@@ -718,6 +718,7 @@ GameObject:
   - component: {fileID: 364513592}
   - component: {fileID: 364513591}
   - component: {fileID: 364513595}
+  - component: {fileID: 364513596}
   m_Layer: 0
   m_Name: Table_Test
   m_TagString: Untagged
@@ -833,6 +834,27 @@ MonoBehaviour:
   tableId: 1
   capacity: 2
   currentState: 0
+--- !u!114 &364513596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364513590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d065436d080f49a49a1b5bbf838f8673, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TableStateView
+  restaurantTable: {fileID: 0}
+  tableRenderer: {fileID: 0}
+  freeColor: {r: 0, g: 1, b: 0, a: 1}
+  waitingForWaiterColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  takingOrderColor: {r: 1, g: 0.5, b: 0, a: 1}
+  waitingForFoodColor: {r: 1, g: 0, b: 0, a: 1}
+  eatingColor: {r: 0, g: 1, b: 1, a: 1}
+  waitingForBillColor: {r: 1, g: 0, b: 1, a: 1}
+  dirtyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
