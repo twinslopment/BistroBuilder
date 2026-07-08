@@ -403,6 +403,7 @@ GameObject:
   m_Component:
   - component: {fileID: 263644899}
   - component: {fileID: 263644898}
+  - component: {fileID: 263644900}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -440,6 +441,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &263644900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48930534730763541a8b6f17bdd23faf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TableStateTester
+  restaurantTable: {fileID: 364513595}
+  secondsBetweenStates: 2
 --- !u!1 &327141221
 GameObject:
   m_ObjectHideFlags: 0
@@ -702,6 +717,7 @@ GameObject:
   - component: {fileID: 364513593}
   - component: {fileID: 364513592}
   - component: {fileID: 364513591}
+  - component: {fileID: 364513595}
   m_Layer: 0
   m_Name: Table_Test
   m_TagString: Untagged
@@ -802,6 +818,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &364513595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364513590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1c50e8d2a482314ea40d7dcbaf74bac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTable
+  tableId: 1
+  capacity: 2
+  currentState: 0
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
