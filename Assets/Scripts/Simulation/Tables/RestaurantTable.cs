@@ -18,6 +18,10 @@ public sealed class RestaurantTable : MonoBehaviour
     [SerializeField]
     private Transform waiterServicePoint;
 
+    [Header("Ocupación actual")]
+    [SerializeField]
+    private CustomerGroup assignedCustomerGroup;
+
     [Header("Estado actual")]
     [SerializeField]
     private TableState currentState = TableState.Free;
@@ -26,11 +30,18 @@ public sealed class RestaurantTable : MonoBehaviour
 
     public int TableId => tableId;
     public int Capacity => capacity;
+
     public Transform CustomerApproachPoint => customerApproachPoint;
     public Transform WaiterServicePoint => waiterServicePoint;
+
+    public CustomerGroup AssignedCustomerGroup =>
+        assignedCustomerGroup;
+
     public TableState CurrentState => currentState;
 
-    public bool IsAvailable => currentState == TableState.Free;
+    public bool IsAvailable =>
+        currentState == TableState.Free &&
+        assignedCustomerGroup == null;
 
     public void SetState(TableState newState)
     {
@@ -52,5 +63,36 @@ public sealed class RestaurantTable : MonoBehaviour
         return IsAvailable &&
                groupSize > 0 &&
                groupSize <= capacity;
+    }
+
+    public bool TryAssignCustomerGroup(CustomerGroup customerGroup)
+    {
+        if (customerGroup == null)
+            return false;
+
+        if (!CanSeatGroup(customerGroup.GroupSize))
+            return false;
+
+        assignedCustomerGroup = customerGroup;
+
+        Debug.Log(
+            $"Mesa {tableId}: grupo {customerGroup.GroupId} registrado.",
+            this
+        );
+
+        return true;
+    }
+
+    public void ReleaseCustomerGroup(CustomerGroup customerGroup)
+    {
+        if (assignedCustomerGroup != customerGroup)
+            return;
+
+        assignedCustomerGroup = null;
+
+        Debug.Log(
+            $"Mesa {tableId}: grupo liberado.",
+            this
+        );
     }
 }

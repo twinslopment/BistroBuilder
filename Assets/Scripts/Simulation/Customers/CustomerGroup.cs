@@ -56,7 +56,16 @@ public sealed class CustomerGroup : MonoBehaviour
 
     public bool AssignTable(RestaurantTable table)
     {
+        if (assignedTable != null)
+            return false;
+
         if (!CanUseTable(table))
+            return false;
+
+        bool registeredInTable =
+            table.TryAssignCustomerGroup(this);
+
+        if (!registeredInTable)
             return false;
 
         assignedTable = table;
@@ -71,7 +80,18 @@ public sealed class CustomerGroup : MonoBehaviour
 
     public void ClearAssignedTable()
     {
+        if (assignedTable == null)
+            return;
+
+        RestaurantTable previousTable = assignedTable;
         assignedTable = null;
+
+        previousTable.ReleaseCustomerGroup(this);
+
+        Debug.Log(
+            $"Grupo {groupId}: mesa asignada liberada.",
+            this
+        );
     }
 
     public void AddWaitingMinutes(int minutes)

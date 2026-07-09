@@ -17,6 +17,7 @@ public sealed class GameClock : MonoBehaviour
 
     public event Action<int, int> TimeChanged;
     public event Action<float> SpeedChanged;
+    public event Action<bool> PauseChanged;
 
     public int Hour { get; private set; }
     public int Minute { get; private set; }
@@ -31,6 +32,7 @@ public sealed class GameClock : MonoBehaviour
         Hour = startHour;
         Minute = startMinute;
 
+        ApplySimulationSpeed();
         NotifyTimeChanged();
     }
 
@@ -41,8 +43,7 @@ public sealed class GameClock : MonoBehaviour
 
         accumulatedMinutes +=
             Time.deltaTime *
-            gameMinutesPerRealSecond *
-            SpeedMultiplier;
+            gameMinutesPerRealSecond;
 
         while (accumulatedMinutes >= 1f)
         {
@@ -51,9 +52,22 @@ public sealed class GameClock : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        // Evita que Unity permanezca acelerado o pausado
+        // después de salir del modo Play.
+        Time.timeScale = 1f;
+    }
+
     public void SetPaused(bool paused)
     {
+        if (IsPaused == paused)
+            return;
+
         IsPaused = paused;
+
+        ApplySimulationSpeed();
+        PauseChanged?.Invoke(IsPaused);
     }
 
     public void SetSpeedMultiplier(float multiplier)
@@ -61,7 +75,7 @@ public sealed class GameClock : MonoBehaviour
         if (multiplier <= 0f)
         {
             Debug.LogWarning(
-                "La velocidad del reloj debe ser superior a cero.",
+                "La velocidad de simulación debe ser superior a cero.",
                 this
             );
 
@@ -72,7 +86,16 @@ public sealed class GameClock : MonoBehaviour
             return;
 
         SpeedMultiplier = multiplier;
+
+        ApplySimulationSpeed();
         SpeedChanged?.Invoke(SpeedMultiplier);
+    }
+
+    private void ApplySimulationSpeed()
+    {
+        Time.timeScale = IsPaused
+            ? 0f
+            : SpeedMultiplier;
     }
 
     private void AdvanceOneMinute()
