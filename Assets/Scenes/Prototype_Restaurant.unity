@@ -470,6 +470,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CustomerGroupTester
   customerGroup: {fileID: 1191849215}
   restaurantTable: {fileID: 364513595}
+  customerMovementView: {fileID: 1191849220}
   delayBeforeAssignment: 2
 --- !u!1 &327141221
 GameObject:

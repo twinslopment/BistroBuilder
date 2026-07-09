@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public sealed class CustomerMovementView : MonoBehaviour
@@ -12,6 +13,8 @@ public sealed class CustomerMovementView : MonoBehaviour
 
     [SerializeField, Min(0.01f)]
     private float arrivalDistance = 0.05f;
+
+    public event Action<CustomerMovementView> DestinationReached;
 
     public bool HasReachedDestination { get; private set; }
 
@@ -65,14 +68,7 @@ public sealed class CustomerMovementView : MonoBehaviour
         if (remainingDistance > arrivalDistance)
             return;
 
-        transform.position = currentDestination.position;
-        isMoving = false;
-        HasReachedDestination = true;
-
-        Debug.Log(
-            $"Grupo {customerGroup.GroupId} ha llegado a la mesa.",
-            this
-        );
+        CompleteMovement();
     }
 
     private void HandleStateChanged(
@@ -108,5 +104,20 @@ public sealed class CustomerMovementView : MonoBehaviour
         currentDestination = assignedTable.CustomerApproachPoint;
         HasReachedDestination = false;
         isMoving = true;
+    }
+
+    private void CompleteMovement()
+    {
+        transform.position = currentDestination.position;
+
+        isMoving = false;
+        HasReachedDestination = true;
+
+        Debug.Log(
+            $"Grupo {customerGroup.GroupId} ha llegado a la mesa.",
+            this
+        );
+
+        DestinationReached?.Invoke(this);
     }
 }

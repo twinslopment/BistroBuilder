@@ -9,8 +9,31 @@ public sealed class CustomerGroupTester : MonoBehaviour
     [SerializeField]
     private RestaurantTable restaurantTable;
 
+    [SerializeField]
+    private CustomerMovementView customerMovementView;
+
     [SerializeField, Min(0.5f)]
     private float delayBeforeAssignment = 2f;
+
+    private bool destinationReached;
+
+    private void OnEnable()
+    {
+        if (customerMovementView != null)
+        {
+            customerMovementView.DestinationReached +=
+                HandleDestinationReached;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (customerMovementView != null)
+        {
+            customerMovementView.DestinationReached -=
+                HandleDestinationReached;
+        }
+    }
 
     private IEnumerator Start()
     {
@@ -34,6 +57,16 @@ public sealed class CustomerGroupTester : MonoBehaviour
             yield break;
         }
 
+        if (customerMovementView == null)
+        {
+            Debug.LogError(
+                "CustomerGroupTester necesita una referencia a CustomerMovementView.",
+                this
+            );
+
+            yield break;
+        }
+
         customerGroup.SetState(CustomerGroupState.WaitingForTable);
 
         yield return new WaitForSeconds(delayBeforeAssignment);
@@ -51,11 +84,20 @@ public sealed class CustomerGroupTester : MonoBehaviour
         }
 
         restaurantTable.SetState(TableState.WaitingForWaiter);
+
+        destinationReached = false;
         customerGroup.SetState(CustomerGroupState.WalkingToTable);
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitUntil(() => destinationReached);
 
         customerGroup.SetState(CustomerGroupState.Seated);
         customerGroup.SetState(CustomerGroupState.WaitingForWaiter);
+    }
+
+    private void HandleDestinationReached(
+        CustomerMovementView movementView
+    )
+    {
+        destinationReached = true;
     }
 }
