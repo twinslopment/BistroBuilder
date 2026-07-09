@@ -93,6 +93,9 @@ public sealed class WaiterMovementView : MonoBehaviour
             WaiterState.WalkingToBill =>
                 GetTableServicePoint(changedWaiter),
 
+            WaiterState.WalkingToCleanTable =>
+                GetTableServicePoint(changedWaiter),
+
             _ => null
         };
 

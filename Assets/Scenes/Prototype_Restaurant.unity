@@ -410,6 +410,7 @@ GameObject:
   - component: {fileID: 263644904}
   - component: {fileID: 263644905}
   - component: {fileID: 263644906}
+  - component: {fileID: 263644907}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -549,6 +550,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cb20c5052c27d6478f0cc67ae786097, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BillAssignmentSystem
+  tables:
+  - {fileID: 364513595}
+  waiters:
+  - {fileID: 1478749460}
+--- !u!114 &263644907
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d788e4866eb20647aa616d6a9527517, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TableCleaningAssignmentSystem
   tables:
   - {fileID: 364513595}
   waiters:
@@ -2392,6 +2409,7 @@ GameObject:
   - component: {fileID: 1478749465}
   - component: {fileID: 1478749466}
   - component: {fileID: 1478749467}
+  - component: {fileID: 1478749468}
   m_Layer: 0
   m_Name: Waiter_Test
   m_TagString: Untagged
@@ -2574,6 +2592,21 @@ MonoBehaviour:
   orderSystem: {fileID: 263644903}
   billDeliveryDuration: 1.5
   paymentDuration: 2.5
+--- !u!114 &1478749468
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1478749458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f4cea8fd196a86488ed3cceb94c1139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TableCleaningServiceFlow
+  waiter: {fileID: 1478749460}
+  waiterMovementView: {fileID: 1478749459}
+  cleaningDuration: 3
 --- !u!1 &1491242206
 GameObject:
   m_ObjectHideFlags: 0
