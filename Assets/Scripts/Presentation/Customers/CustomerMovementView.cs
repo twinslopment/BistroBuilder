@@ -7,6 +7,9 @@ public sealed class CustomerMovementView : MonoBehaviour
     [SerializeField]
     private CustomerGroup customerGroup;
 
+    [SerializeField]
+    private Transform restaurantExitPoint;
+
     [Header("Movimiento")]
     [SerializeField, Min(0.1f)]
     private float movementSpeed = 2f;
@@ -76,9 +79,25 @@ public sealed class CustomerMovementView : MonoBehaviour
         CustomerGroupState newState
     )
     {
-        if (newState != CustomerGroupState.WalkingToTable)
+        Transform destination = newState switch
+        {
+            CustomerGroupState.WalkingToTable =>
+                GetTableDestination(group),
+
+            CustomerGroupState.Leaving =>
+                GetExitDestination(),
+
+            _ => null
+        };
+
+        if (destination == null)
             return;
 
+        BeginMovement(destination);
+    }
+
+    private Transform GetTableDestination(CustomerGroup group)
+    {
         RestaurantTable assignedTable = group.AssignedTable;
 
         if (assignedTable == null)
@@ -88,20 +107,41 @@ public sealed class CustomerMovementView : MonoBehaviour
                 this
             );
 
-            return;
+            return null;
         }
 
         if (assignedTable.CustomerApproachPoint == null)
         {
             Debug.LogError(
-                $"La mesa {assignedTable.TableId} no tiene CustomerApproachPoint.",
+                $"La mesa {assignedTable.TableId} no tiene " +
+                "CustomerApproachPoint.",
                 assignedTable
             );
 
-            return;
+            return null;
         }
 
-        currentDestination = assignedTable.CustomerApproachPoint;
+        return assignedTable.CustomerApproachPoint;
+    }
+
+    private Transform GetExitDestination()
+    {
+        if (restaurantExitPoint == null)
+        {
+            Debug.LogError(
+                "CustomerMovementView necesita RestaurantExitPoint.",
+                this
+            );
+
+            return null;
+        }
+
+        return restaurantExitPoint;
+    }
+
+    private void BeginMovement(Transform destination)
+    {
+        currentDestination = destination;
         HasReachedDestination = false;
         isMoving = true;
     }
@@ -114,7 +154,7 @@ public sealed class CustomerMovementView : MonoBehaviour
         HasReachedDestination = true;
 
         Debug.Log(
-            $"Grupo {customerGroup.GroupId} ha llegado a la mesa.",
+            $"Grupo {customerGroup.GroupId} ha llegado a su destino.",
             this
         );
 
