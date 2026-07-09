@@ -10,6 +10,9 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
     [SerializeField]
     private WaiterMovementView waiterMovementView;
 
+    [SerializeField]
+    private OrderSystem orderSystem;
+
     [Header("Duraciones provisionales")]
     [SerializeField, Min(0.1f)]
     private float takingOrderDuration = 3f;
@@ -97,9 +100,8 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
         );
 
         yield return new WaitUntil(() =>
-            customerGroup != null &&
             customerGroup.CurrentState ==
-                CustomerGroupState.WaitingForWaiter
+            CustomerGroupState.WaitingForWaiter
         );
 
         if (waiter.AssignedTable != table ||
@@ -120,14 +122,44 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
 
         yield return new WaitForSeconds(takingOrderDuration);
 
+        RestaurantOrder order =
+            orderSystem.CreateOrder(table, waiter);
+
+        if (order == null)
+        {
+            Debug.LogError(
+                $"No se pudo crear la comanda de la mesa {table.TableId}.",
+                this
+            );
+
+            activeServiceRoutine = null;
+            yield break;
+        }
+
+        bool sentToKitchen =
+            order.TrySetState(OrderState.SentToKitchen);
+
+        if (!sentToKitchen)
+        {
+            Debug.LogError(
+                $"La comanda {order.OrderId} no pudo enviarse a cocina.",
+                this
+            );
+
+            activeServiceRoutine = null;
+            yield break;
+        }
+
         table.SetState(TableState.WaitingForFood);
         customerGroup.SetState(CustomerGroupState.WaitingForFood);
 
         Debug.Log(
-            $"Camarero {waiter.WaiterId} ha tomado el pedido " +
-            $"del grupo {customerGroup.GroupId} en la mesa {table.TableId}.",
+            $"Comanda {order.OrderId} enviada a cocina para la mesa " +
+            $"{table.TableId}.",
             this
         );
+
+        waiter.ClearAssignment();
 
         activeServiceRoutine = null;
     }
@@ -147,6 +179,14 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
             Debug.LogError(
                 "WaiterTableServiceFlow necesita una referencia " +
                 "a WaiterMovementView.",
+                this
+            );
+        }
+
+        if (orderSystem == null)
+        {
+            Debug.LogError(
+                "WaiterTableServiceFlow necesita una referencia a OrderSystem.",
                 this
             );
         }

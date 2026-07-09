@@ -406,6 +406,8 @@ GameObject:
   - component: {fileID: 263644900}
   - component: {fileID: 263644901}
   - component: {fileID: 263644902}
+  - component: {fileID: 263644903}
+  - component: {fileID: 263644904}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -489,6 +491,34 @@ MonoBehaviour:
   - {fileID: 364513595}
   waiters:
   - {fileID: 1478749460}
+--- !u!114 &263644903
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a58663406e2a83643aa03597e09ba372, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OrderSystem
+  nextOrderId: 1
+--- !u!114 &263644904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 918a6a732206bbf4b972063fe976b8a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KitchenSystem
+  orderSystem: {fileID: 263644903}
+  preparationDuration: 5
+  currentState: 0
 --- !u!1 &327141221
 GameObject:
   m_ObjectHideFlags: 0
@@ -2265,6 +2295,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaiterTableServiceFlow
   waiter: {fileID: 1478749460}
   waiterMovementView: {fileID: 1478749459}
+  orderSystem: {fileID: 263644903}
   takingOrderDuration: 3
 --- !u!1 &1491242206
 GameObject:
