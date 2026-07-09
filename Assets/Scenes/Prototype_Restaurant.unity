@@ -871,6 +871,7 @@ MonoBehaviour:
   capacity: 2
   customerApproachPoint: {fileID: 1677158480}
   waiterServicePoint: {fileID: 1586320370}
+  assignedCustomerGroup: {fileID: 0}
   currentState: 0
 --- !u!114 &364513596
 MonoBehaviour:
@@ -2117,6 +2118,7 @@ GameObject:
   - component: {fileID: 1478749461}
   - component: {fileID: 1478749460}
   - component: {fileID: 1478749459}
+  - component: {fileID: 1478749465}
   m_Layer: 0
   m_Name: Waiter_Test
   m_TagString: Untagged
@@ -2249,6 +2251,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1478749465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1478749458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0cc88478426d5b64f9144c6551eb69ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaiterTableServiceFlow
+  waiter: {fileID: 1478749460}
+  waiterMovementView: {fileID: 1478749459}
+  takingOrderDuration: 3
 --- !u!1 &1491242206
 GameObject:
   m_ObjectHideFlags: 0
