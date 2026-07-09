@@ -55,14 +55,14 @@ public sealed class CustomerArrivalFlow : MonoBehaviour
         if (arrivalDelay > 0f)
             yield return new WaitForSeconds(arrivalDelay);
 
-        customerGroup.SetState(
-            CustomerGroupState.WaitingForTable
-        );
-
         Debug.Log(
             $"Grupo {customerGroup.GroupId} ha llegado " +
             "y espera una mesa.",
             this
+        );
+
+        customerGroup.SetState(
+            CustomerGroupState.WaitingForTable
         );
 
         arrivalRoutine = null;

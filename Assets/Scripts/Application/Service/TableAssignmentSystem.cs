@@ -1,57 +1,112 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public sealed class TableAssignmentSystem : MonoBehaviour
 {
-    [Header("Elementos gestionados")]
+    [Header("Elementos iniciales")]
+    [FormerlySerializedAs("customerGroups")]
     [SerializeField]
-    private CustomerGroup[] customerGroups;
+    private CustomerGroup[] initialCustomerGroups;
 
+    [Header("Mesas gestionadas")]
     [SerializeField]
     private RestaurantTable[] tables;
 
+    private readonly List<CustomerGroup> registeredGroups = new();
     private readonly List<CustomerGroup> waitingGroups = new();
+
+    public IReadOnlyList<CustomerGroup> RegisteredGroups =>
+        registeredGroups;
 
     private void OnEnable()
     {
-        SubscribeToCustomerGroups();
         SubscribeToTables();
+        RegisterInitialCustomerGroups();
     }
 
     private void Start()
     {
         ValidateConfiguration();
-        RegisterGroupsAlreadyWaiting();
         TryAssignWaitingGroups();
     }
 
     private void OnDisable()
     {
-        UnsubscribeFromCustomerGroups();
         UnsubscribeFromTables();
+        UnsubscribeFromCustomerGroups();
+
+        registeredGroups.Clear();
+        waitingGroups.Clear();
     }
 
-    private void SubscribeToCustomerGroups()
+    public bool RegisterCustomerGroup(CustomerGroup customerGroup)
     {
-        if (customerGroups == null)
+        if (customerGroup == null)
+            return false;
+
+        if (registeredGroups.Contains(customerGroup))
+            return false;
+
+        registeredGroups.Add(customerGroup);
+
+        customerGroup.StateChanged +=
+            HandleCustomerGroupStateChanged;
+
+        Debug.Log(
+            $"Grupo {customerGroup.GroupId} registrado " +
+            "en el sistema de asignación de mesas.",
+            customerGroup
+        );
+
+        if (customerGroup.CurrentState ==
+            CustomerGroupState.WaitingForTable)
+        {
+            AddWaitingGroup(customerGroup);
+            TryAssignWaitingGroups();
+        }
+
+        return true;
+    }
+
+    public bool UnregisterCustomerGroup(
+        CustomerGroup customerGroup
+    )
+    {
+        if (customerGroup == null)
+            return false;
+
+        if (!registeredGroups.Remove(customerGroup))
+            return false;
+
+        customerGroup.StateChanged -=
+            HandleCustomerGroupStateChanged;
+
+        waitingGroups.Remove(customerGroup);
+
+        Debug.Log(
+            $"Grupo {customerGroup.GroupId} eliminado " +
+            "del sistema de asignación de mesas.",
+            customerGroup
+        );
+
+        return true;
+    }
+
+    private void RegisterInitialCustomerGroups()
+    {
+        if (initialCustomerGroups == null)
             return;
 
-        foreach (CustomerGroup customerGroup in customerGroups)
+        foreach (CustomerGroup customerGroup in initialCustomerGroups)
         {
-            if (customerGroup != null)
-            {
-                customerGroup.StateChanged +=
-                    HandleCustomerGroupStateChanged;
-            }
+            RegisterCustomerGroup(customerGroup);
         }
     }
 
     private void UnsubscribeFromCustomerGroups()
     {
-        if (customerGroups == null)
-            return;
-
-        foreach (CustomerGroup customerGroup in customerGroups)
+        foreach (CustomerGroup customerGroup in registeredGroups)
         {
             if (customerGroup != null)
             {
@@ -69,7 +124,10 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         foreach (RestaurantTable table in tables)
         {
             if (table != null)
-                table.StateChanged += HandleTableStateChanged;
+            {
+                table.StateChanged +=
+                    HandleTableStateChanged;
+            }
         }
     }
 
@@ -81,22 +139,9 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         foreach (RestaurantTable table in tables)
         {
             if (table != null)
-                table.StateChanged -= HandleTableStateChanged;
-        }
-    }
-
-    private void RegisterGroupsAlreadyWaiting()
-    {
-        if (customerGroups == null)
-            return;
-
-        foreach (CustomerGroup customerGroup in customerGroups)
-        {
-            if (customerGroup != null &&
-                customerGroup.CurrentState ==
-                    CustomerGroupState.WaitingForTable)
             {
-                AddWaitingGroup(customerGroup);
+                table.StateChanged -=
+                    HandleTableStateChanged;
             }
         }
     }
@@ -114,6 +159,11 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         }
 
         waitingGroups.Remove(customerGroup);
+
+        if (newState == CustomerGroupState.Finished)
+        {
+            UnregisterCustomerGroup(customerGroup);
+        }
     }
 
     private void HandleTableStateChanged(
@@ -177,7 +227,6 @@ public sealed class TableAssignmentSystem : MonoBehaviour
             }
 
             waitingGroups.RemoveAt(groupIndex);
-
             customerGroup.ResetWaitingTime();
 
             bestTable.SetState(
@@ -217,11 +266,8 @@ public sealed class TableAssignmentSystem : MonoBehaviour
             if (table == null)
                 continue;
 
-            if (!table.CanSeatGroup(
-                    customerGroup.GroupSize))
-            {
+            if (!table.CanSeatGroup(customerGroup.GroupSize))
                 continue;
-            }
 
             int unusedCapacity =
                 table.Capacity -
@@ -261,17 +307,7 @@ public sealed class TableAssignmentSystem : MonoBehaviour
 
     private void ValidateConfiguration()
     {
-        if (customerGroups == null ||
-            customerGroups.Length == 0)
-        {
-            Debug.LogError(
-                "TableAssignmentSystem no tiene grupos configurados.",
-                this
-            );
-        }
-
-        if (tables == null ||
-            tables.Length == 0)
+        if (tables == null || tables.Length == 0)
         {
             Debug.LogError(
                 "TableAssignmentSystem no tiene mesas configuradas.",
