@@ -411,6 +411,7 @@ GameObject:
   - component: {fileID: 263644905}
   - component: {fileID: 263644906}
   - component: {fileID: 263644907}
+  - component: {fileID: 263644908}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -469,7 +470,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7650003a991ade3448d41e6975a1e64b, type: 3}
   m_Name: 
@@ -570,6 +571,22 @@ MonoBehaviour:
   - {fileID: 364513595}
   waiters:
   - {fileID: 1478749460}
+--- !u!114 &263644908
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 507c15bf2222b7d41a3ed27969875caf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TableAssignmentSystem
+  customerGroups:
+  - {fileID: 1191849215}
+  tables:
+  - {fileID: 364513595}
 --- !u!1 &327141221
 GameObject:
   m_ObjectHideFlags: 0
@@ -1707,6 +1724,8 @@ GameObject:
   - component: {fileID: 1191849220}
   - component: {fileID: 1191849221}
   - component: {fileID: 1191849222}
+  - component: {fileID: 1191849223}
+  - component: {fileID: 1191849224}
   m_Layer: 0
   m_Name: CustomerGroup_Test
   m_TagString: Untagged
@@ -1868,6 +1887,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18ab78085998b1145a0f3fbb4fe7b22e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerExitFlow
+  customerGroup: {fileID: 0}
+  customerMovementView: {fileID: 0}
+--- !u!114 &1191849223
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191849214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05ad95834479cc045bdf4b1307f0b376, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CustomerArrivalFlow
+  customerGroup: {fileID: 0}
+  arrivalDelay: 2
+--- !u!114 &1191849224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191849214}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acb056010fc602a4f8b2f63e1649efcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CustomerSeatingFlow
   customerGroup: {fileID: 0}
   customerMovementView: {fileID: 0}
 --- !u!1 &1208060061
