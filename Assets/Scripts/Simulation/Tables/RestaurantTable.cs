@@ -15,6 +15,9 @@ public sealed class RestaurantTable : MonoBehaviour
     [SerializeField]
     private Transform customerApproachPoint;
 
+    [SerializeField]
+    private Transform waiterServicePoint;
+
     [Header("Estado actual")]
     [SerializeField]
     private TableState currentState = TableState.Free;
@@ -24,6 +27,7 @@ public sealed class RestaurantTable : MonoBehaviour
     public int TableId => tableId;
     public int Capacity => capacity;
     public Transform CustomerApproachPoint => customerApproachPoint;
+    public Transform WaiterServicePoint => waiterServicePoint;
     public TableState CurrentState => currentState;
 
     public bool IsAvailable => currentState == TableState.Free;
