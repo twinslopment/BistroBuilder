@@ -6,5 +6,6 @@ public enum TableState
     WaitingForFood,
     Eating,
     WaitingForBill,
+    Paying,
     Dirty
 }

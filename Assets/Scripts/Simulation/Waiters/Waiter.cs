@@ -75,6 +75,32 @@ public sealed class Waiter : MonoBehaviour
         return true;
     }
 
+    public bool AssignTableForBill(RestaurantTable table)
+    {
+        if (!IsAvailable)
+            return false;
+
+        if (table == null)
+            return false;
+
+        if (table.CurrentState != TableState.WaitingForBill)
+            return false;
+
+        if (table.AssignedCustomerGroup == null)
+            return false;
+
+        assignedTable = table;
+
+        Debug.Log(
+            $"Camarero {waiterId} asignado para llevar la cuenta " +
+            $"a la mesa {table.TableId}.",
+            this
+        );
+
+        SetState(WaiterState.WalkingToBill);
+        return true;
+    }
+
     public void SetState(WaiterState newState)
     {
         if (currentState == newState)

@@ -7,6 +7,7 @@ public enum WaiterState
     WaitingForDish,
     WalkingToServeTable,
     ServingFood,
+    WalkingToBill,
     DeliveringBill,
     CleaningTable
 }

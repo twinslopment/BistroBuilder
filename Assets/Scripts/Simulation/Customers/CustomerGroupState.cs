@@ -9,6 +9,7 @@ public enum CustomerGroupState
     WaitingForFood,
     Eating,
     WaitingForBill,
+    Paying,
     Leaving,
     Finished
 }

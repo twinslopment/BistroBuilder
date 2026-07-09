@@ -17,7 +17,8 @@ public sealed class TableStateView : MonoBehaviour
     private Color waitingForWaiterColor = Color.yellow;
 
     [SerializeField]
-    private Color takingOrderColor = new(1f, 0.5f, 0f);
+    private Color takingOrderColor =
+        new Color(1f, 0.5f, 0f);
 
     [SerializeField]
     private Color waitingForFoodColor = Color.red;
@@ -27,6 +28,10 @@ public sealed class TableStateView : MonoBehaviour
 
     [SerializeField]
     private Color waitingForBillColor = Color.magenta;
+
+    [SerializeField]
+    private Color payingColor =
+        new Color(0.6f, 0.2f, 0.8f);
 
     [SerializeField]
     private Color dirtyColor = Color.gray;
@@ -75,13 +80,19 @@ public sealed class TableStateView : MonoBehaviour
         }
 
         restaurantTable.StateChanged += HandleStateChanged;
-        UpdateVisualState(restaurantTable.CurrentState);
+
+        UpdateVisualState(
+            restaurantTable.CurrentState
+        );
     }
 
     private void OnDisable()
     {
         if (restaurantTable != null)
-            restaurantTable.StateChanged -= HandleStateChanged;
+        {
+            restaurantTable.StateChanged -=
+                HandleStateChanged;
+        }
     }
 
     private void HandleStateChanged(
@@ -96,27 +107,52 @@ public sealed class TableStateView : MonoBehaviour
     {
         Color targetColor = state switch
         {
-            TableState.Free => freeColor,
-            TableState.WaitingForWaiter => waitingForWaiterColor,
-            TableState.TakingOrder => takingOrderColor,
-            TableState.WaitingForFood => waitingForFoodColor,
-            TableState.Eating => eatingColor,
-            TableState.WaitingForBill => waitingForBillColor,
-            TableState.Dirty => dirtyColor,
-            _ => Color.white
+            TableState.Free =>
+                freeColor,
+
+            TableState.WaitingForWaiter =>
+                waitingForWaiterColor,
+
+            TableState.TakingOrder =>
+                takingOrderColor,
+
+            TableState.WaitingForFood =>
+                waitingForFoodColor,
+
+            TableState.Eating =>
+                eatingColor,
+
+            TableState.WaitingForBill =>
+                waitingForBillColor,
+
+            TableState.Paying =>
+                payingColor,
+
+            TableState.Dirty =>
+                dirtyColor,
+
+            _ =>
+                Color.white
         };
 
         tableRenderer.GetPropertyBlock(propertyBlock);
 
         Material material = tableRenderer.sharedMaterial;
 
-        if (material != null && material.HasProperty(BaseColorProperty))
+        if (material != null &&
+            material.HasProperty(BaseColorProperty))
         {
-            propertyBlock.SetColor(BaseColorProperty, targetColor);
+            propertyBlock.SetColor(
+                BaseColorProperty,
+                targetColor
+            );
         }
         else
         {
-            propertyBlock.SetColor(ColorProperty, targetColor);
+            propertyBlock.SetColor(
+                ColorProperty,
+                targetColor
+            );
         }
 
         tableRenderer.SetPropertyBlock(propertyBlock);
