@@ -3,8 +3,9 @@ public enum WaiterState
     Idle,
     WalkingToTable,
     TakingOrder,
-    DeliveringOrderToKitchen,
+    WalkingToKitchen,
     WaitingForDish,
+    WalkingToServeTable,
     ServingFood,
     DeliveringBill,
     CleaningTable

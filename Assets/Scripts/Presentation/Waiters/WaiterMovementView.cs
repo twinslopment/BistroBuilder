@@ -7,6 +7,9 @@ public sealed class WaiterMovementView : MonoBehaviour
     [SerializeField]
     private Waiter waiter;
 
+    [SerializeField]
+    private KitchenSystem kitchenSystem;
+
     [Header("Movimiento")]
     [SerializeField, Min(0.1f)]
     private float movementSpeed = 2.5f;
@@ -76,32 +79,85 @@ public sealed class WaiterMovementView : MonoBehaviour
         WaiterState newState
     )
     {
-        if (newState != WaiterState.WalkingToTable)
+        Transform destination = newState switch
+        {
+            WaiterState.WalkingToTable =>
+                GetTableServicePoint(changedWaiter),
+
+            WaiterState.WalkingToKitchen =>
+                GetKitchenPickupPoint(),
+
+            WaiterState.WalkingToServeTable =>
+                GetTableServicePoint(changedWaiter),
+
+            _ => null
+        };
+
+        if (destination == null)
             return;
 
-        RestaurantTable assignedTable = changedWaiter.AssignedTable;
+        BeginMovement(destination);
+    }
+
+    private Transform GetTableServicePoint(Waiter changedWaiter)
+    {
+        RestaurantTable assignedTable =
+            changedWaiter.AssignedTable;
 
         if (assignedTable == null)
         {
             Debug.LogError(
-                $"El camarero {changedWaiter.WaiterId} no tiene mesa asignada.",
+                $"El camarero {changedWaiter.WaiterId} " +
+                "no tiene mesa asignada.",
                 this
             );
 
-            return;
+            return null;
         }
 
         if (assignedTable.WaiterServicePoint == null)
         {
             Debug.LogError(
-                $"La mesa {assignedTable.TableId} no tiene WaiterServicePoint.",
+                $"La mesa {assignedTable.TableId} " +
+                "no tiene WaiterServicePoint.",
                 assignedTable
             );
 
-            return;
+            return null;
         }
 
-        currentDestination = assignedTable.WaiterServicePoint;
+        return assignedTable.WaiterServicePoint;
+    }
+
+    private Transform GetKitchenPickupPoint()
+    {
+        if (kitchenSystem == null)
+        {
+            Debug.LogError(
+                "WaiterMovementView necesita una referencia " +
+                "a KitchenSystem para ir a cocina.",
+                this
+            );
+
+            return null;
+        }
+
+        if (kitchenSystem.PickupPoint == null)
+        {
+            Debug.LogError(
+                "KitchenSystem no tiene PickupPoint asignado.",
+                kitchenSystem
+            );
+
+            return null;
+        }
+
+        return kitchenSystem.PickupPoint;
+    }
+
+    private void BeginMovement(Transform destination)
+    {
+        currentDestination = destination;
         HasReachedDestination = false;
         isMoving = true;
     }
@@ -114,7 +170,7 @@ public sealed class WaiterMovementView : MonoBehaviour
         HasReachedDestination = true;
 
         Debug.Log(
-            $"Camarero {waiter.WaiterId} ha llegado a la mesa.",
+            $"Camarero {waiter.WaiterId} ha llegado a su destino.",
             this
         );
 

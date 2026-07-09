@@ -9,6 +9,9 @@ public sealed class KitchenSystem : MonoBehaviour
     [SerializeField]
     private OrderSystem orderSystem;
 
+    [SerializeField]
+    private Transform pickupPoint;
+
     [Header("Preparación provisional")]
     [SerializeField, Min(0.1f)]
     private float preparationDuration = 5f;
@@ -28,6 +31,7 @@ public sealed class KitchenSystem : MonoBehaviour
     public KitchenState CurrentState => currentState;
     public RestaurantOrder ActiveOrder => activeOrder;
     public int PendingOrderCount => pendingOrders.Count;
+    public Transform PickupPoint => pickupPoint;
 
     private void OnEnable()
     {

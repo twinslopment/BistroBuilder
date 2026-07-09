@@ -15,15 +15,19 @@ public sealed class Waiter : MonoBehaviour
     [SerializeField]
     private RestaurantTable assignedTable;
 
+    private RestaurantOrder assignedOrder;
+
     public event Action<Waiter, WaiterState> StateChanged;
 
     public int WaiterId => waiterId;
     public WaiterState CurrentState => currentState;
     public RestaurantTable AssignedTable => assignedTable;
+    public RestaurantOrder AssignedOrder => assignedOrder;
 
     public bool IsAvailable =>
         currentState == WaiterState.Idle &&
-        assignedTable == null;
+        assignedTable == null &&
+        assignedOrder == null;
 
     public bool AssignTable(RestaurantTable table)
     {
@@ -47,6 +51,30 @@ public sealed class Waiter : MonoBehaviour
         return true;
     }
 
+    public bool AssignOrderForPickup(RestaurantOrder order)
+    {
+        if (!IsAvailable)
+            return false;
+
+        if (order == null)
+            return false;
+
+        if (order.CurrentState != OrderState.ReadyForPickup)
+            return false;
+
+        assignedOrder = order;
+        assignedTable = order.Table;
+
+        Debug.Log(
+            $"Camarero {waiterId} asignado para recoger " +
+            $"la comanda {order.OrderId}.",
+            this
+        );
+
+        SetState(WaiterState.WalkingToKitchen);
+        return true;
+    }
+
     public void SetState(WaiterState newState)
     {
         if (currentState == newState)
@@ -65,6 +93,8 @@ public sealed class Waiter : MonoBehaviour
     public void ClearAssignment()
     {
         assignedTable = null;
+        assignedOrder = null;
+
         SetState(WaiterState.Idle);
     }
 }
