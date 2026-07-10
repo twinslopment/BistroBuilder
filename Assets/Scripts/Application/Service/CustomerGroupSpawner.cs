@@ -8,11 +8,9 @@ using UnityEngine;
 /// Cada grupo recibe:
 /// - Un identificador único.
 /// - Un tamaño aleatorio.
-/// - El punto de salida del restaurante.
-/// - El registro en TableAssignmentSystem.
-///
-/// Los tiempos utilizan WaitForSeconds, por lo que respetan
-/// la pausa y las velocidades x1, x2 y x3 del juego.
+/// - El punto de salida.
+/// - Registro en el sistema de mesas.
+/// - Registro en la zona física de espera.
 /// </summary>
 public sealed class CustomerGroupSpawner : MonoBehaviour
 {
@@ -23,6 +21,9 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     [Header("Sistemas")]
     [SerializeField]
     private TableAssignmentSystem tableAssignmentSystem;
+
+    [SerializeField]
+    private CustomerWaitingAreaSystem customerWaitingAreaSystem;
 
     [Header("Puntos del restaurante")]
     [SerializeField]
@@ -56,8 +57,6 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
 
     private void OnEnable()
     {
-        // No iniciamos la generación si falta alguna referencia esencial.
-        // Así evitamos crear grupos incompletos o imposibles de gestionar.
         if (!ValidateConfiguration())
         {
             enabled = false;
@@ -70,8 +69,6 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
 
     private void OnDisable()
     {
-        // Si el componente se desactiva, detenemos la generación pendiente.
-        // Los grupos ya creados continúan funcionando normalmente.
         if (spawnRoutine == null)
             return;
 
@@ -80,8 +77,7 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Genera la cantidad configurada de grupos dejando un intervalo
-    /// entre una llegada y la siguiente.
+    /// Genera los grupos dejando un intervalo entre llegadas.
     /// </summary>
     private IEnumerator SpawnGroupsRoutine()
     {
@@ -124,10 +120,11 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     /// <summary>
     /// Crea y configura una instancia concreta del prefab.
     /// </summary>
-    private void SpawnCustomerGroup(int groupId)
+    private void SpawnCustomerGroup(
+        int groupId
+    )
     {
         // Random.Range con enteros no incluye el límite superior.
-        // Por eso sumamos uno para permitir también maximumGroupSize.
         int groupSize = Random.Range(
             minimumGroupSize,
             maximumGroupSize + 1
@@ -150,17 +147,14 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
 
         if (!initialized)
         {
-            Debug.LogError(
-                $"No se pudo inicializar el grupo {groupId}.",
-                this
-            );
-
             Destroy(newGroup.gameObject);
             return;
         }
 
         CustomerMovementView movementView =
-            newGroup.GetComponent<CustomerMovementView>();
+            newGroup.GetComponent<
+                CustomerMovementView
+            >();
 
         if (movementView == null)
         {
@@ -174,23 +168,45 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
             return;
         }
 
-        // El prefab no puede mantener una referencia directa
-        // a un objeto de la escena. El generador se la proporciona
-        // inmediatamente después de crear la instancia.
+        // La salida pertenece a la escena, por lo que se configura
+        // después de instanciar el prefab.
         movementView.ConfigureExitPoint(
             restaurantExitPoint
         );
 
-        bool registered =
+        bool registeredInTableSystem =
             tableAssignmentSystem.RegisterCustomerGroup(
                 newGroup
             );
 
-        if (!registered)
+        if (!registeredInTableSystem)
         {
             Debug.LogError(
                 $"No se pudo registrar el grupo {groupId} " +
                 "en TableAssignmentSystem.",
+                newGroup
+            );
+
+            Destroy(newGroup.gameObject);
+            return;
+        }
+
+        bool registeredInWaitingArea =
+            customerWaitingAreaSystem.RegisterCustomerGroup(
+                newGroup
+            );
+
+        if (!registeredInWaitingArea)
+        {
+            Debug.LogError(
+                $"No se pudo registrar el grupo {groupId} " +
+                "en CustomerWaitingAreaSystem.",
+                newGroup
+            );
+
+            // Deshacemos también el registro anterior para no dejar
+            // referencias a un objeto que será destruido.
+            tableAssignmentSystem.UnregisterCustomerGroup(
                 newGroup
             );
 
@@ -206,8 +222,7 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Comprueba que el generador tiene todos los datos necesarios
-    /// antes de comenzar.
+    /// Valida todas las referencias antes de comenzar a generar grupos.
     /// </summary>
     private bool ValidateConfiguration()
     {
@@ -216,8 +231,7 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (customerGroupPrefab == null)
         {
             Debug.LogError(
-                "CustomerGroupSpawner necesita " +
-                "CustomerGroupPrefab.",
+                "CustomerGroupSpawner necesita CustomerGroupPrefab.",
                 this
             );
 
@@ -227,8 +241,18 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (tableAssignmentSystem == null)
         {
             Debug.LogError(
-                "CustomerGroupSpawner necesita una referencia " +
-                "a TableAssignmentSystem.",
+                "CustomerGroupSpawner necesita TableAssignmentSystem.",
+                this
+            );
+
+            isValid = false;
+        }
+
+        if (customerWaitingAreaSystem == null)
+        {
+            Debug.LogError(
+                "CustomerGroupSpawner necesita " +
+                "CustomerWaitingAreaSystem.",
                 this
             );
 
@@ -248,8 +272,7 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (restaurantExitPoint == null)
         {
             Debug.LogError(
-                "CustomerGroupSpawner necesita " +
-                "RestaurantExitPoint.",
+                "CustomerGroupSpawner necesita RestaurantExitPoint.",
                 this
             );
 
