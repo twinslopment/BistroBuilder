@@ -445,6 +445,7 @@ GameObject:
   - component: {fileID: 263644908}
   - component: {fileID: 263644909}
   - component: {fileID: 263644910}
+  - component: {fileID: 263644911}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -519,7 +520,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c54a564633b5a6c48bc4498f879a4eb4, type: 3}
   m_Name: 
@@ -565,7 +566,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c108acad52e2aa548a81235c99ffb7de, type: 3}
   m_Name: 
@@ -580,7 +581,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1cb20c5052c27d6478f0cc67ae786097, type: 3}
   m_Name: 
@@ -597,7 +598,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d788e4866eb20647aa616d6a9527517, type: 3}
   m_Name: 
@@ -662,6 +663,23 @@ MonoBehaviour:
   - {fileID: 1985212275}
   - {fileID: 2050404729}
   - {fileID: 295579757}
+--- !u!114 &263644911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83ed70faab976ab4e80cdcceff6bf916, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WaiterTaskCoordinator
+  discoverSceneObjectsOnStart: 1
+  manageTakeOrderTasks: 1
+  manageFoodDeliveryTasks: 1
+  manageBillTasks: 1
+  manageCleaningTasks: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -2791,6 +2809,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FoodDeliveryServiceFlow
   waiter: {fileID: 1478749460}
   waiterMovementView: {fileID: 1478749459}
+  taskCoordinator: {fileID: 263644911}
   pickupDuration: 1
   servingDuration: 2
 --- !u!114 &1478749467
