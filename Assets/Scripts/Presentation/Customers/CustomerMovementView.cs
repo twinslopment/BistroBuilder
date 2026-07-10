@@ -49,7 +49,9 @@ public sealed class CustomerMovementView : MonoBehaviour
     private void OnDisable()
     {
         if (customerGroup != null)
+        {
             customerGroup.StateChanged -= HandleStateChanged;
+        }
     }
 
     private void Update()
@@ -74,6 +76,21 @@ public sealed class CustomerMovementView : MonoBehaviour
         CompleteMovement();
     }
 
+    public void ConfigureExitPoint(Transform exitPoint)
+    {
+        if (exitPoint == null)
+        {
+            Debug.LogError(
+                "No se puede configurar un punto de salida nulo.",
+                this
+            );
+
+            return;
+        }
+
+        restaurantExitPoint = exitPoint;
+    }
+
     private void HandleStateChanged(
         CustomerGroup group,
         CustomerGroupState newState
@@ -96,9 +113,12 @@ public sealed class CustomerMovementView : MonoBehaviour
         BeginMovement(destination);
     }
 
-    private Transform GetTableDestination(CustomerGroup group)
+    private Transform GetTableDestination(
+        CustomerGroup group
+    )
     {
-        RestaurantTable assignedTable = group.AssignedTable;
+        RestaurantTable assignedTable =
+            group.AssignedTable;
 
         if (assignedTable == null)
         {
@@ -148,7 +168,8 @@ public sealed class CustomerMovementView : MonoBehaviour
 
     private void CompleteMovement()
     {
-        transform.position = currentDestination.position;
+        transform.position =
+            currentDestination.position;
 
         isMoving = false;
         HasReachedDestination = true;

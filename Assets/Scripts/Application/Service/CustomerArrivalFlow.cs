@@ -32,7 +32,9 @@ public sealed class CustomerArrivalFlow : MonoBehaviour
             return;
         }
 
-        arrivalRoutine = StartCoroutine(ArrivalRoutine());
+        arrivalRoutine = StartCoroutine(
+            ArrivalRoutine()
+        );
     }
 
     private void OnDisable()
@@ -46,7 +48,8 @@ public sealed class CustomerArrivalFlow : MonoBehaviour
 
     private IEnumerator ArrivalRoutine()
     {
-        if (customerGroup.CurrentState != CustomerGroupState.Entering)
+        if (customerGroup.CurrentState !=
+            CustomerGroupState.Entering)
         {
             arrivalRoutine = null;
             yield break;
