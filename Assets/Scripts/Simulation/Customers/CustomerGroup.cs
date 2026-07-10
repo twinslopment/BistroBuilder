@@ -1,6 +1,19 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// Representa un grupo de clientes durante toda su visita al restaurante.
+///
+/// Esta clase conserva los datos principales del grupo:
+/// - Su identificador.
+/// - El número de personas.
+/// - Su estado actual.
+/// - La mesa que tiene asignada.
+/// - El tiempo que lleva esperando.
+///
+/// También comunica los cambios de estado al resto de sistemas mediante
+/// el evento StateChanged.
+/// </summary>
 public sealed class CustomerGroup : MonoBehaviour
 {
     [Header("Identificación")]
@@ -16,23 +29,114 @@ public sealed class CustomerGroup : MonoBehaviour
     private CustomerGroupState currentState =
         CustomerGroupState.Entering;
 
-    [Header("Información durante el servicio")]
-    [SerializeField, Min(0)]
-    private int waitingMinutes;
-
+    [Header("Asignación actual")]
     [SerializeField]
     private RestaurantTable assignedTable;
 
-    public event Action<CustomerGroup, CustomerGroupState> StateChanged;
+    [Header("Tiempo de espera")]
+    [SerializeField, Min(0f)]
+    private float waitingTime;
+
+    /// <summary>
+    /// Se ejecuta cada vez que el grupo cambia de estado.
+    /// Permite que otros sistemas reaccionen sin consultar continuamente
+    /// el estado del grupo.
+    /// </summary>
+    public event Action<CustomerGroup, CustomerGroupState>
+        StateChanged;
 
     public int GroupId => groupId;
+
     public int GroupSize => groupSize;
+
     public CustomerGroupState CurrentState => currentState;
-    public int WaitingMinutes => waitingMinutes;
+
     public RestaurantTable AssignedTable => assignedTable;
 
+    public float WaitingTime => waitingTime;
+
+    /// <summary>
+    /// Indica si el grupo ya tiene una mesa asignada.
+    /// </summary>
     public bool HasAssignedTable => assignedTable != null;
 
+    private void Update()
+    {
+        // El tiempo de espera solamente aumenta mientras el grupo
+        // está esperando a que el restaurante le asigne una mesa.
+        if (currentState ==
+            CustomerGroupState.WaitingForTable)
+        {
+            waitingTime += Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Configura una nueva instancia creada a partir del prefab.
+    ///
+    /// El generador utilizará este método para dar a cada grupo
+    /// un identificador y un tamaño diferentes.
+    /// </summary>
+    public bool Initialize(
+        int newGroupId,
+        int newGroupSize
+    )
+    {
+        if (newGroupId < 1)
+        {
+            Debug.LogError(
+                "El identificador del grupo debe ser mayor que cero.",
+                this
+            );
+
+            return false;
+        }
+
+        if (newGroupSize < 1)
+        {
+            Debug.LogError(
+                "El tamaño del grupo debe ser mayor que cero.",
+                this
+            );
+
+            return false;
+        }
+
+        // Una nueva instancia no debería llegar aquí con una mesa
+        // asignada. Esta comprobación evita reutilizar incorrectamente
+        // un grupo que ya está participando en el servicio.
+        if (assignedTable != null)
+        {
+            Debug.LogError(
+                "No se puede inicializar un grupo que ya tiene " +
+                "una mesa asignada.",
+                this
+            );
+
+            return false;
+        }
+
+        groupId = newGroupId;
+        groupSize = newGroupSize;
+
+        // Todo grupo generado comienza entrando al restaurante
+        // y sin haber acumulado tiempo de espera.
+        waitingTime = 0f;
+        currentState = CustomerGroupState.Entering;
+
+        Debug.Log(
+            $"Grupo {groupId} configurado con " +
+            $"{groupSize} cliente(s).",
+            this
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// Cambia el estado actual del grupo y notifica el cambio
+    /// a todos los sistemas suscritos.
+    /// </summary>
     public void SetState(CustomerGroupState newState)
     {
         if (currentState == newState)
@@ -48,24 +152,40 @@ public sealed class CustomerGroup : MonoBehaviour
         StateChanged?.Invoke(this, currentState);
     }
 
-    public bool CanUseTable(RestaurantTable table)
-    {
-        return table != null &&
-               table.CanSeatGroup(groupSize);
-    }
-
+    /// <summary>
+    /// Intenta asignar una mesa al grupo.
+    ///
+    /// La propia mesa valida que esté libre y que tenga capacidad
+    /// suficiente para el número de clientes.
+    /// </summary>
     public bool AssignTable(RestaurantTable table)
     {
+        if (table == null)
+        {
+            Debug.LogError(
+                $"No se puede asignar una mesa nula " +
+                $"al grupo {groupId}.",
+                this
+            );
+
+            return false;
+        }
+
         if (assignedTable != null)
-            return false;
+        {
+            Debug.LogWarning(
+                $"El grupo {groupId} ya tiene la mesa " +
+                $"{assignedTable.TableId} asignada.",
+                this
+            );
 
-        if (!CanUseTable(table))
             return false;
+        }
 
-        bool registeredInTable =
+        bool tableAcceptedGroup =
             table.TryAssignCustomerGroup(this);
 
-        if (!registeredInTable)
+        if (!tableAcceptedGroup)
             return false;
 
         assignedTable = table;
@@ -78,12 +198,22 @@ public sealed class CustomerGroup : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Libera la mesa ocupada por el grupo.
+    ///
+    /// Se utiliza cuando el grupo abandona el restaurante,
+    /// antes de que la mesa pase al estado Dirty.
+    /// </summary>
     public void ClearAssignedTable()
     {
         if (assignedTable == null)
             return;
 
-        RestaurantTable previousTable = assignedTable;
+        RestaurantTable previousTable =
+            assignedTable;
+
+        // Se elimina primero la referencia del grupo para evitar
+        // mantener una asignación antigua durante la liberación.
         assignedTable = null;
 
         previousTable.ReleaseCustomerGroup(this);
@@ -94,19 +224,14 @@ public sealed class CustomerGroup : MonoBehaviour
         );
     }
 
-    public void AddWaitingMinutes(int minutes)
-    {
-        if (minutes <= 0)
-            return;
-
-        if (currentState != CustomerGroupState.WaitingForTable)
-            return;
-
-        waitingMinutes += minutes;
-    }
-
+    /// <summary>
+    /// Reinicia el contador de espera.
+    ///
+    /// Se llama cuando el grupo recibe una mesa, porque deja de formar
+    /// parte de la cola de entrada.
+    /// </summary>
     public void ResetWaitingTime()
     {
-        waitingMinutes = 0;
+        waitingTime = 0f;
     }
 }
