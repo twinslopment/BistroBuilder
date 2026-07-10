@@ -1,6 +1,20 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Gestiona la limpieza física de una mesa asignada a un camarero.
+///
+/// El flujo es:
+/// - El camarero llega a la mesa sucia.
+/// - Comienza la limpieza.
+/// - Espera el tiempo configurado.
+/// - Finaliza su tarea y queda disponible.
+/// - La mesa vuelve a estar libre.
+///
+/// El camarero se libera antes de cambiar la mesa a Free para evitar
+/// que un nuevo grupo reciba la mesa cuando todavía no hay camarero
+/// disponible para atenderlo.
+/// </summary>
 public sealed class TableCleaningServiceFlow : MonoBehaviour
 {
     [Header("Referencias")]
@@ -45,6 +59,11 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
         ValidateConfiguration();
     }
 
+    /// <summary>
+    /// Detecta que el camarero ha llegado a su destino.
+    /// Solo comienza la limpieza si estaba desplazándose
+    /// específicamente hacia una mesa sucia.
+    /// </summary>
     private void HandleDestinationReached(
         WaiterMovementView movementView
     )
@@ -62,9 +81,14 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
             StartCoroutine(CleanTableRoutine());
     }
 
+    /// <summary>
+    /// Ejecuta el tiempo de limpieza y devuelve la mesa
+    /// al circuito normal de asignación.
+    /// </summary>
     private IEnumerator CleanTableRoutine()
     {
-        RestaurantTable table = waiter.AssignedTable;
+        RestaurantTable table =
+            waiter.AssignedTable;
 
         if (table == null)
         {
@@ -101,7 +125,9 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
             yield break;
         }
 
-        waiter.SetState(WaiterState.CleaningTable);
+        waiter.SetState(
+            WaiterState.CleaningTable
+        );
 
         Debug.Log(
             $"Camarero {waiter.WaiterId} comienza a limpiar " +
@@ -109,8 +135,12 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
             this
         );
 
-        yield return new WaitForSeconds(cleaningDuration);
+        yield return new WaitForSeconds(
+            cleaningDuration
+        );
 
+        // Comprobamos que la tarea no haya cambiado mientras
+        // transcurría el tiempo de limpieza.
         if (waiter.AssignedTable != table)
         {
             Debug.LogWarning(
@@ -135,24 +165,37 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
             yield break;
         }
 
-        table.SetState(TableState.Free);
-
         Debug.Log(
             $"Camarero {waiter.WaiterId} ha terminado de limpiar " +
-            $"la mesa {table.TableId}. La mesa vuelve a estar libre.",
+            $"la mesa {table.TableId}.",
             this
         );
 
+        // La limpieza ya ha terminado antes de provocar nuevos eventos.
         activeRoutine = null;
+
+        // Primero liberamos al camarero. De esta manera, cuando la mesa
+        // pase a Free y sea asignada a otro grupo, el camarero ya estará
+        // disponible para atenderla.
         waiter.ClearAssignment();
+
+        // Este cambio activa TableAssignmentSystem. Si hay grupos esperando,
+        // uno de ellos podrá recibir inmediatamente la mesa.
+        table.SetState(
+            TableState.Free
+        );
     }
 
+    /// <summary>
+    /// Comprueba que el componente dispone de las referencias necesarias.
+    /// </summary>
     private void ValidateConfiguration()
     {
         if (waiter == null)
         {
             Debug.LogError(
-                "TableCleaningServiceFlow necesita una referencia a Waiter.",
+                "TableCleaningServiceFlow necesita una referencia " +
+                "a Waiter.",
                 this
             );
         }

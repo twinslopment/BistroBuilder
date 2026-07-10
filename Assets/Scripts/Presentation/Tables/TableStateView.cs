@@ -1,5 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// Representa visualmente el estado operativo de una mesa.
+///
+/// Cada estado de RestaurantTable se muestra mediante un color provisional.
+/// Esta clase solo se ocupa de la presentación visual y no modifica
+/// la lógica interna de la mesa.
+/// </summary>
 public sealed class TableStateView : MonoBehaviour
 {
     [Header("Referencias")]
@@ -36,31 +43,37 @@ public sealed class TableStateView : MonoBehaviour
     [SerializeField]
     private Color dirtyColor = Color.gray;
 
+    // Identificadores de las propiedades de color utilizadas
+    // por los shaders habituales de Unity.
     private static readonly int BaseColorProperty =
         Shader.PropertyToID("_BaseColor");
 
     private static readonly int ColorProperty =
         Shader.PropertyToID("_Color");
 
+    // Permite modificar el color del Renderer sin crear
+    // una copia independiente del material para cada mesa.
     private MaterialPropertyBlock propertyBlock;
 
     private void Awake()
     {
-        if (restaurantTable == null)
-            restaurantTable = GetComponent<RestaurantTable>();
-
-        if (tableRenderer == null)
-            tableRenderer = GetComponent<Renderer>();
-
-        propertyBlock = new MaterialPropertyBlock();
+        FindRequiredComponents();
+        EnsurePropertyBlockExists();
     }
 
     private void OnEnable()
     {
+        // Unity puede ejecutar OnEnable después de recompilar scripts
+        // en el editor sin conservar los campos no serializados.
+        // Por eso garantizamos aquí que propertyBlock vuelva a existir.
+        FindRequiredComponents();
+        EnsurePropertyBlockExists();
+
         if (restaurantTable == null)
         {
             Debug.LogError(
-                "TableStateView necesita una referencia a RestaurantTable.",
+                "TableStateView necesita una referencia " +
+                "a RestaurantTable.",
                 this
             );
 
@@ -79,8 +92,11 @@ public sealed class TableStateView : MonoBehaviour
             return;
         }
 
-        restaurantTable.StateChanged += HandleStateChanged;
+        restaurantTable.StateChanged +=
+            HandleStateChanged;
 
+        // Sincronizamos inmediatamente el color con el estado
+        // actual de la mesa.
         UpdateVisualState(
             restaurantTable.CurrentState
         );
@@ -95,6 +111,43 @@ public sealed class TableStateView : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Localiza automáticamente los componentes cuando no han sido
+    /// asignados manualmente desde el Inspector.
+    /// </summary>
+    private void FindRequiredComponents()
+    {
+        if (restaurantTable == null)
+        {
+            restaurantTable =
+                GetComponent<RestaurantTable>();
+        }
+
+        if (tableRenderer == null)
+        {
+            tableRenderer =
+                GetComponent<Renderer>();
+        }
+    }
+
+    /// <summary>
+    /// Crea el bloque de propiedades si todavía no existe.
+    ///
+    /// Esta comprobación es necesaria porque los campos no serializados
+    /// pueden perderse durante una recompilación en el editor.
+    /// </summary>
+    private void EnsurePropertyBlockExists()
+    {
+        if (propertyBlock == null)
+        {
+            propertyBlock =
+                new MaterialPropertyBlock();
+        }
+    }
+
+    /// <summary>
+    /// Recibe los cambios de estado enviados por RestaurantTable.
+    /// </summary>
     private void HandleStateChanged(
         RestaurantTable table,
         TableState newState
@@ -103,8 +156,24 @@ public sealed class TableStateView : MonoBehaviour
         UpdateVisualState(newState);
     }
 
+    /// <summary>
+    /// Selecciona y aplica el color correspondiente al estado actual
+    /// de la mesa.
+    /// </summary>
     private void UpdateVisualState(TableState state)
     {
+        if (tableRenderer == null)
+        {
+            Debug.LogError(
+                "No se puede actualizar la mesa porque falta Renderer.",
+                this
+            );
+
+            return;
+        }
+
+        EnsurePropertyBlockExists();
+
         Color targetColor = state switch
         {
             TableState.Free =>
@@ -135,10 +204,17 @@ public sealed class TableStateView : MonoBehaviour
                 Color.white
         };
 
-        tableRenderer.GetPropertyBlock(propertyBlock);
+        // Recuperamos primero las propiedades ya aplicadas al Renderer
+        // para no sobrescribir otros valores visuales.
+        tableRenderer.GetPropertyBlock(
+            propertyBlock
+        );
 
-        Material material = tableRenderer.sharedMaterial;
+        Material material =
+            tableRenderer.sharedMaterial;
 
+        // URP utiliza habitualmente _BaseColor.
+        // Otros shaders pueden utilizar la propiedad clásica _Color.
         if (material != null &&
             material.HasProperty(BaseColorProperty))
         {
@@ -155,6 +231,8 @@ public sealed class TableStateView : MonoBehaviour
             );
         }
 
-        tableRenderer.SetPropertyBlock(propertyBlock);
+        tableRenderer.SetPropertyBlock(
+            propertyBlock
+        );
     }
 }
