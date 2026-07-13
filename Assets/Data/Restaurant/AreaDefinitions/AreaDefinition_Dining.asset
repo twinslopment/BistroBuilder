@@ -15,3 +15,5 @@ MonoBehaviour:
   areaTypeId: dining
   displayName: Comedor
   description: "Zona destinada a mesas y atenci\xF3n a clientes."
+  capabilities:
+  - {fileID: 11400000, guid: 032bc0988adc9cc4596a6d0373b22cb9, type: 2}

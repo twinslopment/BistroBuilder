@@ -15,3 +15,6 @@ MonoBehaviour:
   areaTypeId: kitchen
   displayName: Cocina
   description: "Zona destinada a preparaci\xF3n, recogida y producci\xF3n de comandas."
+  capabilities:
+  - {fileID: 11400000, guid: 220da81e547914c4fab7db7082ff8f73, type: 2}
+  - {fileID: 11400000, guid: 8a9b55ee62835b045ab7faacd162403e, type: 2}

@@ -15,3 +15,6 @@ MonoBehaviour:
   areaTypeId: entrance
   displayName: Entrada
   description: "Zona de acceso, recepci\xF3n y llegada de clientes."
+  capabilities:
+  - {fileID: 11400000, guid: 1e3b0b4febc2635458622a5d520dba82, type: 2}
+  - {fileID: 11400000, guid: 6f7ef72ad9242ac4db59d4baa5d283ec, type: 2}
