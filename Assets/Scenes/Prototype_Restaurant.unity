@@ -449,6 +449,12 @@ GameObject:
   - component: {fileID: 263644912}
   - component: {fileID: 263644913}
   - component: {fileID: 263644914}
+  - component: {fileID: 263644915}
+  - component: {fileID: 263644916}
+  - component: {fileID: 263644917}
+  - component: {fileID: 263644918}
+  - component: {fileID: 263644919}
+  - component: {fileID: 263644920}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -725,6 +731,113 @@ MonoBehaviour:
   memberRegistry: {fileID: 263644913}
   validateMembersOnStart: 1
   operationalAreasOnly: 0
+--- !u!114 &263644915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92cd772b2ae94854ba1e977f4690b64c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementRegistry
+  memberRegistry: {fileID: 263644913}
+  discoverRegisteredMembersOnStart: 1
+--- !u!114 &263644916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca8d4bccc2a748949922254fa821342a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementValidationService
+  areaAssignmentService: {fileID: 263644914}
+  placementRegistry: {fileID: 263644915}
+  validatePlacementsOnStart: 1
+--- !u!114 &263644917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2407c5b34a548f4abf271c5111b9a5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementTransactionService
+  validationService: {fileID: 263644916}
+--- !u!114 &263644918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c2dd1a72ecb1d94dbe6ab1d661677a1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditModeService
+  transactionService: {fileID: 263644917}
+  availabilityRuleSources: []
+--- !u!114 &263644919
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf4bc8fd1766e504f94b84648efbaa3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditInteractionController
+  editModeService: {fileID: 263644918}
+  transactionService: {fileID: 263644917}
+  interactionCamera: {fileID: 330585545}
+  selectableLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  placementSurfaceLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  maximumRayDistance: 500
+  useGridSnapping: 1
+  gridSize: 0.25
+  preserveOriginalWorldHeight: 1
+  rotationStepDegrees: 90
+  toggleEditModeKey: 95
+  rotateClockwiseKey: 32
+  cancelKey: 60
+  primaryMouseButton: 0
+  cancelMouseButton: 1
+  logInteractionEvents: 1
+--- !u!114 &263644920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f22a3c6a43cd3f74d824a3acf16be962, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditPlacementVisualFeedback
+  interactionController: {fileID: 263644919}
+  includeInactiveRenderers: 1
+  validPlacementColor: {r: 0.25, g: 1, b: 0.35, a: 1}
+  invalidPlacementColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  affectBaseColorProperty: 1
+  affectLegacyColorProperty: 1
+  logMissingRenderers: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -768,7 +881,7 @@ GameObject:
   - component: {fileID: 327141224}
   - component: {fileID: 327141223}
   - component: {fileID: 327141222}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Floor_Test
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1182,6 +1295,8 @@ GameObject:
   - component: {fileID: 364513595}
   - component: {fileID: 364513596}
   - component: {fileID: 364513597}
+  - component: {fileID: 364513598}
+  - component: {fileID: 364513599}
   m_Layer: 0
   m_Name: Table_Test
   m_TagString: Untagged
@@ -1340,6 +1455,37 @@ MonoBehaviour:
   positionReference: {fileID: 364513594}
   requiredCapabilities:
   - {fileID: 11400000, guid: 032bc0988adc9cc4596a6d0373b22cb9, type: 2}
+--- !u!114 &364513598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364513590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a316ace32660a844fa023f1548a6d7ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementFootprint
+  localCenter: {x: 0, y: 0, z: 0}
+  size: {x: 1, y: 1}
+  boundaryInset: 0.02
+  minimumClearance: 0
+  blocksOtherPlacements: 1
+--- !u!114 &364513599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364513590}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b30246f1e26f6047a09452293cf7755, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditableObject
+  definition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
+  editingEnabled: 1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1530,6 +1676,8 @@ GameObject:
   - component: {fileID: 537685205}
   - component: {fileID: 537685204}
   - component: {fileID: 537685210}
+  - component: {fileID: 537685211}
+  - component: {fileID: 537685212}
   m_Layer: 0
   m_Name: Table_Test (2)
   m_TagString: Untagged
@@ -1688,6 +1836,37 @@ MonoBehaviour:
   positionReference: {fileID: 537685209}
   requiredCapabilities:
   - {fileID: 11400000, guid: 032bc0988adc9cc4596a6d0373b22cb9, type: 2}
+--- !u!114 &537685211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537685203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a316ace32660a844fa023f1548a6d7ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementFootprint
+  localCenter: {x: 0, y: 0, z: 0}
+  size: {x: 1, y: 1}
+  boundaryInset: 0.02
+  minimumClearance: 0
+  blocksOtherPlacements: 1
+--- !u!114 &537685212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537685203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b30246f1e26f6047a09452293cf7755, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditableObject
+  definition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
+  editingEnabled: 1
 --- !u!1 &561085870
 GameObject:
   m_ObjectHideFlags: 0

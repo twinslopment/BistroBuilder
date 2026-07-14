@@ -2,27 +2,28 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Resuelve y valida la pertenencia espacial de los elementos
-/// del restaurante.
+/// Resuelve y valida la pertenencia espacial y funcional
+/// de los elementos del restaurante.
 ///
 /// Responsabilidades:
-/// - Averiguar qué área contiene la posición de un miembro.
-/// - Validar que el área asignada coincide con su posición.
-/// - Actualizar la asignación cuando un objeto sea movido.
-/// - Informar de elementos mal configurados.
+/// - Averiguar qué área contiene una posición.
+/// - Validar que el área asignada coincide con la posición real.
+/// - Comprobar que el área ofrece las capacidades requeridas.
+/// - Validar posiciones candidatas para el modo edición.
+/// - Validar la huella completa de los objetos colocables.
+/// - Actualizar la asignación cuando un objeto sea colocado.
 ///
 /// No utiliza Update ni realiza comprobaciones continuas.
-/// El futuro modo construcción llamará al servicio únicamente
-/// cuando termine de colocar o mover un elemento.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class RestaurantAreaAssignmentService : MonoBehaviour
+public sealed class RestaurantAreaAssignmentService :
+    MonoBehaviour
 {
+    private const int FootprintSamplePointCount = 5;
+
     [Header("Dependencias")]
 
-    [Tooltip(
-        "Registro central de las áreas del restaurante."
-    )]
+    [Tooltip("Registro central de las áreas del restaurante.")]
     [SerializeField]
     private RestaurantAreaRegistry areaRegistry;
 
@@ -35,19 +36,26 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
     [Header("Validación inicial")]
 
     [Tooltip(
-        "Comprueba una sola vez, al iniciar la escena, que los " +
-        "miembros están situados dentro del área que tienen asignada."
+        "Comprueba una sola vez al iniciar la escena que los " +
+        "miembros están correctamente situados y que sus áreas " +
+        "ofrecen las capacidades necesarias."
     )]
     [SerializeField]
     private bool validateMembersOnStart = true;
 
     [Tooltip(
-        "Cuando está activado, solo se consideran las áreas que " +
-        "están operativas. Para validación física normalmente debe " +
-        "permanecer desactivado."
+        "Cuando está activado, solo se consideran áreas operativas " +
+        "al resolver posiciones."
     )]
     [SerializeField]
     private bool operationalAreasOnly;
+
+    /// <summary>
+    /// Array reutilizable para validar el centro y las cuatro
+    /// esquinas de una huella sin generar basura de memoria.
+    /// </summary>
+    private readonly Vector3[] footprintSamplePoints =
+        new Vector3[FootprintSamplePointCount];
 
     private Coroutine initialValidationRoutine;
 
@@ -82,8 +90,33 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
     }
 
     /// <summary>
-    /// Intenta localizar el área que contiene la posición
-    /// de referencia de un miembro.
+    /// Localiza el área que contiene una posición arbitraria.
+    ///
+    /// Este método permite comprobar una posición candidata
+    /// antes de mover realmente un objeto.
+    /// </summary>
+    public bool TryResolveAreaAtPosition(
+        Vector3 worldPosition,
+        out RestaurantArea resolvedArea
+    )
+    {
+        resolvedArea = null;
+
+        if (areaRegistry == null)
+        {
+            return false;
+        }
+
+        return areaRegistry.TryFindAreaContainingPosition(
+            worldPosition,
+            out resolvedArea,
+            operationalAreasOnly
+        );
+    }
+
+    /// <summary>
+    /// Localiza el área que contiene la posición de referencia
+    /// actual de un miembro.
     /// </summary>
     public bool TryResolveArea(
         RestaurantAreaMember member,
@@ -92,29 +125,219 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
     {
         resolvedArea = null;
 
-        if (member == null ||
-            areaRegistry == null)
+        if (member == null)
         {
             return false;
         }
 
-        return areaRegistry.TryFindAreaContainingPosition(
+        return TryResolveAreaAtPosition(
             member.ReferencePosition,
-            out resolvedArea,
-            operationalAreasOnly
+            out resolvedArea
         );
     }
 
     /// <summary>
-    /// Calcula el área correspondiente a un miembro y actualiza
-    /// su asignación.
+    /// Comprueba si un miembro es funcionalmente compatible
+    /// con un área.
     ///
-    /// Este método podrá llamarse cuando el jugador termine
-    /// de mover o colocar un objeto en el modo construcción.
+    /// No comprueba la huella ni las colisiones físicas.
+    /// </summary>
+    public bool CanPlaceMemberInArea(
+        RestaurantAreaMember member,
+        RestaurantArea candidateArea,
+        out RestaurantAreaCapabilityDefinition
+            missingCapability
+    )
+    {
+        missingCapability = null;
+
+        if (member == null ||
+            candidateArea == null ||
+            candidateArea.Definition == null)
+        {
+            return false;
+        }
+
+        return member.AreRequirementsSatisfiedBy(
+            candidateArea,
+            out missingCapability
+        );
+    }
+
+    /// <summary>
+    /// Valida un único punto candidato.
+    ///
+    /// Se conserva para objetos sin huella o sistemas que ya
+    /// proporcionan directamente una posición de referencia.
+    /// </summary>
+    public RestaurantAreaPlacementValidationStatus
+        ValidateAreaCompatibilityAtPosition(
+            RestaurantAreaMember member,
+            Vector3 candidateWorldPosition,
+            out RestaurantArea candidateArea,
+            out RestaurantAreaCapabilityDefinition
+                missingCapability
+        )
+    {
+        candidateArea = null;
+        missingCapability = null;
+
+        if (member == null)
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .InvalidMember;
+        }
+
+        if (!TryResolveAreaAtPosition(
+                candidateWorldPosition,
+                out candidateArea
+            ))
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .OutsideRegisteredAreas;
+        }
+
+        if (candidateArea.Definition == null)
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .MissingAreaDefinition;
+        }
+
+        if (!member.AreRequirementsSatisfiedBy(
+                candidateArea,
+                out missingCapability
+            ))
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .MissingRequiredCapability;
+        }
+
+        return
+            RestaurantAreaPlacementValidationStatus.Valid;
+    }
+
+    /// <summary>
+    /// Valida la posición y rotación candidatas completas
+    /// de un objeto.
+    ///
+    /// Cuando el objeto tiene RestaurantPlacementFootprint,
+    /// comprueba el centro y las cuatro esquinas.
+    ///
+    /// Cuando no tiene huella, utiliza su posición de referencia.
+    /// </summary>
+    public RestaurantAreaPlacementValidationStatus
+        ValidatePlacementAtPose(
+            RestaurantAreaMember member,
+            Vector3 candidateRootPosition,
+            Quaternion candidateRootRotation,
+            out RestaurantArea candidateArea,
+            out RestaurantAreaCapabilityDefinition
+                missingCapability
+        )
+    {
+        candidateArea = null;
+        missingCapability = null;
+
+        if (member == null)
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .InvalidMember;
+        }
+
+        if (member.TryGetComponent(
+                out RestaurantPlacementFootprint footprint
+            ))
+        {
+            return ValidateFootprintAtPose(
+                member,
+                footprint,
+                candidateRootPosition,
+                candidateRootRotation,
+                out candidateArea,
+                out missingCapability
+            );
+        }
+
+        Vector3 candidateReferencePosition =
+            CalculateCandidateReferencePosition(
+                member,
+                candidateRootPosition,
+                candidateRootRotation
+            );
+
+        return ValidateAreaCompatibilityAtPosition(
+            member,
+            candidateReferencePosition,
+            out candidateArea,
+            out missingCapability
+        );
+    }
+
+    /// <summary>
+    /// Versión simplificada para comprobar un único punto.
+    /// </summary>
+    public bool CanPlaceMemberAtPosition(
+        RestaurantAreaMember member,
+        Vector3 candidateWorldPosition,
+        out RestaurantArea candidateArea,
+        out RestaurantAreaCapabilityDefinition
+            missingCapability
+    )
+    {
+        RestaurantAreaPlacementValidationStatus status =
+            ValidateAreaCompatibilityAtPosition(
+                member,
+                candidateWorldPosition,
+                out candidateArea,
+                out missingCapability
+            );
+
+        return status ==
+               RestaurantAreaPlacementValidationStatus.Valid;
+    }
+
+    /// <summary>
+    /// Versión que valida la pose completa y la huella,
+    /// pensada para el modo edición.
+    /// </summary>
+    public bool CanPlaceMemberAtPose(
+        RestaurantAreaMember member,
+        Vector3 candidateRootPosition,
+        Quaternion candidateRootRotation,
+        out RestaurantArea candidateArea,
+        out RestaurantAreaCapabilityDefinition
+            missingCapability
+    )
+    {
+        RestaurantAreaPlacementValidationStatus status =
+            ValidatePlacementAtPose(
+                member,
+                candidateRootPosition,
+                candidateRootRotation,
+                out candidateArea,
+                out missingCapability
+            );
+
+        return status ==
+               RestaurantAreaPlacementValidationStatus.Valid;
+    }
+
+    /// <summary>
+    /// Calcula el área correspondiente a la posición actual
+    /// y actualiza la asignación del miembro.
+    ///
+    /// Cuando requireCompatibleArea está activado, también
+    /// comprueba capacidades y huella completa.
     /// </summary>
     public bool TryAssignResolvedArea(
         RestaurantAreaMember member,
-        bool clearAreaWhenOutside = false
+        bool clearAreaWhenOutside = false,
+        bool requireCompatibleArea = true
     )
     {
         if (member == null)
@@ -122,57 +345,182 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
             return false;
         }
 
-        if (TryResolveArea(
-                member,
-                out RestaurantArea resolvedArea
-            ))
+        RestaurantArea resolvedArea;
+
+        if (!requireCompatibleArea)
         {
+            if (!TryResolveArea(
+                    member,
+                    out resolvedArea
+                ))
+            {
+                if (clearAreaWhenOutside)
+                {
+                    member.ClearArea();
+                }
+
+                return false;
+            }
+
             member.SetArea(resolvedArea);
             return true;
         }
 
-        if (clearAreaWhenOutside)
+        RestaurantAreaPlacementValidationStatus status =
+            ValidatePlacementAtPose(
+                member,
+                member.transform.position,
+                member.transform.rotation,
+                out resolvedArea,
+                out _
+            );
+
+        if (status !=
+            RestaurantAreaPlacementValidationStatus.Valid)
         {
-            member.ClearArea();
+            if (clearAreaWhenOutside &&
+                status ==
+                RestaurantAreaPlacementValidationStatus
+                    .OutsideRegisteredAreas)
+            {
+                member.ClearArea();
+            }
+
+            return false;
         }
 
-        return false;
+        member.SetArea(resolvedArea);
+        return true;
     }
 
     /// <summary>
-    /// Comprueba si el área asignada al miembro coincide con
-    /// el área que contiene su posición actual.
+    /// Valida completamente un miembro ya colocado.
+    ///
+    /// Incluye:
+    /// - Área asignada.
+    /// - Área física bajo el objeto.
+    /// - Coincidencia entre ambas.
+    /// - Definición de área.
+    /// - Capacidades requeridas.
+    /// - Huella completa dentro de la misma área.
+    /// </summary>
+    public RestaurantAreaMemberValidationStatus ValidateMember(
+        RestaurantAreaMember member,
+        out RestaurantArea resolvedArea,
+        out RestaurantAreaCapabilityDefinition
+            missingCapability
+    )
+    {
+        resolvedArea = null;
+        missingCapability = null;
+
+        if (member == null)
+        {
+            return
+                RestaurantAreaMemberValidationStatus.InvalidMember;
+        }
+
+        if (member.AssignedArea == null)
+        {
+            return
+                RestaurantAreaMemberValidationStatus
+                    .MissingAssignedArea;
+        }
+
+        RestaurantAreaPlacementValidationStatus
+            placementStatus =
+                ValidatePlacementAtPose(
+                    member,
+                    member.transform.position,
+                    member.transform.rotation,
+                    out resolvedArea,
+                    out missingCapability
+                );
+
+        if (placementStatus ==
+            RestaurantAreaPlacementValidationStatus
+                .OutsideRegisteredAreas)
+        {
+            return
+                RestaurantAreaMemberValidationStatus
+                    .OutsideRegisteredAreas;
+        }
+
+        if (placementStatus ==
+            RestaurantAreaPlacementValidationStatus
+                .InvalidMember)
+        {
+            return
+                RestaurantAreaMemberValidationStatus
+                    .InvalidMember;
+        }
+
+        if (!ReferenceEquals(
+                member.AssignedArea,
+                resolvedArea
+            ))
+        {
+            return
+                RestaurantAreaMemberValidationStatus
+                    .AssignedAreaMismatch;
+        }
+
+        switch (placementStatus)
+        {
+            case RestaurantAreaPlacementValidationStatus.Valid:
+                return
+                    RestaurantAreaMemberValidationStatus.Valid;
+
+            case RestaurantAreaPlacementValidationStatus
+                .MissingAreaDefinition:
+
+                return
+                    RestaurantAreaMemberValidationStatus
+                        .MissingAreaDefinition;
+
+            case RestaurantAreaPlacementValidationStatus
+                .MissingRequiredCapability:
+
+                return
+                    RestaurantAreaMemberValidationStatus
+                        .MissingRequiredCapability;
+
+            case RestaurantAreaPlacementValidationStatus
+                .FootprintOutsideCandidateArea:
+
+                return
+                    RestaurantAreaMemberValidationStatus
+                        .FootprintOutsideAssignedArea;
+
+            default:
+                return
+                    RestaurantAreaMemberValidationStatus
+                        .InvalidMember;
+        }
+    }
+
+    /// <summary>
+    /// Indica si la asignación actual de un miembro es válida.
     /// </summary>
     public bool IsAssignmentValid(
         RestaurantAreaMember member,
         out RestaurantArea resolvedArea
     )
     {
-        resolvedArea = null;
-
-        if (member == null ||
-            member.AssignedArea == null)
-        {
-            return false;
-        }
-
-        if (!TryResolveArea(
+        RestaurantAreaMemberValidationStatus status =
+            ValidateMember(
                 member,
-                out resolvedArea
-            ))
-        {
-            return false;
-        }
+                out resolvedArea,
+                out _
+            );
 
-        return ReferenceEquals(
-            member.AssignedArea,
-            resolvedArea
-        );
+        return status ==
+               RestaurantAreaMemberValidationStatus.Valid;
     }
 
     /// <summary>
     /// Valida todos los miembros registrados y devuelve
-    /// un resumen sin crear colecciones temporales.
+    /// un resumen completo.
     /// </summary>
     public RestaurantAreaValidationResult
         ValidateAllRegisteredMembers(
@@ -189,6 +537,9 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
         int unassignedCount = 0;
         int outsideAreaCount = 0;
         int mismatchedCount = 0;
+        int missingDefinitionCount = 0;
+        int incompatibleCapabilityCount = 0;
+        int invalidFootprintCount = 0;
 
         foreach (RestaurantAreaMember member
                  in memberRegistry.RegisteredMembers)
@@ -200,63 +551,127 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
 
             totalCount++;
 
-            if (member.AssignedArea == null)
-            {
-                unassignedCount++;
-
-                if (logDetails)
-                {
-                    Debug.LogWarning(
-                        $"{member.name} no tiene un área asignada.",
-                        member
-                    );
-                }
-
-                continue;
-            }
-
-            if (!TryResolveArea(
+            RestaurantAreaMemberValidationStatus status =
+                ValidateMember(
                     member,
-                    out RestaurantArea resolvedArea
-                ))
+                    out RestaurantArea resolvedArea,
+                    out RestaurantAreaCapabilityDefinition
+                        missingCapability
+                );
+
+            switch (status)
             {
-                outsideAreaCount++;
+                case RestaurantAreaMemberValidationStatus.Valid:
+                    validCount++;
+                    break;
 
-                if (logDetails)
-                {
-                    Debug.LogWarning(
-                        $"{member.name} está fuera de todas las " +
-                        $"áreas registradas. Área asignada: " +
-                        $"{member.AssignedArea.AreaId}.",
-                        member
-                    );
-                }
+                case RestaurantAreaMemberValidationStatus
+                    .MissingAssignedArea:
 
-                continue;
+                    unassignedCount++;
+
+                    if (logDetails)
+                    {
+                        Debug.LogWarning(
+                            $"{member.name} no tiene un área asignada.",
+                            member
+                        );
+                    }
+
+                    break;
+
+                case RestaurantAreaMemberValidationStatus
+                    .OutsideRegisteredAreas:
+
+                    outsideAreaCount++;
+
+                    if (logDetails)
+                    {
+                        Debug.LogWarning(
+                            $"{member.name} está fuera de todas las " +
+                            $"áreas registradas. Área asignada: " +
+                            $"'{member.AssignedArea.AreaId}'.",
+                            member
+                        );
+                    }
+
+                    break;
+
+                case RestaurantAreaMemberValidationStatus
+                    .AssignedAreaMismatch:
+
+                    mismatchedCount++;
+
+                    if (logDetails)
+                    {
+                        Debug.LogWarning(
+                            $"{member.name} tiene asignada el área " +
+                            $"'{member.AssignedArea.AreaId}', pero su " +
+                            $"posición pertenece a " +
+                            $"'{resolvedArea.AreaId}'.",
+                            member
+                        );
+                    }
+
+                    break;
+
+                case RestaurantAreaMemberValidationStatus
+                    .MissingAreaDefinition:
+
+                    missingDefinitionCount++;
+
+                    if (logDetails)
+                    {
+                        Debug.LogWarning(
+                            $"El área '{member.AssignedArea.AreaId}' " +
+                            $"asignada a {member.name} no tiene una " +
+                            $"definición configurada.",
+                            member.AssignedArea
+                        );
+                    }
+
+                    break;
+
+                case RestaurantAreaMemberValidationStatus
+                    .MissingRequiredCapability:
+
+                    incompatibleCapabilityCount++;
+
+                    if (logDetails)
+                    {
+                        string capabilityName =
+                            GetCapabilityDisplayName(
+                                missingCapability
+                            );
+
+                        Debug.LogWarning(
+                            $"{member.name} no puede utilizar el área " +
+                            $"'{member.AssignedArea.AreaId}'. " +
+                            $"Falta la capacidad requerida " +
+                            $"'{capabilityName}'.",
+                            member
+                        );
+                    }
+
+                    break;
+
+                case RestaurantAreaMemberValidationStatus
+                    .FootprintOutsideAssignedArea:
+
+                    invalidFootprintCount++;
+
+                    if (logDetails)
+                    {
+                        Debug.LogWarning(
+                            $"{member.name} tiene parte de su huella " +
+                            $"fuera del área asignada " +
+                            $"'{member.AssignedArea.AreaId}'.",
+                            member
+                        );
+                    }
+
+                    break;
             }
-
-            if (!ReferenceEquals(
-                    member.AssignedArea,
-                    resolvedArea
-                ))
-            {
-                mismatchedCount++;
-
-                if (logDetails)
-                {
-                    Debug.LogWarning(
-                        $"{member.name} tiene asignada el área " +
-                        $"'{member.AssignedArea.AreaId}', pero su " +
-                        $"posición pertenece a " +
-                        $"'{resolvedArea.AreaId}'.",
-                        member
-                    );
-                }
-
-                continue;
-            }
-
-            validCount++;
         }
 
         RestaurantAreaValidationResult result =
@@ -265,16 +680,26 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
                 validCount,
                 unassignedCount,
                 outsideAreaCount,
-                mismatchedCount
+                mismatchedCount,
+                missingDefinitionCount,
+                incompatibleCapabilityCount,
+                invalidFootprintCount
             );
 
         Debug.Log(
-            $"Validación espacial completada. " +
+            $"Validación espacial y funcional completada. " +
             $"Total: {result.TotalCount}, " +
             $"correctos: {result.ValidCount}, " +
             $"sin asignar: {result.UnassignedCount}, " +
             $"fuera de áreas: {result.OutsideAreaCount}, " +
-            $"asignación incorrecta: {result.MismatchedCount}.",
+            $"asignación incorrecta: " +
+            $"{result.MismatchedCount}, " +
+            $"sin definición: " +
+            $"{result.MissingDefinitionCount}, " +
+            $"capacidad incompatible: " +
+            $"{result.IncompatibleCapabilityCount}, " +
+            $"huella fuera del área: " +
+            $"{result.InvalidFootprintCount}.",
             this
         );
 
@@ -282,11 +707,128 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
     }
 
     /// <summary>
-    /// Espera un frame para garantizar que los dos registros
-    /// hayan realizado su descubrimiento inicial.
-    ///
-    /// Es una operación única, no una comprobación continua.
+    /// Valida el centro y las cuatro esquinas de una huella.
     /// </summary>
+    private RestaurantAreaPlacementValidationStatus
+        ValidateFootprintAtPose(
+            RestaurantAreaMember member,
+            RestaurantPlacementFootprint footprint,
+            Vector3 candidateRootPosition,
+            Quaternion candidateRootRotation,
+            out RestaurantArea candidateArea,
+            out RestaurantAreaCapabilityDefinition
+                missingCapability
+        )
+    {
+        candidateArea = null;
+        missingCapability = null;
+
+        int writtenPointCount =
+            footprint.WriteWorldSamplePoints(
+                candidateRootPosition,
+                candidateRootRotation,
+                footprintSamplePoints
+            );
+
+        /*
+         * El centro de la huella determina el área candidata.
+         */
+        if (!TryResolveAreaAtPosition(
+                footprintSamplePoints[0],
+                out candidateArea
+            ))
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .OutsideRegisteredAreas;
+        }
+
+        if (candidateArea.Definition == null)
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .MissingAreaDefinition;
+        }
+
+        if (!member.AreRequirementsSatisfiedBy(
+                candidateArea,
+                out missingCapability
+            ))
+        {
+            return
+                RestaurantAreaPlacementValidationStatus
+                    .MissingRequiredCapability;
+        }
+
+        /*
+         * Todas las esquinas deben permanecer dentro del área
+         * determinada por el centro.
+         *
+         * Se consulta directamente candidateArea para evitar que
+         * dos áreas adyacentes o solapadas produzcan resultados
+         * ambiguos.
+         */
+        for (int index = 1;
+             index < writtenPointCount;
+             index++)
+        {
+            if (!candidateArea.ContainsPosition(
+                    footprintSamplePoints[index]
+                ))
+            {
+                return
+                    RestaurantAreaPlacementValidationStatus
+                        .FootprintOutsideCandidateArea;
+            }
+        }
+
+        return
+            RestaurantAreaPlacementValidationStatus.Valid;
+    }
+
+    /// <summary>
+    /// Calcula dónde estaría el punto de referencia de un miembro
+    /// al aplicar una posición y rotación candidatas a su raíz.
+    /// </summary>
+    private static Vector3
+        CalculateCandidateReferencePosition(
+            RestaurantAreaMember member,
+            Vector3 candidateRootPosition,
+            Quaternion candidateRootRotation
+        )
+    {
+        Transform memberTransform =
+            member.transform;
+
+        Transform referenceTransform =
+            member.PositionReference;
+
+        if (referenceTransform == null ||
+            ReferenceEquals(
+                referenceTransform,
+                memberTransform
+            ))
+        {
+            return candidateRootPosition;
+        }
+
+        Vector3 localReferencePosition =
+            memberTransform.InverseTransformPoint(
+                referenceTransform.position
+            );
+
+        Matrix4x4 candidateMatrix =
+            Matrix4x4.TRS(
+                candidateRootPosition,
+                candidateRootRotation,
+                memberTransform.lossyScale
+            );
+
+        return candidateMatrix.MultiplyPoint3x4(
+            localReferencePosition
+        );
+    }
+
     private IEnumerator
         ValidateMembersAfterStartupRoutine()
     {
@@ -297,10 +839,32 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
         ValidateAllRegisteredMembers();
     }
 
-    /// <summary>
-    /// Recupera únicamente componentes del mismo GameObject.
-    /// No busca objetos por toda la escena.
-    /// </summary>
+    private static string GetCapabilityDisplayName(
+        RestaurantAreaCapabilityDefinition capability
+    )
+    {
+        if (capability == null)
+        {
+            return "capacidad desconocida";
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                capability.DisplayName
+            ))
+        {
+            return capability.DisplayName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                capability.CapabilityId
+            ))
+        {
+            return capability.CapabilityId;
+        }
+
+        return capability.name;
+    }
+
     private void CacheDependenciesIfNeeded()
     {
         if (areaRegistry == null)
@@ -350,7 +914,35 @@ public sealed class RestaurantAreaAssignmentService : MonoBehaviour
 }
 
 /// <summary>
-/// Resultado inmutable de una validación espacial completa.
+/// Resultado al validar un miembro ya colocado.
+/// </summary>
+public enum RestaurantAreaMemberValidationStatus
+{
+    Valid = 0,
+    InvalidMember = 1,
+    MissingAssignedArea = 2,
+    OutsideRegisteredAreas = 3,
+    AssignedAreaMismatch = 4,
+    MissingAreaDefinition = 5,
+    MissingRequiredCapability = 6,
+    FootprintOutsideAssignedArea = 7
+}
+
+/// <summary>
+/// Resultado al validar una posición o pose candidata.
+/// </summary>
+public enum RestaurantAreaPlacementValidationStatus
+{
+    Valid = 0,
+    InvalidMember = 1,
+    OutsideRegisteredAreas = 2,
+    MissingAreaDefinition = 3,
+    MissingRequiredCapability = 4,
+    FootprintOutsideCandidateArea = 5
+}
+
+/// <summary>
+/// Resultado inmutable de una validación completa.
 /// </summary>
 public readonly struct RestaurantAreaValidationResult
 {
@@ -359,6 +951,9 @@ public readonly struct RestaurantAreaValidationResult
     public int UnassignedCount { get; }
     public int OutsideAreaCount { get; }
     public int MismatchedCount { get; }
+    public int MissingDefinitionCount { get; }
+    public int IncompatibleCapabilityCount { get; }
+    public int InvalidFootprintCount { get; }
 
     public bool IsValid =>
         TotalCount == ValidCount;
@@ -368,7 +963,10 @@ public readonly struct RestaurantAreaValidationResult
         int validCount,
         int unassignedCount,
         int outsideAreaCount,
-        int mismatchedCount
+        int mismatchedCount,
+        int missingDefinitionCount,
+        int incompatibleCapabilityCount,
+        int invalidFootprintCount
     )
     {
         TotalCount = totalCount;
@@ -376,5 +974,10 @@ public readonly struct RestaurantAreaValidationResult
         UnassignedCount = unassignedCount;
         OutsideAreaCount = outsideAreaCount;
         MismatchedCount = mismatchedCount;
+        MissingDefinitionCount = missingDefinitionCount;
+        IncompatibleCapabilityCount =
+            incompatibleCapabilityCount;
+        InvalidFootprintCount =
+            invalidFootprintCount;
     }
 }

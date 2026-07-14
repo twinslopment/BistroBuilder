@@ -10,6 +10,7 @@ using UnityEngine;
 /// - Impedir identificadores duplicados.
 /// - Localizar áreas por ID.
 /// - Agrupar áreas por definición.
+/// - Agrupar áreas por capacidades funcionales.
 /// - Resolver qué área contiene una posición.
 /// - Propagar cambios de estado operativo.
 ///
@@ -49,12 +50,6 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
 
     /// <summary>
     /// Agrupa las áreas que comparten una misma definición.
-    ///
-    /// Ejemplo:
-    /// una definición "Comedor" puede tener:
-    /// - Comedor principal.
-    /// - Comedor privado.
-    /// - Comedor superior.
     /// </summary>
     private readonly Dictionary<
         RestaurantAreaDefinition,
@@ -65,7 +60,20 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
             HashSet<RestaurantArea>
         >();
 
-   
+    /// <summary>
+    /// Agrupa las áreas según las capacidades que ofrecen.
+    ///
+    /// Este índice permite realizar consultas directas sin
+    /// recorrer todas las áreas registradas.
+    /// </summary>
+    private readonly Dictionary<
+        RestaurantAreaCapabilityDefinition,
+        HashSet<RestaurantArea>
+    > areasByCapability =
+        new Dictionary<
+            RestaurantAreaCapabilityDefinition,
+            HashSet<RestaurantArea>
+        >();
 
     public event Action<RestaurantArea>
         AreaRegistered;
@@ -78,6 +86,9 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
 
     public int RegisteredAreaCount =>
         registeredAreas.Count;
+
+    public int IndexedCapabilityCount =>
+        areasByCapability.Count;
 
     public IReadOnlyCollection<RestaurantArea>
         RegisteredAreas =>
@@ -97,7 +108,8 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
 
         Debug.Log(
             $"RestaurantAreaRegistry ha registrado " +
-            $"{registeredAreas.Count} área(s).",
+            $"{registeredAreas.Count} área(s) e indexado " +
+            $"{areasByCapability.Count} capacidad(es).",
             this
         );
     }
@@ -114,13 +126,11 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
         registeredAreas.Clear();
         areasById.Clear();
         areasByDefinition.Clear();
+        areasByCapability.Clear();
     }
 
     /// <summary>
-    /// Registra una nueva zona en el sistema espacial.
-    ///
-    /// El futuro modo construcción deberá llamar a este método
-    /// cuando cree una zona durante la partida.
+    /// Registra una nueva área en el sistema espacial.
     /// </summary>
     public bool RegisterArea(
         RestaurantArea area
@@ -180,6 +190,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
         );
 
         AddAreaToDefinitionGroup(area);
+        AddAreaToCapabilityGroups(area);
 
         if (isActiveAndEnabled)
         {
@@ -192,10 +203,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
     }
 
     /// <summary>
-    /// Retira una zona del registro.
-    ///
-    /// El futuro modo construcción deberá llamar a este método
-    /// antes de eliminar o desactivar definitivamente una zona.
+    /// Retira un área del registro.
     /// </summary>
     public bool UnregisterArea(
         RestaurantArea area
@@ -226,6 +234,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
         }
 
         RemoveAreaFromDefinitionGroup(area);
+        RemoveAreaFromCapabilityGroups(area);
 
         AreaUnregistered?.Invoke(area);
 
@@ -233,8 +242,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
     }
 
     /// <summary>
-    /// Devuelve un área concreta mediante su identificador único.
-    /// La consulta es O(1).
+    /// Devuelve un área mediante su identificador único.
     /// </summary>
     public bool TryGetAreaById(
         string areaId,
@@ -255,7 +263,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
     }
 
     /// <summary>
-    /// Comprueba si una zona está actualmente registrada.
+    /// Comprueba si un área está registrada.
     /// </summary>
     public bool ContainsArea(
         RestaurantArea area
@@ -266,10 +274,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
     }
 
     /// <summary>
-    /// Localiza la primera zona que contiene una posición.
-    ///
-    /// Esta consulta solo se ejecuta cuando otro sistema la solicita.
-    /// No existe comprobación espacial por frame.
+    /// Localiza la primera área que contiene una posición.
     /// </summary>
     public bool TryFindAreaContainingPosition(
         Vector3 worldPosition,
@@ -307,11 +312,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
     }
 
     /// <summary>
-    /// Copia en una lista reutilizable todas las áreas que utilizan
-    /// una determinada definición.
-    ///
-    /// El método evita crear listas nuevas y generar basura para
-    /// el recolector de memoria.
+    /// Copia todas las áreas que utilizan una definición.
     /// </summary>
     public int CopyAreasByDefinition(
         RestaurantAreaDefinition definition,
@@ -341,29 +342,97 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
             return 0;
         }
 
-        foreach (RestaurantArea area in areas)
-        {
-            if (area == null)
-            {
-                continue;
-            }
-
-            if (operationalOnly &&
-                !area.IsOperational)
-            {
-                continue;
-            }
-
-            results.Add(area);
-        }
+        CopyValidAreas(
+            areas,
+            results,
+            operationalOnly
+        );
 
         return results.Count;
     }
 
     /// <summary>
+    /// Copia todas las áreas que ofrecen una capacidad concreta.
+    /// </summary>
+    public int CopyAreasByCapability(
+        RestaurantAreaCapabilityDefinition capability,
+        List<RestaurantArea> results,
+        bool operationalOnly = false
+    )
+    {
+        if (results == null)
+        {
+            throw new ArgumentNullException(
+                nameof(results)
+            );
+        }
+
+        results.Clear();
+
+        if (capability == null)
+        {
+            return 0;
+        }
+
+        if (!areasByCapability.TryGetValue(
+                capability,
+                out HashSet<RestaurantArea> areas
+            ))
+        {
+            return 0;
+        }
+
+        CopyValidAreas(
+            areas,
+            results,
+            operationalOnly
+        );
+
+        return results.Count;
+    }
+
+    /// <summary>
+    /// Devuelve cuántas áreas ofrecen una capacidad.
+    /// </summary>
+    public int GetAreaCountByCapability(
+        RestaurantAreaCapabilityDefinition capability,
+        bool operationalOnly = false
+    )
+    {
+        if (capability == null)
+        {
+            return 0;
+        }
+
+        if (!areasByCapability.TryGetValue(
+                capability,
+                out HashSet<RestaurantArea> areas
+            ))
+        {
+            return 0;
+        }
+
+        if (!operationalOnly)
+        {
+            return areas.Count;
+        }
+
+        int operationalCount = 0;
+
+        foreach (RestaurantArea area in areas)
+        {
+            if (area != null &&
+                area.IsOperational)
+            {
+                operationalCount++;
+            }
+        }
+
+        return operationalCount;
+    }
+
+    /// <summary>
     /// Descubre una sola vez las áreas existentes en la escena.
-    ///
-    /// No se repite durante la partida.
     /// </summary>
     private void DiscoverExistingSceneAreas()
     {
@@ -372,8 +441,7 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
                 FindObjectsSortMode.None
             );
 
-        foreach (RestaurantArea area
-                 in sceneAreas)
+        foreach (RestaurantArea area in sceneAreas)
         {
             RegisterArea(area);
         }
@@ -383,6 +451,12 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
         RestaurantArea area
     )
     {
+        if (area == null ||
+            area.Definition == null)
+        {
+            return;
+        }
+
         RestaurantAreaDefinition definition =
             area.Definition;
 
@@ -407,13 +481,14 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
         RestaurantArea area
     )
     {
-        RestaurantAreaDefinition definition =
-            area.Definition;
-
-        if (definition == null)
+        if (area == null ||
+            area.Definition == null)
         {
             return;
         }
+
+        RestaurantAreaDefinition definition =
+            area.Definition;
 
         if (!areasByDefinition.TryGetValue(
                 definition,
@@ -430,6 +505,135 @@ public sealed class RestaurantAreaRegistry : MonoBehaviour
             areasByDefinition.Remove(
                 definition
             );
+        }
+    }
+
+    private void AddAreaToCapabilityGroups(
+        RestaurantArea area
+    )
+    {
+        if (area == null ||
+            area.Definition == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<
+            RestaurantAreaCapabilityDefinition
+        > capabilities =
+            area.Definition.Capabilities;
+
+        if (capabilities == null)
+        {
+            return;
+        }
+
+        for (int index = 0;
+             index < capabilities.Count;
+             index++)
+        {
+            RestaurantAreaCapabilityDefinition capability =
+                capabilities[index];
+
+            if (capability == null)
+            {
+                continue;
+            }
+
+            if (!areasByCapability.TryGetValue(
+                    capability,
+                    out HashSet<RestaurantArea> areas
+                ))
+            {
+                areas =
+                    new HashSet<RestaurantArea>();
+
+                areasByCapability.Add(
+                    capability,
+                    areas
+                );
+            }
+
+            areas.Add(area);
+        }
+    }
+
+    private void RemoveAreaFromCapabilityGroups(
+        RestaurantArea area
+    )
+    {
+        if (area == null ||
+            area.Definition == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<
+            RestaurantAreaCapabilityDefinition
+        > capabilities =
+            area.Definition.Capabilities;
+
+        if (capabilities == null)
+        {
+            return;
+        }
+
+        for (int index = 0;
+             index < capabilities.Count;
+             index++)
+        {
+            RestaurantAreaCapabilityDefinition capability =
+                capabilities[index];
+
+            if (capability == null)
+            {
+                continue;
+            }
+
+            if (!areasByCapability.TryGetValue(
+                    capability,
+                    out HashSet<RestaurantArea> areas
+                ))
+            {
+                continue;
+            }
+
+            areas.Remove(area);
+
+            if (areas.Count == 0)
+            {
+                areasByCapability.Remove(
+                    capability
+                );
+            }
+        }
+    }
+
+    private static void CopyValidAreas(
+        HashSet<RestaurantArea> source,
+        List<RestaurantArea> results,
+        bool operationalOnly
+    )
+    {
+        if (source == null)
+        {
+            return;
+        }
+
+        foreach (RestaurantArea area in source)
+        {
+            if (area == null)
+            {
+                continue;
+            }
+
+            if (operationalOnly &&
+                !area.IsOperational)
+            {
+                continue;
+            }
+
+            results.Add(area);
         }
     }
 
