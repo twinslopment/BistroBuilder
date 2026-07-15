@@ -2,8 +2,11 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Genera grupos de clientes durante el servicio utilizando
+/// Genera grupos de clientes durante un servicio abierto utilizando
 /// CustomerGroupPrefab como plantilla.
+///
+/// La generación ya no comienza simplemente al habilitar el componente.
+/// Solo se inicia cuando RestaurantServiceStateService está en Open.
 ///
 /// Cada grupo recibe:
 /// - Un identificador único.
@@ -12,20 +15,31 @@ using UnityEngine;
 /// - Registro en el sistema de mesas.
 /// - Registro en la zona física de espera.
 /// </summary>
-public sealed class CustomerGroupSpawner : MonoBehaviour
+public sealed class CustomerGroupSpawner :
+    MonoBehaviour
 {
     [Header("Plantilla")]
+
     [SerializeField]
     private CustomerGroup customerGroupPrefab;
 
     [Header("Sistemas")]
+
     [SerializeField]
     private TableAssignmentSystem tableAssignmentSystem;
 
     [SerializeField]
     private CustomerWaitingAreaSystem customerWaitingAreaSystem;
 
+    [Tooltip(
+        "Estado operativo que decide cuándo pueden llegar clientes."
+    )]
+    [SerializeField]
+    private RestaurantServiceStateService
+        serviceStateService;
+
     [Header("Puntos del restaurante")]
+
     [SerializeField]
     private Transform spawnPoint;
 
@@ -33,46 +47,147 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     private Transform restaurantExitPoint;
 
     [Header("Generación provisional")]
-    [SerializeField, Min(1)]
+
+    [SerializeField]
+    [Min(1)]
     private int numberOfGroups = 3;
 
-    [SerializeField, Min(0f)]
+    [SerializeField]
+    [Min(0f)]
     private float firstSpawnDelay = 1f;
 
-    [SerializeField, Min(0.1f)]
+    [SerializeField]
+    [Min(0.1f)]
     private float timeBetweenGroups = 8f;
 
     [Header("Tamaño de los grupos")]
-    [SerializeField, Min(1)]
+
+    [SerializeField]
+    [Min(1)]
     private int minimumGroupSize = 1;
 
-    [SerializeField, Min(1)]
+    [SerializeField]
+    [Min(1)]
     private int maximumGroupSize = 2;
 
     [Header("Identificación")]
-    [SerializeField, Min(1)]
+
+    [SerializeField]
+    [Min(1)]
     private int firstGroupId = 1;
 
     private Coroutine spawnRoutine;
 
+    private int nextGroupId;
+
+    private bool configurationIsValid;
+
+    private void Awake()
+    {
+        CacheDependenciesIfNeeded();
+
+        nextGroupId =
+            Mathf.Max(
+                1,
+                firstGroupId
+            );
+    }
+
     private void OnEnable()
     {
-        if (!ValidateConfiguration())
+        CacheDependenciesIfNeeded();
+
+        configurationIsValid =
+            ValidateConfiguration();
+
+        if (!configurationIsValid)
         {
             enabled = false;
             return;
         }
 
-        spawnRoutine =
-            StartCoroutine(SpawnGroupsRoutine());
+        SubscribeToServiceState();
+    }
+
+    private void Start()
+    {
+        /*
+         * Start se ejecuta después de todos los Awake de la escena.
+         * Esto garantiza que el estado inicial del servicio ya esté
+         * completamente inicializado.
+         */
+        SynchronizeWithServiceState();
     }
 
     private void OnDisable()
     {
-        if (spawnRoutine == null)
-            return;
+        UnsubscribeFromServiceState();
+        StopSpawning();
+    }
 
-        StopCoroutine(spawnRoutine);
+    /// <summary>
+    /// Inicia o detiene la generación al cambiar la fase operativa.
+    /// </summary>
+    private void HandleServiceStateChanged(
+        RestaurantServiceState previousState,
+        RestaurantServiceState currentState
+    )
+    {
+        SynchronizeWithServiceState();
+    }
+
+    /// <summary>
+    /// Mantiene la rutina alineada con el estado real del servicio.
+    /// </summary>
+    private void SynchronizeWithServiceState()
+    {
+        if (!configurationIsValid ||
+            serviceStateService == null)
+        {
+            return;
+        }
+
+        if (serviceStateService.AcceptsNewCustomers)
+        {
+            StartSpawningIfNeeded();
+            return;
+        }
+
+        StopSpawning();
+    }
+
+    /// <summary>
+    /// Inicia una única rutina para el servicio actual.
+    /// </summary>
+    private void StartSpawningIfNeeded()
+    {
+        if (spawnRoutine != null ||
+            !isActiveAndEnabled)
+        {
+            return;
+        }
+
+        spawnRoutine =
+            StartCoroutine(
+                SpawnGroupsRoutine()
+            );
+    }
+
+    /// <summary>
+    /// Detiene inmediatamente futuras llegadas.
+    /// Los grupos ya generados continúan su flujo normal.
+    /// </summary>
+    private void StopSpawning()
+    {
+        if (spawnRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(
+            spawnRoutine
+        );
+
         spawnRoutine = null;
     }
 
@@ -92,13 +207,29 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
              index < numberOfGroups;
              index++)
         {
-            int groupId =
-                firstGroupId + index;
+            /*
+             * Se vuelve a comprobar antes de cada llegada para que
+             * el cierre del servicio detenga nuevas admisiones.
+             */
+            if (serviceStateService == null ||
+                !serviceStateService.AcceptsNewCustomers)
+            {
+                spawnRoutine = null;
+                yield break;
+            }
 
-            SpawnCustomerGroup(groupId);
+            int groupId =
+                nextGroupId;
+
+            nextGroupId++;
+
+            SpawnCustomerGroup(
+                groupId
+            );
 
             bool isLastGroup =
-                index == numberOfGroups - 1;
+                index ==
+                numberOfGroups - 1;
 
             if (!isLastGroup)
             {
@@ -109,8 +240,9 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         }
 
         Debug.Log(
-            $"CustomerGroupSpawner ha generado " +
-            $"{numberOfGroups} grupo(s).",
+            "CustomerGroupSpawner ha generado " +
+            numberOfGroups +
+            " grupo(s) durante el servicio.",
             this
         );
 
@@ -125,19 +257,22 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
     )
     {
         // Random.Range con enteros no incluye el límite superior.
-        int groupSize = Random.Range(
-            minimumGroupSize,
-            maximumGroupSize + 1
-        );
+        int groupSize =
+            Random.Range(
+                minimumGroupSize,
+                maximumGroupSize + 1
+            );
 
-        CustomerGroup newGroup = Instantiate(
-            customerGroupPrefab,
-            spawnPoint.position,
-            spawnPoint.rotation
-        );
+        CustomerGroup newGroup =
+            Instantiate(
+                customerGroupPrefab,
+                spawnPoint.position,
+                spawnPoint.rotation
+            );
 
         newGroup.gameObject.name =
-            $"CustomerGroup_{groupId}";
+            "CustomerGroup_" +
+            groupId;
 
         bool initialized =
             newGroup.Initialize(
@@ -147,7 +282,10 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
 
         if (!initialized)
         {
-            Destroy(newGroup.gameObject);
+            Destroy(
+                newGroup.gameObject
+            );
+
             return;
         }
 
@@ -159,17 +297,23 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (movementView == null)
         {
             Debug.LogError(
-                $"El prefab del grupo {groupId} no contiene " +
-                "CustomerMovementView.",
+                "El prefab del grupo " +
+                groupId +
+                " no contiene CustomerMovementView.",
                 newGroup
             );
 
-            Destroy(newGroup.gameObject);
+            Destroy(
+                newGroup.gameObject
+            );
+
             return;
         }
 
-        // La salida pertenece a la escena, por lo que se configura
-        // después de instanciar el prefab.
+        /*
+         * La salida pertenece a la escena, por lo que se configura
+         * después de instanciar el prefab.
+         */
         movementView.ConfigureExitPoint(
             restaurantExitPoint
         );
@@ -182,12 +326,16 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (!registeredInTableSystem)
         {
             Debug.LogError(
-                $"No se pudo registrar el grupo {groupId} " +
-                "en TableAssignmentSystem.",
+                "No se pudo registrar el grupo " +
+                groupId +
+                " en TableAssignmentSystem.",
                 newGroup
             );
 
-            Destroy(newGroup.gameObject);
+            Destroy(
+                newGroup.gameObject
+            );
+
             return;
         }
 
@@ -199,30 +347,77 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
         if (!registeredInWaitingArea)
         {
             Debug.LogError(
-                $"No se pudo registrar el grupo {groupId} " +
-                "en CustomerWaitingAreaSystem.",
+                "No se pudo registrar el grupo " +
+                groupId +
+                " en CustomerWaitingAreaSystem.",
                 newGroup
             );
 
-            // Deshacemos también el registro anterior para no dejar
-            // referencias a un objeto que será destruido.
+            /*
+             * Deshacemos también el registro anterior para no dejar
+             * referencias a un objeto que será destruido.
+             */
             tableAssignmentSystem.UnregisterCustomerGroup(
                 newGroup
             );
 
-            Destroy(newGroup.gameObject);
+            Destroy(
+                newGroup.gameObject
+            );
+
             return;
         }
 
         Debug.Log(
-            $"Generado grupo {groupId} de " +
-            $"{groupSize} cliente(s).",
+            "Generado grupo " +
+            groupId +
+            " de " +
+            groupSize +
+            " cliente(s).",
             newGroup
         );
     }
 
     /// <summary>
-    /// Valida todas las referencias antes de comenzar a generar grupos.
+    /// Busca dependencias situadas en el mismo GameObject.
+    /// </summary>
+    private void CacheDependenciesIfNeeded()
+    {
+        if (serviceStateService == null)
+        {
+            TryGetComponent(
+                out serviceStateService
+            );
+        }
+    }
+
+    private void SubscribeToServiceState()
+    {
+        if (serviceStateService == null)
+        {
+            return;
+        }
+
+        serviceStateService.StateChanged -=
+            HandleServiceStateChanged;
+
+        serviceStateService.StateChanged +=
+            HandleServiceStateChanged;
+    }
+
+    private void UnsubscribeFromServiceState()
+    {
+        if (serviceStateService == null)
+        {
+            return;
+        }
+
+        serviceStateService.StateChanged -=
+            HandleServiceStateChanged;
+    }
+
+    /// <summary>
+    /// Valida todas las referencias antes de generar grupos.
     /// </summary>
     private bool ValidateConfiguration()
     {
@@ -259,6 +454,17 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
             isValid = false;
         }
 
+        if (serviceStateService == null)
+        {
+            Debug.LogError(
+                "CustomerGroupSpawner necesita " +
+                "RestaurantServiceStateService.",
+                this
+            );
+
+            isValid = false;
+        }
+
         if (spawnPoint == null)
         {
             Debug.LogError(
@@ -279,7 +485,8 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
             isValid = false;
         }
 
-        if (minimumGroupSize > maximumGroupSize)
+        if (minimumGroupSize >
+            maximumGroupSize)
         {
             Debug.LogError(
                 "Minimum Group Size no puede ser mayor que " +
@@ -292,4 +499,52 @@ public sealed class CustomerGroupSpawner : MonoBehaviour
 
         return isValid;
     }
+
+#if UNITY_EDITOR
+    private void Reset()
+    {
+        CacheDependenciesIfNeeded();
+    }
+
+    private void OnValidate()
+    {
+        CacheDependenciesIfNeeded();
+
+        numberOfGroups =
+            Mathf.Max(
+                1,
+                numberOfGroups
+            );
+
+        firstSpawnDelay =
+            Mathf.Max(
+                0f,
+                firstSpawnDelay
+            );
+
+        timeBetweenGroups =
+            Mathf.Max(
+                0.1f,
+                timeBetweenGroups
+            );
+
+        minimumGroupSize =
+            Mathf.Max(
+                1,
+                minimumGroupSize
+            );
+
+        maximumGroupSize =
+            Mathf.Max(
+                minimumGroupSize,
+                maximumGroupSize
+            );
+
+        firstGroupId =
+            Mathf.Max(
+                1,
+                firstGroupId
+            );
+    }
+#endif
 }

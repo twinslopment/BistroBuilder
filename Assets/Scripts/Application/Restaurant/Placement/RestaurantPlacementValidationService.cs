@@ -9,7 +9,8 @@ using UnityEngine;
 /// - Compatibilidad con el área.
 /// - Capacidades requeridas.
 /// - Huella completa dentro del área.
-/// - Solapamiento con otros objetos.
+/// - Solapamiento con otros objetos colocables.
+/// - Solapamiento con obstáculos fijos.
 /// - Separación mínima.
 ///
 /// No mueve objetos, no modifica áreas y no utiliza Update.
@@ -35,6 +36,14 @@ public sealed class RestaurantPlacementValidationService :
     private RestaurantPlacementRegistry
         placementRegistry;
 
+    [Tooltip(
+        "Registro central de paredes, columnas y otros " +
+        "obstáculos fijos."
+    )]
+    [SerializeField]
+    private RestaurantPlacementObstacleRegistry
+        obstacleRegistry;
+
     [Header("Validación inicial")]
 
     [Tooltip(
@@ -44,13 +53,18 @@ public sealed class RestaurantPlacementValidationService :
     private bool validatePlacementsOnStart = true;
 
     /// <summary>
-    /// Lista reutilizable de posibles obstáculos del área.
-    ///
-    /// Evita crear una colección nueva en cada validación.
+    /// Lista reutilizable de otras huellas del área candidata.
     /// </summary>
     private readonly List<RestaurantPlacementFootprint>
         nearbyFootprints =
             new List<RestaurantPlacementFootprint>(16);
+
+    /// <summary>
+    /// Lista reutilizable de obstáculos fijos operativos.
+    /// </summary>
+    private readonly List<RestaurantPlacementObstacle>
+        blockingObstacles =
+            new List<RestaurantPlacementObstacle>(16);
 
     private Coroutine initialValidationRoutine;
 
@@ -139,6 +153,7 @@ public sealed class RestaurantPlacementValidationService :
                 candidateArea,
                 missingCapability,
                 null,
+                null,
                 RestaurantPlacementConflictType.None
             );
         }
@@ -148,10 +163,6 @@ public sealed class RestaurantPlacementValidationService :
                     candidateFootprint
             ))
         {
-            /*
-             * Los elementos sin huella solo necesitan superar
-             * la validación espacial y funcional.
-             */
             return CreateValidResult(
                 member,
                 null,
@@ -168,7 +179,8 @@ public sealed class RestaurantPlacementValidationService :
             );
         }
 
-        if (placementRegistry == null)
+        if (placementRegistry == null ||
+            obstacleRegistry == null)
         {
             return CreateResult(
                 RestaurantPlacementValidationStatus
@@ -192,11 +204,21 @@ public sealed class RestaurantPlacementValidationService :
             true
         );
 
-        RestaurantPlacementFootprint
-            nearestPhysicalConflict = null;
+        obstacleRegistry.CopyBlockingObstacles(
+            blockingObstacles
+        );
 
         RestaurantPlacementFootprint
-            nearestClearanceConflict = null;
+            nearestPhysicalFootprint = null;
+
+        RestaurantPlacementObstacle
+            nearestPhysicalObstacle = null;
+
+        RestaurantPlacementFootprint
+            nearestClearanceFootprint = null;
+
+        RestaurantPlacementObstacle
+            nearestClearanceObstacle = null;
 
         float nearestPhysicalDistance =
             float.PositiveInfinity;
@@ -204,76 +226,28 @@ public sealed class RestaurantPlacementValidationService :
         float nearestClearanceDistance =
             float.PositiveInfinity;
 
-        for (int index = 0;
-             index < nearbyFootprints.Count;
-             index++)
-        {
-            RestaurantPlacementFootprint otherFootprint =
-                nearbyFootprints[index];
+        EvaluateFootprintConflicts(
+            candidateShape,
+            ref nearestPhysicalFootprint,
+            ref nearestPhysicalObstacle,
+            ref nearestClearanceFootprint,
+            ref nearestClearanceObstacle,
+            ref nearestPhysicalDistance,
+            ref nearestClearanceDistance
+        );
 
-            if (otherFootprint == null)
-            {
-                continue;
-            }
+        EvaluateObstacleConflicts(
+            candidateShape,
+            ref nearestPhysicalFootprint,
+            ref nearestPhysicalObstacle,
+            ref nearestClearanceFootprint,
+            ref nearestClearanceObstacle,
+            ref nearestPhysicalDistance,
+            ref nearestClearanceDistance
+        );
 
-            RestaurantPlacementShape otherShape =
-                otherFootprint.BuildCurrentShape();
-
-            RestaurantPlacementConflictType conflict =
-                RestaurantPlacementCollisionUtility
-                    .EvaluateConflict(
-                        candidateShape,
-                        otherShape
-                    );
-
-            if (conflict ==
-                RestaurantPlacementConflictType.None)
-            {
-                continue;
-            }
-
-            float squaredDistance =
-                (
-                    otherShape.Center -
-                    candidateShape.Center
-                ).sqrMagnitude;
-
-            if (conflict ==
-                RestaurantPlacementConflictType
-                    .PhysicalOverlap)
-            {
-                if (squaredDistance <
-                    nearestPhysicalDistance)
-                {
-                    nearestPhysicalDistance =
-                        squaredDistance;
-
-                    nearestPhysicalConflict =
-                        otherFootprint;
-                }
-
-                continue;
-            }
-
-            if (conflict ==
-                    RestaurantPlacementConflictType
-                        .MinimumClearanceViolation &&
-                squaredDistance <
-                    nearestClearanceDistance)
-            {
-                nearestClearanceDistance =
-                    squaredDistance;
-
-                nearestClearanceConflict =
-                    otherFootprint;
-            }
-        }
-
-        /*
-         * El solapamiento físico tiene prioridad sobre cualquier
-         * incumplimiento de separación mínima.
-         */
-        if (nearestPhysicalConflict != null)
+        if (nearestPhysicalFootprint != null ||
+            nearestPhysicalObstacle != null)
         {
             return new RestaurantPlacementValidationResult(
                 RestaurantPlacementValidationStatus
@@ -282,13 +256,15 @@ public sealed class RestaurantPlacementValidationService :
                 candidateFootprint,
                 candidateArea,
                 null,
-                nearestPhysicalConflict,
+                nearestPhysicalFootprint,
+                nearestPhysicalObstacle,
                 RestaurantPlacementConflictType
                     .PhysicalOverlap
             );
         }
 
-        if (nearestClearanceConflict != null)
+        if (nearestClearanceFootprint != null ||
+            nearestClearanceObstacle != null)
         {
             return new RestaurantPlacementValidationResult(
                 RestaurantPlacementValidationStatus
@@ -297,7 +273,8 @@ public sealed class RestaurantPlacementValidationService :
                 candidateFootprint,
                 candidateArea,
                 null,
-                nearestClearanceConflict,
+                nearestClearanceFootprint,
+                nearestClearanceObstacle,
                 RestaurantPlacementConflictType
                     .MinimumClearanceViolation
             );
@@ -335,8 +312,8 @@ public sealed class RestaurantPlacementValidationService :
     }
 
     /// <summary>
-    /// Versión simplificada destinada al futuro controlador
-    /// del modo edición.
+    /// Versión simplificada destinada al controlador del modo
+    /// edición.
     /// </summary>
     public bool CanPlace(
         RestaurantAreaMember member,
@@ -363,17 +340,17 @@ public sealed class RestaurantPlacementValidationService :
             bool logDetails = true
         )
     {
-        if (placementRegistry == null)
+        if (placementRegistry == null ||
+            obstacleRegistry == null)
         {
             return default;
         }
 
-        /*
-         * Se sincroniza antes de validar para recoger miembros
-         * o huellas creados después de la inicialización.
-         */
         placementRegistry
             .RefreshFromRegisteredMembers();
+
+        obstacleRegistry
+            .RefreshFromScene();
 
         int totalCount = 0;
         int validCount = 0;
@@ -522,8 +499,204 @@ public sealed class RestaurantPlacementValidationService :
     }
 
     /// <summary>
+    /// Evalúa conflictos con otras huellas colocables.
+    /// </summary>
+    private void EvaluateFootprintConflicts(
+        RestaurantPlacementShape candidateShape,
+        ref RestaurantPlacementFootprint
+            nearestPhysicalFootprint,
+        ref RestaurantPlacementObstacle
+            nearestPhysicalObstacle,
+        ref RestaurantPlacementFootprint
+            nearestClearanceFootprint,
+        ref RestaurantPlacementObstacle
+            nearestClearanceObstacle,
+        ref float nearestPhysicalDistance,
+        ref float nearestClearanceDistance
+    )
+    {
+        for (int index = 0;
+             index < nearbyFootprints.Count;
+             index++)
+        {
+            RestaurantPlacementFootprint otherFootprint =
+                nearbyFootprints[index];
+
+            if (otherFootprint == null)
+            {
+                continue;
+            }
+
+            RestaurantPlacementShape otherShape =
+                otherFootprint.BuildCurrentShape();
+
+            RestaurantPlacementConflictType conflict =
+                RestaurantPlacementCollisionUtility
+                    .EvaluateConflict(
+                        candidateShape,
+                        otherShape
+                    );
+
+            RegisterNearestConflict(
+                conflict,
+                otherShape.Center,
+                candidateShape.Center,
+                otherFootprint,
+                null,
+                ref nearestPhysicalFootprint,
+                ref nearestPhysicalObstacle,
+                ref nearestClearanceFootprint,
+                ref nearestClearanceObstacle,
+                ref nearestPhysicalDistance,
+                ref nearestClearanceDistance
+            );
+        }
+    }
+
+    /// <summary>
+    /// Evalúa conflictos con paredes, columnas y demás
+    /// obstáculos fijos.
+    /// </summary>
+    private void EvaluateObstacleConflicts(
+        RestaurantPlacementShape candidateShape,
+        ref RestaurantPlacementFootprint
+            nearestPhysicalFootprint,
+        ref RestaurantPlacementObstacle
+            nearestPhysicalObstacle,
+        ref RestaurantPlacementFootprint
+            nearestClearanceFootprint,
+        ref RestaurantPlacementObstacle
+            nearestClearanceObstacle,
+        ref float nearestPhysicalDistance,
+        ref float nearestClearanceDistance
+    )
+    {
+        for (int index = 0;
+             index < blockingObstacles.Count;
+             index++)
+        {
+            RestaurantPlacementObstacle obstacle =
+                blockingObstacles[index];
+
+            if (obstacle == null ||
+                !obstacle.IsBlocking)
+            {
+                continue;
+            }
+
+            Vector2 halfExtents =
+                obstacle.WorldSize *
+                0.5f;
+
+            RestaurantPlacementShape obstacleShape =
+                new RestaurantPlacementShape(
+                    obstacle.WorldCenter,
+                    obstacle.WorldRightAxis,
+                    obstacle.WorldForwardAxis,
+                    halfExtents,
+                    obstacle.MinimumClearance
+                );
+
+            RestaurantPlacementConflictType conflict =
+                RestaurantPlacementCollisionUtility
+                    .EvaluateConflict(
+                        candidateShape,
+                        obstacleShape
+                    );
+
+            RegisterNearestConflict(
+                conflict,
+                obstacleShape.Center,
+                candidateShape.Center,
+                null,
+                obstacle,
+                ref nearestPhysicalFootprint,
+                ref nearestPhysicalObstacle,
+                ref nearestClearanceFootprint,
+                ref nearestClearanceObstacle,
+                ref nearestPhysicalDistance,
+                ref nearestClearanceDistance
+            );
+        }
+    }
+
+    /// <summary>
+    /// Conserva únicamente el conflicto más cercano de cada tipo.
+    /// </summary>
+    private static void RegisterNearestConflict(
+        RestaurantPlacementConflictType conflict,
+        Vector3 otherCenter,
+        Vector3 candidateCenter,
+        RestaurantPlacementFootprint conflictingFootprint,
+        RestaurantPlacementObstacle conflictingObstacle,
+        ref RestaurantPlacementFootprint
+            nearestPhysicalFootprint,
+        ref RestaurantPlacementObstacle
+            nearestPhysicalObstacle,
+        ref RestaurantPlacementFootprint
+            nearestClearanceFootprint,
+        ref RestaurantPlacementObstacle
+            nearestClearanceObstacle,
+        ref float nearestPhysicalDistance,
+        ref float nearestClearanceDistance
+    )
+    {
+        if (conflict ==
+            RestaurantPlacementConflictType.None)
+        {
+            return;
+        }
+
+        float squaredDistance =
+            (
+                otherCenter -
+                candidateCenter
+            ).sqrMagnitude;
+
+        if (conflict ==
+            RestaurantPlacementConflictType
+                .PhysicalOverlap)
+        {
+            if (squaredDistance >=
+                nearestPhysicalDistance)
+            {
+                return;
+            }
+
+            nearestPhysicalDistance =
+                squaredDistance;
+
+            nearestPhysicalFootprint =
+                conflictingFootprint;
+
+            nearestPhysicalObstacle =
+                conflictingObstacle;
+
+            return;
+        }
+
+        if (conflict !=
+                RestaurantPlacementConflictType
+                    .MinimumClearanceViolation ||
+            squaredDistance >=
+                nearestClearanceDistance)
+        {
+            return;
+        }
+
+        nearestClearanceDistance =
+            squaredDistance;
+
+        nearestClearanceFootprint =
+            conflictingFootprint;
+
+        nearestClearanceObstacle =
+            conflictingObstacle;
+    }
+
+    /// <summary>
     /// Espera un frame para que los registros de áreas,
-    /// miembros y huellas completen su inicialización.
+    /// miembros, huellas y obstáculos completen su inicialización.
     /// </summary>
     private IEnumerator ValidateAfterStartupRoutine()
     {
@@ -656,18 +829,23 @@ public sealed class RestaurantPlacementValidationService :
     }
 
     /// <summary>
-    /// Obtiene el nombre del objeto que provoca un conflicto.
+    /// Obtiene el nombre del elemento que provoca un conflicto.
     /// </summary>
     private static string GetConflictName(
         RestaurantPlacementValidationResult result
     )
     {
-        if (result.ConflictingFootprint == null)
+        if (result.ConflictingFootprint != null)
         {
-            return "otro objeto";
+            return result.ConflictingFootprint.name;
         }
 
-        return result.ConflictingFootprint.name;
+        if (result.ConflictingObstacle != null)
+        {
+            return result.ConflictingObstacle.name;
+        }
+
+        return "otro objeto";
     }
 
     /// <summary>
@@ -716,6 +894,7 @@ public sealed class RestaurantPlacementValidationService :
             area,
             null,
             null,
+            null,
             RestaurantPlacementConflictType.None
         );
     }
@@ -738,6 +917,7 @@ public sealed class RestaurantPlacementValidationService :
             area,
             null,
             null,
+            null,
             RestaurantPlacementConflictType.None
         );
     }
@@ -758,6 +938,13 @@ public sealed class RestaurantPlacementValidationService :
         {
             TryGetComponent(
                 out placementRegistry
+            );
+        }
+
+        if (obstacleRegistry == null)
+        {
+            TryGetComponent(
+                out obstacleRegistry
             );
         }
     }
@@ -784,6 +971,16 @@ public sealed class RestaurantPlacementValidationService :
                 $"{nameof(RestaurantPlacementValidationService)} " +
                 $"necesita un " +
                 $"{nameof(RestaurantPlacementRegistry)}.",
+                this
+            );
+        }
+
+        if (obstacleRegistry == null)
+        {
+            Debug.LogError(
+                $"{nameof(RestaurantPlacementValidationService)} " +
+                $"necesita un " +
+                $"{nameof(RestaurantPlacementObstacleRegistry)}.",
                 this
             );
         }
@@ -839,12 +1036,20 @@ public readonly struct RestaurantPlacementValidationResult
         ConflictingFootprint
     { get; }
 
+    public RestaurantPlacementObstacle
+        ConflictingObstacle
+    { get; }
+
     public RestaurantPlacementConflictType ConflictType { get; }
 
     public bool IsValid =>
         Status ==
         RestaurantPlacementValidationStatus.Valid;
 
+    /// <summary>
+    /// Constructor compatible con consumidores anteriores que
+    /// solo conocían conflictos entre huellas colocables.
+    /// </summary>
     public RestaurantPlacementValidationResult(
         RestaurantPlacementValidationStatus status,
         RestaurantAreaMember member,
@@ -856,6 +1061,35 @@ public readonly struct RestaurantPlacementValidationResult
             conflictingFootprint,
         RestaurantPlacementConflictType conflictType
     )
+        : this(
+            status,
+            member,
+            footprint,
+            candidateArea,
+            missingCapability,
+            conflictingFootprint,
+            null,
+            conflictType
+        )
+    {
+    }
+
+    /// <summary>
+    /// Constructor completo, compatible con huellas y obstáculos.
+    /// </summary>
+    public RestaurantPlacementValidationResult(
+        RestaurantPlacementValidationStatus status,
+        RestaurantAreaMember member,
+        RestaurantPlacementFootprint footprint,
+        RestaurantArea candidateArea,
+        RestaurantAreaCapabilityDefinition
+            missingCapability,
+        RestaurantPlacementFootprint
+            conflictingFootprint,
+        RestaurantPlacementObstacle
+            conflictingObstacle,
+        RestaurantPlacementConflictType conflictType
+    )
     {
         Status = status;
         Member = member;
@@ -863,6 +1097,7 @@ public readonly struct RestaurantPlacementValidationResult
         CandidateArea = candidateArea;
         MissingCapability = missingCapability;
         ConflictingFootprint = conflictingFootprint;
+        ConflictingObstacle = conflictingObstacle;
         ConflictType = conflictType;
     }
 }

@@ -1,17 +1,33 @@
 using System;
 using UnityEngine;
 
-public sealed class RestaurantTable : MonoBehaviour
+/// <summary>
+/// Componente operativo de una mesa del restaurante.
+///
+/// La identidad de artículo colocable pertenece a
+/// RestaurantPlaceableObject.
+///
+/// TableId es exclusivamente la identidad funcional de la mesa
+/// dentro de los sistemas de sala, comandas, cuentas y camareros.
+/// RestaurantTableRegistry garantiza que no existan duplicados.
+/// </summary>
+public sealed class RestaurantTable :
+    MonoBehaviour
 {
     [Header("Identificación")]
-    [SerializeField, Min(1)]
+
+    [SerializeField]
+    [Min(1)]
     private int tableId = 1;
 
     [Header("Configuración")]
-    [SerializeField, Min(1)]
+
+    [SerializeField]
+    [Min(1)]
     private int capacity = 2;
 
     [Header("Puntos de interacción")]
+
     [SerializeField]
     private Transform customerApproachPoint;
 
@@ -19,80 +35,215 @@ public sealed class RestaurantTable : MonoBehaviour
     private Transform waiterServicePoint;
 
     [Header("Ocupación actual")]
+
     [SerializeField]
     private CustomerGroup assignedCustomerGroup;
 
     [Header("Estado actual")]
+
     [SerializeField]
-    private TableState currentState = TableState.Free;
+    private TableState currentState =
+        TableState.Free;
 
-    public event Action<RestaurantTable, TableState> StateChanged;
+    public event Action<
+        RestaurantTable,
+        TableState
+    > StateChanged;
 
-    public int TableId => tableId;
-    public int Capacity => capacity;
+    public event Action<
+        RestaurantTable,
+        int,
+        int
+    > TableIdChanged;
 
-    public Transform CustomerApproachPoint => customerApproachPoint;
-    public Transform WaiterServicePoint => waiterServicePoint;
+    public int TableId
+    {
+        get
+        {
+            return tableId;
+        }
+    }
 
-    public CustomerGroup AssignedCustomerGroup =>
-        assignedCustomerGroup;
+    public int Capacity
+    {
+        get
+        {
+            return capacity;
+        }
+    }
 
-    public TableState CurrentState => currentState;
+    public Transform CustomerApproachPoint
+    {
+        get
+        {
+            return customerApproachPoint;
+        }
+    }
 
-    public bool IsAvailable =>
-        currentState == TableState.Free &&
-        assignedCustomerGroup == null;
+    public Transform WaiterServicePoint
+    {
+        get
+        {
+            return waiterServicePoint;
+        }
+    }
 
-    public void SetState(TableState newState)
+    public CustomerGroup AssignedCustomerGroup
+    {
+        get
+        {
+            return assignedCustomerGroup;
+        }
+    }
+
+    public TableState CurrentState
+    {
+        get
+        {
+            return currentState;
+        }
+    }
+
+    public bool IsAvailable
+    {
+        get
+        {
+            return currentState ==
+                       TableState.Free &&
+                   assignedCustomerGroup == null;
+        }
+    }
+
+    /// <summary>
+    /// Asigna la identidad operativa de la mesa.
+    ///
+    /// Debe utilizarlo RestaurantTableRegistry o el sistema de carga.
+    /// </summary>
+    public bool AssignTableId(
+        int newTableId
+    )
+    {
+        if (newTableId < 1 ||
+            tableId == newTableId)
+        {
+            return false;
+        }
+
+        int previousTableId =
+            tableId;
+
+        tableId =
+            newTableId;
+
+        TableIdChanged?.Invoke(
+            this,
+            previousTableId,
+            tableId
+        );
+
+        return true;
+    }
+
+    public void SetState(
+        TableState newState
+    )
     {
         if (currentState == newState)
+        {
             return;
+        }
 
-        currentState = newState;
+        currentState =
+            newState;
 
         Debug.Log(
-            $"Mesa {tableId}: estado cambiado a {currentState}.",
+            "Mesa " +
+            tableId +
+            ": estado cambiado a " +
+            currentState +
+            ".",
             this
         );
 
-        StateChanged?.Invoke(this, currentState);
+        StateChanged?.Invoke(
+            this,
+            currentState
+        );
     }
 
-    public bool CanSeatGroup(int groupSize)
+    public bool CanSeatGroup(
+        int groupSize
+    )
     {
         return IsAvailable &&
                groupSize > 0 &&
                groupSize <= capacity;
     }
 
-    public bool TryAssignCustomerGroup(CustomerGroup customerGroup)
+    public bool TryAssignCustomerGroup(
+        CustomerGroup customerGroup
+    )
     {
-        if (customerGroup == null)
+        if (customerGroup == null ||
+            !CanSeatGroup(
+                customerGroup.GroupSize
+            ))
+        {
             return false;
+        }
 
-        if (!CanSeatGroup(customerGroup.GroupSize))
-            return false;
-
-        assignedCustomerGroup = customerGroup;
+        assignedCustomerGroup =
+            customerGroup;
 
         Debug.Log(
-            $"Mesa {tableId}: grupo {customerGroup.GroupId} registrado.",
+            "Mesa " +
+            tableId +
+            ": grupo " +
+            customerGroup.GroupId +
+            " registrado.",
             this
         );
 
         return true;
     }
 
-    public void ReleaseCustomerGroup(CustomerGroup customerGroup)
+    public void ReleaseCustomerGroup(
+        CustomerGroup customerGroup
+    )
     {
-        if (assignedCustomerGroup != customerGroup)
+        if (!ReferenceEquals(
+                assignedCustomerGroup,
+                customerGroup
+            ))
+        {
             return;
+        }
 
-        assignedCustomerGroup = null;
+        assignedCustomerGroup =
+            null;
 
         Debug.Log(
-            $"Mesa {tableId}: grupo liberado.",
+            "Mesa " +
+            tableId +
+            ": grupo liberado.",
             this
         );
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        tableId =
+            Mathf.Max(
+                1,
+                tableId
+            );
+
+        capacity =
+            Mathf.Max(
+                1,
+                capacity
+            );
+    }
+#endif
 }

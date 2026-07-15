@@ -2,67 +2,124 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public sealed class TableAssignmentSystem : MonoBehaviour
+/// <summary>
+/// Asigna grupos de clientes a las mesas operativas disponibles.
+///
+/// Las mesas ya no proceden de un array fijo del Inspector.
+/// Se sincronizan dinámicamente mediante RestaurantTableRegistry,
+/// por lo que una mesa añadida desde el modo edición podrá participar
+/// sin reiniciar la escena.
+/// </summary>
+public sealed class TableAssignmentSystem :
+    MonoBehaviour
 {
     [Header("Elementos iniciales")]
+
     [FormerlySerializedAs("customerGroups")]
     [SerializeField]
     private CustomerGroup[] initialCustomerGroups;
 
-    [Header("Mesas gestionadas")]
+    [Header("Sistemas")]
+
+    [Tooltip(
+        "Registro dinámico de las mesas operativas."
+    )]
     [SerializeField]
-    private RestaurantTable[] tables;
+    private RestaurantTableRegistry tableRegistry;
 
-    private readonly List<CustomerGroup> registeredGroups = new();
-    private readonly List<CustomerGroup> waitingGroups = new();
+    private readonly List<CustomerGroup>
+        registeredGroups =
+            new List<CustomerGroup>();
 
-    public IReadOnlyList<CustomerGroup> RegisteredGroups =>
-        registeredGroups;
+    private readonly List<CustomerGroup>
+        waitingGroups =
+            new List<CustomerGroup>();
+
+    private readonly HashSet<RestaurantTable>
+        registeredTables =
+            new HashSet<RestaurantTable>();
+
+    public IReadOnlyList<CustomerGroup>
+        RegisteredGroups
+    {
+        get
+        {
+            return registeredGroups;
+        }
+    }
+
+    public int RegisteredTableCount
+    {
+        get
+        {
+            return registeredTables.Count;
+        }
+    }
+
+    private void Awake()
+    {
+        CacheDependenciesIfNeeded();
+    }
 
     private void OnEnable()
     {
-        SubscribeToTables();
+        CacheDependenciesIfNeeded();
+        SubscribeToTableRegistry();
+        SynchronizeTablesFromRegistry();
         RegisterInitialCustomerGroups();
     }
 
     private void Start()
     {
         ValidateConfiguration();
+        SynchronizeTablesFromRegistry();
         TryAssignWaitingGroups();
     }
 
     private void OnDisable()
     {
+        UnsubscribeFromTableRegistry();
         UnsubscribeFromTables();
         UnsubscribeFromCustomerGroups();
 
+        registeredTables.Clear();
         registeredGroups.Clear();
         waitingGroups.Clear();
     }
 
-    public bool RegisterCustomerGroup(CustomerGroup customerGroup)
+    public bool RegisterCustomerGroup(
+        CustomerGroup customerGroup
+    )
     {
-        if (customerGroup == null)
+        if (customerGroup == null ||
+            registeredGroups.Contains(
+                customerGroup
+            ))
+        {
             return false;
+        }
 
-        if (registeredGroups.Contains(customerGroup))
-            return false;
-
-        registeredGroups.Add(customerGroup);
+        registeredGroups.Add(
+            customerGroup
+        );
 
         customerGroup.StateChanged +=
             HandleCustomerGroupStateChanged;
 
         Debug.Log(
-            $"Grupo {customerGroup.GroupId} registrado " +
-            "en el sistema de asignación de mesas.",
+            "Grupo " +
+            customerGroup.GroupId +
+            " registrado en el sistema de asignación de mesas.",
             customerGroup
         );
 
         if (customerGroup.CurrentState ==
             CustomerGroupState.WaitingForTable)
         {
-            AddWaitingGroup(customerGroup);
+            AddWaitingGroup(
+                customerGroup
+            );
+
             TryAssignWaitingGroups();
         }
 
@@ -73,20 +130,25 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         CustomerGroup customerGroup
     )
     {
-        if (customerGroup == null)
+        if (customerGroup == null ||
+            !registeredGroups.Remove(
+                customerGroup
+            ))
+        {
             return false;
-
-        if (!registeredGroups.Remove(customerGroup))
-            return false;
+        }
 
         customerGroup.StateChanged -=
             HandleCustomerGroupStateChanged;
 
-        waitingGroups.Remove(customerGroup);
+        waitingGroups.Remove(
+            customerGroup
+        );
 
         Debug.Log(
-            $"Grupo {customerGroup.GroupId} eliminado " +
-            "del sistema de asignación de mesas.",
+            "Grupo " +
+            customerGroup.GroupId +
+            " eliminado del sistema de asignación de mesas.",
             customerGroup
         );
 
@@ -96,18 +158,29 @@ public sealed class TableAssignmentSystem : MonoBehaviour
     private void RegisterInitialCustomerGroups()
     {
         if (initialCustomerGroups == null)
-            return;
-
-        foreach (CustomerGroup customerGroup in initialCustomerGroups)
         {
-            RegisterCustomerGroup(customerGroup);
+            return;
+        }
+
+        for (int index = 0;
+             index < initialCustomerGroups.Length;
+             index++)
+        {
+            RegisterCustomerGroup(
+                initialCustomerGroups[index]
+            );
         }
     }
 
     private void UnsubscribeFromCustomerGroups()
     {
-        foreach (CustomerGroup customerGroup in registeredGroups)
+        for (int index = 0;
+             index < registeredGroups.Count;
+             index++)
         {
+            CustomerGroup customerGroup =
+                registeredGroups[index];
+
             if (customerGroup != null)
             {
                 customerGroup.StateChanged -=
@@ -116,27 +189,97 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         }
     }
 
-    private void SubscribeToTables()
+    private void SubscribeToTableRegistry()
     {
-        if (tables == null)
-            return;
-
-        foreach (RestaurantTable table in tables)
+        if (tableRegistry == null)
         {
-            if (table != null)
-            {
-                table.StateChanged +=
-                    HandleTableStateChanged;
-            }
+            return;
         }
+
+        tableRegistry.TableRegistered -=
+            HandleTableRegistered;
+
+        tableRegistry.TableUnregistered -=
+            HandleTableUnregistered;
+
+        tableRegistry.TableRegistered +=
+            HandleTableRegistered;
+
+        tableRegistry.TableUnregistered +=
+            HandleTableUnregistered;
+    }
+
+    private void UnsubscribeFromTableRegistry()
+    {
+        if (tableRegistry == null)
+        {
+            return;
+        }
+
+        tableRegistry.TableRegistered -=
+            HandleTableRegistered;
+
+        tableRegistry.TableUnregistered -=
+            HandleTableUnregistered;
+    }
+
+    private void SynchronizeTablesFromRegistry()
+    {
+        if (tableRegistry == null)
+        {
+            return;
+        }
+
+        foreach (RestaurantTable table
+                 in tableRegistry.RegisteredTables)
+        {
+            RegisterTable(
+                table
+            );
+        }
+    }
+
+    private bool RegisterTable(
+        RestaurantTable table
+    )
+    {
+        if (table == null ||
+            !registeredTables.Add(table))
+        {
+            return false;
+        }
+
+        table.StateChanged -=
+            HandleTableStateChanged;
+
+        table.StateChanged +=
+            HandleTableStateChanged;
+
+        TryAssignWaitingGroups();
+
+        return true;
+    }
+
+    private bool UnregisterTable(
+        RestaurantTable table
+    )
+    {
+        if (table == null ||
+            !registeredTables.Remove(table))
+        {
+            return false;
+        }
+
+        table.StateChanged -=
+            HandleTableStateChanged;
+
+        return true;
     }
 
     private void UnsubscribeFromTables()
     {
-        if (tables == null)
-            return;
-
-        foreach (RestaurantTable table in tables)
+        foreach (RestaurantTable table
+                 in registeredTables)
         {
             if (table != null)
             {
@@ -146,23 +289,51 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         }
     }
 
+    private void HandleTableRegistered(
+        RestaurantTable table
+    )
+    {
+        RegisterTable(
+            table
+        );
+    }
+
+    private void HandleTableUnregistered(
+        RestaurantTable table
+    )
+    {
+        UnregisterTable(
+            table
+        );
+    }
+
     private void HandleCustomerGroupStateChanged(
         CustomerGroup customerGroup,
         CustomerGroupState newState
     )
     {
-        if (newState == CustomerGroupState.WaitingForTable)
+        if (newState ==
+            CustomerGroupState.WaitingForTable)
         {
-            AddWaitingGroup(customerGroup);
+            AddWaitingGroup(
+                customerGroup
+            );
+
             TryAssignWaitingGroups();
+
             return;
         }
 
-        waitingGroups.Remove(customerGroup);
+        waitingGroups.Remove(
+            customerGroup
+        );
 
-        if (newState == CustomerGroupState.Finished)
+        if (newState ==
+            CustomerGroupState.Finished)
         {
-            UnregisterCustomerGroup(customerGroup);
+            UnregisterCustomerGroup(
+                customerGroup
+            );
         }
     }
 
@@ -171,24 +342,36 @@ public sealed class TableAssignmentSystem : MonoBehaviour
         TableState newState
     )
     {
-        if (newState == TableState.Free)
+        if (newState ==
+            TableState.Free)
+        {
             TryAssignWaitingGroups();
+        }
     }
 
-    private void AddWaitingGroup(CustomerGroup customerGroup)
+    private void AddWaitingGroup(
+        CustomerGroup customerGroup
+    )
     {
-        if (customerGroup == null)
+        if (customerGroup == null ||
+            waitingGroups.Contains(
+                customerGroup
+            ))
+        {
             return;
+        }
 
-        if (!waitingGroups.Contains(customerGroup))
-            waitingGroups.Add(customerGroup);
+        waitingGroups.Add(
+            customerGroup
+        );
     }
 
     private void TryAssignWaitingGroups()
     {
         int groupIndex = 0;
 
-        while (groupIndex < waitingGroups.Count)
+        while (groupIndex <
+               waitingGroups.Count)
         {
             CustomerGroup customerGroup =
                 waitingGroups[groupIndex];
@@ -198,18 +381,25 @@ public sealed class TableAssignmentSystem : MonoBehaviour
                     CustomerGroupState.WaitingForTable ||
                 customerGroup.HasAssignedTable)
             {
-                waitingGroups.RemoveAt(groupIndex);
+                waitingGroups.RemoveAt(
+                    groupIndex
+                );
+
                 continue;
             }
 
             RestaurantTable bestTable =
-                FindBestTableForGroup(customerGroup);
+                FindBestTableForGroup(
+                    customerGroup
+                );
 
             if (bestTable == null)
             {
                 Debug.Log(
-                    $"No hay una mesa adecuada disponible para " +
-                    $"el grupo {customerGroup.GroupId}.",
+                    "No hay una mesa adecuada disponible para " +
+                    "el grupo " +
+                    customerGroup.GroupId +
+                    ".",
                     this
                 );
 
@@ -218,7 +408,9 @@ public sealed class TableAssignmentSystem : MonoBehaviour
             }
 
             bool assigned =
-                customerGroup.AssignTable(bestTable);
+                customerGroup.AssignTable(
+                    bestTable
+                );
 
             if (!assigned)
             {
@@ -226,7 +418,10 @@ public sealed class TableAssignmentSystem : MonoBehaviour
                 continue;
             }
 
-            waitingGroups.RemoveAt(groupIndex);
+            waitingGroups.RemoveAt(
+                groupIndex
+            );
+
             customerGroup.ResetWaitingTime();
 
             bestTable.SetState(
@@ -238,9 +433,11 @@ public sealed class TableAssignmentSystem : MonoBehaviour
             );
 
             Debug.Log(
-                $"TableAssignmentSystem asignó la mesa " +
-                $"{bestTable.TableId} al grupo " +
-                $"{customerGroup.GroupId}.",
+                "TableAssignmentSystem asignó la mesa " +
+                bestTable.TableId +
+                " al grupo " +
+                customerGroup.GroupId +
+                ".",
                 this
             );
         }
@@ -251,23 +448,30 @@ public sealed class TableAssignmentSystem : MonoBehaviour
     )
     {
         if (customerGroup == null ||
-            tables == null ||
-            tables.Length == 0)
+            registeredTables.Count == 0)
         {
             return null;
         }
 
-        RestaurantTable bestTable = null;
-        int lowestUnusedCapacity = int.MaxValue;
-        float shortestDistanceSquared = float.MaxValue;
+        RestaurantTable bestTable =
+            null;
 
-        foreach (RestaurantTable table in tables)
+        int lowestUnusedCapacity =
+            int.MaxValue;
+
+        float shortestDistanceSquared =
+            float.MaxValue;
+
+        foreach (RestaurantTable table
+                 in registeredTables)
         {
-            if (table == null)
+            if (table == null ||
+                !table.CanSeatGroup(
+                    customerGroup.GroupSize
+                ))
+            {
                 continue;
-
-            if (!table.CanSeatGroup(customerGroup.GroupSize))
-                continue;
+            }
 
             int unusedCapacity =
                 table.Capacity -
@@ -285,34 +489,90 @@ public sealed class TableAssignmentSystem : MonoBehaviour
                 ).sqrMagnitude;
 
             bool hasBetterCapacity =
-                unusedCapacity < lowestUnusedCapacity;
+                unusedCapacity <
+                lowestUnusedCapacity;
 
             bool sameCapacityButCloser =
-                unusedCapacity == lowestUnusedCapacity &&
-                distanceSquared < shortestDistanceSquared;
+                unusedCapacity ==
+                    lowestUnusedCapacity &&
+                distanceSquared <
+                    shortestDistanceSquared;
+
+            bool sameScoreButLowerTableId =
+                unusedCapacity ==
+                    lowestUnusedCapacity &&
+                Mathf.Approximately(
+                    distanceSquared,
+                    shortestDistanceSquared
+                ) &&
+                bestTable != null &&
+                table.TableId <
+                    bestTable.TableId;
 
             if (!hasBetterCapacity &&
-                !sameCapacityButCloser)
+                !sameCapacityButCloser &&
+                !sameScoreButLowerTableId)
             {
                 continue;
             }
 
-            bestTable = table;
-            lowestUnusedCapacity = unusedCapacity;
-            shortestDistanceSquared = distanceSquared;
+            bestTable =
+                table;
+
+            lowestUnusedCapacity =
+                unusedCapacity;
+
+            shortestDistanceSquared =
+                distanceSquared;
         }
 
         return bestTable;
     }
 
+    private void CacheDependenciesIfNeeded()
+    {
+        if (tableRegistry == null)
+        {
+            TryGetComponent(
+                out tableRegistry
+            );
+        }
+    }
+
     private void ValidateConfiguration()
     {
-        if (tables == null || tables.Length == 0)
+        if (tableRegistry == null)
         {
             Debug.LogError(
-                "TableAssignmentSystem no tiene mesas configuradas.",
+                nameof(TableAssignmentSystem) +
+                " necesita un " +
+                nameof(RestaurantTableRegistry) +
+                ".",
+                this
+            );
+
+            return;
+        }
+
+        if (registeredTables.Count == 0)
+        {
+            Debug.LogError(
+                nameof(TableAssignmentSystem) +
+                " no tiene mesas registradas.",
                 this
             );
         }
     }
+
+#if UNITY_EDITOR
+    private void Reset()
+    {
+        CacheDependenciesIfNeeded();
+    }
+
+    private void OnValidate()
+    {
+        CacheDependenciesIfNeeded();
+    }
+#endif
 }

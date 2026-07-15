@@ -10,11 +10,9 @@ using UnityEngine;
 /// - Confirmar únicamente colocaciones válidas.
 /// - Cancelar y restaurar exactamente el estado original.
 /// - Actualizar el área asignada al confirmar.
-/// - Informar a la presentación mediante eventos.
+/// - Publicar cambios confirmados para el historial de deshacer.
 ///
 /// El servicio no interpreta controles de ratón ni dibuja la UI.
-/// Esa responsabilidad pertenecerá a la capa de presentación.
-///
 /// No utiliza Update.
 /// </summary>
 [DisallowMultipleComponent]
@@ -25,7 +23,7 @@ public sealed class RestaurantPlacementTransactionService :
 
     [Tooltip(
         "Servicio que valida áreas, capacidades, límites, " +
-        "solapamientos y separación mínima."
+        "solapamientos, obstáculos y separación mínima."
     )]
     [SerializeField]
     private RestaurantPlacementValidationService
@@ -33,9 +31,8 @@ public sealed class RestaurantPlacementTransactionService :
 
     private RestaurantAreaMember activeMember;
 
-    private RestaurantArea originalArea;
-
-    private TransformSnapshot originalTransform;
+    private RestaurantPlacementStateSnapshot
+        originalState;
 
     private RestaurantPlacementValidationResult
         lastValidationResult;
@@ -62,11 +59,23 @@ public sealed class RestaurantPlacementTransactionService :
 
     /// <summary>
     /// Se ejecuta cuando una colocación válida se confirma.
+    ///
+    /// Se conserva por compatibilidad con consumidores existentes.
     /// </summary>
     public event Action<
         RestaurantAreaMember,
         RestaurantPlacementValidationResult
     > PlacementCommitted;
+
+    /// <summary>
+    /// Publica el estado anterior y posterior de una confirmación.
+    ///
+    /// El historial utiliza este evento para registrar únicamente
+    /// cambios realmente confirmados.
+    /// </summary>
+    public event Action<
+        RestaurantPlacementCommittedChange
+    > PlacementCommittedWithHistory;
 
     /// <summary>
     /// Se ejecuta cuando una confirmación es rechazada.
@@ -83,18 +92,38 @@ public sealed class RestaurantPlacementTransactionService :
     public event Action<RestaurantAreaMember>
         PlacementCancelled;
 
-    public bool HasActiveTransaction =>
-        hasActiveTransaction;
+    public bool HasActiveTransaction
+    {
+        get
+        {
+            return hasActiveTransaction;
+        }
+    }
 
-    public bool HasEvaluatedPreview =>
-        hasEvaluatedPreview;
+    public bool HasEvaluatedPreview
+    {
+        get
+        {
+            return hasEvaluatedPreview;
+        }
+    }
 
-    public RestaurantAreaMember ActiveMember =>
-        activeMember;
+    public RestaurantAreaMember ActiveMember
+    {
+        get
+        {
+            return activeMember;
+        }
+    }
 
     public RestaurantPlacementValidationResult
-        LastValidationResult =>
-            lastValidationResult;
+        LastValidationResult
+    {
+        get
+        {
+            return lastValidationResult;
+        }
+    }
 
     private void Awake()
     {
@@ -121,8 +150,8 @@ public sealed class RestaurantPlacementTransactionService :
     /// - Área asignada.
     /// - Padre.
     /// - Índice entre hermanos.
-    /// - Posición local.
-    /// - Rotación local.
+    /// - Posición local y mundial.
+    /// - Rotación local y mundial.
     /// - Escala local.
     ///
     /// Solo puede existir una transacción activa a la vez.
@@ -163,19 +192,18 @@ public sealed class RestaurantPlacementTransactionService :
             return false;
         }
 
-        activeMember = member;
+        activeMember =
+            member;
 
-        originalArea =
-            member.AssignedArea;
-
-        originalTransform =
-            TransformSnapshot.Capture(
-                member.transform
+        originalState =
+            RestaurantPlacementStateSnapshot.Capture(
+                member
             );
 
         lastValidationResult =
-            validationService
-                .ValidateCurrentPlacement(member);
+            validationService.ValidateCurrentPlacement(
+                member
+            );
 
         hasActiveTransaction = true;
         hasEvaluatedPreview = false;
@@ -209,8 +237,10 @@ public sealed class RestaurantPlacementTransactionService :
         failureReason =
             RestaurantPlacementTransactionFailureReason.None;
 
+        RestaurantAreaMember member;
+
         if (!TryGetValidActiveMember(
-                out RestaurantAreaMember member,
+                out member,
                 out failureReason
             ))
         {
@@ -226,10 +256,6 @@ public sealed class RestaurantPlacementTransactionService :
             return false;
         }
 
-        /*
-         * La validación admite una pose candidata, por lo que no
-         * necesita alterar primero el Transform real del objeto.
-         */
         result =
             validationService.ValidatePlacement(
                 member,
@@ -238,17 +264,20 @@ public sealed class RestaurantPlacementTransactionService :
             );
 
         /*
-         * La pose se aplica después de obtener el resultado.
-         * También se muestran físicamente las posiciones inválidas
-         * mientras el jugador mantenga abierta la operación.
+         * La pose se aplica después de validar. También se muestran
+         * físicamente las posiciones inválidas mientras la operación
+         * permanezca abierta.
          */
         member.transform.SetPositionAndRotation(
             candidateWorldPosition,
             candidateWorldRotation
         );
 
-        lastValidationResult = result;
-        hasEvaluatedPreview = true;
+        lastValidationResult =
+            result;
+
+        hasEvaluatedPreview =
+            true;
 
         PlacementPreviewChanged?.Invoke(
             member,
@@ -264,7 +293,8 @@ public sealed class RestaurantPlacementTransactionService :
     /// La confirmación:
     /// - Se rechaza si la posición no es válida.
     /// - Actualiza el área asignada.
-    /// - Propaga el cambio a los registros mediante AreaChanged.
+    /// - Captura el estado final.
+    /// - Publica un cambio para el historial.
     /// - Cierra la transacción.
     /// </summary>
     public bool TryCommitPlacement(
@@ -278,8 +308,10 @@ public sealed class RestaurantPlacementTransactionService :
         failureReason =
             RestaurantPlacementTransactionFailureReason.None;
 
+        RestaurantAreaMember member;
+
         if (!TryGetValidActiveMember(
-                out RestaurantAreaMember member,
+                out member,
                 out failureReason
             ))
         {
@@ -304,24 +336,14 @@ public sealed class RestaurantPlacementTransactionService :
                 member
             );
 
-        lastValidationResult = result;
-        hasEvaluatedPreview = true;
+        lastValidationResult =
+            result;
 
-        if (!result.IsValid)
-        {
-            failureReason =
-                RestaurantPlacementTransactionFailureReason
-                    .PlacementInvalid;
+        hasEvaluatedPreview =
+            true;
 
-            PlacementCommitRejected?.Invoke(
-                member,
-                result
-            );
-
-            return false;
-        }
-
-        if (result.CandidateArea == null)
+        if (!result.IsValid ||
+            result.CandidateArea == null)
         {
             failureReason =
                 RestaurantPlacementTransactionFailureReason
@@ -336,15 +358,25 @@ public sealed class RestaurantPlacementTransactionService :
         }
 
         /*
-         * SetArea dispara AreaChanged.
-         *
-         * RestaurantAreaMemberRegistry y
-         * RestaurantPlacementRegistry actualizarán sus índices
-         * sin realizar búsquedas globales.
+         * SetArea dispara AreaChanged. Los registros de miembros
+         * y colocación actualizan sus índices mediante eventos.
          */
         member.SetArea(
             result.CandidateArea
         );
+
+        RestaurantPlacementStateSnapshot finalState =
+            RestaurantPlacementStateSnapshot.Capture(
+                member
+            );
+
+        RestaurantPlacementCommittedChange committedChange =
+            new RestaurantPlacementCommittedChange(
+                member,
+                originalState,
+                finalState,
+                result
+            );
 
         RestaurantAreaMember committedMember =
             member;
@@ -355,6 +387,18 @@ public sealed class RestaurantPlacementTransactionService :
             committedMember,
             result
         );
+
+        /*
+         * No se registra una confirmación que no haya producido
+         * ningún cambio real de posición, rotación, jerarquía,
+         * escala o área.
+         */
+        if (committedChange.HasMeaningfulChange)
+        {
+            PlacementCommittedWithHistory?.Invoke(
+                committedChange
+            );
+        }
 
         return true;
     }
@@ -379,20 +423,9 @@ public sealed class RestaurantPlacementTransactionService :
 
         if (cancelledMember != null)
         {
-            originalTransform.Restore(
-                cancelledMember.transform
+            originalState.Restore(
+                cancelledMember
             );
-
-            if (originalArea != null)
-            {
-                cancelledMember.SetArea(
-                    originalArea
-                );
-            }
-            else
-            {
-                cancelledMember.ClearArea();
-            }
         }
 
         ClearActiveTransaction();
@@ -405,10 +438,7 @@ public sealed class RestaurantPlacementTransactionService :
     }
 
     /// <summary>
-    /// Devuelve la pose original de la operación activa.
-    ///
-    /// Será útil para la interfaz, indicadores y acciones de
-    /// restauración.
+    /// Devuelve la pose mundial original de la operación activa.
     /// </summary>
     public bool TryGetOriginalWorldPose(
         out Vector3 worldPosition,
@@ -419,12 +449,13 @@ public sealed class RestaurantPlacementTransactionService :
         worldRotation = Quaternion.identity;
 
         if (!hasActiveTransaction ||
-            activeMember == null)
+            activeMember == null ||
+            !originalState.IsValid)
         {
             return false;
         }
 
-        originalTransform.GetWorldPose(
+        originalState.GetWorldPose(
             out worldPosition,
             out worldRotation
         );
@@ -467,7 +498,8 @@ public sealed class RestaurantPlacementTransactionService :
             return false;
         }
 
-        member = activeMember;
+        member =
+            activeMember;
 
         return true;
     }
@@ -479,8 +511,7 @@ public sealed class RestaurantPlacementTransactionService :
     private void ClearActiveTransaction()
     {
         activeMember = null;
-        originalArea = null;
-        originalTransform = default;
+        originalState = default;
         lastValidationResult = default;
 
         hasActiveTransaction = false;
@@ -512,16 +543,10 @@ public sealed class RestaurantPlacementTransactionService :
             return;
         }
 
-        string serviceName =
-            nameof(RestaurantPlacementTransactionService);
-
-        string dependencyName =
-            nameof(RestaurantPlacementValidationService);
-
         Debug.LogError(
-            serviceName +
+            nameof(RestaurantPlacementTransactionService) +
             " necesita un " +
-            dependencyName +
+            nameof(RestaurantPlacementValidationService) +
             ".",
             this
         );
@@ -538,73 +563,151 @@ public sealed class RestaurantPlacementTransactionService :
         CacheDependenciesIfNeeded();
     }
 #endif
+}
+
+/// <summary>
+/// Estado completo de un objeto colocable en un instante concreto.
+///
+/// Se almacena tanto en coordenadas locales como mundiales para
+/// restaurar con precisión incluso si el objeto no tiene padre.
+/// </summary>
+public readonly struct RestaurantPlacementStateSnapshot
+{
+    private readonly bool isValid;
+
+    private readonly Transform parent;
+
+    private readonly int siblingIndex;
+
+    private readonly Vector3 localPosition;
+
+    private readonly Quaternion localRotation;
+
+    private readonly Vector3 localScale;
+
+    private readonly Vector3 worldPosition;
+
+    private readonly Quaternion worldRotation;
+
+    private readonly RestaurantArea assignedArea;
+
+    public bool IsValid
+    {
+        get
+        {
+            return isValid;
+        }
+    }
+
+    public RestaurantArea AssignedArea
+    {
+        get
+        {
+            return assignedArea;
+        }
+    }
+
+    private RestaurantPlacementStateSnapshot(
+        bool isValid,
+        Transform parent,
+        int siblingIndex,
+        Vector3 localPosition,
+        Quaternion localRotation,
+        Vector3 localScale,
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        RestaurantArea assignedArea
+    )
+    {
+        this.isValid =
+            isValid;
+
+        this.parent =
+            parent;
+
+        this.siblingIndex =
+            siblingIndex;
+
+        this.localPosition =
+            localPosition;
+
+        this.localRotation =
+            localRotation;
+
+        this.localScale =
+            localScale;
+
+        this.worldPosition =
+            worldPosition;
+
+        this.worldRotation =
+            worldRotation;
+
+        this.assignedArea =
+            assignedArea;
+    }
 
     /// <summary>
-    /// Captura completa del Transform de un objeto.
-    ///
-    /// Se almacena en coordenadas locales para restaurar
-    /// correctamente objetos con padres transformados.
+    /// Captura el estado del miembro y su Transform.
     /// </summary>
-    private readonly struct TransformSnapshot
+    public static RestaurantPlacementStateSnapshot Capture(
+        RestaurantAreaMember member
+    )
     {
-        private readonly Transform parent;
-
-        private readonly int siblingIndex;
-
-        private readonly Vector3 localPosition;
-
-        private readonly Quaternion localRotation;
-
-        private readonly Vector3 localScale;
-
-        private TransformSnapshot(
-            Transform parent,
-            int siblingIndex,
-            Vector3 localPosition,
-            Quaternion localRotation,
-            Vector3 localScale
-        )
+        if (member == null)
         {
-            this.parent = parent;
-            this.siblingIndex = siblingIndex;
-            this.localPosition = localPosition;
-            this.localRotation = localRotation;
-            this.localScale = localScale;
+            return default;
         }
 
-        /// <summary>
-        /// Captura el estado local y jerárquico del Transform.
-        /// </summary>
-        public static TransformSnapshot Capture(
-            Transform target
-        )
-        {
-            if (target == null)
-            {
-                return default;
-            }
+        Transform target =
+            member.transform;
 
-            return new TransformSnapshot(
-                target.parent,
-                target.GetSiblingIndex(),
-                target.localPosition,
-                target.localRotation,
-                target.localScale
-            );
+        return new RestaurantPlacementStateSnapshot(
+            true,
+            target.parent,
+            target.GetSiblingIndex(),
+            target.localPosition,
+            target.localRotation,
+            target.localScale,
+            target.position,
+            target.rotation,
+            member.AssignedArea
+        );
+    }
+
+    /// <summary>
+    /// Devuelve la pose mundial capturada.
+    /// </summary>
+    public void GetWorldPose(
+        out Vector3 position,
+        out Quaternion rotation
+    )
+    {
+        position =
+            worldPosition;
+
+        rotation =
+            worldRotation;
+    }
+
+    /// <summary>
+    /// Restaura jerarquía, Transform y área.
+    /// </summary>
+    public bool Restore(
+        RestaurantAreaMember member
+    )
+    {
+        if (!isValid ||
+            member == null)
+        {
+            return false;
         }
 
-        /// <summary>
-        /// Restaura el Transform exactamente al estado capturado.
-        /// </summary>
-        public void Restore(
-            Transform target
-        )
-        {
-            if (target == null)
-            {
-                return;
-            }
+        Transform target =
+            member.transform;
 
+        if (parent != null)
+        {
             target.SetParent(
                 parent,
                 false
@@ -619,55 +722,151 @@ public sealed class RestaurantPlacementTransactionService :
             target.localScale =
                 localScale;
 
-            if (target.parent == null)
-            {
-                return;
-            }
-
             int maximumSiblingIndex =
-                target.parent.childCount - 1;
+                Mathf.Max(
+                    0,
+                    parent.childCount - 1
+                );
 
-            int safeSiblingIndex =
+            target.SetSiblingIndex(
                 Mathf.Clamp(
                     siblingIndex,
                     0,
                     maximumSiblingIndex
-                );
-
-            target.SetSiblingIndex(
-                safeSiblingIndex
+                )
             );
         }
-
-        /// <summary>
-        /// Calcula la pose mundial correspondiente al estado
-        /// capturado.
-        /// </summary>
-        public void GetWorldPose(
-            out Vector3 worldPosition,
-            out Quaternion worldRotation
-        )
+        else
         {
-            if (parent == null)
-            {
-                worldPosition =
-                    localPosition;
+            target.SetParent(
+                null,
+                true
+            );
 
-                worldRotation =
-                    localRotation;
+            target.SetPositionAndRotation(
+                worldPosition,
+                worldRotation
+            );
 
-                return;
-            }
-
-            worldPosition =
-                parent.TransformPoint(
-                    localPosition
-                );
-
-            worldRotation =
-                parent.rotation *
-                localRotation;
+            target.localScale =
+                localScale;
         }
+
+        if (assignedArea != null)
+        {
+            member.SetArea(
+                assignedArea
+            );
+        }
+        else
+        {
+            member.ClearArea();
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Indica si dos capturas representan estados distintos.
+    /// </summary>
+    public bool IsMeaningfullyDifferentFrom(
+        RestaurantPlacementStateSnapshot other
+    )
+    {
+        if (!isValid ||
+            !other.isValid)
+        {
+            return isValid !=
+                   other.isValid;
+        }
+
+        if (parent != other.parent ||
+            siblingIndex != other.siblingIndex ||
+            assignedArea != other.assignedArea)
+        {
+            return true;
+        }
+
+        const float positionTolerance =
+            0.0001f;
+
+        const float scaleTolerance =
+            0.0001f;
+
+        const float rotationToleranceDegrees =
+            0.01f;
+
+        if ((
+                localPosition -
+                other.localPosition
+            ).sqrMagnitude >
+            positionTolerance *
+            positionTolerance)
+        {
+            return true;
+        }
+
+        if (Quaternion.Angle(
+                localRotation,
+                other.localRotation
+            ) >
+            rotationToleranceDegrees)
+        {
+            return true;
+        }
+
+        return (
+                   localScale -
+                   other.localScale
+               ).sqrMagnitude >
+               scaleTolerance *
+               scaleTolerance;
+    }
+}
+
+/// <summary>
+/// Cambio confirmado que puede deshacerse y rehacerse.
+/// </summary>
+public readonly struct RestaurantPlacementCommittedChange
+{
+    public RestaurantAreaMember Member { get; }
+
+    public RestaurantPlacementStateSnapshot Before { get; }
+
+    public RestaurantPlacementStateSnapshot After { get; }
+
+    public RestaurantPlacementValidationResult
+        ValidationResult
+    { get; }
+
+    public bool HasMeaningfulChange
+    {
+        get
+        {
+            return Before.IsMeaningfullyDifferentFrom(
+                After
+            );
+        }
+    }
+
+    public RestaurantPlacementCommittedChange(
+        RestaurantAreaMember member,
+        RestaurantPlacementStateSnapshot before,
+        RestaurantPlacementStateSnapshot after,
+        RestaurantPlacementValidationResult validationResult
+    )
+    {
+        Member =
+            member;
+
+        Before =
+            before;
+
+        After =
+            after;
+
+        ValidationResult =
+            validationResult;
     }
 }
 

@@ -9,13 +9,14 @@ using UnityEngine.InputSystem;
 /// Responsabilidades:
 /// - Leer teclado y ratón mediante el nuevo Input System.
 /// - Activar y cerrar el modo edición.
-/// - Seleccionar objetos colocables.
+/// - Seleccionar exclusivamente objetos autorizados.
+/// - Aplicar las reglas de su definición editable.
 /// - Mover y rotar el objeto seleccionado.
 /// - Solicitar la validación de cada pose candidata.
 /// - Confirmar o cancelar la colocación.
 ///
-/// Las reglas de negocio permanecen en los servicios de
-/// aplicación. Este componente pertenece a presentación.
+/// Las reglas espaciales y transaccionales permanecen en los
+/// servicios de aplicación.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -40,6 +41,14 @@ public sealed class RestaurantEditInteractionController :
         transactionService;
 
     [Tooltip(
+        "Servicio que conserva las colocaciones confirmadas para " +
+        "deshacerlas y rehacerlas."
+    )]
+    [SerializeField]
+    private RestaurantPlacementHistoryService
+        historyService;
+
+    [Tooltip(
         "Cámara utilizada para seleccionar y colocar objetos."
     )]
     [SerializeField]
@@ -48,7 +57,7 @@ public sealed class RestaurantEditInteractionController :
     [Header("Capas")]
 
     [Tooltip(
-        "Capas que pueden contener objetos seleccionables."
+        "Capas que pueden intervenir en la selección."
     )]
     [SerializeField]
     private LayerMask selectableLayerMask = ~0;
@@ -68,7 +77,7 @@ public sealed class RestaurantEditInteractionController :
     [Min(1f)]
     private float maximumRayDistance = 500f;
 
-    [Header("Movimiento")]
+    [Header("Movimiento predeterminado")]
 
     [Tooltip(
         "Ajusta la posición del objeto a una cuadrícula."
@@ -77,7 +86,8 @@ public sealed class RestaurantEditInteractionController :
     private bool useGridSnapping = true;
 
     [Tooltip(
-        "Tamaño de la celda de la cuadrícula."
+        "Tamaño predeterminado de la cuadrícula. Una definición " +
+        "editable puede sustituir este valor."
     )]
     [SerializeField]
     [Min(0.01f)]
@@ -89,10 +99,11 @@ public sealed class RestaurantEditInteractionController :
     [SerializeField]
     private bool preserveOriginalWorldHeight = true;
 
-    [Header("Rotación")]
+    [Header("Rotación predeterminada")]
 
     [Tooltip(
-        "Ángulo aplicado en cada rotación."
+        "Ángulo predeterminado aplicado en cada rotación. Una " +
+        "definición editable puede sustituir este valor."
     )]
     [SerializeField]
     [Range(1f, 180f)]
@@ -119,16 +130,27 @@ public sealed class RestaurantEditInteractionController :
     private Key cancelKey = Key.Escape;
 
     [Tooltip(
-        "Botón principal del ratón. " +
-        "0: izquierdo, 1: derecho, 2: central."
+        "Tecla utilizada junto a Control para deshacer."
+    )]
+    [SerializeField]
+    private Key undoKey = Key.Z;
+
+    [Tooltip(
+        "Tecla utilizada junto a Control para rehacer."
+    )]
+    [SerializeField]
+    private Key redoKey = Key.Y;
+
+    [Tooltip(
+        "Botón principal. 0: izquierdo, 1: derecho, 2: central."
     )]
     [SerializeField]
     [Range(0, 2)]
     private int primaryMouseButton = 0;
 
     [Tooltip(
-        "Botón de cancelación. " +
-        "0: izquierdo, 1: derecho, 2: central."
+        "Botón de cancelación. 0: izquierdo, 1: derecho, " +
+        "2: central."
     )]
     [SerializeField]
     [Range(0, 2)]
@@ -152,6 +174,8 @@ public sealed class RestaurantEditInteractionController :
 
     private RestaurantAreaMember activeMember;
 
+    private RestaurantEditableObject activeEditableObject;
+
     private Vector3 grabOffset;
 
     private Vector3 candidatePosition;
@@ -160,6 +184,10 @@ public sealed class RestaurantEditInteractionController :
         Quaternion.identity;
 
     private float originalWorldHeight;
+
+    private float effectiveGridSize = 0.25f;
+
+    private float effectiveRotationStepDegrees = 90f;
 
     private bool hasCandidatePose;
 
@@ -174,13 +202,19 @@ public sealed class RestaurantEditInteractionController :
         lastValidationResult;
 
     /// <summary>
-    /// Se ejecuta cuando cambia el objeto editado.
+    /// Se ejecuta cuando cambia el miembro espacial editado.
     /// </summary>
     public event Action<RestaurantAreaMember>
         ActiveMemberChanged;
 
     /// <summary>
-    /// Se ejecuta cuando cambia el resultado de la validación.
+    /// Se ejecuta cuando cambia el objeto editable activo.
+    /// </summary>
+    public event Action<RestaurantEditableObject>
+        ActiveEditableObjectChanged;
+
+    /// <summary>
+    /// Se ejecuta cuando cambia el resultado de validación.
     /// </summary>
     public event Action<
         RestaurantPlacementValidationResult
@@ -197,6 +231,14 @@ public sealed class RestaurantEditInteractionController :
         get
         {
             return activeMember;
+        }
+    }
+
+    public RestaurantEditableObject ActiveEditableObject
+    {
+        get
+        {
+            return activeEditableObject;
         }
     }
 
@@ -243,12 +285,25 @@ public sealed class RestaurantEditInteractionController :
         }
 
         /*
-         * Sin teclado no se pueden procesar atajos, pero el
-         * componente permanece seguro para dispositivos sin él.
+         * Mantiene sincronizado el estado local de presentación con
+         * la transacción real. Esto evita que el controlador quede
+         * bloqueado si otra acción cancela o restaura la colocación.
          */
+        SynchronizeLocalPlacementState();
+
         HandleEditModeToggle();
 
         if (!editModeService.IsEditModeActive)
+        {
+            return;
+        }
+
+        /*
+         * Los atajos de historial se procesan antes que la
+         * interacción normal para que Ctrl+Z y Ctrl+Y no puedan
+         * confundirse con otras acciones.
+         */
+        if (HandleHistoryShortcuts())
         {
             return;
         }
@@ -304,6 +359,7 @@ public sealed class RestaurantEditInteractionController :
             }
 
             PublishMessage(message);
+            LogEvent(message);
 
             return false;
         }
@@ -345,11 +401,13 @@ public sealed class RestaurantEditInteractionController :
 
         if (!exited)
         {
-            PublishMessage(
+            string message =
                 "No se pudo cerrar el modo edición. Motivo: " +
                 failureReason +
-                "."
-            );
+                ".";
+
+            PublishMessage(message);
+            LogEvent(message);
 
             return false;
         }
@@ -412,8 +470,295 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Procesa el atajo que activa o desactiva el modo edición.
+    /// Deshace la última colocación confirmada.
     /// </summary>
+    public bool TryUndoLastPlacement()
+    {
+        if (historyService == null)
+        {
+            const string unavailableMessage =
+                "El historial de colocaciones no está disponible.";
+
+            PublishMessage(
+                unavailableMessage
+            );
+
+            LogEvent(
+                unavailableMessage
+            );
+
+            return false;
+        }
+
+        RestaurantAreaMember affectedMember;
+
+        RestaurantPlacementHistoryFailureReason
+            failureReason;
+
+        RestaurantPlacementValidationResult
+            validationResult;
+
+        bool undone =
+            historyService.TryUndo(
+                out affectedMember,
+                out failureReason,
+                out validationResult
+            );
+
+        if (!undone)
+        {
+            string rejectionMessage =
+                BuildHistoryRejectionMessage(
+                    false,
+                    failureReason,
+                    validationResult
+                );
+
+            PublishMessage(
+                rejectionMessage
+            );
+
+            LogEvent(
+                rejectionMessage
+            );
+
+            return false;
+        }
+
+        string memberName =
+            affectedMember != null
+                ? affectedMember.name
+                : "Objeto";
+
+        string message =
+            memberName +
+            ": último cambio deshecho.";
+
+        PublishMessage(
+            message
+        );
+
+        LogEvent(
+            message
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// Rehace la última colocación deshecha.
+    /// </summary>
+    public bool TryRedoLastPlacement()
+    {
+        if (historyService == null)
+        {
+            const string unavailableMessage =
+                "El historial de colocaciones no está disponible.";
+
+            PublishMessage(
+                unavailableMessage
+            );
+
+            LogEvent(
+                unavailableMessage
+            );
+
+            return false;
+        }
+
+        RestaurantAreaMember affectedMember;
+
+        RestaurantPlacementHistoryFailureReason
+            failureReason;
+
+        RestaurantPlacementValidationResult
+            validationResult;
+
+        bool redone =
+            historyService.TryRedo(
+                out affectedMember,
+                out failureReason,
+                out validationResult
+            );
+
+        if (!redone)
+        {
+            string rejectionMessage =
+                BuildHistoryRejectionMessage(
+                    true,
+                    failureReason,
+                    validationResult
+                );
+
+            PublishMessage(
+                rejectionMessage
+            );
+
+            LogEvent(
+                rejectionMessage
+            );
+
+            return false;
+        }
+
+        string memberName =
+            affectedMember != null
+                ? affectedMember.name
+                : "Objeto";
+
+        string message =
+            memberName +
+            ": último cambio rehecho.";
+
+        PublishMessage(
+            message
+        );
+
+        LogEvent(
+            message
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// Procesa Ctrl+Z y Ctrl+Y únicamente durante el modo edición.
+    ///
+    /// El historial no puede ejecutarse mientras existe una
+    /// colocación provisional.
+    /// </summary>
+    private bool HandleHistoryShortcuts()
+    {
+        if (!IsControlModifierPressed())
+        {
+            return false;
+        }
+
+        if (WasKeyPressedThisFrame(
+                undoKey
+            ))
+        {
+            /*
+             * Durante una colocación provisional, Ctrl+Z actúa como
+             * cancelación de esa operación. La primera pulsación
+             * restaura el objeto y libera completamente el
+             * controlador. Una segunda pulsación podrá deshacer la
+             * última colocación que sí fue confirmada.
+             */
+            if (transactionService.HasActiveTransaction)
+            {
+                bool cancelled =
+                    CancelActivePlacement();
+
+                if (!cancelled)
+                {
+                    const string failureMessage =
+                        "No se pudo restaurar la colocación actual.";
+
+                    PublishMessage(
+                        failureMessage
+                    );
+
+                    LogEvent(
+                        failureMessage
+                    );
+                }
+
+                return true;
+            }
+
+            TryUndoLastPlacement();
+
+            return true;
+        }
+
+        if (WasKeyPressedThisFrame(
+                redoKey
+            ))
+        {
+            if (transactionService.HasActiveTransaction)
+            {
+                const string message =
+                    "Confirma o cancela la colocación actual antes " +
+                    "de rehacer.";
+
+                PublishMessage(
+                    message
+                );
+
+                LogEvent(
+                    message
+                );
+
+                return true;
+            }
+
+            TryRedoLastPlacement();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Repara cualquier divergencia entre la transacción de
+    /// colocación y el estado local del controlador.
+    ///
+    /// Puede ocurrir cuando otra regla o servicio restaura una
+    /// colocación sin pasar por la interacción del ratón.
+    /// </summary>
+    private void SynchronizeLocalPlacementState()
+    {
+        if (transactionService == null)
+        {
+            return;
+        }
+
+        bool transactionIsActive =
+            transactionService.HasActiveTransaction;
+
+        bool controllerHasPlacementState =
+            activeMember != null ||
+            activeEditableObject != null ||
+            hasCandidatePose ||
+            hasPublishedPreviewPose;
+
+        if (!transactionIsActive)
+        {
+            if (controllerHasPlacementState)
+            {
+                ClearLocalPlacementState();
+            }
+
+            return;
+        }
+
+        /*
+         * Una transacción sin miembro local no puede continuar de
+         * forma segura. Se restaura y se libera inmediatamente.
+         */
+        if (activeMember != null)
+        {
+            return;
+        }
+
+        transactionService.CancelPlacement();
+        ClearLocalPlacementState();
+
+        const string message =
+            "Se ha restaurado una colocación provisional que había " +
+            "quedado desincronizada.";
+
+        PublishMessage(
+            message
+        );
+
+        LogEvent(
+            message
+        );
+    }
+
     private void HandleEditModeToggle()
     {
         if (!WasKeyPressedThisFrame(
@@ -434,10 +779,6 @@ public sealed class RestaurantEditInteractionController :
         );
     }
 
-    /// <summary>
-    /// Procesa la interacción cuando el modo edición está activo,
-    /// pero no se está moviendo ningún objeto.
-    /// </summary>
     private void HandleEditModeWithoutPlacement()
     {
         if (WasKeyPressedThisFrame(cancelKey))
@@ -461,34 +802,45 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
+        RestaurantEditableObject editableObject;
         RestaurantAreaMember member;
         Vector3 selectedWorldPoint;
+        string rejectionReason;
 
         bool foundMember =
             TryFindSelectableMemberUnderPointer(
+                out editableObject,
                 out member,
-                out selectedWorldPoint
+                out selectedWorldPoint,
+                out rejectionReason
             );
 
         if (!foundMember)
         {
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+            {
+                rejectionReason =
+                    "No hay ningún objeto editable bajo el cursor.";
+            }
+
             PublishMessage(
-                "No hay ningún objeto editable bajo el cursor."
+                rejectionReason
+            );
+
+            LogEvent(
+                rejectionReason
             );
 
             return;
         }
 
         BeginPlacement(
+            editableObject,
             member,
             selectedWorldPoint
         );
     }
 
-    /// <summary>
-    /// Procesa la interacción mientras existe una colocación
-    /// transaccional activa.
-    /// </summary>
     private void HandleActivePlacement()
     {
         bool keyboardCancellation =
@@ -530,30 +882,32 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Inicia una operación para el miembro seleccionado.
+    /// Inicia una colocación respetando la definición editable.
     /// </summary>
     private bool BeginPlacement(
+        RestaurantEditableObject editableObject,
         RestaurantAreaMember member,
         Vector3 selectedWorldPoint
     )
     {
-        if (member == null)
+        if (editableObject == null ||
+            member == null)
         {
             return false;
         }
 
-        RestaurantPlacementFootprint footprint;
+        string rejectionReason;
 
-        bool hasFootprint =
-            member.TryGetComponent(
-                out footprint
-            );
-
-        if (!hasFootprint)
+        if (!editableObject.CanBeginEditing(
+                out rejectionReason
+            ))
         {
             PublishMessage(
-                member.name +
-                " no tiene una huella de colocación."
+                rejectionReason
+            );
+
+            LogEvent(
+                rejectionReason
             );
 
             return false;
@@ -570,17 +924,32 @@ public sealed class RestaurantEditInteractionController :
 
         if (!began)
         {
-            PublishMessage(
+            string message =
                 "No se pudo iniciar la colocación. Motivo: " +
                 failureReason +
-                "."
-            );
+                ".";
+
+            PublishMessage(message);
+            LogEvent(message);
 
             return false;
         }
 
+        activeEditableObject =
+            editableObject;
+
         activeMember =
             member;
+
+        effectiveGridSize =
+            editableObject.ResolveGridSize(
+                gridSize
+            );
+
+        effectiveRotationStepDegrees =
+            editableObject.ResolveRotationStepDegrees(
+                rotationStepDegrees
+            );
 
         Vector3 memberPosition =
             member.transform.position;
@@ -589,10 +958,6 @@ public sealed class RestaurantEditInteractionController :
             memberPosition -
             selectedWorldPoint;
 
-        /*
-         * La altura se controla por separado.
-         * El desplazamiento de agarre solo afecta al plano XZ.
-         */
         grabOffset.y = 0f;
 
         originalWorldHeight =
@@ -610,6 +975,10 @@ public sealed class RestaurantEditInteractionController :
         lastValidationResult =
             transactionService.LastValidationResult;
 
+        ActiveEditableObjectChanged?.Invoke(
+            editableObject
+        );
+
         ActiveMemberChanged?.Invoke(
             member
         );
@@ -620,13 +989,15 @@ public sealed class RestaurantEditInteractionController :
 
         PublishMessage(
             "Moviendo " +
-            member.name +
+            editableObject.DisplayName +
             "."
         );
 
         LogEvent(
             "Colocación iniciada para " +
             member.name +
+            ". Definición: " +
+            editableObject.Definition.DefinitionId +
             "."
         );
 
@@ -634,19 +1005,32 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Rota la pose candidata en torno al eje vertical.
+    /// Rota el objeto cuando su definición lo permite.
     /// </summary>
     private void RotateCandidateClockwise()
     {
         if (!hasCandidatePose ||
-            activeMember == null)
+            activeMember == null ||
+            activeEditableObject == null)
         {
+            return;
+        }
+
+        if (!activeEditableObject.CanRotate)
+        {
+            string message =
+                activeEditableObject.DisplayName +
+                " no permite rotación.";
+
+            PublishMessage(message);
+            LogEvent(message);
+
             return;
         }
 
         Quaternion yawRotation =
             Quaternion.AngleAxis(
-                rotationStepDegrees,
+                effectiveRotationStepDegrees,
                 Vector3.up
             );
 
@@ -657,10 +1041,6 @@ public sealed class RestaurantEditInteractionController :
         hasPublishedPreviewPose = false;
     }
 
-    /// <summary>
-    /// Actualiza la posición candidata desde la posición actual
-    /// del puntero sobre la superficie de colocación.
-    /// </summary>
     private void UpdateCandidatePositionFromPointer()
     {
         Vector3 surfacePoint;
@@ -687,13 +1067,13 @@ public sealed class RestaurantEditInteractionController :
             nextPosition.x =
                 SnapValue(
                     nextPosition.x,
-                    gridSize
+                    effectiveGridSize
                 );
 
             nextPosition.z =
                 SnapValue(
                     nextPosition.z,
-                    gridSize
+                    effectiveGridSize
                 );
         }
 
@@ -703,10 +1083,6 @@ public sealed class RestaurantEditInteractionController :
         hasCandidatePose = true;
     }
 
-    /// <summary>
-    /// Publica una previsualización únicamente cuando la pose
-    /// candidata ha cambiado.
-    /// </summary>
     private void PublishPreviewIfChanged()
     {
         if (!hasCandidatePose ||
@@ -743,12 +1119,14 @@ public sealed class RestaurantEditInteractionController :
 
         if (!previewed)
         {
-            PublishMessage(
+            string message =
                 "No se pudo actualizar la previsualización. " +
                 "Motivo: " +
                 failureReason +
-                "."
-            );
+                ".";
+
+            PublishMessage(message);
+            LogEvent(message);
 
             return;
         }
@@ -769,9 +1147,6 @@ public sealed class RestaurantEditInteractionController :
         );
     }
 
-    /// <summary>
-    /// Solicita la confirmación de la pose actual.
-    /// </summary>
     private void CommitActivePlacement()
     {
         if (activeMember == null)
@@ -835,18 +1210,30 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Busca el miembro colocable más cercano bajo el puntero.
+    /// Obtiene el collider más cercano bajo el cursor y comprueba
+    /// que pertenezca a un objeto editable autorizado.
     /// </summary>
     private bool TryFindSelectableMemberUnderPointer(
+        out RestaurantEditableObject editableObject,
         out RestaurantAreaMember member,
-        out Vector3 selectedWorldPoint
+        out Vector3 selectedWorldPoint,
+        out string rejectionReason
     )
     {
+        editableObject = null;
         member = null;
         selectedWorldPoint = default;
+        rejectionReason = string.Empty;
 
-        if (!TryBuildPointerRay(out Ray ray))
+        Ray ray;
+
+        if (!TryBuildPointerRay(
+                out ray
+            ))
         {
+            rejectionReason =
+                "No se pudo obtener la posición del puntero.";
+
             return false;
         }
 
@@ -858,6 +1245,11 @@ public sealed class RestaurantEditInteractionController :
                 selectableLayerMask,
                 QueryTriggerInteraction.Ignore
             );
+
+        RaycastHit nearestHit =
+            default;
+
+        bool foundCollider = false;
 
         float nearestDistance =
             float.PositiveInfinity;
@@ -875,49 +1267,89 @@ public sealed class RestaurantEditInteractionController :
                 continue;
             }
 
-            RestaurantAreaMember candidateMember =
-                hit.collider.GetComponentInParent<
-                    RestaurantAreaMember
-                >();
-
-            if (candidateMember == null)
-            {
-                continue;
-            }
-
-            RestaurantPlacementFootprint footprint;
-
-            if (!candidateMember.TryGetComponent(
-                    out footprint
-                ))
-            {
-                continue;
-            }
-
-            member =
-                candidateMember;
-
-            selectedWorldPoint =
-                hit.point;
+            nearestHit =
+                hit;
 
             nearestDistance =
                 hit.distance;
+
+            foundCollider =
+                true;
         }
 
-        return member != null;
+        if (!foundCollider ||
+            nearestHit.collider == null)
+        {
+            rejectionReason =
+                "No hay ningún objeto bajo el cursor.";
+
+            return false;
+        }
+
+        editableObject =
+            nearestHit.collider.GetComponentInParent<
+                RestaurantEditableObject
+            >();
+
+        if (editableObject == null)
+        {
+            rejectionReason =
+                nearestHit.collider.gameObject.name +
+                " no es un objeto editable.";
+
+            return false;
+        }
+
+        if (!editableObject.CanBeginEditing(
+                out rejectionReason
+            ))
+        {
+            return false;
+        }
+
+        if (!editableObject.TryGetComponent(
+                out member
+            ))
+        {
+            rejectionReason =
+                editableObject.name +
+                " no tiene RestaurantAreaMember.";
+
+            return false;
+        }
+
+        RestaurantPlacementFootprint footprint;
+
+        if (!editableObject.TryGetComponent(
+                out footprint
+            ))
+        {
+            rejectionReason =
+                editableObject.name +
+                " no tiene RestaurantPlacementFootprint.";
+
+            member = null;
+
+            return false;
+        }
+
+        selectedWorldPoint =
+            nearestHit.point;
+
+        return true;
     }
 
-    /// <summary>
-    /// Obtiene el punto más cercano de una superficie válida bajo
-    /// el puntero.
-    /// </summary>
     private bool TryGetPlacementSurfacePoint(
         out Vector3 surfacePoint
     )
     {
         surfacePoint = default;
 
-        if (!TryBuildPointerRay(out Ray ray))
+        Ray ray;
+
+        if (!TryBuildPointerRay(
+                out ray
+            ))
         {
             return false;
         }
@@ -962,16 +1394,13 @@ public sealed class RestaurantEditInteractionController :
             surfacePoint =
                 hit.point;
 
-            foundSurface = true;
+            foundSurface =
+                true;
         }
 
         return foundSurface;
     }
 
-    /// <summary>
-    /// Crea un rayo desde la cámara utilizando la posición del
-    /// ratón obtenida del nuevo Input System.
-    /// </summary>
     private bool TryBuildPointerRay(
         out Ray ray
     )
@@ -1009,10 +1438,6 @@ public sealed class RestaurantEditInteractionController :
         return true;
     }
 
-    /// <summary>
-    /// Evita interpretar como suelo un collider perteneciente al
-    /// objeto que se está moviendo.
-    /// </summary>
     private bool IsColliderPartOfActiveMember(
         Collider candidateCollider
     )
@@ -1033,9 +1458,6 @@ public sealed class RestaurantEditInteractionController :
                );
     }
 
-    /// <summary>
-    /// Lee una tecla mediante Keyboard.current.
-    /// </summary>
     private static bool WasKeyPressedThisFrame(
         Key key
     )
@@ -1053,9 +1475,23 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Lee uno de los tres botones principales del ratón mediante
-    /// Mouse.current.
+    /// Comprueba las teclas Control izquierda y derecha mediante
+    /// el nuevo Input System.
     /// </summary>
+    private static bool IsControlModifierPressed()
+    {
+        Keyboard keyboard =
+            Keyboard.current;
+
+        if (keyboard == null)
+        {
+            return false;
+        }
+
+        return keyboard.leftCtrlKey.isPressed ||
+               keyboard.rightCtrlKey.isPressed;
+    }
+
     private static bool WasMouseButtonPressedThisFrame(
         int buttonIndex
     )
@@ -1101,12 +1537,26 @@ public sealed class RestaurantEditInteractionController :
     private void ClearLocalPlacementState()
     {
         activeMember = null;
+        activeEditableObject = null;
 
         grabOffset = Vector3.zero;
         candidatePosition = Vector3.zero;
         candidateRotation = Quaternion.identity;
 
         originalWorldHeight = 0f;
+
+        effectiveGridSize =
+            Mathf.Max(
+                0.01f,
+                gridSize
+            );
+
+        effectiveRotationStepDegrees =
+            Mathf.Clamp(
+                rotationStepDegrees,
+                1f,
+                180f
+            );
 
         hasCandidatePose = false;
         hasPublishedPreviewPose = false;
@@ -1116,9 +1566,100 @@ public sealed class RestaurantEditInteractionController :
 
         lastValidationResult = default;
 
+        ActiveEditableObjectChanged?.Invoke(
+            null
+        );
+
         ActiveMemberChanged?.Invoke(
             null
         );
+    }
+
+    /// <summary>
+    /// Construye un mensaje legible para rechazos del historial.
+    /// </summary>
+    private string BuildHistoryRejectionMessage(
+        bool isRedo,
+        RestaurantPlacementHistoryFailureReason
+            failureReason,
+        RestaurantPlacementValidationResult
+            validationResult
+    )
+    {
+        switch (failureReason)
+        {
+            case RestaurantPlacementHistoryFailureReason
+                .NothingToUndo:
+
+                return
+                    "No hay ningún cambio que deshacer.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .NothingToRedo:
+
+                return
+                    "No hay ningún cambio que rehacer.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .PlacementOperationActive:
+
+                return
+                    "Confirma o cancela la colocación actual antes " +
+                    "de utilizar el historial.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .DestinationInvalid:
+
+                return
+                    "No se puede " +
+                    (
+                        isRedo
+                            ? "rehacer"
+                            : "deshacer"
+                    ) +
+                    " porque la posición de destino ya no es " +
+                    "válida. Estado: " +
+                    validationResult.Status +
+                    ".";
+
+            case RestaurantPlacementHistoryFailureReason
+                .MemberUnavailable:
+
+                return
+                    "El objeto asociado al historial ya no está " +
+                    "disponible.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .ValidationSystemUnavailable:
+
+                return
+                    "No se puede validar la posición del historial.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .TransactionSystemUnavailable:
+
+                return
+                    "El sistema transaccional de colocación no está " +
+                    "disponible.";
+
+            case RestaurantPlacementHistoryFailureReason
+                .SnapshotInvalid:
+
+            case RestaurantPlacementHistoryFailureReason
+                .RestoreFailed:
+
+                return
+                    "No se pudo restaurar el estado guardado del " +
+                    "objeto.";
+
+            default:
+
+                return
+                    "No se pudo completar la operación de historial. " +
+                    "Motivo: " +
+                    failureReason +
+                    ".";
+        }
     }
 
     private string BuildInvalidPlacementMessage(
@@ -1235,6 +1776,13 @@ public sealed class RestaurantEditInteractionController :
             );
         }
 
+        if (historyService == null)
+        {
+            TryGetComponent(
+                out historyService
+            );
+        }
+
         if (interactionCamera == null)
         {
             interactionCamera =
@@ -1251,13 +1799,10 @@ public sealed class RestaurantEditInteractionController :
 
         if (editModeService == null)
         {
-            string dependencyName =
-                nameof(RestaurantEditModeService);
-
             Debug.LogError(
                 controllerName +
                 " necesita un " +
-                dependencyName +
+                nameof(RestaurantEditModeService) +
                 ".",
                 this
             );
@@ -1265,16 +1810,26 @@ public sealed class RestaurantEditInteractionController :
 
         if (transactionService == null)
         {
-            string dependencyName =
-                nameof(
-                    RestaurantPlacementTransactionService
-                );
-
             Debug.LogError(
                 controllerName +
                 " necesita un " +
-                dependencyName +
+                nameof(
+                    RestaurantPlacementTransactionService
+                ) +
                 ".",
+                this
+            );
+        }
+
+        if (historyService == null)
+        {
+            Debug.LogError(
+                controllerName +
+                " necesita un " +
+                nameof(
+                    RestaurantPlacementHistoryService
+                ) +
+                " para deshacer y rehacer.",
                 this
             );
         }
