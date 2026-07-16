@@ -49,6 +49,13 @@ public sealed class RestaurantEditInteractionController :
         historyService;
 
     [Tooltip(
+        "Servicio que coordina la creación definitiva de artículos."
+    )]
+    [SerializeField]
+    private RestaurantPlaceableCreationService
+        creationService;
+
+    [Tooltip(
         "Cámara utilizada para seleccionar y colocar objetos."
     )]
     [SerializeField]
@@ -163,6 +170,18 @@ public sealed class RestaurantEditInteractionController :
     )]
     [SerializeField]
     private bool logInteractionEvents = true;
+
+#if UNITY_EDITOR
+    [Header("Diagnóstico de creación en Editor")]
+
+    [Tooltip(
+        "Definición utilizada únicamente por la herramienta de " +
+        "diagnóstico del Inspector. No forma parte del build."
+    )]
+    [SerializeField]
+    private RestaurantPlaceableItemDefinition
+        editorCreationTestDefinition;
+#endif
 
     private const int RaycastBufferSize = 32;
 
@@ -291,19 +310,22 @@ public sealed class RestaurantEditInteractionController :
          */
         SynchronizeLocalPlacementState();
 
-        HandleEditModeToggle();
-
-        if (!editModeService.IsEditModeActive)
+        /*
+         * Los comandos modificados con Control tienen prioridad sobre
+         * cualquier tecla simple del editor. Así Ctrl+Z y Ctrl+Y no
+         * pueden interpretarse accidentalmente como una orden para
+         * activar o cerrar el modo edición, aunque exista una
+         * configuración de teclas incompatible en el Inspector.
+         */
+        if (editModeService.IsEditModeActive &&
+            HandleHistoryShortcuts())
         {
             return;
         }
 
-        /*
-         * Los atajos de historial se procesan antes que la
-         * interacción normal para que Ctrl+Z y Ctrl+Y no puedan
-         * confundirse con otras acciones.
-         */
-        if (HandleHistoryShortcuts())
+        HandleEditModeToggle();
+
+        if (!editModeService.IsEditModeActive)
         {
             return;
         }
@@ -376,6 +398,195 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
+    /// Solicita la creación real de un artículo de catálogo.
+    ///
+    /// Esta es la API que utilizará la UI definitiva del catálogo.
+    /// </summary>
+    public bool TryBeginPlaceableCreation(
+        RestaurantPlaceableItemDefinition definition
+    )
+    {
+        if (creationService == null)
+        {
+            const string message =
+                "El servicio de creación de artículos no está disponible.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (!editModeService.IsEditModeActive)
+        {
+            const string message =
+                "Activa el modo edición antes de añadir artículos.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (transactionService.HasActiveTransaction)
+        {
+            const string message =
+                "Confirma o cancela la colocación actual antes de " +
+                "crear otro artículo.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (definition == null)
+        {
+            const string message =
+                "No se ha seleccionado ningún artículo del catálogo.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (!TryGetInitialCreationSurfacePoint(
+                out Vector3 initialPosition
+            ))
+        {
+            const string message =
+                "No se encontró una superficie válida para iniciar " +
+                "la creación.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (useGridSnapping)
+        {
+            initialPosition.x =
+                SnapValue(
+                    initialPosition.x,
+                    gridSize
+                );
+
+            initialPosition.z =
+                SnapValue(
+                    initialPosition.z,
+                    gridSize
+                );
+        }
+
+        bool began =
+            creationService.TryBeginCreation(
+                definition,
+                initialPosition,
+                Quaternion.identity,
+                null,
+                out RestaurantPlaceableObject placeable,
+                out RestaurantPlaceableCreationResult result
+            );
+
+        if (!began ||
+            placeable == null)
+        {
+            string message =
+                string.IsNullOrWhiteSpace(
+                    result.Message
+                )
+                    ? "No se pudo iniciar la creación del artículo."
+                    : result.Message;
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        if (!placeable.TryGetComponent(
+                out RestaurantEditableObject editableObject
+            ) ||
+            !placeable.TryGetComponent(
+                out RestaurantAreaMember member
+            ))
+        {
+            creationService.TryCancelActiveCreation(
+                out _
+            );
+
+            const string message =
+                "El prefab creado no contiene los componentes " +
+                "editables necesarios.";
+
+            PublishMessage(
+                message
+            );
+
+            LogEvent(
+                message
+            );
+
+            return false;
+        }
+
+        InitializeActivePlacementState(
+            editableObject,
+            member,
+            member.transform.position,
+            false
+        );
+
+        PublishMessage(
+            "Colocando " +
+            editableObject.DisplayName +
+            "."
+        );
+
+        LogEvent(
+            "Creación iniciada para " +
+            editableObject.DisplayName +
+            ". ItemId: " +
+            definition.ItemId +
+            "."
+        );
+
+        return true;
+    }
+
+    /// <summary>
     /// Cierra el modo edición.
     /// </summary>
     public bool TryExitEditMode(
@@ -439,8 +650,21 @@ public sealed class RestaurantEditInteractionController :
         RestaurantAreaMember cancelledMember =
             activeMember;
 
-        bool cancelled =
-            transactionService.CancelPlacement();
+        bool cancelled;
+
+        if (creationService != null &&
+            creationService.HasActiveCreation)
+        {
+            cancelled =
+                creationService.TryCancelActiveCreation(
+                    out _
+                );
+        }
+        else
+        {
+            cancelled =
+                transactionService.CancelPlacement();
+        }
 
         if (!cancelled)
         {
@@ -743,7 +967,18 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
-        transactionService.CancelPlacement();
+        if (creationService != null &&
+            creationService.HasActiveCreation)
+        {
+            creationService.TryCancelActiveCreation(
+                out _
+            );
+        }
+        else
+        {
+            transactionService.CancelPlacement();
+        }
+
         ClearLocalPlacementState();
 
         const string message =
@@ -761,6 +996,16 @@ public sealed class RestaurantEditInteractionController :
 
     private void HandleEditModeToggle()
     {
+        /*
+         * La entrada o salida del modo edición es una acción de tecla
+         * simple. Nunca debe ejecutarse como parte de Ctrl+Z, Ctrl+Y,
+         * Alt+tecla o Shift+tecla.
+         */
+        if (IsAnyKeyboardModifierPressed())
+        {
+            return;
+        }
+
         if (!WasKeyPressedThisFrame(
                 toggleEditModeKey
             ))
@@ -935,6 +1180,40 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
+        InitializeActivePlacementState(
+            editableObject,
+            member,
+            selectedWorldPoint,
+            true
+        );
+
+        PublishMessage(
+            "Moviendo " +
+            editableObject.DisplayName +
+            "."
+        );
+
+        LogEvent(
+            "Colocación iniciada para " +
+            member.name +
+            ". Definición: " +
+            editableObject.Definition.DefinitionId +
+            "."
+        );
+
+        return true;
+    }
+
+    /// <summary>
+    /// Inicializa el estado local de una colocación existente o nueva.
+    /// </summary>
+    private void InitializeActivePlacementState(
+        RestaurantEditableObject editableObject,
+        RestaurantAreaMember member,
+        Vector3 selectedWorldPoint,
+        bool preserveGrabOffset
+    )
+    {
         activeEditableObject =
             editableObject;
 
@@ -955,8 +1234,10 @@ public sealed class RestaurantEditInteractionController :
             member.transform.position;
 
         grabOffset =
-            memberPosition -
-            selectedWorldPoint;
+            preserveGrabOffset
+                ? memberPosition -
+                  selectedWorldPoint
+                : Vector3.zero;
 
         grabOffset.y = 0f;
 
@@ -986,22 +1267,6 @@ public sealed class RestaurantEditInteractionController :
         PlacementValidationChanged?.Invoke(
             lastValidationResult
         );
-
-        PublishMessage(
-            "Moviendo " +
-            editableObject.DisplayName +
-            "."
-        );
-
-        LogEvent(
-            "Colocación iniciada para " +
-            member.name +
-            ". Definición: " +
-            editableObject.Definition.DefinitionId +
-            "."
-        );
-
-        return true;
     }
 
     /// <summary>
@@ -1157,15 +1422,66 @@ public sealed class RestaurantEditInteractionController :
         RestaurantAreaMember memberBeingCommitted =
             activeMember;
 
-        RestaurantPlacementValidationResult result;
+        if (creationService != null &&
+            creationService.HasActiveCreation)
+        {
+            bool creationCommitted =
+                creationService.TryCommitActiveCreation(
+                    out RestaurantPlaceableCreationResult
+                        creationResult
+                );
 
-        RestaurantPlacementTransactionFailureReason
-            failureReason;
+            lastValidationResult =
+                creationResult.ValidationResult;
+
+            PlacementValidationChanged?.Invoke(
+                lastValidationResult
+            );
+
+            if (!creationCommitted)
+            {
+                PublishMessage(
+                    BuildInvalidPlacementMessage(
+                        creationResult.ValidationResult,
+                        creationResult.TransactionFailureReason
+                    )
+                );
+
+                LogEvent(
+                    "Confirmación de creación rechazada. Motivo: " +
+                    creationResult.FailureReason +
+                    "."
+                );
+
+                return;
+            }
+
+            string createdName =
+                creationResult.Placeable != null
+                    ? creationResult.Placeable.DisplayName
+                    : memberBeingCommitted.name;
+
+            ClearLocalPlacementState();
+
+            PublishMessage(
+                createdName +
+                " creado correctamente."
+            );
+
+            LogEvent(
+                "Creación confirmada para " +
+                createdName +
+                "."
+            );
+
+            return;
+        }
 
         bool committed =
             transactionService.TryCommitPlacement(
-                out result,
-                out failureReason
+                out RestaurantPlacementValidationResult result,
+                out RestaurantPlacementTransactionFailureReason
+                    failureReason
             );
 
         lastValidationResult =
@@ -1393,6 +1709,83 @@ public sealed class RestaurantEditInteractionController :
         return true;
     }
 
+    /// <summary>
+    /// Resuelve una posición inicial para una creación solicitada
+    /// desde UI o desde las herramientas del Editor.
+    ///
+    /// Primero utiliza el puntero. Si el puntero está fuera de la
+    /// vista de juego o no corta el suelo, utiliza el centro de la
+    /// cámara para que la solicitud siga siendo determinista.
+    /// </summary>
+    private bool TryGetInitialCreationSurfacePoint(
+        out Vector3 surfacePoint
+    )
+    {
+        if (TryGetPlacementSurfacePoint(
+                out surfacePoint
+            ))
+        {
+            return true;
+        }
+
+        surfacePoint =
+            default;
+
+        if (interactionCamera == null)
+        {
+            return false;
+        }
+
+        Ray centerRay =
+            interactionCamera.ViewportPointToRay(
+                new Vector3(
+                    0.5f,
+                    0.5f,
+                    0f
+                )
+            );
+
+        int hitCount =
+            Physics.RaycastNonAlloc(
+                centerRay,
+                surfaceHitBuffer,
+                maximumRayDistance,
+                placementSurfaceLayerMask,
+                QueryTriggerInteraction.Ignore
+            );
+
+        float nearestDistance =
+            float.PositiveInfinity;
+
+        bool foundSurface =
+            false;
+
+        for (int index = 0;
+             index < hitCount;
+             index++)
+        {
+            RaycastHit hit =
+                surfaceHitBuffer[index];
+
+            if (hit.collider == null ||
+                hit.distance >= nearestDistance)
+            {
+                continue;
+            }
+
+            nearestDistance =
+                hit.distance;
+
+            surfacePoint =
+                hit.point;
+
+            foundSurface =
+                true;
+        }
+
+        return foundSurface;
+    }
+
     private bool TryGetPlacementSurfacePoint(
         out Vector3 surfacePoint
     )
@@ -1546,6 +1939,32 @@ public sealed class RestaurantEditInteractionController :
                keyboard.rightCtrlKey.isPressed;
     }
 
+
+    /// <summary>
+    /// Indica si existe cualquier modificador de teclado activo.
+    ///
+    /// Se utiliza para separar de forma inequívoca las acciones
+    /// simples del editor de los atajos compuestos.
+    /// </summary>
+    private static bool IsAnyKeyboardModifierPressed()
+    {
+        Keyboard keyboard =
+            Keyboard.current;
+
+        if (keyboard == null)
+        {
+            return false;
+        }
+
+        return
+            keyboard.leftCtrlKey.isPressed ||
+            keyboard.rightCtrlKey.isPressed ||
+            keyboard.leftShiftKey.isPressed ||
+            keyboard.rightShiftKey.isPressed ||
+            keyboard.leftAltKey.isPressed ||
+            keyboard.rightAltKey.isPressed;
+    }
+
     private static bool WasMouseButtonPressedThisFrame(
         int buttonIndex
     )
@@ -1582,6 +2001,16 @@ public sealed class RestaurantEditInteractionController :
         if (transactionService == null ||
             !transactionService.HasActiveTransaction)
         {
+            return;
+        }
+
+        if (creationService != null &&
+            creationService.HasActiveCreation)
+        {
+            creationService.TryCancelActiveCreation(
+                out _
+            );
+
             return;
         }
 
@@ -1811,6 +2240,8 @@ public sealed class RestaurantEditInteractionController :
     {
         return editModeService != null &&
                transactionService != null &&
+               historyService != null &&
+               creationService != null &&
                interactionCamera != null;
     }
 
@@ -1834,6 +2265,13 @@ public sealed class RestaurantEditInteractionController :
         {
             TryGetComponent(
                 out historyService
+            );
+        }
+
+        if (creationService == null)
+        {
+            TryGetComponent(
+                out creationService
             );
         }
 
@@ -1884,6 +2322,19 @@ public sealed class RestaurantEditInteractionController :
                     RestaurantPlacementHistoryService
                 ) +
                 " para deshacer y rehacer.",
+                this
+            );
+        }
+
+        if (creationService == null)
+        {
+            Debug.LogError(
+                controllerName +
+                " necesita un " +
+                nameof(
+                    RestaurantPlaceableCreationService
+                ) +
+                " para crear artículos.",
                 this
             );
         }
@@ -1944,6 +2395,27 @@ public sealed class RestaurantEditInteractionController :
     }
 
 #if UNITY_EDITOR
+    [ContextMenu(
+        "Debug/Iniciar creación del artículo asignado"
+    )]
+    private void DebugBeginAssignedItemCreation()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning(
+                "La creación de diagnóstico solo puede ejecutarse " +
+                "durante Play.",
+                this
+            );
+
+            return;
+        }
+
+        TryBeginPlaceableCreation(
+            editorCreationTestDefinition
+        );
+    }
+
     private void Reset()
     {
         CacheDependenciesIfNeeded();

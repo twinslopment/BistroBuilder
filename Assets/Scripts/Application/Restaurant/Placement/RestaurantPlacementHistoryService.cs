@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Mantiene el historial de movimientos confirmados del modo edición.
+/// Historial central de operaciones confirmadas del modo edición.
 ///
-/// Características:
-/// - Registra únicamente confirmaciones reales.
-/// - Deshace desde el estado final al estado anterior.
-/// - Rehace desde el estado anterior al estado final.
-/// - Limpia la rama de rehacer al confirmar un cambio nuevo.
-/// - Revalida el destino antes de restaurarlo.
-/// - No utiliza Update.
+/// Conserva el nombre del componente existente para mantener todas las
+/// referencias serializadas de la escena, pero almacena comandos
+/// genéricos.
+///
+/// Cuando un comando se elimina definitivamente del historial se le
+/// solicita liberar sus recursos. Esto evita conservar GameObjects
+/// inactivos después de perder la posibilidad de rehacerlos.
+///
+/// No utiliza Update.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -22,78 +24,66 @@ public sealed class RestaurantPlacementHistoryService :
 {
     [Header("Dependencias")]
 
-    [Tooltip(
-        "Servicio que publica las colocaciones confirmadas."
-    )]
     [SerializeField]
     private RestaurantPlacementTransactionService
         transactionService;
 
-    [Tooltip(
-        "Servicio utilizado para validar el destino de deshacer " +
-        "y rehacer antes de aplicarlo."
-    )]
     [SerializeField]
     private RestaurantPlacementValidationService
         validationService;
 
     [Header("Historial")]
 
-    [Tooltip(
-        "Número máximo de operaciones conservadas."
-    )]
     [SerializeField]
     [Min(1)]
     private int maximumHistoryEntries = 50;
 
-    [Tooltip(
-        "Valida la posición de destino antes de deshacer o rehacer."
-    )]
     [SerializeField]
     private bool validateDestinationBeforeApplying = true;
 
     [Header("Depuración")]
 
-    [Tooltip(
-        "Escribe las operaciones de historial en la Console."
-    )]
     [SerializeField]
     private bool logHistoryOperations = true;
 
-    private readonly List<
-        RestaurantPlacementCommittedChange
-    > undoStack =
-        new List<RestaurantPlacementCommittedChange>(50);
+    private readonly List<IRestaurantEditHistoryCommand>
+        undoStack =
+            new List<IRestaurantEditHistoryCommand>(50);
 
-    private readonly List<
-        RestaurantPlacementCommittedChange
-    > redoStack =
-        new List<RestaurantPlacementCommittedChange>(50);
+    private readonly List<IRestaurantEditHistoryCommand>
+        redoStack =
+            new List<IRestaurantEditHistoryCommand>(50);
 
-    /// <summary>
-    /// Se ejecuta cuando cambia la disponibilidad de deshacer o rehacer.
-    /// </summary>
     public event Action HistoryChanged;
 
-    /// <summary>
-    /// Se ejecuta después de deshacer correctamente.
-    /// </summary>
     public event Action<RestaurantAreaMember>
         UndoPerformed;
 
-    /// <summary>
-    /// Se ejecuta después de rehacer correctamente.
-    /// </summary>
     public event Action<RestaurantAreaMember>
         RedoPerformed;
 
-    /// <summary>
-    /// Se ejecuta cuando una operación de historial es rechazada.
-    /// </summary>
     public event Action<
         RestaurantPlacementHistoryFailureReason,
         RestaurantPlacementValidationResult
     > HistoryOperationRejected;
+
+    public event Action<IRestaurantEditHistoryCommand>
+        CommandRecorded;
+
+    public event Action<
+        IRestaurantEditHistoryCommand,
+        RestaurantEditHistoryCommandResult
+    > CommandUndone;
+
+    public event Action<
+        IRestaurantEditHistoryCommand,
+        RestaurantEditHistoryCommandResult
+    > CommandRedone;
+
+    public event Action<
+        IRestaurantEditHistoryCommand,
+        RestaurantEditHistoryCommandResult
+    > CommandRejected;
 
     public bool CanUndo
     {
@@ -151,8 +141,79 @@ public sealed class RestaurantPlacementHistoryService :
     }
 
     /// <summary>
-    /// Intenta deshacer la última colocación confirmada.
+    /// Registra una operación que ya se ha ejecutado y confirmado.
     /// </summary>
+    public bool TryRecordExecutedCommand(
+        IRestaurantEditHistoryCommand command
+    )
+    {
+        if (command == null ||
+            !command.IsValid)
+        {
+            RestaurantEditHistoryCommandResult rejection =
+                RestaurantEditHistoryCommandResult.Failure(
+                    RestaurantEditHistoryCommandFailureReason
+                        .CommandInvalid,
+                    command != null
+                        ? command.PrimaryTarget
+                        : null,
+                    ResolveAreaMember(command),
+                    default,
+                    "El comando no contiene un cambio válido."
+                );
+
+            CommandRejected?.Invoke(
+                command,
+                rejection
+            );
+
+            return false;
+        }
+
+        undoStack.Add(
+            command
+        );
+
+        TrimStackIfNeeded(
+            undoStack
+        );
+
+        /*
+         * Una operación nueva descarta toda la rama de rehacer.
+         * Antes de vaciarla se liberan las instancias inactivas que
+         * solo continuaban existiendo por esos comandos.
+         */
+        ReleaseStackResources(
+            redoStack
+        );
+
+        redoStack.Clear();
+
+        HistoryChanged?.Invoke();
+
+        CommandRecorded?.Invoke(
+            command
+        );
+
+        if (logHistoryOperations)
+        {
+            Debug.Log(
+                "Registrado comando '" +
+                command.Description +
+                "'. Tipo: " +
+                command.CommandType +
+                ". Deshacer: " +
+                undoStack.Count +
+                ", rehacer: " +
+                redoStack.Count +
+                ".",
+                this
+            );
+        }
+
+        return true;
+    }
+
     public bool TryUndo(
         out RestaurantAreaMember affectedMember,
         out RestaurantPlacementHistoryFailureReason
@@ -171,7 +232,7 @@ public sealed class RestaurantPlacementHistoryService :
                 out failureReason
             ))
         {
-            Reject(
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -185,7 +246,7 @@ public sealed class RestaurantPlacementHistoryService :
                 RestaurantPlacementHistoryFailureReason
                     .NothingToUndo;
 
-            Reject(
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -196,20 +257,54 @@ public sealed class RestaurantPlacementHistoryService :
         int lastIndex =
             undoStack.Count - 1;
 
-        RestaurantPlacementCommittedChange change =
+        IRestaurantEditHistoryCommand command =
             undoStack[lastIndex];
 
-        affectedMember =
-            change.Member;
-
-        if (!TryApplySnapshot(
-                affectedMember,
-                change.Before,
-                out failureReason,
-                out validationResult
-            ))
+        if (command == null)
         {
-            Reject(
+            failureReason =
+                RestaurantPlacementHistoryFailureReason
+                    .CommandInvalid;
+
+            undoStack.RemoveAt(
+                lastIndex
+            );
+
+            HistoryChanged?.Invoke();
+
+            RejectLegacy(
+                failureReason,
+                validationResult
+            );
+
+            return false;
+        }
+
+        bool undone =
+            command.TryUndo(
+                out RestaurantEditHistoryCommandResult result
+            );
+
+        affectedMember =
+            result.AffectedMember ??
+            ResolveAreaMember(command);
+
+        validationResult =
+            result.ValidationResult;
+
+        if (!undone)
+        {
+            failureReason =
+                MapFailureReason(
+                    result.FailureReason
+                );
+
+            CommandRejected?.Invoke(
+                command,
+                result
+            );
+
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -222,7 +317,7 @@ public sealed class RestaurantPlacementHistoryService :
         );
 
         redoStack.Add(
-            change
+            command
         );
 
         TrimStackIfNeeded(
@@ -235,12 +330,17 @@ public sealed class RestaurantPlacementHistoryService :
             affectedMember
         );
 
+        CommandUndone?.Invoke(
+            command,
+            result
+        );
+
         if (logHistoryOperations)
         {
             Debug.Log(
-                "Deshecha la última colocación de " +
-                affectedMember.name +
-                ".",
+                "Deshecho comando '" +
+                command.Description +
+                "'.",
                 this
             );
         }
@@ -248,9 +348,6 @@ public sealed class RestaurantPlacementHistoryService :
         return true;
     }
 
-    /// <summary>
-    /// Intenta rehacer la última colocación deshecha.
-    /// </summary>
     public bool TryRedo(
         out RestaurantAreaMember affectedMember,
         out RestaurantPlacementHistoryFailureReason
@@ -269,7 +366,7 @@ public sealed class RestaurantPlacementHistoryService :
                 out failureReason
             ))
         {
-            Reject(
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -283,7 +380,7 @@ public sealed class RestaurantPlacementHistoryService :
                 RestaurantPlacementHistoryFailureReason
                     .NothingToRedo;
 
-            Reject(
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -294,20 +391,54 @@ public sealed class RestaurantPlacementHistoryService :
         int lastIndex =
             redoStack.Count - 1;
 
-        RestaurantPlacementCommittedChange change =
+        IRestaurantEditHistoryCommand command =
             redoStack[lastIndex];
 
-        affectedMember =
-            change.Member;
-
-        if (!TryApplySnapshot(
-                affectedMember,
-                change.After,
-                out failureReason,
-                out validationResult
-            ))
+        if (command == null)
         {
-            Reject(
+            failureReason =
+                RestaurantPlacementHistoryFailureReason
+                    .CommandInvalid;
+
+            redoStack.RemoveAt(
+                lastIndex
+            );
+
+            HistoryChanged?.Invoke();
+
+            RejectLegacy(
+                failureReason,
+                validationResult
+            );
+
+            return false;
+        }
+
+        bool redone =
+            command.TryRedo(
+                out RestaurantEditHistoryCommandResult result
+            );
+
+        affectedMember =
+            result.AffectedMember ??
+            ResolveAreaMember(command);
+
+        validationResult =
+            result.ValidationResult;
+
+        if (!redone)
+        {
+            failureReason =
+                MapFailureReason(
+                    result.FailureReason
+                );
+
+            CommandRejected?.Invoke(
+                command,
+                result
+            );
+
+            RejectLegacy(
                 failureReason,
                 validationResult
             );
@@ -320,7 +451,7 @@ public sealed class RestaurantPlacementHistoryService :
         );
 
         undoStack.Add(
-            change
+            command
         );
 
         TrimStackIfNeeded(
@@ -333,12 +464,17 @@ public sealed class RestaurantPlacementHistoryService :
             affectedMember
         );
 
+        CommandRedone?.Invoke(
+            command,
+            result
+        );
+
         if (logHistoryOperations)
         {
             Debug.Log(
-                "Rehecha la última colocación de " +
-                affectedMember.name +
-                ".",
+                "Rehecho comando '" +
+                command.Description +
+                "'.",
                 this
             );
         }
@@ -347,13 +483,22 @@ public sealed class RestaurantPlacementHistoryService :
     }
 
     /// <summary>
-    /// Vacía completamente ambas ramas del historial.
+    /// Vacía ambas ramas y libera los recursos que solo pertenecían
+    /// al historial.
     /// </summary>
     public void ClearHistory()
     {
         bool hadEntries =
             undoStack.Count > 0 ||
             redoStack.Count > 0;
+
+        ReleaseStackResources(
+            undoStack
+        );
+
+        ReleaseStackResources(
+            redoStack
+        );
 
         undoStack.Clear();
         redoStack.Clear();
@@ -364,53 +509,32 @@ public sealed class RestaurantPlacementHistoryService :
         }
     }
 
-    /// <summary>
-    /// Registra una colocación confirmada.
-    /// </summary>
     private void HandlePlacementCommitted(
         RestaurantPlacementCommittedChange change
     )
     {
         if (change.Member == null ||
-            !change.HasMeaningfulChange)
+            !change.HasMeaningfulChange ||
+            change.TransactionKind !=
+                RestaurantPlacementTransactionKind.MoveExisting)
         {
             return;
         }
 
-        undoStack.Add(
-            change
-        );
-
-        TrimStackIfNeeded(
-            undoStack
-        );
-
-        /*
-         * Un cambio nuevo crea una rama distinta. Las operaciones
-         * deshechas anteriormente ya no pueden rehacerse.
-         */
-        redoStack.Clear();
-
-        HistoryChanged?.Invoke();
-
-        if (logHistoryOperations)
-        {
-            Debug.Log(
-                "Registrada colocación de " +
-                change.Member.name +
-                " en el historial. Deshacer: " +
-                undoStack.Count +
-                ", rehacer: " +
-                redoStack.Count +
-                ".",
-                this
+        RestaurantMovePlaceableHistoryCommand command =
+            new RestaurantMovePlaceableHistoryCommand(
+                change.Member,
+                change.Before,
+                change.After,
+                validationService,
+                validateDestinationBeforeApplying
             );
-        }
+
+        TryRecordExecutedCommand(
+            command
+        );
     }
 
-    /// <summary>
-    /// Comprueba las condiciones globales para operar el historial.
-    /// </summary>
     private bool CanOperate(
         out RestaurantPlacementHistoryFailureReason
             failureReason
@@ -437,103 +561,11 @@ public sealed class RestaurantPlacementHistoryService :
             return false;
         }
 
-        if (validateDestinationBeforeApplying &&
-            validationService == null)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .ValidationSystemUnavailable;
-
-            return false;
-        }
-
         return true;
     }
 
-    /// <summary>
-    /// Valida y restaura una captura concreta.
-    /// </summary>
-    private bool TryApplySnapshot(
-        RestaurantAreaMember member,
-        RestaurantPlacementStateSnapshot snapshot,
-        out RestaurantPlacementHistoryFailureReason
-            failureReason,
-        out RestaurantPlacementValidationResult
-            validationResult
-    )
-    {
-        failureReason =
-            RestaurantPlacementHistoryFailureReason.None;
-
-        validationResult = default;
-
-        if (member == null)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .MemberUnavailable;
-
-            return false;
-        }
-
-        if (!snapshot.IsValid)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .SnapshotInvalid;
-
-            return false;
-        }
-
-        if (validateDestinationBeforeApplying)
-        {
-            Vector3 destinationPosition;
-            Quaternion destinationRotation;
-
-            snapshot.GetWorldPose(
-                out destinationPosition,
-                out destinationRotation
-            );
-
-            validationResult =
-                validationService.ValidatePlacement(
-                    member,
-                    destinationPosition,
-                    destinationRotation
-                );
-
-            if (!validationResult.IsValid)
-            {
-                failureReason =
-                    RestaurantPlacementHistoryFailureReason
-                        .DestinationInvalid;
-
-                return false;
-            }
-        }
-
-        bool restored =
-            snapshot.Restore(
-                member
-            );
-
-        if (!restored)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .RestoreFailed;
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Elimina las entradas más antiguas si se supera el límite.
-    /// </summary>
     private void TrimStackIfNeeded(
-        List<RestaurantPlacementCommittedChange> stack
+        List<IRestaurantEditHistoryCommand> stack
     )
     {
         int safeMaximum =
@@ -551,23 +583,166 @@ public sealed class RestaurantPlacementHistoryService :
             return;
         }
 
+        for (int index = 0;
+             index < overflow;
+             index++)
+        {
+            IRestaurantEditHistoryCommand command =
+                stack[index];
+
+            command?.ReleaseResources();
+        }
+
         stack.RemoveRange(
             0,
             overflow
         );
     }
 
-    private void Reject(
-        RestaurantPlacementHistoryFailureReason
-            failureReason,
-        RestaurantPlacementValidationResult
-            validationResult
+    private static void ReleaseStackResources(
+        List<IRestaurantEditHistoryCommand> stack
+    )
+    {
+        if (stack == null)
+        {
+            return;
+        }
+
+        for (int index = 0;
+             index < stack.Count;
+             index++)
+        {
+            IRestaurantEditHistoryCommand command =
+                stack[index];
+
+            command?.ReleaseResources();
+        }
+    }
+
+    private void RejectLegacy(
+        RestaurantPlacementHistoryFailureReason failureReason,
+        RestaurantPlacementValidationResult validationResult
     )
     {
         HistoryOperationRejected?.Invoke(
             failureReason,
             validationResult
         );
+    }
+
+    private static RestaurantAreaMember ResolveAreaMember(
+        IRestaurantEditHistoryCommand command
+    )
+    {
+        if (command == null ||
+            command.PrimaryTarget == null)
+        {
+            return null;
+        }
+
+        if (command.PrimaryTarget is RestaurantAreaMember member)
+        {
+            return member;
+        }
+
+        if (command.PrimaryTarget is Component component)
+        {
+            component.TryGetComponent(
+                out RestaurantAreaMember componentMember
+            );
+
+            return componentMember;
+        }
+
+        if (command.PrimaryTarget is GameObject gameObject)
+        {
+            gameObject.TryGetComponent(
+                out RestaurantAreaMember gameObjectMember
+            );
+
+            return gameObjectMember;
+        }
+
+        return null;
+    }
+
+    private static RestaurantPlacementHistoryFailureReason
+        MapFailureReason(
+            RestaurantEditHistoryCommandFailureReason reason
+        )
+    {
+        switch (reason)
+        {
+            case RestaurantEditHistoryCommandFailureReason.None:
+
+                return
+                    RestaurantPlacementHistoryFailureReason.None;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .ValidationSystemUnavailable:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .ValidationSystemUnavailable;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .DestinationInvalid:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .DestinationInvalid;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .TargetUnavailable:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .MemberUnavailable;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .StateInvalid:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .SnapshotInvalid;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .CommandInvalid:
+
+            case RestaurantEditHistoryCommandFailureReason
+                .CommandUnavailable:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .CommandInvalid;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .LifecycleSystemUnavailable:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .LifecycleSystemUnavailable;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .IdentityConflict:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .IdentityConflict;
+
+            case RestaurantEditHistoryCommandFailureReason
+                .RegistrationFailed:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .RegistrationFailed;
+
+            default:
+
+                return
+                    RestaurantPlacementHistoryFailureReason
+                        .RestoreFailed;
+        }
     }
 
     private void SubscribeToTransactionService()
@@ -627,7 +802,8 @@ public sealed class RestaurantPlacementHistoryService :
             );
         }
 
-        if (validationService == null)
+        if (validateDestinationBeforeApplying &&
+            validationService == null)
         {
             Debug.LogError(
                 nameof(RestaurantPlacementHistoryService) +
@@ -635,7 +811,7 @@ public sealed class RestaurantPlacementHistoryService :
                 nameof(
                     RestaurantPlacementValidationService
                 ) +
-                ".",
+                " para revalidar movimientos históricos.",
                 this
             );
         }
@@ -660,9 +836,6 @@ public sealed class RestaurantPlacementHistoryService :
 #endif
 }
 
-/// <summary>
-/// Motivo por el que deshacer o rehacer no puede completarse.
-/// </summary>
 public enum RestaurantPlacementHistoryFailureReason
 {
     None = 0,
@@ -674,5 +847,9 @@ public enum RestaurantPlacementHistoryFailureReason
     MemberUnavailable = 6,
     SnapshotInvalid = 7,
     DestinationInvalid = 8,
-    RestoreFailed = 9
+    RestoreFailed = 9,
+    CommandInvalid = 10,
+    LifecycleSystemUnavailable = 11,
+    IdentityConflict = 12,
+    RegistrationFailed = 13
 }

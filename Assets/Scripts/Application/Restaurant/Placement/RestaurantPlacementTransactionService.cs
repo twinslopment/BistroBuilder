@@ -41,6 +41,10 @@ public sealed class RestaurantPlacementTransactionService :
 
     private bool hasEvaluatedPreview;
 
+    private RestaurantPlacementTransactionKind
+        activeTransactionKind =
+            RestaurantPlacementTransactionKind.MoveExisting;
+
     /// <summary>
     /// Se ejecuta cuando comienza una operación de edición.
     /// </summary>
@@ -108,6 +112,15 @@ public sealed class RestaurantPlacementTransactionService :
         }
     }
 
+    public RestaurantPlacementTransactionKind
+        ActiveTransactionKind
+    {
+        get
+        {
+            return activeTransactionKind;
+        }
+    }
+
     public RestaurantAreaMember ActiveMember
     {
         get
@@ -162,6 +175,27 @@ public sealed class RestaurantPlacementTransactionService :
             failureReason
     )
     {
+        return TryBeginPlacement(
+            member,
+            RestaurantPlacementTransactionKind.MoveExisting,
+            out failureReason
+        );
+    }
+
+    /// <summary>
+    /// Inicia una transacción indicando su finalidad funcional.
+    ///
+    /// MoveExisting se registra automáticamente como movimiento.
+    /// CreateNew será finalizada por el servicio de creación y no debe
+    /// entrar en el historial como un movimiento.
+    /// </summary>
+    public bool TryBeginPlacement(
+        RestaurantAreaMember member,
+        RestaurantPlacementTransactionKind transactionKind,
+        out RestaurantPlacementTransactionFailureReason
+            failureReason
+    )
+    {
         failureReason =
             RestaurantPlacementTransactionFailureReason.None;
 
@@ -194,6 +228,9 @@ public sealed class RestaurantPlacementTransactionService :
 
         activeMember =
             member;
+
+        activeTransactionKind =
+            transactionKind;
 
         originalState =
             RestaurantPlacementStateSnapshot.Capture(
@@ -315,7 +352,29 @@ public sealed class RestaurantPlacementTransactionService :
             failureReason
     )
     {
+        return TryCommitPlacement(
+            out result,
+            out failureReason,
+            out _
+        );
+    }
+
+    /// <summary>
+    /// Confirma la colocación y devuelve el cambio completo.
+    ///
+    /// El resultado permite que coordinadores de nivel superior,
+    /// como la creación de artículos, completen su propia operación
+    /// atómica antes de registrarla en el historial.
+    /// </summary>
+    public bool TryCommitPlacement(
+        out RestaurantPlacementValidationResult result,
+        out RestaurantPlacementTransactionFailureReason
+            failureReason,
+        out RestaurantPlacementCommittedChange committedChange
+    )
+    {
         result = default;
+        committedChange = default;
 
         failureReason =
             RestaurantPlacementTransactionFailureReason.None;
@@ -339,10 +398,6 @@ public sealed class RestaurantPlacementTransactionService :
             return false;
         }
 
-        /*
-         * Se valida otra vez para no confiar en un resultado
-         * anterior que pueda haber quedado obsoleto.
-         */
         result =
             validationService.ValidateCurrentPlacement(
                 member
@@ -369,10 +424,6 @@ public sealed class RestaurantPlacementTransactionService :
             return false;
         }
 
-        /*
-         * SetArea dispara AreaChanged. Los registros de miembros
-         * y colocación actualizan sus índices mediante eventos.
-         */
         member.SetArea(
             result.CandidateArea
         );
@@ -382,12 +433,13 @@ public sealed class RestaurantPlacementTransactionService :
                 member
             );
 
-        RestaurantPlacementCommittedChange committedChange =
+        committedChange =
             new RestaurantPlacementCommittedChange(
                 member,
                 originalState,
                 finalState,
-                result
+                result,
+                activeTransactionKind
             );
 
         RestaurantAreaMember committedMember =
@@ -400,11 +452,6 @@ public sealed class RestaurantPlacementTransactionService :
             result
         );
 
-        /*
-         * No se registra una confirmación que no haya producido
-         * ningún cambio real de posición, rotación, jerarquía,
-         * escala o área.
-         */
         if (committedChange.HasMeaningfulChange)
         {
             PlacementCommittedWithHistory?.Invoke(
@@ -528,6 +575,9 @@ public sealed class RestaurantPlacementTransactionService :
 
         hasActiveTransaction = false;
         hasEvaluatedPreview = false;
+
+        activeTransactionKind =
+            RestaurantPlacementTransactionKind.MoveExisting;
     }
 
     /// <summary>
@@ -859,6 +909,10 @@ public readonly struct RestaurantPlacementCommittedChange
         ValidationResult
     { get; }
 
+    public RestaurantPlacementTransactionKind
+        TransactionKind
+    { get; }
+
     public bool HasMeaningfulChange
     {
         get
@@ -875,6 +929,23 @@ public readonly struct RestaurantPlacementCommittedChange
         RestaurantPlacementStateSnapshot after,
         RestaurantPlacementValidationResult validationResult
     )
+        : this(
+            member,
+            before,
+            after,
+            validationResult,
+            RestaurantPlacementTransactionKind.MoveExisting
+        )
+    {
+    }
+
+    public RestaurantPlacementCommittedChange(
+        RestaurantAreaMember member,
+        RestaurantPlacementStateSnapshot before,
+        RestaurantPlacementStateSnapshot after,
+        RestaurantPlacementValidationResult validationResult,
+        RestaurantPlacementTransactionKind transactionKind
+    )
     {
         Member =
             member;
@@ -887,7 +958,19 @@ public readonly struct RestaurantPlacementCommittedChange
 
         ValidationResult =
             validationResult;
+
+        TransactionKind =
+            transactionKind;
     }
+}
+
+/// <summary>
+/// Finalidad funcional de una transacción de colocación.
+/// </summary>
+public enum RestaurantPlacementTransactionKind
+{
+    MoveExisting = 0,
+    CreateNew = 1
 }
 
 /// <summary>

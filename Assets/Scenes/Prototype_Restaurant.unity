@@ -590,10 +590,12 @@ GameObject:
   - component: {fileID: 263644921}
   - component: {fileID: 263644923}
   - component: {fileID: 263644922}
-  - component: {fileID: 263644924}
   - component: {fileID: 263644927}
   - component: {fileID: 263644926}
   - component: {fileID: 263644925}
+  - component: {fileID: 263644930}
+  - component: {fileID: 263644929}
+  - component: {fileID: 263644931}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -941,7 +943,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditInteractionController
   editModeService: {fileID: 263644918}
   transactionService: {fileID: 263644917}
-  historyService: {fileID: 263644924}
+  historyService: {fileID: 263644931}
   interactionCamera: {fileID: 330585545}
   selectableLayerMask:
     serializedVersion: 2
@@ -1026,23 +1028,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantServiceStateService
   initialState: 0
   logStateTransitions: 1
---- !u!114 &263644924
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bca24ec5adda51e4fbccfae429ab9f39, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementHistoryService
-  transactionService: {fileID: 263644917}
-  validationService: {fileID: 263644916}
-  maximumHistoryEntries: 50
-  validateDestinationBeforeApplying: 1
-  logHistoryOperations: 1
 --- !u!114 &263644925
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1088,6 +1073,54 @@ MonoBehaviour:
   discoverScenePlaceablesOnStart: 1
   repairMissingOrDuplicateIds: 1
   logStartupSummary: 1
+--- !u!114 &263644929
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4387ed1d9da3f044d80ede5ac6391472, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTablePlaceableRegistrationService
+  placeableRegistry: {fileID: 263644927}
+  tableRegistry: {fileID: 263644926}
+--- !u!114 &263644930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbba58be2bb51f341b1d7cb704e2cbdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableLifecycleService
+  placeableRegistry: {fileID: 263644927}
+  memberRegistry: {fileID: 263644913}
+  inactivePlaceablesRoot: {fileID: 0}
+  createInactiveRootAutomatically: 1
+  logLifecycleOperations: 1
+--- !u!114 &263644931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2466c650bf0058640aebed4a2e0c6fde, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementHistoryService
+  transactionService: {fileID: 263644917}
+  validationService: {fileID: 263644916}
+  maximumHistoryEntries: 50
+  validateDestinationBeforeApplying: 1
+  logHistoryOperations: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -1906,7 +1939,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5045a5dc4a9b6c146a00441ba97ae00e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantTable
-  tableId: 1
+  tableId: 2
   capacity: 2
   customerApproachPoint: {fileID: 118067100}
   waiterServicePoint: {fileID: 347886982}
