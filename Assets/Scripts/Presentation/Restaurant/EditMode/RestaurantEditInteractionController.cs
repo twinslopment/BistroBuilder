@@ -1210,8 +1210,17 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
-    /// Obtiene el collider más cercano bajo el cursor y comprueba
-    /// que pertenezca a un objeto editable autorizado.
+    /// Busca bajo el cursor el objeto editable válido más próximo.
+    ///
+    /// Un raycast puede atravesar varios colliders. El suelo,
+    /// elementos estructurales u otros colliders no editables no deben
+    /// impedir seleccionar una mesa u otro artículo situado en el
+    /// mismo rayo.
+    ///
+    /// Por ello se examinan todos los impactos recibidos y se escoge
+    /// el RestaurantEditableObject más cercano, en lugar de escoger
+    /// primero el collider más cercano y rechazar toda la selección
+    /// cuando ese collider pertenece al suelo.
     /// </summary>
     private bool TryFindSelectableMemberUnderPointer(
         out RestaurantEditableObject editableObject,
@@ -1246,12 +1255,28 @@ public sealed class RestaurantEditInteractionController :
                 QueryTriggerInteraction.Ignore
             );
 
-        RaycastHit nearestHit =
+        if (hitCount <= 0)
+        {
+            rejectionReason =
+                "No hay ningún objeto bajo el cursor.";
+
+            return false;
+        }
+
+        RaycastHit nearestEditableHit =
             default;
 
-        bool foundCollider = false;
+        RestaurantEditableObject
+            nearestEditableObject =
+                null;
 
-        float nearestDistance =
+        float nearestEditableDistance =
+            float.PositiveInfinity;
+
+        RaycastHit nearestNonEditableHit =
+            default;
+
+        float nearestNonEditableDistance =
             float.PositiveInfinity;
 
         for (int index = 0;
@@ -1261,49 +1286,77 @@ public sealed class RestaurantEditInteractionController :
             RaycastHit hit =
                 selectionHitBuffer[index];
 
-            if (hit.collider == null ||
-                hit.distance >= nearestDistance)
+            if (hit.collider == null)
             {
                 continue;
             }
 
-            nearestHit =
-                hit;
+            RestaurantEditableObject
+                candidateEditableObject =
+                    hit.collider.GetComponentInParent<
+                        RestaurantEditableObject
+                    >();
 
-            nearestDistance =
+            if (candidateEditableObject == null)
+            {
+                if (hit.distance <
+                    nearestNonEditableDistance)
+                {
+                    nearestNonEditableDistance =
+                        hit.distance;
+
+                    nearestNonEditableHit =
+                        hit;
+                }
+
+                continue;
+            }
+
+            if (hit.distance >=
+                nearestEditableDistance)
+            {
+                continue;
+            }
+
+            nearestEditableDistance =
                 hit.distance;
 
-            foundCollider =
-                true;
+            nearestEditableHit =
+                hit;
+
+            nearestEditableObject =
+                candidateEditableObject;
         }
 
-        if (!foundCollider ||
-            nearestHit.collider == null)
+        if (nearestEditableObject == null)
         {
-            rejectionReason =
-                "No hay ningún objeto bajo el cursor.";
+            if (nearestNonEditableHit.collider != null)
+            {
+                rejectionReason =
+                    nearestNonEditableHit
+                        .collider
+                        .gameObject
+                        .name +
+                    " no es un objeto editable.";
+            }
+            else
+            {
+                rejectionReason =
+                    "No hay ningún objeto editable bajo el cursor.";
+            }
 
             return false;
         }
 
         editableObject =
-            nearestHit.collider.GetComponentInParent<
-                RestaurantEditableObject
-            >();
-
-        if (editableObject == null)
-        {
-            rejectionReason =
-                nearestHit.collider.gameObject.name +
-                " no es un objeto editable.";
-
-            return false;
-        }
+            nearestEditableObject;
 
         if (!editableObject.CanBeginEditing(
                 out rejectionReason
             ))
         {
+            editableObject = null;
+
             return false;
         }
 
@@ -1315,26 +1368,27 @@ public sealed class RestaurantEditInteractionController :
                 editableObject.name +
                 " no tiene RestaurantAreaMember.";
 
+            editableObject = null;
+
             return false;
         }
 
-        RestaurantPlacementFootprint footprint;
-
         if (!editableObject.TryGetComponent(
-                out footprint
+                out RestaurantPlacementFootprint _
             ))
         {
             rejectionReason =
                 editableObject.name +
                 " no tiene RestaurantPlacementFootprint.";
 
+            editableObject = null;
             member = null;
 
             return false;
         }
 
         selectedWorldPoint =
-            nearestHit.point;
+            nearestEditableHit.point;
 
         return true;
     }

@@ -273,6 +273,18 @@ public sealed class RestaurantPlacementTransactionService :
             candidateWorldRotation
         );
 
+        /*
+         * Cuando Time.timeScale es 0, Unity no ejecuta FixedUpdate.
+         * En ese caso el Transform visual puede cambiar sin que la
+         * escena física actualice todavía el collider utilizado por
+         * los raycasts de selección.
+         *
+         * La sincronización explícita mantiene el collider unido a
+         * la mesa también durante la pausa. Este método solo se llama
+         * cuando cambia realmente la pose candidata.
+         */
+        Physics.SyncTransforms();
+
         lastValidationResult =
             result;
 
@@ -762,6 +774,14 @@ public readonly struct RestaurantPlacementStateSnapshot
         {
             member.ClearArea();
         }
+
+        /*
+         * Cancelar, deshacer o rehacer también puede ocurrir con la
+         * simulación pausada. Se sincroniza la escena física para que
+         * el objeto restaurado pueda seleccionarse inmediatamente en
+         * su nueva posición, sin esperar a un FixedUpdate.
+         */
+        Physics.SyncTransforms();
 
         return true;
     }

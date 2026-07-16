@@ -591,6 +591,9 @@ GameObject:
   - component: {fileID: 263644923}
   - component: {fileID: 263644922}
   - component: {fileID: 263644924}
+  - component: {fileID: 263644927}
+  - component: {fileID: 263644926}
+  - component: {fileID: 263644925}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -640,7 +643,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48930534730763541a8b6f17bdd23faf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TableStateTester
-  restaurantTable: {fileID: 364513595}
+  restaurantTable: {fileID: 0}
   secondsBetweenStates: 2
 --- !u!114 &263644901
 MonoBehaviour:
@@ -655,7 +658,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerGroupTester
   customerGroup: {fileID: 1191849215}
-  restaurantTable: {fileID: 364513595}
+  restaurantTable: {fileID: 0}
   customerMovementView: {fileID: 1191849220}
   delayBeforeAssignment: 2
 --- !u!114 &263644902
@@ -671,8 +674,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaiterAssignmentSystem
   tables:
-  - {fileID: 364513595}
-  - {fileID: 537685205}
+  - {fileID: 0}
+  - {fileID: 0}
   waiters:
   - {fileID: 1478749460}
 --- !u!114 &263644903
@@ -732,8 +735,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BillAssignmentSystem
   tables:
-  - {fileID: 364513595}
-  - {fileID: 537685205}
+  - {fileID: 0}
+  - {fileID: 0}
   waiters:
   - {fileID: 1478749460}
 --- !u!114 &263644907
@@ -749,8 +752,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TableCleaningAssignmentSystem
   tables:
-  - {fileID: 364513595}
-  - {fileID: 537685205}
+  - {fileID: 0}
+  - {fileID: 0}
   waiters:
   - {fileID: 1478749460}
 --- !u!114 &263644908
@@ -766,9 +769,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TableAssignmentSystem
   initialCustomerGroups: []
-  tables:
-  - {fileID: 364513595}
-  - {fileID: 537685205}
+  tableRegistry: {fileID: 263644926}
 --- !u!114 &263644909
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1042,6 +1043,51 @@ MonoBehaviour:
   maximumHistoryEntries: 50
   validateDestinationBeforeApplying: 1
   logHistoryOperations: 1
+--- !u!114 &263644925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b3ff643346aa1145b7061c8c318fda6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTableOperationalRegistrationService
+  tableRegistry: {fileID: 263644926}
+  waiterTaskCoordinator: {fileID: 263644911}
+--- !u!114 &263644926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de2256fa603463d4a8c11cb56ffb9383, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTableRegistry
+  discoverSceneTablesOnStart: 1
+  firstAutomaticTableId: 1
+  repairDuplicateIds: 1
+  logStartupSummary: 1
+--- !u!114 &263644927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a20e6bdbf526b148a5e00a48506b1ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableRegistry
+  discoverScenePlaceablesOnStart: 1
+  repairMissingOrDuplicateIds: 1
+  logStartupSummary: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -1484,17 +1530,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 537685209}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &364513595 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1867385052152241880, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
-  m_PrefabInstance: {fileID: 4787674698877766978}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f1c50e8d2a482314ea40d7dcbaf74bac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTable
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1682,11 +1717,12 @@ GameObject:
   - component: {fileID: 537685208}
   - component: {fileID: 537685207}
   - component: {fileID: 537685206}
-  - component: {fileID: 537685205}
   - component: {fileID: 537685204}
   - component: {fileID: 537685210}
   - component: {fileID: 537685211}
   - component: {fileID: 537685212}
+  - component: {fileID: 537685213}
+  - component: {fileID: 537685214}
   m_Layer: 0
   m_Name: MesaB
   m_TagString: Untagged
@@ -1716,24 +1752,6 @@ MonoBehaviour:
   waitingForBillColor: {r: 1, g: 0, b: 1, a: 1}
   payingColor: {r: 0.6, g: 0.2, b: 0.8, a: 1}
   dirtyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
---- !u!114 &537685205
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 537685203}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f1c50e8d2a482314ea40d7dcbaf74bac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTable
-  tableId: 2
-  capacity: 2
-  customerApproachPoint: {fileID: 118067100}
-  waiterServicePoint: {fileID: 347886982}
-  assignedCustomerGroup: {fileID: 0}
-  currentState: 0
 --- !u!65 &537685206
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1876,6 +1894,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditableObject
   definition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
   editingEnabled: 1
+--- !u!114 &537685213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537685203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5045a5dc4a9b6c146a00441ba97ae00e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTable
+  tableId: 1
+  capacity: 2
+  customerApproachPoint: {fileID: 118067100}
+  waiterServicePoint: {fileID: 347886982}
+  assignedCustomerGroup: {fileID: 0}
+  currentState: 0
+--- !u!114 &537685214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537685203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1034478adb18de643951b7ee7cf231e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableObject
+  itemDefinition: {fileID: 11400000, guid: 7a381e1b474d2644a9eb15e6c0ac1052, type: 2}
+  instanceId: 
+  synchronizeEditableDefinition: 1
 --- !u!1 &561085870
 GameObject:
   m_ObjectHideFlags: 0

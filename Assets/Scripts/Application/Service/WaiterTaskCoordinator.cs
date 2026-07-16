@@ -230,6 +230,13 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         if (table == null)
             return false;
 
+        /*
+         * Una mesa puede registrarse desde el Awake de otro sistema.
+         * Por tanto, este método público no puede asumir que el Awake
+         * de WaiterTaskCoordinator ya haya creado la cola.
+         */
+        EnsureTaskQueueCreated();
+
         if (!registeredTables.Add(table))
             return false;
 
@@ -782,6 +789,12 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     {
         if (table == null)
             return;
+
+        /*
+         * Protección adicional para cualquier llamada futura que
+         * sincronice mesas antes de la inicialización normal.
+         */
+        EnsureTaskQueueCreated();
 
         SynchronizeTakeOrderTask(table);
         SynchronizeDeliverBillTask(table);

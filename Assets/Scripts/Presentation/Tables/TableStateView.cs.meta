@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: d065436d080f49a49a1b5bbf838f8673
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - restaurantTable: {fileID: 1867385052152241880, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
+  - tableRenderer: {fileID: 6748258164345006784, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
