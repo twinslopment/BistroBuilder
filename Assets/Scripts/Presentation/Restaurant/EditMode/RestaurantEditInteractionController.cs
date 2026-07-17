@@ -195,6 +195,18 @@ public sealed class RestaurantEditInteractionController :
 
     private RestaurantEditableObject activeEditableObject;
 
+    /*
+     * La selección permanece aunque no exista una transacción de
+     * movimiento. Esto permite que la interfaz contextual ofrezca
+     * acciones explícitas como Mover o Eliminar sin que un simple
+     * clic arrastre inmediatamente el objeto.
+     */
+    private RestaurantAreaMember selectedMember;
+
+    private RestaurantEditableObject selectedEditableObject;
+
+    private Vector3 selectedWorldPoint;
+
     private Vector3 grabOffset;
 
     private Vector3 candidatePosition;
@@ -233,6 +245,20 @@ public sealed class RestaurantEditInteractionController :
         ActiveEditableObjectChanged;
 
     /// <summary>
+    /// Se ejecuta cuando cambia el miembro seleccionado por el
+    /// jugador, aunque todavía no se esté moviendo.
+    /// </summary>
+    public event Action<RestaurantAreaMember>
+        SelectedMemberChanged;
+
+    /// <summary>
+    /// Se ejecuta cuando cambia el objeto seleccionado por el
+    /// jugador.
+    /// </summary>
+    public event Action<RestaurantEditableObject>
+        SelectedEditableObjectChanged;
+
+    /// <summary>
     /// Se ejecuta cuando cambia el resultado de validación.
     /// </summary>
     public event Action<
@@ -258,6 +284,31 @@ public sealed class RestaurantEditInteractionController :
         get
         {
             return activeEditableObject;
+        }
+    }
+
+    public RestaurantAreaMember SelectedMember
+    {
+        get
+        {
+            return selectedMember;
+        }
+    }
+
+    public RestaurantEditableObject SelectedEditableObject
+    {
+        get
+        {
+            return selectedEditableObject;
+        }
+    }
+
+    public bool HasSelection
+    {
+        get
+        {
+            return selectedMember != null &&
+                   selectedEditableObject != null;
         }
     }
 
@@ -294,6 +345,7 @@ public sealed class RestaurantEditInteractionController :
     {
         CancelActivePlacementIfNeeded();
         ClearLocalPlacementState();
+        ClearSelection();
     }
 
     private void Update()
@@ -471,6 +523,8 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
+        ClearSelection();
+
         if (!TryGetInitialCreationSurfacePoint(
                 out Vector3 initialPosition
             ))
@@ -587,6 +641,95 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
+    /// Inicia el movimiento del artículo seleccionado.
+    ///
+    /// La selección y la colocación son estados distintos: seleccionar
+    /// no modifica la escena; mover abre una transacción explícita.
+    /// </summary>
+    public bool TryBeginMoveSelected()
+    {
+        if (!editModeService.IsEditModeActive)
+        {
+            const string message =
+                "Activa el modo edición antes de mover artículos.";
+
+            PublishMessage(message);
+            LogEvent(message);
+
+            return false;
+        }
+
+        if (transactionService.HasActiveTransaction)
+        {
+            const string message =
+                "Confirma o cancela la colocación actual antes de " +
+                "mover otro artículo.";
+
+            PublishMessage(message);
+            LogEvent(message);
+
+            return false;
+        }
+
+        if (selectedEditableObject == null ||
+            selectedMember == null)
+        {
+            const string message =
+                "Selecciona un artículo antes de moverlo.";
+
+            PublishMessage(message);
+            LogEvent(message);
+
+            return false;
+        }
+
+        Vector3 movementOrigin =
+            selectedMember.transform.position;
+
+        return BeginPlacement(
+            selectedEditableObject,
+            selectedMember,
+            movementOrigin,
+            false
+        );
+    }
+
+    /// <summary>
+    /// Limpia la selección contextual sin afectar a ninguna
+    /// transacción o artículo colocado.
+    /// </summary>
+    public bool ClearSelection()
+    {
+        if (selectedEditableObject == null &&
+            selectedMember == null)
+        {
+            selectedWorldPoint =
+                Vector3.zero;
+
+            return false;
+        }
+
+        selectedEditableObject =
+            null;
+
+        selectedMember =
+            null;
+
+        selectedWorldPoint =
+            Vector3.zero;
+
+        SelectedEditableObjectChanged?.Invoke(
+            null
+        );
+
+        SelectedMemberChanged?.Invoke(
+            null
+        );
+
+        return true;
+    }
+
+    /// <summary>
     /// Cierra el modo edición.
     /// </summary>
     public bool TryExitEditMode(
@@ -624,6 +767,7 @@ public sealed class RestaurantEditInteractionController :
         }
 
         ClearLocalPlacementState();
+        ClearSelection();
 
         PublishMessage(
             "Modo edición cerrado."
@@ -749,6 +893,8 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
+        ClearSelectionIfUnavailable();
+
         string memberName =
             affectedMember != null
                 ? affectedMember.name
@@ -824,6 +970,8 @@ public sealed class RestaurantEditInteractionController :
 
             return false;
         }
+
+        ClearSelectionIfUnavailable();
 
         string memberName =
             affectedMember != null
@@ -1028,6 +1176,26 @@ public sealed class RestaurantEditInteractionController :
     {
         if (WasKeyPressedThisFrame(cancelKey))
         {
+            /*
+             * Escape elimina primero la selección contextual.
+             * Una segunda pulsación, sin selección, cierra el modo.
+             */
+            if (ClearSelection())
+            {
+                const string selectionClearedMessage =
+                    "Selección cancelada.";
+
+                PublishMessage(
+                    selectionClearedMessage
+                );
+
+                LogEvent(
+                    selectionClearedMessage
+                );
+
+                return;
+            }
+
             TryExitEditMode(
                 false
             );
@@ -1049,19 +1217,21 @@ public sealed class RestaurantEditInteractionController :
 
         RestaurantEditableObject editableObject;
         RestaurantAreaMember member;
-        Vector3 selectedWorldPoint;
+        Vector3 hitWorldPoint;
         string rejectionReason;
 
         bool foundMember =
             TryFindSelectableMemberUnderPointer(
                 out editableObject,
                 out member,
-                out selectedWorldPoint,
+                out hitWorldPoint,
                 out rejectionReason
             );
 
         if (!foundMember)
         {
+            ClearSelection();
+
             if (string.IsNullOrWhiteSpace(rejectionReason))
             {
                 rejectionReason =
@@ -1079,10 +1249,10 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
-        BeginPlacement(
+        SelectEditableObject(
             editableObject,
             member,
-            selectedWorldPoint
+            hitWorldPoint
         );
     }
 
@@ -1127,12 +1297,72 @@ public sealed class RestaurantEditInteractionController :
     }
 
     /// <summary>
+    /// Establece una selección contextual sin iniciar movimiento.
+    /// </summary>
+    private void SelectEditableObject(
+        RestaurantEditableObject editableObject,
+        RestaurantAreaMember member,
+        Vector3 hitWorldPoint
+    )
+    {
+        if (editableObject == null ||
+            member == null)
+        {
+            ClearSelection();
+            return;
+        }
+
+        bool selectionChanged =
+            !ReferenceEquals(
+                selectedEditableObject,
+                editableObject
+            ) ||
+            !ReferenceEquals(
+                selectedMember,
+                member
+            );
+
+        selectedEditableObject =
+            editableObject;
+
+        selectedMember =
+            member;
+
+        selectedWorldPoint =
+            hitWorldPoint;
+
+        if (selectionChanged)
+        {
+            SelectedEditableObjectChanged?.Invoke(
+                selectedEditableObject
+            );
+
+            SelectedMemberChanged?.Invoke(
+                selectedMember
+            );
+        }
+
+        string message =
+            editableObject.DisplayName +
+            " seleccionado.";
+
+        PublishMessage(
+            message
+        );
+
+        LogEvent(
+            message
+        );
+    }
+
+    /// <summary>
     /// Inicia una colocación respetando la definición editable.
     /// </summary>
     private bool BeginPlacement(
         RestaurantEditableObject editableObject,
         RestaurantAreaMember member,
-        Vector3 selectedWorldPoint
+        Vector3 selectedWorldPoint,
+        bool preserveGrabOffset
     )
     {
         if (editableObject == null ||
@@ -1184,7 +1414,7 @@ public sealed class RestaurantEditInteractionController :
             editableObject,
             member,
             selectedWorldPoint,
-            true
+            preserveGrabOffset
         );
 
         PublishMessage(
@@ -2023,6 +2253,16 @@ public sealed class RestaurantEditInteractionController :
         }
 
         transactionService.CancelPlacement();
+    }
+
+    private void ClearSelectionIfUnavailable()
+    {
+        if (selectedEditableObject == null ||
+            selectedMember == null ||
+            !selectedEditableObject.gameObject.activeInHierarchy)
+        {
+            ClearSelection();
+        }
     }
 
     private void ClearLocalPlacementState()
