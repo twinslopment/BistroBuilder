@@ -127,6 +127,22 @@ public sealed class RestaurantPlaceableLifecycleService :
                 intendedParent
             );
 
+        if (instance != null)
+        {
+            /*
+             * worldPosition representa el punto de la superficie
+             * seleccionado por el jugador, no necesariamente la
+             * posición de la raíz del prefab.
+             *
+             * El anclaje permite que cada artículo defina qué punto
+             * debe apoyarse sobre el suelo sin introducir alturas
+             * hardcodeadas para mesas, plantas, hornos u otros tipos.
+             */
+            instance.AlignPlacementAnchorToWorldPoint(
+                worldPosition
+            );
+        }
+
         if (instance == null)
         {
             result =

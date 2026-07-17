@@ -44,6 +44,16 @@ public sealed class RestaurantPlaceableObject :
     [SerializeField]
     private string instanceId;
 
+    [Header("Anclaje de colocación")]
+
+    [Tooltip(
+        "Punto del prefab que debe apoyarse sobre la superficie de " +
+        "colocación. Para mobiliario de suelo suele situarse en la " +
+        "base del objeto. Si permanece vacío se utiliza la raíz."
+    )]
+    [SerializeField]
+    private Transform placementAnchor;
+
     [Header("Sincronización")]
 
     [Tooltip(
@@ -119,6 +129,22 @@ public sealed class RestaurantPlaceableObject :
             }
 
             return gameObject.name;
+        }
+    }
+
+    /// <summary>
+    /// Punto del artículo que se apoya sobre la superficie.
+    ///
+    /// La raíz se utiliza como respaldo para mantener compatibilidad
+    /// con prefabs antiguos que todavía no tengan un anclaje explícito.
+    /// </summary>
+    public Transform PlacementAnchor
+    {
+        get
+        {
+            return placementAnchor != null
+                ? placementAnchor
+                : transform;
         }
     }
 
@@ -209,6 +235,44 @@ public sealed class RestaurantPlaceableObject :
     }
 
     /// <summary>
+    /// Calcula la posición que debe tener la raíz para que el anclaje
+    /// coincida con un punto mundial concreto.
+    ///
+    /// El cálculo conserva la rotación y escala actuales del prefab,
+    /// por lo que funciona con mesas, plantas, lámparas de suelo,
+    /// equipamiento y cualquier otro artículo que use un anclaje.
+    /// </summary>
+    public Vector3 CalculateRootPositionForAnchorPoint(
+        Vector3 targetAnchorWorldPosition
+    )
+    {
+        Transform resolvedAnchor =
+            PlacementAnchor;
+
+        Vector3 anchorOffsetFromRoot =
+            resolvedAnchor.position -
+            transform.position;
+
+        return
+            targetAnchorWorldPosition -
+            anchorOffsetFromRoot;
+    }
+
+    /// <summary>
+    /// Coloca la raíz de forma que el anclaje quede exactamente sobre
+    /// el punto mundial indicado.
+    /// </summary>
+    public void AlignPlacementAnchorToWorldPoint(
+        Vector3 targetAnchorWorldPosition
+    )
+    {
+        transform.position =
+            CalculateRootPositionForAnchorPoint(
+                targetAnchorWorldPosition
+            );
+    }
+
+    /// <summary>
     /// Comprueba que el objeto contiene la configuración mínima
     /// necesaria para participar en el sistema.
     /// </summary>
@@ -254,6 +318,18 @@ public sealed class RestaurantPlaceableObject :
             errorMessage =
                 gameObject.name +
                 " no tiene RestaurantPlacementFootprint.";
+
+            return false;
+        }
+
+        if (placementAnchor != null &&
+            placementAnchor != transform &&
+            !placementAnchor.IsChildOf(transform))
+        {
+            errorMessage =
+                gameObject.name +
+                " tiene un Placement Anchor que no pertenece a " +
+                "su propia jerarquía.";
 
             return false;
         }
