@@ -557,13 +557,17 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(-18f, 278f);
 
         Image background =
-            content.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                content
+            );
 
         background.color =
             Charcoal;
 
         Shadow shadow =
-            content.AddComponent<Shadow>();
+            Undo.AddComponent<Shadow>(
+                content
+            );
 
         shadow.effectColor =
             new Color(0f, 0f, 0f, 0.55f);
@@ -596,7 +600,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
             Vector2.zero;
 
         Image accentImage =
-            accent.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                accent
+            );
 
         accentImage.color =
             Gold;
@@ -702,9 +708,11 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(-20f, -54f);
 
         HorizontalLayoutGroup categoryLayout =
-            categoryBar.AddComponent<
+            Undo.AddComponent<
                 HorizontalLayoutGroup
-            >();
+            >(
+                categoryBar
+            );
 
         categoryLayout.spacing =
             8f;
@@ -746,7 +754,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(-20f, -98f);
 
         ScrollRect scrollRect =
-            scroll.AddComponent<ScrollRect>();
+            Undo.AddComponent<ScrollRect>(
+                scroll
+            );
 
         scrollRect.horizontal =
             true;
@@ -771,13 +781,17 @@ public static class BistroBuilderPlaceableCatalogInstaller
         );
 
         Image viewportImage =
-            viewport.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                viewport
+            );
 
         viewportImage.color =
             new Color(1f, 1f, 1f, 0.01f);
 
         Mask mask =
-            viewport.AddComponent<Mask>();
+            Undo.AddComponent<Mask>(
+                viewport
+            );
 
         mask.showMaskGraphic =
             false;
@@ -807,7 +821,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(0f, 0f);
 
         HorizontalLayoutGroup itemsLayout =
-            items.AddComponent<HorizontalLayoutGroup>();
+            Undo.AddComponent<HorizontalLayoutGroup>(
+                items
+            );
 
         itemsLayout.spacing =
             12f;
@@ -831,7 +847,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
             true;
 
         ContentSizeFitter contentSizeFitter =
-            items.AddComponent<ContentSizeFitter>();
+            Undo.AddComponent<ContentSizeFitter>(
+                items
+            );
 
         contentSizeFitter.horizontalFit =
             ContentSizeFitter.FitMode.PreferredSize;
@@ -884,13 +902,17 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(122f, 32f);
 
         Image background =
-            template.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                template
+            );
 
         background.color =
             CharcoalLight;
 
         Button button =
-            template.AddComponent<Button>();
+            Undo.AddComponent<Button>(
+                template
+            );
 
         ConfigureButtonColors(
             button,
@@ -899,7 +921,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
         );
 
         LayoutElement layout =
-            template.AddComponent<LayoutElement>();
+            Undo.AddComponent<LayoutElement>(
+                template
+            );
 
         layout.preferredWidth =
             122f;
@@ -923,9 +947,11 @@ public static class BistroBuilderPlaceableCatalogInstaller
         );
 
         RestaurantPlaceableCatalogCategoryView view =
-            template.AddComponent<
+            Undo.AddComponent<
                 RestaurantPlaceableCatalogCategoryView
-            >();
+            >(
+                template
+            );
 
         AssignObjectReference(
             view,
@@ -964,13 +990,17 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(190f, 142f);
 
         Image background =
-            template.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                template
+            );
 
         background.color =
             CharcoalLight;
 
         Button button =
-            template.AddComponent<Button>();
+            Undo.AddComponent<Button>(
+                template
+            );
 
         ConfigureButtonColors(
             button,
@@ -979,7 +1009,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
         );
 
         LayoutElement layout =
-            template.AddComponent<LayoutElement>();
+            Undo.AddComponent<LayoutElement>(
+                template
+            );
 
         layout.preferredWidth =
             190f;
@@ -1015,16 +1047,23 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(48f, 48f);
 
         Image iconBackground =
-            iconRoot.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                iconRoot
+            );
 
         iconBackground.color =
             Green;
 
-        Image icon =
+        GameObject iconObject =
             CreateUIObject(
                 "Icon",
                 iconRoot.transform
-            ).AddComponent<Image>();
+            );
+
+        Image icon =
+            Undo.AddComponent<Image>(
+                iconObject
+            );
 
         StretchFull(
             icon.rectTransform,
@@ -1146,9 +1185,11 @@ public static class BistroBuilderPlaceableCatalogInstaller
             new Vector2(-12f, 32f);
 
         RestaurantPlaceableCatalogItemView view =
-            template.AddComponent<
+            Undo.AddComponent<
                 RestaurantPlaceableCatalogItemView
-            >();
+            >(
+                template
+            );
 
         AssignObjectReference(
             view,
@@ -1272,7 +1313,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
             );
 
         Text text =
-            gameObject.AddComponent<Text>();
+            Undo.AddComponent<Text>(
+                gameObject
+            );
 
         text.font =
             font;

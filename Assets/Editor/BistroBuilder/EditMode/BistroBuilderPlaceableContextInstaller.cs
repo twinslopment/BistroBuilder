@@ -460,13 +460,17 @@ public static class BistroBuilderPlaceableContextInstaller
             new Vector2(310f, 220f);
 
         Image background =
-            content.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                content
+            );
 
         background.color =
             Charcoal;
 
         Shadow shadow =
-            content.AddComponent<Shadow>();
+            Undo.AddComponent<Shadow>(
+                content
+            );
 
         shadow.effectColor =
             new Color(0f, 0f, 0f, 0.55f);
@@ -499,7 +503,9 @@ public static class BistroBuilderPlaceableContextInstaller
             Vector2.zero;
 
         Image accentImage =
-            accent.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                accent
+            );
 
         accentImage.color =
             Gold;
@@ -637,7 +643,9 @@ public static class BistroBuilderPlaceableContextInstaller
             new Vector2(-18f, 68f);
 
         HorizontalLayoutGroup layout =
-            actions.AddComponent<HorizontalLayoutGroup>();
+            Undo.AddComponent<HorizontalLayoutGroup>(
+                actions
+            );
 
         layout.spacing =
             10f;
@@ -691,13 +699,17 @@ public static class BistroBuilderPlaceableContextInstaller
             );
 
         Image image =
-            buttonObject.AddComponent<Image>();
+            Undo.AddComponent<Image>(
+                buttonObject
+            );
 
         image.color =
             normalColor;
 
         Button button =
-            buttonObject.AddComponent<Button>();
+            Undo.AddComponent<Button>(
+                buttonObject
+            );
 
         ColorBlock colors =
             button.colors;
