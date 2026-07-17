@@ -1448,9 +1448,13 @@ public sealed class RestaurantEditInteractionController :
                 );
 
                 LogEvent(
-                    "Confirmación de creación rechazada. Motivo: " +
-                    creationResult.FailureReason +
-                    "."
+                    "Confirmación de creación rechazada. " +
+                    BuildPlacementDiagnosticMessage(
+                        creationResult.ValidationResult,
+                        creationResult.TransactionFailureReason,
+                        creationResult.FailureReason.ToString(),
+                        memberBeingCommitted
+                    )
                 );
 
                 return;
@@ -1503,9 +1507,13 @@ public sealed class RestaurantEditInteractionController :
             LogEvent(
                 "Confirmación rechazada para " +
                 memberBeingCommitted.name +
-                ". Estado: " +
-                result.Status +
-                "."
+                ". " +
+                BuildPlacementDiagnosticMessage(
+                    result,
+                    failureReason,
+                    string.Empty,
+                    memberBeingCommitted
+                )
             );
 
             return;
@@ -2143,6 +2151,89 @@ public sealed class RestaurantEditInteractionController :
                     failureReason +
                     ".";
         }
+    }
+
+    /// <summary>
+    /// Construye un diagnóstico técnico completo para una colocación
+    /// rechazada. El mismo formato puede alimentar posteriormente el
+    /// panel contextual del modo edición y las herramientas de QA.
+    /// </summary>
+    private static string BuildPlacementDiagnosticMessage(
+        RestaurantPlacementValidationResult result,
+        RestaurantPlacementTransactionFailureReason
+            transactionFailureReason,
+        string operationFailureReason,
+        RestaurantAreaMember member
+    )
+    {
+        string areaName =
+            result.CandidateArea != null
+                ? result.CandidateArea.name
+                : "None";
+
+        string missingCapability =
+            "None";
+
+        if (result.MissingCapability != null)
+        {
+            missingCapability =
+                !string.IsNullOrWhiteSpace(
+                    result.MissingCapability.DisplayName
+                )
+                    ? result.MissingCapability.DisplayName
+                    : (
+                        !string.IsNullOrWhiteSpace(
+                            result.MissingCapability.CapabilityId
+                        )
+                            ? result.MissingCapability.CapabilityId
+                            : result.MissingCapability.name
+                    );
+        }
+
+        string conflictingObject =
+            "None";
+
+        if (result.ConflictingFootprint != null)
+        {
+            conflictingObject =
+                result.ConflictingFootprint.name;
+        }
+        else if (result.ConflictingObstacle != null)
+        {
+            conflictingObject =
+                result.ConflictingObstacle.name;
+        }
+
+        Vector3 position =
+            member != null
+                ? member.transform.position
+                : Vector3.zero;
+
+        string operationFailure =
+            string.IsNullOrWhiteSpace(
+                operationFailureReason
+            )
+                ? "None"
+                : operationFailureReason;
+
+        return
+            "Estado: " +
+            result.Status +
+            "; fallo de transacción: " +
+            transactionFailureReason +
+            "; fallo de operación: " +
+            operationFailure +
+            "; área candidata: " +
+            areaName +
+            "; capacidad ausente: " +
+            missingCapability +
+            "; conflicto: " +
+            conflictingObject +
+            "; tipo de conflicto: " +
+            result.ConflictType +
+            "; posición: " +
+            position.ToString("F3") +
+            ".";
     }
 
     private string BuildInvalidPlacementMessage(

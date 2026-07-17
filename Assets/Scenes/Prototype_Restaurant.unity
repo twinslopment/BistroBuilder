@@ -583,9 +583,7 @@ GameObject:
   - component: {fileID: 263644914}
   - component: {fileID: 263644915}
   - component: {fileID: 263644916}
-  - component: {fileID: 263644917}
   - component: {fileID: 263644918}
-  - component: {fileID: 263644919}
   - component: {fileID: 263644920}
   - component: {fileID: 263644921}
   - component: {fileID: 263644923}
@@ -595,7 +593,10 @@ GameObject:
   - component: {fileID: 263644925}
   - component: {fileID: 263644930}
   - component: {fileID: 263644929}
-  - component: {fileID: 263644931}
+  - component: {fileID: 263644932}
+  - component: {fileID: 263644935}
+  - component: {fileID: 263644934}
+  - component: {fileID: 263644933}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -901,19 +902,6 @@ MonoBehaviour:
   placementRegistry: {fileID: 263644915}
   obstacleRegistry: {fileID: 263644921}
   validatePlacementsOnStart: 1
---- !u!114 &263644917
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2407c5b34a548f4abf271c5111b9a5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementTransactionService
-  validationService: {fileID: 263644916}
 --- !u!114 &263644918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -926,44 +914,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c2dd1a72ecb1d94dbe6ab1d661677a1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditModeService
-  transactionService: {fileID: 263644917}
+  transactionService: {fileID: 263644935}
   availabilityRuleSources:
   - {fileID: 263644922}
---- !u!114 &263644919
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf4bc8fd1766e504f94b84648efbaa3a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditInteractionController
-  editModeService: {fileID: 263644918}
-  transactionService: {fileID: 263644917}
-  historyService: {fileID: 263644931}
-  interactionCamera: {fileID: 330585545}
-  selectableLayerMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  placementSurfaceLayerMask:
-    serializedVersion: 2
-    m_Bits: 8
-  maximumRayDistance: 500
-  useGridSnapping: 1
-  gridSize: 0.25
-  preserveOriginalWorldHeight: 1
-  rotationStepDegrees: 90
-  toggleEditModeKey: 95
-  rotateClockwiseKey: 32
-  cancelKey: 60
-  undoKey: 40
-  redoKey: 39
-  primaryMouseButton: 0
-  cancelMouseButton: 1
-  logInteractionEvents: 1
 --- !u!114 &263644920
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -976,7 +929,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f22a3c6a43cd3f74d824a3acf16be962, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditPlacementVisualFeedback
-  interactionController: {fileID: 263644919}
+  interactionController: {fileID: 263644933}
   includeInactiveRenderers: 1
   validPlacementColor: {r: 0.25, g: 1, b: 0.35, a: 1}
   invalidPlacementColor: {r: 1, g: 0.2, b: 0.2, a: 1}
@@ -1104,7 +1057,7 @@ MonoBehaviour:
   inactivePlaceablesRoot: {fileID: 0}
   createInactiveRootAutomatically: 1
   logLifecycleOperations: 1
---- !u!114 &263644931
+--- !u!114 &263644932
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1113,14 +1066,80 @@ MonoBehaviour:
   m_GameObject: {fileID: 263644897}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2466c650bf0058640aebed4a2e0c6fde, type: 3}
+  m_Script: {fileID: 11500000, guid: d711955dd42287042a283cd2f4fc8d1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableCreationService
+  lifecycleService: {fileID: 263644930}
+  transactionService: {fileID: 0}
+  historyService: {fileID: 0}
+  logCreationOperations: 1
+--- !u!114 &263644933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8239027538c336e4caab678c6f6bd73f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditInteractionController
+  editModeService: {fileID: 263644918}
+  transactionService: {fileID: 263644935}
+  historyService: {fileID: 263644934}
+  creationService: {fileID: 263644932}
+  interactionCamera: {fileID: 330585545}
+  selectableLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  placementSurfaceLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  maximumRayDistance: 500
+  useGridSnapping: 1
+  gridSize: 0.25
+  preserveOriginalWorldHeight: 1
+  rotationStepDegrees: 90
+  toggleEditModeKey: 95
+  rotateClockwiseKey: 32
+  cancelKey: 60
+  undoKey: 40
+  redoKey: 39
+  primaryMouseButton: 0
+  cancelMouseButton: 1
+  logInteractionEvents: 1
+  editorCreationTestDefinition: {fileID: 11400000, guid: 7a381e1b474d2644a9eb15e6c0ac1052, type: 2}
+--- !u!114 &263644934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c13b3585931f5348bc23753f206e0cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementHistoryService
-  transactionService: {fileID: 263644917}
+  transactionService: {fileID: 263644935}
   validationService: {fileID: 263644916}
   maximumHistoryEntries: 50
   validateDestinationBeforeApplying: 1
   logHistoryOperations: 1
+--- !u!114 &263644935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4db96c8ce378c7c4cb72b1f3c27dfa3a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementTransactionService
+  validationService: {fileID: 263644916}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
