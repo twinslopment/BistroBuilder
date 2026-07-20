@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_FactoryTestPlant
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: factory_test_plant
+  displayName: Factory Test Plant
+  category: 3
+  description: 'Elemento decorativo: Factory Test Plant.'
+  catalogIcon: {fileID: 0}
+  prefab: {fileID: 5269749945171665054, guid: 20826ff825e135f4b86adcef17ce492e, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 2286efe883b0a004faea63bac054716e, type: 2}
+  purchasePrice: 25
