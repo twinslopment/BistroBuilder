@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EditableObjectDefinition_FactoryTestPlant
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditableObjectDefinition
   definitionId: factory_test_plant
-  displayName: Factory Test Plant
+  displayName: Planta decorativa de prueba
   description: 'Elemento decorativo: Factory Test Plant.'
   canMove: 1
   canRotate: 1

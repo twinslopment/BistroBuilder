@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: "Mesa b\xE1sica"
   category: 0
   description: "Mesa b\xE1sica para dos clientes."
-  catalogIcon: {fileID: 0}
+  catalogIcon: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
   prefab: {fileID: 1936515173020237737, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
   editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
   purchasePrice: 0

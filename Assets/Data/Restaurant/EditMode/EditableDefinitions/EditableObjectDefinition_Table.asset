@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 31f983748fb1a0d428eeed97664c9b91, type: 3}
   m_Name: EditableObjectDefinition_Table
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantEditableObjectDefinition
-  definitionId: table
-  displayName: Mesa
-  description: 
+  definitionId: table_basic
+  displayName: "Mesa b\xE1sica"
+  description: "Mesa b\xE1sica para dos clientes."
   canMove: 1
   canRotate: 1
   useCustomGridSize: 0

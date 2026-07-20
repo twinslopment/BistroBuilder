@@ -710,6 +710,25 @@ public static class BistroBuilderPlaceableFactoryEngine
                 );
             }
 
+            BistroBuilderCatalogThumbnailService.ThumbnailResult
+                thumbnailResult =
+                    BistroBuilderCatalogThumbnailService
+                        .GenerateAndAssign(
+                            itemDefinition,
+                            false,
+                            true
+                        );
+
+            if (thumbnailResult.Changed &&
+                !string.IsNullOrWhiteSpace(
+                    thumbnailResult.AssetPath
+                ))
+            {
+                createdAssetPaths.Add(
+                    thumbnailResult.AssetPath
+                );
+            }
+
             createdDefinition =
                 itemDefinition;
 
@@ -718,7 +737,8 @@ public static class BistroBuilderPlaceableFactoryEngine
                 plan.DisplayName +
                 " [" +
                 plan.ItemId +
-                "].";
+                "]. " +
+                thumbnailResult.Message;
 
             return true;
         }

@@ -2039,11 +2039,65 @@ public static class BistroBuilderProjectValidator
                 CategoryCatalog,
                 definition.DisplayName +
                 " utiliza la letra de respaldo como icono.",
-                "Es válido durante el prototipo. Más adelante se puede " +
+                "Es válido, pero la herramienta de mantenimiento puede " +
                 "generar una miniatura automática.",
                 definition,
                 definitionPath
             );
+        }
+        else
+        {
+            string iconPath =
+                AssetDatabase.GetAssetPath(
+                    definition.CatalogIcon
+                );
+
+            if (!string.IsNullOrWhiteSpace(iconPath) &&
+                iconPath.StartsWith(
+                    BistroBuilderCatalogThumbnailService
+                        .GeneratedIconFolder +
+                    "/",
+                    StringComparison.Ordinal
+                ))
+            {
+                TextureImporter importer =
+                    AssetImporter.GetAtPath(iconPath)
+                    as TextureImporter;
+
+                if (importer == null)
+                {
+                    report.Add(
+                        BistroBuilderValidationSeverity.Warning,
+                        "BB-ITEM-007",
+                        CategoryCatalog,
+                        definition.DisplayName +
+                        " tiene una miniatura generada sin " +
+                        "TextureImporter válido.",
+                        "Regenera la miniatura desde Placeable " +
+                        "Maintenance.",
+                        definition.CatalogIcon,
+                        iconPath
+                    );
+                }
+                else if (importer.textureType !=
+                         TextureImporterType.Sprite ||
+                         importer.mipmapEnabled ||
+                         importer.wrapMode != TextureWrapMode.Clamp)
+                {
+                    report.Add(
+                        BistroBuilderValidationSeverity.Warning,
+                        "BB-ITEM-008",
+                        CategoryCatalog,
+                        definition.DisplayName +
+                        " tiene una miniatura con ajustes de " +
+                        "importación incorrectos.",
+                        "Regenera la miniatura para aplicar Sprite, " +
+                        "sin mipmaps y Wrap Mode Clamp.",
+                        definition.CatalogIcon,
+                        iconPath
+                    );
+                }
+            }
         }
     }
 

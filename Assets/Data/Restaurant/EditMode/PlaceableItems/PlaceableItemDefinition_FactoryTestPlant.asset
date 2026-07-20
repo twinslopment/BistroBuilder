@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: PlaceableItemDefinition_FactoryTestPlant
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
   itemId: factory_test_plant
-  displayName: Factory Test Plant
+  displayName: Planta decorativa de prueba
   category: 3
   description: 'Elemento decorativo: Factory Test Plant.'
-  catalogIcon: {fileID: 0}
+  catalogIcon: {fileID: 21300000, guid: 76687008be44e1b4485d43d654f95568, type: 3}
   prefab: {fileID: 5269749945171665054, guid: 20826ff825e135f4b86adcef17ce492e, type: 3}
   editableDefinition: {fileID: 11400000, guid: 2286efe883b0a004faea63bac054716e, type: 2}
-  purchasePrice: 25
+  purchasePrice: 30
