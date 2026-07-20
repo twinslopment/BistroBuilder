@@ -26,8 +26,110 @@ public static class BistroBuilderCatalogThumbnailService
     public const int DefaultThumbnailSize = 256;
 
     private const float CameraFieldOfView = 30f;
-    private const float CameraPadding = 1.18f;
     private const float MinimumRenderRadius = 0.1f;
+
+    /// <summary>
+    /// Perfil interno de render. Se prueban varios perfiles y se
+    /// conserva automáticamente el resultado de mayor calidad.
+    /// </summary>
+    private readonly struct ThumbnailRenderProfile
+    {
+        public string Name
+        {
+            get;
+        }
+
+        public float CameraPadding
+        {
+            get;
+        }
+
+        public float AmbientIntensity
+        {
+            get;
+        }
+
+        public float KeyIntensity
+        {
+            get;
+        }
+
+        public float FillIntensity
+        {
+            get;
+        }
+
+        public float Exposure
+        {
+            get;
+        }
+
+        public float ShadowLift
+        {
+            get;
+        }
+
+        public Vector3 ViewDirection
+        {
+            get;
+        }
+
+        public ThumbnailRenderProfile(
+            string name,
+            float cameraPadding,
+            float ambientIntensity,
+            float keyIntensity,
+            float fillIntensity,
+            float exposure,
+            float shadowLift,
+            Vector3 viewDirection
+        )
+        {
+            Name = name;
+            CameraPadding = cameraPadding;
+            AmbientIntensity = ambientIntensity;
+            KeyIntensity = keyIntensity;
+            FillIntensity = fillIntensity;
+            Exposure = exposure;
+            ShadowLift = shadowLift;
+            ViewDirection = viewDirection;
+        }
+    }
+
+    private static readonly ThumbnailRenderProfile[]
+        RenderProfiles =
+        {
+            new ThumbnailRenderProfile(
+                "Studio",
+                1.15f,
+                0.72f,
+                1.85f,
+                0.95f,
+                1.16f,
+                0.045f,
+                new Vector3(1.05f, 0.72f, -1.05f)
+            ),
+            new ThumbnailRenderProfile(
+                "Bright",
+                1.18f,
+                0.92f,
+                2.25f,
+                1.25f,
+                1.28f,
+                0.075f,
+                new Vector3(1.0f, 0.8f, -1.0f)
+            ),
+            new ThumbnailRenderProfile(
+                "Wide",
+                1.34f,
+                0.82f,
+                2.0f,
+                1.05f,
+                1.2f,
+                0.055f,
+                new Vector3(1.12f, 0.68f, -1.0f)
+            )
+        };
 
     /// <summary>
     /// Resultado de una generación individual.
@@ -298,6 +400,12 @@ public static class BistroBuilderCatalogThumbnailService
                 AssetDatabase.SaveAssets();
             }
 
+            BistroBuilderThumbnailQualityReport finalQuality =
+                BistroBuilderCatalogThumbnailQualityService
+                    .AnalyzeSprite(
+                        generatedSprite
+                    );
+
             return new ThumbnailResult(
                 true,
                 true,
@@ -305,7 +413,8 @@ public static class BistroBuilderCatalogThumbnailService
                 definition.DisplayName +
                 ": miniatura generada en " +
                 iconPath +
-                "."
+                ". " +
+                finalQuality.BuildCompactSummary()
             );
         }
         catch (Exception exception)
@@ -466,6 +575,117 @@ public static class BistroBuilderCatalogThumbnailService
         pngBytes = null;
         errorMessage = string.Empty;
 
+        if (prefabAsset == null)
+        {
+            errorMessage =
+                "el prefab de origen es nulo.";
+
+            return false;
+        }
+
+        byte[] bestBytes = null;
+
+        BistroBuilderThumbnailQualityReport bestQuality =
+            null;
+
+        string bestProfileName =
+            string.Empty;
+
+        List<string> attemptErrors =
+            new List<string>();
+
+        for (int index = 0;
+             index < RenderProfiles.Length;
+             index++)
+        {
+            ThumbnailRenderProfile profile =
+                RenderProfiles[index];
+
+            if (!TryRenderSingleProfile(
+                    prefabAsset,
+                    size,
+                    profile,
+                    out byte[] candidateBytes,
+                    out string candidateError
+                ))
+            {
+                attemptErrors.Add(
+                    profile.Name +
+                    ": " +
+                    candidateError
+                );
+
+                continue;
+            }
+
+            BistroBuilderThumbnailQualityReport candidateQuality =
+                BistroBuilderCatalogThumbnailQualityService
+                    .AnalyzePngBytes(
+                        candidateBytes,
+                        profile.Name
+                    );
+
+            if (bestQuality == null ||
+                candidateQuality.Score >
+                bestQuality.Score)
+            {
+                bestBytes =
+                    candidateBytes;
+
+                bestQuality =
+                    candidateQuality;
+
+                bestProfileName =
+                    profile.Name;
+            }
+
+            if (candidateQuality.Status ==
+                BistroBuilderThumbnailQualityStatus.Good)
+            {
+                break;
+            }
+        }
+
+        if (bestBytes == null ||
+            bestQuality == null)
+        {
+            errorMessage =
+                attemptErrors.Count > 0
+                    ? string.Join(" | ", attemptErrors)
+                    : "ningún perfil produjo una imagen válida.";
+
+            return false;
+        }
+
+        pngBytes =
+            bestBytes;
+
+        errorMessage =
+            "Perfil " +
+            bestProfileName +
+            "; calidad " +
+            bestQuality.Score.ToString("0.00") +
+            ".";
+
+        return true;
+    }
+
+    /// <summary>
+    /// Renderiza un único perfil. Todo el estado de PreviewRenderUtility
+    /// se crea y destruye dentro del mismo intento para impedir fugas
+    /// entre perfiles.
+    /// </summary>
+    private static bool TryRenderSingleProfile(
+        GameObject prefabAsset,
+        int size,
+        ThumbnailRenderProfile profile,
+        out byte[] pngBytes,
+        out string errorMessage
+    )
+    {
+        pngBytes = null;
+        errorMessage = string.Empty;
+
         PreviewRenderUtility previewUtility = null;
         GameObject previewRoot = null;
         Texture2D readableTexture = null;
@@ -512,7 +732,8 @@ public static class BistroBuilderCatalogThumbnailService
 
             ConfigurePreviewUtility(
                 previewUtility,
-                bounds
+                bounds,
+                profile
             );
 
             Rect previewRect =
@@ -581,6 +802,11 @@ public static class BistroBuilderCatalogThumbnailService
                 false
             );
 
+            ApplyCatalogToneMapping(
+                readableTexture,
+                profile
+            );
+
             pngBytes =
                 readableTexture.EncodeToPNG();
 
@@ -634,6 +860,86 @@ public static class BistroBuilderCatalogThumbnailService
                 previewUtility.Cleanup();
             }
         }
+    }
+
+    /// <summary>
+    /// Ajuste suave de exposición para iconos. Solo afecta a la
+    /// textura temporal; no toca materiales ni prefabs.
+    /// </summary>
+    private static void ApplyCatalogToneMapping(
+        Texture2D texture,
+        ThumbnailRenderProfile profile
+    )
+    {
+        if (texture == null)
+        {
+            return;
+        }
+
+        Color32[] pixels =
+            texture.GetPixels32();
+
+        for (int index = 0;
+             index < pixels.Length;
+             index++)
+        {
+            Color32 pixel =
+                pixels[index];
+
+            if (pixel.a <= 4)
+            {
+                continue;
+            }
+
+            float red =
+                ToneMapChannel(
+                    pixel.r / 255f,
+                    profile
+                );
+
+            float green =
+                ToneMapChannel(
+                    pixel.g / 255f,
+                    profile
+                );
+
+            float blue =
+                ToneMapChannel(
+                    pixel.b / 255f,
+                    profile
+                );
+
+            pixels[index] =
+                new Color(
+                    red,
+                    green,
+                    blue,
+                    pixel.a / 255f
+                );
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, false);
+    }
+
+    private static float ToneMapChannel(
+        float value,
+        ThumbnailRenderProfile profile
+    )
+    {
+        float lifted =
+            Mathf.Clamp01(
+                (
+                    value +
+                    profile.ShadowLift
+                ) *
+                profile.Exposure
+            );
+
+        return Mathf.Pow(
+            lifted,
+            0.92f
+        );
     }
 
     /// <summary>
@@ -754,7 +1060,8 @@ public static class BistroBuilderCatalogThumbnailService
 
     private static void ConfigurePreviewUtility(
         PreviewRenderUtility previewUtility,
-        Bounds bounds
+        Bounds bounds,
+        ThumbnailRenderProfile profile
     )
     {
         Camera camera =
@@ -765,9 +1072,9 @@ public static class BistroBuilderCatalogThumbnailService
 
         camera.backgroundColor =
             new Color(
-                0.035f,
-                0.04f,
-                0.045f,
+                0.055f,
+                0.06f,
+                0.065f,
                 0f
             );
 
@@ -792,14 +1099,16 @@ public static class BistroBuilderCatalogThumbnailService
         float distance =
             radius /
             Mathf.Sin(halfFieldOfViewRadians) *
-            CameraPadding;
+            profile.CameraPadding;
 
         Vector3 viewDirection =
-            new Vector3(
-                1.05f,
-                0.72f,
-                -1.05f
-            ).normalized;
+            profile.ViewDirection.sqrMagnitude > 0.0001f
+                ? profile.ViewDirection.normalized
+                : new Vector3(
+                    1.05f,
+                    0.72f,
+                    -1.05f
+                ).normalized;
 
         camera.transform.position =
             bounds.center -
@@ -821,9 +1130,9 @@ public static class BistroBuilderCatalogThumbnailService
 
         previewUtility.ambientColor =
             new Color(
-                0.34f,
-                0.34f,
-                0.36f,
+                profile.AmbientIntensity,
+                profile.AmbientIntensity,
+                profile.AmbientIntensity * 1.02f,
                 1f
             );
 
@@ -834,13 +1143,24 @@ public static class BistroBuilderCatalogThumbnailService
             lights.Length > 0 &&
             lights[0] != null)
         {
-            lights[0].intensity = 1.25f;
-            lights[0].color = Color.white;
-            lights[0].shadows = LightShadows.Soft;
+            lights[0].intensity =
+                profile.KeyIntensity;
+
+            lights[0].color =
+                new Color(
+                    1f,
+                    0.96f,
+                    0.9f,
+                    1f
+                );
+
+            lights[0].shadows =
+                LightShadows.Soft;
+
             lights[0].transform.rotation =
                 Quaternion.Euler(
-                    36f,
-                    -32f,
+                    34f,
+                    -34f,
                     0f
                 );
         }
@@ -849,18 +1169,23 @@ public static class BistroBuilderCatalogThumbnailService
             lights.Length > 1 &&
             lights[1] != null)
         {
-            lights[1].intensity = 0.55f;
+            lights[1].intensity =
+                profile.FillIntensity;
+
             lights[1].color =
                 new Color(
                     0.78f,
-                    0.84f,
+                    0.86f,
                     1f,
                     1f
                 );
-            lights[1].shadows = LightShadows.None;
+
+            lights[1].shadows =
+                LightShadows.None;
+
             lights[1].transform.rotation =
                 Quaternion.Euler(
-                    315f,
+                    318f,
                     145f,
                     0f
                 );
