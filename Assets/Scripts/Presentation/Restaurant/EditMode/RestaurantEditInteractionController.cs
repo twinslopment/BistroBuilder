@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -172,14 +171,6 @@ public sealed class RestaurantEditInteractionController :
     [SerializeField]
     private bool logInteractionEvents = true;
 
-    [Tooltip(
-        "Tecla que arma la captura de la siguiente colocación. " +
-        "Pulsa una vez antes de colocar en la zona izquierda y otra " +
-        "vez antes de colocar en la zona derecha."
-    )]
-    [SerializeField]
-    private Key placementHeightDiagnosticKey = Key.F9;
-
 #if UNITY_EDITOR
     [Header("Diagnóstico de creación en Editor")]
 
@@ -192,107 +183,6 @@ public sealed class RestaurantEditInteractionController :
         editorCreationTestDefinition;
 #endif
 
-    private const string PlacementHeightDiagnosticTag =
-        "[BB-PLACEMENT-HEIGHT]";
-
-    /// <summary>
-    /// Un impacto individual utilizado por el diagnóstico.
-    /// Se almacenan referencias y valores, sin asignaciones por frame.
-    /// </summary>
-    private struct PlacementDiagnosticHit
-    {
-        public Collider Collider;
-        public Vector3 Point;
-        public Vector3 Normal;
-        public float Distance;
-        public int Layer;
-        public bool IsActiveMember;
-        public bool WasSelected;
-    }
-
-    /// <summary>
-    /// Trazabilidad de una resolución de superficie.
-    /// </summary>
-    private sealed class PlacementSurfaceTrace
-    {
-        public bool HasData;
-        public string Source = string.Empty;
-        public bool UsedFallback;
-        public bool UsedMathematicalPlane;
-        public Vector2 PointerScreenPosition;
-        public Ray CameraRay;
-        public int RaycastHitCount;
-        public int StoredHitCount;
-        public Collider SelectedCollider;
-        public Vector3 SelectedPoint;
-        public Vector3 SelectedNormal;
-        public float SelectedDistance;
-        public readonly PlacementDiagnosticHit[] Hits =
-            new PlacementDiagnosticHit[RaycastBufferSize];
-
-        public void Clear(
-            string source,
-            bool usedFallback,
-            bool usedMathematicalPlane,
-            Vector2 pointerScreenPosition,
-            Ray cameraRay
-        )
-        {
-            HasData = true;
-            Source = source ?? string.Empty;
-            UsedFallback = usedFallback;
-            UsedMathematicalPlane = usedMathematicalPlane;
-            PointerScreenPosition = pointerScreenPosition;
-            CameraRay = cameraRay;
-            RaycastHitCount = 0;
-            StoredHitCount = 0;
-            SelectedCollider = null;
-            SelectedPoint = Vector3.zero;
-            SelectedNormal = Vector3.zero;
-            SelectedDistance = 0f;
-        }
-    }
-
-    /// <summary>
-    /// Valores de posición calculados en el último frame de la
-    /// previsualización.
-    /// </summary>
-    private struct PlacementCandidateTrace
-    {
-        public bool HasData;
-        public Vector3 SurfacePoint;
-        public Vector3 GrabOffset;
-        public Vector3 PositionBeforeHeightPolicy;
-        public Vector3 PositionAfterHeightPolicy;
-        public Vector3 PositionAfterSnap;
-        public bool PreservedOriginalWorldHeight;
-        public float OriginalWorldHeight;
-        public Vector3 AnchorLocalPosition;
-        public Vector3 AnchorWorldOffsetFromRoot;
-        public float PreviewRootY;
-        public float PreviewAnchorY;
-    }
-
-    /// <summary>
-    /// Muestra completa capturada al confirmar o rechazar.
-    /// </summary>
-    private sealed class PlacementHeightDiagnosticSample
-    {
-        public int Number;
-        public string ObjectName = string.Empty;
-        public string ItemId = string.Empty;
-        public bool WasCreation;
-        public bool WasCommitted;
-        public string ValidationStatus = string.Empty;
-        public PlacementSurfaceTrace InitialTrace;
-        public PlacementSurfaceTrace FinalTrace;
-        public PlacementCandidateTrace CandidateTrace;
-        public float FinalRootY;
-        public float FinalAnchorY;
-        public Vector3 FinalRootPosition;
-        public Vector3 FinalAnchorPosition;
-    }
-
     private const int RaycastBufferSize = 32;
 
     private readonly RaycastHit[] selectionHitBuffer =
@@ -300,26 +190,6 @@ public sealed class RestaurantEditInteractionController :
 
     private readonly RaycastHit[] surfaceHitBuffer =
         new RaycastHit[RaycastBufferSize];
-
-
-    private readonly PlacementSurfaceTrace
-        lastPointerSurfaceTrace =
-            new PlacementSurfaceTrace();
-
-    private readonly PlacementSurfaceTrace
-        lastInitialCreationTrace =
-            new PlacementSurfaceTrace();
-
-    private PlacementCandidateTrace
-        lastCandidateTrace;
-
-    private readonly PlacementHeightDiagnosticSample[]
-        placementHeightDiagnosticSamples =
-            new PlacementHeightDiagnosticSample[2];
-
-    private bool placementHeightDiagnosticArmed;
-
-    private int placementHeightDiagnosticSampleCount;
 
     private RestaurantAreaMember activeMember;
 
@@ -512,8 +382,6 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
-        HandlePlacementHeightDiagnosticShortcut();
-
         if (transactionService.HasActiveTransaction)
         {
             HandleActivePlacement();
@@ -656,8 +524,6 @@ public sealed class RestaurantEditInteractionController :
         }
 
         ClearSelection();
-
-        ResetPlacementHeightDiagnosticTraces();
 
         if (!TryGetInitialCreationSurfacePoint(
                 out Vector3 initialPosition
@@ -1544,8 +1410,6 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
-        ResetPlacementHeightDiagnosticTraces();
-
         InitializeActivePlacementState(
             editableObject,
             member,
@@ -1683,21 +1547,15 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
-        Vector3 positionBeforeHeightPolicy =
+        Vector3 nextPosition =
             surfacePoint +
             grabOffset;
-
-        Vector3 nextPosition =
-            positionBeforeHeightPolicy;
 
         if (preserveOriginalWorldHeight)
         {
             nextPosition.y =
                 originalWorldHeight;
         }
-
-        Vector3 positionAfterHeightPolicy =
-            nextPosition;
 
         if (useGridSnapping)
         {
@@ -1718,13 +1576,6 @@ public sealed class RestaurantEditInteractionController :
             nextPosition;
 
         hasCandidatePose = true;
-
-        CapturePlacementCandidateTrace(
-            surfacePoint,
-            positionBeforeHeightPolicy,
-            positionAfterHeightPolicy,
-            candidatePosition
-        );
     }
 
     private void PublishPreviewIfChanged()
@@ -1783,8 +1634,6 @@ public sealed class RestaurantEditInteractionController :
 
         hasPublishedPreviewPose = true;
 
-        CaptureAppliedPreviewHeight();
-
         lastValidationResult =
             result;
 
@@ -1838,13 +1687,6 @@ public sealed class RestaurantEditInteractionController :
                     )
                 );
 
-                EmitPlacementHeightDiagnosticIfArmed(
-                    memberBeingCommitted,
-                    true,
-                    false,
-                    creationResult.ValidationResult.Status.ToString()
-                );
-
                 return;
             }
 
@@ -1852,13 +1694,6 @@ public sealed class RestaurantEditInteractionController :
                 creationResult.Placeable != null
                     ? creationResult.Placeable.DisplayName
                     : memberBeingCommitted.name;
-
-            EmitPlacementHeightDiagnosticIfArmed(
-                memberBeingCommitted,
-                true,
-                true,
-                creationResult.ValidationResult.Status.ToString()
-            );
 
             ClearLocalPlacementState();
 
@@ -1911,22 +1746,8 @@ public sealed class RestaurantEditInteractionController :
                 )
             );
 
-            EmitPlacementHeightDiagnosticIfArmed(
-                memberBeingCommitted,
-                false,
-                false,
-                result.Status.ToString()
-            );
-
             return;
         }
-
-        EmitPlacementHeightDiagnosticIfArmed(
-            memberBeingCommitted,
-            false,
-            true,
-            result.Status.ToString()
-        );
 
         ClearLocalPlacementState();
 
@@ -2134,13 +1955,6 @@ public sealed class RestaurantEditInteractionController :
     /// vista de juego o no corta el suelo, utiliza el centro de la
     /// cámara para que la solicitud siga siendo determinista.
     /// </summary>
-    /// <summary>
-    /// Resuelve una posición inicial para una creación solicitada
-    /// desde UI o desde las herramientas del Editor.
-    ///
-    /// Primero utiliza el puntero. Si no existe impacto, utiliza el
-    /// centro de la cámara. No se utiliza ningún plano matemático.
-    /// </summary>
     private bool TryGetInitialCreationSurfacePoint(
         out Vector3 surfacePoint
     )
@@ -2149,14 +1963,6 @@ public sealed class RestaurantEditInteractionController :
                 out surfacePoint
             ))
         {
-            CopyPlacementSurfaceTrace(
-                lastPointerSurfaceTrace,
-                lastInitialCreationTrace,
-                "PointerRaycast",
-                false,
-                false
-            );
-
             return true;
         }
 
@@ -2177,9 +1983,6 @@ public sealed class RestaurantEditInteractionController :
                 )
             );
 
-        Vector2 pointerPosition =
-            ReadPointerScreenPosition();
-
         int hitCount =
             Physics.RaycastNonAlloc(
                 centerRay,
@@ -2189,18 +1992,34 @@ public sealed class RestaurantEditInteractionController :
                 QueryTriggerInteraction.Ignore
             );
 
+        float nearestDistance =
+            float.PositiveInfinity;
+
         bool foundSurface =
-            ResolveNearestPlacementSurfaceHit(
-                surfaceHitBuffer,
-                hitCount,
-                centerRay,
-                pointerPosition,
-                "CenterCameraFallback",
-                true,
-                false,
-                lastInitialCreationTrace,
-                out surfacePoint
-            );
+            false;
+
+        for (int index = 0;
+             index < hitCount;
+             index++)
+        {
+            RaycastHit hit =
+                surfaceHitBuffer[index];
+
+            if (hit.collider == null ||
+                hit.distance >= nearestDistance)
+            {
+                continue;
+            }
+
+            nearestDistance =
+                hit.distance;
+
+            surfacePoint =
+                hit.point;
+
+            foundSurface =
+                true;
+        }
 
         return foundSurface;
     }
@@ -2220,9 +2039,6 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
-        Vector2 pointerPosition =
-            ReadPointerScreenPosition();
-
         int hitCount =
             Physics.RaycastNonAlloc(
                 ray,
@@ -2232,133 +2048,27 @@ public sealed class RestaurantEditInteractionController :
                 QueryTriggerInteraction.Ignore
             );
 
-        return ResolveNearestPlacementSurfaceHit(
-            surfaceHitBuffer,
-            hitCount,
-            ray,
-            pointerPosition,
-            "PointerRaycast",
-            false,
-            false,
-            lastPointerSurfaceTrace,
-            out surfacePoint
-        );
-    }
-
-    private void HandlePlacementHeightDiagnosticShortcut()
-    {
-        if (!WasKeyPressedThisFrame(
-                placementHeightDiagnosticKey
-            ))
-        {
-            return;
-        }
-
-        placementHeightDiagnosticArmed =
-            true;
-
-        const string message =
-            PlacementHeightDiagnosticTag +
-            " Captura armada. La siguiente confirmación o rechazo " +
-            "generará una muestra completa.";
-
-        Debug.Log(
-            message,
-            this
-        );
-
-        PublishMessage(
-            "Diagnóstico de altura armado para la siguiente colocación."
-        );
-    }
-
-    private void ResetPlacementHeightDiagnosticTraces()
-    {
-        lastCandidateTrace =
-            default;
-
-        lastInitialCreationTrace.HasData =
-            false;
-
-        lastPointerSurfaceTrace.HasData =
-            false;
-    }
-
-    private bool ResolveNearestPlacementSurfaceHit(
-        RaycastHit[] hitBuffer,
-        int hitCount,
-        Ray ray,
-        Vector2 pointerPosition,
-        string source,
-        bool usedFallback,
-        bool usedMathematicalPlane,
-        PlacementSurfaceTrace trace,
-        out Vector3 surfacePoint
-    )
-    {
-        surfacePoint =
-            default;
-
-        trace.Clear(
-            source,
-            usedFallback,
-            usedMathematicalPlane,
-            pointerPosition,
-            ray
-        );
-
-        trace.RaycastHitCount =
-            Mathf.Max(
-                0,
-                hitCount
-            );
-
         float nearestDistance =
             float.PositiveInfinity;
 
-        bool foundSurface =
-            false;
-
-        int storedHitCount =
-            Mathf.Min(
-                Mathf.Max(0, hitCount),
-                RaycastBufferSize
-            );
+        bool foundSurface = false;
 
         for (int index = 0;
-             index < storedHitCount;
+             index < hitCount;
              index++)
         {
             RaycastHit hit =
-                hitBuffer[index];
+                surfaceHitBuffer[index];
 
-            Collider collider =
-                hit.collider;
+            if (hit.collider == null ||
+                hit.distance >= nearestDistance)
+            {
+                continue;
+            }
 
-            bool isActiveMember =
-                collider != null &&
-                IsColliderPartOfActiveMember(
-                    collider
-                );
-
-            trace.Hits[index] =
-                new PlacementDiagnosticHit
-                {
-                    Collider = collider,
-                    Point = hit.point,
-                    Normal = hit.normal,
-                    Distance = hit.distance,
-                    Layer =
-                        collider != null
-                            ? collider.gameObject.layer
-                            : -1,
-                    IsActiveMember = isActiveMember,
-                    WasSelected = false
-                };
-
-            if (collider == null ||
-                hit.distance >= nearestDistance ||
-                isActiveMember)
+            if (IsColliderPartOfActiveMember(
+                    hit.collider
+                ))
             {
                 continue;
             }
@@ -2369,880 +2079,11 @@ public sealed class RestaurantEditInteractionController :
             surfacePoint =
                 hit.point;
 
-            trace.SelectedCollider =
-                collider;
-
-            trace.SelectedPoint =
-                hit.point;
-
-            trace.SelectedNormal =
-                hit.normal;
-
-            trace.SelectedDistance =
-                hit.distance;
-
             foundSurface =
                 true;
         }
 
-        trace.StoredHitCount =
-            storedHitCount;
-
-        if (foundSurface &&
-            trace.SelectedCollider != null)
-        {
-            for (int index = 0;
-                 index < storedHitCount;
-                 index++)
-            {
-                PlacementDiagnosticHit diagnosticHit =
-                    trace.Hits[index];
-
-                if (ReferenceEquals(
-                        diagnosticHit.Collider,
-                        trace.SelectedCollider
-                    ) &&
-                    Mathf.Approximately(
-                        diagnosticHit.Distance,
-                        trace.SelectedDistance
-                    ))
-                {
-                    diagnosticHit.WasSelected =
-                        true;
-
-                    trace.Hits[index] =
-                        diagnosticHit;
-
-                    break;
-                }
-            }
-        }
-
         return foundSurface;
-    }
-
-    private static void CopyPlacementSurfaceTrace(
-        PlacementSurfaceTrace source,
-        PlacementSurfaceTrace destination,
-        string sourceName,
-        bool usedFallback,
-        bool usedMathematicalPlane
-    )
-    {
-        if (source == null ||
-            destination == null ||
-            !source.HasData)
-        {
-            return;
-        }
-
-        destination.Clear(
-            sourceName,
-            usedFallback,
-            usedMathematicalPlane,
-            source.PointerScreenPosition,
-            source.CameraRay
-        );
-
-        destination.RaycastHitCount =
-            source.RaycastHitCount;
-
-        destination.StoredHitCount =
-            source.StoredHitCount;
-
-        destination.SelectedCollider =
-            source.SelectedCollider;
-
-        destination.SelectedPoint =
-            source.SelectedPoint;
-
-        destination.SelectedNormal =
-            source.SelectedNormal;
-
-        destination.SelectedDistance =
-            source.SelectedDistance;
-
-        for (int index = 0;
-             index < source.StoredHitCount;
-             index++)
-        {
-            destination.Hits[index] =
-                source.Hits[index];
-        }
-    }
-
-    private void CapturePlacementCandidateTrace(
-        Vector3 surfacePoint,
-        Vector3 positionBeforeHeightPolicy,
-        Vector3 positionAfterHeightPolicy,
-        Vector3 positionAfterSnap
-    )
-    {
-        PlacementCandidateTrace trace =
-            new PlacementCandidateTrace
-            {
-                HasData = true,
-                SurfacePoint = surfacePoint,
-                GrabOffset = grabOffset,
-                PositionBeforeHeightPolicy =
-                    positionBeforeHeightPolicy,
-                PositionAfterHeightPolicy =
-                    positionAfterHeightPolicy,
-                PositionAfterSnap =
-                    positionAfterSnap,
-                PreservedOriginalWorldHeight =
-                    preserveOriginalWorldHeight,
-                OriginalWorldHeight =
-                    originalWorldHeight,
-                AnchorLocalPosition =
-                    Vector3.zero,
-                AnchorWorldOffsetFromRoot =
-                    Vector3.zero,
-                PreviewRootY =
-                    activeMember != null
-                        ? activeMember.transform.position.y
-                        : float.NaN,
-                PreviewAnchorY =
-                    float.NaN
-            };
-
-        if (activeMember != null &&
-            activeMember.TryGetComponent(
-                out RestaurantPlaceableObject placeable
-            ))
-        {
-            Transform anchor =
-                placeable.PlacementAnchor;
-
-            if (anchor != null)
-            {
-                trace.AnchorLocalPosition =
-                    activeMember.transform.InverseTransformPoint(
-                        anchor.position
-                    );
-
-                trace.AnchorWorldOffsetFromRoot =
-                    anchor.position -
-                    activeMember.transform.position;
-
-                trace.PreviewAnchorY =
-                    anchor.position.y;
-            }
-        }
-
-        lastCandidateTrace =
-            trace;
-    }
-
-    private void CaptureAppliedPreviewHeight()
-    {
-        if (!lastCandidateTrace.HasData ||
-            activeMember == null)
-        {
-            return;
-        }
-
-        lastCandidateTrace.PreviewRootY =
-            activeMember.transform.position.y;
-
-        if (activeMember.TryGetComponent(
-                out RestaurantPlaceableObject placeable
-            ) &&
-            placeable.PlacementAnchor != null)
-        {
-            lastCandidateTrace.PreviewAnchorY =
-                placeable.PlacementAnchor.position.y;
-
-            lastCandidateTrace.AnchorWorldOffsetFromRoot =
-                placeable.PlacementAnchor.position -
-                activeMember.transform.position;
-
-            lastCandidateTrace.AnchorLocalPosition =
-                activeMember.transform.InverseTransformPoint(
-                    placeable.PlacementAnchor.position
-                );
-        }
-    }
-
-    private void EmitPlacementHeightDiagnosticIfArmed(
-        RestaurantAreaMember member,
-        bool wasCreation,
-        bool wasCommitted,
-        string validationStatus
-    )
-    {
-        if (!placementHeightDiagnosticArmed ||
-            member == null)
-        {
-            return;
-        }
-
-        placementHeightDiagnosticArmed =
-            false;
-
-        PlacementHeightDiagnosticSample sample =
-            BuildPlacementHeightDiagnosticSample(
-                member,
-                wasCreation,
-                wasCommitted,
-                validationStatus
-            );
-
-        int destinationIndex =
-            placementHeightDiagnosticSampleCount %
-            placementHeightDiagnosticSamples.Length;
-
-        placementHeightDiagnosticSamples[destinationIndex] =
-            sample;
-
-        placementHeightDiagnosticSampleCount++;
-
-        Debug.Log(
-            BuildPlacementHeightDiagnosticSampleMessage(
-                sample
-            ),
-            member
-        );
-
-        RestaurantPlacementGeometryDiagnosticUtility
-            .LogPlacementSnapshot(
-                member,
-                interactionCamera,
-                sample.Number
-            );
-
-        if (placementHeightDiagnosticSampleCount >= 2)
-        {
-            PlacementHeightDiagnosticSample first =
-                placementHeightDiagnosticSamples[
-                    (
-                        placementHeightDiagnosticSampleCount -
-                        2
-                    ) %
-                    placementHeightDiagnosticSamples.Length
-                ];
-
-            PlacementHeightDiagnosticSample second =
-                placementHeightDiagnosticSamples[
-                    (
-                        placementHeightDiagnosticSampleCount -
-                        1
-                    ) %
-                    placementHeightDiagnosticSamples.Length
-                ];
-
-            if (first != null &&
-                second != null)
-            {
-                Debug.Log(
-                    BuildPlacementHeightDiagnosticComparisonMessage(
-                        first,
-                        second
-                    ),
-                    member
-                );
-            }
-        }
-    }
-
-    private PlacementHeightDiagnosticSample
-        BuildPlacementHeightDiagnosticSample(
-            RestaurantAreaMember member,
-            bool wasCreation,
-            bool wasCommitted,
-            string validationStatus
-        )
-    {
-        RestaurantPlaceableObject placeable =
-            member.GetComponent<
-                RestaurantPlaceableObject
-            >();
-
-        Transform anchor =
-            placeable != null
-                ? placeable.PlacementAnchor
-                : member.transform;
-
-        return new PlacementHeightDiagnosticSample
-        {
-            Number =
-                placementHeightDiagnosticSampleCount +
-                1,
-            ObjectName =
-                member.name,
-            ItemId =
-                placeable != null &&
-                placeable.ItemDefinition != null
-                    ? placeable.ItemDefinition.ItemId
-                    : string.Empty,
-            WasCreation =
-                wasCreation,
-            WasCommitted =
-                wasCommitted,
-            ValidationStatus =
-                validationStatus ?? string.Empty,
-            InitialTrace =
-                ClonePlacementSurfaceTrace(
-                    lastInitialCreationTrace
-                ),
-            FinalTrace =
-                ClonePlacementSurfaceTrace(
-                    lastPointerSurfaceTrace
-                ),
-            CandidateTrace =
-                lastCandidateTrace,
-            FinalRootY =
-                member.transform.position.y,
-            FinalAnchorY =
-                anchor != null
-                    ? anchor.position.y
-                    : float.NaN,
-            FinalRootPosition =
-                member.transform.position,
-            FinalAnchorPosition =
-                anchor != null
-                    ? anchor.position
-                    : Vector3.zero
-        };
-    }
-
-    private static PlacementSurfaceTrace
-        ClonePlacementSurfaceTrace(
-            PlacementSurfaceTrace source
-        )
-    {
-        if (source == null ||
-            !source.HasData)
-        {
-            return null;
-        }
-
-        PlacementSurfaceTrace clone =
-            new PlacementSurfaceTrace();
-
-        CopyPlacementSurfaceTrace(
-            source,
-            clone,
-            source.Source,
-            source.UsedFallback,
-            source.UsedMathematicalPlane
-        );
-
-        return clone;
-    }
-
-    private static string
-        BuildPlacementHeightDiagnosticSampleMessage(
-            PlacementHeightDiagnosticSample sample
-        )
-    {
-        StringBuilder builder =
-            new StringBuilder(2048);
-
-        builder.AppendLine(
-            PlacementHeightDiagnosticTag +
-            " MUESTRA " +
-            sample.Number
-        );
-
-        builder.AppendLine(
-            "Objeto: " +
-            sample.ObjectName +
-            " | ItemId: " +
-            (
-                string.IsNullOrWhiteSpace(sample.ItemId)
-                    ? "<vacío>"
-                    : sample.ItemId
-            )
-        );
-
-        builder.AppendLine(
-            "Operación: " +
-            (
-                sample.WasCreation
-                    ? "Creación"
-                    : "Movimiento"
-            ) +
-            " | Confirmada: " +
-            sample.WasCommitted +
-            " | Validación: " +
-            sample.ValidationStatus
-        );
-
-        AppendPlacementSurfaceTrace(
-            builder,
-            "INICIO DE CREACIÓN",
-            sample.InitialTrace
-        );
-
-        AppendPlacementSurfaceTrace(
-            builder,
-            "ÚLTIMO PUNTO BAJO CURSOR",
-            sample.FinalTrace
-        );
-
-        PlacementCandidateTrace candidate =
-            sample.CandidateTrace;
-
-        builder.AppendLine(
-            "--- CÁLCULO DE POSICIÓN ---"
-        );
-
-        if (!candidate.HasData)
-        {
-            builder.AppendLine(
-                "Sin datos de pose candidata."
-            );
-        }
-        else
-        {
-            builder.AppendLine(
-                "Punto mundial de superficie: " +
-                FormatVector3(candidate.SurfacePoint)
-            );
-
-            builder.AppendLine(
-                "Grab offset: " +
-                FormatVector3(candidate.GrabOffset)
-            );
-
-            builder.AppendLine(
-                "Raíz antes de política de altura: " +
-                FormatVector3(
-                    candidate.PositionBeforeHeightPolicy
-                ) +
-                " | Y=" +
-                FormatFloat(
-                    candidate.PositionBeforeHeightPolicy.y
-                )
-            );
-
-            builder.AppendLine(
-                "PreserveOriginalWorldHeight: " +
-                candidate.PreservedOriginalWorldHeight +
-                " | originalWorldHeight=" +
-                FormatFloat(
-                    candidate.OriginalWorldHeight
-                )
-            );
-
-            builder.AppendLine(
-                "Raíz después de política de altura: " +
-                FormatVector3(
-                    candidate.PositionAfterHeightPolicy
-                ) +
-                " | Y=" +
-                FormatFloat(
-                    candidate.PositionAfterHeightPolicy.y
-                )
-            );
-
-            builder.AppendLine(
-                "Raíz después de snap: " +
-                FormatVector3(
-                    candidate.PositionAfterSnap
-                ) +
-                " | Y antes/después snap=" +
-                FormatFloat(
-                    candidate.PositionAfterHeightPolicy.y
-                ) +
-                "/" +
-                FormatFloat(
-                    candidate.PositionAfterSnap.y
-                )
-            );
-
-            builder.AppendLine(
-                "PlacementAnchor local respecto a raíz: " +
-                FormatVector3(
-                    candidate.AnchorLocalPosition
-                )
-            );
-
-            builder.AppendLine(
-                "PlacementAnchor offset mundial desde raíz: " +
-                FormatVector3(
-                    candidate.AnchorWorldOffsetFromRoot
-                )
-            );
-
-            builder.AppendLine(
-                "Preview aplicado: raíz Y=" +
-                FormatFloat(
-                    candidate.PreviewRootY
-                ) +
-                " | anchor Y=" +
-                FormatFloat(
-                    candidate.PreviewAnchorY
-                )
-            );
-        }
-
-        builder.AppendLine(
-            "--- RESULTADO FINAL ---"
-        );
-
-        builder.AppendLine(
-            "Raíz final: " +
-            FormatVector3(
-                sample.FinalRootPosition
-            ) +
-            " | Y=" +
-            FormatFloat(
-                sample.FinalRootY
-            )
-        );
-
-        builder.AppendLine(
-            "Anchor final: " +
-            FormatVector3(
-                sample.FinalAnchorPosition
-            ) +
-            " | Y=" +
-            FormatFloat(
-                sample.FinalAnchorY
-            )
-        );
-
-        return builder.ToString();
-    }
-
-    private static void AppendPlacementSurfaceTrace(
-        StringBuilder builder,
-        string title,
-        PlacementSurfaceTrace trace
-    )
-    {
-        builder.AppendLine(
-            "--- " +
-            title +
-            " ---"
-        );
-
-        if (trace == null ||
-            !trace.HasData)
-        {
-            builder.AppendLine(
-                "Sin datos."
-            );
-
-            return;
-        }
-
-        builder.AppendLine(
-            "Fuente: " +
-            trace.Source +
-            " | Fallback: " +
-            trace.UsedFallback +
-            " | Plano matemático: " +
-            trace.UsedMathematicalPlane
-        );
-
-        builder.AppendLine(
-            "Ratón pantalla: " +
-            FormatVector2(
-                trace.PointerScreenPosition
-            )
-        );
-
-        builder.AppendLine(
-            "Rayo origen: " +
-            FormatVector3(
-                trace.CameraRay.origin
-            ) +
-            " | dirección: " +
-            FormatVector3(
-                trace.CameraRay.direction
-            )
-        );
-
-        builder.AppendLine(
-            "Raycast hits: " +
-            trace.RaycastHitCount +
-            " | almacenados: " +
-            trace.StoredHitCount
-        );
-
-        if (trace.SelectedCollider == null)
-        {
-            builder.AppendLine(
-                "Collider seleccionado: <ninguno>"
-            );
-        }
-        else
-        {
-            builder.AppendLine(
-                "Collider seleccionado: " +
-                BuildColliderPath(
-                    trace.SelectedCollider
-                ) +
-                " | tipo=" +
-                trace.SelectedCollider.GetType().Name +
-                " | layer=" +
-                trace.SelectedCollider.gameObject.layer +
-                " (" +
-                LayerMask.LayerToName(
-                    trace.SelectedCollider.gameObject.layer
-                ) +
-                ")" +
-                " | punto=" +
-                FormatVector3(
-                    trace.SelectedPoint
-                ) +
-                " | normal=" +
-                FormatVector3(
-                    trace.SelectedNormal
-                ) +
-                " | distancia=" +
-                FormatFloat(
-                    trace.SelectedDistance
-                )
-            );
-        }
-
-        for (int index = 0;
-             index < trace.StoredHitCount;
-             index++)
-        {
-            PlacementDiagnosticHit hit =
-                trace.Hits[index];
-
-            if (hit.Collider == null)
-            {
-                continue;
-            }
-
-            builder.AppendLine(
-                "  Hit[" +
-                index +
-                "] " +
-                (
-                    hit.WasSelected
-                        ? "[ELEGIDO] "
-                        : string.Empty
-                ) +
-                (
-                    hit.IsActiveMember
-                        ? "[IGNORADO-ACTIVO] "
-                        : string.Empty
-                ) +
-                BuildColliderPath(
-                    hit.Collider
-                ) +
-                " | " +
-                hit.Collider.GetType().Name +
-                " | layer=" +
-                hit.Layer +
-                " (" +
-                LayerMask.LayerToName(
-                    hit.Layer
-                ) +
-                ")" +
-                " | punto=" +
-                FormatVector3(
-                    hit.Point
-                ) +
-                " | distancia=" +
-                FormatFloat(
-                    hit.Distance
-                )
-            );
-        }
-    }
-
-    private static string
-        BuildPlacementHeightDiagnosticComparisonMessage(
-            PlacementHeightDiagnosticSample first,
-            PlacementHeightDiagnosticSample second
-        )
-    {
-        StringBuilder builder =
-            new StringBuilder(1024);
-
-        builder.AppendLine(
-            PlacementHeightDiagnosticTag +
-            " COMPARACIÓN DE MUESTRAS " +
-            first.Number +
-            " Y " +
-            second.Number
-        );
-
-        builder.AppendLine(
-            "Raíz final Y: " +
-            FormatFloat(first.FinalRootY) +
-            " -> " +
-            FormatFloat(second.FinalRootY) +
-            " | delta=" +
-            FormatFloat(
-                second.FinalRootY -
-                first.FinalRootY
-            )
-        );
-
-        builder.AppendLine(
-            "Anchor final Y: " +
-            FormatFloat(first.FinalAnchorY) +
-            " -> " +
-            FormatFloat(second.FinalAnchorY) +
-            " | delta=" +
-            FormatFloat(
-                second.FinalAnchorY -
-                first.FinalAnchorY
-            )
-        );
-
-        builder.AppendLine(
-            "Superficie final Y: " +
-            FormatFloat(
-                first.CandidateTrace.SurfacePoint.y
-            ) +
-            " -> " +
-            FormatFloat(
-                second.CandidateTrace.SurfacePoint.y
-            ) +
-            " | delta=" +
-            FormatFloat(
-                second.CandidateTrace.SurfacePoint.y -
-                first.CandidateTrace.SurfacePoint.y
-            )
-        );
-
-        builder.AppendLine(
-            "originalWorldHeight: " +
-            FormatFloat(
-                first.CandidateTrace.OriginalWorldHeight
-            ) +
-            " -> " +
-            FormatFloat(
-                second.CandidateTrace.OriginalWorldHeight
-            ) +
-            " | delta=" +
-            FormatFloat(
-                second.CandidateTrace.OriginalWorldHeight -
-                first.CandidateTrace.OriginalWorldHeight
-            )
-        );
-
-        builder.AppendLine(
-            "Collider final muestra " +
-            first.Number +
-            ": " +
-            BuildColliderPath(
-                first.FinalTrace != null
-                    ? first.FinalTrace.SelectedCollider
-                    : null
-            )
-        );
-
-        builder.AppendLine(
-            "Collider final muestra " +
-            second.Number +
-            ": " +
-            BuildColliderPath(
-                second.FinalTrace != null
-                    ? second.FinalTrace.SelectedCollider
-                    : null
-            )
-        );
-
-        builder.AppendLine(
-            "Lectura clave: si SurfacePoint.Y cambia pero la raíz " +
-            "final coincide con originalWorldHeight, la política " +
-            "preserveOriginalWorldHeight está anulando la altura " +
-            "obtenida por el raycast."
-        );
-
-        return builder.ToString();
-    }
-
-    private static Vector2 ReadPointerScreenPosition()
-    {
-        Mouse mouse =
-            Mouse.current;
-
-        return mouse != null
-            ? mouse.position.ReadValue()
-            : Vector2.zero;
-    }
-
-    private static string BuildColliderPath(
-        Collider collider
-    )
-    {
-        if (collider == null)
-        {
-            return "<ninguno>";
-        }
-
-        Transform current =
-            collider.transform;
-
-        StringBuilder builder =
-            new StringBuilder(
-                current.name
-            );
-
-        while (current.parent != null)
-        {
-            current =
-                current.parent;
-
-            builder.Insert(
-                0,
-                current.name +
-                "/"
-            );
-        }
-
-        return builder.ToString();
-    }
-
-    private static string FormatVector2(
-        Vector2 value
-    )
-    {
-        return
-            "(" +
-            FormatFloat(value.x) +
-            ", " +
-            FormatFloat(value.y) +
-            ")";
-    }
-
-    private static string FormatVector3(
-        Vector3 value
-    )
-    {
-        return
-            "(" +
-            FormatFloat(value.x) +
-            ", " +
-            FormatFloat(value.y) +
-            ", " +
-            FormatFloat(value.z) +
-            ")";
-    }
-
-    private static string FormatFloat(
-        float value
-    )
-    {
-        if (float.IsNaN(value))
-        {
-            return "NaN";
-        }
-
-        if (float.IsPositiveInfinity(value))
-        {
-            return "+Infinity";
-        }
-
-        if (float.IsNegativeInfinity(value))
-        {
-            return "-Infinity";
-        }
-
-        return value.ToString("0.000000");
     }
 
     private bool TryBuildPointerRay(

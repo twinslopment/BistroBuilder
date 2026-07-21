@@ -304,6 +304,11 @@ public static class BistroBuilderProjectValidator
             scene
         );
 
+        ValidateElevatedVisualSurfaceOverlaps(
+            report,
+            scene
+        );
+
         ValidateEditModeInterface(
             report,
             scene,
@@ -1292,6 +1297,219 @@ public static class BistroBuilderProjectValidator
                     "Local Size debe ser positivo en ambos ejes.",
                     obstacle
                 );
+            }
+        }
+    }
+
+    /// <summary>
+    /// Detecta superficies visuales planas y extensas situadas por
+    /// encima de una superficie de colocación, pero fuera de la capa
+    /// PlacementSurface.
+    ///
+    /// Este patrón puede ocultar la parte inferior de artículos
+    /// correctamente colocados y producir una falsa apariencia de
+    /// hundimiento, aunque la raíz y el PlacementAnchor estén en la
+    /// altura correcta.
+    /// </summary>
+    private static void ValidateElevatedVisualSurfaceOverlaps(
+        BistroBuilderValidationReport report,
+        Scene scene
+    )
+    {
+        int placementSurfaceLayer =
+            LayerMask.NameToLayer(
+                PlacementSurfaceLayerName
+            );
+
+        if (placementSurfaceLayer < 0)
+        {
+            return;
+        }
+
+        List<Collider> sceneColliders =
+            FindSceneComponents<Collider>(
+                scene
+            );
+
+        List<Renderer> sceneRenderers =
+            FindSceneComponents<Renderer>(
+                scene
+            );
+
+        List<Collider> placementSurfaces =
+            new List<Collider>();
+
+        for (int index = 0;
+             index < sceneColliders.Count;
+             index++)
+        {
+            Collider collider =
+                sceneColliders[index];
+
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy ||
+                collider.gameObject.layer !=
+                    placementSurfaceLayer)
+            {
+                continue;
+            }
+
+            placementSurfaces.Add(collider);
+        }
+
+        if (placementSurfaces.Count == 0)
+        {
+            return;
+        }
+
+        HashSet<int> reportedRendererIds =
+            new HashSet<int>();
+
+        const float maximumFlatThickness =
+            0.10f;
+
+        const float minimumHorizontalArea =
+            4f;
+
+        const float minimumElevation =
+            0.02f;
+
+        const float maximumRelevantElevation =
+            2f;
+
+        for (int rendererIndex = 0;
+             rendererIndex < sceneRenderers.Count;
+             rendererIndex++)
+        {
+            Renderer renderer =
+                sceneRenderers[rendererIndex];
+
+            if (renderer == null ||
+                !renderer.enabled ||
+                !renderer.gameObject.activeInHierarchy ||
+                renderer.gameObject.layer ==
+                    placementSurfaceLayer)
+            {
+                continue;
+            }
+
+            Bounds rendererBounds =
+                renderer.bounds;
+
+            float rendererArea =
+                rendererBounds.size.x *
+                rendererBounds.size.z;
+
+            if (rendererBounds.size.y >
+                    maximumFlatThickness ||
+                rendererArea <
+                    minimumHorizontalArea)
+            {
+                continue;
+            }
+
+            for (int surfaceIndex = 0;
+                 surfaceIndex < placementSurfaces.Count;
+                 surfaceIndex++)
+            {
+                Collider surface =
+                    placementSurfaces[surfaceIndex];
+
+                if (surface == null ||
+                    ReferenceEquals(
+                        surface.gameObject,
+                        renderer.gameObject
+                    ))
+                {
+                    continue;
+                }
+
+                Bounds surfaceBounds =
+                    surface.bounds;
+
+                float overlapX =
+                    Mathf.Min(
+                        rendererBounds.max.x,
+                        surfaceBounds.max.x
+                    ) -
+                    Mathf.Max(
+                        rendererBounds.min.x,
+                        surfaceBounds.min.x
+                    );
+
+                float overlapZ =
+                    Mathf.Min(
+                        rendererBounds.max.z,
+                        surfaceBounds.max.z
+                    ) -
+                    Mathf.Max(
+                        rendererBounds.min.z,
+                        surfaceBounds.min.z
+                    );
+
+                if (overlapX <= 0f ||
+                    overlapZ <= 0f)
+                {
+                    continue;
+                }
+
+                float overlapArea =
+                    overlapX *
+                    overlapZ;
+
+                if (overlapArea <
+                    minimumHorizontalArea)
+                {
+                    continue;
+                }
+
+                float elevation =
+                    rendererBounds.min.y -
+                    surfaceBounds.max.y;
+
+                if (elevation <
+                        minimumElevation ||
+                    elevation >
+                        maximumRelevantElevation)
+                {
+                    continue;
+                }
+
+                int rendererId =
+                    renderer.GetInstanceID();
+
+                if (!reportedRendererIds.Add(
+                        rendererId
+                    ))
+                {
+                    break;
+                }
+
+                report.Add(
+                    BistroBuilderValidationSeverity.Error,
+                    "BB-SURFACE-001",
+                    CategoryScene,
+                    renderer.name +
+                    " dibuja una superficie elevada sobre una " +
+                    "superficie de colocación.",
+                    "Elevación detectada: " +
+                    elevation.ToString("0.###") +
+                    " m. Área horizontal solapada: " +
+                    overlapArea.ToString("0.###") +
+                    " m². Superficie de colocación: " +
+                    surface.name +
+                    ". Un objeto colocado correctamente sobre " +
+                    surface.name +
+                    " puede parecer hundido porque " +
+                    renderer.name +
+                    " oculta su parte inferior. Elimina la " +
+                    "superficie heredada o conviértela en una " +
+                    "superficie de colocación coherente.",
+                    renderer
+                );
+
+                break;
             }
         }
     }
