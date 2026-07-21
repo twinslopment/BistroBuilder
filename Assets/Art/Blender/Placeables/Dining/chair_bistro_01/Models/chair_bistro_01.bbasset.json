@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "chair_bistro_01",
+  "displayName": "Silla bistró de madera",
+  "category": "DINING",
+  "assetType": "CHAIR",
+  "source": {
+    "mode": "PROMPT_IMAGE",
+    "prompt": "Silla de comedor de madera estilo bistró",
+    "referenceImage": "",
+    "notes": ""
+  },
+  "dimensions": {
+    "targetWidthM": 0.465,
+    "targetDepthM": 0.492,
+    "targetHeightM": 0.92,
+    "actualWidthM": 0.464727,
+    "actualDepthM": 0.4921,
+    "actualHeightM": 0.92,
+    "toleranceMm": 1.0
+  },
+  "functionalMeasurements": {
+    "seatHeightM": 0.46,
+    "worktopHeightM": 0.9,
+    "doorClearanceM": 0.0
+  },
+  "orientation": {
+    "blenderFront": "-Y",
+    "unityFront": "+Z",
+    "groundAxis": "Z",
+    "origin": "FOOTPRINT_CENTER_GROUND"
+  },
+  "geometry": {
+    "meshCount": 1,
+    "triangleCount": 4104,
+    "materialNames": [
+      "MAT_wood_oak_warm.002"
+    ],
+    "uv0": true,
+    "topologyHash": "4039991fdadb48c651104f92f05401f881843032067b2ef850d6304366fe94b7"
+  },
+  "variants": [
+    {
+      "id": "oak_warm",
+      "displayName": "Roble cálido",
+      "baseColor": [
+        0.58,
+        0.31,
+        0.12,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.58,
+      "priceMultiplier": 1.0
+    },
+    {
+      "id": "walnut_dark",
+      "displayName": "Nogal oscuro",
+      "baseColor": [
+        0.2,
+        0.075,
+        0.025,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.62,
+      "priceMultiplier": 1.08
+    },
+    {
+      "id": "painted_black",
+      "displayName": "Negro pintado",
+      "baseColor": [
+        0.018,
+        0.02,
+        0.023,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.44,
+      "priceMultiplier": 1.04
+    },
+    {
+      "id": "painted_white",
+      "displayName": "Blanco roto",
+      "baseColor": [
+        0.82,
+        0.79,
+        0.7,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.56,
+      "priceMultiplier": 1.04
+    },
+    {
+      "id": "sage_green",
+      "displayName": "Verde salvia",
+      "baseColor": [
+        0.25,
+        0.34,
+        0.24,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.6,
+      "priceMultiplier": 1.06
+    }
+  ]
+}

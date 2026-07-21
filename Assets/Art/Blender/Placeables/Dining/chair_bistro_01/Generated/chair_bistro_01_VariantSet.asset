@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51fb887fc9d34c04191351a57947c5d8, type: 3}
+  m_Name: chair_bistro_01_VariantSet
+  m_EditorClassIdentifier: BistroBuilder.SmartAssets.Runtime::BistroBuilder.SmartAssets.BistroBuilderSmartAssetVariantSet
+  assetId: chair_bistro_01
+  sourceModel: {fileID: 919132149155446097, guid: d5d427d8e9bd72a49985eb4b6faa77c3, type: 3}
+  variants:
+  - id: oak_warm
+    displayName: "Roble c\xE1lido"
+    material: {fileID: 2100000, guid: fd736220c941b644e9231e53809048c6, type: 2}
+    visualPrefab: {fileID: 329627676191994724, guid: 608840a2992a54f45a24132324343b59, type: 3}
+    priceMultiplier: 1
+  - id: walnut_dark
+    displayName: Nogal oscuro
+    material: {fileID: 2100000, guid: ce512b18bd901324a8d07c1a5e1d22ea, type: 2}
+    visualPrefab: {fileID: 429621152074904470, guid: 6558da525e5cfa64092a97668e05d44c, type: 3}
+    priceMultiplier: 1.08
+  - id: painted_black
+    displayName: Negro pintado
+    material: {fileID: 2100000, guid: 8a5ae88af6e66a84b9d4b805d0c59791, type: 2}
+    visualPrefab: {fileID: 7279555863804717030, guid: 40a38ac92bf4de64cb9f90ff4da8d9c8, type: 3}
+    priceMultiplier: 1.04
+  - id: painted_white
+    displayName: Blanco roto
+    material: {fileID: 2100000, guid: 3636a3f266975c64297a0a5276d23b9a, type: 2}
+    visualPrefab: {fileID: 6280376272988102463, guid: d1b9ddfce5aa3cf49a136cc5000913ff, type: 3}
+    priceMultiplier: 1.04
+  - id: sage_green
+    displayName: Verde salvia
+    material: {fileID: 2100000, guid: 486affaf9558d3643a600d67ba044699, type: 2}
+    visualPrefab: {fileID: 1717772446645484883, guid: 1b48ab6a08273ca45a45baf45e6365cd, type: 3}
+    priceMultiplier: 1.06
