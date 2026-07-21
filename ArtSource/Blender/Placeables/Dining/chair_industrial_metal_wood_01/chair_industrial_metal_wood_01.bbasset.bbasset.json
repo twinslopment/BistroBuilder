@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "chair_industrial_metal_wood_01",
+  "displayName": "Silla industrial de metal y madera",
+  "category": "DINING",
+  "assetType": "CHAIR",
+  "source": {
+    "mode": "PROMPT_IMAGE",
+    "prompt": "Silla industrial con estructura tubular de metal negro,respaldo curvo con chapa central verticaly  asiento de madera natural.",
+    "referenceImage": "",
+    "notes": "Referencia visual aportada en el chat."
+  },
+  "dimensions": {
+    "targetWidthM": 0.44999998807907104,
+    "targetDepthM": 0.5199999809265137,
+    "targetHeightM": 0.8399999737739563,
+    "toleranceMm": 1.0
+  },
+  "functionalMeasurements": {
+    "seatHeightM": 0.46000000834465027,
+    "worktopHeightM": 0.8999999761581421,
+    "doorClearanceM": 0.0
+  },
+  "variants": []
+}

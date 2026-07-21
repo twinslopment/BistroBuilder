@@ -1,11 +1,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
 namespace BistroBuilder.SmartAssets.Editor
 {
+    internal static class BistroBuilderSmartAssetsVersion
+    {
+        public const string Current = "2.0.1";
+    }
+
+    /// <summary>
+    /// Contrato JSON compartido con el complemento de Blender.
+    /// Los nombres de los campos deben mantenerse sincronizados con
+    /// el manifiesto .bbasset.json.
+    /// </summary>
     [Serializable]
     internal sealed class BistroBuilderSmartAssetManifest
     {
@@ -75,9 +86,9 @@ namespace BistroBuilder.SmartAssets.Editor
             public string id = string.Empty;
             public string displayName = string.Empty;
 
-            // El manifiesto de Blender serializa el color como [r, g, b, a].
-            // JsonUtility sí puede leer arrays de float, pero no convertirlos
-            // automáticamente a UnityEngine.Color.
+            // Blender serializa el color como [r, g, b, a].
+            // JsonUtility puede leer float[], pero no convertir esa lista
+            // directamente a UnityEngine.Color.
             public float[] baseColor = { 1f, 1f, 1f, 1f };
 
             public float metallic;
@@ -91,7 +102,10 @@ namespace BistroBuilder.SmartAssets.Editor
                     return Color.white;
                 }
 
-                var alpha = baseColor.Length >= 4 ? baseColor[3] : 1f;
+                var alpha = baseColor.Length >= 4
+                    ? baseColor[3]
+                    : 1f;
+
                 return new Color(
                     Mathf.Clamp01(baseColor[0]),
                     Mathf.Clamp01(baseColor[1]),
@@ -106,22 +120,34 @@ namespace BistroBuilder.SmartAssets.Editor
         {
             manifest = null;
 
-            var text = AssetDatabase.LoadAssetAtPath<TextAsset>(manifestPath);
-            if (text == null)
+            if (string.IsNullOrWhiteSpace(manifestPath))
+            {
+                return false;
+            }
+
+            var textAsset =
+                AssetDatabase.LoadAssetAtPath<TextAsset>(manifestPath);
+
+            if (textAsset == null)
             {
                 return false;
             }
 
             try
             {
-                manifest = JsonUtility.FromJson<BistroBuilderSmartAssetManifest>(text.text);
+                manifest =
+                    JsonUtility.FromJson<BistroBuilderSmartAssetManifest>(
+                        textAsset.text);
+
                 return manifest != null
                     && !string.IsNullOrWhiteSpace(manifest.assetId);
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    $"[Smart Assets] No se pudo leer '{manifestPath}': {exception.Message}");
+                    $"[Smart Assets] No se pudo leer " +
+                    $"'{manifestPath}': {exception.Message}");
+
                 return false;
             }
         }
@@ -129,53 +155,103 @@ namespace BistroBuilder.SmartAssets.Editor
 
     internal static class BistroBuilderSmartAssetPaths
     {
-        private const string Marker = "/Art/Blender/Placeables/";
+        private const string ManagedMarker =
+            "/Art/Blender/Placeables/";
 
-        public static bool IsManagedModel(string path)
+        public static bool IsManagedModel(string assetPath)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(assetPath))
             {
                 return false;
             }
 
-            var normalized = path.Replace('\\', '/');
-            return normalized.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
+            var normalized =
+                assetPath.Replace('\\', '/');
+
+            return normalized.EndsWith(
+                    ".fbx",
+                    StringComparison.OrdinalIgnoreCase)
                 && normalized.IndexOf(
-                    Marker,
+                    ManagedMarker,
                     StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool IsManifest(string assetPath)
+        {
+            return !string.IsNullOrWhiteSpace(assetPath)
+                && assetPath.EndsWith(
+                    ".bbasset.json",
+                    StringComparison.OrdinalIgnoreCase);
         }
 
         public static string ManifestPath(string modelPath)
         {
-            var folder = Path.GetDirectoryName(modelPath)?.Replace('\\', '/');
-            return $"{folder}/{Path.GetFileNameWithoutExtension(modelPath)}.bbasset.json";
+            var folder =
+                Path.GetDirectoryName(modelPath)?.Replace('\\', '/');
+
+            return $"{folder}/" +
+                $"{Path.GetFileNameWithoutExtension(modelPath)}" +
+                $".bbasset.json";
+        }
+
+        public static string ModelPathFromManifest(string manifestPath)
+        {
+            if (!IsManifest(manifestPath))
+            {
+                return string.Empty;
+            }
+
+            var suffix = ".bbasset.json";
+
+            return manifestPath.Substring(
+                    0,
+                    manifestPath.Length - suffix.Length)
+                + ".fbx";
         }
 
         public static string ContainerPath(string modelPath)
         {
-            var models = Path.GetDirectoryName(modelPath)?.Replace('\\', '/');
-            return Path.GetDirectoryName(models)?.Replace('\\', '/') ?? "Assets";
+            var modelsFolder =
+                Path.GetDirectoryName(modelPath)?.Replace('\\', '/');
+
+            return Path.GetDirectoryName(modelsFolder)
+                       ?.Replace('\\', '/')
+                ?? "Assets";
+        }
+
+        public static string GeneratedRoot(string modelPath)
+        {
+            return $"{ContainerPath(modelPath)}/Generated";
         }
 
         public static void EnsureFolder(string folder)
         {
-            folder = folder.Replace('\\', '/').TrimEnd('/');
+            folder =
+                folder.Replace('\\', '/').TrimEnd('/');
 
             if (AssetDatabase.IsValidFolder(folder))
             {
                 return;
             }
 
-            var parts = folder.Split('/');
-            var current = parts[0];
+            var parts =
+                folder.Split('/');
 
-            for (var index = 1; index < parts.Length; index++)
+            var current =
+                parts[0];
+
+            for (var index = 1;
+                 index < parts.Length;
+                 index++)
             {
-                var next = $"{current}/{parts[index]}";
+                var next =
+                    $"{current}/{parts[index]}";
 
                 if (!AssetDatabase.IsValidFolder(next))
                 {
-                    AssetDatabase.CreateFolder(current, parts[index]);
+                    AssetDatabase.CreateFolder(
+                        current,
+                        parts[index]);
                 }
 
                 current = next;
@@ -206,109 +282,46 @@ namespace BistroBuilder.SmartAssets.Editor
 
     internal static class BistroBuilderSmartAssetValidator
     {
+        private static readonly Regex VariantIdPattern =
+            new Regex(
+                "^[a-z][a-z0-9_]*$",
+                RegexOptions.Compiled);
+
         public static IReadOnlyList<SmartAssetMessage> Validate(
             GameObject model,
             BistroBuilderSmartAssetManifest manifest)
         {
-            var result = new List<SmartAssetMessage>();
+            var result =
+                new List<SmartAssetMessage>();
 
             if (model == null)
             {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    "No hay un FBX válido seleccionado."));
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        "No hay un FBX válido seleccionado."));
+
                 return result;
             }
 
             if (manifest == null)
             {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    "Falta el manifiesto .bbasset.json."));
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        "Falta el manifiesto .bbasset.json."));
+
                 return result;
             }
 
-            var filters = model.GetComponentsInChildren<MeshFilter>(true);
-            var renderers = model.GetComponentsInChildren<MeshRenderer>(true);
-            var colliders = model.GetComponentsInChildren<Collider>(true);
-            var animators = model.GetComponentsInChildren<Animator>(true);
-
-            result.Add(filters.Length == manifest.geometry.meshCount
-                ? new SmartAssetMessage(
-                    SmartAssetSeverity.Information,
-                    $"Mallas correctas: {filters.Length}.")
-                : new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    $"Mallas: {filters.Length}; manifiesto: {manifest.geometry.meshCount}."));
-
-            if (renderers.Length != filters.Length)
-            {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Warning,
-                    $"MeshRenderers: {renderers.Length}; MeshFilters: {filters.Length}."));
-            }
-
-            if (colliders.Length > 0)
-            {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    "El asset visual contiene colliders; debe generarlos la fábrica universal."));
-            }
-
-            if (animators.Length > 0)
-            {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    "El asset estático contiene Animator."));
-            }
-
-            if (!TryBounds(model.transform, filters, out var bounds))
-            {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    "No se pudieron calcular los bounds."));
-                return result;
-            }
-
-            var tolerance = Mathf.Max(
-                0.00001f,
-                manifest.dimensions.toleranceMm / 1000f);
-
-            Dimension(
+            ValidateGeometry(
                 result,
-                "Anchura",
-                bounds.size.x,
-                manifest.dimensions.targetWidthM,
-                tolerance);
+                model,
+                manifest);
 
-            Dimension(
+            ValidateVariants(
                 result,
-                "Profundidad",
-                bounds.size.z,
-                manifest.dimensions.targetDepthM,
-                tolerance);
-
-            Dimension(
-                result,
-                "Altura",
-                bounds.size.y,
-                manifest.dimensions.targetHeightM,
-                tolerance);
-
-            result.Add(Mathf.Abs(bounds.min.y) <= tolerance
-                ? new SmartAssetMessage(
-                    SmartAssetSeverity.Information,
-                    "La base local está en Y=0.")
-                : new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    $"La base local está en Y={bounds.min.y:F6}."));
-
-            if ((model.transform.localScale - Vector3.one).sqrMagnitude > 0.000001f)
-            {
-                result.Add(new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    $"Escala raíz incorrecta: {model.transform.localScale}."));
-            }
+                manifest);
 
             return result;
         }
@@ -316,9 +329,15 @@ namespace BistroBuilder.SmartAssets.Editor
         public static bool HasErrors(
             IReadOnlyList<SmartAssetMessage> messages)
         {
+            if (messages == null)
+            {
+                return true;
+            }
+
             foreach (var message in messages)
             {
-                if (message.Severity == SmartAssetSeverity.Error)
+                if (message.Severity ==
+                    SmartAssetSeverity.Error)
                 {
                     return true;
                 }
@@ -327,32 +346,249 @@ namespace BistroBuilder.SmartAssets.Editor
             return false;
         }
 
-        private static void Dimension(
+        private static void ValidateGeometry(
             List<SmartAssetMessage> result,
+            GameObject model,
+            BistroBuilderSmartAssetManifest manifest)
+        {
+            var filters =
+                model.GetComponentsInChildren<MeshFilter>(true);
+
+            var renderers =
+                model.GetComponentsInChildren<MeshRenderer>(true);
+
+            var colliders =
+                model.GetComponentsInChildren<Collider>(true);
+
+            var animators =
+                model.GetComponentsInChildren<Animator>(true);
+
+            result.Add(
+                filters.Length == manifest.geometry.meshCount
+                    ? new SmartAssetMessage(
+                        SmartAssetSeverity.Information,
+                        $"Mallas correctas: {filters.Length}.")
+                    : new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        $"Mallas: {filters.Length}; " +
+                        $"manifiesto: {manifest.geometry.meshCount}."));
+
+            if (renderers.Length != filters.Length)
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Warning,
+                        $"MeshRenderers: {renderers.Length}; " +
+                        $"MeshFilters: {filters.Length}."));
+            }
+
+            if (colliders.Length > 0)
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        "El asset visual contiene colliders; " +
+                        "debe generarlos la fábrica universal."));
+            }
+
+            if (animators.Length > 0)
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        "El asset estático contiene Animator."));
+            }
+
+            if (!TryCalculateBounds(
+                    model.transform,
+                    filters,
+                    out var bounds))
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        "No se pudieron calcular los bounds."));
+
+                return;
+            }
+
+            var tolerance =
+                Mathf.Max(
+                    0.00001f,
+                    manifest.dimensions.toleranceMm / 1000f);
+
+            ValidateDimension(
+                result,
+                "Anchura",
+                bounds.size.x,
+                manifest.dimensions.targetWidthM,
+                tolerance);
+
+            ValidateDimension(
+                result,
+                "Profundidad",
+                bounds.size.z,
+                manifest.dimensions.targetDepthM,
+                tolerance);
+
+            ValidateDimension(
+                result,
+                "Altura",
+                bounds.size.y,
+                manifest.dimensions.targetHeightM,
+                tolerance);
+
+            result.Add(
+                Mathf.Abs(bounds.min.y) <= tolerance
+                    ? new SmartAssetMessage(
+                        SmartAssetSeverity.Information,
+                        "La base local está en Y=0.")
+                    : new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        $"La base local está en Y=" +
+                        $"{bounds.min.y:F6}."));
+
+            if ((model.transform.localScale - Vector3.one)
+                    .sqrMagnitude > 0.000001f)
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        $"Escala raíz incorrecta: " +
+                        $"{model.transform.localScale}."));
+            }
+        }
+
+        private static void ValidateVariants(
+            List<SmartAssetMessage> result,
+            BistroBuilderSmartAssetManifest manifest)
+        {
+            var variants =
+                manifest.variants
+                ?? Array.Empty<
+                    BistroBuilderSmartAssetManifest.VariantData>();
+
+            if (variants.Length == 0)
+            {
+                result.Add(
+                    new SmartAssetMessage(
+                        SmartAssetSeverity.Warning,
+                        "No hay variantes configuradas. " +
+                        "Puedes añadirlas manualmente en Blender."));
+
+                return;
+            }
+
+            var usedIds =
+                new HashSet<string>(
+                    StringComparer.Ordinal);
+
+            for (var index = 0;
+                 index < variants.Length;
+                 index++)
+            {
+                var variant =
+                    variants[index];
+
+                if (variant == null)
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Error,
+                            $"La variante {index + 1} es nula."));
+
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(variant.id)
+                    || !VariantIdPattern.IsMatch(variant.id))
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Error,
+                            $"ID de variante inválido: " +
+                            $"'{variant.id}'."));
+                }
+                else if (!usedIds.Add(variant.id))
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Error,
+                            $"ID de variante duplicado: " +
+                            $"'{variant.id}'."));
+                }
+
+                if (string.IsNullOrWhiteSpace(
+                        variant.displayName))
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Warning,
+                            $"La variante '{variant.id}' " +
+                            "no tiene nombre visible."));
+                }
+
+                if (variant.baseColor == null
+                    || variant.baseColor.Length < 3)
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Error,
+                            $"La variante '{variant.id}' " +
+                            "no contiene un color RGB válido."));
+                }
+
+                if (variant.priceMultiplier <= 0f)
+                {
+                    result.Add(
+                        new SmartAssetMessage(
+                            SmartAssetSeverity.Error,
+                            $"La variante '{variant.id}' " +
+                            "tiene un multiplicador de precio " +
+                            "menor o igual a cero."));
+                }
+            }
+
+            result.Add(
+                new SmartAssetMessage(
+                    SmartAssetSeverity.Information,
+                    $"Variantes configuradas: " +
+                    $"{variants.Length}."));
+        }
+
+        private static void ValidateDimension(
+            ICollection<SmartAssetMessage> result,
             string label,
             float actual,
             float expected,
             float tolerance)
         {
-            var difference = Mathf.Abs(actual - expected);
+            var difference =
+                Mathf.Abs(actual - expected);
 
-            result.Add(difference <= tolerance
-                ? new SmartAssetMessage(
-                    SmartAssetSeverity.Information,
-                    $"{label}: {actual:F4} m.")
-                : new SmartAssetMessage(
-                    SmartAssetSeverity.Error,
-                    $"{label}: {actual:F4} m; objetivo {expected:F4} m; " +
-                    $"diferencia {difference * 1000f:F2} mm."));
+            result.Add(
+                difference <= tolerance
+                    ? new SmartAssetMessage(
+                        SmartAssetSeverity.Information,
+                        $"{label}: {actual:F4} m.")
+                    : new SmartAssetMessage(
+                        SmartAssetSeverity.Error,
+                        $"{label}: {actual:F4} m; " +
+                        $"objetivo {expected:F4} m; " +
+                        $"diferencia " +
+                        $"{difference * 1000f:F2} mm."));
         }
 
-        private static bool TryBounds(
+        private static bool TryCalculateBounds(
             Transform root,
             IReadOnlyList<MeshFilter> filters,
             out Bounds bounds)
         {
-            bounds = default;
-            var initialized = false;
+            bounds =
+                default;
+
+            var initialized =
+                false;
 
             foreach (var filter in filters)
             {
@@ -362,9 +598,11 @@ namespace BistroBuilder.SmartAssets.Editor
                 }
 
                 var localToRoot =
-                    root.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                    root.worldToLocalMatrix
+                    * filter.transform.localToWorldMatrix;
 
-                var source = filter.sharedMesh.bounds;
+                var source =
+                    filter.sharedMesh.bounds;
 
                 for (var x = -1; x <= 1; x += 2)
                 {
@@ -372,16 +610,25 @@ namespace BistroBuilder.SmartAssets.Editor
                     {
                         for (var z = -1; z <= 1; z += 2)
                         {
-                            var corner = source.center + Vector3.Scale(
-                                source.extents,
-                                new Vector3(x, y, z));
+                            var corner =
+                                source.center
+                                + Vector3.Scale(
+                                    source.extents,
+                                    new Vector3(x, y, z));
 
-                            var point = localToRoot.MultiplyPoint3x4(corner);
+                            var point =
+                                localToRoot.MultiplyPoint3x4(
+                                    corner);
 
                             if (!initialized)
                             {
-                                bounds = new Bounds(point, Vector3.zero);
-                                initialized = true;
+                                bounds =
+                                    new Bounds(
+                                        point,
+                                        Vector3.zero);
+
+                                initialized =
+                                    true;
                             }
                             else
                             {

@@ -7,14 +7,14 @@ using UnityEngine;
 namespace BistroBuilder.SmartAssets.Editor
 {
     /// <summary>
-    /// Genera y actualiza materiales, prefabs visuales y el conjunto de variantes
-    /// sin duplicar la geometría del FBX original.
+    /// Genera o actualiza materiales, prefabs visuales y el VariantSet.
     ///
-    /// Operación idempotente:
+    /// La operación es idempotente:
     /// - reutiliza materiales existentes;
-    /// - sobrescribe prefabs visuales existentes;
-    /// - conserva sus rutas y GUID;
-    /// - actualiza el VariantSet existente.
+    /// - conserva rutas y GUID;
+    /// - sobrescribe los prefabs en la misma ruta;
+    /// - no duplica la geometría del FBX;
+    /// - puede ejecutarse tantas veces como sea necesario.
     /// </summary>
     internal static class BistroBuilderSmartAssetVariantGenerator
     {
@@ -25,78 +25,112 @@ namespace BistroBuilder.SmartAssets.Editor
         {
             if (source == null)
             {
-                throw new ArgumentNullException(nameof(source));
+                throw new ArgumentNullException(
+                    nameof(source));
             }
 
             if (manifest == null)
             {
-                throw new ArgumentNullException(nameof(manifest));
+                throw new ArgumentNullException(
+                    nameof(manifest));
             }
 
-            var container = BistroBuilderSmartAssetPaths.ContainerPath(modelPath);
-            var generatedRoot = $"{container}/Generated";
-            var materialsFolder = $"{generatedRoot}/Materials";
-            var prefabsFolder = $"{generatedRoot}/VisualVariants";
+            var validation =
+                BistroBuilderSmartAssetValidator.Validate(
+                    source,
+                    manifest);
 
-            BistroBuilderSmartAssetPaths.EnsureFolder(generatedRoot);
-            BistroBuilderSmartAssetPaths.EnsureFolder(materialsFolder);
-            BistroBuilderSmartAssetPaths.EnsureFolder(prefabsFolder);
+            if (BistroBuilderSmartAssetValidator.HasErrors(
+                    validation))
+            {
+                throw new InvalidOperationException(
+                    "La generación de variantes está bloqueada " +
+                    "porque la ficha contiene errores.");
+            }
+
+            var generatedRoot =
+                BistroBuilderSmartAssetPaths
+                    .GeneratedRoot(modelPath);
+
+            var materialsFolder =
+                $"{generatedRoot}/Materials";
+
+            var prefabsFolder =
+                $"{generatedRoot}/VisualVariants";
+
+            BistroBuilderSmartAssetPaths.EnsureFolder(
+                generatedRoot);
+
+            BistroBuilderSmartAssetPaths.EnsureFolder(
+                materialsFolder);
+
+            BistroBuilderSmartAssetPaths.EnsureFolder(
+                prefabsFolder);
 
             var entries =
-                new List<BistroBuilderSmartAssetVariantSet.VariantEntry>();
+                new List<
+                    BistroBuilderSmartAssetVariantSet
+                        .VariantEntry>();
 
             var sourceVariants =
                 manifest.variants
-                ?? Array.Empty<BistroBuilderSmartAssetManifest.VariantData>();
+                ?? Array.Empty<
+                    BistroBuilderSmartAssetManifest
+                        .VariantData>();
 
-            AssetDatabase.StartAssetEditing();
-
-            try
+            foreach (var variant in sourceVariants)
             {
-                foreach (var variant in sourceVariants)
+                if (variant == null
+                    || string.IsNullOrWhiteSpace(variant.id))
                 {
-                    if (string.IsNullOrWhiteSpace(variant.id))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    var materialPath =
-                        $"{materialsFolder}/MAT_{manifest.assetId}_{variant.id}.mat";
+                var materialPath =
+                    $"{materialsFolder}/" +
+                    $"MAT_{manifest.assetId}_" +
+                    $"{variant.id}.mat";
 
-                    var material = CreateOrUpdateMaterial(
+                var material =
+                    CreateOrUpdateMaterial(
                         materialPath,
                         variant);
 
-                    var prefabPath =
-                        $"{prefabsFolder}/{manifest.assetId}__{variant.id}.prefab";
+                var prefabPath =
+                    $"{prefabsFolder}/" +
+                    $"{manifest.assetId}__" +
+                    $"{variant.id}.prefab";
 
-                    var prefab = CreateOrUpdateVisualPrefab(
+                var prefab =
+                    CreateOrUpdateVisualPrefab(
                         prefabPath,
                         source,
                         material,
                         manifest.assetId,
                         variant.id);
 
-                    entries.Add(
-                        new BistroBuilderSmartAssetVariantSet.VariantEntry(
+                entries.Add(
+                    new BistroBuilderSmartAssetVariantSet
+                        .VariantEntry(
                             variant.id,
                             variant.displayName,
+                            variant.GetBaseColor(),
                             material,
                             prefab,
-                            Mathf.Max(0.01f, variant.priceMultiplier)));
-                }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
+                            Mathf.Max(
+                                0.01f,
+                                variant.priceMultiplier)));
             }
 
             var variantSetPath =
-                $"{generatedRoot}/{manifest.assetId}_VariantSet.asset";
+                $"{generatedRoot}/" +
+                $"{manifest.assetId}_" +
+                $"VariantSet.asset";
 
             var variantSet =
                 AssetDatabase.LoadAssetAtPath<
-                    BistroBuilderSmartAssetVariantSet>(variantSetPath);
+                    BistroBuilderSmartAssetVariantSet>(
+                        variantSetPath);
 
             if (variantSet == null)
             {
@@ -105,15 +139,22 @@ namespace BistroBuilder.SmartAssets.Editor
                         BistroBuilderSmartAssetVariantSet>();
 
                 variantSet.name =
-                    Path.GetFileNameWithoutExtension(variantSetPath);
+                    Path.GetFileNameWithoutExtension(
+                        variantSetPath);
 
                 AssetDatabase.CreateAsset(
                     variantSet,
                     variantSetPath);
             }
 
+            var defaultVariantId =
+                entries.Count > 0
+                    ? entries[0].Id
+                    : string.Empty;
+
             variantSet.EditorConfigure(
                 manifest.assetId,
+                defaultVariantId,
                 source,
                 entries.ToArray());
 
@@ -124,36 +165,39 @@ namespace BistroBuilder.SmartAssets.Editor
             return variantSet;
         }
 
-        /// <summary>
-        /// Crea o actualiza el material manteniendo estable el archivo, el GUID
-        /// y el nombre interno exigido por Unity.
-        /// </summary>
         private static Material CreateOrUpdateMaterial(
             string materialPath,
             BistroBuilderSmartAssetManifest.VariantData variant)
         {
             var material =
-                AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+                AssetDatabase.LoadAssetAtPath<Material>(
+                    materialPath);
+
+            var expectedName =
+                Path.GetFileNameWithoutExtension(
+                    materialPath);
 
             if (material == null)
             {
                 var shader =
-                    Shader.Find("Universal Render Pipeline/Lit")
+                    Shader.Find(
+                        "Universal Render Pipeline/Lit")
                     ?? Shader.Find("HDRP/Lit")
                     ?? Shader.Find("Standard");
 
                 if (shader == null)
                 {
                     throw new InvalidOperationException(
-                        "No se encontró un shader Lit compatible.");
+                        "No se encontró un shader Lit " +
+                        "compatible.");
                 }
 
-                material = new Material(shader)
-                {
-                    // Unity requiere que el nombre del objeto principal coincida
-                    // con el nombre del archivo .mat.
-                    name = Path.GetFileNameWithoutExtension(materialPath)
-                };
+                material =
+                    new Material(shader)
+                    {
+                        name = expectedName,
+                        enableInstancing = true
+                    };
 
                 AssetDatabase.CreateAsset(
                     material,
@@ -161,18 +205,19 @@ namespace BistroBuilder.SmartAssets.Editor
             }
             else
             {
-                // Corrige materiales creados por la versión 1.0.1 sin cambiar
-                // la ruta ni el GUID.
-                var expectedName =
-                    Path.GetFileNameWithoutExtension(materialPath);
-
+                // Repara los materiales generados por versiones antiguas
+                // sin cambiar su ruta ni su GUID.
                 if (!string.Equals(
-                    material.name,
-                    expectedName,
-                    StringComparison.Ordinal))
+                        material.name,
+                        expectedName,
+                        StringComparison.Ordinal))
                 {
-                    material.name = expectedName;
+                    material.name =
+                        expectedName;
                 }
+
+                material.enableInstancing =
+                    true;
             }
 
             ApplyMaterialProperties(
@@ -180,6 +225,7 @@ namespace BistroBuilder.SmartAssets.Editor
                 variant);
 
             EditorUtility.SetDirty(material);
+
             return material;
         }
 
@@ -214,7 +260,8 @@ namespace BistroBuilder.SmartAssets.Editor
             {
                 material.SetFloat(
                     "_Smoothness",
-                    1f - Mathf.Clamp01(variant.roughness));
+                    1f - Mathf.Clamp01(
+                        variant.roughness));
             }
         }
 
@@ -225,17 +272,20 @@ namespace BistroBuilder.SmartAssets.Editor
             string assetId,
             string variantId)
         {
-            GameObject instance = null;
+            GameObject instance =
+                null;
 
             try
             {
                 instance =
-                    PrefabUtility.InstantiatePrefab(source) as GameObject;
+                    PrefabUtility.InstantiatePrefab(
+                        source) as GameObject;
 
                 if (instance == null)
                 {
                     instance =
-                        UnityEngine.Object.Instantiate(source);
+                        UnityEngine.Object.Instantiate(
+                            source);
                 }
 
                 instance.name =
@@ -249,12 +299,14 @@ namespace BistroBuilder.SmartAssets.Editor
                     Vector3.one;
 
                 var renderers =
-                    instance.GetComponentsInChildren<Renderer>(true);
+                    instance.GetComponentsInChildren<
+                        Renderer>(true);
 
                 if (renderers.Length == 0)
                 {
                     throw new InvalidOperationException(
-                        $"El modelo '{assetId}' no contiene ningún Renderer.");
+                        $"El modelo '{assetId}' " +
+                        "no contiene ningún Renderer.");
                 }
 
                 foreach (var renderer in renderers)
@@ -266,7 +318,8 @@ namespace BistroBuilder.SmartAssets.Editor
                          index < sharedMaterials.Length;
                          index++)
                     {
-                        sharedMaterials[index] = material;
+                        sharedMaterials[index] =
+                            material;
                     }
 
                     renderer.sharedMaterials =
@@ -281,7 +334,8 @@ namespace BistroBuilder.SmartAssets.Editor
                 if (prefab == null)
                 {
                     throw new InvalidOperationException(
-                        $"No se pudo guardar el prefab '{prefabPath}'.");
+                        $"No se pudo guardar el prefab " +
+                        $"'{prefabPath}'.");
                 }
 
                 return prefab;
@@ -290,7 +344,8 @@ namespace BistroBuilder.SmartAssets.Editor
             {
                 if (instance != null)
                 {
-                    UnityEngine.Object.DestroyImmediate(instance);
+                    UnityEngine.Object.DestroyImmediate(
+                        instance);
                 }
             }
         }
