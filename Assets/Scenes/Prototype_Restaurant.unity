@@ -794,6 +794,11 @@ GameObject:
   - component: {fileID: 263644933}
   - component: {fileID: 263644936}
   - component: {fileID: 263644937}
+  - component: {fileID: 263644938}
+  - component: {fileID: 263644942}
+  - component: {fileID: 263644941}
+  - component: {fileID: 263644940}
+  - component: {fileID: 263644939}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1098,6 +1103,7 @@ MonoBehaviour:
   areaAssignmentService: {fileID: 263644914}
   placementRegistry: {fileID: 263644915}
   obstacleRegistry: {fileID: 263644921}
+  constraintService: {fileID: 263644938}
   validatePlacementsOnStart: 1
 --- !u!114 &263644918
 MonoBehaviour:
@@ -1368,6 +1374,83 @@ MonoBehaviour:
   lifecycleService: {fileID: 263644930}
   historyService: {fileID: 263644934}
   logDeletionOperations: 1
+--- !u!114 &263644938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5527208a24f645278b90d931f538d779, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementConstraintService
+  discoverRulesAutomatically: 1
+  logRuleSummary: 1
+--- !u!114 &263644939
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71f3480b9e4148cb8f39ce00169ba12a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatingTopologyService
+  seatRegistry: {fileID: 263644941}
+  tableRegistry: {fileID: 263644926}
+  transactionService: {fileID: 263644935}
+  historyService: {fileID: 263644934}
+  logTopologySummary: 1
+--- !u!114 &263644940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35ecb028632f4d969d85bbf5358ba8d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatingPlacementConstraintRule
+  seatRegistry: {fileID: 263644941}
+  tableRegistry: {fileID: 263644926}
+  constraintEnabled: 1
+  priority: 10
+  fullTableDetectionToleranceMultiplier: 2.5
+--- !u!114 &263644941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bbf6a05a0bd49c297eb14a932eed9cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatRegistry
+  placeableRegistry: {fileID: 263644927}
+  discoverSceneSeatsOnStart: 1
+  logStartupSummary: 1
+--- !u!114 &263644942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbf3ffc005274556b67ba5ef33ccf9e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantOperationalClearanceConstraintRule
+  constraintEnabled: 1
+  priority: 100
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -2330,6 +2413,7 @@ GameObject:
   - component: {fileID: 537685212}
   - component: {fileID: 537685213}
   - component: {fileID: 537685214}
+  - component: {fileID: 537685215}
   m_Layer: 0
   m_Name: MesaB
   m_TagString: Untagged
@@ -2536,6 +2620,22 @@ MonoBehaviour:
   instanceId: 
   placementAnchor: {fileID: 1287288997}
   synchronizeEditableDefinition: 1
+--- !u!114 &537685215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537685203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b00c5dc73c147949d2680c1ab2ad8ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTableSeatingConfiguration
+  table: {fileID: 537685213}
+  placementFootprint: {fileID: 537685211}
+  definition: {fileID: 11400000, guid: 8323063b52716c14788bb9d16f4e3443, type: 2}
+  seatingCenter: {fileID: 1287288997}
 --- !u!1 &561085870
 GameObject:
   m_ObjectHideFlags: 0

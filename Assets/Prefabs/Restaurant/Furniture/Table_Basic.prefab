@@ -111,6 +111,7 @@ GameObject:
   - component: {fileID: 2884760071042446046}
   - component: {fileID: 5826337146159496211}
   - component: {fileID: 1936515173020237737}
+  - component: {fileID: 7122148608518169463}
   m_Layer: 0
   m_Name: Table_Basic
   m_TagString: Untagged
@@ -317,3 +318,19 @@ MonoBehaviour:
   instanceId: 
   placementAnchor: {fileID: 8805851659388344267}
   synchronizeEditableDefinition: 1
+--- !u!114 &7122148608518169463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8697144769135155498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b00c5dc73c147949d2680c1ab2ad8ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantTableSeatingConfiguration
+  table: {fileID: 5826337146159496211}
+  placementFootprint: {fileID: 6907638358817838625}
+  definition: {fileID: 11400000, guid: 8323063b52716c14788bb9d16f4e3443, type: 2}
+  seatingCenter: {fileID: 8805851659388344267}

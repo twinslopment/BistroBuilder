@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "Silla de comedor de madera, resistente y de estilo bistr\xF3 cl\xE1sico"
   canMove: 1
   canRotate: 1
-  useCustomGridSize: 0
-  customGridSize: 0.25
+  useCustomGridSize: 1
+  customGridSize: 0.05
   useCustomRotationStep: 1
-  customRotationStepDegrees: 90
+  customRotationStepDegrees: 15

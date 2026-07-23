@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 489e30e99d89417aba1f15741c119189, type: 3}
+  m_Name: RestaurantSeatingStandards
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatingStandardsDefinition
+  rectangularCapacities: 020000000400000006000000
+  roundTableStandards:
+  - capacity: 4
+    diameterMetres: 1
+    diameterIsApproved: 1
+  - capacity: 6
+    diameterMetres: 1.2
+    diameterIsApproved: 1
+  - capacity: 8
+    diameterMetres: 1.5
+    diameterIsApproved: 1
+  - capacity: 10
+    diameterMetres: 0
+    diameterIsApproved: 0
