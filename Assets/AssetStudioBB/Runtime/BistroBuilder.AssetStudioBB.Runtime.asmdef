@@ -1,0 +1,14 @@
+{
+  "name": "BistroBuilder.AssetStudioBB.Runtime",
+  "rootNamespace": "BistroBuilder.AssetStudioBB",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

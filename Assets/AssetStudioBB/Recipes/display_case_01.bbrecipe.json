@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "3.0",
+  "pipeline": "AssetStudioBB.Local",
+  "general": {
+    "asset_id": "display_case_01",
+    "display_name": "Vitrina de exposición",
+    "category": "DINING",
+    "family": "STORAGE",
+    "quality": "SHOWCASE",
+    "description": "Vitrina de exposición generado localmente con Asset Studio BB",
+    "reference_image": "",
+    "notes": "Receta de ejemplo incluida en el complemento.",
+    "width_m": 1.1,
+    "depth_m": 0.42,
+    "height_m": 1.8,
+    "tolerance_mm": 2.0
+  },
+  "families": {
+    "seating": {},
+    "table": {},
+    "storage": {
+      "storage_subtype": "DISPLAY",
+      "panel_thickness_m": 0.018,
+      "shelf_count": 4,
+      "door_count": 2,
+      "drawer_count": 0,
+      "handle_projection_m": 0.022,
+      "toe_kick_height_m": 0.06,
+      "glass_doors": true,
+      "open_back": false
+    },
+    "counter": {},
+    "generic": {}
+  },
+  "materials": {
+    "structure_preset": "metal_black",
+    "surface_preset": "oak_light",
+    "upholstery_preset": "fabric_sage",
+    "accent_preset": "metal_black",
+    "glass_preset": "glass_clear",
+    "structure_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "surface_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "upholstery_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "accent_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "glass_tint": [
+      1,
+      1,
+      1,
+      0.35
+    ]
+  },
+  "variants": [
+    {
+      "enabled": true,
+      "variant_id": "oak_black_glass",
+      "display_name": "Roble, negro y cristal",
+      "price_multiplier": 1.0,
+      "structure_preset": "metal_black",
+      "surface_preset": "oak_light",
+      "upholstery_preset": "fabric_sage",
+      "accent_preset": "metal_black",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    },
+    {
+      "enabled": true,
+      "variant_id": "walnut_brass_glass",
+      "display_name": "Nogal, latón y cristal",
+      "price_multiplier": 1.1,
+      "structure_preset": "walnut",
+      "surface_preset": "walnut",
+      "upholstery_preset": "fabric_beige",
+      "accent_preset": "metal_brass",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    }
+  ],
+  "publishing": {
+    "unity_project_root": "",
+    "unity_relative_root": "Assets/Art/AssetStudioBB",
+    "export_lod1": true,
+    "export_lod2": true,
+    "lod1_ratio": 0.6,
+    "lod2_ratio": 0.3,
+    "export_preview": true,
+    "overwrite_export": true
+  }
+}

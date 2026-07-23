@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "3.0",
+  "pipeline": "AssetStudioBB.Local",
+  "general": {
+    "asset_id": "cabinet_service_01",
+    "display_name": "Armario de servicio",
+    "category": "STORAGE",
+    "family": "STORAGE",
+    "quality": "GAME_READY",
+    "description": "Armario de servicio generado localmente con Asset Studio BB",
+    "reference_image": "",
+    "notes": "Receta de ejemplo incluida en el complemento.",
+    "width_m": 1.2,
+    "depth_m": 0.48,
+    "height_m": 1.9,
+    "tolerance_mm": 2.0
+  },
+  "families": {
+    "seating": {},
+    "table": {},
+    "storage": {
+      "storage_subtype": "CABINET",
+      "panel_thickness_m": 0.02,
+      "shelf_count": 4,
+      "door_count": 2,
+      "drawer_count": 1,
+      "handle_projection_m": 0.025,
+      "toe_kick_height_m": 0.08,
+      "glass_doors": false,
+      "open_back": false
+    },
+    "counter": {},
+    "generic": {}
+  },
+  "materials": {
+    "structure_preset": "metal_black",
+    "surface_preset": "wood_black",
+    "upholstery_preset": "fabric_sage",
+    "accent_preset": "metal_brass",
+    "glass_preset": "glass_clear",
+    "structure_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "surface_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "upholstery_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "accent_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "glass_tint": [
+      1,
+      1,
+      1,
+      0.35
+    ]
+  },
+  "variants": [
+    {
+      "enabled": true,
+      "variant_id": "black_brass",
+      "display_name": "Negro y latón",
+      "price_multiplier": 1.0,
+      "structure_preset": "metal_black",
+      "surface_preset": "wood_black",
+      "upholstery_preset": "fabric_sage",
+      "accent_preset": "metal_brass",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    },
+    {
+      "enabled": true,
+      "variant_id": "walnut_black",
+      "display_name": "Nogal y negro",
+      "price_multiplier": 1.1,
+      "structure_preset": "metal_black",
+      "surface_preset": "walnut",
+      "upholstery_preset": "fabric_beige",
+      "accent_preset": "metal_black",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    }
+  ],
+  "publishing": {
+    "unity_project_root": "",
+    "unity_relative_root": "Assets/Art/AssetStudioBB",
+    "export_lod1": true,
+    "export_lod2": true,
+    "lod1_ratio": 0.6,
+    "lod2_ratio": 0.3,
+    "export_preview": true,
+    "overwrite_export": true
+  }
+}

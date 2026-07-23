@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "3.0",
+  "pipeline": "AssetStudioBB.Local",
+  "general": {
+    "asset_id": "armchair_nordic_01",
+    "display_name": "Sillón nórdico",
+    "category": "LOUNGE",
+    "family": "SEATING",
+    "quality": "SHOWCASE",
+    "description": "Sillón nórdico generado localmente con Asset Studio BB",
+    "reference_image": "",
+    "notes": "Receta de ejemplo incluida en el complemento.",
+    "width_m": 0.78,
+    "depth_m": 0.82,
+    "height_m": 0.88,
+    "tolerance_mm": 2.0
+  },
+  "families": {
+    "seating": {
+      "seating_subtype": "ARMCHAIR",
+      "seat_height_m": 0.44,
+      "seat_width_m": 0.61,
+      "seat_depth_m": 0.55,
+      "seat_count": 1,
+      "upholstered": true,
+      "has_back": true,
+      "has_arms": true,
+      "arm_height_m": 0.63,
+      "back_recline": 0.1745329252,
+      "cushion_thickness_m": 0.12,
+      "back_cushion_thickness_m": 0.1,
+      "cushion_rounding_m": 0.035,
+      "frame_thickness_m": 0.045,
+      "leg_splay_m": 0.045,
+      "decorative_pillow": true
+    },
+    "table": {},
+    "storage": {},
+    "counter": {},
+    "generic": {}
+  },
+  "materials": {
+    "structure_preset": "oak_light",
+    "surface_preset": "oak_light",
+    "upholstery_preset": "fabric_sage",
+    "accent_preset": "metal_black",
+    "glass_preset": "glass_clear",
+    "structure_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "surface_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "upholstery_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "accent_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "glass_tint": [
+      1,
+      1,
+      1,
+      0.35
+    ]
+  },
+  "variants": [
+    {
+      "enabled": true,
+      "variant_id": "natural_sage",
+      "display_name": "Natural y salvia",
+      "price_multiplier": 1.0,
+      "structure_preset": "oak_light",
+      "surface_preset": "oak_light",
+      "upholstery_preset": "fabric_sage",
+      "accent_preset": "metal_black",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    },
+    {
+      "enabled": true,
+      "variant_id": "walnut_beige",
+      "display_name": "Nogal y beige",
+      "price_multiplier": 1.1,
+      "structure_preset": "walnut",
+      "surface_preset": "walnut",
+      "upholstery_preset": "fabric_beige",
+      "accent_preset": "metal_brass",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    }
+  ],
+  "publishing": {
+    "unity_project_root": "",
+    "unity_relative_root": "Assets/Art/AssetStudioBB",
+    "export_lod1": true,
+    "export_lod2": true,
+    "lod1_ratio": 0.6,
+    "lod2_ratio": 0.3,
+    "export_preview": true,
+    "overwrite_export": true
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "schemaVersion": "3.0",
+  "pipeline": "AssetStudioBB.Local",
+  "general": {
+    "asset_id": "table_bistro_rect_01",
+    "display_name": "Mesa bistró rectangular",
+    "category": "DINING",
+    "family": "TABLE",
+    "quality": "GAME_READY",
+    "description": "Mesa bistró rectangular generado localmente con Asset Studio BB",
+    "reference_image": "",
+    "notes": "Receta de ejemplo incluida en el complemento.",
+    "width_m": 1.2,
+    "depth_m": 0.72,
+    "height_m": 0.75,
+    "tolerance_mm": 2.0
+  },
+  "families": {
+    "seating": {},
+    "table": {
+      "table_subtype": "RECT",
+      "table_support": "FOUR_LEG",
+      "tabletop_thickness_m": 0.04,
+      "table_leg_thickness_m": 0.055,
+      "table_apron_height_m": 0.09,
+      "pedestal_radius_m": 0.09,
+      "edge_rounding_m": 0.012
+    },
+    "storage": {},
+    "counter": {},
+    "generic": {}
+  },
+  "materials": {
+    "structure_preset": "metal_black",
+    "surface_preset": "oak_light",
+    "upholstery_preset": "fabric_sage",
+    "accent_preset": "metal_black",
+    "glass_preset": "glass_clear",
+    "structure_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "surface_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "upholstery_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "accent_tint": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "glass_tint": [
+      1,
+      1,
+      1,
+      0.35
+    ]
+  },
+  "variants": [
+    {
+      "enabled": true,
+      "variant_id": "oak_black",
+      "display_name": "Roble y negro",
+      "price_multiplier": 1.0,
+      "structure_preset": "metal_black",
+      "surface_preset": "oak_light",
+      "upholstery_preset": "fabric_sage",
+      "accent_preset": "metal_black",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    },
+    {
+      "enabled": true,
+      "variant_id": "walnut_black",
+      "display_name": "Nogal y negro",
+      "price_multiplier": 1.1,
+      "structure_preset": "metal_black",
+      "surface_preset": "walnut",
+      "upholstery_preset": "fabric_beige",
+      "accent_preset": "metal_brass",
+      "glass_preset": "glass_clear",
+      "structure_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "surface_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "upholstery_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "accent_tint": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "glass_tint": [
+        1,
+        1,
+        1,
+        0.35
+      ]
+    }
+  ],
+  "publishing": {
+    "unity_project_root": "",
+    "unity_relative_root": "Assets/Art/AssetStudioBB",
+    "export_lod1": true,
+    "export_lod2": true,
+    "lod1_ratio": 0.6,
+    "lod2_ratio": 0.3,
+    "export_preview": true,
+    "overwrite_export": true
+  }
+}
