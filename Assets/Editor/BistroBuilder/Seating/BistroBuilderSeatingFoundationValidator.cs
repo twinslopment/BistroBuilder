@@ -52,6 +52,9 @@ public sealed class
 /// <summary>
 /// Validador aislado de asientos y colocación asistida.
 ///
+/// 365D comprueba además que el indicador universal tenga cámara,
+/// compensación multirresolución y límites visuales seguros.
+///
 /// No modifica Project Health hasta que el sistema haya superado
 /// compilación, instalación, autotest y prueba real en Play.
 /// </summary>
@@ -126,7 +129,7 @@ public static class
         if (result.ErrorCount == 0)
         {
             result.Messages.Add(
-                "OK: la base universal de asientos, snapping, indicadores y grupos enlazados está completa."
+                "OK: la base universal de asientos, snapping, indicadores multirresolución y grupos enlazados está completa."
             );
         }
 
@@ -554,6 +557,42 @@ public static class
                 result,
                 "El indicador universal no conserva un desplazamiento " +
                 "válido respecto a la superficie."
+            );
+        }
+        else if (snapVisualizer.VisualizationCamera == null)
+        {
+            AddError(
+                result,
+                "El indicador universal no tiene asignada una cámara " +
+                "para calcular su tamaño aparente."
+            );
+        }
+        else if (!snapVisualizer.CompensateForScreenSize)
+        {
+            AddError(
+                result,
+                "La compensación multirresolución del indicador está " +
+                "desactivada."
+            );
+        }
+        else if (snapVisualizer.MinimumInactiveDiameterPixels < 12f ||
+                 snapVisualizer.MinimumCapturedDiameterPixels < 20f ||
+                 snapVisualizer.MinimumCapturedDiameterPixels <=
+                    snapVisualizer.MinimumInactiveDiameterPixels)
+        {
+            AddError(
+                result,
+                "Los mínimos en píxeles del indicador no garantizan " +
+                "una lectura clara en Free Aspect."
+            );
+        }
+        else if (snapVisualizer.MaximumScreenScaleMultiplier < 1.25f ||
+                 snapVisualizer.MaximumScreenScaleMultiplier > 4f)
+        {
+            AddError(
+                result,
+                "El límite de compensación visual del indicador no " +
+                "está dentro del rango seguro."
             );
         }
 

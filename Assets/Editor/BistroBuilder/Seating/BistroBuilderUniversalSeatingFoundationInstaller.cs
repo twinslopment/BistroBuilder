@@ -9,6 +9,9 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// Instalador idempotente de la base universal de asientos.
 ///
+/// 365D conecta y configura el indicador universal multirresolución
+/// sin alterar las reglas funcionales ya validadas.
+///
 /// Modifica únicamente datos, prefabs y escena. Antes de escribir
 /// realiza una copia binaria y restaura todo si falla la validación.
 /// </summary>
@@ -185,13 +188,13 @@ public static class
             }
 
             Debug.Log(
-                "BISTRO BUILDER - SEATING FOUNDATION 365C\n" +
+                "BISTRO BUILDER - SEATING FOUNDATION 365D\n" +
                 result.BuildReport()
             );
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Base universal de asientos, indicadores y grupos enlazados instalada.\n\n" +
+                "Base universal de asientos e indicadores multirresolución instalada.\n\n" +
                 "Errores: " +
                 result.ErrorCount +
                 "\nAdvertencias: " +
@@ -944,6 +947,17 @@ public static class
                 RestaurantEditInteractionController
             >(gameSystems);
 
+        Camera visualizationCamera =
+            FindPrimarySceneCamera(scene);
+
+        if (visualizationCamera == null)
+        {
+            throw new InvalidOperationException(
+                "La escena no contiene una cámara válida para los " +
+                "indicadores universales de colocación."
+            );
+        }
+
         SerializedObject serializedSeatRegistry =
             new SerializedObject(seatRegistry);
 
@@ -1070,34 +1084,88 @@ public static class
             32
         );
 
+        SetObjectReference(
+            serializedSnapVisualizer,
+            "visualizationCamera",
+            visualizationCamera
+        );
+
+        SetBoolean(
+            serializedSnapVisualizer,
+            "compensateForScreenSize",
+            true
+        );
+
         SetFloat(
             serializedSnapVisualizer,
             "surfaceOffset",
-            0.012f
+            0.018f
         );
 
         SetFloat(
             serializedSnapVisualizer,
             "outlineRelativeThickness",
-            0.11f
+            0.14f
         );
 
         SetFloat(
             serializedSnapVisualizer,
             "inactiveOpacity",
-            0.70f
+            0.78f
         );
 
         SetFloat(
             serializedSnapVisualizer,
             "capturedFillOpacity",
-            0.20f
+            0.24f
         );
 
         SetFloat(
             serializedSnapVisualizer,
             "capturedScaleMultiplier",
-            1.08f
+            1.05f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "minimumInactiveDiameterPixels",
+            16f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "minimumCapturedDiameterPixels",
+            28f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "capturedWorldPadding",
+            0.16f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "maximumScreenScaleMultiplier",
+            2.25f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "contrastScaleMultiplier",
+            1.16f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "contrastOpacity",
+            0.82f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "arrowScaleMultiplier",
+            1.22f
         );
 
         serializedSnapVisualizer
@@ -1360,6 +1428,45 @@ public static class
         child = childObject.transform;
         child.SetParent(parent, false);
         return child;
+    }
+
+    private static Camera FindPrimarySceneCamera(
+        Scene scene
+    )
+    {
+        Camera[] cameras =
+            FindSceneComponents<Camera>(scene);
+
+        Camera firstEnabled = null;
+
+        for (int index = 0;
+             index < cameras.Length;
+             index++)
+        {
+            Camera camera = cameras[index];
+
+            if (camera == null)
+            {
+                continue;
+            }
+
+            if (camera.CompareTag("MainCamera"))
+            {
+                return camera;
+            }
+
+            if (firstEnabled == null &&
+                camera.enabled &&
+                camera.gameObject.activeInHierarchy)
+            {
+                firstEnabled = camera;
+            }
+        }
+
+        return firstEnabled ??
+               (cameras.Length > 0
+                   ? cameras[0]
+                   : null);
     }
 
     private static GameObject FindRootByName(

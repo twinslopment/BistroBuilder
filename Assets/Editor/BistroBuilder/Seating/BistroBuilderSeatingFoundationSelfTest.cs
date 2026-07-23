@@ -5,8 +5,12 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Autotest aislado de estándares, generación de plazas y bloqueo de
-/// una silla que excede la capacidad fija de una mesa.
+/// Autotest aislado de estándares, generación de plazas, grupos
+/// enlazados e indicadores universales.
+///
+/// 365D añade comprobaciones matemáticas de legibilidad para cámaras
+/// ortográficas y perspectivas, incluido el comportamiento en vistas
+/// Game pequeñas y Free Aspect.
 ///
 /// Utiliza objetos HideAndDontSave y no modifica la escena.
 /// </summary>
@@ -1593,6 +1597,111 @@ public static class
                     Vector3.forward
                 ) <= 0.01f,
                 "El indicador conserva normal de superficie y dirección.",
+                passed,
+                failed
+            );
+
+            GameObject cameraObject =
+                new GameObject(
+                    "BB_IndicatorCameraSelfTest"
+                );
+
+            cameraObject.hideFlags =
+                HideFlags.HideAndDontSave;
+
+            cameraObject.transform.SetParent(
+                root.transform,
+                false
+            );
+
+            Camera testCamera =
+                cameraObject.AddComponent<Camera>();
+
+            testCamera.orthographic = true;
+            testCamera.orthographicSize = 5f;
+
+            float orthographicWorldUnitsPerPixel =
+                RestaurantPlacementSnapVisualizer
+                    .CalculateWorldUnitsPerPixel(
+                        testCamera,
+                        Vector3.zero,
+                        500
+                    );
+
+            Assert(
+                Mathf.Abs(
+                    orthographicWorldUnitsPerPixel -
+                    0.02f
+                ) <= 0.00001f,
+                "El indicador calcula correctamente la escala de una cámara ortográfica.",
+                passed,
+                failed
+            );
+
+            testCamera.orthographic = false;
+            testCamera.fieldOfView = 60f;
+            testCamera.nearClipPlane = 0.30f;
+            testCamera.transform.SetPositionAndRotation(
+                Vector3.zero,
+                Quaternion.identity
+            );
+
+            float perspectiveWorldUnitsPerPixel =
+                RestaurantPlacementSnapVisualizer
+                    .CalculateWorldUnitsPerPixel(
+                        testCamera,
+                        new Vector3(0f, 0f, 10f),
+                        1000
+                    );
+
+            float expectedPerspectiveWorldUnitsPerPixel =
+                2f *
+                10f *
+                Mathf.Tan(30f * Mathf.Deg2Rad) /
+                1000f;
+
+            Assert(
+                Mathf.Abs(
+                    perspectiveWorldUnitsPerPixel -
+                    expectedPerspectiveWorldUnitsPerPixel
+                ) <= 0.00001f,
+                "El indicador calcula correctamente la escala de una cámara perspectiva.",
+                passed,
+                failed
+            );
+
+            Vector2 paddedCapturedSize =
+                RestaurantPlacementSnapVisualizer
+                    .CalculateScreenAwareSize(
+                        new Vector2(0.36f, 0.36f),
+                        0.16f,
+                        28f,
+                        0.02f,
+                        2.25f
+                    );
+
+            Assert(
+                paddedCapturedSize.x >= 0.679f &&
+                paddedCapturedSize.y >= 0.679f,
+                "El destino capturado añade margen para no quedar oculto bajo el objeto.",
+                passed,
+                failed
+            );
+
+            Vector2 freeAspectCompensatedSize =
+                RestaurantPlacementSnapVisualizer
+                    .CalculateScreenAwareSize(
+                        new Vector2(0.36f, 0.36f),
+                        0.16f,
+                        28f,
+                        0.04f,
+                        2.25f
+                    );
+
+            Assert(
+                freeAspectCompensatedSize.x >= 1.119f &&
+                freeAspectCompensatedSize.x <= 1.121f,
+                "El indicador mantiene su diámetro mínimo en una vista Game pequeña.",
                 passed,
                 failed
             );

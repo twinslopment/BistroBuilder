@@ -1,0 +1,37 @@
+BISTRO BUILDER 365D — REVISIÓN TÉCNICA
+
+DIAGNÓSTICO
+El indicador 365C tenía medidas correctas en metros mundiales, pero su tamaño aparente dependía del tamaño de la vista Game y de la cámara. En Free Aspect con una ventana reducida, la plaza podía quedar por debajo del tamaño visual de la silla provisional y apenas se distinguía. Aumentar el zoom de la vista Game hacía visible el indicador, pero reducía la visión global y agrandaba excesivamente la UI.
+
+SOLUCIÓN
+Se mantiene la geometría mundial como fuente semántica y se añade una capa de legibilidad dependiente de cámara:
+- metros por píxel para cámaras ortográficas;
+- metros por píxel según distancia y FOV para cámaras perspectiva;
+- diámetro mínimo aparente;
+- límite máximo de compensación;
+- padding capturado;
+- doble contorno de contraste;
+- flecha de orientación con escala uniforme.
+
+ARQUITECTURA
+La solución permanece dentro de RestaurantPlacementSnapVisualizer. Los proveedores no conocen resolución, cámara ni píxeles. Los contratos de snapping y los validadores funcionales no cambian.
+
+RENDIMIENTO
+- Sin Update propio.
+- Sin Instantiate/Destroy durante la interacción.
+- Pool fijo de indicadores.
+- Mallas y material compartidos.
+- Cálculo O(n) sobre los indicadores ya visibles.
+- La cámara queda serializada por el instalador; Camera.main es únicamente un fallback defensivo.
+
+RIESGOS CONTROLADOS
+- La compensación se limita a 2,25x para impedir indicadores gigantes.
+- El padding se aplica solo al destino capturado.
+- Los indicadores no capturados mantienen menor presencia visual.
+- La flecha se muestra solo al capturar para evitar ruido.
+
+CRITERIO DE CIERRE
+- Compilación: 0 errores.
+- Validador: 0 errores y solo la advertencia prevista.
+- Autotest: 46/0.
+- Prueba real en Free Aspect sin aumentar la escala de Game.

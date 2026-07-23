@@ -1488,15 +1488,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementSnapVisualizer
   maximumIndicators: 32
-  surfaceOffset: 0.012
-  outlineRelativeThickness: 0.11
-  inactiveOpacity: 0.7
-  capturedFillOpacity: 0.2
-  capturedScaleMultiplier: 1.08
+  surfaceOffset: 0.018
+  outlineRelativeThickness: 0.14
+  inactiveOpacity: 0.78
+  capturedFillOpacity: 0.24
+  capturedScaleMultiplier: 1.05
+  visualizationCamera: {fileID: 330585545}
+  compensateForScreenSize: 1
+  minimumInactiveDiameterPixels: 16
+  minimumCapturedDiameterPixels: 28
+  capturedWorldPadding: 0.16
+  maximumScreenScaleMultiplier: 2.25
+  contrastScaleMultiplier: 1.16
+  contrastOpacity: 0.82
+  arrowScaleMultiplier: 1.22
   availableColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.95}
   occupiedColor: {r: 1, g: 0.55, b: 0.1, a: 0.95}
   blockedColor: {r: 0.95, g: 0.15, b: 0.15, a: 0.98}
   capturedPendingColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+  contrastColor: {r: 0.025, g: 0.03, b: 0.035, a: 1}
+  orientationColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &263644945
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,25 @@
+{
+  "package": "BistroBuilder 365D — Universal Placement Indicator Legibility",
+  "version": "365D",
+  "type": "incremental_patch",
+  "requires": [
+    "BistroBuilder 365 — Universal Seating Foundation",
+    "BistroBuilder 365B — Universal Placement Snapping & Seating Visualization",
+    "BistroBuilder 365C — Universal Placement Indicators & Linked Groups"
+  ],
+  "expected_validation": {
+    "errors": 0,
+    "warnings": 1,
+    "self_tests_passed": 46,
+    "self_tests_failed": 0
+  },
+  "modified_files": [
+    "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs",
+    "Assets/Editor/BistroBuilder/Seating/BistroBuilderUniversalSeatingFoundationInstaller.cs",
+    "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationValidator.cs",
+    "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationSelfTest.cs"
+  ],
+  "preserves_existing_guids": true,
+  "creates_runtime_save_data": false,
+  "rollback": "Restore the previous Git commit"
+}

@@ -6,8 +6,13 @@ using UnityEngine.Rendering;
 /// Visualizador universal, plano y reutilizable de destinos de snapping.
 ///
 /// Sustituye los LineRenderer orientados a cámara por mallas planas
-/// apoyadas sobre la superficie. El resultado no cambia de grosor ni
-/// se deforma con la cámara isométrica.
+/// apoyadas sobre la superficie.
+///
+/// 365D añade compensación de tamaño aparente: el indicador conserva
+/// un diámetro mínimo en pantalla aunque la vista Game sea pequeña,
+/// esté en Free Aspect o cambie el zoom de la cámara. También utiliza
+/// un doble contorno de contraste para que siga siendo legible sobre
+/// suelos claros, oscuros y previsualizaciones coloreadas.
 ///
 /// Mantiene un pool fijo y materiales compartidos. No ejecuta Update,
 /// Instantiate ni Destroy durante el movimiento del puntero.
@@ -47,6 +52,64 @@ public sealed class RestaurantPlacementSnapVisualizer :
     [Range(0.25f, 1.50f)]
     private float capturedScaleMultiplier = 1.08f;
 
+    [Header("Legibilidad multirresolución")]
+
+    [Tooltip(
+        "Cámara utilizada para calcular el tamaño aparente. El " +
+        "instalador conecta la cámara principal de la escena."
+    )]
+    [SerializeField]
+    private Camera visualizationCamera;
+
+    [SerializeField]
+    private bool compensateForScreenSize = true;
+
+    [Tooltip(
+        "Diámetro mínimo de un destino no capturado en píxeles."
+    )]
+    [SerializeField]
+    [Range(8f, 64f)]
+    private float minimumInactiveDiameterPixels = 16f;
+
+    [Tooltip(
+        "Diámetro mínimo del destino capturado en píxeles."
+    )]
+    [SerializeField]
+    [Range(12f, 96f)]
+    private float minimumCapturedDiameterPixels = 28f;
+
+    [Tooltip(
+        "Margen mundial añadido alrededor del destino capturado para " +
+        "que el contorno permanezca visible bajo el objeto."
+    )]
+    [SerializeField]
+    [Min(0f)]
+    private float capturedWorldPadding = 0.16f;
+
+    [Tooltip(
+        "Límite de compensación para evitar indicadores gigantes en " +
+        "ventanas extremadamente pequeñas."
+    )]
+    [SerializeField]
+    [Range(1f, 4f)]
+    private float maximumScreenScaleMultiplier = 2.25f;
+
+    [Tooltip(
+        "Escala del contorno oscuro exterior respecto al contorno de " +
+        "estado."
+    )]
+    [SerializeField]
+    [Range(1.02f, 1.40f)]
+    private float contrastScaleMultiplier = 1.16f;
+
+    [SerializeField]
+    [Range(0.10f, 1f)]
+    private float contrastOpacity = 0.82f;
+
+    [SerializeField]
+    [Range(1f, 2f)]
+    private float arrowScaleMultiplier = 1.22f;
+
     [Header("Estados")]
 
     [SerializeField]
@@ -64,6 +127,14 @@ public sealed class RestaurantPlacementSnapVisualizer :
     [SerializeField]
     private Color capturedPendingColor =
         new Color(1.00f, 0.82f, 0.12f, 1f);
+
+    [SerializeField]
+    private Color contrastColor =
+        new Color(0.025f, 0.030f, 0.035f, 1f);
+
+    [SerializeField]
+    private Color orientationColor =
+        new Color(1f, 1f, 1f, 1f);
 
     private const int CircleSegmentCount = 32;
 
@@ -90,8 +161,24 @@ public sealed class RestaurantPlacementSnapVisualizer :
     public float SurfaceOffset =>
         surfaceOffset;
 
+    public Camera VisualizationCamera =>
+        visualizationCamera;
+
+    public bool CompensateForScreenSize =>
+        compensateForScreenSize;
+
+    public float MinimumInactiveDiameterPixels =>
+        minimumInactiveDiameterPixels;
+
+    public float MinimumCapturedDiameterPixels =>
+        minimumCapturedDiameterPixels;
+
+    public float MaximumScreenScaleMultiplier =>
+        maximumScreenScaleMultiplier;
+
     private void Awake()
     {
+        CacheVisualizationCameraIfNeeded();
         EnsureResources();
         EnsurePool();
         HideAll();
@@ -132,6 +219,7 @@ public sealed class RestaurantPlacementSnapVisualizer :
         bool capturedValidationIsValid
     )
     {
+        CacheVisualizationCameraIfNeeded();
         EnsureResources();
         EnsurePool();
 
@@ -174,7 +262,18 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 surfaceOffset,
                 inactiveOpacity,
                 capturedFillOpacity,
-                scaleMultiplier
+                scaleMultiplier,
+                visualizationCamera,
+                compensateForScreenSize,
+                minimumInactiveDiameterPixels,
+                minimumCapturedDiameterPixels,
+                capturedWorldPadding,
+                maximumScreenScaleMultiplier,
+                contrastColor,
+                contrastOpacity,
+                contrastScaleMultiplier,
+                orientationColor,
+                arrowScaleMultiplier
             );
         }
 
@@ -226,6 +325,123 @@ public sealed class RestaurantPlacementSnapVisualizer :
             default:
                 return availableColor;
         }
+    }
+
+    /// <summary>
+    /// Calcula cuántos metros mundiales representa un píxel vertical
+    /// en la posición indicada.
+    ///
+    /// Se expone para que el autotest pueda validar el comportamiento
+    /// de forma determinista sin depender de una vista Game concreta.
+    /// </summary>
+    public static float CalculateWorldUnitsPerPixel(
+        Camera camera,
+        Vector3 worldPosition,
+        int pixelHeightOverride = 0
+    )
+    {
+        if (camera == null)
+        {
+            return 0f;
+        }
+
+        int pixelHeight =
+            pixelHeightOverride > 0
+                ? pixelHeightOverride
+                : camera.pixelHeight;
+
+        pixelHeight = Mathf.Max(1, pixelHeight);
+
+        if (camera.orthographic)
+        {
+            return Mathf.Max(
+                0.000001f,
+                camera.orthographicSize * 2f / pixelHeight
+            );
+        }
+
+        float distance =
+            Vector3.Dot(
+                worldPosition - camera.transform.position,
+                camera.transform.forward
+            );
+
+        distance = Mathf.Max(
+            camera.nearClipPlane + 0.01f,
+            distance
+        );
+
+        float visibleHeight =
+            2f *
+            distance *
+            Mathf.Tan(
+                camera.fieldOfView *
+                0.5f *
+                Mathf.Deg2Rad
+            );
+
+        return Mathf.Max(
+            0.000001f,
+            visibleHeight / pixelHeight
+        );
+    }
+
+    /// <summary>
+    /// Devuelve el tamaño visible final del indicador conservando su
+    /// proporción y aplicando un mínimo aparente en pantalla.
+    /// </summary>
+    public static Vector2 CalculateScreenAwareSize(
+        Vector2 requestedSize,
+        float worldPadding,
+        float minimumDiameterPixels,
+        float worldUnitsPerPixel,
+        float maximumScaleMultiplier
+    )
+    {
+        Vector2 safeSize =
+            new Vector2(
+                Mathf.Max(0.05f, Mathf.Abs(requestedSize.x)),
+                Mathf.Max(0.05f, Mathf.Abs(requestedSize.y))
+            );
+
+        float safePadding =
+            Mathf.Max(0f, worldPadding);
+
+        safeSize +=
+            Vector2.one * safePadding * 2f;
+
+        float largestDimension =
+            Mathf.Max(safeSize.x, safeSize.y);
+
+        float requiredWorldDiameter =
+            Mathf.Max(0f, minimumDiameterPixels) *
+            Mathf.Max(0f, worldUnitsPerPixel);
+
+        float scale =
+            largestDimension > 0.000001f
+                ? Mathf.Max(
+                    1f,
+                    requiredWorldDiameter / largestDimension
+                )
+                : 1f;
+
+        scale =
+            Mathf.Min(
+                scale,
+                Mathf.Max(1f, maximumScaleMultiplier)
+            );
+
+        return safeSize * scale;
+    }
+
+    private void CacheVisualizationCameraIfNeeded()
+    {
+        if (visualizationCamera != null)
+        {
+            return;
+        }
+
+        visualizationCamera = Camera.main;
     }
 
     private void EnsureResources()
@@ -322,13 +538,13 @@ public sealed class RestaurantPlacementSnapVisualizer :
         root.transform.SetParent(transform, false);
         root.hideFlags = HideFlags.HideAndDontSave;
 
-        MeshRenderer outlineRenderer;
-        MeshFilter outlineFilter =
+        MeshRenderer contrastRenderer;
+        MeshFilter contrastFilter =
             CreateMeshChild(
                 root.transform,
-                "Outline",
-                32000,
-                out outlineRenderer
+                "ContrastOutline",
+                31998,
+                out contrastRenderer
             );
 
         MeshRenderer fillRenderer;
@@ -340,21 +556,43 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 out fillRenderer
             );
 
+        MeshRenderer outlineRenderer;
+        MeshFilter outlineFilter =
+            CreateMeshChild(
+                root.transform,
+                "Outline",
+                32000,
+                out outlineRenderer
+            );
+
+        MeshRenderer arrowContrastRenderer;
+        MeshFilter arrowContrastFilter =
+            CreateMeshChild(
+                root.transform,
+                "FacingContrast",
+                32001,
+                out arrowContrastRenderer
+            );
+
         MeshRenderer arrowRenderer;
         MeshFilter arrowFilter =
             CreateMeshChild(
                 root.transform,
                 "Facing",
-                32001,
+                32002,
                 out arrowRenderer
             );
 
         return new IndicatorView(
             root,
+            contrastFilter,
+            contrastRenderer,
             outlineFilter,
             outlineRenderer,
             fillFilter,
             fillRenderer,
+            arrowContrastFilter,
+            arrowContrastRenderer,
             arrowFilter,
             arrowRenderer
         );
@@ -733,6 +971,10 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
         private readonly GameObject root;
 
+        private readonly MeshFilter contrastFilter;
+
+        private readonly MeshRenderer contrastRenderer;
+
         private readonly MeshFilter outlineFilter;
 
         private readonly MeshRenderer outlineRenderer;
@@ -741,9 +983,16 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
         private readonly MeshRenderer fillRenderer;
 
+        private readonly MeshFilter arrowContrastFilter;
+
+        private readonly MeshRenderer arrowContrastRenderer;
+
         private readonly MeshFilter arrowFilter;
 
         private readonly MeshRenderer arrowRenderer;
+
+        private readonly MaterialPropertyBlock contrastBlock =
+            new MaterialPropertyBlock();
 
         private readonly MaterialPropertyBlock outlineBlock =
             new MaterialPropertyBlock();
@@ -751,24 +1000,35 @@ public sealed class RestaurantPlacementSnapVisualizer :
         private readonly MaterialPropertyBlock fillBlock =
             new MaterialPropertyBlock();
 
+        private readonly MaterialPropertyBlock arrowContrastBlock =
+            new MaterialPropertyBlock();
+
         private readonly MaterialPropertyBlock arrowBlock =
             new MaterialPropertyBlock();
 
         public IndicatorView(
             GameObject root,
+            MeshFilter contrastFilter,
+            MeshRenderer contrastRenderer,
             MeshFilter outlineFilter,
             MeshRenderer outlineRenderer,
             MeshFilter fillFilter,
             MeshRenderer fillRenderer,
+            MeshFilter arrowContrastFilter,
+            MeshRenderer arrowContrastRenderer,
             MeshFilter arrowFilter,
             MeshRenderer arrowRenderer
         )
         {
             this.root = root;
+            this.contrastFilter = contrastFilter;
+            this.contrastRenderer = contrastRenderer;
             this.outlineFilter = outlineFilter;
             this.outlineRenderer = outlineRenderer;
             this.fillFilter = fillFilter;
             this.fillRenderer = fillRenderer;
+            this.arrowContrastFilter = arrowContrastFilter;
+            this.arrowContrastRenderer = arrowContrastRenderer;
             this.arrowFilter = arrowFilter;
             this.arrowRenderer = arrowRenderer;
         }
@@ -783,7 +1043,18 @@ public sealed class RestaurantPlacementSnapVisualizer :
             float surfaceOffset,
             float inactiveOpacity,
             float capturedFillOpacity,
-            float scaleMultiplier
+            float scaleMultiplier,
+            Camera visualizationCamera,
+            bool compensateForScreenSize,
+            float minimumInactiveDiameterPixels,
+            float minimumCapturedDiameterPixels,
+            float capturedWorldPadding,
+            float maximumScreenScaleMultiplier,
+            Color contrastColor,
+            float contrastOpacity,
+            float contrastScaleMultiplier,
+            Color orientationColor,
+            float arrowScaleMultiplier
         )
         {
             if (root == null)
@@ -825,16 +1096,83 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 )
             );
 
+            Vector2 requestedSize =
+                hint.Size *
+                Mathf.Max(0.01f, scaleMultiplier);
+
+            float worldUnitsPerPixel =
+                compensateForScreenSize
+                    ? CalculateWorldUnitsPerPixel(
+                        visualizationCamera,
+                        hint.WorldPosition
+                    )
+                    : 0f;
+
+            Vector2 visibleSize =
+                CalculateScreenAwareSize(
+                    requestedSize,
+                    isCaptured
+                        ? capturedWorldPadding
+                        : 0f,
+                    isCaptured
+                        ? minimumCapturedDiameterPixels
+                        : minimumInactiveDiameterPixels,
+                    worldUnitsPerPixel,
+                    maximumScreenScaleMultiplier
+                );
+
             root.transform.localScale =
                 new Vector3(
-                    hint.Size.x * scaleMultiplier,
-                    hint.Size.y * scaleMultiplier,
+                    visibleSize.x,
+                    visibleSize.y,
                     1f
                 );
 
+            contrastFilter.sharedMesh = outlineMesh;
             outlineFilter.sharedMesh = outlineMesh;
             fillFilter.sharedMesh = fillMesh;
+            arrowContrastFilter.sharedMesh = arrowMesh;
             arrowFilter.sharedMesh = arrowMesh;
+
+            contrastFilter.transform.localScale =
+                Vector3.one *
+                Mathf.Max(1.01f, contrastScaleMultiplier);
+
+            outlineFilter.transform.localScale = Vector3.one;
+            fillFilter.transform.localScale = Vector3.one;
+
+            float largestVisibleDimension =
+                Mathf.Max(
+                    visibleSize.x,
+                    visibleSize.y
+                );
+
+            Vector3 uniformArrowLocalScale =
+                new Vector3(
+                    largestVisibleDimension /
+                    Mathf.Max(0.0001f, visibleSize.x),
+                    largestVisibleDimension /
+                    Mathf.Max(0.0001f, visibleSize.y),
+                    1f
+                ) *
+                Mathf.Max(1f, arrowScaleMultiplier);
+
+            arrowFilter.transform.localScale =
+                uniformArrowLocalScale;
+
+            arrowContrastFilter.transform.localScale =
+                uniformArrowLocalScale *
+                Mathf.Max(1.01f, contrastScaleMultiplier);
+
+            Color resolvedContrastColor = contrastColor;
+            resolvedContrastColor.a *=
+                Mathf.Clamp01(contrastOpacity);
+
+            SetRendererColor(
+                contrastRenderer,
+                contrastBlock,
+                resolvedContrastColor
+            );
 
             Color outlineColor = stateColor;
             outlineColor.a *=
@@ -858,7 +1196,25 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 fillColor
             );
 
-            Color arrowColor = outlineColor;
+            Color arrowContrastColor = contrastColor;
+            arrowContrastColor.a *=
+                Mathf.Clamp01(contrastOpacity);
+
+            SetRendererColor(
+                arrowContrastRenderer,
+                arrowContrastBlock,
+                arrowContrastColor
+            );
+
+            Color arrowColor =
+                isCaptured
+                    ? orientationColor
+                    : outlineColor;
+
+            arrowColor.a =
+                isCaptured
+                    ? 1f
+                    : outlineColor.a;
 
             SetRendererColor(
                 arrowRenderer,
@@ -866,9 +1222,14 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 arrowColor
             );
 
+            bool showArrow =
+                hint.ShowFacingDirection &&
+                isCaptured;
+
+            contrastRenderer.enabled = true;
             fillRenderer.enabled = isCaptured;
-            arrowRenderer.enabled =
-                hint.ShowFacingDirection;
+            arrowContrastRenderer.enabled = showArrow;
+            arrowRenderer.enabled = showArrow;
 
             root.SetActive(true);
         }
@@ -921,6 +1282,47 @@ public sealed class RestaurantPlacementSnapVisualizer :
                 capturedScaleMultiplier,
                 0.25f,
                 1.50f
+            );
+
+        minimumInactiveDiameterPixels =
+            Mathf.Clamp(
+                minimumInactiveDiameterPixels,
+                8f,
+                64f
+            );
+
+        minimumCapturedDiameterPixels =
+            Mathf.Clamp(
+                minimumCapturedDiameterPixels,
+                12f,
+                96f
+            );
+
+        capturedWorldPadding =
+            Mathf.Max(0f, capturedWorldPadding);
+
+        maximumScreenScaleMultiplier =
+            Mathf.Clamp(
+                maximumScreenScaleMultiplier,
+                1f,
+                4f
+            );
+
+        contrastScaleMultiplier =
+            Mathf.Clamp(
+                contrastScaleMultiplier,
+                1.02f,
+                1.40f
+            );
+
+        contrastOpacity =
+            Mathf.Clamp01(contrastOpacity);
+
+        arrowScaleMultiplier =
+            Mathf.Clamp(
+                arrowScaleMultiplier,
+                1f,
+                2f
             );
     }
 #endif
