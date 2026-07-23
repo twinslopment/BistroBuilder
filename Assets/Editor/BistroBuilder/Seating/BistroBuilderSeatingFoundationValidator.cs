@@ -50,7 +50,7 @@ public sealed class
 }
 
 /// <summary>
-/// Validador aislado del primer bloque de asientos.
+/// Validador aislado de asientos y colocación asistida.
 ///
 /// No modifica Project Health hasta que el sistema haya superado
 /// compilación, instalación, autotest y prueba real en Play.
@@ -126,7 +126,7 @@ public static class
         if (result.ErrorCount == 0)
         {
             result.Messages.Add(
-                "OK: la base universal de asientos está completa."
+                "OK: la base universal de asientos y snapping está completa."
             );
         }
 
@@ -436,6 +436,26 @@ public static class
                 RestaurantSeatingTopologyService
             >(scene);
 
+        RestaurantPlacementSnapVisualizer snapVisualizer =
+            FindSceneComponent<
+                RestaurantPlacementSnapVisualizer
+            >(scene);
+
+        RestaurantSeatingSnapProvider seatingSnapProvider =
+            FindSceneComponent<
+                RestaurantSeatingSnapProvider
+            >(scene);
+
+        RestaurantPlacementSnapService snapService =
+            FindSceneComponent<
+                RestaurantPlacementSnapService
+            >(scene);
+
+        RestaurantEditInteractionController interactionController =
+            FindSceneComponent<
+                RestaurantEditInteractionController
+            >(scene);
+
         if (constraintService == null)
         {
             AddError(
@@ -488,6 +508,79 @@ public static class
                 result,
                 "GameSystems no contiene " +
                 "RestaurantSeatingTopologyService."
+            );
+        }
+
+        if (snapVisualizer == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantPlacementSnapVisualizer."
+            );
+        }
+        else if (snapVisualizer.MaximumIndicatorCount < 4)
+        {
+            AddError(
+                result,
+                "El visualizador de snapping no tiene un pool válido."
+            );
+        }
+
+        if (seatingSnapProvider == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantSeatingSnapProvider."
+            );
+        }
+        else if (!seatingSnapProvider.ValidateConfiguration(
+                out string snapProviderError
+            ))
+        {
+            AddError(result, snapProviderError);
+        }
+
+        if (snapService == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantPlacementSnapService."
+            );
+        }
+        else
+        {
+            snapService.RefreshProviders();
+
+            if (snapService.RegisteredProviderCount < 1)
+            {
+                AddError(
+                    result,
+                    "El servicio de snapping no ha registrado " +
+                    "ningún proveedor."
+                );
+            }
+        }
+
+        if (interactionController == null)
+        {
+            AddError(
+                result,
+                "La escena no contiene " +
+                "RestaurantEditInteractionController."
+            );
+        }
+        else if (!object.ReferenceEquals(
+                interactionController.PlacementSnapService,
+                snapService
+            ))
+        {
+            AddError(
+                result,
+                "RestaurantEditInteractionController no está " +
+                "conectado al servicio universal de snapping."
             );
         }
 

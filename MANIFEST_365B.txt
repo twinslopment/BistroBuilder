@@ -1,0 +1,26 @@
+BISTRO BUILDER 365B — MANIFEST
+
+ARCHIVOS NUEVOS
+- Assets/Scripts/Application/Restaurant/Placement/Snapping.meta
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs.meta
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapService.cs
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapService.cs.meta
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs
+- Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs.meta
+- Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs
+- Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs.meta
+
+ARCHIVOS SUSTITUIDOS, CONSERVANDO SU META/GUID EXISTENTE
+- Assets/Scripts/Simulation/Restaurant/Seating/RestaurantSeat.cs
+- Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingPlacementConstraintRule.cs
+- Assets/Scripts/Presentation/Restaurant/EditMode/RestaurantEditInteractionController.cs
+- Assets/Editor/BistroBuilder/Seating/BistroBuilderUniversalSeatingFoundationInstaller.cs
+- Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationValidator.cs
+- Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationSelfTest.cs
+
+DOCUMENTACIÓN
+- INSTRUCCIONES_365B.txt
+- MANIFEST_365B.txt
+- PACKAGE_MANIFEST_365B.json
+- REVISION_TECNICA_365B.txt

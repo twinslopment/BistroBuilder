@@ -1,0 +1,79 @@
+BISTRO BUILDER 365B
+UNIVERSAL PLACEMENT SNAPPING & SEATING VISUALIZATION
+
+REQUISITO
+- Debe estar instalado y validado BistroBuilder 365 — Universal Seating Foundation.
+- Este paquete es incremental: no sustituye la base 365, la completa.
+
+OBJETIVO
+- El jugador deja de buscar coordenadas invisibles.
+- Una silla próxima a una plaza se ajusta automáticamente a posición y orientación.
+- Las plazas próximas se visualizan mientras se crea o mueve una silla.
+- La validación transaccional original sigue siendo la autoridad final.
+- La arquitectura admite proveedores futuros: muebles-pared, módulos, decoración-superficie, barras y equipamiento.
+
+INSTALACIÓN SEGURA
+1. Sal de Play Mode y guarda la escena.
+2. Crea un commit de seguridad en GitHub Desktop:
+   "Baseline 365 antes de snapping universal"
+3. Cierra Unity.
+4. Extrae el ZIP en la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+5. Confirma la sustitución de archivos cuando Windows lo solicite.
+6. Abre Unity y espera a que termine de compilar e importar.
+7. No entres todavía en Play Mode.
+8. Abre y guarda:
+   Assets/Scenes/Prototype_Restaurant.unity
+9. Ejecuta:
+   Tools > Bistro Builder > Seating > Install or Repair Seating Foundation
+
+RESULTADO ESPERADO DEL INSTALADOR
+- Errores: 0
+- Advertencias: 1
+La advertencia prevista continúa siendo la mesa redonda de 10 clientes pendiente de diámetro aprobado.
+
+VALIDACIÓN
+1. Ejecuta:
+   Tools > Bistro Builder > Seating > Validate Seating Foundation
+2. Resultado esperado:
+   - Errores: 0
+   - Advertencias: 1
+   - OK: la base universal de asientos y snapping está completa.
+3. Ejecuta:
+   Tools > Bistro Builder > Seating > Run Seating Foundation Self-Test
+4. Resultado esperado:
+   - Pruebas superadas: 32
+   - Pruebas fallidas: 0
+
+PRUEBA FUNCIONAL EN PLAY
+1. Entra en Play Mode con el servicio Closed.
+2. Pulsa F2.
+3. Selecciona Silla bistró de madera en el catálogo.
+4. Acerca el cursor a una mesa, sin intentar acertar la coordenada exacta.
+5. Deben aparecer indicadores de plazas próximas.
+6. Al entrar aproximadamente a 0,65 m de una plaza:
+   - la silla se ajusta a la plaza;
+   - gira automáticamente hacia la mesa;
+   - la previsualización queda verde si la colocación es válida.
+7. Mueve ligeramente el cursor: la plaza debe permanecer estable hasta alejarte aproximadamente 0,85 m.
+8. Coloca las dos sillas de Table_Basic.
+9. Intenta colocar una tercera silla en esa mesa.
+10. Debe quedar roja y mostrar:
+    "Esta mesa admite un máximo de 2 clientes."
+11. Intenta colocar una silla sobre una plaza ocupada de una mesa no completa.
+12. Debe mostrar:
+    "Esta plaza de la mesa ya está ocupada."
+13. Comprueba creación, movimiento, cancelar, Undo y Redo.
+14. La Console debe permanecer sin errores rojos.
+
+NO MODIFICAR MANUALMENTE
+- Colliders.
+- PlacementFootprint.
+- AssociationPoint.
+- FacingAxis.
+- Radios de captura o liberación.
+- Componentes añadidos a GameSystems.
+
+COMMIT FINAL
+Solo después de validar Unity y la prueba funcional:
+"365B snapping universal y plazas visuales validados"

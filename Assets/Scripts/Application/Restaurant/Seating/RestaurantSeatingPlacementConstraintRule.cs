@@ -313,7 +313,8 @@ public sealed class RestaurantSeatingPlacementConstraintRule :
                 " de " +
                 bestOccupiedMatch.TableConfiguration.name +
                 ".",
-                bestOccupiedMatch.TableConfiguration
+                bestOccupiedMatch.TableConfiguration,
+                true
             );
         }
 

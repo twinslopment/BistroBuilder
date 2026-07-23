@@ -1,0 +1,126 @@
+{
+  "package": "BistroBuilder 365B — Universal Placement Snapping & Seating Visualization",
+  "version": "365B",
+  "type": "incremental_patch",
+  "requires": "BistroBuilder 365 — Universal Seating Foundation",
+  "expected_validation": {
+    "errors": 0,
+    "warnings": 1
+  },
+  "expected_self_test": {
+    "passed": 32,
+    "failed": 0
+  },
+  "capture_radius_metres": 0.65,
+  "release_radius_metres": 0.85,
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationSelfTest.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 51030,
+      "sha256": "c3323dd9ac5cb73189307f7399f936c4d36896f9c655c97595d02fb2102ada9b"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationValidator.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 18741,
+      "sha256": "d31a1c67657d6812e4206c93aeb33df22f9897f9fc368468baf3886eeb979784"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderUniversalSeatingFoundationInstaller.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 39741,
+      "sha256": "5696c38224a4f5933ef30be510cf7ada0958fedf88385e386d0f2e79834ca4c1"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapService.cs",
+      "action": "new",
+      "size_bytes": 14211,
+      "sha256": "36ed9ab423cd8a9cfabc9b790007c3f9f530c954d808f77527850a92be58a25a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapService.cs.meta",
+      "action": "new",
+      "size_bytes": 243,
+      "sha256": "f978d008deeaa6c29dd9146cbb9136aad1b8781e72a1e9e0ad67562101f355f6"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs",
+      "action": "new",
+      "size_bytes": 7718,
+      "sha256": "8b3a7c2dcc4e72cdb8781646c5b25b8fc7af7bcef229c3dc40843c7b2bef36fb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs.meta",
+      "action": "new",
+      "size_bytes": 243,
+      "sha256": "16f14831dbb4a83edc85ffc831d3624b55ee6baed25f34db51f54c814d94e653"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs",
+      "action": "new",
+      "size_bytes": 9892,
+      "sha256": "708533f66bddae5ae30a0a8feaa9135812eae3903b7656a01a2f86cd2f43a74a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs.meta",
+      "action": "new",
+      "size_bytes": 243,
+      "sha256": "1b806ec04748cd8913b5f74dd23a255654ca5cbce853fde771e70a407434daf9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping.meta",
+      "action": "new",
+      "size_bytes": 172,
+      "sha256": "0eed8b61d4c72d88064a18efeb7d12b4fe5afbd47457ad533eb19274049acfdb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingPlacementConstraintRule.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 17300,
+      "sha256": "6ffade4106781258af563ac1269d662fdfb41380a9702fde372f5683f2249944"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs",
+      "action": "new",
+      "size_bytes": 13900,
+      "sha256": "842f4446a81278c26bbf4a38eb07bcd486e623fa63b7521f4f27320196407611"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs.meta",
+      "action": "new",
+      "size_bytes": 243,
+      "sha256": "165cc147eaeb85285d26021f39b22f049b3131b5f7508e8250f7a8e73600e2c1"
+    },
+    {
+      "path": "Assets/Scripts/Presentation/Restaurant/EditMode/RestaurantEditInteractionController.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 69554,
+      "sha256": "8d5a51dbd6aa8e23b8f329d201d65ad92bd21c88b2d1eaa9fe3b09a84f14a107"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Restaurant/Seating/RestaurantSeat.cs",
+      "action": "replace_preserve_existing_meta",
+      "size_bytes": 17417,
+      "sha256": "19e32e2d220b45192a83d0a23fadac7fd209ebaf7e759ef3ac2cc91f4bbbca9f"
+    },
+    {
+      "path": "INSTRUCCIONES_365B.txt",
+      "action": "documentation",
+      "size_bytes": 3061,
+      "sha256": "970efd1acb4e854779a110cc05151c2b72962c42eb425cd02cf3712e6898e0fd"
+    },
+    {
+      "path": "MANIFEST_365B.txt",
+      "action": "documentation",
+      "size_bytes": 1529,
+      "sha256": "17e2419b7eceee272aab1590743f30b7c50ebd0853f4ec0395d48944a209259d"
+    },
+    {
+      "path": "REVISION_TECNICA_365B.txt",
+      "action": "documentation",
+      "size_bytes": 3816,
+      "sha256": "e81b3a7e64bbb88ed2a6ff841bdc81b2c1391ebb8e3f2582584cd51684e53bf8"
+    }
+  ]
+}

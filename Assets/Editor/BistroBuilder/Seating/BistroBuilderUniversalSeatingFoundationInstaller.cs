@@ -185,13 +185,13 @@ public static class
             }
 
             Debug.Log(
-                "BISTRO BUILDER - SEATING FOUNDATION\n" +
+                "BISTRO BUILDER - SEATING FOUNDATION 365B\n" +
                 result.BuildReport()
             );
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Base universal de asientos instalada.\n\n" +
+                "Base universal de asientos y snapping instalada.\n\n" +
                 "Errores: " +
                 result.ErrorCount +
                 "\nAdvertencias: " +
@@ -882,6 +882,21 @@ public static class
                 RestaurantSeatingTopologyService
             >(gameSystems);
 
+        RestaurantPlacementSnapVisualizer snapVisualizer =
+            GetOrAddComponent<
+                RestaurantPlacementSnapVisualizer
+            >(gameSystems);
+
+        RestaurantSeatingSnapProvider seatingSnapProvider =
+            GetOrAddComponent<
+                RestaurantSeatingSnapProvider
+            >(gameSystems);
+
+        RestaurantPlacementSnapService snapService =
+            GetOrAddComponent<
+                RestaurantPlacementSnapService
+            >(gameSystems);
+
         RestaurantPlaceableRegistry placeableRegistry =
             RequireComponent<RestaurantPlaceableRegistry>(
                 gameSystems
@@ -905,6 +920,11 @@ public static class
         RestaurantPlacementValidationService validationService =
             RequireComponent<
                 RestaurantPlacementValidationService
+            >(gameSystems);
+
+        RestaurantEditInteractionController interactionController =
+            RequireComponent<
+                RestaurantEditInteractionController
             >(gameSystems);
 
         SerializedObject serializedSeatRegistry =
@@ -964,6 +984,90 @@ public static class
 
         serializedTopology.ApplyModifiedPropertiesWithoutUndo();
 
+        SerializedObject serializedSnapProvider =
+            new SerializedObject(seatingSnapProvider);
+
+        SetObjectReference(
+            serializedSnapProvider,
+            "tableRegistry",
+            tableRegistry
+        );
+
+        SetObjectReference(
+            serializedSnapProvider,
+            "seatRegistry",
+            seatRegistry
+        );
+
+        SetBoolean(
+            serializedSnapProvider,
+            "snapEnabled",
+            true
+        );
+
+        SetInteger(
+            serializedSnapProvider,
+            "priority",
+            100
+        );
+
+        SetFloat(
+            serializedSnapProvider,
+            "captureRadius",
+            0.65f
+        );
+
+        SetFloat(
+            serializedSnapProvider,
+            "releaseRadius",
+            0.85f
+        );
+
+        SetFloat(
+            serializedSnapProvider,
+            "maximumVerticalCaptureDifference",
+            0.30f
+        );
+
+        SetFloat(
+            serializedSnapProvider,
+            "visualizationRadius",
+            2.50f
+        );
+
+        SetFloat(
+            serializedSnapProvider,
+            "slotIndicatorRadius",
+            0.18f
+        );
+
+        serializedSnapProvider
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedSnapService =
+            new SerializedObject(snapService);
+
+        SetObjectReference(
+            serializedSnapService,
+            "visualizer",
+            snapVisualizer
+        );
+
+        serializedSnapService
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedInteractionController =
+            new SerializedObject(interactionController);
+
+        SetObjectReference(
+            serializedInteractionController,
+            "placementSnapService",
+            snapService
+        );
+
+        serializedInteractionController
+            .ApplyModifiedPropertiesWithoutUndo();
+
         SerializedObject serializedValidation =
             new SerializedObject(validationService);
 
@@ -976,12 +1080,17 @@ public static class
         serializedValidation.ApplyModifiedPropertiesWithoutUndo();
 
         constraintService.RefreshRules();
+        snapService.RefreshProviders();
 
         EditorUtility.SetDirty(constraintService);
         EditorUtility.SetDirty(clearanceRule);
         EditorUtility.SetDirty(seatRegistry);
         EditorUtility.SetDirty(seatingRule);
         EditorUtility.SetDirty(topologyService);
+        EditorUtility.SetDirty(snapVisualizer);
+        EditorUtility.SetDirty(seatingSnapProvider);
+        EditorUtility.SetDirty(snapService);
+        EditorUtility.SetDirty(interactionController);
         EditorUtility.SetDirty(validationService);
     }
 

@@ -56,6 +56,14 @@ public sealed class RestaurantEditInteractionController :
         creationService;
 
     [Tooltip(
+        "Servicio universal que ajusta artículos a destinos " +
+        "funcionales como plazas, paredes o módulos."
+    )]
+    [SerializeField]
+    private RestaurantPlacementSnapService
+        placementSnapService;
+
+    [Tooltip(
         "Cámara utilizada para seleccionar y colocar objetos."
     )]
     [SerializeField]
@@ -329,6 +337,9 @@ public sealed class RestaurantEditInteractionController :
             return lastValidationResult;
         }
     }
+
+    public RestaurantPlacementSnapService PlacementSnapService =>
+        placementSnapService;
 
     private void Awake()
     {
@@ -1483,6 +1494,8 @@ public sealed class RestaurantEditInteractionController :
         hasCandidatePose = true;
         hasPublishedPreviewPose = false;
 
+        placementSnapService?.BeginSession(member);
+
         lastValidationResult =
             transactionService.LastValidationResult;
 
@@ -1533,6 +1546,7 @@ public sealed class RestaurantEditInteractionController :
             yawRotation *
             candidateRotation;
 
+        placementSnapService?.ReleaseCurrentCapture();
         hasPublishedPreviewPose = false;
     }
 
@@ -1572,8 +1586,25 @@ public sealed class RestaurantEditInteractionController :
                 );
         }
 
-        candidatePosition =
-            nextPosition;
+        if (placementSnapService != null &&
+            placementSnapService.TryResolveSnap(
+                activeMember,
+                nextPosition,
+                candidateRotation,
+                out RestaurantPlacementSnapResult snapResult
+            ))
+        {
+            candidatePosition =
+                snapResult.RootPosition;
+
+            candidateRotation =
+                snapResult.RootRotation;
+        }
+        else
+        {
+            candidatePosition =
+                nextPosition;
+        }
 
         hasCandidatePose = true;
     }
@@ -1623,6 +1654,7 @@ public sealed class RestaurantEditInteractionController :
             PublishMessage(message);
             LogEvent(message);
 
+            placementSnapService?.SetCurrentSnapValidation(false);
             return;
         }
 
@@ -1639,6 +1671,10 @@ public sealed class RestaurantEditInteractionController :
 
         PlacementValidationChanged?.Invoke(
             result
+        );
+
+        placementSnapService?.SetCurrentSnapValidation(
+            result.IsValid
         );
 
         if (result.IsValid)
@@ -2284,6 +2320,8 @@ public sealed class RestaurantEditInteractionController :
 
     private void ClearLocalPlacementState()
     {
+        placementSnapService?.EndSession();
+
         activeMember = null;
         activeEditableObject = null;
 
@@ -2628,6 +2666,7 @@ public sealed class RestaurantEditInteractionController :
                transactionService != null &&
                historyService != null &&
                creationService != null &&
+               placementSnapService != null &&
                interactionCamera != null;
     }
 
@@ -2658,6 +2697,13 @@ public sealed class RestaurantEditInteractionController :
         {
             TryGetComponent(
                 out creationService
+            );
+        }
+
+        if (placementSnapService == null)
+        {
+            TryGetComponent(
+                out placementSnapService
             );
         }
 
@@ -2721,6 +2767,17 @@ public sealed class RestaurantEditInteractionController :
                     RestaurantPlaceableCreationService
                 ) +
                 " para crear artículos.",
+                this
+            );
+        }
+
+        if (placementSnapService == null)
+        {
+            Debug.LogError(
+                controllerName +
+                " necesita un " +
+                nameof(RestaurantPlacementSnapService) +
+                ".",
                 this
             );
         }

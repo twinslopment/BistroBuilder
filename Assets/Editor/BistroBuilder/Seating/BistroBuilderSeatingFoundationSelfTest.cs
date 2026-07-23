@@ -31,6 +31,7 @@ public static class
         TestConfigurationGeneration(passed, failed);
         TestImmutableCapacityAndSpacing(passed, failed);
         TestFixedCapacityRule(passed, failed);
+        TestInteractiveSnapping(passed, failed);
         TestOperationalClearance(passed, failed);
 
         StringBuilder report = new StringBuilder();
@@ -849,6 +850,37 @@ public static class
                 confirmedSeats[0]
             );
 
+            RestaurantPlacementConstraintContext occupiedContext =
+                new RestaurantPlacementConstraintContext(
+                    candidateMember,
+                    slots[1].AssociationPosition,
+                    Quaternion.LookRotation(
+                        slots[1].FacingDirection,
+                        Vector3.up
+                    ),
+                    null,
+                    candidateFootprint,
+                    null,
+                    null
+                );
+
+            RestaurantPlacementConstraintEvaluation occupiedResult =
+                rule.Evaluate(occupiedContext);
+
+            Assert(
+                !occupiedResult.IsValid &&
+                string.Equals(
+                    occupiedResult.RuleId,
+                    "seating_slot_occupied",
+                    StringComparison.Ordinal
+                ) &&
+                occupiedResult.ShouldOverrideGenericConflicts,
+                "Una plaza ocupada prevalece sobre el mensaje " +
+                "genérico de solapamiento.",
+                passed,
+                failed
+            );
+
             RestaurantPlacementConstraintEvaluation freeResult =
                 rule.Evaluate(fullContext);
 
@@ -881,6 +913,317 @@ public static class
             }
 
             UnityEngine.Object.DestroyImmediate(testRoot);
+        }
+    }
+
+    /// <summary>
+    /// Comprueba el flujo que faltaba en 365: captura desde una pose
+    /// imperfecta, orientación automática, histéresis y liberación.
+    /// </summary>
+    private static void TestInteractiveSnapping(
+        List<string> passed,
+        List<string> failed
+    )
+    {
+        GameObject root =
+            new GameObject(
+                "BB_InteractiveSeatingSnapSelfTest"
+            );
+
+        root.hideFlags = HideFlags.HideAndDontSave;
+        root.SetActive(false);
+
+        RestaurantSeatUseProfileDefinition profile = null;
+        RestaurantTableSeatingConfigurationDefinition definition = null;
+
+        try
+        {
+            RestaurantSeatRegistry seatRegistry =
+                root.AddComponent<RestaurantSeatRegistry>();
+
+            RestaurantTableRegistry tableRegistry =
+                root.AddComponent<RestaurantTableRegistry>();
+
+            RestaurantSeatingSnapProvider provider =
+                root.AddComponent<RestaurantSeatingSnapProvider>();
+
+            RestaurantPlacementSnapService snapService =
+                root.AddComponent<RestaurantPlacementSnapService>();
+
+            SerializedObject serializedTableRegistry =
+                new SerializedObject(tableRegistry);
+
+            serializedTableRegistry
+                .FindProperty("discoverSceneTablesOnStart")
+                .boolValue = false;
+
+            serializedTableRegistry
+                .ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject serializedProvider =
+                new SerializedObject(provider);
+
+            serializedProvider
+                .FindProperty("tableRegistry")
+                .objectReferenceValue = tableRegistry;
+
+            serializedProvider
+                .FindProperty("seatRegistry")
+                .objectReferenceValue = seatRegistry;
+
+            serializedProvider
+                .FindProperty("captureRadius")
+                .floatValue = 0.65f;
+
+            serializedProvider
+                .FindProperty("releaseRadius")
+                .floatValue = 0.85f;
+
+            serializedProvider.ApplyModifiedPropertiesWithoutUndo();
+
+            snapService.RefreshProviders();
+
+            profile =
+                ScriptableObject.CreateInstance<
+                    RestaurantSeatUseProfileDefinition
+                >();
+
+            definition =
+                CreateRectangularDefinition(
+                    2,
+                    1,
+                    1,
+                    0,
+                    0
+                );
+
+            GameObject tableObject =
+                CreateTemporaryObject(
+                    "SnapTestTable",
+                    root.transform
+                );
+
+            RestaurantTable table =
+                tableObject.AddComponent<RestaurantTable>();
+
+            RestaurantPlacementFootprint footprint =
+                tableObject.AddComponent<
+                    RestaurantPlacementFootprint
+                >();
+
+            RestaurantTableSeatingConfiguration configuration =
+                tableObject.AddComponent<
+                    RestaurantTableSeatingConfiguration
+                >();
+
+            ConfigureTable(
+                table,
+                footprint,
+                configuration,
+                definition,
+                2,
+                new Vector2(1.00f, 0.80f)
+            );
+
+            tableRegistry.RegisterTable(table);
+
+            List<RestaurantTableSeatSlot> slots =
+                new List<RestaurantTableSeatSlot>(2);
+
+            configuration.WriteCurrentSlots(slots);
+
+            RestaurantSeat candidate =
+                CreateSeatAtSlot(
+                    "InteractiveSnapCandidate",
+                    root.transform,
+                    profile,
+                    slots[0]
+                );
+
+            candidate.AssociationPoint.localPosition =
+                new Vector3(0f, 0f, 0.20f);
+
+            RestaurantAreaMember member =
+                candidate.gameObject.AddComponent<
+                    RestaurantAreaMember
+                >();
+
+            Quaternion wrongRotation =
+                Quaternion.Euler(0f, 90f, 0f);
+
+            Vector3 impreciseAssociationPosition =
+                slots[0].AssociationPosition +
+                Vector3.right * 0.45f;
+
+            Vector3 impreciseRootPosition =
+                candidate
+                    .CalculateRootPositionForAssociationAtPose(
+                        impreciseAssociationPosition,
+                        wrongRotation
+                    );
+
+            snapService.BeginSession(member);
+
+            bool snapped =
+                snapService.TryResolveSnap(
+                    member,
+                    impreciseRootPosition,
+                    wrongRotation,
+                    out RestaurantPlacementSnapResult snapResult
+                );
+
+            Assert(
+                snapped &&
+                snapResult.IsSnapped,
+                "Una silla se captura desde una posición imperfecta " +
+                "del cursor.",
+                passed,
+                failed
+            );
+
+            Vector3 resolvedAssociationPosition =
+                candidate.CalculateAssociationPositionAtPose(
+                    snapResult.RootPosition,
+                    snapResult.RootRotation
+                );
+
+            Assert(
+                Vector3.Distance(
+                    resolvedAssociationPosition,
+                    slots[0].AssociationPosition
+                ) <= 0.001f,
+                "El snapping coloca AssociationPoint exactamente en " +
+                "la plaza.",
+                passed,
+                failed
+            );
+
+            Assert(
+                Vector3.Angle(
+                    candidate.CalculateFacingDirectionAtPose(
+                        snapResult.RootRotation
+                    ),
+                    slots[0].FacingDirection
+                ) <= 0.1f,
+                "El snapping orienta automáticamente la silla hacia " +
+                "la mesa.",
+                passed,
+                failed
+            );
+
+            Vector3 hysteresisAssociationPosition =
+                slots[0].AssociationPosition +
+                Vector3.right * 0.75f;
+
+            Vector3 hysteresisRootPosition =
+                candidate
+                    .CalculateRootPositionForAssociationAtPose(
+                        hysteresisAssociationPosition,
+                        snapResult.RootRotation
+                    );
+
+            bool retained =
+                snapService.TryResolveSnap(
+                    member,
+                    hysteresisRootPosition,
+                    snapResult.RootRotation,
+                    out RestaurantPlacementSnapResult retainedResult
+                );
+
+            Assert(
+                retained &&
+                retainedResult.TargetKey == snapResult.TargetKey,
+                "La histéresis mantiene estable la plaza capturada.",
+                passed,
+                failed
+            );
+
+            Vector3 releasedAssociationPosition =
+                slots[0].AssociationPosition +
+                Vector3.right * 0.95f;
+
+            Vector3 releasedRootPosition =
+                candidate
+                    .CalculateRootPositionForAssociationAtPose(
+                        releasedAssociationPosition,
+                        snapResult.RootRotation
+                    );
+
+            bool stillSnapped =
+                snapService.TryResolveSnap(
+                    member,
+                    releasedRootPosition,
+                    snapResult.RootRotation,
+                    out _
+                );
+
+            Assert(
+                !stillSnapped,
+                "La plaza se libera al superar el radio de salida.",
+                passed,
+                failed
+            );
+
+            RestaurantSeat occupiedSeat =
+                CreateSeatAtSlot(
+                    "OccupiedSnapSlot",
+                    root.transform,
+                    profile,
+                    slots[0]
+                );
+
+            occupiedSeat.ApplyTopology(
+                configuration,
+                slots[0].SlotIndex,
+                RestaurantSeatTopologyStatus.Associated,
+                "Plaza ocupada para el autotest."
+            );
+
+            seatRegistry.RegisterSeat(occupiedSeat);
+
+            snapService.EndSession();
+            snapService.BeginSession(member);
+
+            bool occupiedCaptured =
+                snapService.TryResolveSnap(
+                    member,
+                    impreciseRootPosition,
+                    wrongRotation,
+                    out RestaurantPlacementSnapResult occupiedResult
+                );
+
+            Assert(
+                occupiedCaptured &&
+                occupiedResult.HintState ==
+                    RestaurantPlacementSnapHintState.Occupied,
+                "Una plaza ocupada sigue atrayendo la previsualización " +
+                "para mostrar un rechazo preciso.",
+                passed,
+                failed
+            );
+        }
+        catch (Exception exception)
+        {
+            failed.Add(
+                "El autotest de snapping interactivo lanzó " +
+                exception.GetType().Name +
+                ": " +
+                exception.Message
+            );
+        }
+        finally
+        {
+            if (profile != null)
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+
+            if (definition != null)
+            {
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+
+            UnityEngine.Object.DestroyImmediate(root);
         }
     }
 

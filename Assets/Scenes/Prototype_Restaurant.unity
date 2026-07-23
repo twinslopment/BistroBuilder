@@ -799,6 +799,9 @@ GameObject:
   - component: {fileID: 263644941}
   - component: {fileID: 263644940}
   - component: {fileID: 263644939}
+  - component: {fileID: 263644944}
+  - component: {fileID: 263644945}
+  - component: {fileID: 263644943}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1292,6 +1295,7 @@ MonoBehaviour:
   transactionService: {fileID: 263644935}
   historyService: {fileID: 263644934}
   creationService: {fileID: 263644932}
+  placementSnapService: {fileID: 263644943}
   interactionCamera: {fileID: 330585545}
   selectableLayerMask:
     serializedVersion: 2
@@ -1451,6 +1455,61 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantOperationalClearanceConstraintRule
   constraintEnabled: 1
   priority: 100
+--- !u!114 &263644943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e99bd455296647959673a5f00830e95a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementSnapService
+  discoverProvidersAutomatically: 1
+  visualizer: {fileID: 263644944}
+  logProviderSummary: 1
+--- !u!114 &263644944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cfe4dc4f1744a44bbf99a36a5bccf7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementSnapVisualizer
+  maximumIndicators: 32
+  floorOffset: 0.025
+  lineWidth: 0.025
+  availableColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.95}
+  occupiedColor: {r: 1, g: 0.55, b: 0.1, a: 0.95}
+  blockedColor: {r: 0.95, g: 0.15, b: 0.15, a: 0.98}
+  capturedPendingColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+--- !u!114 &263644945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b3d3a1ebf3b497ba59eb67853c9b162, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatingSnapProvider
+  tableRegistry: {fileID: 263644926}
+  seatRegistry: {fileID: 263644941}
+  snapEnabled: 1
+  priority: 100
+  captureRadius: 0.65
+  releaseRadius: 0.85
+  maximumVerticalCaptureDifference: 0.3
+  visualizationRadius: 2.5
+  slotIndicatorRadius: 0.18
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

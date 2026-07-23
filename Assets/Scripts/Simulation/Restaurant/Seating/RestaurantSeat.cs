@@ -250,6 +250,73 @@ public sealed class RestaurantSeat :
             : Vector3.forward;
     }
 
+    /// <summary>
+    /// Calcula una rotación de raíz que alinea el frente funcional de
+    /// la silla con una dirección mundial concreta.
+    /// </summary>
+    public Quaternion CalculateRootRotationForFacingDirection(
+        Vector3 desiredWorldFacingDirection
+    )
+    {
+        desiredWorldFacingDirection.y = 0f;
+
+        if (desiredWorldFacingDirection.sqrMagnitude <=
+            0.000001f)
+        {
+            return transform.rotation;
+        }
+
+        desiredWorldFacingDirection.Normalize();
+
+        Quaternion localFacingRotation =
+            Quaternion.LookRotation(
+                GetLocalFacingDirection(),
+                Vector3.up
+            );
+
+        Quaternion worldFacingRotation =
+            Quaternion.LookRotation(
+                desiredWorldFacingDirection,
+                Vector3.up
+            );
+
+        return worldFacingRotation *
+               Quaternion.Inverse(localFacingRotation);
+    }
+
+    /// <summary>
+    /// Calcula la posición de raíz necesaria para que AssociationPoint
+    /// coincida exactamente con una posición mundial.
+    /// </summary>
+    public Vector3 CalculateRootPositionForAssociationAtPose(
+        Vector3 desiredAssociationPosition,
+        Quaternion candidateRootRotation
+    )
+    {
+        if (associationPoint == null)
+        {
+            return desiredAssociationPosition;
+        }
+
+        Vector3 localPoint =
+            transform.InverseTransformPoint(
+                associationPoint.position
+            );
+
+        Vector3 scale = transform.lossyScale;
+
+        Vector3 scaledLocalPoint =
+            new Vector3(
+                localPoint.x * scale.x,
+                localPoint.y * scale.y,
+                localPoint.z * scale.z
+            );
+
+        return desiredAssociationPosition -
+               candidateRootRotation *
+               scaledLocalPoint;
+    }
+
     public void ApplyTopology(
         RestaurantTableSeatingConfiguration tableConfiguration,
         int slotIndex,

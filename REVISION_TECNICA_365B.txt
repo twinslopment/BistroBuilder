@@ -1,0 +1,77 @@
+BISTRO BUILDER 365B — REVISIÓN TÉCNICA
+
+CLASIFICACIÓN
+P0: interacción básica de plazas inutilizable sin ajuste asistido.
+
+CAUSA CORREGIDA
+La base 365 validaba una silla con una tolerancia final de 0,06 m y 10 grados, pero el controlador solo ofrecía cuadrícula. El autotest anterior colocaba objetos directamente en coordenadas exactas y no cubría el flujo real del puntero.
+
+ARQUITECTURA
+1. RestaurantPlacementSnapService
+   - Núcleo universal.
+   - Descubre proveedores una vez.
+   - Mantiene una única sesión por artículo activo.
+   - Selección determinista de candidatos.
+   - Histéresis entre radio de captura y liberación.
+   - No contiene reglas específicas de sillas.
+
+2. IRestaurantPlacementSnapProvider
+   - Contrato extensible por familia funcional.
+   - Devuelve poses candidatas e indicadores visuales.
+   - Permite proveedores futuros sin modificar el controlador.
+
+3. RestaurantSeatingSnapProvider
+   - Convierte plazas de mesa en destinos de snapping.
+   - Calcula posición de raíz desde AssociationPoint.
+   - Calcula orientación desde FacingAxis.
+   - Excluye la silla activa al resolver ocupación.
+   - Usa registros existentes, sin FindObjects por frame.
+   - Mantiene respaldo geométrico durante el frame previo a la reconstrucción topológica.
+
+4. RestaurantPlacementSnapVisualizer
+   - Pool fijo de 32 indicadores configurables.
+   - Sin Instantiate/Destroy durante el movimiento del cursor.
+   - Verde: plaza disponible o captura válida.
+   - Naranja: plaza ocupada.
+   - Rojo: captura rechazada por validación.
+   - Amarillo: captura pendiente de validación.
+
+5. RestaurantEditInteractionController
+   - Continúa gestionando input y transacciones.
+   - Solicita una pose asistida antes de publicar la previsualización.
+   - No contiene lógica silla-mesa.
+
+AUTORIDAD DE VALIDACIÓN
+El snapping no confirma ni reserva plazas. RestaurantPlacementValidationService y las reglas especializadas siguen decidiendo si una pose es válida. Esto evita que una ayuda visual pueda saltarse capacidad, colisiones, extracción, acceso o circulación.
+
+MENSAJES FUNCIONALES
+- Mesa completa prevalece sobre solapamiento genérico.
+- Plaza ocupada prevalece sobre solapamiento genérico.
+- Las demás causas conservan el sistema de mensajes existente.
+
+RENDIMIENTO
+- Sin búsquedas globales por frame.
+- Buffers reutilizados para candidatos, plazas e indicadores.
+- Pool visual fijo.
+- Trabajo activo únicamente durante una colocación.
+- Complejidad actual del proveedor de asientos: tablas registradas × sillas registradas durante el arrastre. Adecuado para el prototipo y sin asignaciones recurrentes deliberadas.
+
+AUTOTEST AÑADIDO
+- Captura desde posición imperfecta.
+- Ajuste exacto de AssociationPoint.
+- Orientación automática.
+- Histéresis.
+- Liberación fuera del radio.
+- Captura de plaza ocupada para mostrar rechazo preciso.
+- Prioridad del mensaje de plaza ocupada sobre el solapamiento genérico.
+
+LÍMITE CONOCIDO Y DELIBERADO
+Las plazas ocupadas se muestran previamente. Los bloqueos por obstáculos, extracción o circulación se colorean en rojo al capturar y validar la plaza; no se prevalidan todas las plazas visibles cada frame, para evitar multiplicar el coste de validación espacial.
+
+ROLLBACK
+- El instalador mantiene su copia atómica de escena y datos.
+- Los scripts se revierten con el commit de seguridad previo a 365B.
+- Los nuevos archivos tienen GUID propios; los archivos sustituidos no incluyen meta para conservar los GUID existentes.
+
+VALIDACIÓN FUERA DE UNITY
+Se han realizado revisión estructural, balance sintáctico de delimitadores, comprobación de rutas, metas nuevas y coherencia de referencias. La compilación real, serialización de escena y prueba gráfica deben confirmarse en Unity mediante el procedimiento incluido.
