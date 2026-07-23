@@ -32,6 +32,7 @@ public static class
         TestImmutableCapacityAndSpacing(passed, failed);
         TestFixedCapacityRule(passed, failed);
         TestInteractiveSnapping(passed, failed);
+        TestUniversalIndicatorAndLinkedGroups(passed, failed);
         TestOperationalClearance(passed, failed);
 
         StringBuilder report = new StringBuilder();
@@ -1206,6 +1207,400 @@ public static class
         {
             failed.Add(
                 "El autotest de snapping interactivo lanzó " +
+                exception.GetType().Name +
+                ": " +
+                exception.Message
+            );
+        }
+        finally
+        {
+            if (profile != null)
+            {
+                UnityEngine.Object.DestroyImmediate(profile);
+            }
+
+            if (definition != null)
+            {
+                UnityEngine.Object.DestroyImmediate(definition);
+            }
+
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    /// <summary>
+    /// Comprueba la geometría universal del indicador y el movimiento
+    /// relativo de una mesa con sus sillas sin alterar jerarquías.
+    /// </summary>
+    private static void TestUniversalIndicatorAndLinkedGroups(
+        List<string> passed,
+        List<string> failed
+    )
+    {
+        GameObject root =
+            new GameObject(
+                "BB_LinkedGroupSelfTest"
+            );
+
+        root.hideFlags = HideFlags.HideAndDontSave;
+        root.SetActive(false);
+
+        RestaurantSeatUseProfileDefinition profile = null;
+        RestaurantTableSeatingConfigurationDefinition definition = null;
+
+        try
+        {
+            RestaurantSeatRegistry seatRegistry =
+                root.AddComponent<RestaurantSeatRegistry>();
+
+            RestaurantTableRegistry tableRegistry =
+                root.AddComponent<RestaurantTableRegistry>();
+
+            RestaurantSeatingTopologyService topologyService =
+                root.AddComponent<
+                    RestaurantSeatingTopologyService
+                >();
+
+            RestaurantSeatingLinkedGroupProvider provider =
+                root.AddComponent<
+                    RestaurantSeatingLinkedGroupProvider
+                >();
+
+            RestaurantPlacementLinkedGroupService groupService =
+                root.AddComponent<
+                    RestaurantPlacementLinkedGroupService
+                >();
+
+            SerializedObject serializedProvider =
+                new SerializedObject(provider);
+
+            serializedProvider.FindProperty("seatRegistry")
+                .objectReferenceValue = seatRegistry;
+
+            serializedProvider.FindProperty("topologyService")
+                .objectReferenceValue = topologyService;
+
+            serializedProvider.ApplyModifiedPropertiesWithoutUndo();
+
+            groupService.RefreshProviders();
+
+            profile =
+                ScriptableObject.CreateInstance<
+                    RestaurantSeatUseProfileDefinition
+                >();
+
+            definition =
+                CreateRectangularDefinition(
+                    2,
+                    1,
+                    1,
+                    0,
+                    0
+                );
+
+            GameObject tableObject =
+                CreateTemporaryObject(
+                    "LinkedGroupTable",
+                    root.transform
+                );
+
+            tableObject.transform.position =
+                new Vector3(1f, 0f, 2f);
+
+            RestaurantTable table =
+                tableObject.AddComponent<RestaurantTable>();
+
+            RestaurantPlacementFootprint footprint =
+                tableObject.AddComponent<
+                    RestaurantPlacementFootprint
+                >();
+
+            RestaurantTableSeatingConfiguration configuration =
+                tableObject.AddComponent<
+                    RestaurantTableSeatingConfiguration
+                >();
+
+            RestaurantAreaMember tableMember =
+                tableObject.AddComponent<RestaurantAreaMember>();
+
+            ConfigureTable(
+                table,
+                footprint,
+                configuration,
+                definition,
+                2,
+                new Vector2(1.00f, 0.80f)
+            );
+
+            tableRegistry.RegisterTable(table);
+
+            List<RestaurantTableSeatSlot> slots =
+                new List<RestaurantTableSeatSlot>(2);
+
+            configuration.WriteCurrentSlots(slots);
+
+            RestaurantSeat seat =
+                CreateSeatAtSlot(
+                    "LinkedGroupSeat",
+                    root.transform,
+                    profile,
+                    slots[0]
+                );
+
+            RestaurantAreaMember seatMember =
+                seat.gameObject.AddComponent<
+                    RestaurantAreaMember
+                >();
+
+            seat.ApplyTopology(
+                configuration,
+                slots[0].SlotIndex,
+                RestaurantSeatTopologyStatus.Associated,
+                "Asociación del autotest de grupos."
+            );
+
+            seatRegistry.RegisterSeat(seat);
+
+            Transform originalSeatParent =
+                seat.transform.parent;
+
+            Vector3 originalTablePosition =
+                tableObject.transform.position;
+
+            Quaternion originalTableRotation =
+                tableObject.transform.rotation;
+
+            Vector3 originalSeatPosition =
+                seat.transform.position;
+
+            Quaternion originalSeatRotation =
+                seat.transform.rotation;
+
+            RestaurantPlacementStateSnapshot tableBefore =
+                RestaurantPlacementStateSnapshot.Capture(
+                    tableMember
+                );
+
+            RestaurantPlacementStateSnapshot seatBefore =
+                RestaurantPlacementStateSnapshot.Capture(
+                    seatMember
+                );
+
+            groupService.BeginSession(tableMember);
+
+            Assert(
+                groupService.ActiveFollowerCount == 1,
+                "La mesa reúne exactamente su silla asociada.",
+                passed,
+                failed
+            );
+
+            Assert(
+                ReferenceEquals(
+                    seat.transform.parent,
+                    originalSeatParent
+                ),
+                "El grupo lógico no modifica la jerarquía permanente.",
+                passed,
+                failed
+            );
+
+            Vector3 translation =
+                new Vector3(2f, 0f, -1f);
+
+            groupService.PreparePreviewPose(
+                tableMember,
+                originalTablePosition + translation,
+                originalTableRotation
+            );
+
+            Assert(
+                Vector3.Distance(
+                    seat.transform.position,
+                    originalSeatPosition + translation
+                ) <= 0.001f,
+                "Mover la mesa traslada la silla con el mismo delta.",
+                passed,
+                failed
+            );
+
+            groupService.CancelSession(tableMember);
+            tableObject.transform.SetPositionAndRotation(
+                originalTablePosition,
+                originalTableRotation
+            );
+
+            Assert(
+                Vector3.Distance(
+                    seat.transform.position,
+                    originalSeatPosition
+                ) <= 0.001f &&
+                Quaternion.Angle(
+                    seat.transform.rotation,
+                    originalSeatRotation
+                ) <= 0.01f,
+                "Cancelar restaura exactamente la pose de la silla.",
+                passed,
+                failed
+            );
+
+            groupService.BeginSession(tableMember);
+
+            Quaternion rotatedTable =
+                Quaternion.Euler(0f, 90f, 0f) *
+                originalTableRotation;
+
+            groupService.PreparePreviewPose(
+                tableMember,
+                originalTablePosition,
+                rotatedTable
+            );
+
+            Vector3 originalRelative =
+                originalSeatPosition -
+                originalTablePosition;
+
+            Vector3 expectedRotatedSeatPosition =
+                originalTablePosition +
+                Quaternion.Euler(0f, 90f, 0f) *
+                originalRelative;
+
+            Assert(
+                Vector3.Distance(
+                    seat.transform.position,
+                    expectedRotatedSeatPosition
+                ) <= 0.001f,
+                "Girar la mesa rota la silla alrededor de la raíz.",
+                passed,
+                failed
+            );
+
+            Assert(
+                Quaternion.Angle(
+                    seat.transform.rotation,
+                    Quaternion.Euler(0f, 90f, 0f) *
+                    originalSeatRotation
+                ) <= 0.01f,
+                "Girar la mesa conserva la orientación relativa de la silla.",
+                passed,
+                failed
+            );
+
+            RestaurantPlacementStateSnapshot tableAfter =
+                RestaurantPlacementStateSnapshot.Capture(
+                    tableMember
+                );
+
+            RestaurantPlacementStateSnapshot seatAfter =
+                RestaurantPlacementStateSnapshot.Capture(
+                    seatMember
+                );
+
+            groupService.CancelSession(tableMember);
+            tableBefore.Restore(tableMember);
+            seatBefore.Restore(seatMember);
+            Physics.SyncTransforms();
+
+            RestaurantMoveLinkedGroupHistoryCommand historyCommand =
+                new RestaurantMoveLinkedGroupHistoryCommand(
+                    tableMember,
+                    new[]
+                    {
+                        tableMember,
+                        seatMember
+                    },
+                    new[]
+                    {
+                        tableBefore,
+                        seatBefore
+                    },
+                    new[]
+                    {
+                        tableAfter,
+                        seatAfter
+                    },
+                    null,
+                    groupService,
+                    false
+                );
+
+            bool redone =
+                historyCommand.TryRedo(out _);
+
+            Assert(
+                redone &&
+                Vector3.Distance(
+                    seat.transform.position,
+                    expectedRotatedSeatPosition
+                ) <= 0.001f,
+                "Redo reaplica mesa y silla como una única operación.",
+                passed,
+                failed
+            );
+
+            bool undone =
+                historyCommand.TryUndo(out _);
+
+            Assert(
+                undone &&
+                Vector3.Distance(
+                    tableObject.transform.position,
+                    originalTablePosition
+                ) <= 0.001f &&
+                Vector3.Distance(
+                    seat.transform.position,
+                    originalSeatPosition
+                ) <= 0.001f,
+                "Undo restaura mesa y silla con una sola operación.",
+                passed,
+                failed
+            );
+
+            RestaurantPlacementSnapHint rectangularHint =
+                new RestaurantPlacementSnapHint(
+                    new RestaurantPlacementSnapTargetKey(1, 2, 3),
+                    Vector3.zero,
+                    Vector3.up,
+                    Vector3.forward,
+                    new Vector2(1.20f, 0.60f),
+                    RestaurantPlacementSnapHintGeometry
+                        .RectangularFootprint,
+                    true,
+                    RestaurantPlacementSnapHintState.Available,
+                    tableObject
+                );
+
+            Assert(
+                rectangularHint.Geometry ==
+                    RestaurantPlacementSnapHintGeometry
+                        .RectangularFootprint &&
+                Vector2.Distance(
+                    rectangularHint.Size,
+                    new Vector2(1.20f, 0.60f)
+                ) <= 0.001f,
+                "El indicador universal conserva geometría y medidas.",
+                passed,
+                failed
+            );
+
+            Assert(
+                Vector3.Angle(
+                    rectangularHint.SurfaceNormal,
+                    Vector3.up
+                ) <= 0.01f &&
+                Vector3.Angle(
+                    rectangularHint.FacingDirection,
+                    Vector3.forward
+                ) <= 0.01f,
+                "El indicador conserva normal de superficie y dirección.",
+                passed,
+                failed
+            );
+        }
+        catch (Exception exception)
+        {
+            failed.Add(
+                "El autotest de indicadores y grupos lanzó " +
                 exception.GetType().Name +
                 ": " +
                 exception.Message

@@ -185,13 +185,13 @@ public static class
             }
 
             Debug.Log(
-                "BISTRO BUILDER - SEATING FOUNDATION 365B\n" +
+                "BISTRO BUILDER - SEATING FOUNDATION 365C\n" +
                 result.BuildReport()
             );
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Base universal de asientos y snapping instalada.\n\n" +
+                "Base universal de asientos, indicadores y grupos enlazados instalada.\n\n" +
                 "Errores: " +
                 result.ErrorCount +
                 "\nAdvertencias: " +
@@ -897,6 +897,23 @@ public static class
                 RestaurantPlacementSnapService
             >(gameSystems);
 
+        RestaurantSeatingLinkedGroupProvider
+            seatingLinkedGroupProvider =
+                GetOrAddComponent<
+                    RestaurantSeatingLinkedGroupProvider
+                >(gameSystems);
+
+        RestaurantPlacementLinkedGroupService linkedGroupService =
+            GetOrAddComponent<
+                RestaurantPlacementLinkedGroupService
+            >(gameSystems);
+
+        RestaurantLinkedGroupPlacementConstraintRule
+            linkedGroupRule =
+                GetOrAddComponent<
+                    RestaurantLinkedGroupPlacementConstraintRule
+                >(gameSystems);
+
         RestaurantPlaceableRegistry placeableRegistry =
             RequireComponent<RestaurantPlaceableRegistry>(
                 gameSystems
@@ -1044,6 +1061,137 @@ public static class
         serializedSnapProvider
             .ApplyModifiedPropertiesWithoutUndo();
 
+        SerializedObject serializedSnapVisualizer =
+            new SerializedObject(snapVisualizer);
+
+        SetInteger(
+            serializedSnapVisualizer,
+            "maximumIndicators",
+            32
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "surfaceOffset",
+            0.012f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "outlineRelativeThickness",
+            0.11f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "inactiveOpacity",
+            0.70f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "capturedFillOpacity",
+            0.20f
+        );
+
+        SetFloat(
+            serializedSnapVisualizer,
+            "capturedScaleMultiplier",
+            1.08f
+        );
+
+        serializedSnapVisualizer
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedLinkedProvider =
+            new SerializedObject(seatingLinkedGroupProvider);
+
+        SetObjectReference(
+            serializedLinkedProvider,
+            "seatRegistry",
+            seatRegistry
+        );
+
+        SetObjectReference(
+            serializedLinkedProvider,
+            "topologyService",
+            topologyService
+        );
+
+        SetBoolean(
+            serializedLinkedProvider,
+            "linkEnabled",
+            true
+        );
+
+        SetInteger(
+            serializedLinkedProvider,
+            "priority",
+            100
+        );
+
+        serializedLinkedProvider
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedLinkedGroupService =
+            new SerializedObject(linkedGroupService);
+
+        SetObjectReference(
+            serializedLinkedGroupService,
+            "validationService",
+            validationService
+        );
+
+        SetObjectReference(
+            serializedLinkedGroupService,
+            "transactionService",
+            transactionService
+        );
+
+        serializedLinkedGroupService
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedLinkedGroupRule =
+            new SerializedObject(linkedGroupRule);
+
+        SetObjectReference(
+            serializedLinkedGroupRule,
+            "linkedGroupService",
+            linkedGroupService
+        );
+
+        SetObjectReference(
+            serializedLinkedGroupRule,
+            "validationService",
+            validationService
+        );
+
+        SetBoolean(
+            serializedLinkedGroupRule,
+            "constraintEnabled",
+            true
+        );
+
+        SetInteger(
+            serializedLinkedGroupRule,
+            "priority",
+            20
+        );
+
+        serializedLinkedGroupRule
+            .ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject serializedHistory =
+            new SerializedObject(historyService);
+
+        SetObjectReference(
+            serializedHistory,
+            "linkedGroupService",
+            linkedGroupService
+        );
+
+        serializedHistory.ApplyModifiedPropertiesWithoutUndo();
+
         SerializedObject serializedSnapService =
             new SerializedObject(snapService);
 
@@ -1065,6 +1213,12 @@ public static class
             snapService
         );
 
+        SetObjectReference(
+            serializedInteractionController,
+            "linkedGroupService",
+            linkedGroupService
+        );
+
         serializedInteractionController
             .ApplyModifiedPropertiesWithoutUndo();
 
@@ -1079,6 +1233,7 @@ public static class
 
         serializedValidation.ApplyModifiedPropertiesWithoutUndo();
 
+        linkedGroupService.RefreshProviders();
         constraintService.RefreshRules();
         snapService.RefreshProviders();
 
@@ -1090,6 +1245,10 @@ public static class
         EditorUtility.SetDirty(snapVisualizer);
         EditorUtility.SetDirty(seatingSnapProvider);
         EditorUtility.SetDirty(snapService);
+        EditorUtility.SetDirty(seatingLinkedGroupProvider);
+        EditorUtility.SetDirty(linkedGroupService);
+        EditorUtility.SetDirty(linkedGroupRule);
+        EditorUtility.SetDirty(historyService);
         EditorUtility.SetDirty(interactionController);
         EditorUtility.SetDirty(validationService);
     }

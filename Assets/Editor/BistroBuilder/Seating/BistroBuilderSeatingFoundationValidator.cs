@@ -126,7 +126,7 @@ public static class
         if (result.ErrorCount == 0)
         {
             result.Messages.Add(
-                "OK: la base universal de asientos y snapping está completa."
+                "OK: la base universal de asientos, snapping, indicadores y grupos enlazados está completa."
             );
         }
 
@@ -451,6 +451,27 @@ public static class
                 RestaurantPlacementSnapService
             >(scene);
 
+        RestaurantSeatingLinkedGroupProvider
+            seatingLinkedGroupProvider =
+                FindSceneComponent<
+                    RestaurantSeatingLinkedGroupProvider
+                >(scene);
+
+        RestaurantPlacementLinkedGroupService linkedGroupService =
+            FindSceneComponent<
+                RestaurantPlacementLinkedGroupService
+            >(scene);
+
+        RestaurantLinkedGroupPlacementConstraintRule linkedGroupRule =
+            FindSceneComponent<
+                RestaurantLinkedGroupPlacementConstraintRule
+            >(scene);
+
+        RestaurantPlacementHistoryService historyService =
+            FindSceneComponent<
+                RestaurantPlacementHistoryService
+            >(scene);
+
         RestaurantEditInteractionController interactionController =
             FindSceneComponent<
                 RestaurantEditInteractionController
@@ -468,12 +489,12 @@ public static class
         {
             constraintService.RefreshRules();
 
-            if (constraintService.RegisteredRuleCount < 2)
+            if (constraintService.RegisteredRuleCount < 3)
             {
                 AddError(
                     result,
-                    "El servicio modular no ha registrado las dos " +
-                    "reglas iniciales."
+                    "El servicio modular no ha registrado las tres " +
+                    "reglas obligatorias."
                 );
             }
         }
@@ -526,6 +547,15 @@ public static class
                 "El visualizador de snapping no tiene un pool válido."
             );
         }
+        else if (snapVisualizer.SurfaceOffset < 0f ||
+                 snapVisualizer.SurfaceOffset > 0.10f)
+        {
+            AddError(
+                result,
+                "El indicador universal no conserva un desplazamiento " +
+                "válido respecto a la superficie."
+            );
+        }
 
         if (seatingSnapProvider == null)
         {
@@ -564,6 +594,70 @@ public static class
             }
         }
 
+        if (seatingLinkedGroupProvider == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantSeatingLinkedGroupProvider."
+            );
+        }
+        else if (!seatingLinkedGroupProvider.ValidateConfiguration(
+                out string linkedProviderError
+            ))
+        {
+            AddError(result, linkedProviderError);
+        }
+
+        if (linkedGroupService == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantPlacementLinkedGroupService."
+            );
+        }
+        else
+        {
+            linkedGroupService.RefreshProviders();
+
+            if (!linkedGroupService.ValidateConfiguration(
+                    out string linkedGroupError
+                ))
+            {
+                AddError(result, linkedGroupError);
+            }
+        }
+
+        if (linkedGroupRule == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene la regla de validación " +
+                "de grupos enlazados."
+            );
+        }
+
+        if (historyService == null)
+        {
+            AddError(
+                result,
+                "GameSystems no contiene " +
+                "RestaurantPlacementHistoryService."
+            );
+        }
+        else if (!object.ReferenceEquals(
+                historyService.LinkedGroupService,
+                linkedGroupService
+            ))
+        {
+            AddError(
+                result,
+                "RestaurantPlacementHistoryService no está conectado " +
+                "al historial atómico de grupos enlazados."
+            );
+        }
+
         if (interactionController == null)
         {
             AddError(
@@ -572,16 +666,32 @@ public static class
                 "RestaurantEditInteractionController."
             );
         }
-        else if (!object.ReferenceEquals(
-                interactionController.PlacementSnapService,
-                snapService
-            ))
+        else
         {
-            AddError(
-                result,
-                "RestaurantEditInteractionController no está " +
-                "conectado al servicio universal de snapping."
-            );
+            if (!object.ReferenceEquals(
+                    interactionController.PlacementSnapService,
+                    snapService
+                ))
+            {
+                AddError(
+                    result,
+                    "RestaurantEditInteractionController no está " +
+                    "conectado al servicio universal de snapping."
+                );
+            }
+
+            if (!object.ReferenceEquals(
+                    interactionController
+                        .PlacementLinkedGroupService,
+                    linkedGroupService
+                ))
+            {
+                AddError(
+                    result,
+                    "RestaurantEditInteractionController no está " +
+                    "conectado al servicio de grupos enlazados."
+                );
+            }
         }
 
         RestaurantTable[] tables =

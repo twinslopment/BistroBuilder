@@ -13,11 +13,21 @@ public enum RestaurantPlacementSnapHintState
 }
 
 /// <summary>
-/// Identidad estable de un destino de snapping durante una sesión.
+/// Geometría visual de un destino de snapping.
 ///
-/// No utiliza cadenas ni asignaciones por frame. La combinación del
-/// proveedor, el objeto relacionado y el identificador local hace que
-/// dos destinos sean deterministas incluso cuando están muy próximos.
+/// Permite que el mismo visualizador represente plazas puntuales,
+/// huellas rectangulares, bordes lineales o superficies futuras sin
+/// introducir reglas de una familia concreta en el núcleo.
+/// </summary>
+public enum RestaurantPlacementSnapHintGeometry
+{
+    CircularAnchor = 0,
+    RectangularFootprint = 1,
+    LinearSocket = 2
+}
+
+/// <summary>
+/// Identidad estable de un destino de snapping durante una sesión.
 /// </summary>
 public readonly struct RestaurantPlacementSnapTargetKey :
     IEquatable<RestaurantPlacementSnapTargetKey>
@@ -166,6 +176,10 @@ public readonly struct RestaurantPlacementSnapCandidate
 
 /// <summary>
 /// Indicador visual genérico de un destino de snapping.
+///
+/// La pose visual se describe mediante una normal de superficie y una
+/// dirección frontal. Así el mismo indicador puede mostrarse sobre el
+/// suelo, una pared, un tablero o cualquier plano futuro.
 /// </summary>
 public readonly struct RestaurantPlacementSnapHint
 {
@@ -173,14 +187,29 @@ public readonly struct RestaurantPlacementSnapHint
 
     public Vector3 WorldPosition { get; }
 
+    public Vector3 SurfaceNormal { get; }
+
     public Vector3 FacingDirection { get; }
 
-    public float Radius { get; }
+    public Vector2 Size { get; }
+
+    /// <summary>
+    /// Radio equivalente conservado para consumidores de 365B.
+    /// </summary>
+    public float Radius =>
+        Mathf.Max(Size.x, Size.y) * 0.5f;
+
+    public RestaurantPlacementSnapHintGeometry Geometry { get; }
+
+    public bool ShowFacingDirection { get; }
 
     public RestaurantPlacementSnapHintState State { get; }
 
     public UnityEngine.Object RelatedObject { get; }
 
+    /// <summary>
+    /// Constructor compatible con los proveedores de 365B.
+    /// </summary>
     public RestaurantPlacementSnapHint(
         RestaurantPlacementSnapTargetKey targetKey,
         Vector3 worldPosition,
@@ -189,20 +218,81 @@ public readonly struct RestaurantPlacementSnapHint
         RestaurantPlacementSnapHintState state,
         UnityEngine.Object relatedObject
     )
+        : this(
+            targetKey,
+            worldPosition,
+            Vector3.up,
+            facingDirection,
+            Vector2.one * Mathf.Max(0.05f, radius) * 2f,
+            RestaurantPlacementSnapHintGeometry.CircularAnchor,
+            true,
+            state,
+            relatedObject
+        )
+    {
+    }
+
+    public RestaurantPlacementSnapHint(
+        RestaurantPlacementSnapTargetKey targetKey,
+        Vector3 worldPosition,
+        Vector3 surfaceNormal,
+        Vector3 facingDirection,
+        Vector2 size,
+        RestaurantPlacementSnapHintGeometry geometry,
+        bool showFacingDirection,
+        RestaurantPlacementSnapHintState state,
+        UnityEngine.Object relatedObject
+    )
     {
         TargetKey = targetKey;
         WorldPosition = worldPosition;
 
-        facingDirection.y = 0f;
+        SurfaceNormal =
+            surfaceNormal.sqrMagnitude > 0.000001f
+                ? surfaceNormal.normalized
+                : Vector3.up;
+
+        Vector3 projectedFacing =
+            Vector3.ProjectOnPlane(
+                facingDirection,
+                SurfaceNormal
+            );
 
         FacingDirection =
-            facingDirection.sqrMagnitude > 0.000001f
-                ? facingDirection.normalized
-                : Vector3.forward;
+            projectedFacing.sqrMagnitude > 0.000001f
+                ? projectedFacing.normalized
+                : ResolveFallbackFacing(SurfaceNormal);
 
-        Radius = Mathf.Max(0.05f, radius);
+        Size = new Vector2(
+            Mathf.Max(0.05f, Mathf.Abs(size.x)),
+            Mathf.Max(0.05f, Mathf.Abs(size.y))
+        );
+
+        Geometry = geometry;
+        ShowFacingDirection = showFacingDirection;
         State = state;
         RelatedObject = relatedObject;
+    }
+
+    private static Vector3 ResolveFallbackFacing(
+        Vector3 surfaceNormal
+    )
+    {
+        Vector3 projectedForward =
+            Vector3.ProjectOnPlane(
+                Vector3.forward,
+                surfaceNormal
+            );
+
+        if (projectedForward.sqrMagnitude > 0.000001f)
+        {
+            return projectedForward.normalized;
+        }
+
+        return Vector3.ProjectOnPlane(
+                   Vector3.right,
+                   surfaceNormal
+               ).normalized;
     }
 }
 
@@ -263,9 +353,6 @@ public readonly struct RestaurantPlacementSnapResult
 
 /// <summary>
 /// Contrato universal para familias que ofrecen posiciones asistidas.
-///
-/// Ejemplos futuros: sillas-mesa, módulos de barra, muebles-pared,
-/// decoración-superficie o equipamiento encastrado.
 /// </summary>
 public interface IRestaurantPlacementSnapProvider
 {

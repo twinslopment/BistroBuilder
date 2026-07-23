@@ -1,0 +1,49 @@
+BISTRO BUILDER 365C — REVISIÓN TÉCNICA
+
+OBJETIVO 1: INDICADORES UNIVERSALES
+- Se elimina la representación basada en LineRenderer orientado a cámara.
+- Se utilizan mallas planas apoyadas sobre la normal de la superficie.
+- Geometrías publicadas:
+  * CircularAnchor
+  * RectangularFootprint
+  * LinearSocket
+- Cada hint contiene posición, normal, dirección frontal, tamaño, geometría,
+  estado y objeto relacionado.
+- Un único visualizador usa material compartido, MaterialPropertyBlock y un
+  pool fijo de indicadores.
+- No hay Instantiate/Destroy ni Update por indicador durante el arrastre.
+- El proveedor de asientos es el primer consumidor; futuros proveedores de
+  paredes, módulos, muebles o decoración pueden publicar la geometría que
+  corresponda sin cambiar el visualizador.
+
+OBJETIVO 2: GRUPOS ENLAZADOS ATÓMICOS
+- Contrato genérico IRestaurantPlacementLinkedGroupProvider.
+- RestaurantPlacementLinkedGroupService coordina la sesión.
+- RestaurantSeatingLinkedGroupProvider adapta la topología mesa-silla.
+- No se cambia la jerarquía permanente de los artículos.
+- Las poses de seguidores se calculan siempre desde la captura inicial:
+  evita deriva acumulada durante el movimiento del puntero.
+- RestaurantLinkedGroupPlacementConstraintRule reutiliza el validador
+  completo para cada miembro enlazado.
+- La operación se bloquea si falla cualquier área, capacidad, huella,
+  colisión, separación, obstáculo o regla especializada.
+- Cancelación restaura todos los seguidores; la transacción existente
+  restaura la raíz.
+- RestaurantMoveLinkedGroupHistoryCommand aplica y valida todos los estados
+  de destino como una única operación.
+- Si Undo/Redo encuentra un destino inválido, restaura el rollback completo
+  y no deja estados parciales.
+- RestaurantPlacementHistoryService registra un comando compuesto en lugar
+  del movimiento individual de la raíz.
+
+COMPATIBILIDAD
+- Se conservan IDs, prefabs, definiciones y perfiles de 365/365B.
+- No se hardcodean MesaA, Table_Basic ni chair_bistro_01 en el núcleo.
+- El snapping de sillas sigue usando las plazas confirmadas existentes.
+- La advertencia de la mesa redonda de 10 continúa intencionadamente.
+
+VERIFICACIÓN REAL PENDIENTE
+- La estructura, rutas, referencias de instalación, GUID nuevos, balance de
+  código y manifiesto se han comprobado fuera de Unity.
+- La compilación C# definitiva, serialización y prueba física deben validarse
+  dentro del proyecto Unity del usuario.

@@ -339,8 +339,16 @@ public sealed class RestaurantSeatingSnapProvider :
                             slot.SlotIndex
                         ),
                         slot.AssociationPosition,
+                        Vector3.up,
                         slot.FacingDirection,
-                        slotIndicatorRadius,
+                        Vector2.one *
+                        Mathf.Max(
+                            0.10f,
+                            slotIndicatorRadius * 2f
+                        ),
+                        RestaurantPlacementSnapHintGeometry
+                            .CircularAnchor,
+                        true,
                         occupied
                             ? RestaurantPlacementSnapHintState
                                 .Occupied

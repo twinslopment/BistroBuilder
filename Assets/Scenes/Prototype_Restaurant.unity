@@ -802,6 +802,9 @@ GameObject:
   - component: {fileID: 263644944}
   - component: {fileID: 263644945}
   - component: {fileID: 263644943}
+  - component: {fileID: 263644948}
+  - component: {fileID: 263644946}
+  - component: {fileID: 263644947}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1296,6 +1299,7 @@ MonoBehaviour:
   historyService: {fileID: 263644934}
   creationService: {fileID: 263644932}
   placementSnapService: {fileID: 263644943}
+  linkedGroupService: {fileID: 263644946}
   interactionCamera: {fileID: 330585545}
   selectableLayerMask:
     serializedVersion: 2
@@ -1331,6 +1335,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementHistoryService
   transactionService: {fileID: 263644935}
   validationService: {fileID: 263644916}
+  linkedGroupService: {fileID: 263644946}
   maximumHistoryEntries: 50
   validateDestinationBeforeApplying: 1
   logHistoryOperations: 1
@@ -1483,8 +1488,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementSnapVisualizer
   maximumIndicators: 32
-  floorOffset: 0.025
-  lineWidth: 0.025
+  surfaceOffset: 0.012
+  outlineRelativeThickness: 0.11
+  inactiveOpacity: 0.7
+  capturedFillOpacity: 0.2
+  capturedScaleMultiplier: 1.08
   availableColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.95}
   occupiedColor: {r: 1, g: 0.55, b: 0.1, a: 0.95}
   blockedColor: {r: 0.95, g: 0.15, b: 0.15, a: 0.98}
@@ -1510,6 +1518,54 @@ MonoBehaviour:
   maximumVerticalCaptureDifference: 0.3
   visualizationRadius: 2.5
   slotIndicatorRadius: 0.18
+--- !u!114 &263644946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f0ba715ecf64338a35ccf483606198c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlacementLinkedGroupService
+  validationService: {fileID: 263644916}
+  transactionService: {fileID: 263644935}
+  discoverProvidersAutomatically: 1
+  logGroupSummary: 1
+--- !u!114 &263644947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d608edfb44014d96a833da6bf69a5f6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantLinkedGroupPlacementConstraintRule
+  linkedGroupService: {fileID: 263644946}
+  validationService: {fileID: 263644916}
+  constraintEnabled: 1
+  priority: 20
+--- !u!114 &263644948
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8896a7221072405193ed04bbc98e38c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantSeatingLinkedGroupProvider
+  seatRegistry: {fileID: 263644941}
+  topologyService: {fileID: 263644939}
+  linkEnabled: 1
+  priority: 100
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

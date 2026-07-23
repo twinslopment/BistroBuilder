@@ -64,6 +64,14 @@ public sealed class RestaurantEditInteractionController :
         placementSnapService;
 
     [Tooltip(
+        "Servicio universal que mueve y rota relaciones confirmadas " +
+        "como una única unidad atómica."
+    )]
+    [SerializeField]
+    private RestaurantPlacementLinkedGroupService
+        linkedGroupService;
+
+    [Tooltip(
         "Cámara utilizada para seleccionar y colocar objetos."
     )]
     [SerializeField]
@@ -340,6 +348,10 @@ public sealed class RestaurantEditInteractionController :
 
     public RestaurantPlacementSnapService PlacementSnapService =>
         placementSnapService;
+
+    public RestaurantPlacementLinkedGroupService
+        PlacementLinkedGroupService =>
+            linkedGroupService;
 
     private void Awake()
     {
@@ -1495,6 +1507,7 @@ public sealed class RestaurantEditInteractionController :
         hasPublishedPreviewPose = false;
 
         placementSnapService?.BeginSession(member);
+        linkedGroupService?.BeginSession(member);
 
         lastValidationResult =
             transactionService.LastValidationResult;
@@ -1635,6 +1648,12 @@ public sealed class RestaurantEditInteractionController :
         RestaurantPlacementTransactionFailureReason
             failureReason;
 
+        linkedGroupService?.PreparePreviewPose(
+            activeMember,
+            candidatePosition,
+            candidateRotation
+        );
+
         bool previewed =
             transactionService.TryPreviewPlacement(
                 candidatePosition,
@@ -1748,6 +1767,10 @@ public sealed class RestaurantEditInteractionController :
                     ? creationResult.Placeable.DisplayName
                     : memberBeingCommitted.name;
 
+            linkedGroupService?.CompleteSession(
+                memberBeingCommitted
+            );
+
             ClearLocalPlacementState();
 
             PublishMessage(
@@ -1801,6 +1824,10 @@ public sealed class RestaurantEditInteractionController :
 
             return;
         }
+
+        linkedGroupService?.CompleteSession(
+            memberBeingCommitted
+        );
 
         ClearLocalPlacementState();
 
@@ -2321,6 +2348,7 @@ public sealed class RestaurantEditInteractionController :
     private void ClearLocalPlacementState()
     {
         placementSnapService?.EndSession();
+        linkedGroupService?.ReleaseSession();
 
         activeMember = null;
         activeEditableObject = null;
@@ -2667,6 +2695,7 @@ public sealed class RestaurantEditInteractionController :
                historyService != null &&
                creationService != null &&
                placementSnapService != null &&
+               linkedGroupService != null &&
                interactionCamera != null;
     }
 
@@ -2704,6 +2733,13 @@ public sealed class RestaurantEditInteractionController :
         {
             TryGetComponent(
                 out placementSnapService
+            );
+        }
+
+        if (linkedGroupService == null)
+        {
+            TryGetComponent(
+                out linkedGroupService
             );
         }
 
@@ -2777,6 +2813,17 @@ public sealed class RestaurantEditInteractionController :
                 controllerName +
                 " necesita un " +
                 nameof(RestaurantPlacementSnapService) +
+                ".",
+                this
+            );
+        }
+
+        if (linkedGroupService == null)
+        {
+            Debug.LogError(
+                controllerName +
+                " necesita un " +
+                nameof(RestaurantPlacementLinkedGroupService) +
                 ".",
                 this
             );

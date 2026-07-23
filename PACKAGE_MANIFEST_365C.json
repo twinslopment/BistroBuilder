@@ -1,0 +1,142 @@
+{
+  "package_id": "BistroBuilder_365C_Universal_Placement_Indicators_and_Linked_Groups",
+  "version": "365C",
+  "created_utc": "2026-07-23T11:10:55.153688+00:00",
+  "requires": [
+    "BistroBuilder 365 Universal Seating Foundation",
+    "BistroBuilder 365B Universal Placement Snapping and Seating Visualization"
+  ],
+  "expected_validation": {
+    "errors": 0,
+    "warnings": 1,
+    "self_tests_passed": 42,
+    "self_tests_failed": 0
+  },
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationSelfTest.cs",
+      "size_bytes": 63340,
+      "sha256": "91a30ec3fe993afc4cebcae7fa7c8f2209812e41b81f9fb13cd9f8b524e6fd70"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderSeatingFoundationValidator.cs",
+      "size_bytes": 22078,
+      "sha256": "d74aef53678d44654d4f56441f2a246f3f4c231bde440d7ba82bdf60d4991179"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Seating/BistroBuilderUniversalSeatingFoundationInstaller.cs",
+      "size_bytes": 43876,
+      "sha256": "fe8ebecb69a4a54ac1060b18aa69d9565f1375c2e993dc5038d22812627f65e5"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantLinkedGroupPlacementConstraintRule.cs",
+      "size_bytes": 5872,
+      "sha256": "df60dd09b247a45d8471c11bad97910e3354d5c1845720decdaaa798031fdaf9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantLinkedGroupPlacementConstraintRule.cs.meta",
+      "size_bytes": 243,
+      "sha256": "9354a5887e6c5b9bd354c78b566abe22da2c69d101c4377362f0d8b8a9611824"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantMoveLinkedGroupHistoryCommand.cs",
+      "size_bytes": 10115,
+      "sha256": "6c641e9f6c60e4268a0979039ad48099855d4b4f97393bdb7c66b9b88cc0219e"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantMoveLinkedGroupHistoryCommand.cs.meta",
+      "size_bytes": 243,
+      "sha256": "762f0bbf81f28f3f1ef682f8488fca0a6e291fa1236ebfe7cc03e4cc26e079db"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantPlacementLinkedGroupService.cs",
+      "size_bytes": 19890,
+      "sha256": "20e36d227009ba3900602704bb2c988126293a140d0d33c3c81262fc0a8f4848"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantPlacementLinkedGroupService.cs.meta",
+      "size_bytes": 243,
+      "sha256": "9cf65ececd08bd56c1883b2df0c678a65a5d0a9a99fe6b8d95e3eed108b23962"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantPlacementLinkedGroupTypes.cs",
+      "size_bytes": 1051,
+      "sha256": "37357ff0c2584d5b8a34cb30132f543e3300109b2bd3fdd565f7f8f48a95440f"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups/RestaurantPlacementLinkedGroupTypes.cs.meta",
+      "size_bytes": 243,
+      "sha256": "b690dce52d02bc3a417c7c044ba553647f7fc4dd5913dd0754d00c06ca2a99e6"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/LinkedGroups.meta",
+      "size_bytes": 172,
+      "sha256": "d0cddbfa42e0dbf8cfd9c348006f95fa52a9674c31a7bdd492a5cb4aed4484b4"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/RestaurantPlacementHistoryService.cs",
+      "size_bytes": 18475,
+      "sha256": "9c7783cd4dd5d3205b41fc740898ca350bc2bdd294d06f2d7096d83c049e9977"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs",
+      "size_bytes": 10096,
+      "sha256": "50ef38d96a6ba1c06f9c3b8d51cf588e976b4a76b3ae9c9966ac743d78b12ec5"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapTypes.cs.meta",
+      "size_bytes": 243,
+      "sha256": "16f14831dbb4a83edc85ffc831d3624b55ee6baed25f34db51f54c814d94e653"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs",
+      "size_bytes": 23404,
+      "sha256": "c180d0d40ef42f2663121530cea276a112b292033e23d2505ddf0fd8b10f0ddb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Placement/Snapping/RestaurantPlacementSnapVisualizer.cs.meta",
+      "size_bytes": 243,
+      "sha256": "1b806ec04748cd8913b5f74dd23a255654ca5cbce853fde771e70a407434daf9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingLinkedGroupProvider.cs",
+      "size_bytes": 3642,
+      "sha256": "7b8274f1380fe0a75bc9a635498b0c1330b6b6a1519a3dcc25cf764dae9d4c46"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingLinkedGroupProvider.cs.meta",
+      "size_bytes": 243,
+      "sha256": "1182f3099f3c1a7f4be552ad8ce856ecb3b41316496a28e9ac954d4978d175e3"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs",
+      "size_bytes": 14214,
+      "sha256": "c52948d9e3b8575fc2a7a60fb7024cba4159908768d6fa7e89de06a8a5b4eb3c"
+    },
+    {
+      "path": "Assets/Scripts/Application/Restaurant/Seating/RestaurantSeatingSnapProvider.cs.meta",
+      "size_bytes": 243,
+      "sha256": "165cc147eaeb85285d26021f39b22f049b3131b5f7508e8250f7a8e73600e2c1"
+    },
+    {
+      "path": "Assets/Scripts/Presentation/Restaurant/EditMode/RestaurantEditInteractionController.cs",
+      "size_bytes": 70812,
+      "sha256": "d6854783251ad44ff9b2ad6202e6bde8f3d1e5a5112b88841d2521c7b8f51132"
+    },
+    {
+      "path": "INSTRUCCIONES_365C.txt",
+      "size_bytes": 3504,
+      "sha256": "d9c44f7a6e5b9895acc2f63c0490a8a80a4c1d73c2b813e65cc3518f4c29233a"
+    },
+    {
+      "path": "MANIFEST_365C.txt",
+      "size_bytes": 843,
+      "sha256": "35219b8e2dfd8695bb39e9401d5d9785b2057db00d3c6ac4ea037e760fc743c3"
+    },
+    {
+      "path": "REVISION_TECNICA_365C.txt",
+      "size_bytes": 2484,
+      "sha256": "19e52ed20dbff544b6dccf1869d823ca489ec1d3588c07ec02a3bc9511d05a00"
+    }
+  ]
+}

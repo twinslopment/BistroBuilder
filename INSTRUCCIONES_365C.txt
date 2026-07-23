@@ -1,0 +1,88 @@
+BISTRO BUILDER 365C
+INDICADORES UNIVERSALES LIMPIOS Y GRUPOS ENLAZADOS ATÓMICOS
+
+REQUISITO PREVIO
+- Debe estar instalada y validada BistroBuilder 365B.
+- Debe existir un commit limpio con el estado funcional de 365B.
+
+INSTALACIÓN
+1. Sal de Play Mode y guarda la escena Prototype_Restaurant.
+2. Cierra Unity por completo.
+3. Extrae este ZIP directamente en:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+4. Confirma la sustitución de archivos.
+5. Abre Unity y espera a que termine toda la compilación.
+6. La Console debe quedar con 0 errores.
+7. Ejecuta:
+   Tools > Bistro Builder > Seating > Install or Repair Seating Foundation
+8. Resultado esperado del instalador:
+   - Errores: 0
+   - Advertencias: 1
+   La advertencia prevista sigue siendo el diámetro pendiente de aprobación
+   de la mesa redonda de 10 clientes.
+9. Ejecuta:
+   Tools > Bistro Builder > Seating > Validate Seating Foundation
+10. Resultado esperado:
+   - Errores: 0
+   - Advertencias: 1
+   - OK: la base universal de asientos, snapping, indicadores y grupos
+     enlazados está completa.
+11. Ejecuta:
+   Tools > Bistro Builder > Seating > Run Seating Foundation Self-Test
+12. Resultado esperado:
+   - Pruebas superadas: 42
+   - Pruebas fallidas: 0
+
+PRUEBA FUNCIONAL A — INDICADOR UNIVERSAL
+1. Entra en Play y activa el modo edición con F2.
+2. Selecciona Silla bistró de madera.
+3. Acércala a una plaza de MesaA.
+4. Debe aparecer un indicador plano apoyado en el suelo:
+   - contorno circular limpio;
+   - flecha de orientación;
+   - sin volumen grueso ni forma orientada hacia la cámara;
+   - verde si la plaza está disponible;
+   - naranja si está ocupada;
+   - rojo si la captura no es válida;
+   - relleno suave únicamente en la plaza capturada.
+5. La silla debe continuar haciendo snapping y orientándose sola.
+
+PRUEBA FUNCIONAL B — MOVER Y GIRAR MESA CON SILLAS
+1. Coloca dos sillas válidas en MesaA.
+2. Selecciona MesaA y pulsa Mover.
+3. Desplaza la mesa:
+   - las dos sillas deben acompañarla conservando posición y orientación
+     relativas;
+   - las sillas deben seguir siendo artículos independientes;
+   - no debe modificarse su jerarquía permanente.
+4. Pulsa R para girar la mesa:
+   - las sillas deben girar alrededor de la mesa;
+   - deben conservar su orientación relativa hacia la mesa.
+5. Acerca el conjunto a una pared, obstáculo o zona insuficiente:
+   - la previsualización debe pasar a rojo;
+   - no debe permitir confirmar;
+   - debe mostrar un motivo relacionado con el miembro del conjunto que
+     queda inválido.
+6. Pulsa Esc:
+   - mesa y sillas deben volver exactamente a sus poses anteriores.
+7. Repite el movimiento en una posición válida y confirma.
+8. Pulsa Ctrl+Z una sola vez:
+   - mesa y sillas deben volver juntas.
+9. Pulsa Ctrl+Y una sola vez:
+   - mesa y sillas deben reaplicar juntas el movimiento.
+10. Comprueba que la capacidad y las plazas siguen asociadas.
+
+CRITERIOS DE BLOQUEO
+No crear commit final si ocurre cualquiera de estos casos:
+- una silla no acompaña a la mesa;
+- una silla cambia de padre en Hierarchy;
+- Undo/Redo necesita más de una pulsación para el conjunto;
+- una silla atraviesa un obstáculo y aun así permite confirmar;
+- cancelar no restaura exactamente todo el conjunto;
+- desaparece la asociación de plazas;
+- aparece cualquier error rojo en Console.
+
+ROLLBACK
+- No modifiques manualmente prefabs, colliders ni valores de plazas.
+- Si Unity muestra errores, cierra Unity y vuelve al commit limpio anterior
+  desde GitHub Desktop.
