@@ -44,6 +44,14 @@ public sealed class RestaurantPlacementValidationService :
     private RestaurantPlacementObstacleRegistry
         obstacleRegistry;
 
+    [Tooltip(
+        "Coordina reglas modulares específicas de familias, como " +
+        "asientos, puertas o equipamiento con espacio operativo."
+    )]
+    [SerializeField]
+    private RestaurantPlacementConstraintService
+        constraintService;
+
     [Header("Validación inicial")]
 
     [Tooltip(
@@ -158,25 +166,66 @@ public sealed class RestaurantPlacementValidationService :
             );
         }
 
-        if (!member.TryGetComponent(
-                out RestaurantPlacementFootprint
-                    candidateFootprint
-            ))
+        member.TryGetComponent(
+            out RestaurantPlacementFootprint
+                candidateFootprint
+        );
+
+        /*
+         * Las reglas funcionales se evalúan antes que los conflictos
+         * físicos genéricos. Así una quinta silla comunica la causa
+         * real —capacidad máxima— aunque también esté cerca de otra
+         * silla. El núcleo sigue comprobando después colisiones y
+         * separación para cualquier candidato que supere sus reglas.
+         */
+        RestaurantPlacementConstraintEvaluation
+            constraintEvaluation =
+                RestaurantPlacementConstraintEvaluation.Valid();
+
+        if (constraintService != null)
         {
-            return CreateValidResult(
-                member,
-                null,
-                candidateArea
-            );
+            RestaurantPlacementConstraintContext context =
+                new RestaurantPlacementConstraintContext(
+                    member,
+                    candidateRootPosition,
+                    candidateRootRotation,
+                    candidateArea,
+                    candidateFootprint,
+                    placementRegistry,
+                    obstacleRegistry
+                );
+
+            constraintEvaluation =
+                constraintService.Evaluate(context);
+
+            if (!constraintEvaluation.IsValid &&
+                constraintEvaluation
+                    .ShouldOverrideGenericConflicts)
+            {
+                return CreateConstraintViolationResult(
+                    member,
+                    candidateFootprint,
+                    candidateArea,
+                    constraintEvaluation
+                );
+            }
         }
 
-        if (!candidateFootprint.BlocksOtherPlacements)
+        if (candidateFootprint == null ||
+            !candidateFootprint.BlocksOtherPlacements)
         {
-            return CreateValidResult(
-                member,
-                candidateFootprint,
-                candidateArea
-            );
+            return !constraintEvaluation.IsValid
+                ? CreateConstraintViolationResult(
+                    member,
+                    candidateFootprint,
+                    candidateArea,
+                    constraintEvaluation
+                )
+                : CreateValidResult(
+                    member,
+                    candidateFootprint,
+                    candidateArea
+                );
         }
 
         if (placementRegistry == null ||
@@ -280,6 +329,16 @@ public sealed class RestaurantPlacementValidationService :
             );
         }
 
+        if (!constraintEvaluation.IsValid)
+        {
+            return CreateConstraintViolationResult(
+                member,
+                candidateFootprint,
+                candidateArea,
+                constraintEvaluation
+            );
+        }
+
         return CreateValidResult(
             member,
             candidateFootprint,
@@ -357,6 +416,7 @@ public sealed class RestaurantPlacementValidationService :
         int areaErrorCount = 0;
         int physicalOverlapCount = 0;
         int clearanceViolationCount = 0;
+        int constraintViolationCount = 0;
         int systemErrorCount = 0;
 
         foreach (RestaurantPlacementFootprint footprint
@@ -437,6 +497,29 @@ public sealed class RestaurantPlacementValidationService :
                     break;
 
                 case RestaurantPlacementValidationStatus
+                    .PlacementConstraintViolation:
+
+                    constraintViolationCount++;
+
+                    if (logDetails)
+                    {
+                        string message =
+                            !string.IsNullOrWhiteSpace(
+                                result.UserMessage
+                            )
+                                ? result.UserMessage
+                                : "La colocación incumple una regla " +
+                                  "funcional especializada.";
+
+                        Debug.LogWarning(
+                            message,
+                            member
+                        );
+                    }
+
+                    break;
+
+                case RestaurantPlacementValidationStatus
                     .SystemUnavailable:
 
                     systemErrorCount++;
@@ -478,6 +561,7 @@ public sealed class RestaurantPlacementValidationService :
                 areaErrorCount,
                 physicalOverlapCount,
                 clearanceViolationCount,
+                constraintViolationCount,
                 systemErrorCount
             );
 
@@ -490,6 +574,8 @@ public sealed class RestaurantPlacementValidationService :
             $"{summary.PhysicalOverlapCount}, " +
             $"separación insuficiente: " +
             $"{summary.ClearanceViolationCount}, " +
+            $"reglas funcionales incumplidas: " +
+            $"{summary.ConstraintViolationCount}, " +
             $"errores de sistema: " +
             $"{summary.SystemErrorCount}.",
             this
@@ -821,6 +907,16 @@ public sealed class RestaurantPlacementValidationService :
                     "Se intentó validar un objeto sin un " +
                     "miembro de área válido.";
 
+            case RestaurantPlacementValidationStatus
+                .PlacementConstraintViolation:
+
+                return
+                    !string.IsNullOrWhiteSpace(result.UserMessage)
+                        ? result.UserMessage
+                        : memberName +
+                          " incumple una regla funcional de " +
+                          "colocación.";
+
             default:
 
                 return
@@ -880,6 +976,28 @@ public sealed class RestaurantPlacementValidationService :
     /// <summary>
     /// Construye un resultado válido.
     /// </summary>
+    private static RestaurantPlacementValidationResult
+        CreateConstraintViolationResult(
+            RestaurantAreaMember member,
+            RestaurantPlacementFootprint footprint,
+            RestaurantArea area,
+            RestaurantPlacementConstraintEvaluation evaluation
+        )
+    {
+        return new RestaurantPlacementValidationResult(
+            RestaurantPlacementValidationStatus
+                .PlacementConstraintViolation,
+            member,
+            footprint,
+            area,
+            null,
+            null,
+            null,
+            RestaurantPlacementConflictType.None,
+            evaluation
+        );
+    }
+
     private static RestaurantPlacementValidationResult
         CreateValidResult(
             RestaurantAreaMember member,
@@ -947,6 +1065,13 @@ public sealed class RestaurantPlacementValidationService :
                 out obstacleRegistry
             );
         }
+
+        if (constraintService == null)
+        {
+            TryGetComponent(
+                out constraintService
+            );
+        }
     }
 
     /// <summary>
@@ -1012,7 +1137,8 @@ public enum RestaurantPlacementValidationStatus
     FootprintOutsideCandidateArea = 5,
     PhysicalOverlap = 6,
     MinimumClearanceViolation = 7,
-    SystemUnavailable = 8
+    SystemUnavailable = 8,
+    PlacementConstraintViolation = 9
 }
 
 /// <summary>
@@ -1041,6 +1167,19 @@ public readonly struct RestaurantPlacementValidationResult
     { get; }
 
     public RestaurantPlacementConflictType ConflictType { get; }
+
+    public RestaurantPlacementConstraintEvaluation
+        ConstraintEvaluation
+    { get; }
+
+    public string UserMessage =>
+        ConstraintEvaluation.UserMessage;
+
+    public string TechnicalMessage =>
+        ConstraintEvaluation.TechnicalMessage;
+
+    public Object RelatedObject =>
+        ConstraintEvaluation.RelatedObject;
 
     public bool IsValid =>
         Status ==
@@ -1090,6 +1229,38 @@ public readonly struct RestaurantPlacementValidationResult
             conflictingObstacle,
         RestaurantPlacementConflictType conflictType
     )
+        : this(
+            status,
+            member,
+            footprint,
+            candidateArea,
+            missingCapability,
+            conflictingFootprint,
+            conflictingObstacle,
+            conflictType,
+            RestaurantPlacementConstraintEvaluation.Valid()
+        )
+    {
+    }
+
+    /// <summary>
+    /// Constructor completo con diagnóstico de regla especializada.
+    /// </summary>
+    public RestaurantPlacementValidationResult(
+        RestaurantPlacementValidationStatus status,
+        RestaurantAreaMember member,
+        RestaurantPlacementFootprint footprint,
+        RestaurantArea candidateArea,
+        RestaurantAreaCapabilityDefinition
+            missingCapability,
+        RestaurantPlacementFootprint
+            conflictingFootprint,
+        RestaurantPlacementObstacle
+            conflictingObstacle,
+        RestaurantPlacementConflictType conflictType,
+        RestaurantPlacementConstraintEvaluation
+            constraintEvaluation
+    )
     {
         Status = status;
         Member = member;
@@ -1099,6 +1270,7 @@ public readonly struct RestaurantPlacementValidationResult
         ConflictingFootprint = conflictingFootprint;
         ConflictingObstacle = conflictingObstacle;
         ConflictType = conflictType;
+        ConstraintEvaluation = constraintEvaluation;
     }
 }
 
@@ -1117,6 +1289,8 @@ public readonly struct RestaurantPlacementValidationSummary
 
     public int ClearanceViolationCount { get; }
 
+    public int ConstraintViolationCount { get; }
+
     public int SystemErrorCount { get; }
 
     public bool IsValid =>
@@ -1129,6 +1303,7 @@ public readonly struct RestaurantPlacementValidationSummary
         int areaErrorCount,
         int physicalOverlapCount,
         int clearanceViolationCount,
+        int constraintViolationCount,
         int systemErrorCount
     )
     {
@@ -1138,6 +1313,8 @@ public readonly struct RestaurantPlacementValidationSummary
         PhysicalOverlapCount = physicalOverlapCount;
         ClearanceViolationCount =
             clearanceViolationCount;
+        ConstraintViolationCount =
+            constraintViolationCount;
         SystemErrorCount = systemErrorCount;
     }
 }

@@ -1640,6 +1640,23 @@ public sealed class RestaurantEditInteractionController :
         PlacementValidationChanged?.Invoke(
             result
         );
+
+        if (result.IsValid)
+        {
+            PublishMessage(
+                "Posición válida."
+            );
+        }
+        else
+        {
+            PublishMessage(
+                BuildInvalidPlacementMessage(
+                    result,
+                    RestaurantPlacementTransactionFailureReason
+                        .PlacementInvalid
+                )
+            );
+        }
     }
 
     private void CommitActivePlacement()
@@ -2456,6 +2473,25 @@ public sealed class RestaurantEditInteractionController :
                 ? "None"
                 : operationFailureReason;
 
+        string constraintRule =
+            string.IsNullOrWhiteSpace(
+                result.ConstraintEvaluation.RuleId
+            )
+                ? "None"
+                : result.ConstraintEvaluation.RuleId;
+
+        string constraintMessage =
+            string.IsNullOrWhiteSpace(
+                result.TechnicalMessage
+            )
+                ? "None"
+                : result.TechnicalMessage;
+
+        string relatedObject =
+            result.RelatedObject != null
+                ? result.RelatedObject.name
+                : "None";
+
         return
             "Estado: " +
             result.Status +
@@ -2471,6 +2507,12 @@ public sealed class RestaurantEditInteractionController :
             conflictingObject +
             "; tipo de conflicto: " +
             result.ConflictType +
+            "; regla especializada: " +
+            constraintRule +
+            "; objeto relacionado: " +
+            relatedObject +
+            "; diagnóstico especializado: " +
+            constraintMessage +
             "; posición: " +
             position.ToString("F3") +
             ".";
@@ -2482,6 +2524,13 @@ public sealed class RestaurantEditInteractionController :
             failureReason
     )
     {
+        if (!string.IsNullOrWhiteSpace(
+                result.UserMessage
+            ))
+        {
+            return result.UserMessage;
+        }
+
         switch (result.Status)
         {
             case RestaurantPlacementValidationStatus
@@ -2521,6 +2570,12 @@ public sealed class RestaurantEditInteractionController :
 
                 return
                     "No se mantiene la separación mínima.";
+
+            case RestaurantPlacementValidationStatus
+                .PlacementConstraintViolation:
+
+                return
+                    "La posición incumple una regla funcional.";
 
             case RestaurantPlacementValidationStatus
                 .SystemUnavailable:
