@@ -186,6 +186,208 @@ public static class BistroBuilderPersistenceFoundationSelfTest
             "El DTO conserva una rotación válida."
         );
 
+        BistroBuilderGeneralGameSaveData generalSample =
+            new BistroBuilderGeneralGameSaveData
+            {
+                gameId = "game_test_01",
+                restaurantName = "Bistro de prueba",
+                createdUtc = DateTime.UtcNow.ToString("O"),
+                capturedUtc = DateTime.UtcNow.ToString("O"),
+                dayIndex = 12,
+                calendarYear = 3,
+                calendarMonth = 5,
+                calendarDay = 17,
+                progressionStageId = "first_service_ready",
+                progressionLevel = 4,
+                clockHour = 19,
+                clockMinute = 35,
+                clockAccumulatedMinutes = 0.25f,
+                clockSpeedMultiplier = 2f,
+                clockIsPaused = true,
+                serviceState = (int)RestaurantServiceState.Closed,
+                snapshotMode =
+                    (int)BistroBuilderSaveSnapshotMode.ClosedRestaurant
+            };
+
+        BistroBuilderGeneralGameSaveData generalRoundTrip =
+            (BistroBuilderGeneralGameSaveData)serializer.Deserialize(
+                serializer.Serialize(generalSample, false),
+                typeof(BistroBuilderGeneralGameSaveData)
+            );
+
+        report.Check(
+            generalRoundTrip != null,
+            "El DTO general completa un round-trip JSON."
+        );
+        report.Check(
+            generalRoundTrip != null &&
+            generalRoundTrip.gameId == "game_test_01" &&
+            generalRoundTrip.restaurantName == "Bistro de prueba",
+            "El DTO general conserva identidad y nombre."
+        );
+        report.Check(
+            generalRoundTrip != null &&
+            generalRoundTrip.dayIndex == 12 &&
+            generalRoundTrip.calendarYear == 3 &&
+            generalRoundTrip.calendarMonth == 5 &&
+            generalRoundTrip.calendarDay == 17,
+            "El DTO general conserva día y calendario."
+        );
+        report.Check(
+            generalRoundTrip != null &&
+            generalRoundTrip.clockHour == 19 &&
+            generalRoundTrip.clockMinute == 35 &&
+            Mathf.Approximately(
+                generalRoundTrip.clockAccumulatedMinutes,
+                0.25f
+            ) &&
+            Mathf.Approximately(
+                generalRoundTrip.clockSpeedMultiplier,
+                2f
+            ) &&
+            generalRoundTrip.clockIsPaused,
+            "El DTO general conserva reloj, fracción, velocidad y pausa."
+        );
+        report.Check(
+            generalRoundTrip != null &&
+            generalRoundTrip.snapshotMode ==
+                (int)BistroBuilderSaveSnapshotMode.ClosedRestaurant &&
+            generalRoundTrip.serviceState ==
+                (int)RestaurantServiceState.Closed,
+            "El DTO general conserva el modo de snapshot y servicio."
+        );
+
+        BistroBuilderSaveReferenceRegistry referenceRegistry =
+            new BistroBuilderSaveReferenceRegistry();
+        object referenceValue = new object();
+
+        report.Check(
+            referenceRegistry.TryRegister(
+                BistroBuilderSaveReferenceDomains.RestaurantTable,
+                "table_test",
+                referenceValue
+            ),
+            "El registro acepta una referencia persistente válida."
+        );
+        report.Check(
+            !referenceRegistry.TryRegister(
+                BistroBuilderSaveReferenceDomains.RestaurantTable,
+                "table_test",
+                new object()
+            ),
+            "El registro rechaza referencias duplicadas."
+        );
+        report.Check(
+            referenceRegistry.TryResolve<object>(
+                BistroBuilderSaveReferenceDomains.RestaurantTable,
+                "table_test",
+                out object resolvedReference
+            ) &&
+            ReferenceEquals(referenceValue, resolvedReference),
+            "Las secciones pueden resolver referencias cruzadas por ID."
+        );
+
+        BistroBuilderSaveOperationBag operationBag =
+            new BistroBuilderSaveOperationBag();
+        operationBag.Set("checkpoint", "checkpoint_test");
+        report.Check(
+            operationBag.TryGet(
+                "checkpoint",
+                out string checkpointValue
+            ) && checkpointValue == "checkpoint_test",
+            "La carga comparte datos temporales entre proveedores."
+        );
+
+        float originalTimeScale = Time.timeScale;
+        GameObject clockTestObject =
+            new GameObject("BB_ClockPersistenceSelfTest");
+        GameClock testClock = clockTestObject.AddComponent<GameClock>();
+        IDisposable clockLock = null;
+
+        try
+        {
+            report.Check(
+                testClock.TryRestoreState(
+                    12,
+                    34,
+                    2f,
+                    false,
+                    0.5f,
+                    false
+                ),
+                "GameClock acepta un estado persistente válido."
+            );
+
+            clockLock = testClock.AcquireSimulationLock(
+                "Persistence self-test"
+            );
+
+            report.Check(
+                testClock.IsRuntimeSuspended,
+                "El bloqueo de snapshot suspende el reloj."
+            );
+            report.Check(
+                Mathf.Approximately(Time.timeScale, 0f),
+                "El bloqueo mantiene Time.timeScale a cero."
+            );
+
+            bool restoredWhileLocked = testClock.TryRestoreState(
+                18,
+                45,
+                3f,
+                true,
+                0.75f,
+                false
+            );
+            report.Check(
+                restoredWhileLocked &&
+                testClock.Hour == 18 &&
+                testClock.Minute == 45 &&
+                testClock.IsPaused &&
+                Mathf.Approximately(
+                    testClock.AccumulatedMinutes,
+                    0.75f
+                ) &&
+                Mathf.Approximately(Time.timeScale, 0f),
+                "El reloj restaura datos sin reactivar el mundo durante " +
+                "la carga."
+            );
+
+            testClock.TryRestoreState(
+                18,
+                45,
+                3f,
+                false,
+                0.75f,
+                false
+            );
+            clockLock.Dispose();
+            clockLock = null;
+
+            report.Check(
+                !testClock.IsRuntimeSuspended &&
+                Mathf.Approximately(Time.timeScale, 3f),
+                "Al liberar el snapshot se aplica la velocidad restaurada."
+            );
+            report.Check(
+                !testClock.TryRestoreState(
+                    25,
+                    0,
+                    1f,
+                    false,
+                    0f,
+                    false
+                ),
+                "GameClock rechaza estados persistentes inválidos."
+            );
+        }
+        finally
+        {
+            clockLock?.Dispose();
+            UnityEngine.Object.DestroyImmediate(clockTestObject);
+            Time.timeScale = originalTimeScale;
+        }
+
         string firstHash =
             BistroBuilderFileSaveStorage.ComputeSha256(serialized);
         string repeatedHash =
@@ -745,6 +947,31 @@ public static class BistroBuilderPersistenceFoundationSelfTest
                 >()
                 : null;
 
+        BistroBuilderGeneralGameStateService generalState =
+            gameSystems != null
+                ? gameSystems.GetComponent<
+                    BistroBuilderGeneralGameStateService
+                >()
+                : null;
+        BistroBuilderGeneralGameSaveSectionProvider generalProvider =
+            gameSystems != null
+                ? gameSystems.GetComponent<
+                    BistroBuilderGeneralGameSaveSectionProvider
+                >()
+                : null;
+        BistroBuilderSimulationSaveParticipant simulationParticipant =
+            gameSystems != null
+                ? gameSystems.GetComponent<
+                    BistroBuilderSimulationSaveParticipant
+                >()
+                : null;
+        BistroBuilderActiveServiceSaveGuard activeServiceGuard =
+            gameSystems != null
+                ? gameSystems.GetComponent<
+                    BistroBuilderActiveServiceSaveGuard
+                >()
+                : null;
+
         if (service != null)
         {
             service.RefreshExtensions();
@@ -756,8 +983,8 @@ public static class BistroBuilderPersistenceFoundationSelfTest
             "El orquestador de escena está configurado."
         );
         report.Check(
-            service != null && service.RegisteredProviderCount >= 1,
-            "El orquestador descubre al menos un proveedor."
+            service != null && service.RegisteredProviderCount >= 2,
+            "El orquestador descubre los dos proveedores de la base 366B."
         );
         report.Check(
             catalog != null && catalog.ValidateConfiguration(out _),
@@ -779,6 +1006,43 @@ public static class BistroBuilderPersistenceFoundationSelfTest
             participant != null &&
             participant.ValidateConfiguration(out _),
             "El bloqueo de interacción está configurado."
+        );
+
+        report.Check(
+            generalState != null &&
+            generalState.ValidateConfiguration(out _),
+            "El estado general de partida está configurado."
+        );
+        report.Check(
+            generalProvider != null &&
+            generalProvider.ValidateConfiguration(out _),
+            "El proveedor game.general es válido."
+        );
+        report.Check(
+            generalProvider != null &&
+            generalProvider.SectionId == "game.general" &&
+            generalProvider.SectionVersion == 1,
+            "game.general conserva identidad y versión estables."
+        );
+        report.Check(
+            generalProvider != null &&
+            generalProvider.PrepareOrder > generalProvider.ApplyOrder &&
+            generalProvider.FinalizeOrder > generalProvider.ApplyOrder,
+            "game.general cierra temprano y reactiva el servicio al final."
+        );
+        report.Check(
+            simulationParticipant != null &&
+            simulationParticipant.ValidateConfiguration(out _),
+            "El participante de simulación está configurado."
+        );
+        report.Check(
+            activeServiceGuard != null &&
+            activeServiceGuard.ValidateConfiguration(out _),
+            "La reserva de persistencia de servicio activo es válida."
+        );
+        report.Check(
+            service != null && service.HasProvider("game.general"),
+            "El orquestador expone la capacidad game.general."
         );
 
         BistroBuilderPersistenceValidationResult validation =

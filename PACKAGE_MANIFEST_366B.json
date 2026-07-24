@@ -1,0 +1,162 @@
+{
+  "package": "BistroBuilder 366B — General Game State and Active Service Readiness",
+  "package_version": "366B",
+  "base_required": [
+    "BistroBuilder 366",
+    "BistroBuilder 366A"
+  ],
+  "generated_utc": "2026-07-24T07:56:39.263398+00:00",
+  "file_count_excluding_manifest": 30,
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs",
+      "size_bytes": 38405,
+      "sha256": "24a2902ed175f188b2ca217844456e8dd69ebcdbe49b5c518fcd00178591a2c5"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs.meta",
+      "size_bytes": 243,
+      "sha256": "00edb02bb39d8ae24219a082be707153b694fa05acd41a6c5b892ff6a5330638"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs",
+      "size_bytes": 18520,
+      "sha256": "1a2cfaa353922ad1b7fdc9cc4f87fe7090ab12b06b1ab8bc35426cb3e4bb7e78"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs.meta",
+      "size_bytes": 243,
+      "sha256": "dafca8f76e0fcfe5b7c52c4f23ff1ad3268bffde2b0830e63495e06b844ac77b"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs",
+      "size_bytes": 13173,
+      "sha256": "7473515a56fa9446ef94b446fcfacfa71e86445f112b7e54ba58fbfe0836aad2"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs.meta",
+      "size_bytes": 243,
+      "sha256": "ace663f7f17a1e55925161726a5f0e3028bf82cbf2bed92b36b623a2823e83a9"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs",
+      "size_bytes": 16776,
+      "sha256": "d9182a3aa43dac19da423d145be9f3608af4f50d4e75a56e93579243e987b97f"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs.meta",
+      "size_bytes": 243,
+      "sha256": "24fa32fe7feefe91945824c257514acd6b9a0d6932588cf0b2c17b2d2795bae4"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs",
+      "size_bytes": 11316,
+      "sha256": "ba7f820b989a7da9982f8c08129c4b928cec2c3e97a0810d51927e861a3809fc"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs.meta",
+      "size_bytes": 243,
+      "sha256": "ad7d51cf84276f6f6d12a9c0872439959961ad93d89c4c8d3d802dffc22d7fd9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs",
+      "size_bytes": 65738,
+      "sha256": "cd2229d0664649e1f4d3447ba5f0cacde2a6f1d0f17cdcd0a8b77911953b53ae"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs.meta",
+      "size_bytes": 243,
+      "sha256": "852230fe4249e523c2a38de334146a67cd1f4fce2e34c5d9d15e326022602776"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderActiveServiceSaveGuard.cs",
+      "size_bytes": 4104,
+      "sha256": "58c1c289b94664c870b2b2d9b4b34f202a22c4028c75fc62984e2ff02a672bda"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderActiveServiceSaveGuard.cs.meta",
+      "size_bytes": 243,
+      "sha256": "751e4d9d6359716c1c7afffec3f0eec186c1591ada2aa1bdb7708ff48f78026c"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveData.cs",
+      "size_bytes": 1984,
+      "sha256": "b34e1cef421b17bfa01479f6dc01be2f51d011df21902d5e42552f5a76650a6a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveData.cs.meta",
+      "size_bytes": 243,
+      "sha256": "4bcd4ce478176874828cc00b4ced696e1c5837349a2be4115f5ddc5e3e4e166c"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveSectionProvider.cs",
+      "size_bytes": 15179,
+      "sha256": "ce919f947faba04f52b7c7e67954f5e41e7252036673552f1a3fc0adfc43dc21"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveSectionProvider.cs.meta",
+      "size_bytes": 243,
+      "sha256": "eb180c8f30726c92d3a6495c032c00279a76fcd749d00351d50511cf8897b7ef"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameStateService.cs",
+      "size_bytes": 10372,
+      "sha256": "b94fb9cd0a213134cf25c4b92c623922e6258232fa0bc90996238b367b909d4b"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameStateService.cs.meta",
+      "size_bytes": 243,
+      "sha256": "860ad7c6425dd8268784d01de814a93d0691dde89934d0493582759ba25dee7d"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderSimulationSaveParticipant.cs",
+      "size_bytes": 2759,
+      "sha256": "8833f547d07da36f148affb237f97eae03921143e7ca953c570ca5bb39052763"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General/BistroBuilderSimulationSaveParticipant.cs.meta",
+      "size_bytes": 243,
+      "sha256": "2f93d5024607c71c5c26c254161bd9d9ef2770510a5d519b475e5a57c06cb17a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/General.meta",
+      "size_bytes": 172,
+      "sha256": "afa5cf88893b0c9085ce1d37a771cee4e31a885ff399d986628cdfec50109965"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs",
+      "size_bytes": 29811,
+      "sha256": "41789b6b94898bc0d5b351847d5655df805c950f9d6c7bf61efc810dae080f1c"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs.meta",
+      "size_bytes": 243,
+      "sha256": "87b8c9ebbe659ee751f21cb3af1f20a7cac6e3a96f8e10cebe91b9e0de3da3af"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/RestaurantServiceStateService.cs",
+      "size_bytes": 10546,
+      "sha256": "7356601b1b6067bffcdb766792ffe3098a87c5aa3e3e10452e809863a0c42c92"
+    },
+    {
+      "path": "Assets/Scripts/Core/GameClock.cs",
+      "size_bytes": 7865,
+      "sha256": "cda64ea819636138132d19e2c135c9ba399b806d7627a63a3661f9105a81a516"
+    },
+    {
+      "path": "INSTRUCCIONES_366B.txt",
+      "size_bytes": 3912,
+      "sha256": "fcea4b477c1e8a70c16bdce5235f29a8839d9d45b9a0a2f0e6a123f88ff3566a"
+    },
+    {
+      "path": "MANIFEST_366B.txt",
+      "size_bytes": 1233,
+      "sha256": "f161815b97acff900db04b469a9329e79b29dff05b83540910fd35a388007240"
+    },
+    {
+      "path": "REVISION_TECNICA_366B.txt",
+      "size_bytes": 4699,
+      "sha256": "a5c95840ef4736076af87fefcc50cd0e9ea2b560b47715196a378c3edc66adaa"
+    }
+  ]
+}

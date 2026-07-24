@@ -48,6 +48,21 @@ public interface IBistroBuilderSaveSectionProvider
     );
 }
 
+
+/// <summary>
+/// Orden opcional por fase. Permite aplicar datos generales pronto y
+/// restaurar el estado operativo al final, después de reconstruir todas
+/// las entidades de un futuro servicio activo.
+/// </summary>
+public interface IBistroBuilderSaveSectionPhaseOrdering
+{
+    int PrepareOrder { get; }
+
+    int ApplyOrder { get; }
+
+    int FinalizeOrder { get; }
+}
+
 /// <summary>
 /// Migración pura entre dos versiones consecutivas de una sección.
 ///
@@ -176,17 +191,26 @@ public sealed class BistroBuilderSaveCaptureContext
 
     public object State { get; private set; }
 
+    /// <summary>
+    /// Datos temporales compartidos por todas las secciones de una misma
+    /// captura. Permite usar un único checkpointId en game.general,
+    /// clientes, comandas y cocina.
+    /// </summary>
+    public BistroBuilderSaveOperationBag SharedData { get; }
+
     public bool HasFailed { get; private set; }
 
     public string ErrorMessage { get; private set; }
 
     public BistroBuilderSaveCaptureContext(
         int slotIndex,
-        Func<bool> cancellationRequested = null
+        Func<bool> cancellationRequested = null,
+        BistroBuilderSaveOperationBag sharedData = null
     )
     {
         SlotIndex = slotIndex;
         this.cancellationRequested = cancellationRequested;
+        SharedData = sharedData ?? new BistroBuilderSaveOperationBag();
         ErrorMessage = string.Empty;
     }
 
@@ -225,6 +249,19 @@ public sealed class BistroBuilderSaveLoadContext
 
     public int ObjectsPerFrame { get; }
 
+    /// <summary>
+    /// Registro compartido de entidades reconstruidas. Las secciones de
+    /// clientes, comandas o personal podrán resolver por ID mesas,
+    /// asientos y otros objetos creados por secciones anteriores.
+    /// </summary>
+    public BistroBuilderSaveReferenceRegistry References { get; }
+
+    /// <summary>
+    /// Bolsa de datos temporal compartida durante una única carga.
+    /// Nunca se persiste ni sobrevive a la operación.
+    /// </summary>
+    public BistroBuilderSaveOperationBag SharedData { get; }
+
     public bool HasFailed { get; private set; }
 
     public string ErrorMessage { get; private set; }
@@ -240,6 +277,8 @@ public sealed class BistroBuilderSaveLoadContext
         IsRollback = isRollback;
         ObjectsPerFrame = Math.Max(1, objectsPerFrame);
         this.cancellationRequested = cancellationRequested;
+        References = new BistroBuilderSaveReferenceRegistry();
+        SharedData = new BistroBuilderSaveOperationBag();
         ErrorMessage = string.Empty;
     }
 
@@ -256,3 +295,146 @@ public sealed class BistroBuilderSaveLoadContext
             : errorMessage;
     }
 }
+
+/// <summary>
+/// Dominios estables para referencias cruzadas entre secciones.
+/// </summary>
+public static class BistroBuilderSaveReferenceDomains
+{
+    public const string GameState = "game.state";
+    public const string GameClock = "game.clock";
+    public const string ServiceState = "service.state";
+    public const string RestaurantPlaceable = "restaurant.placeable";
+    public const string RestaurantTable = "restaurant.table";
+    public const string RestaurantSeat = "restaurant.seat";
+}
+
+/// <summary>
+/// Registro de referencias reconstruidas, indexadas por dominio e ID
+/// persistente. No serializa objetos Unity: solo sirve durante la carga.
+/// </summary>
+public sealed class BistroBuilderSaveReferenceRegistry
+{
+    private readonly Dictionary<string, object> references =
+        new Dictionary<string, object>(StringComparer.Ordinal);
+
+    public int Count => references.Count;
+
+    public bool TryRegister(
+        string domain,
+        string persistentId,
+        object value,
+        bool replaceExisting = false
+    )
+    {
+        if (value == null ||
+            !TryBuildKey(domain, persistentId, out string key))
+        {
+            return false;
+        }
+
+        if (references.ContainsKey(key) && !replaceExisting)
+        {
+            return false;
+        }
+
+        references[key] = value;
+        return true;
+    }
+
+    public bool TryResolve<T>(
+        string domain,
+        string persistentId,
+        out T value
+    ) where T : class
+    {
+        value = null;
+
+        if (!TryBuildKey(domain, persistentId, out string key) ||
+            !references.TryGetValue(key, out object stored))
+        {
+            return false;
+        }
+
+        value = stored as T;
+        return value != null;
+    }
+
+    public bool Contains(string domain, string persistentId)
+    {
+        return TryBuildKey(domain, persistentId, out string key) &&
+               references.ContainsKey(key);
+    }
+
+    public void Clear()
+    {
+        references.Clear();
+    }
+
+    private static bool TryBuildKey(
+        string domain,
+        string persistentId,
+        out string key
+    )
+    {
+        key = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(domain) ||
+            string.IsNullOrWhiteSpace(persistentId))
+        {
+            return false;
+        }
+
+        key = domain.Trim().ToLowerInvariant() + "|" +
+              persistentId.Trim().ToLowerInvariant();
+        return true;
+    }
+}
+
+/// <summary>
+/// Datos temporales compartidos entre proveedores durante una carga.
+/// </summary>
+public sealed class BistroBuilderSaveOperationBag
+{
+    private readonly Dictionary<string, object> values =
+        new Dictionary<string, object>(StringComparer.Ordinal);
+
+    public int Count => values.Count;
+
+    public void Set(string key, object value)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new ArgumentException(
+                "La clave compartida no puede estar vacía.",
+                nameof(key)
+            );
+        }
+
+        values[key.Trim().ToLowerInvariant()] = value;
+    }
+
+    public bool TryGet<T>(string key, out T value)
+    {
+        value = default;
+
+        if (string.IsNullOrWhiteSpace(key) ||
+            !values.TryGetValue(
+                key.Trim().ToLowerInvariant(),
+                out object stored
+            ) ||
+            !(stored is T typed))
+        {
+            return false;
+        }
+
+        value = typed;
+        return true;
+    }
+
+    public void Clear()
+    {
+        values.Clear();
+    }
+}
+

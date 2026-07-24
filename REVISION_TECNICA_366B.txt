@@ -1,0 +1,118 @@
+BISTRO BUILDER 366B — REVISIÓN TÉCNICA
+======================================
+
+DECISIÓN CENTRAL
+----------------
+366B no implementa un guardado exclusivo de restaurante cerrado. Introduce
+las piezas que necesita el futuro checkpoint de servicio activo:
+
+1. Bloqueo apilable del reloj.
+2. Orden independiente de preparación, aplicación y finalización.
+3. Registro de referencias cruzadas por IDs persistentes.
+4. Bolsa temporal compartida entre secciones.
+5. Clasificación explícita ClosedRestaurant / ActiveService.
+6. Lista de secciones runtime obligatorias para snapshots activos.
+7. Guard que habilita automáticamente el flujo cuando aparezca
+   service.runtime.
+
+CONGELACIÓN COHERENTE
+---------------------
+GameClock separa:
+- IsPaused: decisión persistente del jugador.
+- IsRuntimeSuspended: bloqueo temporal de sistemas.
+
+BistroBuilderSimulationSaveParticipant adquiere un bloqueo IDisposable antes
+de capturar o cargar. Los proveedores pueden restaurar pausa y velocidad sin
+reactivar el mundo. La simulación solo continúa al finalizar toda la operación.
+
+ORDEN DE CARGA
+--------------
+IBistroBuilderSaveSectionPhaseOrdering permite tres órdenes:
+- PrepareOrder: game.general cierra el servicio antes de retirar entidades.
+- ApplyOrder: identidad, calendario y reloj se restauran pronto.
+- FinalizeOrder: el estado Open/Preparing/Closing se aplica al final absoluto.
+
+Esto evita que un futuro CustomerGroupSpawner o KitchenSystem se reactive
+antes de recuperar grupos, comandas y tareas.
+
+REFERENCIAS CRUZADAS
+--------------------
+BistroBuilderSaveReferenceRegistry no serializa objetos Unity. Durante la
+carga, restaurant.structure registra:
+- RestaurantPlaceableObject por InstanceId.
+- RestaurantTable por InstanceId.
+- RestaurantSeat por InstanceId.
+
+Los futuros proveedores podrán persistir únicamente IDs y resolverlos después,
+sin Find, rutas de escena ni referencias frágiles.
+
+ESTADO GENERAL
+--------------
+BistroBuilderGeneralGameStateService es autoridad de:
+- GameId.
+- Nombre del restaurante.
+- Día y fecha.
+- Etapa y nivel de progresión general.
+
+No almacena dinero, inventario o personal. Esos datos deben pertenecer a sus
+sistemas canónicos para evitar duplicaciones y divergencias.
+
+SERVICIO ACTIVO FUTURO
+----------------------
+Un snapshot activo declara:
+- snapshotMode = ActiveService.
+- activeServiceCheckpointId.
+- requiredRuntimeSectionIds.
+- RestaurantServiceState real.
+
+En 366B, BistroBuilderActiveServiceSaveGuard rechaza guardar/cargar abierto
+porque service.runtime todavía no existe. Cuando se instale ese proveedor, la
+regla lo detectará mediante HasProvider y dejará pasar la operación.
+
+COMPATIBILIDAD
+--------------
+game.general es opcional al leer para no invalidar slots 366 existentes. Las
+nuevas generaciones siempre incluyen la sección. Una partida antigua cargada
+y guardada de nuevo queda actualizada de forma natural.
+
+RENDIMIENTO
+-----------
+- El estado general es pequeño.
+- No añade búsquedas por frame.
+- El registro de referencias usa diccionario con clave normalizada.
+- El bloqueo del reloj solo crea un token por operación.
+- Continúan la serialización y el disco en segundo plano de 366.
+- No se añaden GameObjects durante guardado/carga salvo los ya reconstruidos
+  por restaurant.structure.
+
+ALCANCE NO INCLUIDO
+-------------------
+- Dinero y libro financiero.
+- Personal y turnos.
+- Carta, inventario y proveedores.
+- Clientes activos.
+- Comandas y platos.
+- Cocina en curso.
+- Tareas y movimiento de empleados.
+- Reservas, marketing, reputación y mejoras.
+
+Esos sistemas se incorporarán como secciones independientes. service.runtime
+será el coordinador del checkpoint activo y reutilizará el bloqueo, el orden
+por fases y el registro de referencias introducidos aquí.
+
+CHECKPOINT COHERENTE ENTRE SECCIONES
+------------------------------------
+El orquestador crea una única BistroBuilderSaveOperationBag por captura y la
+comparte con todos los proveedores. game.general publica en ella el instante
+UTC y, cuando el servicio está activo, un activeServiceCheckpointId único.
+Los futuros proveedores de clientes, comandas, cocina, camareros y tareas
+reutilizarán ese mismo identificador. Así se podrá rechazar una generación si
+sus secciones no pertenecen a la misma fotografía lógica del servicio.
+
+REFERENCIAS PARA EL FUTURO RUNTIME
+---------------------------------
+restaurant.structure registra cada colocable, mesa y asiento reconstruido por
+su InstanceId persistente. service.runtime podrá aplicar después clientes,
+comandas y asignaciones resolviendo esos IDs en memoria, sin depender de
+GameObject.Find, nombres de escena, jerarquías ni referencias serializadas a
+objetos Unity.

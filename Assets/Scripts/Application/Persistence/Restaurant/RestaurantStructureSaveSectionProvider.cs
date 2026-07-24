@@ -690,6 +690,41 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 placeable
             );
 
+            if (!context.References.TryRegister(
+                    BistroBuilderSaveReferenceDomains.RestaurantPlaceable,
+                    restoredInstanceId,
+                    placeable
+                ))
+            {
+                context.Fail(
+                    "La referencia persistente del colocable " +
+                    restoredInstanceId + " está duplicada."
+                );
+                yield break;
+            }
+
+            if (placeable.TryGetComponent(
+                    out RestaurantTable loadedTable
+                ))
+            {
+                context.References.TryRegister(
+                    BistroBuilderSaveReferenceDomains.RestaurantTable,
+                    restoredInstanceId,
+                    loadedTable
+                );
+            }
+
+            if (placeable.TryGetComponent(
+                    out RestaurantSeat loadedSeat
+                ))
+            {
+                context.References.TryRegister(
+                    BistroBuilderSaveReferenceDomains.RestaurantSeat,
+                    restoredInstanceId,
+                    loadedSeat
+                );
+            }
+
             if ((index + 1) % context.ObjectsPerFrame == 0)
             {
                 yield return null;

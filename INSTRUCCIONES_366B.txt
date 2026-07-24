@@ -1,0 +1,127 @@
+BISTRO BUILDER 366B — PERSISTENCIA DEL ESTADO GENERAL
+======================================================
+
+OBJETIVO
+--------
+Añadir identidad, calendario, reloj, progresión general y estado operativo
+sobre BistroBuilder 366, conservando compatibilidad con las generaciones
+estructurales ya creadas.
+
+La arquitectura queda preparada para un futuro snapshot con el restaurante
+abierto, clientes, comandas, cocina y tareas en curso.
+
+REQUISITOS PREVIOS
+------------------
+- BistroBuilder 366 instalado y validado.
+- Hotfix 366A instalado.
+- BistroBuilder 365D validado.
+- Proyecto sin errores de compilación.
+- Commit previo recomendado:
+  "Baseline 366 antes de persistencia general"
+
+INSTALACIÓN
+-----------
+1. Sal de Play Mode.
+2. Guarda Prototype_Restaurant.unity.
+3. Cierra Unity completamente.
+4. Extrae este ZIP sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+5. Confirma la sustitución de archivos.
+6. Abre Unity y espera a que termine la compilación.
+7. Comprueba Console: 0 errores.
+
+IMPORTANTE SOBRE .META
+----------------------
+- Los scripts nuevos incluyen sus .meta y GUID.
+- Los scripts de 366 reemplazados conservan los .meta originales del paquete.
+- GameClock.cs y RestaurantServiceStateService.cs sustituyen archivos ya
+  existentes y no incluyen .meta: Unity conservará los .meta/GUID presentes
+  en el proyecto.
+
+ACTUALIZACIÓN DE ESCENA
+-----------------------
+Fuera de Play Mode:
+
+Tools > Bistro Builder > Persistence > Install or Repair Save Foundation
+
+Resultado esperado:
+- Errores: 0
+- Advertencias: 0
+
+Después:
+
+Tools > Bistro Builder > Persistence > Validate Save Foundation
+
+Resultado esperado:
+- Errores: 0
+- Advertencias: 0
+- Proveedores registrados: 2
+- game.general preparada
+- restaurant.structure preparada
+
+AUTOTEST
+--------
+Ejecuta:
+
+Tools > Bistro Builder > Persistence > Run Save Foundation Self-Test
+
+Resultado esperado:
+- Pruebas superadas: 80
+- Pruebas fallidas: 0
+
+PRUEBA FUNCIONAL
+----------------
+1. Entra en Play Mode con el restaurante cerrado.
+2. Abre:
+   Tools > Bistro Builder > Persistence > Save & Load Debug
+3. En "Estado general de prueba", introduce valores reconocibles, por ejemplo:
+   - Restaurante: Bistro Asturias
+   - Día de juego: 12
+   - Fecha: año 2, mes 4, día 18
+   - Etapa: first_service_ready
+   - Nivel: 4
+   - Hora: 19
+   - Minuto: 35
+   - Fracción: 0,50
+   - Velocidad: 2
+   - Pausa: activada o desactivada
+4. Pulsa "Aplicar prueba".
+5. Guarda en un slot nuevo.
+6. Cambia todos los valores y modifica mobiliario.
+7. Carga el slot.
+8. Comprueba que se restauran:
+   - Nombre del restaurante.
+   - Día y fecha.
+   - Etapa y nivel.
+   - Hora, minuto, fracción, velocidad y pausa.
+   - Mobiliario y relaciones mesa-silla-plaza.
+9. Cierra Unity, vuelve a abrir y carga el mismo slot.
+10. Repite la comprobación.
+
+PRUEBA DEL BLOQUEO DE SERVICIO ACTIVO
+-------------------------------------
+Mientras todavía no exista service.runtime:
+
+1. Abre el restaurante mediante el flujo de prueba existente.
+2. Intenta guardar.
+3. El guardado debe rechazarse con un mensaje indicando que falta
+   service.runtime.
+4. Intenta cargar otra partida con el servicio abierto.
+5. La carga debe rechazarse y pedir cerrar primero el restaurante.
+
+Esto no es una limitación arquitectónica: evita crear snapshots incompletos.
+Cuando se instale service.runtime, la misma regla permitirá guardar/cargar
+abierto sin sustituir 366B.
+
+COMPATIBILIDAD CON PARTIDAS 366
+-------------------------------
+game.general es opcional durante la lectura para permitir cargar generaciones
+creadas antes de 366B. Esas partidas mantienen el estado general actual por
+defecto y, al volver a guardarse, incorporan automáticamente game.general.
+
+ROLLBACK
+--------
+Para retirar 366B:
+- Restaura el commit previo.
+- No elimines manualmente componentes o scripts parciales.
+- Las generaciones 366 siguen siendo legibles por la base restaurada.

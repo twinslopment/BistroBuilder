@@ -1,0 +1,19 @@
+BistroBuilder 366B — archivos incrementales
+
+REEMPLAZADOS (conservan GUID existente)
+- Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs
+- Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs
+- Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs
+- Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs
+- Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs
+- Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs
+- Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs
+- Assets/Scripts/Core/GameClock.cs
+- Assets/Scripts/Application/Service/RestaurantServiceStateService.cs
+
+NUEVOS
+- Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveData.cs
+- Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameStateService.cs
+- Assets/Scripts/Application/Persistence/General/BistroBuilderGeneralGameSaveSectionProvider.cs
+- Assets/Scripts/Application/Persistence/General/BistroBuilderSimulationSaveParticipant.cs
+- Assets/Scripts/Application/Persistence/General/BistroBuilderActiveServiceSaveGuard.cs

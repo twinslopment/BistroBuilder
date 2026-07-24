@@ -64,6 +64,18 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         providers =
             new List<IBistroBuilderSaveSectionProvider>(16);
 
+    private readonly List<IBistroBuilderSaveSectionProvider>
+        prepareProviders =
+            new List<IBistroBuilderSaveSectionProvider>(16);
+
+    private readonly List<IBistroBuilderSaveSectionProvider>
+        applyProviders =
+            new List<IBistroBuilderSaveSectionProvider>(16);
+
+    private readonly List<IBistroBuilderSaveSectionProvider>
+        finalizeProviders =
+            new List<IBistroBuilderSaveSectionProvider>(16);
+
     private readonly List<IBistroBuilderSaveSectionMigration>
         migrations =
             new List<IBistroBuilderSaveSectionMigration>(16);
@@ -121,6 +133,34 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
     public int RegisteredProviderCount => providers.Count;
 
     public int RegisteredSerializerCount => serializers.Count;
+
+    /// <summary>
+    /// Comprueba si una capacidad de persistencia está instalada mediante
+    /// la identidad estable de su sección.
+    /// </summary>
+    public bool HasProvider(string sectionId)
+    {
+        if (string.IsNullOrWhiteSpace(sectionId))
+        {
+            return false;
+        }
+
+        string normalized = NormalizeSectionId(sectionId);
+
+        for (int index = 0; index < providers.Count; index++)
+        {
+            if (string.Equals(
+                    NormalizeSectionId(providers[index].SectionId),
+                    normalized,
+                    StringComparison.Ordinal
+                ))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Registra o sustituye un adaptador de serialización por identidad.
@@ -273,6 +313,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         migrations.Sort(CompareMigrations);
         guards.Sort(CompareGuards);
         participants.Sort(CompareParticipants);
+        RebuildProviderPhaseOrders();
     }
 
     public bool ValidateConfiguration(out string error)
@@ -999,6 +1040,9 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         batchResult.HasFailed = false;
         batchResult.ErrorMessage = string.Empty;
 
+        BistroBuilderSaveOperationBag sharedCaptureData =
+            new BistroBuilderSaveOperationBag();
+
         for (int index = 0;
              index < providers.Count;
              index++)
@@ -1007,7 +1051,8 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             BistroBuilderSaveCaptureContext context =
                 new BistroBuilderSaveCaptureContext(
                     slotIndex,
-                    () => token.IsCancellationRequested
+                    () => token.IsCancellationRequested,
+                    sharedCaptureData
                 );
 
             IEnumerator routine;
@@ -1107,11 +1152,12 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         BistroBuilderSaveLoadContext context
     )
     {
-        for (int index = providers.Count - 1;
-             index >= 0;
-             index--)
+        for (int index = 0;
+             index < prepareProviders.Count;
+             index++)
         {
-            IBistroBuilderSaveSectionProvider provider = providers[index];
+            IBistroBuilderSaveSectionProvider provider =
+                prepareProviders[index];
             IEnumerator routine;
 
             try
@@ -1177,10 +1223,11 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         }
 
         for (int index = 0;
-             index < providers.Count;
+             index < applyProviders.Count;
              index++)
         {
-            IBistroBuilderSaveSectionProvider provider = providers[index];
+            IBistroBuilderSaveSectionProvider provider =
+                applyProviders[index];
             string sectionId = NormalizeSectionId(provider.SectionId);
 
             if (!byId.TryGetValue(
@@ -1244,8 +1291,8 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             }
 
             float normalized =
-                providers.Count > 0
-                    ? (index + 1f) / providers.Count
+                applyProviders.Count > 0
+                    ? (index + 1f) / applyProviders.Count
                     : 1f;
 
             SetProgress(
@@ -1267,17 +1314,17 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
     )
     {
         for (int index = 0;
-             index < providers.Count;
+             index < finalizeProviders.Count;
              index++)
         {
             try
             {
-                providers[index].FinalizeLoad(context);
+                finalizeProviders[index].FinalizeLoad(context);
             }
             catch (Exception exception)
             {
                 context.Fail(
-                    providers[index].SectionId +
+                    finalizeProviders[index].SectionId +
                     ": " +
                     exception.Message
                 );
@@ -1413,10 +1460,11 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         }
 
         for (int index = 0;
-             index < providers.Count;
+             index < applyProviders.Count;
              index++)
         {
-            IBistroBuilderSaveSectionProvider provider = providers[index];
+            IBistroBuilderSaveSectionProvider provider =
+                applyProviders[index];
             string sectionId = NormalizeSectionId(provider.SectionId);
 
             if (!storedById.TryGetValue(
@@ -2107,6 +2155,90 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void RebuildProviderPhaseOrders()
+    {
+        prepareProviders.Clear();
+        applyProviders.Clear();
+        finalizeProviders.Clear();
+
+        prepareProviders.AddRange(providers);
+        applyProviders.AddRange(providers);
+        finalizeProviders.AddRange(providers);
+
+        prepareProviders.Sort(CompareProvidersForPrepare);
+        applyProviders.Sort(CompareProvidersForApply);
+        finalizeProviders.Sort(CompareProvidersForFinalize);
+    }
+
+    private static int CompareProvidersForPrepare(
+        IBistroBuilderSaveSectionProvider first,
+        IBistroBuilderSaveSectionProvider second
+    )
+    {
+        int firstOrder = GetPrepareOrder(first);
+        int secondOrder = GetPrepareOrder(second);
+        int orderComparison = secondOrder.CompareTo(firstOrder);
+
+        return orderComparison != 0
+            ? orderComparison
+            : CompareProviders(first, second);
+    }
+
+    private static int CompareProvidersForApply(
+        IBistroBuilderSaveSectionProvider first,
+        IBistroBuilderSaveSectionProvider second
+    )
+    {
+        int orderComparison = GetApplyOrder(first).CompareTo(
+            GetApplyOrder(second)
+        );
+
+        return orderComparison != 0
+            ? orderComparison
+            : CompareProviders(first, second);
+    }
+
+    private static int CompareProvidersForFinalize(
+        IBistroBuilderSaveSectionProvider first,
+        IBistroBuilderSaveSectionProvider second
+    )
+    {
+        int orderComparison = GetFinalizeOrder(first).CompareTo(
+            GetFinalizeOrder(second)
+        );
+
+        return orderComparison != 0
+            ? orderComparison
+            : CompareProviders(first, second);
+    }
+
+    private static int GetPrepareOrder(
+        IBistroBuilderSaveSectionProvider provider
+    )
+    {
+        return provider is IBistroBuilderSaveSectionPhaseOrdering ordering
+            ? ordering.PrepareOrder
+            : provider != null ? provider.LoadOrder : int.MinValue;
+    }
+
+    private static int GetApplyOrder(
+        IBistroBuilderSaveSectionProvider provider
+    )
+    {
+        return provider is IBistroBuilderSaveSectionPhaseOrdering ordering
+            ? ordering.ApplyOrder
+            : provider != null ? provider.LoadOrder : int.MaxValue;
+    }
+
+    private static int GetFinalizeOrder(
+        IBistroBuilderSaveSectionProvider provider
+    )
+    {
+        return provider is IBistroBuilderSaveSectionPhaseOrdering ordering
+            ? ordering.FinalizeOrder
+            : provider != null ? provider.LoadOrder : int.MaxValue;
     }
 
     private static int CompareProviders(

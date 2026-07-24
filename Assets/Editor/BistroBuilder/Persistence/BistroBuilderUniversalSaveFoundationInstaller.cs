@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Instalador idempotente de BistroBuilder 366.
+/// Instalador idempotente de BistroBuilder 366B.
 ///
 /// Solo añade y configura componentes en GameSystems. Antes de guardar
 /// conserva una copia binaria de la escena y la restaura si cualquier
@@ -75,7 +75,7 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
 
             Undo.RegisterCompleteObjectUndo(
                 gameSystems,
-                "Instalar persistencia BistroBuilder 366"
+                "Instalar persistencia BistroBuilder 366B"
             );
 
             BistroBuilderSaveGameService service =
@@ -98,12 +98,44 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
                 GetOrAddComponent<
                     BistroBuilderEditInteractionSaveParticipant
                 >(gameSystems);
+            BistroBuilderGeneralGameStateService generalState =
+                GetOrAddComponent<BistroBuilderGeneralGameStateService>(
+                    gameSystems
+                );
+            BistroBuilderGeneralGameSaveSectionProvider generalProvider =
+                GetOrAddComponent<
+                    BistroBuilderGeneralGameSaveSectionProvider
+                >(gameSystems);
+            BistroBuilderSimulationSaveParticipant simulationParticipant =
+                GetOrAddComponent<
+                    BistroBuilderSimulationSaveParticipant
+                >(gameSystems);
+            BistroBuilderActiveServiceSaveGuard activeServiceGuard =
+                GetOrAddComponent<BistroBuilderActiveServiceSaveGuard>(
+                    gameSystems
+                );
 
             ConfigureService(service);
             ConfigureCatalog(catalog);
             ConfigureProvider(gameSystems, provider, catalog);
             ConfigureGuard(gameSystems, guard);
             ConfigureParticipant(gameSystems, participant);
+            ConfigureGeneralState(gameSystems, generalState);
+            ConfigureGeneralProvider(
+                gameSystems,
+                service,
+                generalState,
+                generalProvider
+            );
+            ConfigureSimulationParticipant(
+                gameSystems,
+                simulationParticipant
+            );
+            ConfigureActiveServiceGuard(
+                gameSystems,
+                service,
+                activeServiceGuard
+            );
 
             service.RefreshExtensions();
 
@@ -112,6 +144,10 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
             EditorUtility.SetDirty(provider);
             EditorUtility.SetDirty(guard);
             EditorUtility.SetDirty(participant);
+            EditorUtility.SetDirty(generalState);
+            EditorUtility.SetDirty(generalProvider);
+            EditorUtility.SetDirty(simulationParticipant);
+            EditorUtility.SetDirty(activeServiceGuard);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene))
@@ -136,13 +172,13 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
             }
 
             Debug.Log(
-                "BISTRO BUILDER - SAVE FOUNDATION 366\n" +
+                "BISTRO BUILDER - SAVE FOUNDATION 366B\n" +
                 result.BuildReport()
             );
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Plataforma universal de guardado y carga instalada.\n\n" +
+                "Persistencia general 366B instalada sobre la plataforma universal.\n\n" +
                 "Errores: " + result.ErrorCount +
                 "\nAdvertencias: " + result.WarningCount +
                 "\n\nEjecuta ahora Validate Save Foundation.",
@@ -334,6 +370,82 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
         );
         SetInt(serialized, "priority", 1000);
 
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureGeneralState(
+        GameObject gameSystems,
+        BistroBuilderGeneralGameStateService generalState
+    )
+    {
+        SerializedObject serialized = new SerializedObject(generalState);
+        SetReference(
+            serialized,
+            "gameClock",
+            RequireComponent<GameClock>(gameSystems)
+        );
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureGeneralProvider(
+        GameObject gameSystems,
+        BistroBuilderSaveGameService service,
+        BistroBuilderGeneralGameStateService generalState,
+        BistroBuilderGeneralGameSaveSectionProvider provider
+    )
+    {
+        SerializedObject serialized = new SerializedObject(provider);
+        SetReference(serialized, "saveGameService", service);
+        SetReference(serialized, "generalGameState", generalState);
+        SetReference(
+            serialized,
+            "gameClock",
+            RequireComponent<GameClock>(gameSystems)
+        );
+        SetReference(
+            serialized,
+            "serviceStateService",
+            RequireComponent<RestaurantServiceStateService>(gameSystems)
+        );
+        SetBool(serialized, "logLoadSummary", true);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureSimulationParticipant(
+        GameObject gameSystems,
+        BistroBuilderSimulationSaveParticipant participant
+    )
+    {
+        SerializedObject serialized = new SerializedObject(participant);
+        SetReference(
+            serialized,
+            "gameClock",
+            RequireComponent<GameClock>(gameSystems)
+        );
+        SetInt(serialized, "priority", 2000);
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureActiveServiceGuard(
+        GameObject gameSystems,
+        BistroBuilderSaveGameService service,
+        BistroBuilderActiveServiceSaveGuard guard
+    )
+    {
+        SerializedObject serialized = new SerializedObject(guard);
+        SetReference(serialized, "saveGameService", service);
+        SetReference(
+            serialized,
+            "serviceStateService",
+            RequireComponent<RestaurantServiceStateService>(gameSystems)
+        );
+        SetString(
+            serialized,
+            "requiredRuntimeSectionId",
+            BistroBuilderGeneralGameSaveSectionProvider
+                .FutureActiveServiceSectionId
+        );
+        SetInt(serialized, "priority", 500);
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 

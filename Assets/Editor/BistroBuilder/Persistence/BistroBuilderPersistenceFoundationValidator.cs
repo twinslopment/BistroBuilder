@@ -22,7 +22,7 @@ public static class BistroBuilderPersistenceFoundationValidator
             ValidateCurrentProject();
 
         Debug.Log(
-            "BISTRO BUILDER - VALIDACIÓN DE PERSISTENCIA 366\n" +
+            "BISTRO BUILDER - VALIDACIÓN DE PERSISTENCIA 366B\n" +
             result.BuildReport()
         );
 
@@ -68,6 +68,23 @@ public static class BistroBuilderPersistenceFoundationValidator
                 BistroBuilderEditInteractionSaveParticipant
             >();
 
+        BistroBuilderGeneralGameStateService generalState =
+            gameSystems.GetComponent<
+                BistroBuilderGeneralGameStateService
+            >();
+        BistroBuilderGeneralGameSaveSectionProvider generalProvider =
+            gameSystems.GetComponent<
+                BistroBuilderGeneralGameSaveSectionProvider
+            >();
+        BistroBuilderSimulationSaveParticipant simulationParticipant =
+            gameSystems.GetComponent<
+                BistroBuilderSimulationSaveParticipant
+            >();
+        BistroBuilderActiveServiceSaveGuard activeServiceGuard =
+            gameSystems.GetComponent<
+                BistroBuilderActiveServiceSaveGuard
+            >();
+
         ValidateSingleComponent(
             gameSystems,
             service,
@@ -99,6 +116,31 @@ public static class BistroBuilderPersistenceFoundationValidator
             result
         );
 
+        ValidateSingleComponent(
+            gameSystems,
+            generalState,
+            nameof(BistroBuilderGeneralGameStateService),
+            result
+        );
+        ValidateSingleComponent(
+            gameSystems,
+            generalProvider,
+            nameof(BistroBuilderGeneralGameSaveSectionProvider),
+            result
+        );
+        ValidateSingleComponent(
+            gameSystems,
+            simulationParticipant,
+            nameof(BistroBuilderSimulationSaveParticipant),
+            result
+        );
+        ValidateSingleComponent(
+            gameSystems,
+            activeServiceGuard,
+            nameof(BistroBuilderActiveServiceSaveGuard),
+            result
+        );
+
         if (service != null)
         {
             service.RefreshExtensions();
@@ -117,7 +159,7 @@ public static class BistroBuilderPersistenceFoundationValidator
                 );
             }
 
-            if (service.RegisteredProviderCount < 1)
+            if (service.RegisteredProviderCount < 2)
             {
                 result.AddError(
                     "El orquestador no ha registrado proveedores."
@@ -222,12 +264,110 @@ public static class BistroBuilderPersistenceFoundationValidator
             }
         }
 
+        if (generalState != null)
+        {
+            if (!generalState.ValidateConfiguration(out string error))
+            {
+                result.AddError(
+                    nameof(BistroBuilderGeneralGameStateService) +
+                    ": " + error
+                );
+            }
+            else
+            {
+                result.AddOk(
+                    "La identidad y el calendario general están " +
+                    "preparados."
+                );
+            }
+        }
+
+        if (generalProvider != null)
+        {
+            if (!generalProvider.ValidateConfiguration(out string error))
+            {
+                result.AddError(
+                    nameof(BistroBuilderGeneralGameSaveSectionProvider) +
+                    ": " + error
+                );
+            }
+            else
+            {
+                result.AddOk("La sección game.general está preparada.");
+            }
+
+            if (!string.Equals(
+                    generalProvider.SectionId,
+                    BistroBuilderGeneralGameSaveSectionProvider
+                        .StableSectionId,
+                    StringComparison.Ordinal
+                ) ||
+                generalProvider.SectionVersion !=
+                    BistroBuilderGeneralGameSaveSectionProvider
+                        .StableSectionVersion)
+            {
+                result.AddError(
+                    "La identidad o versión de game.general no es estable."
+                );
+            }
+
+            if (generalProvider.PrepareOrder <=
+                    generalProvider.ApplyOrder ||
+                generalProvider.FinalizeOrder <=
+                    generalProvider.ApplyOrder)
+            {
+                result.AddError(
+                    "El orden por fases de game.general no garantiza " +
+                    "cierre temprano y reactivación tardía."
+                );
+            }
+        }
+
+        if (simulationParticipant != null)
+        {
+            if (!simulationParticipant.ValidateConfiguration(
+                    out string error
+                ))
+            {
+                result.AddError(
+                    nameof(BistroBuilderSimulationSaveParticipant) +
+                    ": " + error
+                );
+            }
+            else
+            {
+                result.AddOk(
+                    "El reloj se congela mediante un bloqueo apilable " +
+                    "durante snapshots y cargas."
+                );
+            }
+        }
+
+        if (activeServiceGuard != null)
+        {
+            if (!activeServiceGuard.ValidateConfiguration(out string error))
+            {
+                result.AddError(
+                    nameof(BistroBuilderActiveServiceSaveGuard) +
+                    ": " + error
+                );
+            }
+            else
+            {
+                result.AddOk(
+                    "El guardado de servicio activo queda reservado a " +
+                    "service.runtime sin acoplar el núcleo."
+                );
+            }
+        }
+
         ValidateRequiredExistingServices(gameSystems, result);
 
         if (result.ErrorCount == 0)
         {
             result.AddOk(
-                "La plataforma universal de guardado y carga está completa."
+                "La persistencia general 366B está completa y preparada " +
+                "para snapshots de servicio activo."
             );
         }
 
@@ -326,7 +466,9 @@ public static class BistroBuilderPersistenceFoundationValidator
             typeof(RestaurantSeatingTopologyService),
             typeof(RestaurantPlacementTransactionService),
             typeof(RestaurantPlaceableCreationService),
-            typeof(RestaurantEditInteractionController)
+            typeof(RestaurantEditInteractionController),
+            typeof(GameClock),
+            typeof(RestaurantServiceStateService)
         };
 
         for (int index = 0; index < requiredTypes.Length; index++)

@@ -120,8 +120,7 @@ public sealed class RestaurantServiceStateService :
 
     private void Awake()
     {
-        currentState =
-            initialState;
+        currentState = initialState;
     }
 
     private void Start()
@@ -229,7 +228,36 @@ public sealed class RestaurantServiceStateService :
     }
 
     /// <summary>
-    /// Aplica una transición y publica los eventos correspondientes.
+    /// Restaura directamente un estado persistente sin simular la cadena
+    /// de transiciones jugables que llevó hasta él.
+    ///
+    /// La carga compleja puede aplicarlo al final, una vez reconstruidos
+    /// clientes, comandas, cocina y tareas de personal.
+    /// </summary>
+    public bool TryRestoreState(
+        RestaurantServiceState restoredState,
+        bool publishEvents = true
+    )
+    {
+        if (!Enum.IsDefined(
+                typeof(RestaurantServiceState),
+                restoredState
+            ))
+        {
+            return false;
+        }
+
+        if (currentState == restoredState)
+        {
+            return true;
+        }
+
+        ApplyState(restoredState, publishEvents, true);
+        return true;
+    }
+
+    /// <summary>
+    /// Aplica una transición jugable normal y publica eventos.
     /// </summary>
     private bool ChangeState(
         RestaurantServiceState nextState
@@ -240,22 +268,36 @@ public sealed class RestaurantServiceStateService :
             return false;
         }
 
+        ApplyState(nextState, true, false);
+        return true;
+    }
+
+    private void ApplyState(
+        RestaurantServiceState nextState,
+        bool publishEvents,
+        bool isRestoration
+    )
+    {
         RestaurantServiceState previousState =
             currentState;
 
-        currentState =
-            nextState;
+        currentState = nextState;
 
         if (logStateTransitions)
         {
             Debug.Log(
-                "Estado del servicio: " +
-                previousState +
-                " -> " +
-                currentState +
-                ".",
+                isRestoration
+                    ? "Estado del servicio restaurado: " +
+                      previousState + " -> " + currentState + "."
+                    : "Estado del servicio: " +
+                      previousState + " -> " + currentState + ".",
                 this
             );
+        }
+
+        if (!publishEvents)
+        {
+            return;
         }
 
         StateChanged?.Invoke(
@@ -274,8 +316,6 @@ public sealed class RestaurantServiceStateService :
         {
             ServiceClosed?.Invoke();
         }
-
-        return true;
     }
 
 #if UNITY_EDITOR

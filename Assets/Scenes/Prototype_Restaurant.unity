@@ -810,6 +810,10 @@ GameObject:
   - component: {fileID: 263644951}
   - component: {fileID: 263644950}
   - component: {fileID: 263644949}
+  - component: {fileID: 263644957}
+  - component: {fileID: 263644956}
+  - component: {fileID: 263644955}
+  - component: {fileID: 263644954}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1664,6 +1668,73 @@ MonoBehaviour:
   prettyPrintJson: 1
   objectsPerFrame: 32
   logOperations: 1
+--- !u!114 &263644954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dba5c2babebd442898677f82c080f367, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderActiveServiceSaveGuard
+  saveGameService: {fileID: 263644953}
+  serviceStateService: {fileID: 263644923}
+  requiredRuntimeSectionId: service.runtime
+  priority: 500
+--- !u!114 &263644955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9baf8817ba3465e98eb7ac7a796b7f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSimulationSaveParticipant
+  gameClock: {fileID: 263644898}
+  priority: 2000
+--- !u!114 &263644956
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9019d094773e4c0293343c33ba562204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderGeneralGameSaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  generalGameState: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  serviceStateService: {fileID: 263644923}
+  logLoadSummary: 1
+--- !u!114 &263644957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45abeaa1bad74c60aacf06ab6a4e9f1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderGeneralGameStateService
+  initialRestaurantName: Mi restaurante
+  initialDayIndex: 1
+  initialCalendarYear: 1
+  initialCalendarMonth: 1
+  initialCalendarDay: 1
+  initialProgressionStageId: new_restaurant
+  initialProgressionLevel: 1
+  gameClock: {fileID: 263644898}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
