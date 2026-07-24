@@ -1,0 +1,133 @@
+BISTRO BUILDER 367C — INTEGRACIÓN DE COMANDAS CANÓNICAS CON EL SERVICIO REAL
+
+PAQUETE PREPARADO CONTRA
+- Snapshot exacto subido: BistroBuilder_Codigo_Actual_367B.zip
+- Base validada: 367A2 + 367B4
+- Autotest previo: 80/0
+- Console previa: 0 errores
+
+OBJETIVO
+367C conecta el flujo real existente con la autoridad canónica de comandas:
+
+1. OrderSystem crea primero la comanda canónica.
+2. Se genera una línea por miembro de CustomerGroup.
+3. Cada RestaurantOrder conserva su CanonicalOrderId.
+4. Las transiciones legacy solo se aplican si la autoridad canónica las acepta.
+5. El avance de todas las líneas se realiza sobre una copia profunda y se
+   sustituye atómicamente.
+6. Si falla la carta, una referencia o una transición, el estado legacy no
+   avanza.
+7. Una creación parcial puede revertirse sin dejar comandas huérfanas.
+8. Una toma de pedido fallida recupera mesa, grupo y camarero en vez de
+   dejarlos bloqueados en TakingOrder.
+
+IDENTIDADES GENERADAS
+- legacy_order_000001
+- table_000001
+- group_000001
+- customer_g000001_p001
+- waiter_000001
+
+ALCANCE ACTUAL
+- La comanda real ya nace con OrderId y OrderLineId canónicos.
+- Existe una línea por cliente lógico del grupo.
+- Los platos se seleccionan de forma determinista desde la carta runtime.
+- Precio, DishId, CustomerId, mesa y grupo quedan congelados en la comanda.
+- Cocina, recogida y entrega actuales continúan trabajando con RestaurantOrder.
+- Sus estados coarse se proyectan atómicamente sobre todas las líneas.
+
+NO INCLUYE TODAVÍA
+- Procesamiento de cocina línea por línea.
+- Entrega individual a cada cliente visual.
+- Entidades Customer individuales en escena.
+- Bandejas o capacidad de transporte.
+- Persistencia service.runtime con el restaurante abierto.
+- Selección por preferencias reales.
+Estos bloques utilizarán directamente los IDs y líneas creados por 367C.
+
+ARCHIVOS SUSTITUIDOS
+- Assets/Scripts/Simulation/Orders/RestaurantOrder.cs
+- Assets/Scripts/Simulation/Orders/OrderSystem.cs
+- Assets/Scripts/Application/Service/WaiterTableServiceFlow.cs
+- Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs
+
+ARCHIVOS NUEVOS
+- Assets/Scripts/Simulation/Orders/IRestaurantOrderTransitionGate.cs
+- Assets/Scripts/Application/Orders/BistroBuilderServiceOrderIdentityUtility.cs
+- Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs
+- Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationInstaller.cs
+- Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationValidator.cs
+- Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationSelfTest.cs
+- Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationDebugWindow.cs
+
+INSTALACIÓN
+1. Confirma que 367B4 está comprometido y subido a Git.
+2. Sal de Play Mode.
+3. Guarda Prototype_Restaurant.unity.
+4. Cierra Unity completamente.
+5. Extrae el ZIP sobre la raíz:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+6. Confirma la sustitución de archivos.
+7. Abre Unity y espera a que compile.
+8. Primera comprobación: Console con 0 errores.
+9. No ejecutes el instalador hasta confirmar la compilación limpia.
+
+INSTALADOR
+Tools > Bistro Builder > Orders >
+Install or Repair 367C Service Integration
+
+RESULTADO ESPERADO DEL VALIDADOR
+- Correctos: 13
+- Advertencias: 0
+- Errores: 0
+
+VALIDADOR
+Tools > Bistro Builder > Orders >
+Validate 367C Service Integration
+
+AUTOTEST
+Tools > Bistro Builder > Orders >
+Run 367C Service Integration Self-Test
+
+RESULTADO ESPERADO DEL AUTOTEST
+- Pruebas superadas: 69
+- Pruebas fallidas: 0
+
+PRUEBA FUNCIONAL REAL
+1. Entra en Play Mode.
+2. Abre:
+   Tools > Bistro Builder > Orders > Service Integration Debug
+3. Abre el restaurante o ejecuta el ciclo normal de servicio.
+4. Espera a que un camarero tome una comanda real.
+5. Comprueba:
+   - Comandas legacy activas: 1 o más.
+   - Enlaces activos: coincide con las comandas legacy activas.
+   - Cada RestaurantOrder muestra CanonicalOrderId.
+   - Número de líneas = tamaño del grupo.
+   - Cada línea tiene CustomerId y DishId.
+6. Observa la progresión:
+   - Created -> líneas Draft.
+   - SentToKitchen -> líneas Queued.
+   - Preparing -> líneas Preparing.
+   - ReadyForPickup -> líneas ReadyForPickup.
+   - Served -> líneas Served.
+   - Completed -> líneas Consumed y agregado Completed.
+7. Cuando desaparezca la fachada legacy:
+   - Enlaces activos disminuye.
+   - La fotografía canónica conserva la comanda terminal.
+8. Comprueba que el servicio completo sigue llegando a cuenta, pago, salida y
+   mesa reutilizable.
+9. Console: 0 errores.
+
+REGLAS DE SEGURIDAD
+- No pulses herramientas de instalación en Play Mode.
+- No modifiques manualmente CanonicalOrderId.
+- No elimines el componente de integración mientras existan comandas activas.
+- No guardes todavía un servicio activo: service.runtime aún no está instalado.
+- El servicio provisional configurado por el instalador es Lunch; el futuro
+  sistema de horarios lo cambiará mediante TrySetCurrentMealService.
+
+ROLLBACK
+El instalador conserva una copia binaria de la escena y la restaura si falla.
+Los archivos de código se recuperan mediante GitHub Desktop descartando los
+cambios del paquete.

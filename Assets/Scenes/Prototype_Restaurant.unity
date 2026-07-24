@@ -818,6 +818,7 @@ GameObject:
   - component: {fileID: 263644959}
   - component: {fileID: 263644958}
   - component: {fileID: 263644961}
+  - component: {fileID: 263644962}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -915,6 +916,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrderSystem
   nextOrderId: 1
+  canonicalIntegrationService: {fileID: 263644962}
 --- !u!114 &263644904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1772,7 +1774,31 @@ MonoBehaviour:
   initializeCatalogDishesWhenEmpty: 1
   defaultDishEnabled: 1
   defaultDishUnlocked: 1
-  items: []
+  items:
+  - dishId: dish_fabada_asturiana
+    currentPriceCents: 1850
+    unlocked: 1
+    enabled: 1
+    manuallySoldOut: 0
+    signatureDish: 0
+    availableServices: 6
+    displayOrder: 0
+  - dishId: dish_merluza_plancha
+    currentPriceCents: 2100
+    unlocked: 1
+    enabled: 1
+    manuallySoldOut: 0
+    signatureDish: 0
+    availableServices: 6
+    displayOrder: 1
+  - dishId: dish_tarta_queso
+    currentPriceCents: 750
+    unlocked: 1
+    enabled: 1
+    manuallySoldOut: 0
+    signatureDish: 0
+    availableServices: 6
+    displayOrder: 2
   logChanges: 1
 --- !u!114 &263644960
 MonoBehaviour:
@@ -1804,6 +1830,22 @@ MonoBehaviour:
   nextSequenceNumber: 1
   orders: []
   logChanges: 1
+--- !u!114 &263644962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e56a8b71908d495689977a7310a8c9fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCanonicalOrderIntegrationService
+  canonicalOrderService: {fileID: 263644961}
+  currentMealService: 2
+  defaultCourseIndex: 1
+  logSynchronization: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

@@ -231,6 +231,33 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
             out BistroBuilderCanonicalOrder createdSnapshot
         )
     {
+        return TryCreateIndividualOrder(
+            string.Empty,
+            tableReferenceId,
+            customerGroupReferenceId,
+            customerIds,
+            mealService,
+            courseIndex,
+            out createdSnapshot
+        );
+    }
+
+    /// <summary>
+    /// Crea una comanda individual conservando una referencia externa
+    /// estable. 367C la utiliza para enlazar el OrderId legacy sin convertirlo
+    /// en la identidad canónica de la comanda.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult
+        TryCreateIndividualOrder(
+            string externalReferenceId,
+            string tableReferenceId,
+            string customerGroupReferenceId,
+            IList<string> customerIds,
+            BistroBuilderMealServiceAvailability mealService,
+            int courseIndex,
+            out BistroBuilderCanonicalOrder createdSnapshot
+        )
+    {
         createdSnapshot = null;
 
         if (customerIds == null || customerIds.Count == 0)
@@ -255,6 +282,7 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         BistroBuilderCanonicalOrderCreationRequest request =
             new BistroBuilderCanonicalOrderCreationRequest
             {
+                externalReferenceId = externalReferenceId,
                 tableReferenceId = tableReferenceId,
                 customerGroupReferenceId = customerGroupReferenceId,
                 mealService = mealService
@@ -364,6 +392,217 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
             "Estado de línea actualizado.",
             order.OrderId,
             normalizedLineId
+        );
+    }
+
+    /// <summary>
+    /// Avanza todas las líneas no terminales de una comanda hasta un mismo
+    /// estado de la ruta normal.
+    ///
+    /// La operación se realiza sobre una copia profunda y sustituye el
+    /// agregado original únicamente después de validarlo. Por tanto, un fallo
+    /// en una sola línea no deja la comanda parcialmente actualizada.
+    ///
+    /// Este método existe para la migración 367C del flujo coarse. Los
+    /// sistemas definitivos de cocina y entrega continuarán utilizando
+    /// TryTransitionLine para procesar cada plato individualmente.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult
+        TryAdvanceAllLinesToState(
+            string orderId,
+            BistroBuilderCanonicalOrderLineState target,
+            string actorReferenceId
+        )
+    {
+        if (!TryResolveOrder(
+                orderId,
+                out BistroBuilderCanonicalOrder order,
+                out BistroBuilderCanonicalOrderOperationResult failure
+            ))
+        {
+            return failure;
+        }
+
+        int targetValue = (int)target;
+
+        if (targetValue <
+                (int)BistroBuilderCanonicalOrderLineState.Draft ||
+            targetValue >
+                (int)BistroBuilderCanonicalOrderLineState.Consumed)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                "El destino no pertenece a la ruta normal de una línea.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        if (order.IsTerminal)
+        {
+            bool alreadyCompleted =
+                target == BistroBuilderCanonicalOrderLineState.Consumed &&
+                order.State == BistroBuilderCanonicalOrderState.Completed;
+
+            if (alreadyCompleted)
+            {
+                return BistroBuilderCanonicalOrderOperationResult.Success(
+                    "La comanda ya se encuentra completada.",
+                    order.OrderId,
+                    string.Empty
+                );
+            }
+
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason
+                    .OrderAlreadyTerminal,
+                "La comanda ya está en un estado terminal.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        bool changed = false;
+
+        for (int lineIndex = 0;
+             lineIndex < candidate.Lines.Count;
+             lineIndex++)
+        {
+            BistroBuilderCanonicalOrderLine line =
+                candidate.Lines[lineIndex];
+
+            if (line == null)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .InvalidSnapshot,
+                    "La comanda contiene una línea nula.",
+                    order.OrderId,
+                    string.Empty
+                );
+            }
+
+            if (line.State == target)
+            {
+                continue;
+            }
+
+            if (line.IsTerminal ||
+                (int)line.State > targetValue)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .InvalidTransition,
+                    "La línea " + line.LineId +
+                    " no puede retroceder de " + line.State +
+                    " a " + target + ".",
+                    order.OrderId,
+                    line.LineId
+                );
+            }
+
+            while (line.State != target)
+            {
+                if (!BistroBuilderCanonicalOrderTransitionPolicy
+                        .TryGetNormalNextState(
+                            line.State,
+                            out BistroBuilderCanonicalOrderLineState next
+                        ) ||
+                    (int)next > targetValue)
+                {
+                    return Failure(
+                        BistroBuilderCanonicalOrderFailureReason
+                            .InvalidTransition,
+                        "No existe una ruta normal desde " +
+                        line.State + " hasta " + target + ".",
+                        order.OrderId,
+                        line.LineId
+                    );
+                }
+
+                if (!candidate.TryTransitionLine(
+                        line.LineId,
+                        next,
+                        actorReferenceId,
+                        out string transitionError
+                    ))
+                {
+                    return Failure(
+                        BistroBuilderCanonicalOrderFailureReason
+                            .InvalidTransition,
+                        transitionError,
+                        order.OrderId,
+                        line.LineId
+                    );
+                }
+
+                changed = true;
+            }
+        }
+
+        if (!changed)
+        {
+            return BistroBuilderCanonicalOrderOperationResult.Success(
+                "Todas las líneas ya se encuentran en el estado solicitado.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        if (!candidate.TryValidate(out string validationError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                validationError,
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        BistroBuilderCanonicalOrderState expectedAggregate =
+            GetExpectedAggregateForUniformLineState(target);
+
+        if (candidate.State != expectedAggregate)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                "El estado agregado " + candidate.State +
+                " no coincide con el destino uniforme " + target + ".",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        int orderIndex = orders.IndexOf(order);
+
+        if (orderIndex < 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderNotFound,
+                "La comanda no figura en la colección runtime.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        UnindexOrder(order);
+        orders[orderIndex] = candidate;
+        IndexOrder(candidate);
+        Revision++;
+
+        PublishChange(
+            BistroBuilderCanonicalOrderChangeType.LineStateChanged,
+            candidate.OrderId,
+            string.Empty,
+            "Todas las líneas se avanzaron atómicamente a " +
+            target + "."
+        );
+
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Comanda avanzada atómicamente.",
+            candidate.OrderId,
+            string.Empty
         );
     }
 
@@ -920,6 +1159,42 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         if (menuService == null)
         {
             TryGetComponent(out menuService);
+        }
+    }
+
+    private static BistroBuilderCanonicalOrderState
+        GetExpectedAggregateForUniformLineState(
+            BistroBuilderCanonicalOrderLineState lineState
+        )
+    {
+        switch (lineState)
+        {
+            case BistroBuilderCanonicalOrderLineState.Draft:
+                return BistroBuilderCanonicalOrderState.Draft;
+
+            case BistroBuilderCanonicalOrderLineState.Submitted:
+                return BistroBuilderCanonicalOrderState.Submitted;
+
+            case BistroBuilderCanonicalOrderLineState.Queued:
+            case BistroBuilderCanonicalOrderLineState.Preparing:
+                return BistroBuilderCanonicalOrderState.InProgress;
+
+            case BistroBuilderCanonicalOrderLineState.ReadyForPickup:
+                return BistroBuilderCanonicalOrderState.ReadyForPickup;
+
+            case BistroBuilderCanonicalOrderLineState
+                .AssignedForDelivery:
+            case BistroBuilderCanonicalOrderLineState.InTransit:
+                return BistroBuilderCanonicalOrderState.InDelivery;
+
+            case BistroBuilderCanonicalOrderLineState.Served:
+                return BistroBuilderCanonicalOrderState.Served;
+
+            case BistroBuilderCanonicalOrderLineState.Consumed:
+                return BistroBuilderCanonicalOrderState.Completed;
+
+            default:
+                return BistroBuilderCanonicalOrderState.Failed;
         }
     }
 

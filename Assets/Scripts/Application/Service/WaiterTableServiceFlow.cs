@@ -132,6 +132,12 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
                 this
             );
 
+            RecoverFailedOrderTaking(
+                table,
+                customerGroup,
+                waiter
+            );
+
             activeServiceRoutine = null;
             yield break;
         }
@@ -142,9 +148,28 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
         if (!sentToKitchen)
         {
             Debug.LogError(
-                $"La comanda {order.OrderId} no pudo enviarse a cocina.",
+                $"La comanda {order.OrderId} no pudo enviarse a cocina. " +
+                order.LastTransitionError,
                 this
             );
+
+            if (orderSystem.CancelOrder(order))
+            {
+                RecoverFailedOrderTaking(
+                    table,
+                    customerGroup,
+                    waiter
+                );
+            }
+            else
+            {
+                Debug.LogError(
+                    "La comanda fallida tampoco pudo cancelarse. " +
+                    "Se mantiene el estado actual para evitar ocultar " +
+                    "una divergencia.",
+                    this
+                );
+            }
 
             activeServiceRoutine = null;
             yield break;
@@ -162,6 +187,39 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
         waiter.ClearAssignment();
 
         activeServiceRoutine = null;
+    }
+
+    /// <summary>
+    /// Devuelve mesa, grupo y camarero a un estado operativo coherente cuando
+    /// la creación o el envío de una comanda fallan.
+    ///
+    /// Antes de 367C el flujo podía quedar bloqueado en TakingOrder.
+    /// </summary>
+    private static void RecoverFailedOrderTaking(
+        RestaurantTable table,
+        CustomerGroup customerGroup,
+        Waiter waiter
+    )
+    {
+        if (table != null &&
+            table.AssignedCustomerGroup == customerGroup)
+        {
+            table.SetState(TableState.WaitingForWaiter);
+        }
+
+        if (customerGroup != null &&
+            customerGroup.AssignedTable == table)
+        {
+            customerGroup.SetState(
+                CustomerGroupState.WaitingForWaiter
+            );
+        }
+
+        if (waiter != null &&
+            waiter.AssignedTable == table)
+        {
+            waiter.ClearAssignment();
+        }
     }
 
     private void ValidateConfiguration()
@@ -187,6 +245,16 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
         {
             Debug.LogError(
                 "WaiterTableServiceFlow necesita una referencia a OrderSystem.",
+                this
+            );
+        }
+        else if (!orderSystem.ValidateConfiguration(
+                     out string orderSystemError
+                 ))
+        {
+            Debug.LogError(
+                "OrderSystem no está preparado para tomar pedidos. " +
+                orderSystemError,
                 this
             );
         }

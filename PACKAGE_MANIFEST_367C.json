@@ -1,0 +1,140 @@
+{
+  "package": "BistroBuilder 367C — Service Canonical Order Integration",
+  "version": "367C",
+  "built_against": "BistroBuilder_Codigo_Actual_367B.zip",
+  "requires": [
+    "367A2",
+    "367B4"
+  ],
+  "expected_validation": {
+    "correct": 13,
+    "warnings": 0,
+    "errors": 0
+  },
+  "expected_self_test": {
+    "passed": 69,
+    "failed": 0
+  },
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationDebugWindow.cs",
+      "size": 6997,
+      "sha256": "cbd3d8b1403d474323132fc734f317b647bdbca370dedbf57b80502fd512c8ee"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationDebugWindow.cs.meta",
+      "size": 243,
+      "sha256": "b320b3b3e112af3e2f19a8ee8f77d5789022e472d8708ad4c3926595ebf34805"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationInstaller.cs",
+      "size": 7176,
+      "sha256": "8ae4634d7b28d2ee19f95cec0c39dda2a36cffd1334cacff633c9831e8fbf764"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationInstaller.cs.meta",
+      "size": 243,
+      "sha256": "df3ec3d70a3f725a4bcd0e3fe47759f1cde4e6c05e7ab44aedc7b3b327e7bef3"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationSelfTest.cs",
+      "size": 26942,
+      "sha256": "c0ff15b26d56b98cd4c40af0e9c66c58c33583550cadf193ec5f7fbc0f1a6e42"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationSelfTest.cs.meta",
+      "size": 243,
+      "sha256": "b22bc0ae658348040e4dd5f3033d63b843a7a558bce4570bd4da16980fd98b43"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationValidator.cs",
+      "size": 10336,
+      "sha256": "f6779ce5141fae8721c582dabb23707d51d23cfe6b395d6deeec36e40425bc2a"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderIntegrationValidator.cs.meta",
+      "size": 243,
+      "sha256": "a9fb3b9bba7f5ef9f415d1dcd298a06ff92b547a3fe20a833526343337b3378a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs",
+      "size": 16946,
+      "sha256": "53f2449ba3d4dede26e1b75fd877667bccf465932c587eac1cddf9f77412b199"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs.meta",
+      "size": 243,
+      "sha256": "8ffbb2949f1454b3ae50ee1bd344646ee2afb56c61d797213c634a1142f6c69f"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "size": 38374,
+      "sha256": "f43b40018ed0f1ec35e57a3be8cf2d0cf2fd5f36833d7cfefc9eb4cf636ed3bb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "size": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderServiceOrderIdentityUtility.cs",
+      "size": 5936,
+      "sha256": "dcdea91c0e34c202ea1d5376bed194509b5842d59ce407881b853dcaf8520e7b"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderServiceOrderIdentityUtility.cs.meta",
+      "size": 243,
+      "sha256": "aa45ff331ed81f5cc3fccdebaab2280fdaa1da62a216b5db23e2fe6ea67a69b5"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/WaiterTableServiceFlow.cs",
+      "size": 6706,
+      "sha256": "909f760e04bc4ed88ab920f3e7d370b4554d701975d795ad9dff782f7d08ec72"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/WaiterTableServiceFlow.cs.meta",
+      "size": 59,
+      "sha256": "cc69adee75fbcb0e384f8249d43da2abddcf5ba24515239f729ecc240b0e49e1"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/IRestaurantOrderTransitionGate.cs",
+      "size": 525,
+      "sha256": "8b0b4b4d003135e8953f07019d9ba1229e4d9a638c7241cd55d725fdcc719394"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/IRestaurantOrderTransitionGate.cs.meta",
+      "size": 243,
+      "sha256": "ed5b2bc57ae861a4c2eeaf16631e4020f83ab61b0312d5189a2501eda23759ba"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/OrderSystem.cs",
+      "size": 8068,
+      "sha256": "95c948aa55c9fecd326c4311b90b9da1baf03f300b8e376d6d9a267f62adfc13"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/OrderSystem.cs.meta",
+      "size": 59,
+      "sha256": "62251521d7dd7fde5a39e86ec5fc0c5ab8e609696d84051f06d8e0f0d85a86b3"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/RestaurantOrder.cs",
+      "size": 5490,
+      "sha256": "735c88979434a88f6fca29f6d453cc8bd3d251faf96e7937d758212445960521"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/RestaurantOrder.cs.meta",
+      "size": 59,
+      "sha256": "9eaf00de16bf138f4fdc66c39ca33d6abd15888fd6ed5499500e776d707cf6fc"
+    },
+    {
+      "path": "INSTRUCCIONES_367C.txt",
+      "size": 5214,
+      "sha256": "2cedf6affe06ae9dc962902c107f9a0d1a8ca0ba2b625a059a56b39c8cad9dba"
+    },
+    {
+      "path": "REVISION_TECNICA_367C.md",
+      "size": 1993,
+      "sha256": "f84d3f853a9b4ea9f047148a5172f15c06a5b434d454707c94ef6995e7d0d278"
+    }
+  ]
+}
