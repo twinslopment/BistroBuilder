@@ -1,0 +1,17 @@
+BISTRO BUILDER 366A — HOTFIX DE COMPATIBILIDAD QUATERNION
+
+Corrige el error de compilación:
+CS1061: 'Quaternion' does not contain a definition for 'sqrMagnitude'.
+
+INSTALACIÓN
+1. En el diálogo "Enter Safe Mode?", pulsa Quit.
+2. Extrae este ZIP sobre la raíz del proyecto BistroBuilder.
+3. Confirma la sustitución del archivo existente.
+4. Abre Unity y espera a que termine la compilación.
+5. Comprueba que la Console queda con 0 errores.
+
+ARCHIVO SUSTITUIDO
+Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveData.cs
+
+La corrección conserva el .meta y su GUID. No modifica datos, prefabs ni escenas.
+No ejecutes el instalador de persistencia hasta confirmar que la Console está limpia.

@@ -1,0 +1,136 @@
+BISTROBUILDER 366 — REVISIÓN TÉCNICA
+=====================================
+
+1. DECISIÓN CENTRAL
+-------------------
+La plataforma no depende de JSON ni de archivos locales. Los sistemas del juego
+aportan secciones versionadas. Cada sección declara su serializador. El
+orquestador trabaja contra interfaces de serialización y almacenamiento.
+
+Esto permite evolucionar, sin reescribir mesas, personal o economía, hacia:
+
+- JSON para datos pequeños y depurables;
+- binario para secciones voluminosas;
+- almacenamiento local, Steam Cloud o plataforma;
+- un modelo híbrido por sección;
+- SQLite para historiales consultables si las métricas lo justifican.
+
+2. CONSISTENCIA DEL SNAPSHOT
+----------------------------
+IBistroBuilderSaveOperationGuard impide comenzar en estados inseguros.
+IBistroBuilderSaveOperationParticipant queda fijado desde 366 para que sistemas
+futuros puedan congelar reloj, IA o escrituras mientras se captura una imagen
+consistente de toda la partida. Desde 366, el participante de interacción
+desactiva temporalmente el controlador del modo edición para impedir cambios
+durante capturas distribuidas entre varios frames.
+
+3. RENDIMIENTO
+--------------
+- Captura y aplicación incremental por lotes.
+- Serialización, checksum y acceso a disco fuera del hilo principal.
+- Resolución de definiciones O(1) mediante diccionario por ItemId.
+- Índice ligero de slots que lee solo manifiestos.
+- Secciones segmentadas, no un documento monolítico.
+- Sin Find, Resources ni búsqueda por rutas durante guardado/carga runtime.
+- Buffers reutilizados en el proveedor estructural.
+- Registro y topología reconstruidos una sola vez al finalizar.
+- Progreso y duración total instrumentados desde la primera versión.
+
+4. INTEGRIDAD Y RECUPERACIÓN
+----------------------------
+- Generaciones completas e inmutables.
+- SHA-256 por sección y por manifiesto.
+- Escritura durable con Flush(true).
+- Renombrado de directorio temporal solo al completar.
+- Reemplazo del puntero current con previous como backup.
+- Escaneo de generaciones si ambos punteros son ilegibles.
+- Validación de rutas para impedir salir de la carpeta de la generación.
+- Retención configurable de generaciones.
+- Snapshot de rollback en memoria antes de modificar el mundo.
+- Si la carga falla, se intenta restaurar automáticamente el estado anterior.
+
+5. VERSIONADO Y FORMATOS
+------------------------
+Cada sección contiene:
+
+- SectionId estable;
+- SectionVersion;
+- SerializerId;
+- checksum;
+- tamaño;
+- ruta relativa.
+
+Las migraciones son consecutivas y pueden cambiar tanto versión como
+serializador. Una sección futura puede pasar de JSON a binario sin modificar la
+plataforma ni otros sistemas.
+
+6. ESTADO ESTRUCTURAL 366
+-------------------------
+restaurant.structure v1 persiste:
+
+- InstanceId;
+- ItemId;
+- posición mundial;
+- rotación;
+- escala;
+- silla, mesa y slot esperado.
+
+La topología se reconstruye desde la escena cargada y se compara con la relación
+guardada. No se confía ciegamente en una asociación duplicada.
+
+7. REFERENCIAS TÉCNICAS CONSULTADAS
+-----------------------------------
+- Documentación oficial de Unity sobre JsonUtility y uso desde background
+  threads.
+- Documentación oficial de Unity sobre Application.persistentDataPath.
+- Documentación oficial de Microsoft sobre File.Replace.
+- Postmortem técnico de Thief: arquitectura por propiedades y relaciones capaz
+  de soportar guardado, carga y versionado.
+- Postmortem técnico de Stellaris: centralización del estado completo para evitar
+  fugas entre sesiones.
+- Postmortem técnico de Dungeon Siege: tecnología común entre mundo, editor y
+  persistencia.
+- Postmortem técnico de Whacked: coste de tiempos de carga al fragmentar datos en
+  miles de archivos generalizados.
+
+Conclusión aplicada: estado centralizado por secciones, pocos archivos por
+sistema, manifiesto, versiones y reconstrucción explícita de relaciones.
+
+8. LÍMITES DEL HITO
+-------------------
+366 es la plataforma completa y su primera sección real, no el contenido total
+de una partida final. Aún faltan proveedores para:
+
+- personal;
+- carta;
+- inventario;
+- proveedores;
+- economía;
+- reservas;
+- reputación;
+- progresión;
+- reloj y calendario;
+- simulación activa.
+
+También falta la UI final de slots, autosave y pantalla de carga. Añadir estos
+módulos no requiere sustituir la arquitectura de 366.
+
+9. VALIDACIÓN REAL PENDIENTE
+----------------------------
+Se han realizado comprobaciones estructurales, de delimitadores, referencias
+internas, GUID y manifiesto del paquete. La compilación C# y el round-trip real
+solo pueden confirmarse dentro del proyecto Unity del usuario.
+
+10. ENDURECIMIENTO ADICIONAL
+----------------------------
+- El guardado valida cada DTO capturado antes de serializarlo.
+- Las tareas canceladas alcanzan un estado terminal antes de liberar el cerrojo,
+  evitando trabajos huérfanos y operaciones concurrentes sobre un mismo slot.
+- Las identidades de sección, serializador y extensiones se restringen a formatos
+  seguros; las rutas se contienen dentro de la generación y de
+  Application.persistentDataPath.
+- El manifiesto rechaza rutas duplicadas, payloads vacíos y metadatos incompletos.
+- La relación mesa-plaza-silla se valida antes de modificar el mundo, incluyendo
+  mesas reales, rango de plaza y ocupación exclusiva.
+- La interacción del modo edición queda temporalmente deshabilitada mientras una
+  captura o carga distribuida entre frames está activa.

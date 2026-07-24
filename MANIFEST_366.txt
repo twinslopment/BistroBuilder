@@ -1,0 +1,33 @@
+BISTROBUILDER 366 — MANIFEST
+============================
+
+RUNTIME
+-------
+Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs
+Assets/Scripts/Application/Persistence/BistroBuilderSaveModels.cs
+Assets/Scripts/Application/Persistence/BistroBuilderJsonSaveSerializer.cs
+Assets/Scripts/Application/Persistence/BistroBuilderFileSaveStorage.cs
+Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs
+Assets/Scripts/Application/Persistence/BistroBuilderSaveDefinitionCatalog.cs
+Assets/Scripts/Application/Persistence/BistroBuilderPlacementOperationSaveGuard.cs
+Assets/Scripts/Presentation/Persistence/BistroBuilderEditInteractionSaveParticipant.cs
+Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveData.cs
+Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs
+
+EDITOR
+------
+Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs
+Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs
+Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs
+Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs
+
+DOCUMENTACIÓN
+-------------
+INSTRUCCIONES_366.txt
+MANIFEST_366.txt
+REVISION_TECNICA_366.txt
+PACKAGE_MANIFEST_366.json
+
+ARCHIVOS .META
+--------------
+Todos los scripts y carpetas nuevas incluyen .meta y GUID propios.

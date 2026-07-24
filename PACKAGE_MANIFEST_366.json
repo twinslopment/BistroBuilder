@@ -1,0 +1,237 @@
+{
+  "package": "BistroBuilder 366 — Universal Save / Load Foundation",
+  "version": "366",
+  "type": "feature_foundation",
+  "created_utc": "2026-07-23T13:18:08.806564+00:00",
+  "requires": [
+    "BistroBuilder project through validated milestone 365D",
+    "Assets/Scenes/Prototype_Restaurant.unity",
+    "GameSystems with the existing placeable, placement, seating and edit-mode services"
+  ],
+  "scope": {
+    "platform": "Modular, versioned, asynchronous and storage-agnostic save/load orchestration",
+    "initial_section": "restaurant.structure v1",
+    "persists": [
+      "placeable instance IDs",
+      "catalog item IDs",
+      "world position",
+      "world rotation",
+      "local scale",
+      "seat-table-slot relations"
+    ],
+    "not_yet_persisted": [
+      "staff",
+      "menu",
+      "inventory",
+      "economy",
+      "reservations",
+      "customers",
+      "progression",
+      "active service simulation"
+    ]
+  },
+  "expected_validation": {
+    "errors": 0,
+    "warnings": 0,
+    "self_tests_passed": 58,
+    "self_tests_failed": 0
+  },
+  "integrity": {
+    "immutable_generations": true,
+    "sha256_per_section": true,
+    "sha256_manifest_pointer": true,
+    "current_previous_recovery": true,
+    "generation_scan_recovery": true,
+    "in_memory_load_rollback": true,
+    "durable_file_flush": true,
+    "contained_paths": true
+  },
+  "performance": {
+    "main_thread": "Unity state capture and application only, processed in batches",
+    "background": "serialization, hashing and file I/O",
+    "definition_resolution": "O(1) dictionary by ItemId",
+    "slot_index": "manifest-only lightweight reads",
+    "format_and_storage": "replaceable per contracts"
+  },
+  "preserves_existing_guids": true,
+  "creates_runtime_save_data_only_when_user_saves": true,
+  "rollback": "Restore the Git baseline commit; the installer also restores the scene bytes if installation fails.",
+  "inventory_excludes_this_manifest": true,
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs",
+      "size_bytes": 28856,
+      "sha256": "7d969e481bf552df1608b07229371189e3d708ee5daf95c6aee753de9b2e862a"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationSelfTest.cs.meta",
+      "size_bytes": 243,
+      "sha256": "00edb02bb39d8ae24219a082be707153b694fa05acd41a6c5b892ff6a5330638"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs",
+      "size_bytes": 13910,
+      "sha256": "1afe08930102448c779ab51b85f2590ab8c9a83fa1384da5b55f07b1859758a4"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderPersistenceFoundationValidator.cs.meta",
+      "size_bytes": 243,
+      "sha256": "dafca8f76e0fcfe5b7c52c4f23ff1ad3268bffde2b0830e63495e06b844ac77b"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs",
+      "size_bytes": 6969,
+      "sha256": "9663dc88f89717c4148a9aaedeea9c26fb994fce40e8a24c140613ec5c5ee2fe"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderSaveLoadDebugWindow.cs.meta",
+      "size_bytes": 243,
+      "sha256": "ace663f7f17a1e55925161726a5f0e3028bf82cbf2bed92b36b623a2823e83a9"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs",
+      "size_bytes": 12684,
+      "sha256": "cd7e9e7911105786870daeda38b4bb1867863daa5849ecd9481dd04169c6c1d7"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence/BistroBuilderUniversalSaveFoundationInstaller.cs.meta",
+      "size_bytes": 243,
+      "sha256": "24fa32fe7feefe91945824c257514acd6b9a0d6932588cf0b2c17b2d2795bae4"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Persistence.meta",
+      "size_bytes": 172,
+      "sha256": "eee6823c34fafc27d3f79bc711c6647d82966c119f7c276ee9c518673e7b841a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderFileSaveStorage.cs",
+      "size_bytes": 42411,
+      "sha256": "eeaca588cfb2df6b5afe8728a71533e487ee73281101f6f0fa5838b524601d82"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderFileSaveStorage.cs.meta",
+      "size_bytes": 243,
+      "sha256": "b2f95855051c9a01c3e4d13489735574ec012f26b775ceabc79b7ecdcca2e967"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderJsonSaveSerializer.cs",
+      "size_bytes": 1690,
+      "sha256": "cd39d09d23ed001977fe71cb61a7a02ae5a3e3bf9bc0f14fa16f87c4fddac57c"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderJsonSaveSerializer.cs.meta",
+      "size_bytes": 243,
+      "sha256": "4d5ac9eafd677b4a5104541f80b74b9edb205e0024eeed33ba56308d469e85c9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderPlacementOperationSaveGuard.cs",
+      "size_bytes": 2659,
+      "sha256": "40b26b81eb5e6373049c628c7fbe3904d0794780ce10da99d09c745178f288bb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderPlacementOperationSaveGuard.cs.meta",
+      "size_bytes": 243,
+      "sha256": "8eb79923472df0a062b062aa1fc0bffeab2d660d119fa210221325b0d445c93b"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs",
+      "size_bytes": 6335,
+      "sha256": "40a12296161bdf2453cc81e6898574f443d21602add3524ddda05f96ea41eb91"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveContracts.cs.meta",
+      "size_bytes": 243,
+      "sha256": "ad7d51cf84276f6f6d12a9c0872439959961ad93d89c4c8d3d802dffc22d7fd9"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveDefinitionCatalog.cs",
+      "size_bytes": 4060,
+      "sha256": "e0d89b9bf89c1ccdc6ea184b4a3f3b1d91edc18e89a5fdf78a61f30b99ab213b"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveDefinitionCatalog.cs.meta",
+      "size_bytes": 243,
+      "sha256": "588cd67279ff8f06a79d8733520c825b7c0abc0a3095298cf9a44a116ebb1aef"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs",
+      "size_bytes": 61693,
+      "sha256": "a2e718aff200ed4e9bc959b50d1ffc41779c222f02700721062d19fda02d0c87"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveGameService.cs.meta",
+      "size_bytes": 243,
+      "sha256": "852230fe4249e523c2a38de334146a67cd1f4fce2e34c5d9d15e326022602776"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveModels.cs",
+      "size_bytes": 11692,
+      "sha256": "1422ae54291a820dd12e5e0e69b4436fc86d5c1cdf7c7d994f67f4d3fd387d46"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/BistroBuilderSaveModels.cs.meta",
+      "size_bytes": 243,
+      "sha256": "abfb04d3ac3c75dccd6ca728d84ba76dfe248fe0fbc8527ea425c51319e88e3d"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveData.cs",
+      "size_bytes": 2861,
+      "sha256": "346da3a3a9ba56b5ed50cfb39e5d3727caae0c1b39562c0fcc37a01e1cf6dc83"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveData.cs.meta",
+      "size_bytes": 243,
+      "sha256": "e3c71c6ce4846d1554605e3b13a63f19fd372d4166ed545d9b51fc7d810ee4b1"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs",
+      "size_bytes": 28663,
+      "sha256": "dfc55b114d57a0bf098de443e96511a32cc28b7f9ba15c348f3f6c7ff7115c24"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant/RestaurantStructureSaveSectionProvider.cs.meta",
+      "size_bytes": 243,
+      "sha256": "87b8c9ebbe659ee751f21cb3af1f20a7cac6e3a96f8e10cebe91b9e0de3da3af"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence/Restaurant.meta",
+      "size_bytes": 172,
+      "sha256": "443ca9a06fb9d7cf425e382cffb73f4b1cc7f82e0e102aff5c5810e76dd0291f"
+    },
+    {
+      "path": "Assets/Scripts/Application/Persistence.meta",
+      "size_bytes": 172,
+      "sha256": "c896e937f24b269270ed954086360b24d6bf894ce99cc6894f8a15eafbed5c50"
+    },
+    {
+      "path": "Assets/Scripts/Presentation/Persistence/BistroBuilderEditInteractionSaveParticipant.cs",
+      "size_bytes": 3047,
+      "sha256": "6d747721182d1308ba6e0e75c196b741e0ad6fc52b718d3bcdca17c0211f94e1"
+    },
+    {
+      "path": "Assets/Scripts/Presentation/Persistence/BistroBuilderEditInteractionSaveParticipant.cs.meta",
+      "size_bytes": 243,
+      "sha256": "28040c837c6fff43f44b5e63dafbb00ab2ede92220ae06bc86f8527536c4a591"
+    },
+    {
+      "path": "Assets/Scripts/Presentation/Persistence.meta",
+      "size_bytes": 172,
+      "sha256": "b4bfe03938e6c2566eeb0d29af63e1d55533406153271bbd1b97f71a32416442"
+    },
+    {
+      "path": "INSTRUCCIONES_366.txt",
+      "size_bytes": 4870,
+      "sha256": "a1232ebf17237878d7c5ee74db04617103221afaad3cc3d9ec8b21c40e672230"
+    },
+    {
+      "path": "MANIFEST_366.txt",
+      "size_bytes": 1419,
+      "sha256": "1dee2ed6c3cb0b7bf3cfc4f0f8e74550c958cc45d8ccbc87cf59dc7b19b17152"
+    },
+    {
+      "path": "REVISION_TECNICA_366.txt",
+      "size_bytes": 5495,
+      "sha256": "d6577c8ba13bbc8d68f4b76c930a2cfee6f00722350ecf9ccd7d9a2ac1d55837"
+    }
+  ]
+}
