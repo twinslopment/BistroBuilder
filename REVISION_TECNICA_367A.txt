@@ -1,0 +1,65 @@
+BISTRO BUILDER 367A — REVISIÓN TÉCNICA
+======================================
+
+DECISIONES ARQUITECTÓNICAS
+--------------------------
+1. Separación definición/estado
+   - BistroBuilderDishDefinition contiene datos estáticos de diseño.
+   - BistroBuilderMenuItemRuntimeState contiene decisiones de la partida.
+   - menu.state solo persiste el estado mutable por DishId.
+
+2. Identidad estable
+   - DishId no depende de nombre visible, asset path, GameObject ni traducción.
+   - Los IDs se validan y normalizan con una política única.
+
+3. Dinero exacto
+   - Los precios se representan como int en céntimos.
+   - Se evita pérdida de precisión de float y futuras discrepancias financieras.
+
+4. Autoridad única
+   - BistroBuilderRestaurantMenuService es el único propietario de la carta.
+   - No se entregan referencias mutables; las consultas devuelven clones.
+   - Las sustituciones completas son atómicas.
+
+5. Rendimiento
+   - Catálogo y carta usan diccionarios con StringComparer.Ordinal.
+   - Búsqueda por DishId O(1).
+   - No existe Update ni Find continuo.
+   - Captura y carga ceden frames por lotes.
+
+6. Eventos
+   - Cada mutación válida incrementa Revision y publica un único evento tipado.
+   - Las operaciones rechazadas no publican eventos.
+
+7. Persistencia
+   - menu.state v1 se integra mediante IBistroBuilderSaveSectionProvider.
+   - LoadOrder 20: después de game.general y antes de restaurant.structure.
+   - IsRequired false permite cargar slots anteriores a 367A.
+   - Los datos se validan antes de tocar el estado runtime.
+
+8. Preparación para servicio activo
+   - DishId será reutilizable por OrderLine y service.runtime.
+   - La definición ya declara pase, estación, tiempo y RecipeId futuro.
+   - 367A no inventa inventario, recetas operativas ni comandas provisionales.
+
+9. Instalación segura
+   - El instalador hace copia binaria de la escena.
+   - Hace backup de los assets conocidos antes de modificarlos.
+   - Si falla una comprobación, restaura escena y assets.
+   - El catálogo se recompone con todas las definiciones del proyecto.
+
+RIESGOS CONTROLADOS
+-------------------
+- Cambiar DishId rompería referencias persistentes: se documenta como identidad
+  inmutable y una futura migración deberá resolver cualquier renombrado.
+- Los tres platos iniciales son datos de calibración funcional, no contenido final.
+- La UI Menu Debug es técnica y no sustituye la pantalla final de carta.
+- El sistema de comandas actual sigue genérico hasta 367C/367D.
+
+NO SE HA HECHO
+--------------
+- No se han sustituido scripts existentes de simulación.
+- No se ha añadido inventario ficticio.
+- No se ha añadido economía provisional.
+- No se ha habilitado guardado con servicio activo.
+- No se han creado referencias directas a GameObjects en DTO persistentes.

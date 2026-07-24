@@ -1,0 +1,41 @@
+BISTROBUILDER 367A1 — HOTFIX DE ASIGNACIÓN DEFINIDA C#
+========================================================
+
+OBJETIVO
+--------
+Corrige los errores de compilación CS0177 y CS0165 detectados al instalar 367A.
+
+CAUSA
+-----
+Varias validaciones combinaban el operador de cortocircuito || con parámetros
+out. Si la referencia situada a la izquierda era nula, C# podía abandonar la
+expresión sin ejecutar la llamada que asignaba el parámetro out. El compilador
+no podía garantizar que la variable tuviese un valor en todos los caminos.
+
+ARCHIVOS REEMPLAZADOS
+---------------------
+- Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs
+- Assets/Scripts/Application/Persistence/Menu/BistroBuilderMenuSaveSectionProvider.cs
+- Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuDebugWindow.cs
+
+El tercer archivo corrige preventivamente el mismo patrón en la ventana de
+depuración, aunque todavía no hubiese aparecido en la primera tanda de errores.
+
+INSTALACIÓN DESDE SAFETY MODE
+-----------------------------
+1. Cierra Unity completamente.
+2. Extrae este ZIP directamente sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+3. Confirma la sustitución de los archivos.
+4. Abre Unity normalmente.
+5. Espera a que termine la compilación.
+6. Comprueba que la Console queda con 0 errores.
+7. No ejecutes todavía Install or Repair de 367A hasta confirmar la compilación.
+
+COMPATIBILIDAD
+--------------
+- Conserva los .meta y GUID originales.
+- No modifica escenas, prefabs, ScriptableObjects ni datos persistentes.
+- No cambia el contrato público ni la arquitectura de 367A.
+- Solo separa las comprobaciones nulas de las llamadas con parámetros out y
+  garantiza mensajes de error definidos en todos los caminos.

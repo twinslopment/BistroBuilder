@@ -1,0 +1,49 @@
+BISTROBUILDER 367A2 — HOTFIX DE REORDENACIÓN DE CARTA
+======================================================
+
+OBJETIVO
+--------
+Corrige el único fallo del autotest 367A:
+"Orden normalizado tras mover".
+
+CAUSA
+-----
+TryMoveDish retiraba e insertaba correctamente el plato en la posición pedida,
+pero después llamaba a NormalizeDisplayOrder. Ese método ordenaba la lista por
+los valores DisplayOrder anteriores y deshacía el movimiento antes de asignar
+los nuevos índices.
+
+CORRECCIÓN
+----------
+Después de mover un plato, el servicio conserva el orden actual de la lista y
+solo reasigna índices consecutivos 0..N-1. El ordenado por DisplayOrder se sigue
+usando en cargas, sustituciones y normalización de datos externos, donde sí es
+correcto.
+
+ARCHIVO REEMPLAZADO
+-------------------
+- Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs
+
+INSTALACIÓN
+-----------
+1. Sal de Play Mode.
+2. Cierra Unity completamente.
+3. Extrae este ZIP directamente sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+4. Confirma la sustitución del archivo.
+5. Abre Unity y espera a que termine la compilación.
+6. Comprueba que la Console queda con 0 errores.
+7. Ejecuta de nuevo:
+   Tools > Bistro Builder > Menu > Run 367A Dish & Menu Self-Test
+
+RESULTADO ESPERADO
+------------------
+- Pruebas superadas: 66
+- Pruebas fallidas: 0
+
+COMPATIBILIDAD
+--------------
+- Conserva el .meta y GUID originales.
+- No modifica escenas, catálogos, platos ni partidas guardadas.
+- No cambia contratos públicos ni datos serializados.
+- Es acumulativo sobre 367A1.

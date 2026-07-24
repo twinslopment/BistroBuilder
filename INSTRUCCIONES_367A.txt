@@ -1,0 +1,133 @@
+BISTRO BUILDER 367A — CATÁLOGO CANÓNICO Y CARTA RUNTIME
+=========================================================
+
+OBJETIVO
+--------
+Instalar el primer bloque seguro de BistroBuilder 367 sin sustituir todavía
+los sistemas actuales de comandas, cocina, camareros o clientes.
+
+367A crea:
+- definiciones canónicas de platos con DishId estable;
+- catálogo indexado por DishId;
+- autoridad runtime de la carta activa;
+- precios en céntimos enteros;
+- activación, desbloqueo, agotado, plato firma y disponibilidad por servicio;
+- orden de presentación;
+- sección de persistencia opcional menu.state;
+- instalador con rollback;
+- validador, autotest y ventana técnica de prueba.
+
+REQUISITOS
+----------
+- BistroBuilder 366B instalado y validado.
+- Escena Assets/Scenes/Prototype_Restaurant.unity abierta y guardada.
+- Console sin errores.
+- Fuera de Play Mode.
+
+INSTALACIÓN
+-----------
+1. Cierra Unity.
+2. Extrae este ZIP sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+3. Confirma la combinación de carpetas.
+4. Abre Unity y espera a que termine la compilación.
+5. Comprueba Console: 0 errores.
+6. Guarda la escena si Unity la marca como modificada y déjala limpia.
+7. Ejecuta:
+   Tools > Bistro Builder > Menu >
+   Install or Repair 367A Dish & Menu Foundation
+8. Resultado esperado del instalador:
+   Errores: 0
+   Advertencias: 0
+9. Ejecuta:
+   Tools > Bistro Builder > Menu >
+   Validate 367A Dish & Menu Foundation
+10. Resultado esperado:
+    Correctos: 14
+    Advertencias: 0
+    Errores: 0
+
+AUTOTEST
+--------
+Fuera de Play Mode ejecuta:
+Tools > Bistro Builder > Menu > Run 367A Dish & Menu Self-Test
+
+Resultado esperado:
+- Pruebas superadas: 66
+- Pruebas fallidas: 0
+
+El autotest no modifica la escena ni las partidas reales. Usa objetos
+HideAndDontSave y comprueba:
+- normalización y validación de IDs;
+- definiciones y catálogo;
+- duplicados;
+- precios exactos en céntimos;
+- activación, agotado, disponibilidad, desbloqueo y plato firma;
+- orden de carta;
+- snapshots independientes;
+- reemplazo atómico y rollback lógico;
+- captura, validación, JSON y aplicación de menu.state;
+- referencia inexistente controlada;
+- configuración real del proyecto.
+
+PRUEBA FUNCIONAL
+----------------
+1. Entra en Play Mode con el restaurante Closed.
+2. Abre:
+   Tools > Bistro Builder > Menu > Menu Debug
+3. Deben aparecer tres platos:
+   - dish_fabada_asturiana
+   - dish_merluza_plancha
+   - dish_tarta_queso
+4. Selecciona la fabada y cambia el precio a 1995 céntimos.
+5. Marca la fabada como plato firma.
+6. Marca la merluza como agotada.
+7. Deja la tarta disponible solo en Dinner.
+8. Abre la ventana de persistencia 366B.
+9. Guarda en un slot de prueba con el restaurante Closed.
+10. Modifica de nuevo precio, firma, agotado y servicios sin guardar.
+11. Carga el slot.
+12. Abre Menu Debug y confirma que ha vuelto exactamente el estado guardado.
+13. Cierra Unity, vuelve a abrir y carga el mismo slot.
+14. Confirma otra vez la restauración y Console con 0 errores.
+
+ASSETS CREADOS POR EL INSTALADOR
+--------------------------------
+Assets/Data/BistroBuilder/Menu/Definitions/
+- dish_fabada_asturiana.asset
+- dish_merluza_plancha.asset
+- dish_tarta_queso.asset
+
+Assets/Data/BistroBuilder/Menu/
+- BistroBuilderDishCatalog.asset
+
+COMPONENTES AÑADIDOS A GAMESYSTEMS
+----------------------------------
+- BistroBuilderDishCatalogService
+- BistroBuilderRestaurantMenuService
+- BistroBuilderMenuSaveSectionProvider
+
+COMPATIBILIDAD
+--------------
+- Las partidas 366/366B continúan siendo legibles porque menu.state es
+  opcional al cargar generaciones antiguas.
+- Al guardar de nuevo, el slot incorpora menu.state.
+- No se reemplazan OrderSystem, RestaurantOrder, KitchenSystem,
+  WaiterTableServiceFlow, CustomerGroup ni Waiter.
+
+ALCANCE DEL BLOQUE
+------------------
+367A NO integra todavía elecciones de clientes ni líneas de comanda.
+Eso se realizará en los siguientes bloques, después de validar esta base:
+- 367B: identidades runtime de cliente y pedido compatibles con la base actual.
+- 367C: Order y OrderLine canónicos por cliente y plato.
+- 367D: cocina y entrega por líneas concretas.
+- 367E: consumo individual, platos compartidos y varios pases.
+
+REGLAS
+------
+- No edites DishId después de crear partidas que lo utilicen.
+- El nombre visible sí puede cambiar o traducirse.
+- No uses float para precios persistentes; se guardan céntimos enteros.
+- No añadas una definición directamente a la carta sin incorporarla al catálogo.
+- No hagas commit final hasta superar compilación, validador, autotest y prueba real.

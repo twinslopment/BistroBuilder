@@ -1,0 +1,22 @@
+{
+  "package": "BistroBuilder 367A2 — Menu Reordering Hotfix",
+  "version": "367A2",
+  "base_required": "367A + 367A1",
+  "files": [
+    {
+      "path": "Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs",
+      "size": 26581,
+      "sha256": "c282455d59c2ae2eced77b0b27e7ca964880821904b2d12c462380ffcb035d31"
+    },
+    {
+      "path": "Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs.meta",
+      "size": 243,
+      "sha256": "e0d04a981d40816be185b684d4bee3f8841d90b256024a48bd2c83cc71132ff1"
+    },
+    {
+      "path": "INSTRUCCIONES_367A2.txt",
+      "size": 1590,
+      "sha256": "5d8f0b650dc2f1a98646d4a1aa23790d3a82c7d3cf0fb3c32e4a62b00031ec3c"
+    }
+  ]
+}

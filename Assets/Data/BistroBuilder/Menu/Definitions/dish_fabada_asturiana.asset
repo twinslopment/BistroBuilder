@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af4b9d22e7c54d8674c13d02b2f31f0e, type: 3}
+  m_Name: dish_fabada_asturiana
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishDefinition
+  dishId: dish_fabada_asturiana
+  displayName: Fabada asturiana
+  description: "Plato principal de cocci\xF3n lenta basado en fabes y compango."
+  category: 1
+  course: 3
+  defaultAvailability: 6
+  requiredStation: 2
+  basePreparationSeconds: 840
+  complexity: 5
+  recipeId: recipe_fabada_asturiana
+  basePriceCents: 1850
+  shareable: 0
+  minimumConsumers: 1
+  maximumConsumers: 1

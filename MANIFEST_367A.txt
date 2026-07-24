@@ -1,0 +1,35 @@
+BISTRO BUILDER 367A — MANIFEST
+======================================
+
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuDebugWindow.cs | 11753 bytes | SHA-256 575b46fa071505f748816815d6bfda9dd436af08d984fc184f0dab26bb2d76fc
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuDebugWindow.cs.meta | 243 bytes | SHA-256 11e16632c99303f9b97b6d5aedb31d8e621c7f7a20a1111c5b441993395e3c08
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationInstaller.cs | 21209 bytes | SHA-256 3b0d947d9fd9082f62d54c04ef022d65ab7ffc04f994865a3e50b5f07077d732
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationInstaller.cs.meta | 243 bytes | SHA-256 748546cd2dce9d07f98afad305d9b82c0ce2f159cfb07412f685a6e4f8751eca
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationSelfTest.cs | 27125 bytes | SHA-256 61242ffb7b42cd551bf7193d7e5a8a7418f57dfc1b19e0d1bd04b28335d2f4e5
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationSelfTest.cs.meta | 243 bytes | SHA-256 0964c96822ce8e37d046179d8fc9adbfc7722920b38377732ab8d2e527efad81
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationValidator.cs | 12455 bytes | SHA-256 90d98539847d5541e55ab2335942d0884e9100e2c8daa1b42999a99ca5d7b4f4
+Assets/Editor/BistroBuilder/Menu/BistroBuilderMenuFoundationValidator.cs.meta | 243 bytes | SHA-256 2e6a71eb70a9b783f9d6db3917e321b097e2acc387e65382503108f4cb1ad5a2
+Assets/Editor/BistroBuilder/Menu.meta | 172 bytes | SHA-256 63f8640e29817d83fcc8165a3f14e18bc9db2730dd4361a8166e1f2637c9aebb
+Assets/Scripts/Application/Menu/BistroBuilderDishCatalogService.cs | 2521 bytes | SHA-256 edee46be6dcccdc7851037a8114ab98835fb9567a952be9577f3b6868daee2a5
+Assets/Scripts/Application/Menu/BistroBuilderDishCatalogService.cs.meta | 243 bytes | SHA-256 7dad6abbedd9e0349b92cbca2fe4ded9ecc5fee9a016e2439e67429bbc130912
+Assets/Scripts/Application/Menu/BistroBuilderMenuContracts.cs | 2425 bytes | SHA-256 72123d5406a2efc3521f6933f27cd84ce8d1b8d0a2307b4b97c92e7a26cae427
+Assets/Scripts/Application/Menu/BistroBuilderMenuContracts.cs.meta | 243 bytes | SHA-256 2001bc2fc421fa210c2cca06fadd69ba58073c509bf23fafa0b8db2aea9a99e7
+Assets/Scripts/Application/Menu/BistroBuilderMenuItemRuntimeState.cs | 4910 bytes | SHA-256 eabba47c4f20ac7f2122ce2918fa5c26c1293b0b29dfe56e9458bd5849f9aa78
+Assets/Scripts/Application/Menu/BistroBuilderMenuItemRuntimeState.cs.meta | 243 bytes | SHA-256 6d9719da9aa1fdd57e617ed06b65b1e5f9ac237acdc3412a508592cab9b2c26f
+Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs | 25236 bytes | SHA-256 a9145dbc068408f36e1fa8c50bbd8f01d89d66f7eaacbbab6d919ac09fc57890
+Assets/Scripts/Application/Menu/BistroBuilderRestaurantMenuService.cs.meta | 243 bytes | SHA-256 e0d04a981d40816be185b684d4bee3f8841d90b256024a48bd2c83cc71132ff1
+Assets/Scripts/Application/Menu.meta | 172 bytes | SHA-256 276b06adc7a06d41321cc1bda994f87fc0b9fa70be5fd1478b2f0f32e988d3da
+Assets/Scripts/Application/Persistence/Menu/BistroBuilderMenuSaveData.cs | 885 bytes | SHA-256 f5fcc1b05d29ddbd43e80f65f1c000620053dbb8f98f6d0c2693c3fb6e6b100f
+Assets/Scripts/Application/Persistence/Menu/BistroBuilderMenuSaveData.cs.meta | 243 bytes | SHA-256 7c175e9ebfeaabefa7756b6c9ab2c5a3dc44f02d87a77f4cf2b38c4b7a7e1adb
+Assets/Scripts/Application/Persistence/Menu/BistroBuilderMenuSaveSectionProvider.cs | 10057 bytes | SHA-256 eb46b8f485fc532aad74014c82cc328b35d6290b010ced5144cc549b693d1bc1
+Assets/Scripts/Application/Persistence/Menu/BistroBuilderMenuSaveSectionProvider.cs.meta | 243 bytes | SHA-256 3580fcddf92e4e1f2591b3b69e1ee3a605932f7735160d2beaadb6745f5a0bf4
+Assets/Scripts/Application/Persistence/Menu.meta | 172 bytes | SHA-256 4834d510c7c52282f151092b1fb2cb48ff1f81324cee6d31f3b9a501da4b9205
+Assets/Scripts/Domain/Menu/BistroBuilderDishCatalog.cs | 3943 bytes | SHA-256 250a32efee41a0752a581aa387cace0a6cd5295a91bd65431be642fd35f19fe6
+Assets/Scripts/Domain/Menu/BistroBuilderDishCatalog.cs.meta | 243 bytes | SHA-256 62aca6641760f01b2465d8e0b82d02b20d0fcc352389e9f723baf6d36f851e82
+Assets/Scripts/Domain/Menu/BistroBuilderDishDefinition.cs | 6642 bytes | SHA-256 3345b8fe0011b0a1dda33853b1f3c9a3be5e94fe93a9e36a49012daf2663d1c3
+Assets/Scripts/Domain/Menu/BistroBuilderDishDefinition.cs.meta | 243 bytes | SHA-256 8affc1d5dca31d0d056b590a47c4968286d6ee0e0640da047c8ee9aea7f5e372
+Assets/Scripts/Domain/Menu/BistroBuilderDishEnums.cs | 4544 bytes | SHA-256 21c966f2adb296a4cbb33ea21a1638f3eb7aa481c68100c4477bfba6e945509f
+Assets/Scripts/Domain/Menu/BistroBuilderDishEnums.cs.meta | 243 bytes | SHA-256 a07b9813e920c3a72f936c4abb636b399fb8d26c5fbcded28d6f1eb8568d110d
+Assets/Scripts/Domain/Menu.meta | 172 bytes | SHA-256 3c46c7ed0ed8eecf26f1648e5589fabc73662681579cd0e9e7b4146bf43024be
+INSTRUCCIONES_367A.txt | 4580 bytes | SHA-256 b2835fd9bc5b40a24bf130b3eb652e0707311bdf18af49ee79325baefa822dc5
+REVISION_TECNICA_367A.txt | 2807 bytes | SHA-256 59fff02ba7564995fb38daf3062cc957cc2c51f0de8b39d10cf18cad779e722a

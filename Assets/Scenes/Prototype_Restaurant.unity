@@ -814,6 +814,9 @@ GameObject:
   - component: {fileID: 263644956}
   - component: {fileID: 263644955}
   - component: {fileID: 263644954}
+  - component: {fileID: 263644960}
+  - component: {fileID: 263644959}
+  - component: {fileID: 263644958}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1735,6 +1738,55 @@ MonoBehaviour:
   initialProgressionStageId: new_restaurant
   initialProgressionLevel: 1
   gameClock: {fileID: 263644898}
+--- !u!114 &263644958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 969bcc710fd8155b3f07911a8b050c7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuSaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  menuService: {fileID: 263644959}
+  catalogService: {fileID: 263644960}
+  captureItemsPerFrame: 64
+  logLoadSummary: 1
+--- !u!114 &263644959
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1660cba684435cac4e20625640bc4c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRestaurantMenuService
+  catalogService: {fileID: 263644960}
+  initializeCatalogDishesWhenEmpty: 1
+  defaultDishEnabled: 1
+  defaultDishUnlocked: 1
+  items: []
+  logChanges: 1
+--- !u!114 &263644960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5836b770d978c4c951a1ba5b6e91d224, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishCatalogService
+  catalog: {fileID: 11400000, guid: add8f2a9c0ad60d438b57d803080403a, type: 2}
+  logInitialization: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
