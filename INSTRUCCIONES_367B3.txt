@@ -1,0 +1,35 @@
+BISTRO BUILDER 367B3 — HOTFIX ACUMULATIVO DE COMPILACIÓN
+
+CORRIGE
+- CS0177 en parámetros out del servicio y snapshot (367B1).
+- Acceso del autotest de Editor a métodos internal sin hacerlos públicos (367B2).
+- CS0165 en el instalador: variable local menuError no asignada cuando el menú es null.
+
+CAUSA DEL CS0165
+El instalador combinaba en una sola condición:
+    menu == null || !menu.ValidateConfiguration(out string menuError)
+
+Si menu era null, C# podía omitir la segunda parte y menuError quedaba sin asignar.
+La comprobación se ha dividido en dos bloques explícitos.
+
+ARCHIVOS
+Sustituye:
+- Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs
+- Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs
+- Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationInstaller.cs
+
+Añade o conserva:
+- Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrdersAssemblyInfo.cs
+
+INSTALACIÓN DESDE SAFE MODE
+1. Cierra Unity completamente.
+2. Extrae este ZIP sobre la raíz del proyecto BistroBuilder.
+3. Confirma la sustitución de archivos.
+4. Abre Unity y espera a que compile.
+5. Confirma que sale de Safe Mode y la Console queda con 0 errores.
+6. No ejecutes todavía el instalador ni el autotest hasta confirmar 0 errores.
+
+COMPATIBILIDAD
+- Hotfix acumulativo: no necesitas reinstalar 367B1 ni 367B2.
+- Conserva los .meta/GUID de todos los scripts sustituidos.
+- No modifica escenas, catálogos, partidas ni datos de 367A.

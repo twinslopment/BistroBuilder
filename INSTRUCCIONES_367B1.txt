@@ -1,0 +1,22 @@
+BISTRO BUILDER 367B1 — HOTFIX DE ASIGNACIÓN DEFINIDA
+
+CORRECCIÓN
+- Corrige cinco errores CS0177 causados por evaluación cortocircuitada con parámetros out.
+- Se separan las comprobaciones de referencias nulas y las validaciones que asignan el parámetro out.
+- No cambia el modelo de comandas, los datos serializados, la escena ni los IDs persistentes.
+
+ARCHIVOS SUSTITUIDOS
+- Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs
+- Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs
+
+INSTALACIÓN
+1. Cerrar Unity completamente, incluso si está en Safe Mode.
+2. Extraer este ZIP sobre la raíz del proyecto BistroBuilder.
+3. Confirmar la sustitución de archivos.
+4. Abrir Unity y esperar a que termine la compilación.
+5. Comprobar que Console muestra 0 errores.
+6. No ejecutar aún el instalador de 367B hasta confirmar la compilación.
+
+COMPATIBILIDAD
+- Los .meta originales se conservan para mantener los GUID.
+- Hotfix acumulativo sobre BistroBuilder 367B.

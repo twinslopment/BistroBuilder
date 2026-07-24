@@ -1,0 +1,22 @@
+{
+  "package": "BistroBuilder 367B4 — Aggregate State Hotfix",
+  "version": "367B4",
+  "install_over": "367B3",
+  "files": [
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrder.cs",
+      "size": 13133,
+      "sha256": "07ce9fa110800fb8f1227bf002d5912126a6aa7fe18fa46cdb28e3c125f025d3"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrder.cs.meta",
+      "size": 243,
+      "sha256": "3809cb021d346bc1671848109911fd7189e998029e4cc3a2221c4c5b083902e3"
+    },
+    {
+      "path": "INSTRUCCIONES_367B4.txt",
+      "size": 1391,
+      "sha256": "3efbb5baabb46d64ee1b7ebf3ea55d138fb75a9d1545f1b9c62c36a76914f74b"
+    }
+  ]
+}

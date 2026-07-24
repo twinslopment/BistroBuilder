@@ -1,0 +1,50 @@
+BISTRO BUILDER 367B — CANONICAL ORDERS FOUNDATION
+
+OBJETIVO
+- Introducir OrderId, OrderLineId, CustomerId y DishId estables.
+- Crear una línea independiente por plato físico.
+- Soportar desde el dominio platos compartidos y varios pases.
+- Congelar el precio de carta en el momento de pedir.
+- Preparar un snapshot reutilizable por el futuro service.runtime.
+- No reemplazar todavía RestaurantOrder, OrderSystem, KitchenSystem ni los flujos legacy.
+
+POR QUÉ ES ADITIVO
+El proyecto conserva un ciclo de servicio operativo. Sustituirlo sin conocer y
+validar primero el nuevo agregado multiplicaría el riesgo de regresiones. 367B
+instala la autoridad canónica en paralelo. El siguiente subbloque conectará el
+flujo real mediante adaptadores explícitos, sin reflexión ni búsquedas por nombre.
+
+INSTALACIÓN
+1. Crear commit y Push del estado validado de 367A2.
+2. Salir de Play Mode, guardar escena y cerrar Unity.
+3. Extraer el ZIP sobre la raíz del proyecto BistroBuilder.
+4. Abrir Unity y esperar la compilación.
+5. Confirmar Console con 0 errores.
+6. Fuera de Play Mode ejecutar:
+   Tools > Bistro Builder > Orders > Install or Repair 367B Canonical Orders Foundation
+7. Ejecutar:
+   Tools > Bistro Builder > Orders > Validate 367B Canonical Orders Foundation
+8. Ejecutar:
+   Tools > Bistro Builder > Orders > Run 367B Canonical Orders Self-Test
+
+PRUEBA FUNCIONAL TÉCNICA
+1. Entrar en Play Mode con la carta restaurada desde catálogo.
+2. Abrir:
+   Tools > Bistro Builder > Orders > Canonical Orders Debug
+3. Elegir Lunch, 3 clientes y pase 1.
+4. Pulsar Crear comanda individual de prueba.
+5. Deben existir 3 líneas, cada una con CustomerId y DishId.
+6. Avanzar las líneas de forma independiente.
+7. Confirmar que una línea servida no completa las restantes.
+8. Llevar las 3 a Consumed; la comanda debe quedar Completed.
+9. Confirmar Console con 0 errores.
+
+ALCANCE ACTUAL
+- Dominio, creación, validación, índices y snapshots de comandas canónicas.
+- Herramientas técnicas de instalación, validación, autotest y depuración.
+- Aún NO modifica el servicio jugable ni persiste restaurante abierto.
+
+SIGUIENTE SUBBLOQUE
+Integración explícita con CustomerGroup/RestaurantCustomer, OrderSystem,
+KitchenSystem, WaiterTaskCoordinator y FoodDeliveryServiceFlow usando las APIs
+reales del proyecto y manteniendo rollback de integración.

@@ -1,0 +1,34 @@
+BISTRO BUILDER 367B2 — HOTFIX DE VISIBILIDAD PARA PRUEBAS DE EDITOR
+
+CAUSA
+- Los métodos TryTransitionLine y TryCancel pertenecen al agregado runtime y
+  están declarados como internal.
+- Las pruebas se compilan en Assembly-CSharp-Editor, mientras el runtime se
+  compila en Assembly-CSharp.
+- Faltaba declarar el ensamblado de Editor como ensamblado amigo.
+
+CORRECCIÓN
+- Añade InternalsVisibleTo("Assembly-CSharp-Editor").
+- Mantiene los mutadores del agregado como internal; no se abre una API pública
+  que permita modificar comandas fuera del servicio de aplicación.
+- Incluye también las correcciones CS0177 de 367B1, por lo que es acumulativo.
+
+ARCHIVOS
+- Sustituye:
+  Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs
+  Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs
+- Añade:
+  Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrdersAssemblyInfo.cs
+
+INSTALACIÓN DESDE SAFE MODE
+1. Cerrar Unity completamente.
+2. Extraer este ZIP sobre la raíz del proyecto BistroBuilder.
+3. Confirmar la sustitución de archivos.
+4. Abrir Unity y esperar a que termine la compilación.
+5. Confirmar que Unity sale de Safe Mode y la Console queda con 0 errores.
+6. No ejecutar todavía el instalador ni el autotest hasta confirmar 0 errores.
+
+COMPATIBILIDAD
+- Conserva los .meta y GUID de los dos scripts sustituidos.
+- El archivo nuevo incluye su propio .meta.
+- No modifica escenas, catálogos, partidas ni datos de 367A.

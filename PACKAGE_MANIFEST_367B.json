@@ -1,0 +1,158 @@
+{
+  "package": "BistroBuilder 367B — Canonical Orders Foundation",
+  "version": "367B",
+  "scope": "Additive canonical order domain; no legacy flow replacement",
+  "expected_self_test_checks": 81,
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderDebugWindow.cs",
+      "bytes": 8759,
+      "sha256": "96b34e0db42a007ad9fd99479531e7ffb30d15b43001720732bea56e69c459c2"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderDebugWindow.cs.meta",
+      "bytes": 243,
+      "sha256": "6ec7800f0bf71604c74ec12b06cced1f9909044dba8101e19f762f521940b56d"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationInstaller.cs",
+      "bytes": 5679,
+      "sha256": "8db2d6b493ea5f9a996975bf6c69735d0ea76ec7b972561e95970b29f3e56d30"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationInstaller.cs.meta",
+      "bytes": 243,
+      "sha256": "f2551317b04444b07040f2f363a67a7d26845d717e21b11115e4037d2d2bd5aa"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationSelfTest.cs",
+      "bytes": 26368,
+      "sha256": "3c09f78e9d4d9f4d59ed190d5ba73c1eb01380a6577c754324bcd079ae767ebd"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationSelfTest.cs.meta",
+      "bytes": 243,
+      "sha256": "59d74644c082021656b61aa3517931b23c542c553f1154d30fe34b9b143e5c1e"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationValidator.cs",
+      "bytes": 6791,
+      "sha256": "b7b02e70c49c4ca3eac9eb5a9d455c0be593c4505b3ea57813e69b1dd122f464"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationValidator.cs.meta",
+      "bytes": 243,
+      "sha256": "1a68c0d8417bf1b187381281ea5f6f424ab56608a673f7402be0beb08ef715b2"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders.meta",
+      "bytes": 172,
+      "sha256": "9b418db15a503148b5c4ffd06289fd13aff548f6ca71b6a0180ac2b18feb38ae"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder.meta",
+      "bytes": 172,
+      "sha256": "3679068d914bfa54d3a3a4c3018a8bc7b177832533df7208626a857577289e46"
+    },
+    {
+      "path": "Assets/Editor.meta",
+      "bytes": 172,
+      "sha256": "ea2bc0ac0d75609ccb164249dca718a0bfa538d052d28523eeb5e4c29e2d9cce"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "bytes": 28958,
+      "sha256": "e5115a6d92e28de1df930761a7c2fbb2c826b682aae1faa472a86184a40f88de"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "bytes": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders.meta",
+      "bytes": 172,
+      "sha256": "fc52ec205fd88e30101c6922203d436d7739e1ebc312d093342b103ad1e7c800"
+    },
+    {
+      "path": "Assets/Scripts/Application.meta",
+      "bytes": 172,
+      "sha256": "d35ea12dab32199fb5b34cbc0e9b2b1c4ef07c064cec6ba89613f1209907eb70"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrder.cs",
+      "bytes": 12705,
+      "sha256": "1281337cd5c45ef192200ffa4c8f874b35871ef1b3f07aa9c6d660aafa50ad31"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrder.cs.meta",
+      "bytes": 243,
+      "sha256": "3809cb021d346bc1671848109911fd7189e998029e4cc3a2221c4c5b083902e3"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderContracts.cs",
+      "bytes": 13462,
+      "sha256": "9078154897ba72ac03cd719cdc86c7fe0edea475941a69d08fb1d8c455d1b028"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderContracts.cs.meta",
+      "bytes": 243,
+      "sha256": "e89ea52ed34029462579720816dc45820d53d899ceb2b3fc6ff6b8701d1a34f2"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderFactory.cs",
+      "bytes": 9166,
+      "sha256": "107a9e87de6a82cf7a37f5591cf26cfc3816b64b805ac996d166b911ddf29371"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderFactory.cs.meta",
+      "bytes": 243,
+      "sha256": "2196ea04617b1086e0e944ef1c1f6baacdb9b80babbf3fb2145d19b653325bcc"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderLine.cs",
+      "bytes": 6522,
+      "sha256": "347528b4ee6b027ed0474c1dad55fcfa93163dc0c28c078d68848ad64049f137"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderLine.cs.meta",
+      "bytes": 243,
+      "sha256": "8658cee8ad488a4e9c3ad037b047743e9237bc79a23255eeba3d27ea7854d854"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs",
+      "bytes": 3536,
+      "sha256": "469664fbc1d8d38025aea9b22b5cda118295dc67543aa65828f2afaa8e9f92d4"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs.meta",
+      "bytes": 243,
+      "sha256": "bce847b5de68169dbccfd387fe31008af26696e86660e9edeae49d9daeecd45d"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical.meta",
+      "bytes": 172,
+      "sha256": "6f577b1d823d19038c3b010aa03af76158b1806ddfdafa00e51b3211f8f61a84"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders.meta",
+      "bytes": 172,
+      "sha256": "32519274d62d79e75077561f7f96c32a5e6b65eb72bd6b20d5fee08706376bdd"
+    },
+    {
+      "path": "Assets/Scripts/Simulation.meta",
+      "bytes": 172,
+      "sha256": "36fb4213bf8666fec4bb762ea88a34e5caff6f134eb874a26ae6359429fa7cde"
+    },
+    {
+      "path": "Assets/Scripts.meta",
+      "bytes": 172,
+      "sha256": "60bed7cc08625d594f51b61925445c37ce9d89c9e52cd8afe4cee57d9965139d"
+    },
+    {
+      "path": "INSTRUCCIONES_367B.txt",
+      "bytes": 2356,
+      "sha256": "a7fb582edc63a4542f3e0c52cc13a6dc23eb569d7222d96265dfc2cc6d74b9ed"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "package": "BistroBuilder 367B1 — Definite Assignment Hotfix",
+  "version": "367B1",
+  "files": [
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "size": 29070,
+      "sha256": "c7fc9375860311ee615a6574641c138a997a3982e8eb45031aca7f46d7223a59"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "size": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs",
+      "size": 3533,
+      "sha256": "d922c3df9f16d182e3bf6e480d5deeeb739f7f3556906f858ecde7ebe14e405a"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs.meta",
+      "size": 243,
+      "sha256": "bce847b5de68169dbccfd387fe31008af26696e86660e9edeae49d9daeecd45d"
+    },
+    {
+      "path": "INSTRUCCIONES_367B1.txt",
+      "size": 1025,
+      "sha256": "762e73f48aa5c0a1c642e0a4187041f4c0bae807f529cacc6e6c62c3bffce0e8"
+    }
+  ]
+}

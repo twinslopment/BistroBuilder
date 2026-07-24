@@ -1,0 +1,40 @@
+BISTRO BUILDER 367B4 — HOTFIX DE ESTADO AGREGADO DE COMANDA
+
+FALLO CORREGIDO
+- Autotest 367B: “Un plato servido no completa otro aún en pase”.
+
+CAUSA
+- El agregado devolvía ReadyForPickup cuando una línea seguía lista para
+  recoger pero otra ya había sido servida o consumida.
+- Ese estado mixto no representa una comanda completamente lista como lote y
+  podría inducir a futuros coordinadores a tratar como pendientes líneas que
+  ya abandonaron el pase.
+
+CORRECCIÓN
+- ReadyForPickup solo se devuelve cuando todas las líneas activas están listas
+  para recoger; se permiten únicamente líneas canceladas fuera de ese estado.
+- Una combinación Served/Consumed + ReadyForPickup se clasifica como
+  InProgress.
+- No se modifica la máquina de estados individual de las líneas.
+
+ARCHIVO SUSTITUIDO
+Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrder.cs
+
+INSTALACIÓN
+1. Cierra Unity completamente.
+2. Extrae este ZIP sobre la raíz del proyecto BistroBuilder.
+3. Confirma la sustitución.
+4. Abre Unity y espera a que compile.
+5. Comprueba Console: 0 errores.
+6. Ejecuta:
+   Tools > Bistro Builder > Orders >
+   Run 367B Canonical Orders Self-Test
+
+RESULTADO ESPERADO
+- Pruebas superadas: 80
+- Pruebas fallidas: 0
+
+COMPATIBILIDAD
+- Conserva el .meta y GUID del script.
+- Se instala encima de 367B3.
+- No modifica escenas, catálogos, cartas ni partidas.

@@ -1,0 +1,56 @@
+{
+  "package": "BistroBuilder 367B3 — Installer Definite Assignment Hotfix",
+  "version": "367B3",
+  "cumulative_over": [
+    "367B",
+    "367B1",
+    "367B2"
+  ],
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationInstaller.cs",
+      "size": 5926,
+      "sha256": "e932a16e8c90d1d8dbe8507712df5e57cbe33c80b77449e22d1350e7a6be6e2c"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderCanonicalOrderFoundationInstaller.cs.meta",
+      "size": 243,
+      "sha256": "f2551317b04444b07040f2f363a67a7d26845d717e21b11115e4037d2d2bd5aa"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "size": 29070,
+      "sha256": "c7fc9375860311ee615a6574641c138a997a3982e8eb45031aca7f46d7223a59"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "size": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs",
+      "size": 3533,
+      "sha256": "d922c3df9f16d182e3bf6e480d5deeeb739f7f3556906f858ecde7ebe14e405a"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderRuntimeSnapshot.cs.meta",
+      "size": 243,
+      "sha256": "bce847b5de68169dbccfd387fe31008af26696e86660e9edeae49d9daeecd45d"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrdersAssemblyInfo.cs",
+      "size": 257,
+      "sha256": "7efda8d80ae3db3f2e5879503d037230f7aa0912efe7d8d98cbce725b83213fd"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrdersAssemblyInfo.cs.meta",
+      "size": 243,
+      "sha256": "64bc6ceba4bce999ecbb3351d730cf0ad7c5186980c59c4e063947b2a19ea5ef"
+    },
+    {
+      "path": "INSTRUCCIONES_367B3.txt",
+      "size": 1517,
+      "sha256": "804881b8b29f1e47afb5749448cccb6a3203386bd5208342f61494211b0b1afb"
+    }
+  ]
+}

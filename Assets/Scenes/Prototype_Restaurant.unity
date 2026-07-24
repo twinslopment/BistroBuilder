@@ -817,6 +817,7 @@ GameObject:
   - component: {fileID: 263644960}
   - component: {fileID: 263644959}
   - component: {fileID: 263644958}
+  - component: {fileID: 263644961}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1787,6 +1788,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishCatalogService
   catalog: {fileID: 11400000, guid: add8f2a9c0ad60d438b57d803080403a, type: 2}
   logInitialization: 1
+--- !u!114 &263644961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31c816bb26624ffea4bddb972f8e570a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCanonicalOrderService
+  menuService: {fileID: 263644959}
+  nextSequenceNumber: 1
+  orders: []
+  logChanges: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
