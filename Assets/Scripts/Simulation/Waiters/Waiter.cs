@@ -17,17 +17,24 @@ public sealed class Waiter : MonoBehaviour
 
     private RestaurantOrder assignedOrder;
 
+    private string assignedOrderLineId = string.Empty;
+
     public event Action<Waiter, WaiterState> StateChanged;
 
     public int WaiterId => waiterId;
     public WaiterState CurrentState => currentState;
     public RestaurantTable AssignedTable => assignedTable;
     public RestaurantOrder AssignedOrder => assignedOrder;
+    public string AssignedOrderLineId => assignedOrderLineId ?? string.Empty;
+    public bool HasAssignedOrderLine =>
+        assignedOrder != null &&
+        BistroBuilderOrderIdUtility.IsValid(AssignedOrderLineId);
 
     public bool IsAvailable =>
         currentState == WaiterState.Idle &&
         assignedTable == null &&
-        assignedOrder == null;
+        assignedOrder == null &&
+        string.IsNullOrEmpty(AssignedOrderLineId);
 
     public bool AssignTable(RestaurantTable table)
     {
@@ -53,21 +60,60 @@ public sealed class Waiter : MonoBehaviour
 
     public bool AssignOrderForPickup(RestaurantOrder order)
     {
-        if (!IsAvailable)
+        if (!IsAvailable || order == null)
+        {
             return false;
-
-        if (order == null)
-            return false;
+        }
 
         if (order.CurrentState != OrderState.ReadyForPickup)
+        {
             return false;
+        }
 
         assignedOrder = order;
+        assignedOrderLineId = string.Empty;
         assignedTable = order.Table;
 
         Debug.Log(
-            $"Camarero {waiterId} asignado para recoger " +
-            $"la comanda {order.OrderId}.",
+            "Camarero " + waiterId + " asignado para recoger " +
+            "la comanda " + order.OrderId + ".",
+            this
+        );
+
+        SetState(WaiterState.WalkingToKitchen);
+        return true;
+    }
+
+    /// <summary>
+    /// Asigna un plato físico concreto. La autoridad canónica debe reservar la
+    /// línea antes de llamar a este método.
+    /// </summary>
+    public bool AssignOrderLineForPickup(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        if (!IsAvailable || order == null || order.Table == null)
+        {
+            return false;
+        }
+
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
+        if (!order.HasCanonicalOrder ||
+            !BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
+        {
+            return false;
+        }
+
+        assignedOrder = order;
+        assignedOrderLineId = normalizedLineId;
+        assignedTable = order.Table;
+
+        Debug.Log(
+            "Camarero " + waiterId + " asignado para recoger la línea " +
+            normalizedLineId + " de la comanda " + order.OrderId + ".",
             this
         );
 
@@ -146,6 +192,7 @@ public sealed class Waiter : MonoBehaviour
     {
         assignedTable = null;
         assignedOrder = null;
+        assignedOrderLineId = string.Empty;
 
         SetState(WaiterState.Idle);
     }

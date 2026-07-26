@@ -819,6 +819,7 @@ GameObject:
   - component: {fileID: 263644958}
   - component: {fileID: 263644961}
   - component: {fileID: 263644962}
+  - component: {fileID: 263644963}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -929,9 +930,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 918a6a732206bbf4b972063fe976b8a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KitchenSystem
+  kitchenId: kitchen_main
   orderSystem: {fileID: 263644903}
+  lineExecutionService: {fileID: 263644963}
   pickupPoint: {fileID: 504368063}
-  preparationDuration: 5
+  preparationDurationScale: 0.01
+  minimumPreparationDuration: 0.25
+  maximumPreparationDuration: 30
   currentState: 0
 --- !u!114 &263644905
 MonoBehaviour:
@@ -1053,6 +1058,7 @@ MonoBehaviour:
   manageFoodDeliveryTasks: 1
   manageBillTasks: 1
   manageCleaningTasks: 1
+  lineExecutionService: {fileID: 263644963}
 --- !u!114 &263644912
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1845,7 +1851,23 @@ MonoBehaviour:
   canonicalOrderService: {fileID: 263644961}
   currentMealService: 2
   defaultCourseIndex: 1
+  individualLineExecutionEnabled: 1
   logSynchronization: 1
+--- !u!114 &263644963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e734ecedc38e47e68f3e397911cd0339, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderLineExecutionService
+  canonicalOrderService: {fileID: 263644961}
+  integrationService: {fileID: 263644962}
+  logTransitions: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -3952,6 +3974,7 @@ MonoBehaviour:
   waiter: {fileID: 1028994910}
   waiterMovementView: {fileID: 1028994909}
   taskCoordinator: {fileID: 263644911}
+  lineExecutionService: {fileID: 263644963}
   pickupDuration: 1
   servingDuration: 2
 --- !u!114 &1028994908
@@ -5645,6 +5668,7 @@ MonoBehaviour:
   waiter: {fileID: 1478749460}
   waiterMovementView: {fileID: 1478749459}
   taskCoordinator: {fileID: 263644911}
+  lineExecutionService: {fileID: 263644963}
   pickupDuration: 1
   servingDuration: 2
 --- !u!114 &1478749467

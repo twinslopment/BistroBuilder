@@ -42,6 +42,13 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     [SerializeField, Range(0, 20)]
     private int defaultCourseIndex = 1;
 
+    [Tooltip(
+        "Cuando está activo, cocina y reparto mutan cada línea de forma " +
+        "individual. La fachada legacy solo se valida y sincroniza."
+    )]
+    [SerializeField]
+    private bool individualLineExecutionEnabled;
+
     [Header("Depuración")]
 
     [SerializeField]
@@ -65,6 +72,9 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         currentMealService;
 
     public int DefaultCourseIndex => defaultCourseIndex;
+
+    public bool IndividualLineExecutionEnabled =>
+        individualLineExecutionEnabled;
 
     public int ActiveLinkCount => canonicalByLegacyOrderId.Count;
 
@@ -353,6 +363,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         out string error
     )
     {
+        error = string.Empty;
+
         if (!EnsureReady(out error))
         {
             return false;
@@ -386,44 +398,54 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             return false;
         }
 
-        if (!BistroBuilderLegacyCanonicalOrderStateMap.TryGetLineTarget(
-                targetState,
-                out BistroBuilderCanonicalOrderLineState targetLineState,
-                out bool cancelOrder
-            ))
-        {
-            error =
-                "No existe traducción canónica para el estado " +
-                targetState + ".";
-            return false;
-        }
-
         BistroBuilderCanonicalOrderOperationResult result;
 
-        if (cancelOrder)
+        if (!individualLineExecutionEnabled)
         {
-            result = canonicalOrderService.TryCancelOrder(
-                order.CanonicalOrderId,
-                BistroBuilderServiceOrderIdentityUtility
-                    .BuildWaiterReference(order.AssignedWaiter.WaiterId)
-            );
+            if (!BistroBuilderLegacyCanonicalOrderStateMap.TryGetLineTarget(
+                    targetState,
+                    out BistroBuilderCanonicalOrderLineState targetLineState,
+                    out bool cancelOrder
+                ))
+            {
+                error =
+                    "No existe traducción canónica para el estado " +
+                    targetState + ".";
+                return false;
+            }
+
+            result = cancelOrder
+                ? canonicalOrderService.TryCancelOrder(
+                    order.CanonicalOrderId,
+                    BistroBuilderServiceOrderIdentityUtility
+                        .BuildWaiterReference(order.AssignedWaiter.WaiterId)
+                )
+                : canonicalOrderService.TryAdvanceAllLinesToState(
+                    order.CanonicalOrderId,
+                    targetLineState,
+                    BistroBuilderServiceOrderIdentityUtility
+                        .BuildWaiterReference(order.AssignedWaiter.WaiterId)
+                );
+
+            if (!result.Succeeded)
+            {
+                error =
+                    "La transición canónica fue rechazada. " +
+                    result.Message;
+                return false;
+            }
         }
         else
         {
-            result = canonicalOrderService.TryAdvanceAllLinesToState(
-                order.CanonicalOrderId,
-                targetLineState,
-                BistroBuilderServiceOrderIdentityUtility
-                    .BuildWaiterReference(order.AssignedWaiter.WaiterId)
-            );
-        }
-
-        if (!result.Succeeded)
-        {
-            error =
-                "La transición canónica fue rechazada. " +
-                result.Message;
-            return false;
+            if (!TryApproveIndividualLineExecutionTransition(
+                    order,
+                    targetState,
+                    out result,
+                    out error
+                ))
+            {
+                return false;
+            }
         }
 
         if (!canonicalOrderService.TryGetOrderSnapshot(
@@ -436,16 +458,39 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             return false;
         }
 
-        if (!BistroBuilderLegacyCanonicalOrderStateMap
+        if (snapshot == null)
+        {
+            error =
+                "La fotografía canónica resultante es nula.";
+            return false;
+        }
+
+        bool compatible = individualLineExecutionEnabled &&
+                          (targetState == OrderState.Preparing ||
+                           targetState == OrderState.ReadyForPickup ||
+                           targetState == OrderState.Served)
+            ? BistroBuilderLegacyCanonicalOrderStateMap
+                .TryValidateIndividualLineCompatibility(
+                    targetState,
+                    snapshot.Lines,
+                    out error
+                )
+            : BistroBuilderLegacyCanonicalOrderStateMap
                 .IsAggregateCompatible(
                     targetState,
                     snapshot.State
-                ))
+                );
+
+        if (!compatible)
         {
-            error =
-                "El estado canónico resultante " + snapshot.State +
-                " no es compatible con el estado legacy " +
-                targetState + ".";
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error =
+                    "El estado canónico resultante " + snapshot.State +
+                    " no es compatible con el estado legacy " +
+                    targetState + ".";
+            }
+
             return false;
         }
 
@@ -459,6 +504,103 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 snapshot.State + ").",
                 this
             );
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryApproveIndividualLineExecutionTransition(
+        RestaurantOrder order,
+        OrderState targetState,
+        out BistroBuilderCanonicalOrderOperationResult result,
+        out string error
+    )
+    {
+        result = default;
+        error = string.Empty;
+
+        string actorReference = order.AssignedWaiter != null
+            ? BistroBuilderServiceOrderIdentityUtility
+                .BuildWaiterReference(order.AssignedWaiter.WaiterId)
+            : "legacy_order_transition";
+
+        switch (targetState)
+        {
+            case OrderState.SentToKitchen:
+                result = canonicalOrderService.TryAdvanceAllLinesToState(
+                    order.CanonicalOrderId,
+                    BistroBuilderCanonicalOrderLineState.Queued,
+                    actorReference
+                );
+                break;
+
+            case OrderState.Preparing:
+            case OrderState.ReadyForPickup:
+            case OrderState.Served:
+                if (!canonicalOrderService.TryGetOrderSnapshot(
+                        order.CanonicalOrderId,
+                        out BistroBuilderCanonicalOrder snapshot
+                    ))
+                {
+                    result = default;
+                    error = "No se encontró la comanda canónica enlazada.";
+                    return false;
+                }
+
+                if (snapshot == null)
+                {
+                    result = default;
+                    error = "La fotografía canónica enlazada es nula.";
+                    return false;
+                }
+
+                if (!BistroBuilderLegacyCanonicalOrderStateMap
+                        .TryValidateIndividualLineCompatibility(
+                            targetState,
+                            snapshot.Lines,
+                            out error
+                        ))
+                {
+                    result = default;
+                    return false;
+                }
+
+                result = BistroBuilderCanonicalOrderOperationResult.Success(
+                    "La fachada legacy es compatible con las líneas.",
+                    order.CanonicalOrderId,
+                    string.Empty
+                );
+                break;
+
+            case OrderState.Completed:
+                result = canonicalOrderService.TryCompleteServedOrder(
+                    order.CanonicalOrderId,
+                    actorReference
+                );
+                break;
+
+            case OrderState.Cancelled:
+                result = canonicalOrderService.TryCancelOrder(
+                    order.CanonicalOrderId,
+                    actorReference
+                );
+                break;
+
+            default:
+                result = default;
+                error =
+                    "367D no reconoce la transición legacy a " +
+                    targetState + ".";
+                return false;
+        }
+
+        if (!result.Succeeded)
+        {
+            error =
+                "La transición canónica fue rechazada. " +
+                result.Message;
+            return false;
         }
 
         error = string.Empty;

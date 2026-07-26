@@ -49,6 +49,15 @@ public static class BistroBuilderServiceOrderIdentityUtility
             : string.Empty;
     }
 
+    public static string BuildKitchenReference(string kitchenId)
+    {
+        string normalized = BistroBuilderOrderIdUtility.Normalize(kitchenId);
+
+        return BistroBuilderOrderIdUtility.IsValid(normalized)
+            ? normalized
+            : string.Empty;
+    }
+
     public static string BuildWaiterReference(int waiterId)
     {
         return waiterId > 0
@@ -199,4 +208,100 @@ public static class BistroBuilderLegacyCanonicalOrderStateMap
             _ => false
         };
     }
+
+    /// <summary>
+    /// Valida estados coarse cuando 367D procesa líneas individualmente.
+    /// No modifica el agregado canónico.
+    /// </summary>
+    public static bool TryValidateIndividualLineCompatibility(
+        OrderState legacyState,
+        IReadOnlyList<BistroBuilderCanonicalOrderLine> lines,
+        out string error
+    )
+    {
+        if (lines == null || lines.Count == 0)
+        {
+            error = "La comanda canónica no contiene líneas.";
+            return false;
+        }
+
+        bool hasActive = false;
+        bool anyPreparingOrLater = false;
+        bool allPastKitchen = true;
+        bool allServed = true;
+
+        for (int index = 0; index < lines.Count; index++)
+        {
+            BistroBuilderCanonicalOrderLine line = lines[index];
+
+            if (line == null)
+            {
+                error = "La comanda canónica contiene una línea nula.";
+                return false;
+            }
+
+            BistroBuilderCanonicalOrderLineState state = line.State;
+
+            if (state == BistroBuilderCanonicalOrderLineState.Cancelled)
+            {
+                continue;
+            }
+
+            if (state == BistroBuilderCanonicalOrderLineState.Failed)
+            {
+                error =
+                    "Una línea fallida requiere un flujo de incidencia antes " +
+                    "de continuar la comanda.";
+                return false;
+            }
+
+            hasActive = true;
+
+            int stateValue = (int)state;
+
+            if (stateValue >=
+                    (int)BistroBuilderCanonicalOrderLineState.Preparing &&
+                stateValue <=
+                    (int)BistroBuilderCanonicalOrderLineState.Consumed)
+            {
+                anyPreparingOrLater = true;
+            }
+
+            if (state == BistroBuilderCanonicalOrderLineState.Draft ||
+                state == BistroBuilderCanonicalOrderLineState.Submitted ||
+                state == BistroBuilderCanonicalOrderLineState.Queued ||
+                state == BistroBuilderCanonicalOrderLineState.Preparing)
+            {
+                allPastKitchen = false;
+            }
+
+            if (state != BistroBuilderCanonicalOrderLineState.Served &&
+                state != BistroBuilderCanonicalOrderLineState.Consumed)
+            {
+                allServed = false;
+            }
+        }
+
+        if (!hasActive)
+        {
+            error = "La comanda no contiene líneas activas.";
+            return false;
+        }
+
+        bool compatible = legacyState switch
+        {
+            OrderState.Preparing => anyPreparingOrLater,
+            OrderState.ReadyForPickup => allPastKitchen,
+            OrderState.Served => allServed,
+            _ => false
+        };
+
+        error = compatible
+            ? string.Empty
+            : "Las líneas canónicas no son compatibles con " +
+              legacyState + ".";
+
+        return compatible;
+    }
+
 }

@@ -1,0 +1,191 @@
+{
+  "package": "BistroBuilder 367D — Individual Dish Production and Delivery",
+  "version": "367D",
+  "install_over": "367C",
+  "expected_validator": {
+    "correct": 19,
+    "warnings": 0,
+    "errors": 0
+  },
+  "expected_selftest": {
+    "passed": 72,
+    "failed": 0
+  },
+  "files": [
+    {
+      "path": "AUDITORIA_ESTATICA_367D.json",
+      "size": 209,
+      "sha256": "0ea3e0f0e1bba5ced80b208fb1a133bdfd3a8c550a8a0b7654bb671a8421fc25"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowDebugWindow.cs",
+      "size": 6165,
+      "sha256": "3e589a8f2c8c4e3ec4c887e0a19721494e70b2346c6e194901196aa8351aa795"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowDebugWindow.cs.meta",
+      "size": 243,
+      "sha256": "c00e9551219889ae61f1c47a0070ba81c2e62d177954513581705648d5562c3d"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowInstaller.cs",
+      "size": 13250,
+      "sha256": "13f8d2cace7e85e0b3e1773f62cba737a5ab0817c0e847c7a6f1673f2010772a"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowInstaller.cs.meta",
+      "size": 243,
+      "sha256": "58eab1390a8b8da6ba15c966126c7da0c581d49e42ee2326ae9b97bed617a309"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowSelfTest.cs",
+      "size": 27932,
+      "sha256": "a67e7dd06e588e1446a97d8ec61142223adf50268bfdadd7cf75fa5276d443be"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowSelfTest.cs.meta",
+      "size": 243,
+      "sha256": "fb9e6a21cb241f522a2de5ffc8360fbbb7c5f2ff10cc90844bafd849b291e361"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowValidator.cs",
+      "size": 13560,
+      "sha256": "827d968b90bc88463042cfdff2138fa4725f051415cec12b1844aeb89263d740"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowValidator.cs.meta",
+      "size": 243,
+      "sha256": "c2a2c23a5984d7dbd268f62b175a776a006555f048398be86ec32b283a4cb17a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs",
+      "size": 21658,
+      "sha256": "f41dfa5858c7498608c22d236842410ebbd5029e7f17356dcf30a94939c7efc6"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs.meta",
+      "size": 243,
+      "sha256": "8ffbb2949f1454b3ae50ee1bd344646ee2afb56c61d797213c634a1142f6c69f"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "size": 44115,
+      "sha256": "242d293c7b5c329ba3d0874be8bc96b2c9ba1028d3ab2d12b4666234423f1ae6"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "size": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderOrderLineExecutionService.cs",
+      "size": 25923,
+      "sha256": "6eb1e3bee3712a121f94fa9a074ee8e7e2cfcf7640fee6bcba7302d456fa4483"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderOrderLineExecutionService.cs.meta",
+      "size": 243,
+      "sha256": "1858e10d7060f3f1487fe11705743436bc1f765539a2b4df68afb6539f9106a7"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderServiceOrderIdentityUtility.cs",
+      "size": 9138,
+      "sha256": "ec4af9f828ea57fd56ab80d486c76256e88f8102e1058ce1d7e18217ee2dcfa0"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderServiceOrderIdentityUtility.cs.meta",
+      "size": 243,
+      "sha256": "aa45ff331ed81f5cc3fccdebaab2280fdaa1da62a216b5db23e2fe6ea67a69b5"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs",
+      "size": 15165,
+      "sha256": "871fefc8c153c982ef685e92f849516905b45655f04cb056986fb9d01cb95e08"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs.meta",
+      "size": 59,
+      "sha256": "ab763dc5de28d4e08094443edf7a444e8f358654ac3ccd225aff00dc0e2385a6"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/WaiterTaskCoordinator.cs",
+      "size": 47274,
+      "sha256": "00e64d90648275f6c119afa08454a62c08a645cae8a1e1038da42d46c747c156"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/WaiterTaskCoordinator.cs.meta",
+      "size": 59,
+      "sha256": "2f49da3b200ecebdd52329010b1390a138479fbefadb737cff69aa4f16d5e9a3"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/BistroBuilderKitchenLineRuntimeModels.cs",
+      "size": 7837,
+      "sha256": "aae64547269d1f4046fccc9bd5b0e084862069c48e1807979d06ba6a97802538"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/BistroBuilderKitchenLineRuntimeModels.cs.meta",
+      "size": 243,
+      "sha256": "73bd0e73a981c3866da06287868667f76140f2b1d05234926a592fcf0642a168"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs",
+      "size": 22003,
+      "sha256": "3f9f61c84b8cad6be23eb17bcda7b46b1716410ec341f3838e2f799d9c7a9364"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs.meta",
+      "size": 59,
+      "sha256": "5076e58c944b4a860bac84a6d222ca3153bd320b0b4d685090f82911d466e1ba"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderContracts.cs",
+      "size": 13569,
+      "sha256": "afa602df003e7dfa16716e1077933bff969d9c1b976189d36132494bee86a682"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Orders/Canonical/BistroBuilderCanonicalOrderContracts.cs.meta",
+      "size": 243,
+      "sha256": "e89ea52ed34029462579720816dc45820d53d899ceb2b3fc6ff6b8701d1a34f2"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Tasks/WaiterTask.cs",
+      "size": 7738,
+      "sha256": "bef49eaddcfe2d43e5b7ba73050c14d4d85fec2570a947916243adf8c3f1cf46"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Tasks/WaiterTask.cs.meta",
+      "size": 59,
+      "sha256": "be3050717a8fbd40db3bfb52e2f1324e7d41730397d25b41e55982083bcc7061"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Tasks/WaiterTaskQueue.cs",
+      "size": 15010,
+      "sha256": "5daf7351e0dad7ee9a76f7c14f85aefec5ac669054995c6a4f129c5a09e8b28c"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Tasks/WaiterTaskQueue.cs.meta",
+      "size": 59,
+      "sha256": "d74f2645991bf1c714100e976643e05b59a1f599439bf7c610457d2bd7c5b159"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Waiter.cs",
+      "size": 4984,
+      "sha256": "897232f554f92e625f3ce76c7648ffa152449846a6590dda9487b7f1d5ab5ef1"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Waiters/Waiter.cs.meta",
+      "size": 59,
+      "sha256": "f7de954231f445a5c42868fcea9c6dea1b7b9295274aafd038de72773083340f"
+    },
+    {
+      "path": "INSTRUCCIONES_367D.txt",
+      "size": 4637,
+      "sha256": "be31e11304df92f27ad491ae0a6668221863af2d910d09f1593acf04e5603dfc"
+    },
+    {
+      "path": "REVISION_TECNICA_367D.md",
+      "size": 2910,
+      "sha256": "06b0fdd3fafc681430bec6d98a899508f8755412e2dc989b54fe28683ab25665"
+    }
+  ]
+}

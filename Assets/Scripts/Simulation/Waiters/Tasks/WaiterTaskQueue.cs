@@ -24,38 +24,40 @@ public sealed class WaiterTaskQueue
     /// Las tareas DeliverFood se identifican mediante la comanda.
     /// El resto se identifican mediante la mesa.
     /// </summary>
-    private readonly struct TaskKey :
-        IEquatable<TaskKey>
+    private readonly struct TaskKey : IEquatable<TaskKey>
     {
         private readonly WaiterTaskType type;
         private readonly object target;
+        private readonly string orderLineId;
 
         public TaskKey(
             WaiterTaskType type,
             RestaurantTable table,
-            RestaurantOrder order
+            RestaurantOrder order,
+            string orderLineId
         )
         {
             this.type = type;
-
-            target = type == WaiterTaskType.DeliverFood
-                ? order
-                : table;
+            target = type == WaiterTaskType.DeliverFood ? order : table;
+            this.orderLineId = type == WaiterTaskType.DeliverFood
+                ? BistroBuilderOrderIdUtility.Normalize(orderLineId)
+                : string.Empty;
         }
 
         public bool Equals(TaskKey other)
         {
             return type == other.type &&
-                   ReferenceEquals(
-                       target,
-                       other.target
+                   ReferenceEquals(target, other.target) &&
+                   string.Equals(
+                       orderLineId,
+                       other.orderLineId,
+                       StringComparison.Ordinal
                    );
         }
 
         public override bool Equals(object obj)
         {
-            return obj is TaskKey other &&
-                   Equals(other);
+            return obj is TaskKey other && Equals(other);
         }
 
         public override int GetHashCode()
@@ -65,9 +67,11 @@ public sealed class WaiterTaskQueue
                 int targetHash = target != null
                     ? RuntimeHelpers.GetHashCode(target)
                     : 0;
+                int lineHash = orderLineId != null
+                    ? StringComparer.Ordinal.GetHashCode(orderLineId)
+                    : 0;
 
-                return ((int)type * 397) ^
-                       targetHash;
+                return (((int)type * 397) ^ targetHash) * 397 ^ lineHash;
             }
         }
     }
@@ -151,13 +155,42 @@ public sealed class WaiterTaskQueue
         out WaiterTask createdTask
     )
     {
+        return TryCreateTask(
+            type,
+            priority,
+            table,
+            order,
+            string.Empty,
+            out createdTask
+        );
+    }
+
+    public bool TryCreateTask(
+        WaiterTaskType type,
+        WaiterTaskPriority priority,
+        RestaurantTable table,
+        RestaurantOrder order,
+        string orderLineId,
+        out WaiterTask createdTask
+    )
+    {
         createdTask = null;
 
         if (table == null)
+        {
             return false;
+        }
 
-        if (type == WaiterTaskType.DeliverFood &&
-            order == null)
+        if (type == WaiterTaskType.DeliverFood && order == null)
+        {
+            return false;
+        }
+
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
+        if (!string.IsNullOrEmpty(normalizedLineId) &&
+            !BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
         {
             return false;
         }
@@ -165,16 +198,13 @@ public sealed class WaiterTaskQueue
         TaskKey key = new TaskKey(
             type,
             table,
-            order
+            order,
+            normalizedLineId
         );
 
-        if (activeTasksByKey.TryGetValue(
-                key,
-                out WaiterTask existingTask
-            ))
+        if (activeTasksByKey.TryGetValue(key, out WaiterTask existingTask))
         {
             createdTask = existingTask;
-
             return false;
         }
 
@@ -187,20 +217,15 @@ public sealed class WaiterTaskQueue
             priority,
             table,
             order,
+            normalizedLineId,
             nextCreationSequence
         );
 
         nextTaskId++;
         nextCreationSequence++;
-
         activeTasks.Add(createdTask);
-        activeTasksByKey.Add(
-            key,
-            createdTask
-        );
-
+        activeTasksByKey.Add(key, createdTask);
         TaskCreated?.Invoke(createdTask);
-
         return true;
     }
 
@@ -214,13 +239,31 @@ public sealed class WaiterTaskQueue
         out WaiterTask task
     )
     {
+        return TryGetActiveTask(
+            type,
+            table,
+            order,
+            string.Empty,
+            out task
+        );
+    }
+
+    public bool TryGetActiveTask(
+        WaiterTaskType type,
+        RestaurantTable table,
+        RestaurantOrder order,
+        string orderLineId,
+        out WaiterTask task
+    )
+    {
         task = null;
 
         if (table == null)
+        {
             return false;
+        }
 
-        if (type == WaiterTaskType.DeliverFood &&
-            order == null)
+        if (type == WaiterTaskType.DeliverFood && order == null)
         {
             return false;
         }
@@ -228,13 +271,11 @@ public sealed class WaiterTaskQueue
         TaskKey key = new TaskKey(
             type,
             table,
-            order
+            order,
+            orderLineId
         );
 
-        return activeTasksByKey.TryGetValue(
-            key,
-            out task
-        );
+        return activeTasksByKey.TryGetValue(key, out task);
     }
 
     /// <summary>
@@ -499,7 +540,8 @@ public sealed class WaiterTaskQueue
         TaskKey key = new TaskKey(
             task.Type,
             task.Table,
-            task.Order
+            task.Order,
+            task.OrderLineId
         );
 
         return activeTasksByKey.TryGetValue(
@@ -522,7 +564,8 @@ public sealed class WaiterTaskQueue
         TaskKey key = new TaskKey(
             task.Type,
             task.Table,
-            task.Order
+            task.Order,
+            task.OrderLineId
         );
 
         activeTasksByKey.Remove(key);

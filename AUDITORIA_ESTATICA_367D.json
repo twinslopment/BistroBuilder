@@ -1,0 +1,9 @@
+{
+  "csharp_files": 16,
+  "meta_files": 16,
+  "combined_project_csharp_files": 154,
+  "combined_project_meta_files": 208,
+  "expected_validator_correct": 19,
+  "expected_selftest_passed": 72,
+  "issues": []
+}

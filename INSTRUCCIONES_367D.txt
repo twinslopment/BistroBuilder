@@ -1,0 +1,113 @@
+BISTRO BUILDER 367D — PREPARACIÓN Y ENTREGA INDIVIDUAL DE PLATOS
+
+OBJETIVO
+Sustituir el tratamiento provisional de una comanda completa como un único
+lote por la ejecución operativa de cada plato físico mediante OrderLineId.
+
+ALCANCE IMPLEMENTADO
+- Una línea canónica representa un plato físico concreto.
+- La cocina mantiene una cola FIFO de líneas, no de comandas completas.
+- Cada línea resuelve su duración desde BistroBuilderDishDefinition.
+- Cada línea avanza de forma controlada:
+  Queued -> Preparing -> ReadyForPickup -> AssignedForDelivery ->
+  InTransit -> Served -> Consumed.
+- El coordinador genera una tarea DeliverFood independiente por OrderLineId.
+- Un camarero conserva AssignedOrderLineId durante recogida y entrega.
+- Los fallos antes de Served devuelven la línea al pase sin duplicar platos.
+- Served es irreversible y se protege frente a reintentos duplicados.
+- La fachada RestaurantOrder se sincroniza sin convertirse en autoridad de
+  las líneas.
+- La comanda legacy pasa a ReadyForPickup cuando todas las líneas activas han
+  abandonado cocina, aunque algunas ya hayan sido entregadas.
+- El grupo entra en Eating cuando todas sus líneas activas están servidas.
+- Al pagar, todas las líneas Served pasan atómicamente a Consumed.
+- Snapshot versionado de cocina con cola, línea activa y tiempo restante,
+  preparado para el futuro service.runtime.
+
+LÍMITES DEL HITO
+- Se utiliza una única capacidad provisional de cocina. La arquitectura deja
+  KitchenId y contratos preparados para estaciones múltiples posteriores.
+- Los clientes todavía comienzan a comer como grupo cuando todos los platos
+  están servidos. El consumo individual por cliente será un hito posterior.
+- 367D prepara service.runtime, pero todavía no habilita guardar con el
+  restaurante abierto.
+
+INSTALACIÓN
+1. Confirma que el cierre de 367C está comprometido y subido a Git.
+2. Sal de Play Mode y guarda Prototype_Restaurant.unity.
+3. Cierra Unity completamente.
+4. Extrae este ZIP sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+5. Confirma la sustitución de archivos.
+6. Abre Unity y espera a que termine la compilación.
+7. Antes de ejecutar herramientas, confirma Console: 0 errores.
+
+INSTALADOR
+Fuera de Play Mode y con la escena guardada:
+Tools > Bistro Builder > Orders >
+Install or Repair 367D Individual Dish Flow
+
+Resultado esperado:
+- Correctos: 19
+- Advertencias: 0
+- Errores: 0
+
+El instalador:
+- es idempotente;
+- crea o repara BistroBuilderOrderLineExecutionService;
+- activa el modo individual de la integración 367C;
+- conecta KitchenSystem, WaiterTaskCoordinator y FoodDeliveryServiceFlow;
+- asigna el pase operativo a los movimientos de camareros;
+- desactiva FoodDeliveryAssignmentSystem para evitar autoridad duplicada;
+- conserva una copia binaria de la escena y la restaura si algo falla.
+
+VALIDADOR
+Tools > Bistro Builder > Orders >
+Validate 367D Individual Dish Flow
+
+Resultado esperado:
+- Correctos: 19
+- Advertencias: 0
+- Errores: 0
+
+AUTOTEST
+Tools > Bistro Builder > Orders >
+Run 367D Individual Dish Flow Self-Test
+
+Resultado esperado:
+- Pruebas superadas: 72
+- Pruebas fallidas: 0
+
+El autotest usa objetos HideAndDontSave. No modifica escenas, assets, carta,
+partidas ni guardados reales.
+
+PRUEBA FUNCIONAL REAL
+1. Entra en Play Mode.
+2. Abre el restaurante.
+3. Abre:
+   Tools > Bistro Builder > Orders > Individual Dish Flow Debug
+4. Espera una comanda de dos o más clientes.
+5. Pulsa periódicamente “Actualizar fotografía”.
+6. Comprueba que las líneas avanzan de forma independiente y que pueden
+   coexistir estados distintos en una misma comanda, por ejemplo:
+   - una línea ReadyForPickup;
+   - otra Preparing;
+   - otra AssignedForDelivery o InTransit.
+7. Comprueba que se crea una tarea DeliverFood por LineId.
+8. Comprueba que un camarero recoge y sirve una línea concreta.
+9. Comprueba que el grupo no pasa a Eating hasta que todas las líneas activas
+   están Served.
+10. Deja terminar pago, salida, limpieza y reutilización de la mesa.
+11. Console: 0 errores.
+
+PRUEBA DE RECUPERACIÓN RECOMENDADA
+Durante una entrega, desactiva y vuelve a activar el FoodDeliveryServiceFlow
+del camarero de prueba. La línea debe regresar al pase y poder reasignarse,
+sin crear otro plato ni otra línea.
+
+NO HACER
+- No reactives FoodDeliveryAssignmentSystem.
+- No edites manualmente OrderLineId, KitchenId ni CanonicalOrderId.
+- No añadas una segunda KitchenSystem todavía: el validador la rechazará de
+  forma intencionada hasta implementar enrutamiento por estaciones.
+- No hagas el commit final antes del autotest y la prueba funcional real.

@@ -58,6 +58,15 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     [SerializeField]
     private bool manageCleaningTasks;
 
+    [Header("Ejecución individual 367D")]
+
+    [Tooltip(
+        "Autoridad de ejecución de líneas usada para reservar, reintentar y " +
+        "validar cada plato físico."
+    )]
+    [SerializeField]
+    private BistroBuilderOrderLineExecutionService lineExecutionService;
+
     /// <summary>
     /// Mesas conocidas actualmente por el coordinador.
     /// HashSet impide registros duplicados.
@@ -81,32 +90,26 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             new HashSet<KitchenSystem>();
 
     /// <summary>
-    /// Almacena un manejador de OrderReady para cada cocina.
-    ///
-    /// Es necesario porque el evento entrega la comanda,
-    /// pero no indica directamente qué cocina lo emitió.
+    /// Manejador de línea lista asociado a cada cocina.
+    /// Se conserva la cocina en el cierre para no depender de búsquedas.
     /// </summary>
     private readonly Dictionary<
         KitchenSystem,
-        Action<RestaurantOrder>
-    > kitchenOrderReadyHandlers =
+        Action<BistroBuilderOrderLineReadyEvent>
+    > kitchenLineReadyHandlers =
         new Dictionary<
             KitchenSystem,
-            Action<RestaurantOrder>
+            Action<BistroBuilderOrderLineReadyEvent>
         >();
 
     /// <summary>
-    /// Relaciona cada comanda preparada con la cocina
-    /// donde debe recogerse.
+    /// Relaciona cada LineId que está en pase o reparto con la cocina donde
+    /// debe recogerse. La clave canónica permite varias líneas de una misma
+    /// comanda sin colisiones.
     /// </summary>
-    private readonly Dictionary<
-        RestaurantOrder,
-        KitchenSystem
-    > kitchenByOrder =
-        new Dictionary<
-            RestaurantOrder,
-            KitchenSystem
-        >();
+    private readonly Dictionary<string, KitchenSystem>
+        kitchenByOrderLineId =
+            new Dictionary<string, KitchenSystem>(StringComparer.Ordinal);
 
     /// <summary>
     /// Cola central de tareas activas.
@@ -158,9 +161,14 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             ? taskQueue.ActiveTasks
             : Array.Empty<WaiterTask>();
 
+    public bool ManagesFoodDeliveryTasks => manageFoodDeliveryTasks;
+    public BistroBuilderOrderLineExecutionService LineExecutionService =>
+        lineExecutionService;
+
     private void Awake()
     {
         EnsureTaskQueueCreated();
+        ResolveLineExecutionService();
     }
 
     private void OnEnable()
@@ -216,8 +224,8 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         registeredWaiters.Clear();
         registeredKitchens.Clear();
 
-        kitchenOrderReadyHandlers.Clear();
-        kitchenByOrder.Clear();
+        kitchenLineReadyHandlers.Clear();
+        kitchenByOrderLineId.Clear();
     }
 
     /// <summary>
@@ -326,14 +334,14 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         if (!registeredKitchens.Add(kitchenSystem))
             return false;
 
-        Action<RestaurantOrder> handler =
-            order =>
-                HandleOrderReady(
+        Action<BistroBuilderOrderLineReadyEvent> handler =
+            readyEvent =>
+                HandleOrderLineReady(
                     kitchenSystem,
-                    order
+                    readyEvent
                 );
 
-        kitchenOrderReadyHandlers.Add(
+        kitchenLineReadyHandlers.Add(
             kitchenSystem,
             handler
         );
@@ -370,7 +378,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             kitchenSystem
         );
 
-        kitchenOrderReadyHandlers.Remove(
+        kitchenLineReadyHandlers.Remove(
             kitchenSystem
         );
 
@@ -384,7 +392,8 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     /// cuando el servicio termina correctamente.
     /// </summary>
     public bool TryCompleteFoodDeliveryTask(
-        RestaurantOrder order
+        RestaurantOrder order,
+        string orderLineId
     )
     {
         if (order == null ||
@@ -394,95 +403,158 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             return false;
         }
 
-        bool found =
-            taskQueue.TryGetActiveTask(
-                WaiterTaskType.DeliverFood,
-                order.Table,
-                order,
-                out WaiterTask task
-            );
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
+        if (!BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
+        {
+            return false;
+        }
+
+        bool found = taskQueue.TryGetActiveTask(
+            WaiterTaskType.DeliverFood,
+            order.Table,
+            order,
+            normalizedLineId,
+            out WaiterTask task
+        );
 
         if (!found)
             return false;
 
-        bool completed =
-            taskQueue.TryCompleteTask(task);
+        bool completed = taskQueue.TryCompleteTask(task);
 
         if (completed)
         {
-            kitchenByOrder.Remove(order);
+            kitchenByOrderLineId.Remove(normalizedLineId);
         }
 
         return completed;
     }
 
     /// <summary>
-    /// Recupera una tarea de reparto que no pudo terminar.
-    ///
-    /// Si la comanda sigue lista para recoger, se crea una nueva
-    /// tarea pendiente. En caso contrario se retira definitivamente.
+    /// Compatibilidad con herramientas antiguas: solo es inequívoco cuando la
+    /// comanda tiene exactamente una tarea de reparto activa.
+    /// </summary>
+    public bool TryCompleteFoodDeliveryTask(RestaurantOrder order)
+    {
+        WaiterTask task = FindFoodDeliveryTask(null, order, string.Empty);
+        return task != null &&
+               TryCompleteFoodDeliveryTask(order, task.OrderLineId);
+    }
+
+    /// <summary>
+    /// Recupera una tarea de reparto individual que no pudo terminar.
+    /// La línea debe haberse devuelto antes al pase por la autoridad 367D.
     /// </summary>
     public bool ReportFoodDeliveryFailure(
         Waiter waiter,
-        RestaurantOrder order
+        RestaurantOrder order,
+        string orderLineId
     )
     {
         if (taskQueue == null)
             return false;
 
-        WaiterTask task =
-            FindFoodDeliveryTask(
-                waiter,
-                order
-            );
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
+        WaiterTask task = FindFoodDeliveryTask(
+            waiter,
+            order,
+            normalizedLineId
+        );
 
         if (task == null)
             return false;
 
-        RestaurantOrder affectedOrder =
-            task.Order;
+        RestaurantOrder affectedOrder = task.Order;
+        string affectedLineId = task.OrderLineId;
+        Waiter assignedWaiter = task.AssignedWaiter ?? waiter;
 
-        bool cancelled =
-            taskQueue.TryCancelTask(task);
+        if (affectedOrder != null &&
+            BistroBuilderOrderIdUtility.IsValid(affectedLineId) &&
+            lineExecutionService != null)
+        {
+            string actorReference = waiter != null
+                ? BistroBuilderServiceOrderIdentityUtility
+                    .BuildWaiterReference(waiter.WaiterId)
+                : "delivery_failure_recovery";
+
+            lineExecutionService.TryReturnLineToPickup(
+                affectedOrder,
+                affectedLineId,
+                actorReference,
+                out _
+            );
+        }
+
+        bool cancelled = taskQueue.TryCancelTask(task);
 
         if (!cancelled)
             return false;
 
-        // Se declara antes de la expresión para garantizar que
-        // siempre esté inicializada cuando se utilice después.
+        if (assignedWaiter != null &&
+            ReferenceEquals(assignedWaiter.AssignedOrder, affectedOrder) &&
+            string.Equals(
+                assignedWaiter.AssignedOrderLineId,
+                affectedLineId,
+                StringComparison.Ordinal
+            ))
+        {
+            assignedWaiter.ClearAssignment();
+        }
+
         KitchenSystem sourceKitchen = null;
 
-        bool orderCanBeRetried =
+        bool lineCanBeRetried =
             affectedOrder != null &&
             affectedOrder.Table != null &&
-            affectedOrder.CurrentState ==
-                OrderState.ReadyForPickup &&
-            kitchenByOrder.TryGetValue(
+            BistroBuilderOrderIdUtility.IsValid(affectedLineId) &&
+            lineExecutionService != null &&
+            lineExecutionService.IsLineReadyForPickup(
                 affectedOrder,
+                affectedLineId
+            ) &&
+            kitchenByOrderLineId.TryGetValue(
+                affectedLineId,
                 out sourceKitchen
             ) &&
             sourceKitchen != null &&
-            registeredKitchens.Contains(
-                sourceKitchen
-            );
+            registeredKitchens.Contains(sourceKitchen);
 
-        if (orderCanBeRetried)
+        if (lineCanBeRetried)
         {
             CreateFoodDeliveryTask(
                 sourceKitchen,
-                affectedOrder
+                affectedOrder,
+                affectedLineId
             );
         }
-        else if (affectedOrder != null)
+        else if (BistroBuilderOrderIdUtility.IsValid(affectedLineId))
         {
-            kitchenByOrder.Remove(
-                affectedOrder
-            );
+            kitchenByOrderLineId.Remove(affectedLineId);
         }
 
         RequestDispatch();
-
         return true;
+    }
+
+    public bool ReportFoodDeliveryFailure(
+        Waiter waiter,
+        RestaurantOrder order
+    )
+    {
+        string lineId = waiter != null
+            ? waiter.AssignedOrderLineId
+            : string.Empty;
+
+        WaiterTask task = FindFoodDeliveryTask(waiter, order, lineId);
+        return task != null && ReportFoodDeliveryFailure(
+            waiter,
+            order,
+            task.OrderLineId
+        );
     }
 
     /// <summary>
@@ -643,16 +715,16 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         if (kitchenSystem == null)
             return;
 
-        if (!kitchenOrderReadyHandlers.TryGetValue(
+        if (!kitchenLineReadyHandlers.TryGetValue(
                 kitchenSystem,
-                out Action<RestaurantOrder> handler
+                out Action<BistroBuilderOrderLineReadyEvent> handler
             ))
         {
             return;
         }
 
-        kitchenSystem.OrderReady -= handler;
-        kitchenSystem.OrderReady += handler;
+        kitchenSystem.OrderLineReady -= handler;
+        kitchenSystem.OrderLineReady += handler;
     }
 
     private void UnsubscribeFromKitchen(
@@ -662,15 +734,15 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         if (kitchenSystem == null)
             return;
 
-        if (!kitchenOrderReadyHandlers.TryGetValue(
+        if (!kitchenLineReadyHandlers.TryGetValue(
                 kitchenSystem,
-                out Action<RestaurantOrder> handler
+                out Action<BistroBuilderOrderLineReadyEvent> handler
             ))
         {
             return;
         }
 
-        kitchenSystem.OrderReady -= handler;
+        kitchenSystem.OrderLineReady -= handler;
     }
 
     private void HandleTableStateChanged(
@@ -693,16 +765,20 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         RequestDispatch();
     }
 
-    private void HandleOrderReady(
+    private void HandleOrderLineReady(
         KitchenSystem kitchenSystem,
-        RestaurantOrder order
+        BistroBuilderOrderLineReadyEvent readyEvent
     )
     {
         if (!manageFoodDeliveryTasks)
             return;
 
+        RestaurantOrder order = readyEvent.Order;
+        string orderLineId = readyEvent.OrderLineId;
+
         if (kitchenSystem == null ||
-            order == null)
+            order == null ||
+            !BistroBuilderOrderIdUtility.IsValid(orderLineId))
         {
             return;
         }
@@ -713,31 +789,32 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                 $"La comanda {order.OrderId} no tiene mesa asignada.",
                 this
             );
-
             return;
         }
 
-        if (order.CurrentState !=
-            OrderState.ReadyForPickup)
+        if (lineExecutionService == null ||
+            !lineExecutionService.IsLineReadyForPickup(order, orderLineId))
         {
             return;
         }
 
         CreateFoodDeliveryTask(
             kitchenSystem,
-            order
+            order,
+            orderLineId
         );
 
         RequestDispatch();
     }
 
     /// <summary>
-    /// Crea una tarea de reparto sin duplicar una comanda
-    /// que ya estuviera registrada.
+    /// Crea una tarea por plato físico. El índice de WaiterTaskQueue evita
+    /// duplicar el mismo LineId y permite varias líneas de una sola comanda.
     /// </summary>
     private bool CreateFoodDeliveryTask(
         KitchenSystem kitchenSystem,
-        RestaurantOrder order
+        RestaurantOrder order,
+        string orderLineId
     )
     {
         if (kitchenSystem == null ||
@@ -747,23 +824,36 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             return false;
         }
 
-        kitchenByOrder[order] =
-            kitchenSystem;
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
 
-        bool created =
-            taskQueue.TryCreateTask(
-                WaiterTaskType.DeliverFood,
-                WaiterTaskPriority.Urgent,
-                order.Table,
-                order,
-                out WaiterTask task
-            );
+        if (!BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
+        {
+            return false;
+        }
+
+        bool created = taskQueue.TryCreateTask(
+            WaiterTaskType.DeliverFood,
+            WaiterTaskPriority.Urgent,
+            order.Table,
+            order,
+            normalizedLineId,
+            out WaiterTask task
+        );
+
+        if (!created && task == null)
+        {
+            kitchenByOrderLineId.Remove(normalizedLineId);
+            return false;
+        }
+
+        kitchenByOrderLineId[normalizedLineId] = kitchenSystem;
 
         if (created)
         {
             Debug.Log(
-                $"Tarea {task.TaskId} creada para repartir " +
-                $"la comanda {order.OrderId}.",
+                $"Tarea {task.TaskId} creada para repartir la línea " +
+                $"{normalizedLineId} de la comanda {order.OrderId}.",
                 this
             );
         }
@@ -1088,9 +1178,11 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
                 if (!taskQueue.TryStartTask(task))
                 {
+                    RollbackAcceptedTask(waiter, task);
+
                     Debug.LogError(
                         $"La tarea {task.TaskId} fue aceptada, " +
-                        "pero no pudo comenzar.",
+                        "pero no pudo comenzar. La asignación se revirtió.",
                         this
                     );
 
@@ -1133,12 +1225,19 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                 );
 
             case WaiterTaskType.DeliverFood:
-                return task.Order != null &&
-                       task.Order.CurrentState ==
-                           OrderState.ReadyForPickup &&
-                       waiter.AssignOrderForPickup(
-                           task.Order
-                       );
+                if (task.Order == null ||
+                    !BistroBuilderOrderIdUtility.IsValid(task.OrderLineId) ||
+                    lineExecutionService == null)
+                {
+                    return false;
+                }
+
+                return lineExecutionService.TryAssignLineForDelivery(
+                    task.Order,
+                    task.OrderLineId,
+                    waiter,
+                    out _
+                );
 
             case WaiterTaskType.DeliverBill:
                 return waiter.AssignTableForBill(
@@ -1153,6 +1252,41 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             default:
                 return false;
         }
+    }
+
+    private void RollbackAcceptedTask(
+        Waiter waiter,
+        WaiterTask task
+    )
+    {
+        if (task == null)
+            return;
+
+        if (task.Type == WaiterTaskType.DeliverFood &&
+            lineExecutionService != null &&
+            task.Order != null &&
+            BistroBuilderOrderIdUtility.IsValid(task.OrderLineId))
+        {
+            lineExecutionService.TryReturnLineToPickup(
+                task.Order,
+                task.OrderLineId,
+                waiter,
+                out _
+            );
+        }
+
+        if (waiter != null &&
+            ReferenceEquals(waiter.AssignedOrder, task.Order) &&
+            string.Equals(
+                waiter.AssignedOrderLineId,
+                task.OrderLineId,
+                StringComparison.Ordinal
+            ))
+        {
+            waiter.ClearAssignment();
+        }
+
+        taskQueue.TryReleaseTaskAssignment(task);
     }
 
     /// <summary>
@@ -1179,8 +1313,12 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             case WaiterTaskType.DeliverFood:
                 return manageFoodDeliveryTasks &&
                        task.Order != null &&
-                       task.Order.CurrentState ==
-                           OrderState.ReadyForPickup;
+                       BistroBuilderOrderIdUtility.IsValid(task.OrderLineId) &&
+                       lineExecutionService != null &&
+                       lineExecutionService.IsLineReadyForPickup(
+                           task.Order,
+                           task.OrderLineId
+                       );
 
             case WaiterTaskType.DeliverBill:
                 return manageBillTasks &&
@@ -1270,19 +1408,18 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         WaiterTask task
     )
     {
-        if (task.Type ==
-                WaiterTaskType.DeliverFood &&
-            task.Order != null &&
-            kitchenByOrder.TryGetValue(
-                task.Order,
-                out KitchenSystem kitchenSystem
-            ) &&
-            kitchenSystem != null &&
-            kitchenSystem.PickupPoint != null)
+        if (task.Type == WaiterTaskType.DeliverFood &&
+            BistroBuilderOrderIdUtility.IsValid(task.OrderLineId))
         {
-            return kitchenSystem
-                .PickupPoint
-                .position;
+            if (kitchenByOrderLineId.TryGetValue(
+                    task.OrderLineId,
+                    out KitchenSystem kitchenSystem
+                ) &&
+                kitchenSystem != null &&
+                kitchenSystem.PickupPoint != null)
+            {
+                return kitchenSystem.PickupPoint.position;
+            }
         }
 
         if (task.Table != null &&
@@ -1309,51 +1446,63 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     /// </summary>
     private WaiterTask FindFoodDeliveryTask(
         Waiter waiter,
-        RestaurantOrder order
+        RestaurantOrder order,
+        string orderLineId
     )
     {
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
         if (order != null &&
             order.Table != null &&
-            taskQueue.TryGetActiveTask(
-                WaiterTaskType.DeliverFood,
-                order.Table,
-                order,
-                out WaiterTask taskByOrder
-            ))
+            BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
         {
-            return taskByOrder;
+            if (taskQueue.TryGetActiveTask(
+                    WaiterTaskType.DeliverFood,
+                    order.Table,
+                    order,
+                    normalizedLineId,
+                    out WaiterTask taskByLine
+                ))
+            {
+                return taskByLine;
+            }
         }
 
-        if (waiter == null)
+        if (waiter == null && order == null)
             return null;
 
-        IReadOnlyList<WaiterTask> tasks =
-            taskQueue.ActiveTasks;
+        IReadOnlyList<WaiterTask> tasks = taskQueue.ActiveTasks;
+        WaiterTask uniqueOrderTask = null;
 
-        for (int index = 0;
-             index < tasks.Count;
-             index++)
+        for (int index = 0; index < tasks.Count; index++)
         {
-            WaiterTask task =
-                tasks[index];
+            WaiterTask task = tasks[index];
 
             if (task == null ||
-                task.Type !=
-                    WaiterTaskType.DeliverFood)
+                task.Type != WaiterTaskType.DeliverFood)
             {
                 continue;
             }
 
-            if (ReferenceEquals(
-                    task.AssignedWaiter,
-                    waiter
-                ))
+            if (waiter != null &&
+                ReferenceEquals(task.AssignedWaiter, waiter))
             {
                 return task;
             }
+
+            if (order != null && ReferenceEquals(task.Order, order))
+            {
+                // La compatibilidad por comanda solo es segura cuando existe
+                // una única tarea activa para ella.
+                if (uniqueOrderTask != null)
+                    return null;
+
+                uniqueOrderTask = task;
+            }
         }
 
-        return null;
+        return uniqueOrderTask;
     }
 
     /// <summary>
@@ -1364,72 +1513,96 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         Waiter waiter
     )
     {
-        if (waiter == null ||
-            taskQueue == null)
-        {
+        if (waiter == null || taskQueue == null)
             return;
-        }
 
-        IReadOnlyList<WaiterTask> tasks =
-            taskQueue.ActiveTasks;
+        IReadOnlyList<WaiterTask> tasks = taskQueue.ActiveTasks;
 
-        for (int index = tasks.Count - 1;
-             index >= 0;
-             index--)
+        for (int index = tasks.Count - 1; index >= 0; index--)
         {
-            WaiterTask task =
-                tasks[index];
+            WaiterTask task = tasks[index];
 
             if (task == null ||
-                !ReferenceEquals(
-                    task.AssignedWaiter,
-                    waiter
-                ))
+                !ReferenceEquals(task.AssignedWaiter, waiter))
             {
                 continue;
             }
 
-            if (task.State ==
-                WaiterTaskState.Assigned)
+            if (task.State == WaiterTaskState.Assigned)
             {
-                taskQueue
-                    .TryReleaseTaskAssignment(task);
+                if (task.Type == WaiterTaskType.DeliverFood &&
+                    lineExecutionService != null &&
+                    task.Order != null &&
+                    BistroBuilderOrderIdUtility.IsValid(task.OrderLineId))
+                {
+                    lineExecutionService.TryReturnLineToPickup(
+                        task.Order,
+                        task.OrderLineId,
+                        waiter,
+                        out _
+                    );
+                }
+
+                taskQueue.TryReleaseTaskAssignment(task);
+
+                if (ReferenceEquals(waiter.AssignedOrder, task.Order) ||
+                    ReferenceEquals(waiter.AssignedTable, task.Table))
+                {
+                    waiter.ClearAssignment();
+                }
 
                 continue;
             }
 
-            RestaurantTable affectedTable =
-                task.Table;
+            RestaurantTable affectedTable = task.Table;
+            RestaurantOrder affectedOrder = task.Order;
+            string affectedLineId = task.OrderLineId;
+            WaiterTaskType affectedType = task.Type;
 
-            RestaurantOrder affectedOrder =
-                task.Order;
-
-            WaiterTaskType affectedType =
-                task.Type;
+            if (affectedType == WaiterTaskType.DeliverFood &&
+                lineExecutionService != null &&
+                affectedOrder != null &&
+                BistroBuilderOrderIdUtility.IsValid(affectedLineId))
+            {
+                lineExecutionService.TryReturnLineToPickup(
+                    affectedOrder,
+                    affectedLineId,
+                    waiter,
+                    out _
+                );
+            }
 
             taskQueue.TryCancelTask(task);
 
-            if (affectedType ==
-                    WaiterTaskType.DeliverFood &&
+            if (ReferenceEquals(waiter.AssignedOrder, affectedOrder) ||
+                ReferenceEquals(waiter.AssignedTable, affectedTable))
+            {
+                waiter.ClearAssignment();
+            }
+
+            if (affectedType == WaiterTaskType.DeliverFood &&
                 affectedOrder != null &&
-                affectedOrder.CurrentState ==
-                    OrderState.ReadyForPickup &&
-                kitchenByOrder.TryGetValue(
+                BistroBuilderOrderIdUtility.IsValid(affectedLineId) &&
+                lineExecutionService != null &&
+                lineExecutionService.IsLineReadyForPickup(
                     affectedOrder,
+                    affectedLineId
+                ) &&
+                kitchenByOrderLineId.TryGetValue(
+                    affectedLineId,
                     out KitchenSystem kitchenSystem
                 ) &&
                 kitchenSystem != null)
             {
                 CreateFoodDeliveryTask(
                     kitchenSystem,
-                    affectedOrder
+                    affectedOrder,
+                    affectedLineId
                 );
             }
             else
             {
-                SynchronizeTableTasks(
-                    affectedTable
-                );
+                SynchronizeTableTasks(affectedTable);
             }
         }
     }
@@ -1441,19 +1614,57 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         WaiterTask task
     )
     {
-        if (task == null)
+        if (task == null || taskQueue == null)
             return;
 
-        RestaurantOrder order =
-            task.Order;
+        string orderLineId = task.OrderLineId;
+        Waiter assignedWaiter = task.AssignedWaiter;
+
+        if (task.Type == WaiterTaskType.DeliverFood &&
+            task.Order != null &&
+            BistroBuilderOrderIdUtility.IsValid(orderLineId) &&
+            lineExecutionService != null)
+        {
+            string actorReference = assignedWaiter != null
+                ? BistroBuilderServiceOrderIdentityUtility
+                    .BuildWaiterReference(assignedWaiter.WaiterId)
+                : "task_cancellation_recovery";
+
+            lineExecutionService.TryReturnLineToPickup(
+                task.Order,
+                orderLineId,
+                actorReference,
+                out _
+            );
+        }
 
         taskQueue.TryCancelTask(task);
 
-        if (task.Type ==
-                WaiterTaskType.DeliverFood &&
-            order != null)
+        if (assignedWaiter != null)
         {
-            kitchenByOrder.Remove(order);
+            bool ownsFoodAssignment =
+                task.Type == WaiterTaskType.DeliverFood &&
+                ReferenceEquals(assignedWaiter.AssignedOrder, task.Order) &&
+                string.Equals(
+                    assignedWaiter.AssignedOrderLineId,
+                    orderLineId,
+                    StringComparison.Ordinal
+                );
+
+            bool ownsTableAssignment =
+                task.Type != WaiterTaskType.DeliverFood &&
+                ReferenceEquals(assignedWaiter.AssignedTable, task.Table);
+
+            if (ownsFoodAssignment || ownsTableAssignment)
+            {
+                assignedWaiter.ClearAssignment();
+            }
+        }
+
+        if (task.Type == WaiterTaskType.DeliverFood &&
+            BistroBuilderOrderIdUtility.IsValid(orderLineId))
+        {
+            kitchenByOrderLineId.Remove(orderLineId);
         }
     }
 
@@ -1520,13 +1731,13 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             if (task == null ||
                 task.Type !=
                     WaiterTaskType.DeliverFood ||
-                task.Order == null)
+                !BistroBuilderOrderIdUtility.IsValid(task.OrderLineId))
             {
                 continue;
             }
 
-            if (!kitchenByOrder.TryGetValue(
-                    task.Order,
+            if (!kitchenByOrderLineId.TryGetValue(
+                    task.OrderLineId,
                     out KitchenSystem sourceKitchen
                 ))
             {
@@ -1545,6 +1756,48 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         }
     }
 
+    public bool ValidateIndividualDishFlowConfiguration(out string error)
+    {
+        ResolveLineExecutionService();
+
+        if (!manageFoodDeliveryTasks)
+        {
+            error = "El coordinador no gestiona reparto de comida.";
+            return false;
+        }
+
+        if (lineExecutionService == null)
+        {
+            error = "Falta BistroBuilderOrderLineExecutionService.";
+            return false;
+        }
+
+        if (!lineExecutionService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private void ResolveLineExecutionService()
+    {
+        if (lineExecutionService != null)
+            return;
+
+        lineExecutionService = GetComponent<
+            BistroBuilderOrderLineExecutionService
+        >();
+
+        if (lineExecutionService == null)
+        {
+            lineExecutionService = FindFirstObjectByType<
+                BistroBuilderOrderLineExecutionService
+            >();
+        }
+    }
+
     private void ValidateRuntimeConfiguration()
     {
         if (registeredWaiters.Count == 0)
@@ -1555,14 +1808,25 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             );
         }
 
-        if (manageFoodDeliveryTasks &&
-            registeredKitchens.Count == 0)
+        if (manageFoodDeliveryTasks && registeredKitchens.Count == 0)
         {
             Debug.LogWarning(
                 "WaiterTaskCoordinator gestiona repartos, " +
                 "pero no ha encontrado ninguna cocina.",
                 this
             );
+        }
+
+        if (!manageFoodDeliveryTasks)
+        {
+            return;
+        }
+
+        if (!ValidateIndividualDishFlowConfiguration(
+                out string configurationError
+            ))
+        {
+            Debug.LogError(configurationError, this);
         }
     }
 }

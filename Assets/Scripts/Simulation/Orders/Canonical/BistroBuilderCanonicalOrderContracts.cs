@@ -191,6 +191,8 @@ public static class BistroBuilderCanonicalOrderTransitionPolicy
                            BistroBuilderCanonicalOrderLineState
                                .ReadyForPickup ||
                        target ==
+                           BistroBuilderCanonicalOrderLineState.Queued ||
+                       target ==
                            BistroBuilderCanonicalOrderLineState.Failed;
 
             case BistroBuilderCanonicalOrderLineState.ReadyForPickup:

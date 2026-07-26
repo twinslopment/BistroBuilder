@@ -44,6 +44,12 @@ public sealed class WaiterTask
     public RestaurantOrder Order { get; }
 
     /// <summary>
+    /// LineId canónico relacionado con una tarea DeliverFood individual.
+    /// Puede estar vacío en tareas legacy creadas por pruebas antiguas.
+    /// </summary>
+    public string OrderLineId { get; }
+
+    /// <summary>
     /// Camarero que tiene reservada o asignada la tarea.
     ///
     /// Será null mientras la tarea permanezca pendiente.
@@ -100,6 +106,27 @@ public sealed class WaiterTask
         RestaurantOrder order,
         long creationSequence
     )
+        : this(
+            taskId,
+            type,
+            priority,
+            table,
+            order,
+            string.Empty,
+            creationSequence
+        )
+    {
+    }
+
+    public WaiterTask(
+        int taskId,
+        WaiterTaskType type,
+        WaiterTaskPriority priority,
+        RestaurantTable table,
+        RestaurantOrder order,
+        string orderLineId,
+        long creationSequence
+    )
     {
         if (taskId <= 0)
         {
@@ -117,12 +144,23 @@ public sealed class WaiterTask
             );
         }
 
-        if (type == WaiterTaskType.DeliverFood &&
-            order == null)
+        if (type == WaiterTaskType.DeliverFood && order == null)
         {
             throw new ArgumentNullException(
                 nameof(order),
                 "Una tarea DeliverFood necesita una comanda."
+            );
+        }
+
+        string normalizedLineId =
+            BistroBuilderOrderIdUtility.Normalize(orderLineId);
+
+        if (!string.IsNullOrEmpty(normalizedLineId) &&
+            !BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
+        {
+            throw new ArgumentException(
+                "La tarea contiene un OrderLineId inválido.",
+                nameof(orderLineId)
             );
         }
 
@@ -139,8 +177,8 @@ public sealed class WaiterTask
         Priority = priority;
         Table = table;
         Order = order;
+        OrderLineId = normalizedLineId;
         CreationSequence = creationSequence;
-
         State = WaiterTaskState.Pending;
         AssignedWaiter = null;
     }

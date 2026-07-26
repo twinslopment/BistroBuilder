@@ -1,0 +1,67 @@
+{
+  "package": "BistroBuilder 367D1 — Kitchen Reentrancy Guard Hotfix",
+  "base": "BistroBuilder 367D",
+  "type": "cumulative hotfix",
+  "expected_validation": {
+    "correct": 20,
+    "warnings": 0,
+    "errors": 0
+  },
+  "expected_self_test": {
+    "passed": 77,
+    "failed": 0
+  },
+  "preserves_meta_guids": true,
+  "files": [
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowInstaller.cs",
+      "size": 13255,
+      "sha256": "7722bcb35df609cc4c610b202f8f361d524c87bb0a0bb52a2961597e117bbfbd"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowInstaller.cs.meta",
+      "size": 243,
+      "sha256": "58eab1390a8b8da6ba15c966126c7da0c581d49e42ee2326ae9b97bed617a309"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowSelfTest.cs",
+      "size": 30134,
+      "sha256": "72451cfc138237b1f17bc676a547c74b55fb1a934635188f8ab326c08332fa1d"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowSelfTest.cs.meta",
+      "size": 243,
+      "sha256": "fb9e6a21cb241f522a2de5ffc8360fbbb7c5f2ff10cc90844bafd849b291e361"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowValidator.cs",
+      "size": 13989,
+      "sha256": "dfd26662cbac1fba2bc2720e7791714f0513b759c0c2a5261bba3cc42d186d01"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualDishFlowValidator.cs.meta",
+      "size": 243,
+      "sha256": "c2a2c23a5984d7dbd268f62b175a776a006555f048398be86ec32b283a4cb17a"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs",
+      "size": 23976,
+      "sha256": "a3f4b3a040751bff457f874c3f773eba214c4b83b2aa9427257ea70fe685c967"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs.meta",
+      "size": 59,
+      "sha256": "5076e58c944b4a860bac84a6d222ca3153bd320b0b4d685090f82911d466e1ba"
+    },
+    {
+      "path": "INSTRUCCIONES_367D1.txt",
+      "size": 2425,
+      "sha256": "c391c80cfa4a190791a412cc7e46b4112191d5ac579e43dc24829dd088a275c1"
+    },
+    {
+      "path": "REVISION_TECNICA_367D1.md",
+      "size": 1721,
+      "sha256": "c5f52c64ef55bb7958a898af8e633b4d3647950f132fa6b1a99d5e5d29fe1b5e"
+    }
+  ]
+}

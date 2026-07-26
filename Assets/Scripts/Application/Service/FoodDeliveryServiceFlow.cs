@@ -1,17 +1,16 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Ejecuta físicamente la recogida y entrega de una comanda.
+/// Ejecuta la recogida y entrega de un plato físico concreto.
 ///
-/// La selección y asignación del camarero corresponde al
-/// WaiterTaskCoordinator. Esta clase se limita a ejecutar:
-/// - El desplazamiento hasta cocina.
-/// - La recogida del plato.
-/// - El desplazamiento hasta la mesa.
-/// - La entrega de la comida.
-/// - La confirmación o recuperación de la tarea.
+/// La asignación pertenece a WaiterTaskCoordinator y la autoridad de estado
+/// pertenece a BistroBuilderCanonicalOrderService a través de
+/// BistroBuilderOrderLineExecutionService. Este flujo solo coordina movimiento,
+/// tiempos provisionales y confirmación transaccional de la tarea.
 /// </summary>
+[DisallowMultipleComponent]
 public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 {
     [Header("Referencias")]
@@ -22,12 +21,11 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
     [SerializeField]
     private WaiterMovementView waiterMovementView;
 
-    [Tooltip(
-        "Coordinador central de tareas. Si no se configura " +
-        "manualmente, se buscará automáticamente en la escena."
-    )]
     [SerializeField]
     private WaiterTaskCoordinator taskCoordinator;
+
+    [SerializeField]
+    private BistroBuilderOrderLineExecutionService lineExecutionService;
 
     [Header("Duraciones provisionales")]
 
@@ -37,59 +35,58 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
     [SerializeField, Min(0.1f)]
     private float servingDuration = 2f;
 
-    /// <summary>
-    /// Corrutina operativa actualmente en ejecución.
-    ///
-    /// Impide iniciar dos procesos de recogida o servicio
-    /// simultáneamente para el mismo camarero.
-    /// </summary>
     private Coroutine activeRoutine;
+
+    public Waiter Waiter => waiter;
+    public WaiterMovementView MovementView => waiterMovementView;
+    public WaiterTaskCoordinator TaskCoordinator => taskCoordinator;
+    public BistroBuilderOrderLineExecutionService LineExecutionService =>
+        lineExecutionService;
 
     private void Awake()
     {
-        ResolveTaskCoordinator();
+        ResolveDependencies();
     }
 
     private void OnEnable()
     {
         if (waiterMovementView != null)
         {
-            waiterMovementView.DestinationReached +=
-                HandleDestinationReached;
+            waiterMovementView.DestinationReached -= HandleDestinationReached;
+            waiterMovementView.DestinationReached += HandleDestinationReached;
         }
     }
 
     private void Start()
     {
-        ResolveTaskCoordinator();
-        ValidateConfiguration();
+        ResolveDependencies();
+
+        if (!ValidateConfiguration(out string error))
+        {
+            Debug.LogError(error, this);
+            enabled = false;
+        }
     }
 
     private void OnDisable()
     {
         if (waiterMovementView != null)
         {
-            waiterMovementView.DestinationReached -=
-                HandleDestinationReached;
+            waiterMovementView.DestinationReached -= HandleDestinationReached;
         }
 
-        RestaurantOrder interruptedOrder =
-            waiter != null
-                ? waiter.AssignedOrder
-                : null;
+        RestaurantOrder interruptedOrder = waiter != null
+            ? waiter.AssignedOrder
+            : null;
+        string interruptedLineId = waiter != null
+            ? waiter.AssignedOrderLineId
+            : string.Empty;
 
-        bool wasExecutingDelivery =
-            waiter != null &&
-            (
-                waiter.CurrentState ==
-                    WaiterState.WalkingToKitchen ||
-                waiter.CurrentState ==
-                    WaiterState.WaitingForDish ||
-                waiter.CurrentState ==
-                    WaiterState.WalkingToServeTable ||
-                waiter.CurrentState ==
-                    WaiterState.ServingFood
-            );
+        bool wasExecutingDelivery = waiter != null &&
+            (waiter.CurrentState == WaiterState.WalkingToKitchen ||
+             waiter.CurrentState == WaiterState.WaitingForDish ||
+             waiter.CurrentState == WaiterState.WalkingToServeTable ||
+             waiter.CurrentState == WaiterState.ServingFood);
 
         if (activeRoutine != null)
         {
@@ -97,366 +94,444 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             activeRoutine = null;
         }
 
-        // Si el flujo se desactiva durante una entrega,
-        // la tarea debe regresar al coordinador para no quedar
-        // bloqueada indefinidamente.
-        if (Application.isPlaying &&
-            wasExecutingDelivery)
+        if (Application.isPlaying && wasExecutingDelivery)
         {
-            if (taskCoordinator != null)
-            {
-                taskCoordinator.ReportFoodDeliveryFailure(
-                    waiter,
-                    interruptedOrder
-                );
-            }
-
-            if (waiter != null &&
-                interruptedOrder != null &&
-                waiter.AssignedOrder ==
-                    interruptedOrder)
-            {
-                waiter.ClearAssignment();
-            }
+            RecoverInterruptedLine(
+                interruptedOrder,
+                interruptedLineId,
+                true
+            );
         }
     }
 
-    /// <summary>
-    /// Reacciona cuando el camarero alcanza un destino.
-    ///
-    /// El estado actual determina si ha llegado a cocina
-    /// o a la mesa donde debe servir.
-    /// </summary>
-    private void HandleDestinationReached(
-        WaiterMovementView movementView
-    )
+    public bool ValidateConfiguration(out string error)
     {
-        if (waiter == null ||
-            activeRoutine != null)
+        ResolveDependencies();
+
+        if (waiter == null)
         {
+            error = "FoodDeliveryServiceFlow necesita una referencia a Waiter.";
+            return false;
+        }
+
+        if (waiterMovementView == null)
+        {
+            error =
+                "FoodDeliveryServiceFlow necesita WaiterMovementView.";
+            return false;
+        }
+
+        if (taskCoordinator == null)
+        {
+            error =
+                "FoodDeliveryServiceFlow necesita WaiterTaskCoordinator.";
+            return false;
+        }
+
+        if (lineExecutionService == null)
+        {
+            error =
+                "FoodDeliveryServiceFlow necesita " +
+                "BistroBuilderOrderLineExecutionService.";
+            return false;
+        }
+
+        if (!lineExecutionService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        if (float.IsNaN(pickupDuration) ||
+            float.IsInfinity(pickupDuration) ||
+            pickupDuration <= 0f ||
+            float.IsNaN(servingDuration) ||
+            float.IsInfinity(servingDuration) ||
+            servingDuration <= 0f)
+        {
+            error = "Las duraciones de reparto deben ser positivas.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private void HandleDestinationReached(WaiterMovementView movementView)
+    {
+        if (waiter == null || activeRoutine != null)
+            return;
+
+        if (waiter.CurrentState == WaiterState.WalkingToKitchen)
+        {
+            activeRoutine = StartCoroutine(PickupLineRoutine());
             return;
         }
 
-        if (waiter.CurrentState ==
-            WaiterState.WalkingToKitchen)
+        if (waiter.CurrentState == WaiterState.WalkingToServeTable)
         {
-            activeRoutine =
-                StartCoroutine(
-                    PickupFoodRoutine()
-                );
-
-            return;
-        }
-
-        if (waiter.CurrentState ==
-            WaiterState.WalkingToServeTable)
-        {
-            activeRoutine =
-                StartCoroutine(
-                    ServeFoodRoutine()
-                );
+            activeRoutine = StartCoroutine(ServeLineRoutine());
         }
     }
 
-    /// <summary>
-    /// Ejecuta la recogida de una comanda preparada.
-    /// </summary>
-    private IEnumerator PickupFoodRoutine()
+    private IEnumerator PickupLineRoutine()
     {
-        RestaurantOrder order =
-            waiter.AssignedOrder;
+        RestaurantOrder order = waiter.AssignedOrder;
+        string orderLineId = waiter.AssignedOrderLineId;
 
-        if (order == null)
+        if (!ValidateAssignedLine(order, orderLineId, out string error))
         {
-            Debug.LogError(
-                $"El camarero {waiter.WaiterId} " +
-                "no tiene comanda asignada.",
-                waiter
-            );
-
-            AbortDelivery(
-                null,
-                true
-            );
-
+            Debug.LogError(error, this);
+            AbortDelivery(order, orderLineId, true);
             yield break;
         }
 
-        if (order.CurrentState !=
-            OrderState.ReadyForPickup)
-        {
-            Debug.LogError(
-                $"La comanda {order.OrderId} " +
-                "no está lista para recoger.",
-                this
-            );
-
-            AbortDelivery(
-                order,
-                true
-            );
-
-            yield break;
-        }
-
-        waiter.SetState(
-            WaiterState.WaitingForDish
-        );
+        waiter.SetState(WaiterState.WaitingForDish);
 
         Debug.Log(
-            $"Camarero {waiter.WaiterId} recoge la comanda " +
-            $"{order.OrderId} en cocina.",
+            "Camarero " + waiter.WaiterId + " recoge la línea " +
+            orderLineId + " de la comanda " + order.OrderId + ".",
             this
         );
 
-        yield return new WaitForSeconds(
-            pickupDuration
-        );
+        yield return new WaitForSeconds(pickupDuration);
 
-        bool assignmentStillValid =
-            waiter.AssignedOrder == order &&
-            waiter.AssignedTable ==
-                order.Table;
-
-        if (!assignmentStillValid)
+        if (!IsAssignmentStillValid(order, orderLineId))
         {
             Debug.LogWarning(
-                "La asignación del camarero cambió " +
-                "durante la recogida.",
+                "La asignación de línea cambió durante la recogida.",
                 this
             );
-
-            // No se limpia la asignación del camarero porque
-            // podría haber recibido otro trabajo válido.
-            AbortDelivery(
-                order,
-                false
-            );
-
+            AbortDelivery(order, orderLineId, false);
             yield break;
         }
 
-        waiter.SetState(
-            WaiterState.WalkingToServeTable
-        );
+        if (!lineExecutionService.TryMarkLineInTransit(
+                order,
+                orderLineId,
+                waiter,
+                out error
+            ))
+        {
+            Debug.LogError(
+                "No se pudo retirar la línea del pase. " + error,
+                this
+            );
+            AbortDelivery(order, orderLineId, true);
+            yield break;
+        }
 
+        waiter.SetState(WaiterState.WalkingToServeTable);
         activeRoutine = null;
     }
 
-    /// <summary>
-    /// Ejecuta la entrega de la comida en la mesa.
-    /// </summary>
-    private IEnumerator ServeFoodRoutine()
+    private IEnumerator ServeLineRoutine()
     {
-        RestaurantOrder order =
-            waiter.AssignedOrder;
+        RestaurantOrder order = waiter.AssignedOrder;
+        string orderLineId = waiter.AssignedOrderLineId;
 
-        if (order == null)
+        if (!ValidateAssignedLine(order, orderLineId, out string error))
         {
-            Debug.LogError(
-                $"El camarero {waiter.WaiterId} " +
-                "no tiene comanda asignada.",
-                waiter
-            );
-
-            AbortDelivery(
-                null,
-                true
-            );
-
+            Debug.LogError(error, this);
+            AbortDelivery(order, orderLineId, true);
             yield break;
         }
 
-        RestaurantTable table =
-            order.Table;
+        RestaurantTable table = order.Table;
+        CustomerGroup customerGroup = order.CustomerGroup;
 
-        CustomerGroup customerGroup =
-            order.CustomerGroup;
-
-        if (table == null ||
-            customerGroup == null)
+        if (table == null || customerGroup == null)
         {
             Debug.LogError(
-                $"La comanda {order.OrderId} " +
-                "tiene datos incompletos.",
+                "La comanda " + order.OrderId + " tiene datos incompletos.",
                 this
             );
-
-            AbortDelivery(
-                order,
-                true
-            );
-
+            AbortDelivery(order, orderLineId, true);
             yield break;
         }
 
-        waiter.SetState(
-            WaiterState.ServingFood
-        );
+        waiter.SetState(WaiterState.ServingFood);
 
         Debug.Log(
-            $"Camarero {waiter.WaiterId} sirve la comanda " +
-            $"{order.OrderId} en la mesa {table.TableId}.",
+            "Camarero " + waiter.WaiterId + " sirve la línea " +
+            orderLineId + " en la mesa " + table.TableId + ".",
             this
         );
 
-        yield return new WaitForSeconds(
-            servingDuration
+        yield return new WaitForSeconds(servingDuration);
+
+        if (!IsAssignmentStillValid(order, orderLineId))
+        {
+            Debug.LogWarning(
+                "La asignación de línea cambió durante el servicio.",
+                this
+            );
+            AbortDelivery(order, orderLineId, false);
+            yield break;
+        }
+
+        bool markedServed = lineExecutionService.TryMarkLineServed(
+            order,
+            orderLineId,
+            waiter,
+            out bool allActiveLinesServed,
+            out error
         );
 
-        bool served =
-            order.TrySetState(
-                OrderState.Served
-            );
-
-        if (!served)
+        if (!markedServed)
         {
+            // Served es irreversible. Si la autoridad aceptó la línea pero la
+            // fachada coarse no pudo sincronizarse, se limpia la tarea sin
+            // generar un segundo plato duplicado.
+            bool alreadyServed = IsLineServedOrConsumed(order, orderLineId);
+
             Debug.LogError(
-                $"La comanda {order.OrderId} " +
-                "no pudo pasar a Served.",
+                "La línea " + orderLineId +
+                " no pudo completar toda la sincronización. " + error,
                 this
             );
 
-            AbortDelivery(
-                order,
-                true
-            );
+            if (alreadyServed)
+            {
+                CompleteOrCancelTaskWithoutRetry(order, orderLineId);
+                activeRoutine = null;
+                waiter.ClearAssignment();
+            }
+            else
+            {
+                AbortDelivery(order, orderLineId, true);
+            }
 
             yield break;
         }
 
-        table.SetState(
-            TableState.Eating
-        );
-
-        customerGroup.SetState(
-            CustomerGroupState.Eating
-        );
-
-        Debug.Log(
-            $"Comanda {order.OrderId} servida al grupo " +
-            $"{customerGroup.GroupId}.",
-            this
-        );
-
-        bool taskCompleted =
-            taskCoordinator != null &&
-            taskCoordinator
-                .TryCompleteFoodDeliveryTask(order);
+        bool taskCompleted = taskCoordinator != null &&
+            taskCoordinator.TryCompleteFoodDeliveryTask(order, orderLineId);
 
         if (!taskCompleted)
         {
             Debug.LogWarning(
-                $"No se encontró una tarea activa para completar " +
-                $"el reparto de la comanda {order.OrderId}.",
+                "No se encontró la tarea activa de la línea " +
+                orderLineId + ".",
                 this
             );
 
-            // Se solicita al coordinador que limpie cualquier
-            // tarea inconsistente relacionada con el reparto.
-            if (taskCoordinator != null)
-            {
-                taskCoordinator.ReportFoodDeliveryFailure(
-                    waiter,
-                    order
-                );
-            }
+            // La línea ya está servida, por lo que ReportFailure solo limpia
+            // la tarea inconsistente y nunca la recrea.
+            taskCoordinator?.ReportFoodDeliveryFailure(
+                waiter,
+                order,
+                orderLineId
+            );
         }
 
-        // Se elimina la referencia antes de cambiar el camarero
-        // a Idle, porque ese evento puede generar inmediatamente
-        // una nueva asignación.
-        activeRoutine = null;
+        if (allActiveLinesServed)
+        {
+            table.SetState(TableState.Eating);
+            customerGroup.SetState(CustomerGroupState.Eating);
 
+            Debug.Log(
+                "Todos los platos de la comanda " + order.OrderId +
+                " han sido servidos al grupo " +
+                customerGroup.GroupId + ".",
+                this
+            );
+        }
+        else
+        {
+            Debug.Log(
+                "Línea " + orderLineId + " servida; el grupo " +
+                customerGroup.GroupId + " continúa esperando otros platos.",
+                this
+            );
+        }
+
+        activeRoutine = null;
         waiter.ClearAssignment();
     }
 
-    /// <summary>
-    /// Informa al coordinador de que el reparto no pudo terminar.
-    ///
-    /// El coordinador decidirá si la tarea puede reintentarse
-    /// o debe eliminarse definitivamente.
-    /// </summary>
+    private bool ValidateAssignedLine(
+        RestaurantOrder order,
+        string orderLineId,
+        out string error
+    )
+    {
+        if (order == null)
+        {
+            error = "El camarero no tiene comanda asignada.";
+            return false;
+        }
+
+        if (!BistroBuilderOrderIdUtility.IsValid(orderLineId))
+        {
+            error = "El camarero no tiene un LineId canónico asignado.";
+            return false;
+        }
+
+        if (!IsAssignmentStillValid(order, orderLineId))
+        {
+            error = "La asignación camarero-comanda-línea no es coherente.";
+            return false;
+        }
+
+        if (!lineExecutionService.TryGetLineSnapshot(
+                order,
+                orderLineId,
+                out _,
+                out BistroBuilderCanonicalOrderLine line,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        bool validOperationalState =
+            line.State ==
+                BistroBuilderCanonicalOrderLineState.AssignedForDelivery ||
+            line.State == BistroBuilderCanonicalOrderLineState.InTransit;
+
+        if (!validOperationalState)
+        {
+            error = "La línea está en " + line.State +
+                    " y no puede ejecutar reparto.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool IsAssignmentStillValid(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        return waiter != null &&
+               ReferenceEquals(waiter.AssignedOrder, order) &&
+               ReferenceEquals(waiter.AssignedTable, order?.Table) &&
+               string.Equals(
+                   waiter.AssignedOrderLineId,
+                   BistroBuilderOrderIdUtility.Normalize(orderLineId),
+                   StringComparison.Ordinal
+               );
+    }
+
+    private bool IsLineServedOrConsumed(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        return lineExecutionService != null &&
+               lineExecutionService.TryGetLineSnapshot(
+                   order,
+                   orderLineId,
+                   out _,
+                   out BistroBuilderCanonicalOrderLine line,
+                   out _
+               ) &&
+               (line.State == BistroBuilderCanonicalOrderLineState.Served ||
+                line.State == BistroBuilderCanonicalOrderLineState.Consumed);
+    }
+
+    private void CompleteOrCancelTaskWithoutRetry(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        if (taskCoordinator == null)
+            return;
+
+        if (!taskCoordinator.TryCompleteFoodDeliveryTask(order, orderLineId))
+        {
+            taskCoordinator.ReportFoodDeliveryFailure(
+                waiter,
+                order,
+                orderLineId
+            );
+        }
+    }
+
     private void AbortDelivery(
         RestaurantOrder order,
+        string orderLineId,
         bool clearWaiterAssignment
     )
     {
         activeRoutine = null;
 
-        if (taskCoordinator != null)
+        if (order != null &&
+            BistroBuilderOrderIdUtility.IsValid(orderLineId) &&
+            lineExecutionService != null)
         {
-            taskCoordinator.ReportFoodDeliveryFailure(
-                waiter,
-                order
+            string actorReference = waiter != null
+                ? BistroBuilderServiceOrderIdentityUtility
+                    .BuildWaiterReference(waiter.WaiterId)
+                : "delivery_failure";
+
+            lineExecutionService.TryReturnLineToPickup(
+                order,
+                orderLineId,
+                actorReference,
+                out _
             );
         }
 
-        if (!clearWaiterAssignment ||
-            waiter == null)
-        {
+        taskCoordinator?.ReportFoodDeliveryFailure(
+            waiter,
+            order,
+            orderLineId
+        );
+
+        if (!clearWaiterAssignment || waiter == null)
             return;
-        }
 
-        bool canClearAssignment =
-            order == null ||
-            waiter.AssignedOrder == order;
+        bool canClear = order == null ||
+            (ReferenceEquals(waiter.AssignedOrder, order) &&
+             string.Equals(
+                 waiter.AssignedOrderLineId,
+                 BistroBuilderOrderIdUtility.Normalize(orderLineId),
+                 StringComparison.Ordinal
+             ));
 
-        if (canClearAssignment)
+        if (canClear)
         {
             waiter.ClearAssignment();
         }
     }
 
-    /// <summary>
-    /// Localiza el coordinador cuando no se ha configurado
-    /// manualmente en el Inspector.
-    ///
-    /// Esta búsqueda se realiza durante la inicialización,
-    /// nunca de forma continua durante Update.
-    /// </summary>
-    private void ResolveTaskCoordinator()
+    private void RecoverInterruptedLine(
+        RestaurantOrder order,
+        string orderLineId,
+        bool clearAssignment
+    )
     {
-        if (taskCoordinator != null)
-            return;
-
-        taskCoordinator =
-            FindFirstObjectByType<
-                WaiterTaskCoordinator
-            >();
+        AbortDelivery(order, orderLineId, clearAssignment);
     }
 
-    /// <summary>
-    /// Comprueba que todas las referencias esenciales
-    /// estén configuradas.
-    /// </summary>
-    private void ValidateConfiguration()
+    private void ResolveDependencies()
     {
-        if (waiter == null)
-        {
-            Debug.LogError(
-                "FoodDeliveryServiceFlow necesita " +
-                "una referencia a Waiter.",
-                this
-            );
-        }
-
-        if (waiterMovementView == null)
-        {
-            Debug.LogError(
-                "FoodDeliveryServiceFlow necesita una referencia " +
-                "a WaiterMovementView.",
-                this
-            );
-        }
-
         if (taskCoordinator == null)
         {
-            Debug.LogError(
-                "FoodDeliveryServiceFlow no ha encontrado " +
-                "WaiterTaskCoordinator.",
-                this
-            );
+            taskCoordinator = FindFirstObjectByType<WaiterTaskCoordinator>();
+        }
+
+        if (lineExecutionService == null && taskCoordinator != null)
+        {
+            lineExecutionService = taskCoordinator.LineExecutionService;
+        }
+
+        if (lineExecutionService == null)
+        {
+            lineExecutionService = FindFirstObjectByType<
+                BistroBuilderOrderLineExecutionService
+            >();
         }
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        pickupDuration = Mathf.Max(0.1f, pickupDuration);
+        servingDuration = Mathf.Max(0.1f, servingDuration);
+    }
+#endif
 }

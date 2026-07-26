@@ -1,0 +1,56 @@
+BISTROBUILDER 367D1 — HOTFIX DE REENTRADA DE COCINA
+====================================================
+
+OBJETIVO
+--------
+Corrige una reentrada síncrona de KitchenSystem detectada en la prueba funcional
+real de 367D. Unity ejecuta StartCoroutine hasta el primer yield antes de devolver
+el manejador. Durante esa ventana, el cambio legacy a Preparing podía volver a
+invocar EnqueueQueuedLines y crear un segundo consumidor de la misma cola.
+
+SÍNTOMA CORREGIDO
+-----------------
+- Dos líneas de una misma comanda podían entrar en Preparing simultáneamente pese
+  a existir una sola capacidad provisional de cocina.
+- activeWork podía quedar sobrescrito por la corrutina reentrante.
+- Una línea podía quedar bloqueada en Preparing y no llegar nunca a ReadyForPickup.
+- La misma línea podía registrar dos inicios de preparación.
+
+CAMBIOS
+-------
+- Guardia explícita processingLoopClaimed antes de StartCoroutine.
+- Rechazo de reclamaciones anidadas durante transiciones síncronas.
+- Liberación segura mediante try/finally.
+- Protección frente a manejadores obsoletos si la corrutina termina antes del
+  primer yield.
+- Parada controlada sin reiniciar la cola durante OnDisable o restauración.
+- Marcador RuntimeRevision = 367D1.
+- Validador actualizado: 20 correctos esperados.
+- Autotest actualizado con pruebas anti-reentrada: 77 superadas esperadas.
+
+INSTALACIÓN
+-----------
+1. Sal de Play Mode.
+2. Cierra Unity.
+3. Extrae este ZIP sobre la raíz del proyecto BistroBuilder.
+4. Confirma la sustitución de archivos.
+5. Abre Unity y espera a que compile.
+6. Comprueba Console: 0 errores.
+7. Ejecuta:
+   Tools > Bistro Builder > Orders > Install or Repair 367D1 Individual Dish Flow
+8. Ejecuta:
+   Tools > Bistro Builder > Orders > Validate 367D1 Individual Dish Flow
+   Resultado esperado: 20 correctos, 0 advertencias, 0 errores.
+9. Ejecuta:
+   Tools > Bistro Builder > Orders > Run 367D1 Individual Dish Flow Self-Test
+   Resultado esperado: 77 superadas, 0 fallidas.
+
+PRUEBA FUNCIONAL POSTERIOR
+--------------------------
+Con un grupo de dos clientes y una sola cocina:
+- solo una línea puede estar Preparing;
+- la otra debe permanecer Queued;
+- la primera debe pasar a ReadyForPickup y después la segunda a Preparing;
+- no debe repetirse el mensaje de preparación para el mismo LineId;
+- ambas líneas deben terminar Served y el grupo debe empezar a comer;
+- Console debe permanecer con 0 errores.
