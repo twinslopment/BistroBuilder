@@ -24,7 +24,7 @@ using UnityEngine;
 )]
 public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 {
-    public const string RuntimeRevision = "367E";
+    public const string RuntimeRevision = "367F";
 
     [Header("Dependencias")]
 
@@ -45,6 +45,13 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
     )]
     [SerializeField, Min(0.1f)]
     private float defaultEatingDurationSeconds = 6f;
+
+    [Tooltip(
+        "Desfase determinista entre clientes del mismo pase. Permite que un " +
+        "plato compartido conserve progreso parcial real."
+    )]
+    [SerializeField, Min(0f)]
+    private float perCustomerEatingDurationOffsetSeconds;
 
     [Header("Estado runtime persistible")]
 
@@ -79,6 +86,8 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
     private readonly List<BistroBuilderCustomerDiningCustomerRuntime>
         customerCreationBuffer =
             new List<BistroBuilderCustomerDiningCustomerRuntime>(16);
+    private readonly List<SharedLineProgressKey> sharedProgressBuffer =
+        new List<SharedLineProgressKey>(16);
 
     private bool initialized;
     private bool subscriptionsActive;
@@ -93,6 +102,8 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
     public BistroBuilderOrderLineExecutionService LineExecutionService =>
         lineExecutionService;
     public float DefaultEatingDurationSeconds => defaultEatingDurationSeconds;
+    public float PerCustomerEatingDurationOffsetSeconds =>
+        perCustomerEatingDurationOffsetSeconds;
     public int ActiveOrderCount => activeOrders != null ? activeOrders.Count : 0;
     public int Revision { get; private set; }
 
@@ -204,6 +215,15 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
             defaultEatingDurationSeconds <= 0f)
         {
             error = "La duración individual de consumo debe ser positiva.";
+            return false;
+        }
+
+        if (float.IsNaN(perCustomerEatingDurationOffsetSeconds) ||
+            float.IsInfinity(perCustomerEatingDurationOffsetSeconds) ||
+            perCustomerEatingDurationOffsetSeconds < 0f ||
+            perCustomerEatingDurationOffsetSeconds > 60f)
+        {
+            error = "El desfase individual de consumo no es válido.";
             return false;
         }
 
@@ -925,6 +945,7 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         }
 
         consumedLineBuffer.Clear();
+        sharedProgressBuffer.Clear();
 
         for (int lineIndex = 0;
              lineIndex < canonical.Lines.Count;
@@ -948,6 +969,22 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
             else if (!string.IsNullOrEmpty(error))
             {
                 return false;
+            }
+            else if (line.IsShared)
+            {
+                int completedConsumers = CountLineConsumerClaims(
+                    candidate,
+                    line
+                );
+
+                sharedProgressBuffer.Add(
+                    new SharedLineProgressKey(
+                        line.LineId,
+                        line.CourseIndex,
+                        completedConsumers,
+                        line.ConsumerCustomerIds.Count
+                    )
+                );
             }
         }
 
@@ -980,6 +1017,19 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
             string.Empty,
             "Cliente terminó el pase " + expectedCourseIndex + "."
         );
+
+        for (int index = 0; index < sharedProgressBuffer.Count; index++)
+        {
+            SharedLineProgressKey progress = sharedProgressBuffer[index];
+            PublishSharedProgress(
+                normalizedOrderId,
+                normalizedCustomerId,
+                progress.LineId,
+                progress.CourseIndex,
+                progress.CompletedConsumerCount,
+                progress.TotalConsumerCount
+            );
+        }
 
         for (int index = 0; index < consumedLineBuffer.Count; index++)
         {
@@ -1097,7 +1147,7 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 
             if (customer.TryStartCourse(
                     courseIndex,
-                    defaultEatingDurationSeconds,
+                    CalculateEatingDuration(runtime, customer),
                     out _
                 ))
             {
@@ -1755,6 +1805,68 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         return true;
     }
 
+    private float CalculateEatingDuration(
+        BistroBuilderCustomerDiningOrderRuntime runtime,
+        BistroBuilderCustomerDiningCustomerRuntime customer
+    )
+    {
+        int ordinal = 0;
+
+        if (runtime != null && customer != null)
+        {
+            for (int index = 0; index < runtime.Customers.Count; index++)
+            {
+                if (runtime.Customers[index] != null &&
+                    string.Equals(
+                        runtime.Customers[index].CustomerId,
+                        customer.CustomerId,
+                        StringComparison.Ordinal
+                    ))
+                {
+                    ordinal = index;
+                    break;
+                }
+            }
+        }
+
+        return Mathf.Max(
+            0.1f,
+            defaultEatingDurationSeconds +
+            ordinal * perCustomerEatingDurationOffsetSeconds
+        );
+    }
+
+    private static int CountLineConsumerClaims(
+        BistroBuilderCustomerDiningOrderRuntime runtime,
+        BistroBuilderCanonicalOrderLine line
+    )
+    {
+        if (runtime == null || line == null ||
+            line.ConsumerCustomerIds == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+
+        for (int index = 0;
+             index < line.ConsumerCustomerIds.Count;
+             index++)
+        {
+            if (runtime.TryGetCustomer(
+                    line.ConsumerCustomerIds[index],
+                    out BistroBuilderCustomerDiningCustomerRuntime customer
+                ) &&
+                customer != null &&
+                customer.HasConsumedLine(line.LineId))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     private int CountEatingCustomers(string orderId)
     {
         if (!runtimeByOrderId.TryGetValue(
@@ -2201,6 +2313,45 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         }
     }
 
+    private void PublishSharedProgress(
+        string orderId,
+        string customerId,
+        string lineId,
+        int courseIndex,
+        int completedConsumerCount,
+        int totalConsumerCount
+    )
+    {
+        BistroBuilderCustomerDiningChangedEvent change =
+            new BistroBuilderCustomerDiningChangedEvent(
+                BistroBuilderCustomerDiningChangeType.SharedLineProgressed,
+                orderId,
+                customerId,
+                lineId,
+                courseIndex,
+                completedConsumerCount,
+                totalConsumerCount,
+                Revision,
+                "Progreso de plato compartido: " +
+                completedConsumerCount + "/" + totalConsumerCount + "."
+            );
+
+        DiningChanged?.Invoke(change);
+
+        if (logTransitions)
+        {
+            Debug.Log(
+                "367F consumo compartido: SharedLineProgressed. OrderId: " +
+                change.OrderId + ". CustomerId: " + change.CustomerId +
+                ". LineId: " + change.LineId + ". Course: " +
+                change.CourseIndex + ". Progreso: " +
+                change.CompletedConsumerCount + "/" +
+                change.TotalConsumerCount + ".",
+                this
+            );
+        }
+    }
+
     private void PublishChange(
         BistroBuilderCustomerDiningChangeType changeType,
         string orderId,
@@ -2227,7 +2378,7 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         }
 
         Debug.Log(
-            "367E consumo individual: " + changeType +
+            "367F consumo individual: " + changeType +
             ". OrderId: " +
             (string.IsNullOrEmpty(change.OrderId) ? "-" : change.OrderId) +
             ". CustomerId: " +
@@ -2273,6 +2424,27 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
             );
     }
 
+    private readonly struct SharedLineProgressKey
+    {
+        public string LineId { get; }
+        public int CourseIndex { get; }
+        public int CompletedConsumerCount { get; }
+        public int TotalConsumerCount { get; }
+
+        public SharedLineProgressKey(
+            string lineId,
+            int courseIndex,
+            int completedConsumerCount,
+            int totalConsumerCount
+        )
+        {
+            LineId = BistroBuilderOrderIdUtility.Normalize(lineId);
+            CourseIndex = courseIndex;
+            CompletedConsumerCount = completedConsumerCount;
+            TotalConsumerCount = totalConsumerCount;
+        }
+    }
+
     private readonly struct CustomerCompletionKey
     {
         public string OrderId { get; }
@@ -2297,6 +2469,11 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         defaultEatingDurationSeconds = Mathf.Max(
             0.1f,
             defaultEatingDurationSeconds
+        );
+        perCustomerEatingDurationOffsetSeconds = Mathf.Clamp(
+            perCustomerEatingDurationOffsetSeconds,
+            0f,
+            60f
         );
     }
 #endif

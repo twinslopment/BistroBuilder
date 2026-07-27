@@ -821,6 +821,8 @@ GameObject:
   - component: {fileID: 263644962}
   - component: {fileID: 263644963}
   - component: {fileID: 263644964}
+  - component: {fileID: 263644966}
+  - component: {fileID: 263644965}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -934,6 +936,7 @@ MonoBehaviour:
   kitchenId: kitchen_main
   orderSystem: {fileID: 263644903}
   lineExecutionService: {fileID: 263644963}
+  canonicalOrderService: {fileID: 263644961}
   pickupPoint: {fileID: 504368063}
   preparationDurationScale: 0.01
   minimumPreparationDuration: 0.25
@@ -1850,9 +1853,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCanonicalOrderIntegrationService
   canonicalOrderService: {fileID: 263644961}
+  orderCompositionService: {fileID: 263644966}
+  courseAndSharingService: {fileID: 263644965}
   currentMealService: 2
   defaultCourseIndex: 1
   individualLineExecutionEnabled: 1
+  courseAndSharingExecutionEnabled: 1
   logSynchronization: 1
 --- !u!114 &263644963
 MonoBehaviour:
@@ -1885,8 +1891,42 @@ MonoBehaviour:
   canonicalOrderService: {fileID: 263644961}
   lineExecutionService: {fileID: 263644963}
   defaultEatingDurationSeconds: 6
+  perCustomerEatingDurationOffsetSeconds: 0.75
   activeOrders: []
   logTransitions: 1
+--- !u!114 &263644965
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0acab50f23e842d0865fe2427aa0dce4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCourseAndSharingService
+  orderSystem: {fileID: 263644903}
+  canonicalOrderService: {fileID: 263644961}
+  compositionService: {fileID: 263644966}
+  customerDiningService: {fileID: 263644964}
+  activeOrders: []
+  logTransitions: 1
+--- !u!114 &263644966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3369cb45e3d240209b5a7eaf01f44a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderCompositionService
+  menuService: {fileID: 263644959}
+  compositionProfile: {fileID: 11400000, guid: 66e06e88b46dfb94498cd6e1e3d156bd, type: 2}
+  logComposition: 0
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

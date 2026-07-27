@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcb06c2a3e3549259ddca5a049616cf3, type: 3}
+  m_Name: BB_Default_Order_Composition_367F
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderCompositionProfile
+  coordinationPolicy: 0
+  rules:
+  - enabled: 1
+    courseIndex: 1
+    compositionMode: 0
+    menuDisplayOffset: 0
+    sharedGroupSize: 2
+  - enabled: 1
+    courseIndex: 2
+    compositionMode: 1
+    menuDisplayOffset: 1
+    sharedGroupSize: 2

@@ -793,6 +793,371 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     }
 
     /// <summary>
+    /// Somete todas las líneas Draft de una comanda y libera a Queued
+    /// únicamente las líneas del pase indicado.
+    ///
+    /// La operación se ejecuta sobre una copia profunda. Los pases futuros
+    /// permanecen Submitted y no pueden entrar en cocina hasta una liberación
+    /// posterior de 367F.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult
+        TrySubmitOrderAndReleaseCourse(
+            string orderId,
+            int courseIndex,
+            string actorReferenceId
+        )
+    {
+        if (!BistroBuilderCourseAndSharingPolicy.IsValidCourseIndex(
+                courseIndex
+            ))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                "El pase inicial indicado no es válido."
+            );
+        }
+
+        if (!TryResolveOrder(
+                orderId,
+                out BistroBuilderCanonicalOrder order,
+                out BistroBuilderCanonicalOrderOperationResult failure
+            ))
+        {
+            return failure;
+        }
+
+        if (order.IsTerminal)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderAlreadyTerminal,
+                "La comanda ya está en un estado terminal.",
+                order.OrderId
+            );
+        }
+
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        bool foundCourse = false;
+        bool changed = false;
+        string firstReleasedLineId = string.Empty;
+        int releasedCount = 0;
+
+        for (int index = 0; index < candidate.Lines.Count; index++)
+        {
+            BistroBuilderCanonicalOrderLine line = candidate.Lines[index];
+
+            if (line == null)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                    "La comanda contiene una línea nula.",
+                    order.OrderId
+                );
+            }
+
+            if (line.State == BistroBuilderCanonicalOrderLineState.Draft)
+            {
+                if (!candidate.TryTransitionLine(
+                        line.LineId,
+                        BistroBuilderCanonicalOrderLineState.Submitted,
+                        actorReferenceId,
+                        out string submitError
+                    ))
+                {
+                    return Failure(
+                        BistroBuilderCanonicalOrderFailureReason
+                            .InvalidTransition,
+                        submitError,
+                        order.OrderId,
+                        line.LineId
+                    );
+                }
+
+                changed = true;
+            }
+
+            if (line.CourseIndex != courseIndex || line.IsTerminal)
+            {
+                continue;
+            }
+
+            foundCourse = true;
+
+            if (line.State == BistroBuilderCanonicalOrderLineState.Submitted)
+            {
+                if (!candidate.TryTransitionLine(
+                        line.LineId,
+                        BistroBuilderCanonicalOrderLineState.Queued,
+                        actorReferenceId,
+                        out string releaseError
+                    ))
+                {
+                    return Failure(
+                        BistroBuilderCanonicalOrderFailureReason
+                            .InvalidTransition,
+                        releaseError,
+                        order.OrderId,
+                        line.LineId
+                    );
+                }
+
+                if (releasedCount == 0)
+                {
+                    firstReleasedLineId = line.LineId;
+                }
+
+                releasedCount++;
+                changed = true;
+            }
+        }
+
+        if (!foundCourse)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                "La comanda no contiene líneas activas en el pase indicado.",
+                order.OrderId
+            );
+        }
+
+        if (!candidate.TryValidate(out string validationError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                validationError,
+                order.OrderId
+            );
+        }
+
+        if (!changed)
+        {
+            return BistroBuilderCanonicalOrderOperationResult.Success(
+                "La comanda ya estaba sometida y el pase ya estaba liberado.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        int orderIndex = orders.IndexOf(order);
+
+        if (orderIndex < 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderNotFound,
+                "La comanda no figura en la colección runtime.",
+                order.OrderId
+            );
+        }
+
+        UnindexOrder(order);
+        orders[orderIndex] = candidate;
+        IndexOrder(candidate);
+        Revision++;
+
+        PublishChange(
+            BistroBuilderCanonicalOrderChangeType.LineStateChanged,
+            candidate.OrderId,
+            releasedCount == 1 ? firstReleasedLineId : string.Empty,
+            "Comanda sometida y pase " + courseIndex +
+            " liberado atómicamente."
+        );
+
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Comanda sometida y pase inicial liberado.",
+            candidate.OrderId,
+            releasedCount == 1 ? firstReleasedLineId : string.Empty
+        );
+    }
+
+    /// <summary>
+    /// Libera atómicamente un conjunto explícito de líneas Submitted.
+    ///
+    /// Un LineId repetido o ajeno rechaza la operación completa. Las líneas
+    /// que ya superaron Queued se aceptan de forma idempotente, pero una línea
+    /// Draft indica que la comanda todavía no fue sometida.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult
+        TryReleaseSubmittedLines(
+            string orderId,
+            IList<string> lineIds,
+            string actorReferenceId
+        )
+    {
+        if (!TryResolveOrder(
+                orderId,
+                out BistroBuilderCanonicalOrder order,
+                out BistroBuilderCanonicalOrderOperationResult failure
+            ))
+        {
+            return failure;
+        }
+
+        if (lineIds == null || lineIds.Count == 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                "Debe indicarse al menos un LineId para liberar.",
+                order.OrderId
+            );
+        }
+
+        if (order.IsTerminal)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderAlreadyTerminal,
+                "La comanda ya está en un estado terminal.",
+                order.OrderId
+            );
+        }
+
+        HashSet<string> uniqueLineIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        List<string> normalizedLineIds = new List<string>(lineIds.Count);
+
+        for (int index = 0; index < lineIds.Count; index++)
+        {
+            string lineId = BistroBuilderOrderIdUtility.Normalize(
+                lineIds[index]
+            );
+
+            if (!BistroBuilderOrderIdUtility.IsValid(lineId))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidLineId,
+                    "La liberación contiene un LineId inválido.",
+                    order.OrderId,
+                    lineId
+                );
+            }
+
+            if (!uniqueLineIds.Add(lineId))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .DuplicateLineId,
+                    "La liberación contiene un LineId duplicado.",
+                    order.OrderId,
+                    lineId
+                );
+            }
+
+            normalizedLineIds.Add(lineId);
+        }
+
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        bool changed = false;
+        string firstChangedLineId = string.Empty;
+        int changedCount = 0;
+
+        for (int index = 0; index < normalizedLineIds.Count; index++)
+        {
+            string lineId = normalizedLineIds[index];
+
+            if (!candidate.TryGetLine(
+                    lineId,
+                    out BistroBuilderCanonicalOrderLine line
+                ) ||
+                line == null)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                    "Una línea de liberación no pertenece a la comanda.",
+                    order.OrderId,
+                    lineId
+                );
+            }
+
+            if (line.State == BistroBuilderCanonicalOrderLineState.Draft)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                    "La línea " + lineId +
+                    " continúa en Draft y no puede liberarse.",
+                    order.OrderId,
+                    lineId
+                );
+            }
+
+            if (line.State != BistroBuilderCanonicalOrderLineState.Submitted)
+            {
+                // Idempotencia: una línea ya liberada o resuelta no se muta.
+                continue;
+            }
+
+            if (!candidate.TryTransitionLine(
+                    lineId,
+                    BistroBuilderCanonicalOrderLineState.Queued,
+                    actorReferenceId,
+                    out string transitionError
+                ))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                    transitionError,
+                    order.OrderId,
+                    lineId
+                );
+            }
+
+            if (changedCount == 0)
+            {
+                firstChangedLineId = lineId;
+            }
+
+            changedCount++;
+            changed = true;
+        }
+
+        if (!candidate.TryValidate(out string validationError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                validationError,
+                order.OrderId
+            );
+        }
+
+        if (!changed)
+        {
+            return BistroBuilderCanonicalOrderOperationResult.Success(
+                "Todas las líneas indicadas ya estaban liberadas.",
+                order.OrderId,
+                normalizedLineIds.Count == 1
+                    ? normalizedLineIds[0]
+                    : string.Empty
+            );
+        }
+
+        int orderIndex = orders.IndexOf(order);
+
+        if (orderIndex < 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderNotFound,
+                "La comanda no figura en la colección runtime.",
+                order.OrderId
+            );
+        }
+
+        UnindexOrder(order);
+        orders[orderIndex] = candidate;
+        IndexOrder(candidate);
+        Revision++;
+
+        PublishChange(
+            BistroBuilderCanonicalOrderChangeType.LineStateChanged,
+            candidate.OrderId,
+            changedCount == 1 ? firstChangedLineId : string.Empty,
+            "Líneas Submitted liberadas atómicamente hacia cocina."
+        );
+
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Líneas liberadas correctamente.",
+            candidate.OrderId,
+            changedCount == 1 ? firstChangedLineId : string.Empty
+        );
+    }
+
+    /// <summary>
     /// Consume atómicamente todas las líneas servidas de una comanda.
     ///
     /// Las líneas canceladas o ya consumidas se conservan. Cualquier línea

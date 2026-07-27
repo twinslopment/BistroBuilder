@@ -15,7 +15,7 @@ public sealed class KitchenSystem : MonoBehaviour
     /// <summary>
     /// Revisión del runtime individual instalada.
     /// </summary>
-    public const string RuntimeRevision = "367D1";
+    public const string RuntimeRevision = "367F";
     [Header("Identidad persistente")]
     [SerializeField]
     private string kitchenId = "kitchen_main";
@@ -26,6 +26,9 @@ public sealed class KitchenSystem : MonoBehaviour
 
     [SerializeField]
     private BistroBuilderOrderLineExecutionService lineExecutionService;
+
+    [SerializeField]
+    private BistroBuilderCanonicalOrderService canonicalOrderService;
 
     [SerializeField]
     private Transform pickupPoint;
@@ -53,6 +56,10 @@ public sealed class KitchenSystem : MonoBehaviour
         new HashSet<string>(StringComparer.Ordinal);
     private readonly HashSet<RestaurantOrder> subscribedOrders =
         new HashSet<RestaurantOrder>();
+    private readonly HashSet<string> pendingCanonicalScanOrderIds =
+        new HashSet<string>(StringComparer.Ordinal);
+    private readonly List<string> pendingCanonicalScanBuffer =
+        new List<string>(16);
 
     private LineWorkItem activeWork;
     private Coroutine processingRoutine;
@@ -62,6 +69,7 @@ public sealed class KitchenSystem : MonoBehaviour
     // por eso comprobar solo processingRoutine == null no es suficiente.
     private bool processingLoopClaimed;
     private bool suppressProcessingRestart;
+    private bool canonicalScanScopeActive;
 
     private long nextWorkSequence;
     private bool hasStarted;
@@ -91,6 +99,7 @@ public sealed class KitchenSystem : MonoBehaviour
     private void Awake()
     {
         kitchenId = BistroBuilderOrderIdUtility.Normalize(kitchenId);
+        ResolveCanonicalDependency();
     }
 
     private void OnEnable()
@@ -101,10 +110,28 @@ public sealed class KitchenSystem : MonoBehaviour
             orderSystem.OrderCreated += HandleOrderCreated;
         }
 
+        ResolveCanonicalDependency();
+
+        if (canonicalOrderService != null)
+        {
+            canonicalOrderService.OrdersChanged -=
+                HandleCanonicalOrdersChanged;
+            canonicalOrderService.OrdersChanged +=
+                HandleCanonicalOrdersChanged;
+        }
+
         if (hasStarted)
         {
             SynchronizeExistingOrders();
             EnsureProcessingRoutine();
+        }
+    }
+
+    private void Update()
+    {
+        if (Application.isPlaying)
+        {
+            DrainPendingCanonicalScans();
         }
     }
 
@@ -128,6 +155,15 @@ public sealed class KitchenSystem : MonoBehaviour
         {
             orderSystem.OrderCreated -= HandleOrderCreated;
         }
+
+        if (canonicalOrderService != null)
+        {
+            canonicalOrderService.OrdersChanged -=
+                HandleCanonicalOrdersChanged;
+        }
+
+        pendingCanonicalScanOrderIds.Clear();
+        pendingCanonicalScanBuffer.Clear();
 
         foreach (RestaurantOrder order in subscribedOrders)
         {
@@ -189,6 +225,17 @@ public sealed class KitchenSystem : MonoBehaviour
 
         if (!lineExecutionService.ValidateConfiguration(out error))
         {
+            return false;
+        }
+
+        ResolveCanonicalDependency();
+
+        if (canonicalOrderService == null ||
+            !canonicalOrderService.ValidateConfiguration(out error))
+        {
+            error = string.IsNullOrWhiteSpace(error)
+                ? "KitchenSystem necesita la autoridad canónica 367F."
+                : error;
             return false;
         }
 
@@ -379,6 +426,89 @@ public sealed class KitchenSystem : MonoBehaviour
         EnsureProcessingRoutine();
         error = string.Empty;
         return true;
+    }
+
+    private void HandleCanonicalOrdersChanged(
+        BistroBuilderCanonicalOrderChangedEvent change
+    )
+    {
+        if (BistroBuilderOrderIdUtility.IsValid(change.OrderId))
+        {
+            pendingCanonicalScanOrderIds.Add(change.OrderId);
+        }
+
+        // El evento canónico es síncrono. Solo se encola el escaneo para no
+        // reentrar en una liberación de pase o una transición de línea.
+    }
+
+    private void DrainPendingCanonicalScans()
+    {
+        if (canonicalScanScopeActive ||
+            pendingCanonicalScanOrderIds.Count == 0 ||
+            orderSystem == null)
+        {
+            return;
+        }
+
+        canonicalScanScopeActive = true;
+
+        try
+        {
+            int safety = 0;
+
+            while (pendingCanonicalScanOrderIds.Count > 0 && safety < 64)
+            {
+                safety++;
+                pendingCanonicalScanBuffer.Clear();
+                pendingCanonicalScanBuffer.AddRange(
+                    pendingCanonicalScanOrderIds
+                );
+                pendingCanonicalScanOrderIds.Clear();
+                pendingCanonicalScanBuffer.Sort(StringComparer.Ordinal);
+
+                IReadOnlyList<RestaurantOrder> orders =
+                    orderSystem.ActiveOrders;
+
+                for (int pendingIndex = 0;
+                     pendingIndex < pendingCanonicalScanBuffer.Count;
+                     pendingIndex++)
+                {
+                    string orderId =
+                        pendingCanonicalScanBuffer[pendingIndex];
+
+                    for (int orderIndex = 0;
+                         orderIndex < orders.Count;
+                         orderIndex++)
+                    {
+                        RestaurantOrder order = orders[orderIndex];
+
+                        if (order != null && order.HasCanonicalOrder &&
+                            string.Equals(
+                                order.CanonicalOrderId,
+                                orderId,
+                                StringComparison.Ordinal
+                            ))
+                        {
+                            EnqueueQueuedLines(order);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (pendingCanonicalScanOrderIds.Count > 0)
+            {
+                Debug.LogError(
+                    "KitchenSystem superó el límite de escaneos 367F.",
+                    this
+                );
+                pendingCanonicalScanOrderIds.Clear();
+            }
+        }
+        finally
+        {
+            canonicalScanScopeActive = false;
+        }
     }
 
     private void HandleOrderCreated(RestaurantOrder order)
@@ -761,6 +891,19 @@ public sealed class KitchenSystem : MonoBehaviour
         );
 
         StateChanged?.Invoke(currentState);
+    }
+
+    private void ResolveCanonicalDependency()
+    {
+        if (canonicalOrderService == null && lineExecutionService != null)
+        {
+            canonicalOrderService = lineExecutionService.CanonicalOrderService;
+        }
+
+        if (canonicalOrderService == null)
+        {
+            TryGetComponent(out canonicalOrderService);
+        }
     }
 
 #if UNITY_EDITOR

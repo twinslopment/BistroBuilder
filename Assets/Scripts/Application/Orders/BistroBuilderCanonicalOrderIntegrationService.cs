@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Responsabilidades:
 /// - Crear una comanda canónica antes de crear RestaurantOrder.
-/// - Generar una línea por miembro de CustomerGroup.
+/// - Componer líneas individuales o compartidas según un perfil de datos.
 /// - Conservar un enlace único legacy OrderId -> Canonical OrderId.
 /// - Aprobar cada transición legacy solo después de aplicarla de forma
 ///   atómica en la autoridad canónica.
@@ -29,6 +29,12 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     [SerializeField]
     private BistroBuilderCanonicalOrderService canonicalOrderService;
 
+    [SerializeField]
+    private BistroBuilderOrderCompositionService orderCompositionService;
+
+    [SerializeField]
+    private BistroBuilderCourseAndSharingService courseAndSharingService;
+
     [Header("Servicio provisional")]
 
     [Tooltip(
@@ -48,6 +54,13 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     )]
     [SerializeField]
     private bool individualLineExecutionEnabled;
+
+    [Tooltip(
+        "Activa composición por pases, platos compartidos y liberación " +
+        "coordinada 367F."
+    )]
+    [SerializeField]
+    private bool courseAndSharingExecutionEnabled;
 
     [Header("Depuración")]
 
@@ -75,6 +88,15 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
 
     public bool IndividualLineExecutionEnabled =>
         individualLineExecutionEnabled;
+
+    public bool CourseAndSharingExecutionEnabled =>
+        courseAndSharingExecutionEnabled;
+
+    public BistroBuilderOrderCompositionService OrderCompositionService =>
+        orderCompositionService;
+
+    public BistroBuilderCourseAndSharingService CourseAndSharingService =>
+        courseAndSharingService;
 
     public int ActiveLinkCount => canonicalByLegacyOrderId.Count;
 
@@ -117,6 +139,30 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             initialized = false;
             error = "El pase predeterminado queda fuera de rango.";
             return false;
+        }
+
+        if (courseAndSharingExecutionEnabled)
+        {
+            if (!individualLineExecutionEnabled)
+            {
+                initialized = false;
+                error = "367F requiere la ejecución individual 367D activa.";
+                return false;
+            }
+
+            if (orderCompositionService == null ||
+                !orderCompositionService.ValidateConfiguration(out error))
+            {
+                initialized = false;
+                return false;
+            }
+
+            if (courseAndSharingService == null ||
+                !courseAndSharingService.ValidateConfiguration(out error))
+            {
+                initialized = false;
+                return false;
+            }
         }
 
         initialized = true;
@@ -216,16 +262,41 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             BistroBuilderServiceOrderIdentityUtility
                 .BuildGroupReference(customerGroup.GroupId);
 
-        BistroBuilderCanonicalOrderOperationResult result =
-            canonicalOrderService.TryCreateIndividualOrder(
+        BistroBuilderCanonicalOrderOperationResult result;
+        BistroBuilderCanonicalOrder snapshot;
+
+        if (courseAndSharingExecutionEnabled)
+        {
+            if (!orderCompositionService.TryBuildCreationRequest(
+                    externalReferenceId,
+                    tableReferenceId,
+                    groupReferenceId,
+                    customerIds,
+                    currentMealService,
+                    out BistroBuilderCanonicalOrderCreationRequest request,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            result = canonicalOrderService.TryCreateOrder(
+                request,
+                out snapshot
+            );
+        }
+        else
+        {
+            result = canonicalOrderService.TryCreateIndividualOrder(
                 externalReferenceId,
                 tableReferenceId,
                 groupReferenceId,
                 customerIds,
                 currentMealService,
                 defaultCourseIndex,
-                out BistroBuilderCanonicalOrder snapshot
+                out snapshot
             );
+        }
 
         if (!result.Succeeded ||
             snapshot == null)
@@ -251,7 +322,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 groupReferenceId,
                 StringComparison.Ordinal
             ) ||
-            snapshot.Lines.Count != customerGroup.GroupSize)
+            snapshot.Lines.Count == 0 ||
+            !DoesSnapshotCoverCustomers(snapshot, customerIds))
         {
             TryRollbackUnregisteredCanonicalOrder(
                 snapshot.OrderId,
@@ -336,7 +408,12 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 expectedGroup,
                 StringComparison.Ordinal
             ) ||
-            snapshot.Lines.Count != order.CustomerGroup.GroupSize)
+            snapshot.Lines.Count == 0 ||
+            !TryBuildExpectedCustomerReferences(
+                order.CustomerGroup,
+                out _
+            ) ||
+            !DoesSnapshotCoverCustomers(snapshot, customerIds))
         {
             error =
                 "Las referencias del enlace legacy-canónico no coinciden.";
@@ -528,11 +605,27 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         switch (targetState)
         {
             case OrderState.SentToKitchen:
-                result = canonicalOrderService.TryAdvanceAllLinesToState(
-                    order.CanonicalOrderId,
-                    BistroBuilderCanonicalOrderLineState.Queued,
-                    actorReference
-                );
+                if (courseAndSharingExecutionEnabled)
+                {
+                    if (!courseAndSharingService
+                            .TrySubmitAndReleaseInitialCourse(
+                                order,
+                                actorReference,
+                                out result,
+                                out error
+                            ))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    result = canonicalOrderService.TryAdvanceAllLinesToState(
+                        order.CanonicalOrderId,
+                        BistroBuilderCanonicalOrderLineState.Queued,
+                        actorReference
+                    );
+                }
                 break;
 
             case OrderState.Preparing:
@@ -590,7 +683,7 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             default:
                 result = default;
                 error =
-                    "367D no reconoce la transición legacy a " +
+                    "367F no reconoce la transición legacy a " +
                     targetState + ".";
                 return false;
         }
@@ -690,6 +783,72 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         );
     }
 
+    private bool TryBuildExpectedCustomerReferences(
+        CustomerGroup customerGroup,
+        out string error
+    )
+    {
+        if (customerGroup == null)
+        {
+            error = "No existe el grupo legacy del enlace canónico.";
+            return false;
+        }
+
+        return BistroBuilderServiceOrderIdentityUtility
+            .TryBuildCustomerReferences(
+                customerGroup.GroupId,
+                customerGroup.GroupSize,
+                customerIds,
+                out error
+            );
+    }
+
+    private static bool DoesSnapshotCoverCustomers(
+        BistroBuilderCanonicalOrder snapshot,
+        IList<string> expectedCustomerIds
+    )
+    {
+        if (snapshot == null || expectedCustomerIds == null)
+        {
+            return false;
+        }
+
+        HashSet<string> expected =
+            new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> actual =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        for (int index = 0; index < expectedCustomerIds.Count; index++)
+        {
+            expected.Add(BistroBuilderOrderIdUtility.Normalize(
+                expectedCustomerIds[index]
+            ));
+        }
+
+        for (int lineIndex = 0;
+             lineIndex < snapshot.Lines.Count;
+             lineIndex++)
+        {
+            BistroBuilderCanonicalOrderLine line = snapshot.Lines[lineIndex];
+
+            if (line == null || line.ConsumerCustomerIds == null)
+            {
+                return false;
+            }
+
+            for (int consumerIndex = 0;
+                 consumerIndex < line.ConsumerCustomerIds.Count;
+                 consumerIndex++)
+            {
+                actual.Add(BistroBuilderOrderIdUtility.Normalize(
+                    line.ConsumerCustomerIds[consumerIndex]
+                ));
+            }
+        }
+
+        return expected.SetEquals(actual);
+    }
+
     private bool EnsureReady(out string error)
     {
         if (initialized &&
@@ -726,6 +885,16 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         if (canonicalOrderService == null)
         {
             TryGetComponent(out canonicalOrderService);
+        }
+
+        if (orderCompositionService == null)
+        {
+            TryGetComponent(out orderCompositionService);
+        }
+
+        if (courseAndSharingService == null)
+        {
+            TryGetComponent(out courseAndSharingService);
         }
     }
 

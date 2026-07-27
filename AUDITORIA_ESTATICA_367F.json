@@ -1,0 +1,167 @@
+{
+  "milestone": "367F",
+  "static_audit_passed": true,
+  "checks_passed": 31,
+  "checks_failed": 0,
+  "checks": [
+    {
+      "name": "package_has_assets",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "all_scripts_have_meta",
+      "passed": true,
+      "detail": "14 scripts"
+    },
+    {
+      "name": "no_orphan_script_meta",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "package_guids_present",
+      "passed": true,
+      "detail": "15 metas"
+    },
+    {
+      "name": "package_guids_unique",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "preserve_guid:Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "passed": true,
+      "detail": "31c816bb26624ffea4bddb972f8e570a"
+    },
+    {
+      "name": "preserve_guid:Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs.meta",
+      "passed": true,
+      "detail": "e56a8b71908d495689977a7310a8c9fd"
+    },
+    {
+      "name": "preserve_guid:Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs.meta",
+      "passed": true,
+      "detail": "a0c2c609b0cd4dc98110ba62421ea2bb"
+    },
+    {
+      "name": "preserve_guid:Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs.meta",
+      "passed": true,
+      "detail": "1ab04adee3b64679b178b78ca1d1ed43"
+    },
+    {
+      "name": "preserve_guid:Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs.meta",
+      "passed": true,
+      "detail": "918a6a732206bbf4b972063fe976b8a8"
+    },
+    {
+      "name": "no_cross_asset_guid_collision",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "balanced_csharp_delimiters",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "no_duplicate_types_after_overlay",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "no_runtime_scene_find",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_runtime_linq",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_hardcoded_dish_ids",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "legacy_link_uses_customer_coverage",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "legacy_link_has_no_linecount_equals_groupsize",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "course_reentry_guard",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "kitchen_deferred_canonical_scan",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "canonical_atomic_initial_release",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "canonical_atomic_selective_release",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "selftest_check_count_98",
+      "passed": true,
+      "detail": "98"
+    },
+    {
+      "name": "selftest_covers_real_ordersystem",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "selftest_covers_partial_shared",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "selftest_covers_atomic_duplicate_rejection",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "menu_installer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "menu_validator",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "menu_selftest",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "menu_debug",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "expected_validator_success_count",
+      "passed": true,
+      "detail": "35 correctos con una cocina"
+    }
+  ],
+  "limitations": [
+    "La compilación definitiva debe confirmarse dentro de Unity con los assemblies reales del proyecto.",
+    "La prueba funcional en Play Mode debe ejecutarse después del autotest."
+  ]
+}

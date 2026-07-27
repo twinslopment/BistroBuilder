@@ -1,0 +1,44 @@
+BISTRO BUILDER 367F — PLATOS COMPARTIDOS Y VARIOS PASES
+=========================================================
+
+REQUISITO PREVIO
+- BistroBuilder 367E completamente instalado y validado.
+- Unity cerrado durante la copia del paquete.
+
+INSTALACIÓN
+1. Cierra Unity.
+2. Extrae este ZIP directamente sobre la raíz del proyecto:
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+3. Confirma la sustitución de archivos.
+4. Abre Unity y espera a que termine de importar y compilar.
+5. No ejecutes herramientas hasta confirmar 0 errores rojos.
+
+HERRAMIENTAS
+- Instalar/reparar:
+  Tools > Bistro Builder > Orders > Install or Repair 367F Shared Dishes and Courses
+
+- Validar:
+  Tools > Bistro Builder > Orders > Validate 367F Shared Dishes and Courses
+
+- Autotest:
+  Tools > Bistro Builder > Orders > Run 367F Shared Dishes and Courses Self-Test
+
+- Diagnóstico en Play Mode:
+  Tools > Bistro Builder > Orders > Shared Dishes and Courses Debug
+
+RESULTADOS PREVISTOS
+- Instalador/validador: 35 correctos, 0 advertencias, 0 errores.
+- Autotest: 98 pruebas superadas, 0 fallidas.
+
+PERFIL PILOTO INSTALADO
+- Pase 1: un plato compartido por todos los clientes.
+- Pase 2: un plato individual por cliente.
+- Política: PerTable; el segundo pase no se libera hasta resolver el primero.
+
+NOTAS
+- El perfil es un ScriptableObject configurable por datos.
+- No contiene DishId hardcodeados: selecciona platos pedibles por orden de carta.
+- Las líneas futuras permanecen Submitted y no entran en cocina hasta su liberación.
+- La autoridad canónica conserva el estado de cada OrderLineId.
+- El consumo compartido permanece Served hasta que todos sus consumidores terminan.
+- El paquete no persiste todavía un servicio abierto en disco; deja snapshots versionados preparados para service.runtime.

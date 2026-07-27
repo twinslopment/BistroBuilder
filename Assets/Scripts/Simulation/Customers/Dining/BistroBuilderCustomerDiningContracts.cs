@@ -28,7 +28,8 @@ public enum BistroBuilderCustomerDiningChangeType
     GroupCoarseStateChanged = 4,
     BillReady = 5,
     OrderRemoved = 6,
-    StateRestored = 7
+    StateRestored = 7,
+    SharedLineProgressed = 8
 }
 
 /// <summary>
@@ -40,6 +41,9 @@ public readonly struct BistroBuilderCustomerDiningChangedEvent
     public string OrderId { get; }
     public string CustomerId { get; }
     public string LineId { get; }
+    public int CourseIndex { get; }
+    public int CompletedConsumerCount { get; }
+    public int TotalConsumerCount { get; }
     public int Revision { get; }
     public string Description { get; }
 
@@ -50,12 +54,39 @@ public readonly struct BistroBuilderCustomerDiningChangedEvent
         string lineId,
         int revision,
         string description
+    ) : this(
+        changeType,
+        orderId,
+        customerId,
+        lineId,
+        0,
+        0,
+        0,
+        revision,
+        description
+    )
+    {
+    }
+
+    public BistroBuilderCustomerDiningChangedEvent(
+        BistroBuilderCustomerDiningChangeType changeType,
+        string orderId,
+        string customerId,
+        string lineId,
+        int courseIndex,
+        int completedConsumerCount,
+        int totalConsumerCount,
+        int revision,
+        string description
     )
     {
         ChangeType = changeType;
         OrderId = BistroBuilderOrderIdUtility.Normalize(orderId);
         CustomerId = BistroBuilderOrderIdUtility.Normalize(customerId);
         LineId = BistroBuilderOrderIdUtility.Normalize(lineId);
+        CourseIndex = courseIndex;
+        CompletedConsumerCount = Math.Max(0, completedConsumerCount);
+        TotalConsumerCount = Math.Max(0, totalConsumerCount);
         Revision = revision;
         Description = description ?? string.Empty;
     }

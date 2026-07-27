@@ -1,0 +1,52 @@
+{
+  "milestone": "367F",
+  "name": "Shared Dishes and Multiple Courses",
+  "created_utc": "2026-07-27T10:31:13.232076+00:00",
+  "file_count_total_including_manifest": 33,
+  "manifested_file_count_excluding_manifest": 32,
+  "csharp_file_count": 14,
+  "meta_file_count": 15,
+  "expected_installer_validator": {
+    "correct": 35,
+    "warnings": 0,
+    "errors": 0
+  },
+  "expected_selftest": {
+    "passed": 98,
+    "failed": 0
+  },
+  "files_sha256": {
+    "AUDITORIA_ESTATICA_367F.json": "0175a874601468ea1ff77e3c8664b87eb394cd67198a743671f7e261e7e7f6a2",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesDebugWindow.cs": "226949a1f2c8bc71aa78bfd8ffa617eac8d0afecad20983d2768179ffb37487c",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesDebugWindow.cs.meta": "b9748d1414f0b236c18f9a19f1474c094f832b2f1371a9f0d6594957c7e4d747",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesInstaller.cs": "3fc701b3d94d0dc0ded76fb348d2bd84fec96801e927d285fb0aafd9b7fae8ce",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesInstaller.cs.meta": "ccb738759c512a2340eac6427a5dcab917a0e88a003620bb4418e27dacb91113",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesSelfTest.cs": "a63463c94d78896c5627c27d3b68ad0c87a81e89170700ca3c1351ffe767d834",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesSelfTest.cs.meta": "7e13c0fa5d4f5b84d5a502ad98fbe7cb1af6134bc5a845f9146e4d1a7c29e550",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesValidator.cs": "8caf8b45310c30646869f04e164497d24c87e0b265d4605d580d84934afe31b8",
+    "Assets/Editor/BistroBuilder/Orders/BistroBuilderSharedCoursesValidator.cs.meta": "70ce3bd289794a1aac3f97c79f53d492cdcda0e6cad31e2cc0f83898d8dcb0b8",
+    "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs": "278d62674271f749838e90c8bd3594e1cdfd3ae8c142328b4fa1732c8a3b9b84",
+    "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderIntegrationService.cs.meta": "8ffbb2949f1454b3ae50ee1bd344646ee2afb56c61d797213c634a1142f6c69f",
+    "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs": "bbc6faf31b8f5a6a65cbeb6b53ff484def00b2f203e8de666c754e8858a72521",
+    "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97",
+    "Assets/Scripts/Application/Orders/BistroBuilderCourseAndSharingService.cs": "f8794087df7e4f22b43a490b4259af11057c3741ed20f3795a006461f05521ad",
+    "Assets/Scripts/Application/Orders/BistroBuilderCourseAndSharingService.cs.meta": "f22f15ad065deb736467f42254ed252ba0592adebc64182492cc6975206153b4",
+    "Assets/Scripts/Application/Orders/BistroBuilderOrderCompositionService.cs": "56e44c49d14260cc52188e41986ee3a2c158405786ad9352e68fe656d45409f7",
+    "Assets/Scripts/Application/Orders/BistroBuilderOrderCompositionService.cs.meta": "581bf728bb93debca041cbba78a7e00ba1aa443ebafd35061a4db4001fb80e1a",
+    "Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs": "c8278d7363d020223650574b7eb729f96a8b90cd06120bdaee15e0e63cc3ad2d",
+    "Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs.meta": "d8f568977e43c4cc32c632fdde5eb1e95dadffba1d8c314640453e2221006999",
+    "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs": "fce9861c442f882df59ee6aabef6d1d5fc7edba5146bda5428d7fb1f88d55ccc",
+    "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs.meta": "83f75885981f6f9cf71ad4da3db43c1a33ca6e9a734362f8678850d4337d0ecc",
+    "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs": "132bea7298107d06998306e31a3594dd8e032b2c7d789e134d179cda6e29a18f",
+    "Assets/Scripts/Simulation/Kitchen/KitchenSystem.cs.meta": "5076e58c944b4a860bac84a6d222ca3153bd320b0b4d685090f82911d466e1ba",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderCourseAndSharingContracts.cs": "408851940e9f256a9a140ab992f2152e776ed2479e1fbfe15b3a635c6093afef",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderCourseAndSharingContracts.cs.meta": "954cacd2eb456454bde10775e0d153236c3b205110a8975fda9c8359f88200e0",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderCourseAndSharingRuntime.cs": "1ed2e2cc253a54e9f0b1d55de9d0d36dcd5d4cb6931045d43e8c2f22ed1d4751",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderCourseAndSharingRuntime.cs.meta": "005d62b1bda2c4cce2f7177d95d6021b6eceed8a2f981fffb728c8773ad9bba4",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderOrderCompositionProfile.cs": "1414241e3712cbbb17db6e34b8467318e09bc4b61e4e74f2fc43764eee2d7586",
+    "Assets/Scripts/Simulation/Orders/Courses/BistroBuilderOrderCompositionProfile.cs.meta": "54a433f2eeeb337426c262a08c4c5ed2c2a46702707518ea55c30b931bce8798",
+    "Assets/Scripts/Simulation/Orders/Courses.meta": "37431f4b468c40106738bf5b3fe28e20c706fa4aa6ba2ca2586dbf897e6ee832",
+    "INSTRUCCIONES_367F.txt": "c6fe8a51e6d4d0a5d06023fbb4f8e71f01ee86a5f48ac4ecf0daa053a702e31d",
+    "REVISION_TECNICA_367F.md": "dfc30ee350a8f9279032f6e09e240989a38e3643f117b1fba4cfeec0c2b969b8"
+  }
+}
