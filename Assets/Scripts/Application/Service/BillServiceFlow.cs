@@ -1,9 +1,17 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Entrega la cuenta y completa el pago.
+///
+/// Desde 367E la cuenta está protegida por la autoridad de consumo individual:
+/// no puede iniciarse mientras exista un CustomerId, pase o línea pendiente.
+/// </summary>
+[DisallowMultipleComponent]
 public sealed class BillServiceFlow : MonoBehaviour
 {
     [Header("Referencias")]
+
     [SerializeField]
     private Waiter waiter;
 
@@ -13,7 +21,11 @@ public sealed class BillServiceFlow : MonoBehaviour
     [SerializeField]
     private OrderSystem orderSystem;
 
+    [SerializeField]
+    private BistroBuilderCustomerDiningService customerDiningService;
+
     [Header("Duraciones provisionales")]
+
     [SerializeField, Min(0.1f)]
     private float billDeliveryDuration = 1.5f;
 
@@ -22,10 +34,23 @@ public sealed class BillServiceFlow : MonoBehaviour
 
     private Coroutine activeRoutine;
 
+    public Waiter Waiter => waiter;
+    public WaiterMovementView MovementView => waiterMovementView;
+    public OrderSystem OrderSystem => orderSystem;
+    public BistroBuilderCustomerDiningService CustomerDiningService =>
+        customerDiningService;
+
+    private void Awake()
+    {
+        ResolveDependencies();
+    }
+
     private void OnEnable()
     {
         if (waiterMovementView != null)
         {
+            waiterMovementView.DestinationReached -=
+                HandleDestinationReached;
             waiterMovementView.DestinationReached +=
                 HandleDestinationReached;
         }
@@ -48,7 +73,13 @@ public sealed class BillServiceFlow : MonoBehaviour
 
     private void Start()
     {
-        ValidateConfiguration();
+        ResolveDependencies();
+
+        if (!ValidateConfiguration(out string error))
+        {
+            Debug.LogError(error, this);
+            enabled = false;
+        }
     }
 
     private void HandleDestinationReached(
@@ -56,13 +87,16 @@ public sealed class BillServiceFlow : MonoBehaviour
     )
     {
         if (waiter == null || activeRoutine != null)
+        {
             return;
+        }
 
         if (waiter.CurrentState != WaiterState.WalkingToBill)
+        {
             return;
+        }
 
-        activeRoutine =
-            StartCoroutine(DeliverBillAndPayRoutine());
+        activeRoutine = StartCoroutine(DeliverBillAndPayRoutine());
     }
 
     private IEnumerator DeliverBillAndPayRoutine()
@@ -72,60 +106,59 @@ public sealed class BillServiceFlow : MonoBehaviour
         if (table == null)
         {
             Debug.LogError(
-                $"El camarero {waiter.WaiterId} no tiene mesa asignada.",
+                "El camarero " + waiter.WaiterId +
+                " no tiene mesa asignada.",
                 waiter
             );
-
             activeRoutine = null;
             yield break;
         }
 
-        CustomerGroup customerGroup =
-            table.AssignedCustomerGroup;
+        CustomerGroup customerGroup = table.AssignedCustomerGroup;
 
         if (customerGroup == null)
         {
             Debug.LogError(
-                $"La mesa {table.TableId} no tiene grupo asignado.",
+                "La mesa " + table.TableId + " no tiene grupo asignado.",
                 table
             );
-
             activeRoutine = null;
             yield break;
         }
 
-        if (orderSystem == null)
+        if (orderSystem == null || customerDiningService == null)
         {
             Debug.LogError(
-                "BillServiceFlow no tiene OrderSystem asignado.",
+                "BillServiceFlow no tiene todas sus autoridades asignadas.",
                 this
             );
-
             activeRoutine = null;
             yield break;
         }
 
-        RestaurantOrder order =
-            orderSystem.GetActiveOrderForTable(table);
+        RestaurantOrder order = orderSystem.GetActiveOrderForTable(table);
 
         if (order == null)
         {
             Debug.LogError(
-                $"La mesa {table.TableId} no tiene una comanda activa.",
+                "La mesa " + table.TableId +
+                " no tiene una comanda activa.",
                 table
             );
-
             activeRoutine = null;
             yield break;
         }
 
-        if (order.CurrentState != OrderState.Served)
+        if (!customerDiningService.TryValidateBillReady(
+                order,
+                out string billGuardError
+            ))
         {
             Debug.LogError(
-                $"La comanda {order.OrderId} no está en estado Served.",
+                "367E bloqueó una cuenta prematura para la comanda " +
+                order.OrderId + ". " + billGuardError,
                 this
             );
-
             activeRoutine = null;
             yield break;
         }
@@ -135,45 +168,67 @@ public sealed class BillServiceFlow : MonoBehaviour
         customerGroup.SetState(CustomerGroupState.Paying);
 
         Debug.Log(
-            $"Camarero {waiter.WaiterId} entrega la cuenta " +
-            $"a la mesa {table.TableId}.",
+            "Camarero " + waiter.WaiterId +
+            " entrega la cuenta a la mesa " + table.TableId + ".",
             this
         );
 
-        yield return new WaitForSeconds(
-            billDeliveryDuration
-        );
+        yield return new WaitForSeconds(billDeliveryDuration);
 
-        Debug.Log(
-            $"Grupo {customerGroup.GroupId} está realizando el pago.",
-            this
-        );
-
-        yield return new WaitForSeconds(
-            paymentDuration
-        );
-
-        bool completed =
-            orderSystem.CompleteOrder(order);
-
-        if (!completed)
+        if (!customerDiningService.TryValidateBillReady(
+                order,
+                out billGuardError
+            ))
         {
             Debug.LogError(
-                $"No se pudo completar la comanda {order.OrderId}.",
+                "La cuenta dejó de ser válida durante su entrega. " +
+                billGuardError,
                 this
             );
-
             activeRoutine = null;
             yield break;
         }
 
-        customerGroup.SetState(
-            CustomerGroupState.Leaving
+        Debug.Log(
+            "Grupo " + customerGroup.GroupId +
+            " está realizando el pago.",
+            this
         );
 
+        yield return new WaitForSeconds(paymentDuration);
+
+        if (!customerDiningService.TryValidateBillReady(
+                order,
+                out billGuardError
+            ))
+        {
+            Debug.LogError(
+                "367E bloqueó la finalización de un pago inconsistente. " +
+                billGuardError,
+                this
+            );
+            activeRoutine = null;
+            yield break;
+        }
+
+        bool completed = orderSystem.CompleteOrder(order);
+
+        if (!completed)
+        {
+            Debug.LogError(
+                "No se pudo completar la comanda " + order.OrderId + ".",
+                this
+            );
+            activeRoutine = null;
+            yield break;
+        }
+
+        customerGroup.SetState(CustomerGroupState.Leaving);
+
         Debug.Log(
-            $"Grupo {customerGroup.GroupId} ha pagado la comanda " +
-            $"{order.OrderId} y se prepara para abandonar la mesa.",
+            "Grupo " + customerGroup.GroupId +
+            " ha pagado la comanda " + order.OrderId +
+            " y se prepara para abandonar la mesa.",
             this
         );
 
@@ -181,31 +236,78 @@ public sealed class BillServiceFlow : MonoBehaviour
         activeRoutine = null;
     }
 
-    private void ValidateConfiguration()
+    public bool ValidateConfiguration(out string error)
     {
+        ResolveDependencies();
+
         if (waiter == null)
         {
-            Debug.LogError(
-                "BillServiceFlow necesita una referencia a Waiter.",
-                this
-            );
+            error = "BillServiceFlow necesita una referencia a Waiter.";
+            return false;
         }
 
         if (waiterMovementView == null)
         {
-            Debug.LogError(
-                "BillServiceFlow necesita una referencia " +
-                "a WaiterMovementView.",
-                this
-            );
+            error =
+                "BillServiceFlow necesita una referencia a " +
+                "WaiterMovementView.";
+            return false;
         }
 
         if (orderSystem == null)
         {
-            Debug.LogError(
-                "BillServiceFlow necesita una referencia a OrderSystem.",
-                this
-            );
+            error = "BillServiceFlow necesita una referencia a OrderSystem.";
+            return false;
+        }
+
+        if (customerDiningService == null)
+        {
+            error =
+                "BillServiceFlow necesita " +
+                "BistroBuilderCustomerDiningService.";
+            return false;
+        }
+
+        if (!customerDiningService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        if (float.IsNaN(billDeliveryDuration) ||
+            float.IsInfinity(billDeliveryDuration) ||
+            billDeliveryDuration <= 0f ||
+            float.IsNaN(paymentDuration) ||
+            float.IsInfinity(paymentDuration) ||
+            paymentDuration <= 0f)
+        {
+            error = "Las duraciones de cuenta y pago deben ser positivas.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private void ResolveDependencies()
+    {
+        // El instalador 367E asigna referencias explícitas. Los GetComponent
+        // locales se conservan como recuperación segura para prefabs.
+        if (waiter == null)
+        {
+            TryGetComponent(out waiter);
+        }
+
+        if (waiterMovementView == null)
+        {
+            TryGetComponent(out waiterMovementView);
         }
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        billDeliveryDuration = Mathf.Max(0.1f, billDeliveryDuration);
+        paymentDuration = Mathf.Max(0.1f, paymentDuration);
+    }
+#endif
 }

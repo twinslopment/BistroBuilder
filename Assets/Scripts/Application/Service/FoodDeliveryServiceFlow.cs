@@ -27,6 +27,9 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
     [SerializeField]
     private BistroBuilderOrderLineExecutionService lineExecutionService;
 
+    [SerializeField]
+    private BistroBuilderCustomerDiningService customerDiningService;
+
     [Header("Duraciones provisionales")]
 
     [SerializeField, Min(0.1f)]
@@ -42,6 +45,8 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
     public WaiterTaskCoordinator TaskCoordinator => taskCoordinator;
     public BistroBuilderOrderLineExecutionService LineExecutionService =>
         lineExecutionService;
+    public BistroBuilderCustomerDiningService CustomerDiningService =>
+        customerDiningService;
 
     private void Awake()
     {
@@ -137,6 +142,19 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         }
 
         if (!lineExecutionService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        if (customerDiningService == null)
+        {
+            error =
+                "FoodDeliveryServiceFlow necesita " +
+                "BistroBuilderCustomerDiningService.";
+            return false;
+        }
+
+        if (!customerDiningService.ValidateConfiguration(out error))
         {
             return false;
         }
@@ -273,7 +291,7 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             order,
             orderLineId,
             waiter,
-            out bool allActiveLinesServed,
+            out _,
             out error
         );
 
@@ -324,23 +342,38 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             );
         }
 
-        if (allActiveLinesServed)
+        if (!customerDiningService.TryNotifyLineServed(
+                order,
+                orderLineId,
+                out BistroBuilderCustomerDiningNotificationResult dining,
+                out string diningError
+            ))
         {
-            table.SetState(TableState.Eating);
-            customerGroup.SetState(CustomerGroupState.Eating);
-
+            // La línea ya está servida y no puede duplicarse. Se informa del
+            // fallo de reconciliación, se cierra la tarea y el diagnóstico
+            // 367E podrá reparar la sesión sin generar un segundo plato.
+            Debug.LogError(
+                "La línea " + orderLineId +
+                " se sirvió, pero no pudo reconciliarse con el consumo " +
+                "individual. " + diningError,
+                this
+            );
+        }
+        else if (dining.StartedCustomerCount > 0)
+        {
             Debug.Log(
-                "Todos los platos de la comanda " + order.OrderId +
-                " han sido servidos al grupo " +
-                customerGroup.GroupId + ".",
+                "Línea " + orderLineId + " servida; " +
+                dining.StartedCustomerCount +
+                " cliente(s) comienzan a comer de forma individual.",
                 this
             );
         }
         else
         {
             Debug.Log(
-                "Línea " + orderLineId + " servida; el grupo " +
-                customerGroup.GroupId + " continúa esperando otros platos.",
+                "Línea " + orderLineId +
+                " servida y reconciliada; otros clientes o pases " +
+                "continúan pendientes.",
                 this
             );
         }
@@ -524,6 +557,11 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             lineExecutionService = FindFirstObjectByType<
                 BistroBuilderOrderLineExecutionService
             >();
+        }
+
+        if (customerDiningService == null && taskCoordinator != null)
+        {
+            taskCoordinator.TryGetComponent(out customerDiningService);
         }
     }
 

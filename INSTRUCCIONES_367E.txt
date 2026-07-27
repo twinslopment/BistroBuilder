@@ -1,0 +1,81 @@
+BISTROBUILDER 367E — CONSUMO INDIVIDUAL POR CLIENTE
+====================================================
+
+REQUISITO PREVIO
+----------------
+BistroBuilder 367D1 debe estar instalado, validado y comprometido en Git.
+
+INSTALACIÓN DEL CÓDIGO
+----------------------
+1. Sal de Play Mode.
+2. Guarda Prototype_Restaurant.unity.
+3. Cierra Unity completamente.
+4. Extrae este ZIP directamente sobre la raíz del proyecto:
+
+   C:\Users\mruperez\ProyectoBB\BistroBuilder
+
+5. Confirma la sustitución de archivos.
+6. Abre Unity y espera a que termine de importar y compilar.
+7. La primera comprobación es únicamente Console: 0 errores rojos.
+8. No ejecutes todavía el instalador si la compilación presenta un error.
+
+INSTALACIÓN EN LA ESCENA
+------------------------
+Fuera de Play Mode y con la escena guardada:
+
+Tools > Bistro Builder > Orders > Install or Repair 367E Individual Customer Dining
+
+Resultado esperado:
+- Correctos: 24
+- Advertencias: 0
+- Errores: 0
+
+VALIDACIÓN DE SOLO LECTURA
+--------------------------
+Tools > Bistro Builder > Orders > Validate 367E Individual Customer Dining
+
+Resultado esperado:
+- Correctos: 24
+- Advertencias: 0
+- Errores: 0
+
+AUTOTEST AISLADO
+----------------
+Tools > Bistro Builder > Orders > Run 367E Individual Customer Dining Self-Test
+
+Resultado esperado:
+- Pruebas superadas: 109
+- Pruebas fallidas: 0
+
+PRUEBA FUNCIONAL REAL
+---------------------
+1. Entra en Play Mode.
+2. Abre el servicio desde Restaurant Service State Service > Debug > Open Service.
+3. Abre:
+
+   Tools > Bistro Builder > Orders > Individual Customer Dining Debug
+
+4. Observa una comanda de dos o más clientes.
+5. Tras servir el primer plato debe existir un CustomerId Eating y otro
+   WaitingForDish.
+6. El primer cliente debe poder terminar y su línea pasar a Consumed mientras
+   el segundo continúa esperando o comiendo.
+7. La mesa y el grupo no deben solicitar la cuenta hasta que todos los clientes
+   hayan terminado y todas las líneas estén Consumed o Cancelled.
+8. Comprueba Console: 0 errores y ninguna transición duplicada.
+
+ROLLBACK
+--------
+- El instalador guarda una copia binaria de la escena y la restaura si falla.
+- Los cuatro scripts existentes conservan sus GUID originales.
+- Para retirar por completo el código nuevo, utiliza el commit base de 367D1.
+
+ALCANCE
+-------
+367E incorpora la autoridad canónica de consumo por CustomerId y pase.
+Los platos compartidos y la ejecución jugable de varios pases se desarrollarán
+formalmente en 367F, aunque los contratos de consumidores y CourseIndex quedan
+preparados desde este paquete.
+
+El snapshot de consumo queda preparado para el futuro service.runtime, pero
+367E todavía no añade el proveedor completo de guardado con restaurante abierto.

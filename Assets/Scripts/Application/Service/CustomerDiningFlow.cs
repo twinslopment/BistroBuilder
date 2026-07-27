@@ -1,121 +1,51 @@
-using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Adaptador de compatibilidad del prefab de grupos.
+///
+/// Antes de 367E este componente ejecutaba un único temporizador para todo el
+/// grupo. Esa responsabilidad pertenece ahora a
+/// BistroBuilderCustomerDiningService, que trabaja por CustomerId y pase.
+///
+/// Se conserva el componente para no romper prefabs ni GUID existentes, pero
+/// no mantiene corrutinas, no cambia estados y no constituye autoridad.
+/// </summary>
+[DisallowMultipleComponent]
 public sealed class CustomerDiningFlow : MonoBehaviour
 {
-    [Header("Referencias")]
+    [Header("Referencia legacy conservada")]
+
     [SerializeField]
     private CustomerGroup customerGroup;
 
-    [Header("Duraciones provisionales")]
-    [SerializeField, Min(0.1f)]
-    private float eatingDuration = 6f;
-
-    private Coroutine activeRoutine;
+    public CustomerGroup CustomerGroup => customerGroup;
 
     private void Awake()
     {
         if (customerGroup == null)
+        {
             customerGroup = GetComponent<CustomerGroup>();
+        }
     }
 
-    private void OnEnable()
+    private void Start()
+    {
+        if (!ValidateConfiguration(out string error))
+        {
+            Debug.LogError(error, this);
+            enabled = false;
+        }
+    }
+
+    public bool ValidateConfiguration(out string error)
     {
         if (customerGroup == null)
         {
-            Debug.LogError(
-                "CustomerDiningFlow necesita una referencia a CustomerGroup.",
-                this
-            );
-
-            enabled = false;
-            return;
+            error = "CustomerDiningFlow necesita CustomerGroup.";
+            return false;
         }
 
-        customerGroup.StateChanged += HandleCustomerStateChanged;
-    }
-
-    private void OnDisable()
-    {
-        if (customerGroup != null)
-        {
-            customerGroup.StateChanged -=
-                HandleCustomerStateChanged;
-        }
-
-        if (activeRoutine != null)
-        {
-            StopCoroutine(activeRoutine);
-            activeRoutine = null;
-        }
-    }
-
-    private void HandleCustomerStateChanged(
-        CustomerGroup changedGroup,
-        CustomerGroupState newState
-    )
-    {
-        if (newState != CustomerGroupState.Eating)
-            return;
-
-        if (activeRoutine != null)
-            return;
-
-        activeRoutine = StartCoroutine(EatingRoutine());
-    }
-
-    private IEnumerator EatingRoutine()
-    {
-        RestaurantTable table = customerGroup.AssignedTable;
-
-        if (table == null)
-        {
-            Debug.LogError(
-                $"El grupo {customerGroup.GroupId} " +
-                "no tiene mesa mientras está comiendo.",
-                this
-            );
-
-            activeRoutine = null;
-            yield break;
-        }
-
-        Debug.Log(
-            $"Grupo {customerGroup.GroupId} comienza a comer.",
-            this
-        );
-
-        yield return new WaitForSeconds(eatingDuration);
-
-        if (customerGroup.CurrentState !=
-            CustomerGroupState.Eating)
-        {
-            activeRoutine = null;
-            yield break;
-        }
-
-        if (customerGroup.AssignedTable != table)
-        {
-            Debug.LogWarning(
-                "La mesa del grupo cambió mientras estaba comiendo.",
-                this
-            );
-
-            activeRoutine = null;
-            yield break;
-        }
-
-        table.SetState(TableState.WaitingForBill);
-        customerGroup.SetState(
-            CustomerGroupState.WaitingForBill
-        );
-
-        Debug.Log(
-            $"Grupo {customerGroup.GroupId} solicita la cuenta " +
-            $"en la mesa {table.TableId}.",
-            this
-        );
-
-        activeRoutine = null;
+        error = string.Empty;
+        return true;
     }
 }

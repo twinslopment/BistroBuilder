@@ -820,6 +820,7 @@ GameObject:
   - component: {fileID: 263644961}
   - component: {fileID: 263644962}
   - component: {fileID: 263644963}
+  - component: {fileID: 263644964}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1867,6 +1868,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderLineExecutionService
   canonicalOrderService: {fileID: 263644961}
   integrationService: {fileID: 263644962}
+  logTransitions: 1
+--- !u!114 &263644964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0c2c609b0cd4dc98110ba62421ea2bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCustomerDiningService
+  orderSystem: {fileID: 263644903}
+  canonicalOrderService: {fileID: 263644961}
+  lineExecutionService: {fileID: 263644963}
+  defaultEatingDurationSeconds: 6
+  activeOrders: []
   logTransitions: 1
 --- !u!1 &295579756
 GameObject:
@@ -3957,6 +3976,7 @@ MonoBehaviour:
   waiter: {fileID: 1028994910}
   waiterMovementView: {fileID: 1028994909}
   orderSystem: {fileID: 263644903}
+  customerDiningService: {fileID: 263644964}
   billDeliveryDuration: 1.5
   paymentDuration: 2.5
 --- !u!114 &1028994907
@@ -3975,6 +3995,7 @@ MonoBehaviour:
   waiterMovementView: {fileID: 1028994909}
   taskCoordinator: {fileID: 263644911}
   lineExecutionService: {fileID: 263644963}
+  customerDiningService: {fileID: 263644964}
   pickupDuration: 1
   servingDuration: 2
 --- !u!114 &1028994908
@@ -5669,6 +5690,7 @@ MonoBehaviour:
   waiterMovementView: {fileID: 1478749459}
   taskCoordinator: {fileID: 263644911}
   lineExecutionService: {fileID: 263644963}
+  customerDiningService: {fileID: 263644964}
   pickupDuration: 1
   servingDuration: 2
 --- !u!114 &1478749467
@@ -5686,6 +5708,7 @@ MonoBehaviour:
   waiter: {fileID: 1478749460}
   waiterMovementView: {fileID: 1478749459}
   orderSystem: {fileID: 263644903}
+  customerDiningService: {fileID: 263644964}
   billDeliveryDuration: 1.5
   paymentDuration: 2.5
 --- !u!114 &1478749468

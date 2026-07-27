@@ -396,6 +396,192 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     }
 
     /// <summary>
+    /// Consume de forma atómica un conjunto concreto de líneas servidas.
+    ///
+    /// 367E utiliza esta operación cuando un cliente termina un pase. Las
+    /// líneas compartidas solo se incluyen cuando todos sus consumidores han
+    /// registrado el consumo en BistroBuilderCustomerDiningService.
+    ///
+    /// La comanda original se sustituye únicamente después de validar una
+    /// copia profunda completa, evitando consumos parciales si una línea es
+    /// inválida o cambia de estado durante la operación.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult TryConsumeServedLines(
+        string orderId,
+        IList<string> lineIds,
+        string actorReferenceId
+    )
+    {
+        if (!TryResolveOrder(
+                orderId,
+                out BistroBuilderCanonicalOrder order,
+                out BistroBuilderCanonicalOrderOperationResult failure
+            ))
+        {
+            return failure;
+        }
+
+        if (lineIds == null || lineIds.Count == 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                "Debe indicarse al menos una línea servida.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        if (order.State == BistroBuilderCanonicalOrderState.Cancelled ||
+            order.State == BistroBuilderCanonicalOrderState.Failed)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderAlreadyTerminal,
+                "La comanda está cancelada o fallida.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        HashSet<string> uniqueLineIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        bool changed = false;
+        string firstChangedLineId = string.Empty;
+
+        for (int index = 0; index < lineIds.Count; index++)
+        {
+            string normalizedLineId =
+                BistroBuilderOrderIdUtility.Normalize(lineIds[index]);
+
+            if (!BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidLineId,
+                    "La operación contiene un LineId inválido.",
+                    order.OrderId,
+                    normalizedLineId
+                );
+            }
+
+            if (!uniqueLineIds.Add(normalizedLineId))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .DuplicateLineId,
+                    "La operación contiene un LineId duplicado.",
+                    order.OrderId,
+                    normalizedLineId
+                );
+            }
+
+            if (!candidate.TryGetLine(
+                    normalizedLineId,
+                    out BistroBuilderCanonicalOrderLine line
+                ) ||
+                line == null)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                    "La línea no pertenece a la comanda indicada.",
+                    order.OrderId,
+                    normalizedLineId
+                );
+            }
+
+            if (line.State == BistroBuilderCanonicalOrderLineState.Consumed)
+            {
+                continue;
+            }
+
+            if (line.State != BistroBuilderCanonicalOrderLineState.Served)
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .InvalidTransition,
+                    "La línea " + normalizedLineId +
+                    " no está servida; su estado es " + line.State + ".",
+                    order.OrderId,
+                    normalizedLineId
+                );
+            }
+
+            if (!candidate.TryTransitionLine(
+                    normalizedLineId,
+                    BistroBuilderCanonicalOrderLineState.Consumed,
+                    actorReferenceId,
+                    out string transitionError
+                ))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason
+                        .InvalidTransition,
+                    transitionError,
+                    order.OrderId,
+                    normalizedLineId
+                );
+            }
+
+            if (string.IsNullOrEmpty(firstChangedLineId))
+            {
+                firstChangedLineId = normalizedLineId;
+            }
+
+            changed = true;
+        }
+
+        if (!changed)
+        {
+            return BistroBuilderCanonicalOrderOperationResult.Success(
+                "Las líneas indicadas ya estaban consumidas.",
+                order.OrderId,
+                string.Empty
+            );
+        }
+
+        if (!candidate.TryValidate(out string validationError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                validationError,
+                order.OrderId,
+                firstChangedLineId
+            );
+        }
+
+        int orderIndex = orders.IndexOf(order);
+
+        if (orderIndex < 0)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderNotFound,
+                "La comanda no figura en la colección runtime.",
+                order.OrderId,
+                firstChangedLineId
+            );
+        }
+
+        UnindexOrder(order);
+        orders[orderIndex] = candidate;
+        IndexOrder(candidate);
+        Revision++;
+
+        PublishChange(
+            BistroBuilderCanonicalOrderChangeType.LineStateChanged,
+            candidate.OrderId,
+            uniqueLineIds.Count == 1 ? firstChangedLineId : string.Empty,
+            uniqueLineIds.Count == 1
+                ? "Línea consumida individualmente."
+                : "Líneas consumidas atómicamente por un cliente."
+        );
+
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Consumo de líneas aplicado atómicamente.",
+            candidate.OrderId,
+            uniqueLineIds.Count == 1 ? firstChangedLineId : string.Empty
+        );
+    }
+
+    /// <summary>
     /// Avanza todas las líneas no terminales de una comanda hasta un mismo
     /// estado de la ruta normal.
     ///

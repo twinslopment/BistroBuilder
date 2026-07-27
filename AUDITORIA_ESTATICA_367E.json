@@ -1,0 +1,130 @@
+{
+  "package": "BistroBuilder 367E — Individual Customer Dining",
+  "runtime_revision": "367E",
+  "base_required": "367D1",
+  "static_audit": {
+    "csharp_files": 11,
+    "meta_files": 12,
+    "delimiter_balance_all_ok": true,
+    "delimiter_details": [
+      {
+        "file": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningRuntime.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/BillServiceFlow.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/CustomerDiningFlow.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningInstaller.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningSelfTest.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningValidator.cs",
+        "ok": true,
+        "detail": []
+      },
+      {
+        "file": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningDebugWindow.cs",
+        "ok": true,
+        "detail": []
+      }
+    ],
+    "duplicate_types_after_overlay": {},
+    "duplicate_guids_after_overlay": {},
+    "existing_guids_preserved": [
+      {
+        "file": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+        "preserved": true
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/CustomerDiningFlow.cs.meta",
+        "preserved": true
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs.meta",
+        "preserved": true
+      },
+      {
+        "file": "Assets/Scripts/Application/Service/BillServiceFlow.cs.meta",
+        "preserved": true
+      }
+    ],
+    "runtime_scene_find_calls_in_new_authority": 0,
+    "food_delivery_findfirst_count_before": 2,
+    "food_delivery_findfirst_count_after": 2,
+    "linq_in_new_runtime": false,
+    "quaternion_sqrMagnitude_usage": 0,
+    "expected_validator_correct": 24,
+    "validator_numbering": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "expected_selftest_passed": 109,
+    "expected_selftest_failed": 0,
+    "atomic_batch_method_present": true,
+    "reentrancy_queue_only_handler": true,
+    "versioned_snapshot_present": true,
+    "passive_legacy_flow": true
+  },
+  "limitations": [
+    "La compilación definitiva debe validarse dentro de Unity con sus assemblies reales.",
+    "Los platos compartidos y varios pases quedan soportados por contratos, pero su ejecución jugable completa corresponde a 367F.",
+    "El proveedor completo service.runtime todavía no se registra en 367E."
+  ]
+}

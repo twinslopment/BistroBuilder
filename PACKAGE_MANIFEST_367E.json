@@ -1,0 +1,196 @@
+{
+  "package_id": "BistroBuilder_367E_Individual_Customer_Dining",
+  "display_name": "BistroBuilder 367E — Consumo individual por cliente",
+  "base_required": "BistroBuilder 367D1 validated",
+  "runtime_revision": "367E",
+  "schema_versions": {
+    "customer_dining_runtime": 1
+  },
+  "expected_results": {
+    "installer": {
+      "correct": 24,
+      "warnings": 0,
+      "errors": 0
+    },
+    "validator": {
+      "correct": 24,
+      "warnings": 0,
+      "errors": 0
+    },
+    "self_test": {
+      "passed": 109,
+      "failed": 0
+    }
+  },
+  "file_count_excluding_manifest": 26,
+  "files": [
+    {
+      "path": "AUDITORIA_ESTATICA_367E.json",
+      "status": "new",
+      "size_bytes": 3652,
+      "sha256": "fb60059a16a3b0475bdee0689ec4b9b949edd41cbcd4b1dfcc2d7e5f4c87c0b2"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningDebugWindow.cs",
+      "status": "new",
+      "size_bytes": 11006,
+      "sha256": "99f0ed9a12489d761b1a414cedf78749f32598865fd4f76e76c6d1fa84101440"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningDebugWindow.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "c3b7741327a0fd9f03d767edf5f986ce62aee2c924b078f172b8f85a1401fb23",
+      "guid": "99df8fac5d0e484ca103c0aff2adadb2"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningInstaller.cs",
+      "status": "new",
+      "size_bytes": 10033,
+      "sha256": "b83bc0925342da691d3640a5d8d202cc640b70e6da4b3cb3dad80423c0947b98"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningInstaller.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "7b0f96aba7c82ea12ce629acb24ad6c0f96e6fb069ddbc06d93c2f7855e7fd02",
+      "guid": "eea2196893704d07bc2326b239f0e351"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningSelfTest.cs",
+      "status": "new",
+      "size_bytes": 40338,
+      "sha256": "4dc53183c3bfc5ed3fb92fb0056154bf01da7ea07ce1532d98fa9770ccd74a3a"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningSelfTest.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "0bdcdee2516abcd23f7edf13f51af98e3aa98b48ade5caf09a2707eb64d519e7",
+      "guid": "2a1a84e0e1e343e8a4f4313c28d9e9a5"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningValidator.cs",
+      "status": "new",
+      "size_bytes": 14344,
+      "sha256": "36fc4626f52135cb6e2d459e4f92ff2cdbd4b5cf10b33b7e070d8e06ed00610d"
+    },
+    {
+      "path": "Assets/Editor/BistroBuilder/Orders/BistroBuilderIndividualCustomerDiningValidator.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "bdd15d78780024f5a0334684982f61a487d8e70a0a1b8f2c0f8ca0a69259e719",
+      "guid": "6cb0108f3c8f4c4684129e731d5973cf"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs",
+      "status": "replaced",
+      "size_bytes": 50423,
+      "sha256": "0eee3c1aa762f034f3d31c1c08049131b021322eeaab80fd7e14a361edc605a2"
+    },
+    {
+      "path": "Assets/Scripts/Application/Orders/BistroBuilderCanonicalOrderService.cs.meta",
+      "status": "replaced",
+      "size_bytes": 243,
+      "sha256": "479b6f8d8147993a9dab4487913c0df29ca978b3b15c4b8700f197d9d2f02a97",
+      "guid": "31c816bb26624ffea4bddb972f8e570a"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/BillServiceFlow.cs",
+      "status": "replaced",
+      "size_bytes": 8133,
+      "sha256": "4b14edb45246a8ce16130c46391e5dd199dd154f842734257c03e3a68f12c132"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/BillServiceFlow.cs.meta",
+      "status": "replaced",
+      "size_bytes": 59,
+      "sha256": "e3e27ce00803be11870c8f879c600cb92d5b85e91860db537990da5c1145ca55",
+      "guid": "007d234e0c0f06f468f040e808e33a66"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs",
+      "status": "new",
+      "size_bytes": 65753,
+      "sha256": "82ba625217bdd701861e414687a27066896dfa6ee8d5d6d4da176cd4b9361133"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/BistroBuilderCustomerDiningService.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "d8f568977e43c4cc32c632fdde5eb1e95dadffba1d8c314640453e2221006999",
+      "guid": "a0c2c609b0cd4dc98110ba62421ea2bb"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/CustomerDiningFlow.cs",
+      "status": "replaced",
+      "size_bytes": 1321,
+      "sha256": "a1adaf7669b1f18c696052b8b7fba9dd85303233a9e88b1531b780cd45ef83da"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/CustomerDiningFlow.cs.meta",
+      "status": "replaced",
+      "size_bytes": 59,
+      "sha256": "2894108f07f053f82e650eee05f7b344e48d0813f9a0c25248b7b93610d1f53a",
+      "guid": "d383cc2648d8a454c8c365c760971d11"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs",
+      "status": "replaced",
+      "size_bytes": 16479,
+      "sha256": "6bc723167a7b7ff9e48d5b52fb3f81ff2f023cae0f2e3796e4bc734bcf00d29e"
+    },
+    {
+      "path": "Assets/Scripts/Application/Service/FoodDeliveryServiceFlow.cs.meta",
+      "status": "replaced",
+      "size_bytes": 59,
+      "sha256": "ab763dc5de28d4e08094443edf7a444e8f358654ac3ccd225aff00dc0e2385a6",
+      "guid": "b40766223749b5042b3ae6eb53fa8050"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs",
+      "status": "new",
+      "size_bytes": 5588,
+      "sha256": "17b2b6033f93d1654671f324e7c64f180d6f3460b2da9d066190b1bbb43c3927"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningContracts.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "83f75885981f6f9cf71ad4da3db43c1a33ca6e9a734362f8678850d4337d0ecc",
+      "guid": "1ab04adee3b64679b178b78ca1d1ed43"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningRuntime.cs",
+      "status": "new",
+      "size_bytes": 16374,
+      "sha256": "37fbcb72717edaac918ac3da063c5faf62fedb9f0c847b5ae492ef817f838d21"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Customers/Dining/BistroBuilderCustomerDiningRuntime.cs.meta",
+      "status": "new",
+      "size_bytes": 243,
+      "sha256": "6e0b208bd4ed08fb5247a52814c5aae48078302912bb658ff0c0d6abac1bc642",
+      "guid": "83a36e220fc640e6a4b4cf0c9a958589"
+    },
+    {
+      "path": "Assets/Scripts/Simulation/Customers/Dining.meta",
+      "status": "new",
+      "size_bytes": 172,
+      "sha256": "2d11dd4060a8c296e053c894f3701689abf7afd5a0e780953aaa09a464aa01af",
+      "guid": "ea379ab287c447278fb78352e7692456"
+    },
+    {
+      "path": "INSTRUCCIONES_367E.txt",
+      "status": "new",
+      "size_bytes": 2730,
+      "sha256": "8bff502fbd705a7b80861cf6474438c7857367385ed70c5121f9cc4e53e63868"
+    },
+    {
+      "path": "REVISION_TECNICA_367E.md",
+      "status": "new",
+      "size_bytes": 3998,
+      "sha256": "b589aea88493cf517c2e05b315d33e74357541cea347b95e1cfbacddfd4b24f0"
+    }
+  ]
+}
