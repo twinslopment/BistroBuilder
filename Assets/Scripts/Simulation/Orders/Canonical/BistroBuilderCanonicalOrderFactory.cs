@@ -46,15 +46,18 @@ public static class BistroBuilderCanonicalOrderFactory
             request.externalReferenceId
         );
 
-        if (!BistroBuilderOrderIdUtility.IsValid(tableId) ||
+        if (!BistroBuilderServiceModeUtility.IsDefined(
+                request.serviceMode
+            ) ||
+            !BistroBuilderOrderIdUtility.IsValid(tableId) ||
             !BistroBuilderOrderIdUtility.IsValid(groupId) ||
             !string.IsNullOrEmpty(externalId) &&
             !BistroBuilderOrderIdUtility.IsValid(externalId))
         {
             result = Failure(
                 BistroBuilderCanonicalOrderFailureReason.InvalidReferenceId,
-                "La mesa, el grupo o la referencia externa no tienen una " +
-                "identidad estable válida."
+                "El destino, el grupo, la modalidad o la referencia " +
+                "externa no tienen una identidad estable válida."
             );
             return false;
         }
@@ -110,7 +113,8 @@ public static class BistroBuilderCanonicalOrderFactory
             tableId,
             groupId,
             request.mealService,
-            candidateLines
+            candidateLines,
+            request.serviceMode
         );
 
         if (!order.TryValidate(out string validationError))

@@ -24,6 +24,9 @@ public sealed class BillServiceFlow : MonoBehaviour
     [SerializeField]
     private BistroBuilderCustomerDiningService customerDiningService;
 
+    [SerializeField]
+    private BistroBuilderBarServiceSystem barServiceSystem;
+
     [Header("Duraciones provisionales")]
 
     [SerializeField, Min(0.1f)]
@@ -149,6 +152,21 @@ public sealed class BillServiceFlow : MonoBehaviour
             yield break;
         }
 
+        int transferredBarChargesCents = barServiceSystem != null
+            ? barServiceSystem.GetPendingTransferredChargeCents(customerGroup)
+            : 0;
+
+        if (transferredBarChargesCents > 0)
+        {
+            Debug.Log(
+                "La cuenta de la mesa " + table.TableId +
+                " incorpora " +
+                (transferredBarChargesCents / 100f).ToString("0.00") +
+                " € de consumo previo en barra.",
+                this
+            );
+        }
+
         if (!customerDiningService.TryValidateBillReady(
                 order,
                 out string billGuardError
@@ -221,6 +239,15 @@ public sealed class BillServiceFlow : MonoBehaviour
             );
             activeRoutine = null;
             yield break;
+        }
+
+        if (barServiceSystem != null &&
+            transferredBarChargesCents > 0)
+        {
+            barServiceSystem.TrySettleTransferredCharges(
+                customerGroup,
+                out _
+            );
         }
 
         customerGroup.SetState(CustomerGroupState.Leaving);
@@ -300,6 +327,13 @@ public sealed class BillServiceFlow : MonoBehaviour
         if (waiterMovementView == null)
         {
             TryGetComponent(out waiterMovementView);
+        }
+
+        if (barServiceSystem == null)
+        {
+            barServiceSystem = FindFirstObjectByType<
+                BistroBuilderBarServiceSystem
+            >();
         }
     }
 

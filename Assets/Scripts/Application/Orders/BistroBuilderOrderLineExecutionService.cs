@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -476,6 +477,117 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Reserva de forma transaccional todas las líneas de una ronda 367G.
+    ///
+    /// Primero valida el lote completo y después realiza las transiciones.
+    /// Si cualquier línea falla, las ya reservadas regresan al pase antes de
+    /// devolver el control al coordinador.
+    /// </summary>
+    public bool TryReserveDeliveryRun(
+        BistroBuilderDeliveryRun deliveryRun,
+        Waiter waiter,
+        out string error
+    )
+    {
+        if (deliveryRun == null)
+        {
+            error = "La ronda de reparto es nula.";
+            return false;
+        }
+
+        if (waiter == null)
+        {
+            error = "No se puede reservar una ronda sin camarero.";
+            return false;
+        }
+
+        if (!waiter.IsAvailable)
+        {
+            error = "El camarero no está disponible para una nueva ronda.";
+            return false;
+        }
+
+        if (deliveryRun.State != BistroBuilderDeliveryRunState.Planned ||
+            deliveryRun.Items.Count == 0 ||
+            deliveryRun.Items.Count > waiter.FoodDeliveryCapacity)
+        {
+            error = "La ronda no está planificada o supera la capacidad.";
+            return false;
+        }
+
+        // La validación completa se ejecuta antes de la primera mutación.
+        for (int index = 0; index < deliveryRun.Items.Count; index++)
+        {
+            BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
+
+            if (!TryGetLineSnapshot(
+                    item.Order,
+                    item.OrderLineId,
+                    out _,
+                    out BistroBuilderCanonicalOrderLine line,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            if (line.State !=
+                BistroBuilderCanonicalOrderLineState.ReadyForPickup)
+            {
+                error = "La línea " + item.OrderLineId +
+                        " ya no está lista para recogida.";
+                return false;
+            }
+        }
+
+        string actorReference =
+            BistroBuilderServiceOrderIdentityUtility
+                .BuildWaiterReference(waiter.WaiterId);
+
+        int reservedCount = 0;
+
+        for (int index = 0; index < deliveryRun.Items.Count; index++)
+        {
+            BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
+
+            BistroBuilderCanonicalOrderOperationResult result =
+                canonicalOrderService.TryTransitionLine(
+                    item.OrderLineId,
+                    BistroBuilderCanonicalOrderLineState.AssignedForDelivery,
+                    actorReference
+                );
+
+            if (!result.Succeeded)
+            {
+                string rollbackError = RollbackDeliveryRunReservation(
+                    deliveryRun,
+                    reservedCount
+                );
+
+                error = "No se pudo reservar la línea " +
+                        item.OrderLineId + ": " + result.Message;
+
+                if (!string.IsNullOrEmpty(rollbackError))
+                {
+                    error += " Falló parte del rollback: " + rollbackError;
+                }
+
+                return false;
+            }
+
+            reservedCount++;
+            LogTransition(
+                item.Order,
+                item.OrderLineId,
+                "AssignedForDelivery (ronda " + deliveryRun.RunId + ")"
+            );
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
     public bool TryMarkLineInTransit(
         RestaurantOrder order,
         string orderLineId,
@@ -745,6 +857,37 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         return true;
     }
 
+    private string RollbackDeliveryRunReservation(
+        BistroBuilderDeliveryRun deliveryRun,
+        int reservedCount
+    )
+    {
+        if (deliveryRun == null || reservedCount <= 0)
+            return string.Empty;
+
+        List<string> errors = new List<string>();
+        int count = Math.Min(reservedCount, deliveryRun.Items.Count);
+
+        for (int index = count - 1; index >= 0; index--)
+        {
+            BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
+
+            BistroBuilderCanonicalOrderOperationResult rollback =
+                canonicalOrderService.TryTransitionLine(
+                    item.OrderLineId,
+                    BistroBuilderCanonicalOrderLineState.ReadyForPickup,
+                    "delivery_run_assignment_rollback"
+                );
+
+            if (!rollback.Succeeded)
+            {
+                errors.Add(item.OrderLineId + ": " + rollback.Message);
+            }
+        }
+
+        return string.Join(" | ", errors);
+    }
+
     private bool ValidateWaiterLineAssignment(
         RestaurantOrder order,
         string orderLineId,
@@ -761,12 +904,20 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         string normalizedLineId =
             BistroBuilderOrderIdUtility.Normalize(orderLineId);
 
-        if (!ReferenceEquals(waiter.AssignedOrder, order) ||
-            !string.Equals(
+        bool ownsLegacyLine =
+            ReferenceEquals(waiter.AssignedOrder, order) &&
+            string.Equals(
                 waiter.AssignedOrderLineId,
                 normalizedLineId,
                 StringComparison.Ordinal
-            ))
+            );
+
+        bool ownsRunLine = waiter.HasDeliveryLine(
+            order,
+            normalizedLineId
+        );
+
+        if (!ownsLegacyLine && !ownsRunLine)
         {
             error = "El camarero no tiene asignada esa línea.";
             return false;

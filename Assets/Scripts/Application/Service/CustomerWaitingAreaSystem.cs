@@ -188,6 +188,11 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
     ///
     /// Cuando sale el primer grupo, los demás avanzan una posición.
     /// </summary>
+    public void RefreshWaitingQueue()
+    {
+        ReorganizeWaitingQueue();
+    }
+
     private void ReorganizeWaitingQueue()
     {
         // Eliminamos referencias destruidas o grupos que ya no esperan.
@@ -222,21 +227,32 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
              groupIndex < waitingGroups.Count;
              pointIndex++)
         {
-            Transform waitingPoint =
-                waitingPoints[pointIndex];
+            Transform waitingPoint = waitingPoints[pointIndex];
 
-            // Los puntos nulos se ignoran sin romper el resto de la cola.
             if (waitingPoint == null)
                 continue;
 
-            CustomerGroup customerGroup =
-                waitingGroups[groupIndex];
+            CustomerGroup customerGroup = null;
 
-            groupIndex++;
+            // WaitingAtBar conserva su posición lógica en waitingGroups,
+            // pero no ocupa ni vuelve a caminar hacia un punto físico de la
+            // cola mientras tenga una plaza de barra.
+            while (groupIndex < waitingGroups.Count)
+            {
+                CustomerGroup candidate = waitingGroups[groupIndex];
+                groupIndex++;
 
-            assignedWaitingPoints[
-                customerGroup
-            ] = waitingPoint;
+                if (candidate != null && !candidate.IsOccupyingBar)
+                {
+                    customerGroup = candidate;
+                    break;
+                }
+            }
+
+            if (customerGroup == null)
+                break;
+
+            assignedWaitingPoints[customerGroup] = waitingPoint;
 
             bool alreadyAtSamePoint =
                 previousAssignments.TryGetValue(

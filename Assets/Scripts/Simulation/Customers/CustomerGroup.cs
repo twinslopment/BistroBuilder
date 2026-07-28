@@ -29,6 +29,18 @@ public sealed class CustomerGroup : MonoBehaviour
     private CustomerGroupState currentState =
         CustomerGroupState.Entering;
 
+    [Header("Modalidad de servicio 367H")]
+    [SerializeField]
+    private BistroBuilderServiceMode requestedServiceMode =
+        BistroBuilderServiceMode.TableService;
+
+    [SerializeField]
+    private BistroBuilderServiceMode currentServiceMode =
+        BistroBuilderServiceMode.TableService;
+
+    [SerializeField]
+    private BistroBuilderBarServiceSpot assignedBarSpot;
+
     [Header("Asignación actual")]
     [SerializeField]
     private RestaurantTable assignedTable;
@@ -52,6 +64,20 @@ public sealed class CustomerGroup : MonoBehaviour
     public CustomerGroupState CurrentState => currentState;
 
     public RestaurantTable AssignedTable => assignedTable;
+
+    public BistroBuilderServiceMode RequestedServiceMode =>
+        requestedServiceMode;
+
+    public BistroBuilderServiceMode CurrentServiceMode =>
+        currentServiceMode;
+
+    public BistroBuilderBarServiceSpot AssignedBarSpot => assignedBarSpot;
+
+    public bool HasAssignedBarSpot => assignedBarSpot != null;
+
+    public bool IsOccupyingBar =>
+        assignedBarSpot != null &&
+        BistroBuilderServiceModeUtility.IsBarMode(currentServiceMode);
 
     public float WaitingTime => waitingTime;
 
@@ -82,10 +108,33 @@ public sealed class CustomerGroup : MonoBehaviour
         int newGroupSize
     )
     {
+        return Initialize(
+            newGroupId,
+            newGroupSize,
+            BistroBuilderServiceMode.TableService
+        );
+    }
+
+    public bool Initialize(
+        int newGroupId,
+        int newGroupSize,
+        BistroBuilderServiceMode serviceMode
+    )
+    {
         if (newGroupId < 1)
         {
             Debug.LogError(
                 "El identificador del grupo debe ser mayor que cero.",
+                this
+            );
+
+            return false;
+        }
+
+        if (!BistroBuilderServiceModeUtility.IsDefined(serviceMode))
+        {
+            Debug.LogError(
+                "La modalidad solicitada por el grupo no es válida.",
                 this
             );
 
@@ -118,6 +167,12 @@ public sealed class CustomerGroup : MonoBehaviour
 
         groupId = newGroupId;
         groupSize = newGroupSize;
+        requestedServiceMode = serviceMode;
+        currentServiceMode = serviceMode ==
+            BistroBuilderServiceMode.BarService
+                ? BistroBuilderServiceMode.BarService
+                : BistroBuilderServiceMode.TableService;
+        assignedBarSpot = null;
 
         // Todo grupo generado comienza entrando al restaurante
         // y sin haber acumulado tiempo de espera.
@@ -126,7 +181,8 @@ public sealed class CustomerGroup : MonoBehaviour
 
         Debug.Log(
             $"Grupo {groupId} configurado con " +
-            $"{groupSize} cliente(s).",
+            $"{groupSize} cliente(s), modalidad solicitada " +
+            requestedServiceMode + ".",
             this
         );
 
@@ -150,6 +206,81 @@ public sealed class CustomerGroup : MonoBehaviour
         );
 
         StateChanged?.Invoke(this, currentState);
+    }
+
+
+    /// <summary>
+    /// Registra la plaza ancla después de que BarServiceRegistry haya
+    /// reservado atómicamente todas las plazas necesarias para el grupo.
+    /// </summary>
+    public bool TryAssignBarSpot(
+        BistroBuilderBarServiceSpot barSpot,
+        BistroBuilderServiceMode serviceMode
+    )
+    {
+        if (barSpot == null ||
+            assignedBarSpot != null ||
+            !BistroBuilderServiceModeUtility.IsBarMode(serviceMode) ||
+            !ReferenceEquals(barSpot.AssignedCustomerGroup, this))
+        {
+            return false;
+        }
+
+        assignedBarSpot = barSpot;
+        currentServiceMode = serviceMode;
+        return true;
+    }
+
+    /// <summary>
+    /// Compatibilidad para una única plaza. La autoridad normal de 367H debe
+    /// utilizar BistroBuilderBarServiceRegistry.ReleaseGroup para liberar de
+    /// forma conjunta todas las plazas de un grupo.
+    /// </summary>
+    public bool TryReleaseBarSpot()
+    {
+        if (assignedBarSpot == null)
+        {
+            return false;
+        }
+
+        BistroBuilderBarServiceSpot previousSpot = assignedBarSpot;
+        assignedBarSpot = null;
+        previousSpot.TryRelease(this);
+        currentServiceMode = BistroBuilderServiceMode.TableService;
+        return true;
+    }
+
+    /// <summary>
+    /// Limpia únicamente la referencia del grupo después de que el registro
+    /// haya liberado todas las plazas físicas.
+    /// </summary>
+    public bool TryClearBarSpotAssignmentAfterRegistryRelease()
+    {
+        if (assignedBarSpot == null)
+        {
+            return false;
+        }
+
+        assignedBarSpot = null;
+        currentServiceMode = BistroBuilderServiceMode.TableService;
+        return true;
+    }
+
+    public bool TrySetCurrentServiceMode(BistroBuilderServiceMode serviceMode)
+    {
+        if (!BistroBuilderServiceModeUtility.IsDefined(serviceMode))
+        {
+            return false;
+        }
+
+        if (BistroBuilderServiceModeUtility.IsBarMode(serviceMode) &&
+            assignedBarSpot == null)
+        {
+            return false;
+        }
+
+        currentServiceMode = serviceMode;
+        return true;
     }
 
     /// <summary>
@@ -189,6 +320,7 @@ public sealed class CustomerGroup : MonoBehaviour
             return false;
 
         assignedTable = table;
+        currentServiceMode = BistroBuilderServiceMode.TableService;
 
         Debug.Log(
             $"Grupo {groupId} asignado a mesa {table.TableId}.",

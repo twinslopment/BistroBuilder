@@ -44,6 +44,17 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
         BistroBuilderMealServiceAvailability.Lunch |
         BistroBuilderMealServiceAvailability.Dinner;
 
+    [Header("Modalidades de servicio")]
+
+    [Tooltip(
+        "Modalidades en las que puede pedirse este artículo. Los assets " +
+        "anteriores a 367H con valor None se interpretan como TableService " +
+        "hasta que el instalador los normalice."
+    )]
+    [SerializeField]
+    private BistroBuilderDishServiceModeAvailability allowedServiceModes =
+        BistroBuilderDishServiceModeAvailability.TableService;
+
     [Header("Producción")]
 
     [SerializeField]
@@ -93,8 +104,27 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
     public BistroBuilderMealServiceAvailability DefaultAvailability =>
         defaultAvailability;
 
+    public BistroBuilderDishServiceModeAvailability AllowedServiceModes =>
+        allowedServiceModes == BistroBuilderDishServiceModeAvailability.None
+            ? BistroBuilderDishServiceModeAvailability.TableService
+            : allowedServiceModes;
+
     public BistroBuilderKitchenStationType RequiredStation =>
         requiredStation;
+
+    public bool IsAvailableForServiceMode(BistroBuilderServiceMode mode)
+    {
+        if (!BistroBuilderServiceModeUtility.IsDefined(mode))
+        {
+            return false;
+        }
+
+        BistroBuilderDishServiceModeAvailability required =
+            BistroBuilderServiceModeUtility.ToAvailability(mode);
+
+        return required != BistroBuilderDishServiceModeAvailability.None &&
+               (AllowedServiceModes & required) == required;
+    }
 
     public int BasePreparationSeconds => basePreparationSeconds;
 
@@ -143,6 +173,16 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
         {
             error = "El plato " + dishId +
                     " contiene una clasificación desconocida.";
+            return false;
+        }
+
+        if (!BistroBuilderServiceModeUtility.IsValidAvailabilityMask(
+                AllowedServiceModes,
+                false
+            ))
+        {
+            error = "El plato " + dishId +
+                    " no tiene modalidades de servicio válidas.";
             return false;
         }
 
@@ -222,6 +262,13 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
             MaximumPreparationSeconds
         );
         complexity = Mathf.Clamp(complexity, 1, 10);
+        if (allowedServiceModes ==
+            BistroBuilderDishServiceModeAvailability.None)
+        {
+            allowedServiceModes =
+                BistroBuilderDishServiceModeAvailability.TableService;
+        }
+
         minimumConsumers = Mathf.Max(1, minimumConsumers);
         maximumConsumers = Mathf.Max(minimumConsumers, maximumConsumers);
 

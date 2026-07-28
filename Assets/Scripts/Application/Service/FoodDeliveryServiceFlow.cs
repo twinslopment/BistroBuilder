@@ -3,16 +3,17 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Ejecuta la recogida y entrega de un plato físico concreto.
+/// Ejecuta la recogida y entrega de platos físicos.
 ///
-/// La asignación pertenece a WaiterTaskCoordinator y la autoridad de estado
-/// pertenece a BistroBuilderCanonicalOrderService a través de
-/// BistroBuilderOrderLineExecutionService. Este flujo solo coordina movimiento,
-/// tiempos provisionales y confirmación transaccional de la tarea.
+/// Desde 367G1 puede transportar una ronda con varias líneas y varias mesas.
+/// La autoridad de estados sigue perteneciendo a las comandas canónicas; esta
+/// clase solo coordina movimiento, tiempos y confirmación transaccional.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 {
+    public const string RuntimeRevision = "367H";
+
     [Header("Referencias")]
 
     [SerializeField]
@@ -30,10 +31,20 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
     [SerializeField]
     private BistroBuilderCustomerDiningService customerDiningService;
 
+    [SerializeField]
+    private BistroBuilderBarServiceSystem barServiceSystem;
+
     [Header("Duraciones provisionales")]
 
     [SerializeField, Min(0.1f)]
     private float pickupDuration = 1f;
+
+    [Tooltip(
+        "Tiempo adicional de recogida por cada plato posterior al primero " +
+        "dentro de una ronda."
+    )]
+    [SerializeField, Min(0f)]
+    private float additionalPickupDurationPerLine = 0.2f;
 
     [SerializeField, Min(0.1f)]
     private float servingDuration = 2f;
@@ -47,6 +58,8 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         lineExecutionService;
     public BistroBuilderCustomerDiningService CustomerDiningService =>
         customerDiningService;
+    public float AdditionalPickupDurationPerLine =>
+        additionalPickupDurationPerLine;
 
     private void Awake()
     {
@@ -80,6 +93,9 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             waiterMovementView.DestinationReached -= HandleDestinationReached;
         }
 
+        BistroBuilderDeliveryRun interruptedRun = waiter != null
+            ? waiter.AssignedDeliveryRun
+            : null;
         RestaurantOrder interruptedOrder = waiter != null
             ? waiter.AssignedOrder
             : null;
@@ -99,14 +115,20 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             activeRoutine = null;
         }
 
-        if (Application.isPlaying && wasExecutingDelivery)
+        if (!Application.isPlaying || !wasExecutingDelivery)
+            return;
+
+        if (interruptedRun != null)
         {
-            RecoverInterruptedLine(
-                interruptedOrder,
-                interruptedLineId,
-                true
-            );
+            RecoverInterruptedRun(interruptedRun, true);
+            return;
         }
+
+        RecoverInterruptedLine(
+            interruptedOrder,
+            interruptedLineId,
+            true
+        );
     }
 
     public bool ValidateConfiguration(out string error)
@@ -121,52 +143,54 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 
         if (waiterMovementView == null)
         {
-            error =
-                "FoodDeliveryServiceFlow necesita WaiterMovementView.";
+            error = "FoodDeliveryServiceFlow necesita WaiterMovementView.";
             return false;
         }
 
         if (taskCoordinator == null)
         {
-            error =
-                "FoodDeliveryServiceFlow necesita WaiterTaskCoordinator.";
+            error = "FoodDeliveryServiceFlow necesita WaiterTaskCoordinator.";
             return false;
         }
 
         if (lineExecutionService == null)
         {
-            error =
-                "FoodDeliveryServiceFlow necesita " +
-                "BistroBuilderOrderLineExecutionService.";
+            error = "FoodDeliveryServiceFlow necesita " +
+                    "BistroBuilderOrderLineExecutionService.";
             return false;
         }
 
         if (!lineExecutionService.ValidateConfiguration(out error))
-        {
             return false;
-        }
 
         if (customerDiningService == null)
         {
-            error =
-                "FoodDeliveryServiceFlow necesita " +
-                "BistroBuilderCustomerDiningService.";
+            error = "FoodDeliveryServiceFlow necesita " +
+                    "BistroBuilderCustomerDiningService.";
             return false;
         }
 
         if (!customerDiningService.ValidateConfiguration(out error))
+            return false;
+
+        if (barServiceSystem == null)
         {
+            error = "FoodDeliveryServiceFlow necesita " +
+                    "BistroBuilderBarServiceSystem para destinos de barra.";
             return false;
         }
 
         if (float.IsNaN(pickupDuration) ||
             float.IsInfinity(pickupDuration) ||
             pickupDuration <= 0f ||
+            float.IsNaN(additionalPickupDurationPerLine) ||
+            float.IsInfinity(additionalPickupDurationPerLine) ||
+            additionalPickupDurationPerLine < 0f ||
             float.IsNaN(servingDuration) ||
             float.IsInfinity(servingDuration) ||
             servingDuration <= 0f)
         {
-            error = "Las duraciones de reparto deben ser positivas.";
+            error = "Las duraciones de reparto son inválidas.";
             return false;
         }
 
@@ -181,15 +205,270 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 
         if (waiter.CurrentState == WaiterState.WalkingToKitchen)
         {
-            activeRoutine = StartCoroutine(PickupLineRoutine());
+            activeRoutine = waiter.AssignedDeliveryRun != null
+                ? StartCoroutine(PickupDeliveryRunRoutine())
+                : StartCoroutine(PickupLineRoutine());
             return;
         }
 
         if (waiter.CurrentState == WaiterState.WalkingToServeTable)
         {
-            activeRoutine = StartCoroutine(ServeLineRoutine());
+            activeRoutine = waiter.AssignedDeliveryRun != null
+                ? StartCoroutine(ServeDeliveryRunStopRoutine())
+                : StartCoroutine(ServeLineRoutine());
         }
     }
+
+    /// <summary>
+    /// Recoge todas las líneas de una ronda en una sola operación de cocina.
+    /// </summary>
+    private IEnumerator PickupDeliveryRunRoutine()
+    {
+        BistroBuilderDeliveryRun deliveryRun = waiter.AssignedDeliveryRun;
+
+        if (!ValidateAssignedRun(
+                deliveryRun,
+                BistroBuilderDeliveryRunState.Assigned,
+                out string error
+            ))
+        {
+            Debug.LogError(error, this);
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        if (!deliveryRun.TryBeginPickup())
+        {
+            Debug.LogError(
+                "La ronda " + deliveryRun.RunId +
+                " no pudo comenzar la recogida.",
+                this
+            );
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        waiter.SetState(WaiterState.WaitingForDish);
+
+        Debug.Log(
+            "Camarero " + waiter.WaiterId + " recoge la ronda " +
+            deliveryRun.RunId + " con " + deliveryRun.Items.Count +
+            " plato(s).",
+            this
+        );
+
+        float totalPickupDuration = pickupDuration +
+            Mathf.Max(0, deliveryRun.Items.Count - 1) *
+            additionalPickupDurationPerLine;
+
+        yield return new WaitForSeconds(totalPickupDuration);
+
+        if (!IsDeliveryRunAssignmentStillValid(deliveryRun))
+        {
+            Debug.LogWarning(
+                "La ronda cambió durante la recogida.",
+                this
+            );
+            AbortDeliveryRun(deliveryRun, false);
+            yield break;
+        }
+
+        for (int index = 0; index < deliveryRun.Items.Count; index++)
+        {
+            BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
+
+            if (!lineExecutionService.TryMarkLineInTransit(
+                    item.Order,
+                    item.OrderLineId,
+                    waiter,
+                    out error
+                ) ||
+                !deliveryRun.TryMarkLineInTransit(
+                    item.Order,
+                    item.OrderLineId
+                ))
+            {
+                Debug.LogError(
+                    "No se pudo retirar toda la ronda del pase. " + error,
+                    this
+                );
+                AbortDeliveryRun(deliveryRun, true);
+                yield break;
+            }
+        }
+
+        if (!waiter.TryBeginDeliveryRunStops())
+        {
+            Debug.LogError(
+                "La ronda no pudo preparar su primera parada.",
+                this
+            );
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        activeRoutine = null;
+        waiter.SetState(WaiterState.WalkingToServeTable);
+    }
+
+    /// <summary>
+    /// Sirve secuencialmente todas las líneas de la mesa actual y continúa con
+    /// la siguiente parada sin regresar a cocina.
+    /// </summary>
+    private IEnumerator ServeDeliveryRunStopRoutine()
+    {
+        BistroBuilderDeliveryRun deliveryRun = waiter.AssignedDeliveryRun;
+
+        if (!ValidateAssignedRun(
+                deliveryRun,
+                BistroBuilderDeliveryRunState.InTransit,
+                out string error
+            ))
+        {
+            Debug.LogError(error, this);
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        BistroBuilderDeliveryStop stop = deliveryRun.CurrentStop;
+
+        if (stop == null ||
+            (stop.Table == null) == (stop.BarSpot == null) ||
+            stop.WaiterServicePoint == null)
+        {
+            Debug.LogError("La ronda no tiene una parada válida.", this);
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        waiter.SetState(WaiterState.ServingFood);
+
+        for (int index = 0; index < stop.Items.Count; index++)
+        {
+            BistroBuilderDeliveryRunItem item = stop.Items[index];
+
+            if (item.IsFinished)
+                continue;
+
+            if (!waiter.TrySelectDeliveryLine(
+                    item.Order,
+                    item.OrderLineId
+                ) ||
+                !ValidateRunLineInTransit(item, out error))
+            {
+                Debug.LogError(error, this);
+                AbortDeliveryRun(deliveryRun, true);
+                yield break;
+            }
+
+            Debug.Log(
+                "Camarero " + waiter.WaiterId + " sirve la línea " +
+                item.OrderLineId + " de la ronda " + deliveryRun.RunId +
+                " en " + DescribeDestination(stop.Table, stop.BarSpot) + ".",
+                this
+            );
+
+            yield return new WaitForSeconds(servingDuration);
+
+            if (!IsDeliveryRunAssignmentStillValid(deliveryRun) ||
+                !ReferenceEquals(deliveryRun.CurrentStop, stop))
+            {
+                Debug.LogWarning(
+                    "La ronda cambió durante el servicio de una parada.",
+                    this
+                );
+                AbortDeliveryRun(deliveryRun, false);
+                yield break;
+            }
+
+            bool markedServed = lineExecutionService.TryMarkLineServed(
+                item.Order,
+                item.OrderLineId,
+                waiter,
+                out _,
+                out error
+            );
+
+            if (!markedServed)
+            {
+                bool alreadyServed = IsLineServedOrConsumed(
+                    item.Order,
+                    item.OrderLineId
+                );
+
+                Debug.LogError(
+                    "La línea " + item.OrderLineId +
+                    " no pudo completar toda la sincronización. " + error,
+                    this
+                );
+
+                if (!alreadyServed)
+                {
+                    AbortDeliveryRun(deliveryRun, true);
+                    yield break;
+                }
+            }
+
+            // Si Served ya era irreversible, el modelo de transporte también
+            // debe cerrarla para que nunca se reprograme como plato pendiente.
+            if (!deliveryRun.TryMarkLineServed(
+                    item.Order,
+                    item.OrderLineId
+                ))
+            {
+                Debug.LogError(
+                    "La ronda no pudo registrar como servida la línea " +
+                    item.OrderLineId + ".",
+                    this
+                );
+                AbortDeliveryRun(deliveryRun, true);
+                yield break;
+            }
+
+            CompleteDeliveryTaskWithoutRetry(item);
+            NotifyDiningLineServed(item.Order, item.OrderLineId);
+        }
+
+        if (deliveryRun.RemainingLineCount == 0)
+        {
+            if (!deliveryRun.TryComplete())
+            {
+                Debug.LogError(
+                    "La ronda terminó sus líneas, pero no pudo cerrarse.",
+                    this
+                );
+                AbortDeliveryRun(deliveryRun, true);
+                yield break;
+            }
+
+            Debug.Log(
+                "Ronda 367H " + deliveryRun.RunId + " completada por el " +
+                "camarero " + waiter.WaiterId + ".",
+                this
+            );
+
+            activeRoutine = null;
+            waiter.ClearAssignment();
+            yield break;
+        }
+
+        if (!waiter.TryAdvanceDeliveryRunStop())
+        {
+            Debug.LogError(
+                "La ronda conserva platos, pero no pudo avanzar de destino.",
+                this
+            );
+            AbortDeliveryRun(deliveryRun, true);
+            yield break;
+        }
+
+        activeRoutine = null;
+        waiter.SetState(WaiterState.WalkingToServeTable);
+    }
+
+    // ---------------------------------------------------------------------
+    // Compatibilidad con la entrega individual 367D.
+    // ---------------------------------------------------------------------
 
     private IEnumerator PickupLineRoutine()
     {
@@ -238,8 +517,8 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             yield break;
         }
 
-        waiter.SetState(WaiterState.WalkingToServeTable);
         activeRoutine = null;
+        waiter.SetState(WaiterState.WalkingToServeTable);
     }
 
     private IEnumerator ServeLineRoutine()
@@ -254,10 +533,7 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             yield break;
         }
 
-        RestaurantTable table = order.Table;
-        CustomerGroup customerGroup = order.CustomerGroup;
-
-        if (table == null || customerGroup == null)
+        if (!order.HasValidDestination || order.CustomerGroup == null)
         {
             Debug.LogError(
                 "La comanda " + order.OrderId + " tiene datos incompletos.",
@@ -271,7 +547,8 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 
         Debug.Log(
             "Camarero " + waiter.WaiterId + " sirve la línea " +
-            orderLineId + " en la mesa " + table.TableId + ".",
+            orderLineId + " en " +
+            DescribeDestination(order.Table, order.BarSpot) + ".",
             this
         );
 
@@ -297,9 +574,6 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 
         if (!markedServed)
         {
-            // Served es irreversible. Si la autoridad aceptó la línea pero la
-            // fachada coarse no pudo sincronizarse, se limpia la tarea sin
-            // generar un segundo plato duplicado.
             bool alreadyServed = IsLineServedOrConsumed(order, orderLineId);
 
             Debug.LogError(
@@ -322,64 +596,91 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
             yield break;
         }
 
-        bool taskCompleted = taskCoordinator != null &&
-            taskCoordinator.TryCompleteFoodDeliveryTask(order, orderLineId);
-
-        if (!taskCompleted)
-        {
-            Debug.LogWarning(
-                "No se encontró la tarea activa de la línea " +
-                orderLineId + ".",
-                this
-            );
-
-            // La línea ya está servida, por lo que ReportFailure solo limpia
-            // la tarea inconsistente y nunca la recrea.
-            taskCoordinator?.ReportFoodDeliveryFailure(
-                waiter,
-                order,
-                orderLineId
-            );
-        }
-
-        if (!customerDiningService.TryNotifyLineServed(
-                order,
-                orderLineId,
-                out BistroBuilderCustomerDiningNotificationResult dining,
-                out string diningError
-            ))
-        {
-            // La línea ya está servida y no puede duplicarse. Se informa del
-            // fallo de reconciliación, se cierra la tarea y el diagnóstico
-            // 367E podrá reparar la sesión sin generar un segundo plato.
-            Debug.LogError(
-                "La línea " + orderLineId +
-                " se sirvió, pero no pudo reconciliarse con el consumo " +
-                "individual. " + diningError,
-                this
-            );
-        }
-        else if (dining.StartedCustomerCount > 0)
-        {
-            Debug.Log(
-                "Línea " + orderLineId + " servida; " +
-                dining.StartedCustomerCount +
-                " cliente(s) comienzan a comer de forma individual.",
-                this
-            );
-        }
-        else
-        {
-            Debug.Log(
-                "Línea " + orderLineId +
-                " servida y reconciliada; otros clientes o pases " +
-                "continúan pendientes.",
-                this
-            );
-        }
+        CompleteOrCancelTaskWithoutRetry(order, orderLineId);
+        NotifyDiningLineServed(order, orderLineId);
 
         activeRoutine = null;
         waiter.ClearAssignment();
+    }
+
+    private bool ValidateAssignedRun(
+        BistroBuilderDeliveryRun deliveryRun,
+        BistroBuilderDeliveryRunState expectedState,
+        out string error
+    )
+    {
+        if (deliveryRun == null)
+        {
+            error = "El camarero no tiene una ronda asignada.";
+            return false;
+        }
+
+        if (!IsDeliveryRunAssignmentStillValid(deliveryRun))
+        {
+            error = "La asignación camarero-ronda no es coherente.";
+            return false;
+        }
+
+        if (deliveryRun.State != expectedState)
+        {
+            error = "La ronda está en " + deliveryRun.State +
+                    " y se esperaba " + expectedState + ".";
+            return false;
+        }
+
+        if (deliveryRun.SourceKitchen == null ||
+            deliveryRun.SourceKitchen.PickupPoint == null)
+        {
+            error = "La ronda no tiene un punto de recogida válido.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool ValidateRunLineInTransit(
+        BistroBuilderDeliveryRunItem item,
+        out string error
+    )
+    {
+        if (item == null)
+        {
+            error = "La línea de la ronda es nula.";
+            return false;
+        }
+
+        if (!lineExecutionService.TryGetLineSnapshot(
+                item.Order,
+                item.OrderLineId,
+                out _,
+                out BistroBuilderCanonicalOrderLine line,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        if (line.State != BistroBuilderCanonicalOrderLineState.InTransit)
+        {
+            error = "La línea " + item.OrderLineId + " está en " +
+                    line.State + " y no puede servirse desde la bandeja.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool IsDeliveryRunAssignmentStillValid(
+        BistroBuilderDeliveryRun deliveryRun
+    )
+    {
+        return waiter != null &&
+               deliveryRun != null &&
+               !deliveryRun.IsTerminal &&
+               ReferenceEquals(waiter.AssignedDeliveryRun, deliveryRun) &&
+               ReferenceEquals(deliveryRun.AssignedWaiter, waiter);
     }
 
     private bool ValidateAssignedLine(
@@ -441,6 +742,7 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         return waiter != null &&
                ReferenceEquals(waiter.AssignedOrder, order) &&
                ReferenceEquals(waiter.AssignedTable, order?.Table) &&
+               ReferenceEquals(waiter.AssignedBarSpot, order?.BarSpot) &&
                string.Equals(
                    waiter.AssignedOrderLineId,
                    BistroBuilderOrderIdUtility.Normalize(orderLineId),
@@ -465,6 +767,26 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
                 line.State == BistroBuilderCanonicalOrderLineState.Consumed);
     }
 
+    private void CompleteDeliveryTaskWithoutRetry(
+        BistroBuilderDeliveryRunItem item
+    )
+    {
+        if (item == null || taskCoordinator == null)
+            return;
+
+        if (!taskCoordinator.TryCompleteFoodDeliveryTask(
+                item.Order,
+                item.OrderLineId
+            ))
+        {
+            Debug.LogWarning(
+                "No se encontró la tarea activa de la línea " +
+                item.OrderLineId + " dentro de la ronda.",
+                this
+            );
+        }
+    }
+
     private void CompleteOrCancelTaskWithoutRetry(
         RestaurantOrder order,
         string orderLineId
@@ -480,6 +802,137 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
                 order,
                 orderLineId
             );
+        }
+    }
+
+    private void NotifyDiningLineServed(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        if (order != null && order.HasBarDestination)
+        {
+            string barError = string.Empty;
+            bool reconciled = barServiceSystem != null &&
+                barServiceSystem.TryNotifyLineServed(
+                    order,
+                    orderLineId,
+                    out barError
+                );
+
+            if (!reconciled)
+            {
+                Debug.LogError(
+                    "La línea " + orderLineId +
+                    " se sirvió en barra, pero la sesión no pudo " +
+                    "reconciliarse. " + barError,
+                    this
+                );
+            }
+            return;
+        }
+
+        if (!customerDiningService.TryNotifyLineServed(
+                order,
+                orderLineId,
+                out BistroBuilderCustomerDiningNotificationResult dining,
+                out string diningError
+            ))
+        {
+            Debug.LogError(
+                "La línea " + orderLineId +
+                " se sirvió, pero no pudo reconciliarse con el consumo " +
+                "individual. " + diningError,
+                this
+            );
+            return;
+        }
+
+        if (dining.StartedCustomerCount > 0)
+        {
+            Debug.Log(
+                "Línea " + orderLineId + " servida; " +
+                dining.StartedCustomerCount +
+                " cliente(s) comienzan a comer de forma individual.",
+                this
+            );
+            return;
+        }
+
+        Debug.Log(
+            "Línea " + orderLineId +
+            " servida y reconciliada; otros clientes o pases " +
+            "continúan pendientes.",
+            this
+        );
+    }
+
+    private static string DescribeDestination(
+        RestaurantTable table,
+        BistroBuilderBarServiceSpot barSpot
+    )
+    {
+        if (table != null)
+        {
+            return "la mesa " + table.TableId;
+        }
+
+        if (barSpot != null)
+        {
+            return "la plaza de barra " + barSpot.BarSpotId;
+        }
+
+        return "un destino desconocido";
+    }
+
+    private void AbortDeliveryRun(
+        BistroBuilderDeliveryRun deliveryRun,
+        bool clearWaiterAssignment
+    )
+    {
+        activeRoutine = null;
+
+        bool recovered = taskCoordinator != null &&
+            taskCoordinator.ReportFoodDeliveryRunFailure(
+                waiter,
+                deliveryRun
+            );
+
+        if (!recovered && deliveryRun != null)
+        {
+            string actorReference = waiter != null
+                ? BistroBuilderServiceOrderIdentityUtility
+                    .BuildWaiterReference(waiter.WaiterId)
+                : "delivery_run_failure";
+
+            for (int index = 0; index < deliveryRun.Items.Count; index++)
+            {
+                BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
+
+                if (item.State == BistroBuilderDeliveryRunItemState.Served)
+                    continue;
+
+                if (lineExecutionService != null)
+                {
+                    lineExecutionService.TryReturnLineToPickup(
+                        item.Order,
+                        item.OrderLineId,
+                        actorReference,
+                        out _
+                    );
+                }
+            }
+
+            deliveryRun.TryCancel();
+        }
+
+        if (!clearWaiterAssignment || waiter == null)
+            return;
+
+        if (deliveryRun == null ||
+            ReferenceEquals(waiter.AssignedDeliveryRun, deliveryRun))
+        {
+            waiter.ClearAssignment();
         }
     }
 
@@ -526,9 +979,15 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
              ));
 
         if (canClear)
-        {
             waiter.ClearAssignment();
-        }
+    }
+
+    private void RecoverInterruptedRun(
+        BistroBuilderDeliveryRun deliveryRun,
+        bool clearAssignment
+    )
+    {
+        AbortDeliveryRun(deliveryRun, clearAssignment);
     }
 
     private void RecoverInterruptedLine(
@@ -542,6 +1001,12 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
 
     private void ResolveDependencies()
     {
+        if (waiter == null)
+            TryGetComponent(out waiter);
+
+        if (waiterMovementView == null)
+            TryGetComponent(out waiterMovementView);
+
         if (taskCoordinator == null)
         {
             taskCoordinator = FindFirstObjectByType<WaiterTaskCoordinator>();
@@ -563,13 +1028,32 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         {
             taskCoordinator.TryGetComponent(out customerDiningService);
         }
+
+        if (customerDiningService == null)
+        {
+            customerDiningService = FindFirstObjectByType<
+                BistroBuilderCustomerDiningService
+            >();
+        }
+
+        if (barServiceSystem == null)
+        {
+            barServiceSystem = FindFirstObjectByType<
+                BistroBuilderBarServiceSystem
+            >();
+        }
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
         pickupDuration = Mathf.Max(0.1f, pickupDuration);
+        additionalPickupDurationPerLine = Mathf.Max(
+            0f,
+            additionalPickupDurationPerLine
+        );
         servingDuration = Mathf.Max(0.1f, servingDuration);
+        ResolveDependencies();
     }
 #endif
 }

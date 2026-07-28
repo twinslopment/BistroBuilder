@@ -10,5 +10,11 @@ public enum WaiterState
     WalkingToBill,
     DeliveringBill,
     WalkingToCleanTable,
-    CleaningTable
+    CleaningTable,
+
+    // 367H: atención independiente de barra.
+    WalkingToBar,
+    TakingBarOrder,
+    WalkingToBarBill,
+    DeliveringBarBill
 }

@@ -27,6 +27,10 @@ public sealed class BistroBuilderCanonicalOrder
     private string customerGroupReferenceId;
 
     [SerializeField]
+    private BistroBuilderServiceMode serviceMode =
+        BistroBuilderServiceMode.TableService;
+
+    [SerializeField]
     private BistroBuilderMealServiceAvailability mealService;
 
     [SerializeField]
@@ -45,7 +49,13 @@ public sealed class BistroBuilderCanonicalOrder
     public string OrderId => orderId ?? string.Empty;
     public long SequenceNumber => sequenceNumber;
     public string ExternalReferenceId => externalReferenceId ?? string.Empty;
+    /// <summary>
+    /// Alias legacy. En 367H representa el destino operativo y puede ser una
+    /// mesa o una plaza de barra según ServiceMode.
+    /// </summary>
     public string TableReferenceId => tableReferenceId ?? string.Empty;
+    public string ServiceDestinationReferenceId => TableReferenceId;
+    public BistroBuilderServiceMode ServiceMode => serviceMode;
     public string CustomerGroupReferenceId =>
         customerGroupReferenceId ?? string.Empty;
     public BistroBuilderMealServiceAvailability MealService => mealService;
@@ -65,7 +75,9 @@ public sealed class BistroBuilderCanonicalOrder
         string tableReferenceId,
         string customerGroupReferenceId,
         BistroBuilderMealServiceAvailability mealService,
-        List<BistroBuilderCanonicalOrderLine> lines
+        List<BistroBuilderCanonicalOrderLine> lines,
+        BistroBuilderServiceMode serviceMode =
+            BistroBuilderServiceMode.TableService
     )
     {
         this.orderId = BistroBuilderOrderIdUtility.Normalize(orderId);
@@ -76,6 +88,7 @@ public sealed class BistroBuilderCanonicalOrder
             BistroBuilderOrderIdUtility.Normalize(tableReferenceId);
         this.customerGroupReferenceId =
             BistroBuilderOrderIdUtility.Normalize(customerGroupReferenceId);
+        this.serviceMode = serviceMode;
         this.mealService = mealService;
         this.lines = lines != null
             ? new List<BistroBuilderCanonicalOrderLine>(lines)
@@ -221,9 +234,17 @@ public sealed class BistroBuilderCanonicalOrder
             return false;
         }
 
-        if (!BistroBuilderOrderIdUtility.IsValid(TableReferenceId))
+        if (!BistroBuilderServiceModeUtility.IsDefined(ServiceMode))
         {
-            error = "La referencia de mesa de la comanda no es válida.";
+            error = "La modalidad de servicio de la comanda no es válida.";
+            return false;
+        }
+
+        if (!BistroBuilderOrderIdUtility.IsValid(
+                ServiceDestinationReferenceId
+            ))
+        {
+            error = "La referencia de destino de la comanda no es válida.";
             return false;
         }
 
@@ -305,8 +326,9 @@ public sealed class BistroBuilderCanonicalOrder
             orderId = OrderId,
             sequenceNumber = sequenceNumber,
             externalReferenceId = ExternalReferenceId,
-            tableReferenceId = TableReferenceId,
+            tableReferenceId = ServiceDestinationReferenceId,
             customerGroupReferenceId = CustomerGroupReferenceId,
+            serviceMode = serviceMode,
             mealService = mealService,
             createdUtc = CreatedUtc,
             state = state,

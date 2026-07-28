@@ -280,6 +280,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 return false;
             }
 
+            request.serviceMode = BistroBuilderServiceMode.TableService;
+
             result = canonicalOrderService.TryCreateOrder(
                 request,
                 out snapshot
@@ -322,6 +324,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 groupReferenceId,
                 StringComparison.Ordinal
             ) ||
+            snapshot.ServiceMode !=
+                BistroBuilderServiceMode.TableService ||
             snapshot.Lines.Count == 0 ||
             !DoesSnapshotCoverCustomers(snapshot, customerIds))
         {
@@ -333,6 +337,165 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             error =
                 "La comanda canónica creada no conserva todas sus " +
                 "referencias o líneas.";
+            return false;
+        }
+
+        canonicalOrderId = snapshot.OrderId;
+        error = string.Empty;
+        return true;
+    }
+
+
+    public bool TryCreateCanonicalBarOrder(
+        BistroBuilderBarServiceSpot barSpot,
+        CustomerGroup customerGroup,
+        Waiter waiter,
+        int legacyOrderId,
+        BistroBuilderServiceMode serviceMode,
+        IList<string> dishIds,
+        out string canonicalOrderId,
+        out string error
+    )
+    {
+        canonicalOrderId = string.Empty;
+
+        if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        if (barSpot == null || customerGroup == null || waiter == null)
+        {
+            error = "La comanda de barra necesita plaza, grupo y camarero.";
+            return false;
+        }
+
+        if (!BistroBuilderServiceModeUtility.IsBarMode(serviceMode))
+        {
+            error = "La modalidad indicada no pertenece al servicio de barra.";
+            return false;
+        }
+
+        if (legacyOrderId < 1 || dishIds == null || dishIds.Count == 0)
+        {
+            error = "La identidad o los artículos de la comanda no son válidos.";
+            return false;
+        }
+
+        if (!ReferenceEquals(barSpot.AssignedCustomerGroup, customerGroup) ||
+            !ReferenceEquals(customerGroup.AssignedBarSpot, barSpot))
+        {
+            error = "La plaza de barra no está ocupada por el grupo indicado.";
+            return false;
+        }
+
+        BistroBuilderRestaurantMenuService menu =
+            orderCompositionService != null
+                ? orderCompositionService.MenuService
+                : null;
+
+        if (menu == null || menu.CatalogService == null)
+        {
+            error = "No está disponible la carta para crear la comanda de barra.";
+            return false;
+        }
+
+        if (!BistroBuilderServiceOrderIdentityUtility
+                .TryBuildCustomerReferences(
+                    customerGroup.GroupId,
+                    customerGroup.GroupSize,
+                    customerIds,
+                    out error
+                ))
+        {
+            return false;
+        }
+
+        string externalReferenceId =
+            BistroBuilderServiceOrderIdentityUtility
+                .BuildLegacyOrderReference(legacyOrderId);
+        string destinationReferenceId =
+            BistroBuilderServiceOrderIdentityUtility
+                .BuildBarSpotReference(barSpot.BarSpotId);
+        string groupReferenceId =
+            BistroBuilderServiceOrderIdentityUtility
+                .BuildGroupReference(customerGroup.GroupId);
+
+        BistroBuilderCanonicalOrderCreationRequest request =
+            new BistroBuilderCanonicalOrderCreationRequest
+            {
+                externalReferenceId = externalReferenceId,
+                tableReferenceId = destinationReferenceId,
+                customerGroupReferenceId = groupReferenceId,
+                mealService = currentMealService,
+                serviceMode = serviceMode
+            };
+
+        for (int index = 0; index < dishIds.Count; index++)
+        {
+            string dishId = BistroBuilderMenuIdUtility.NormalizeStableId(
+                dishIds[index]
+            );
+
+            if (!menu.IsDishOrderable(
+                    dishId,
+                    currentMealService,
+                    out string rejection
+                ) ||
+                !menu.CatalogService.TryGetDefinition(
+                    dishId,
+                    out BistroBuilderDishDefinition definition
+                ) ||
+                !definition.IsAvailableForServiceMode(serviceMode))
+            {
+                error = string.IsNullOrWhiteSpace(rejection)
+                    ? "El artículo " + dishId +
+                      " no está disponible en esta modalidad de barra."
+                    : rejection;
+                return false;
+            }
+
+            string customerId = customerIds[index % customerIds.Count];
+            request.lines.Add(
+                new BistroBuilderCanonicalOrderLineRequest(
+                    dishId,
+                    customerId,
+                    new[] { customerId },
+                    1
+                )
+            );
+        }
+
+        BistroBuilderCanonicalOrderOperationResult result =
+            canonicalOrderService.TryCreateOrder(request, out var snapshot);
+
+        if (!result.Succeeded || snapshot == null)
+        {
+            error = string.IsNullOrWhiteSpace(result.Message)
+                ? "La autoridad canónica rechazó la comanda de barra."
+                : result.Message;
+            return false;
+        }
+
+        bool valid =
+            snapshot.ServiceMode == serviceMode &&
+            string.Equals(
+                snapshot.ServiceDestinationReferenceId,
+                destinationReferenceId,
+                StringComparison.Ordinal
+            ) &&
+            string.Equals(
+                snapshot.CustomerGroupReferenceId,
+                groupReferenceId,
+                StringComparison.Ordinal
+            ) &&
+            snapshot.Lines.Count == dishIds.Count &&
+            DoesSnapshotCoverCustomers(snapshot, customerIds);
+
+        if (!valid)
+        {
+            TryRollbackUnregisteredCanonicalOrder(snapshot.OrderId, out _);
+            error = "La comanda de barra creada no conserva su contexto.";
             return false;
         }
 
@@ -386,9 +549,7 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         string expectedExternal =
             BistroBuilderServiceOrderIdentityUtility
                 .BuildLegacyOrderReference(order.OrderId);
-        string expectedTable =
-            BistroBuilderServiceOrderIdentityUtility
-                .BuildTableReference(order.Table.TableId);
+        string expectedDestination = order.ServiceDestinationReferenceId;
         string expectedGroup =
             BistroBuilderServiceOrderIdentityUtility
                 .BuildGroupReference(order.CustomerGroup.GroupId);
@@ -399,8 +560,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 StringComparison.Ordinal
             ) ||
             !string.Equals(
-                snapshot.TableReferenceId,
-                expectedTable,
+                snapshot.ServiceDestinationReferenceId,
+                expectedDestination,
                 StringComparison.Ordinal
             ) ||
             !string.Equals(
@@ -408,6 +569,7 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 expectedGroup,
                 StringComparison.Ordinal
             ) ||
+            snapshot.ServiceMode != order.ServiceMode ||
             snapshot.Lines.Count == 0 ||
             !TryBuildExpectedCustomerReferences(
                 order.CustomerGroup,

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -30,6 +31,9 @@ public sealed class CustomerGroupSpawner :
 
     [SerializeField]
     private CustomerWaitingAreaSystem customerWaitingAreaSystem;
+
+    [SerializeField]
+    private BistroBuilderBarServiceSystem barServiceSystem;
 
     [Tooltip(
         "Estado operativo que decide cuándo pueden llegar clientes."
@@ -70,6 +74,22 @@ public sealed class CustomerGroupSpawner :
     [Min(1)]
     private int maximumGroupSize = 2;
 
+    [Header("Modalidades de servicio 367H")]
+
+    [Tooltip(
+        "Probabilidad de que un grupo de una sola persona elija consumir " +
+        "exclusivamente en barra."
+    )]
+    [SerializeField, Range(0f, 1f)]
+    private float barServiceProbability = 0.15f;
+
+    [Tooltip(
+        "Probabilidad adicional de que un grupo espere mesa consumiendo " +
+        "en barra cuando exista una plaza compatible."
+    )]
+    [SerializeField, Range(0f, 1f)]
+    private float waitingAtBarProbability = 0.25f;
+
     [Header("Identificación")]
 
     [SerializeField]
@@ -81,6 +101,89 @@ public sealed class CustomerGroupSpawner :
     private int nextGroupId;
 
     private bool configurationIsValid;
+
+    // Secuencia opcional de tamaños usada exclusivamente por herramientas de
+    // diagnóstico en Play Mode. Permanece vacía en la simulación normal.
+    private readonly Queue<int> diagnosticGroupSizes = new Queue<int>();
+    private readonly Queue<BistroBuilderServiceMode>
+        diagnosticServiceModes =
+            new Queue<BistroBuilderServiceMode>();
+
+    /// <summary>
+    /// Configura una secuencia temporal y determinista de tamaños de grupo.
+    /// No se serializa y desaparece al salir de Play Mode.
+    /// </summary>
+    public bool TryConfigureDiagnosticGroupSizes(
+        IList<int> groupSizes,
+        out string error
+    )
+    {
+        if (!Application.isPlaying)
+        {
+            error = "La secuencia diagnóstica solo puede usarse en Play Mode.";
+            return false;
+        }
+
+        if (groupSizes == null || groupSizes.Count == 0)
+        {
+            error = "La secuencia diagnóstica está vacía.";
+            return false;
+        }
+
+        for (int index = 0; index < groupSizes.Count; index++)
+        {
+            if (groupSizes[index] < 1)
+            {
+                error = "Todos los tamaños diagnósticos deben ser positivos.";
+                return false;
+            }
+        }
+
+        diagnosticGroupSizes.Clear();
+
+        for (int index = 0; index < groupSizes.Count; index++)
+            diagnosticGroupSizes.Enqueue(groupSizes[index]);
+
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryConfigureDiagnosticServiceModes(
+        IList<BistroBuilderServiceMode> serviceModes,
+        out string error
+    )
+    {
+        if (!Application.isPlaying)
+        {
+            error = "La secuencia diagnóstica solo puede usarse en Play Mode.";
+            return false;
+        }
+
+        if (serviceModes == null || serviceModes.Count == 0)
+        {
+            error = "La secuencia de modalidades está vacía.";
+            return false;
+        }
+
+        for (int index = 0; index < serviceModes.Count; index++)
+        {
+            if (!BistroBuilderServiceModeUtility.IsDefined(serviceModes[index]))
+            {
+                error = "La secuencia contiene una modalidad desconocida.";
+                return false;
+            }
+        }
+
+        diagnosticServiceModes.Clear();
+
+        for (int index = 0; index < serviceModes.Count; index++)
+        {
+            diagnosticServiceModes.Enqueue(serviceModes[index]);
+        }
+
+        error = string.Empty;
+        return true;
+    }
 
     private void Awake()
     {
@@ -257,8 +360,9 @@ public sealed class CustomerGroupSpawner :
     )
     {
         // Random.Range con enteros no incluye el límite superior.
-        int groupSize =
-            Random.Range(
+        int groupSize = diagnosticGroupSizes.Count > 0
+            ? diagnosticGroupSizes.Dequeue()
+            : Random.Range(
                 minimumGroupSize,
                 maximumGroupSize + 1
             );
@@ -274,10 +378,14 @@ public sealed class CustomerGroupSpawner :
             "CustomerGroup_" +
             groupId;
 
+        BistroBuilderServiceMode serviceMode =
+            ResolveServiceMode(groupSize);
+
         bool initialized =
             newGroup.Initialize(
                 groupId,
-                groupSize
+                groupSize,
+                serviceMode
             );
 
         if (!initialized)
@@ -368,6 +476,21 @@ public sealed class CustomerGroupSpawner :
             return;
         }
 
+        if (barServiceSystem != null &&
+            !barServiceSystem.RegisterCustomerGroup(newGroup))
+        {
+            Debug.LogError(
+                "No se pudo registrar el grupo " + groupId +
+                " en BistroBuilderBarServiceSystem.",
+                newGroup
+            );
+
+            customerWaitingAreaSystem.UnregisterCustomerGroup(newGroup);
+            tableAssignmentSystem.UnregisterCustomerGroup(newGroup);
+            Destroy(newGroup.gameObject);
+            return;
+        }
+
         Debug.Log(
             "Generado grupo " +
             groupId +
@@ -378,6 +501,30 @@ public sealed class CustomerGroupSpawner :
         );
     }
 
+    private BistroBuilderServiceMode ResolveServiceMode(int groupSize)
+    {
+        if (diagnosticServiceModes.Count > 0)
+        {
+            return diagnosticServiceModes.Dequeue();
+        }
+
+        float value = Random.value;
+
+        // El servicio exclusivo de barra se limita inicialmente a grupos de
+        // una persona porque cada plaza representa un puesto individual.
+        if (groupSize == 1 && value < barServiceProbability)
+        {
+            return BistroBuilderServiceMode.BarService;
+        }
+
+        if (value < barServiceProbability + waitingAtBarProbability)
+        {
+            return BistroBuilderServiceMode.WaitingAtBar;
+        }
+
+        return BistroBuilderServiceMode.TableService;
+    }
+
     /// <summary>
     /// Busca dependencias situadas en el mismo GameObject.
     /// </summary>
@@ -385,9 +532,14 @@ public sealed class CustomerGroupSpawner :
     {
         if (serviceStateService == null)
         {
-            TryGetComponent(
-                out serviceStateService
-            );
+            TryGetComponent(out serviceStateService);
+        }
+
+        if (barServiceSystem == null)
+        {
+            barServiceSystem = FindFirstObjectByType<
+                BistroBuilderBarServiceSystem
+            >();
         }
     }
 
@@ -462,6 +614,27 @@ public sealed class CustomerGroupSpawner :
                 this
             );
 
+            isValid = false;
+        }
+
+        if (barServiceSystem == null)
+        {
+            Debug.LogError(
+                "CustomerGroupSpawner necesita BistroBuilderBarServiceSystem.",
+                this
+            );
+            isValid = false;
+        }
+
+        if (barServiceProbability < 0f ||
+            waitingAtBarProbability < 0f ||
+            barServiceProbability + waitingAtBarProbability > 1f)
+        {
+            Debug.LogError(
+                "Las probabilidades de modalidades 367H deben sumar como " +
+                "máximo 1.",
+                this
+            );
             isValid = false;
         }
 

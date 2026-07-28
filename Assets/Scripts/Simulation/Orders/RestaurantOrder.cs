@@ -1,14 +1,9 @@
 using System;
 
 /// <summary>
-/// Fachada operativa temporal de una comanda utilizada por el flujo de
-/// servicio anterior a 367B.
-///
-/// Desde 367C puede quedar enlazada a una comanda canónica. En ese caso cada
-/// transición legacy debe ser aprobada primero por
-/// IRestaurantOrderTransitionGate. Así el flujo existente continúa
-/// funcionando mientras la autoridad canónica recibe el estado de forma
-/// atómica y no se producen dos versiones contradictorias de la comanda.
+/// Fachada operativa temporal de una comanda utilizada por los sistemas de
+/// cocina, reparto y cuenta. Desde 367H el destino puede ser una mesa o una
+/// plaza de barra real; nunca se crea una RestaurantTable ficticia.
 /// </summary>
 public sealed class RestaurantOrder
 {
@@ -18,23 +13,32 @@ public sealed class RestaurantOrder
 
     public int OrderId { get; }
     public RestaurantTable Table { get; }
+    public BistroBuilderBarServiceSpot BarSpot { get; }
     public CustomerGroup CustomerGroup { get; }
     public Waiter AssignedWaiter { get; }
+    public BistroBuilderServiceMode ServiceMode { get; }
+
+    public BistroBuilderServiceDestinationKind DestinationKind =>
+        Table != null
+            ? BistroBuilderServiceDestinationKind.Table
+            : BistroBuilderServiceDestinationKind.BarSpot;
+
+    public string ServiceDestinationReferenceId =>
+        BistroBuilderServiceModeUtility.BuildDestinationReference(
+            Table,
+            BarSpot
+        );
+
+    public bool HasTableDestination => Table != null;
+    public bool HasBarDestination => BarSpot != null;
+    public bool HasValidDestination => HasTableDestination ^ HasBarDestination;
 
     /// <summary>
     /// Identidad de la comanda canónica asociada.
-    ///
-    /// Puede estar vacía únicamente en pruebas o construcciones legacy que no
-    /// hayan pasado todavía por la integración 367C.
     /// </summary>
     public string CanonicalOrderId { get; }
 
     public OrderState CurrentState { get; private set; }
-
-    /// <summary>
-    /// Motivo del último rechazo de transición.
-    /// Se mantiene para diagnóstico sin escribir errores desde el dominio.
-    /// </summary>
     public string LastTransitionError { get; private set; }
 
     public bool HasCanonicalOrder =>
@@ -44,12 +48,6 @@ public sealed class RestaurantOrder
         CurrentState == OrderState.Completed ||
         CurrentState == OrderState.Cancelled;
 
-    /// <summary>
-    /// Constructor compatible con el código anterior.
-    ///
-    /// Se conserva para pruebas aisladas. El flujo jugable instalado con 367C
-    /// utiliza el constructor interno enlazado a la autoridad canónica.
-    /// </summary>
     public RestaurantOrder(
         int orderId,
         RestaurantTable table,
@@ -59,8 +57,10 @@ public sealed class RestaurantOrder
         : this(
             orderId,
             table,
+            null,
             customerGroup,
             assignedWaiter,
+            BistroBuilderServiceMode.TableService,
             string.Empty,
             null
         )
@@ -75,14 +75,98 @@ public sealed class RestaurantOrder
         string canonicalOrderId,
         IRestaurantOrderTransitionGate transitionGate
     )
+        : this(
+            orderId,
+            table,
+            null,
+            customerGroup,
+            assignedWaiter,
+            BistroBuilderServiceMode.TableService,
+            canonicalOrderId,
+            transitionGate
+        )
+    {
+    }
+
+    public RestaurantOrder(
+        int orderId,
+        BistroBuilderBarServiceSpot barSpot,
+        CustomerGroup customerGroup,
+        Waiter assignedWaiter,
+        BistroBuilderServiceMode serviceMode
+    )
+        : this(
+            orderId,
+            null,
+            barSpot,
+            customerGroup,
+            assignedWaiter,
+            serviceMode,
+            string.Empty,
+            null
+        )
+    {
+    }
+
+    internal RestaurantOrder(
+        int orderId,
+        BistroBuilderBarServiceSpot barSpot,
+        CustomerGroup customerGroup,
+        Waiter assignedWaiter,
+        BistroBuilderServiceMode serviceMode,
+        string canonicalOrderId,
+        IRestaurantOrderTransitionGate transitionGate
+    )
+        : this(
+            orderId,
+            null,
+            barSpot,
+            customerGroup,
+            assignedWaiter,
+            serviceMode,
+            canonicalOrderId,
+            transitionGate
+        )
+    {
+    }
+
+    private RestaurantOrder(
+        int orderId,
+        RestaurantTable table,
+        BistroBuilderBarServiceSpot barSpot,
+        CustomerGroup customerGroup,
+        Waiter assignedWaiter,
+        BistroBuilderServiceMode serviceMode,
+        string canonicalOrderId,
+        IRestaurantOrderTransitionGate transitionGate
+    )
     {
         if (orderId <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(orderId));
         }
 
-        Table = table ??
-            throw new ArgumentNullException(nameof(table));
+        if (!BistroBuilderServiceModeUtility.IsDefined(serviceMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(serviceMode));
+        }
+
+        bool expectsTable =
+            serviceMode == BistroBuilderServiceMode.TableService;
+
+        if (expectsTable && (table == null || barSpot != null))
+        {
+            throw new ArgumentException(
+                "TableService necesita exactamente una mesa."
+            );
+        }
+
+        if (!expectsTable && (barSpot == null || table != null))
+        {
+            throw new ArgumentException(
+                "Una modalidad de barra necesita exactamente una plaza."
+            );
+        }
 
         CustomerGroup = customerGroup ??
             throw new ArgumentNullException(nameof(customerGroup));
@@ -103,6 +187,9 @@ public sealed class RestaurantOrder
         }
 
         OrderId = orderId;
+        Table = table;
+        BarSpot = barSpot;
+        ServiceMode = serviceMode;
         CanonicalOrderId = normalizedCanonicalId;
         this.transitionGate = transitionGate;
         CurrentState = OrderState.Created;
@@ -144,7 +231,6 @@ public sealed class RestaurantOrder
 
         CurrentState = newState;
         StateChanged?.Invoke(this, CurrentState);
-
         return true;
     }
 
@@ -173,7 +259,6 @@ public sealed class RestaurantOrder
 
             OrderState.Completed => false,
             OrderState.Cancelled => false,
-
             _ => false
         };
     }

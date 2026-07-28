@@ -348,7 +348,13 @@ public sealed class BistroBuilderCanonicalOrderLineRequest
 public sealed class BistroBuilderCanonicalOrderCreationRequest
 {
     public string externalReferenceId;
+
+    // Nombre legacy conservado para compatibilidad binaria y de snapshots.
+    // Desde 367H contiene la identidad del destino operativo: mesa o plaza.
     public string tableReferenceId;
+
+    public BistroBuilderServiceMode serviceMode =
+        BistroBuilderServiceMode.TableService;
     public string customerGroupReferenceId;
     public BistroBuilderMealServiceAvailability mealService =
         BistroBuilderMealServiceAvailability.Lunch;

@@ -142,13 +142,19 @@ public sealed class WaiterMovementView : MonoBehaviour
                 GetKitchenPickupPoint(),
 
             WaiterState.WalkingToServeTable =>
-                GetTableServicePoint(changedWaiter),
+                GetAssignedServicePoint(changedWaiter),
 
             WaiterState.WalkingToBill =>
                 GetTableServicePoint(changedWaiter),
 
             WaiterState.WalkingToCleanTable =>
                 GetTableServicePoint(changedWaiter),
+
+            WaiterState.WalkingToBar =>
+                GetAssignedServicePoint(changedWaiter),
+
+            WaiterState.WalkingToBarBill =>
+                GetAssignedServicePoint(changedWaiter),
 
             _ => null
         };
@@ -159,6 +165,33 @@ public sealed class WaiterMovementView : MonoBehaviour
         }
 
         BeginMovement(destination);
+    }
+
+    /// <summary>
+    /// Obtiene el punto de servicio del destino operativo asignado. Puede ser
+    /// una mesa o una plaza de barra y nunca depende de una mesa proxy.
+    /// </summary>
+    private Transform GetAssignedServicePoint(Waiter changedWaiter)
+    {
+        if (changedWaiter == null)
+        {
+            return null;
+        }
+
+        Transform destination = changedWaiter.AssignedWaiterServicePoint;
+
+        if (destination != null)
+        {
+            return destination;
+        }
+
+        Debug.LogError(
+            "El camarero " + changedWaiter.WaiterId +
+            " no tiene un punto de servicio operativo asignado.",
+            this
+        );
+
+        return null;
     }
 
     /// <summary>
@@ -202,28 +235,36 @@ public sealed class WaiterMovementView : MonoBehaviour
     /// </summary>
     private Transform GetKitchenPickupPoint()
     {
-        if (kitchenSystem == null)
+        // Una ronda 367G puede proceder de una cocina distinta de la
+        // referencia provisional instalada en este componente. La ronda
+        // activa es la autoridad del punto de recogida.
+        KitchenSystem activeKitchen =
+            waiter != null && waiter.AssignedDeliveryRun != null
+                ? waiter.AssignedDeliveryRun.SourceKitchen
+                : kitchenSystem;
+
+        if (activeKitchen == null)
         {
             Debug.LogError(
-                "WaiterMovementView necesita una referencia " +
-                "a KitchenSystem para ir a cocina.",
+                "WaiterMovementView necesita una cocina de origen " +
+                "para ir al punto de recogida.",
                 this
             );
 
             return null;
         }
 
-        if (kitchenSystem.PickupPoint == null)
+        if (activeKitchen.PickupPoint == null)
         {
             Debug.LogError(
                 "KitchenSystem no tiene PickupPoint asignado.",
-                kitchenSystem
+                activeKitchen
             );
 
             return null;
         }
 
-        return kitchenSystem.PickupPoint;
+        return activeKitchen.PickupPoint;
     }
 
     /// <summary>

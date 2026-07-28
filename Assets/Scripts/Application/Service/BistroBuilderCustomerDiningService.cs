@@ -2053,6 +2053,13 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 
     private void HandleOrderCreated(RestaurantOrder order)
     {
+        // 367H: el consumo en barra tiene su propia autoridad y no puede
+        // forzarse a través de una RestaurantTable inexistente.
+        if (order != null && order.HasBarDestination)
+        {
+            return;
+        }
+
         if (!TryRegisterOrder(order, out string error))
         {
             Debug.LogError(

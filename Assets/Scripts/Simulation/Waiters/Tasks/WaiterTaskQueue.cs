@@ -176,12 +176,14 @@ public sealed class WaiterTaskQueue
     {
         createdTask = null;
 
-        if (table == null)
+        if (type != WaiterTaskType.DeliverFood && table == null)
         {
             return false;
         }
 
-        if (type == WaiterTaskType.DeliverFood && order == null)
+        if (type == WaiterTaskType.DeliverFood &&
+            (order == null ||
+             (!order.HasTableDestination && !order.HasBarDestination)))
         {
             return false;
         }
@@ -211,15 +213,25 @@ public sealed class WaiterTaskQueue
         EnsureTaskIdIsAvailable();
         EnsureCreationSequenceIsAvailable();
 
-        createdTask = new WaiterTask(
-            nextTaskId,
-            type,
-            priority,
-            table,
-            order,
-            normalizedLineId,
-            nextCreationSequence
-        );
+        createdTask = type == WaiterTaskType.DeliverFood && table == null
+            ? new WaiterTask(
+                nextTaskId,
+                type,
+                priority,
+                order.BarSpot,
+                order,
+                normalizedLineId,
+                nextCreationSequence
+            )
+            : new WaiterTask(
+                nextTaskId,
+                type,
+                priority,
+                table,
+                order,
+                normalizedLineId,
+                nextCreationSequence
+            );
 
         nextTaskId++;
         nextCreationSequence++;
@@ -258,7 +270,7 @@ public sealed class WaiterTaskQueue
     {
         task = null;
 
-        if (table == null)
+        if (type != WaiterTaskType.DeliverFood && table == null)
         {
             return false;
         }

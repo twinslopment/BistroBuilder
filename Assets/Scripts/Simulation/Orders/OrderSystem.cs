@@ -219,6 +219,157 @@ public sealed class OrderSystem : MonoBehaviour
         return order;
     }
 
+
+    public RestaurantOrder CreateBarOrder(
+        BistroBuilderBarServiceSpot barSpot,
+        CustomerGroup customerGroup,
+        Waiter waiter,
+        BistroBuilderServiceMode serviceMode,
+        IList<string> dishIds
+    )
+    {
+        if (barSpot == null || customerGroup == null || waiter == null)
+        {
+            Debug.LogError(
+                "No se puede crear una comanda de barra sin plaza, grupo " +
+                "y camarero.",
+                this
+            );
+            return null;
+        }
+
+        if (!BistroBuilderServiceModeUtility.IsBarMode(serviceMode) ||
+            !ReferenceEquals(barSpot.AssignedCustomerGroup, customerGroup) ||
+            !ReferenceEquals(customerGroup.AssignedBarSpot, barSpot))
+        {
+            Debug.LogError(
+                "El contexto de barra no es coherente para crear la comanda.",
+                this
+            );
+            return null;
+        }
+
+        RestaurantOrder existing = GetActiveOrderForBarSpot(barSpot);
+
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        CacheDependenciesIfNeeded();
+
+        if (canonicalIntegrationService == null)
+        {
+            Debug.LogError(
+                "Falta la integración canónica para crear la comanda de barra.",
+                this
+            );
+            return null;
+        }
+
+        int legacyOrderId = nextOrderId;
+
+        if (!canonicalIntegrationService.TryCreateCanonicalBarOrder(
+                barSpot,
+                customerGroup,
+                waiter,
+                legacyOrderId,
+                serviceMode,
+                dishIds,
+                out string canonicalOrderId,
+                out string creationError
+            ))
+        {
+            Debug.LogError(
+                "No se pudo crear la comanda canónica de barra. " +
+                creationError,
+                this
+            );
+            return null;
+        }
+
+        RestaurantOrder order;
+
+        try
+        {
+            order = new RestaurantOrder(
+                legacyOrderId,
+                barSpot,
+                customerGroup,
+                waiter,
+                serviceMode,
+                canonicalOrderId,
+                canonicalIntegrationService
+            );
+        }
+        catch (Exception exception)
+        {
+            canonicalIntegrationService
+                .TryRollbackUnregisteredCanonicalOrder(
+                    canonicalOrderId,
+                    out _
+                );
+            Debug.LogException(exception, this);
+            return null;
+        }
+
+        if (!canonicalIntegrationService.TryRegisterLegacyOrder(
+                order,
+                out string registrationError
+            ))
+        {
+            canonicalIntegrationService
+                .TryRollbackUnregisteredCanonicalOrder(
+                    canonicalOrderId,
+                    out _
+                );
+            Debug.LogError(
+                "No se pudo registrar la comanda de barra. " +
+                registrationError,
+                this
+            );
+            return null;
+        }
+
+        nextOrderId++;
+        activeOrders.Add(order);
+
+        Debug.Log(
+            "Comanda " + order.OrderId + " creada para la plaza " +
+            barSpot.BarSpotId + ", grupo " + customerGroup.GroupId +
+            ", modalidad " + serviceMode + ". CanonicalOrderId: " +
+            order.CanonicalOrderId + ".",
+            this
+        );
+
+        OrderCreated?.Invoke(order);
+        return order;
+    }
+
+    public RestaurantOrder GetActiveOrderForBarSpot(
+        BistroBuilderBarServiceSpot barSpot
+    )
+    {
+        if (barSpot == null)
+        {
+            return null;
+        }
+
+        for (int index = 0; index < activeOrders.Count; index++)
+        {
+            RestaurantOrder order = activeOrders[index];
+
+            if (order != null &&
+                ReferenceEquals(order.BarSpot, barSpot) &&
+                !order.IsFinished)
+            {
+                return order;
+            }
+        }
+
+        return null;
+    }
+
     public RestaurantOrder GetActiveOrderForTable(
         RestaurantTable table
     )

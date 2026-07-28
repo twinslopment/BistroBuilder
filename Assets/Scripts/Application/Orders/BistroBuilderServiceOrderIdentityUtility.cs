@@ -28,6 +28,16 @@ public static class BistroBuilderServiceOrderIdentityUtility
             : string.Empty;
     }
 
+    public static string BuildBarSpotReference(string barSpotId)
+    {
+        string normalized =
+            BistroBuilderOrderIdUtility.Normalize(barSpotId);
+
+        return BistroBuilderOrderIdUtility.IsValid(normalized)
+            ? normalized
+            : string.Empty;
+    }
+
     public static string BuildGroupReference(int groupId)
     {
         return groupId > 0

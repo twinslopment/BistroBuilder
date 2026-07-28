@@ -109,19 +109,25 @@ public sealed class CustomerExitFlow : MonoBehaviour
         RestaurantTable previousTable =
             customerGroup.AssignedTable;
 
+        int finishedGroupId =
+            customerGroup.GroupId;
+
+        // Un cliente de BarService nunca recibe una RestaurantTable. Su
+        // visita puede terminar correctamente desde la barra sin ensuciar ni
+        // liberar una mesa ficticia.
         if (previousTable == null)
         {
-            Debug.LogError(
-                $"El grupo {customerGroup.GroupId} llegó a la salida, " +
-                "pero no tiene ninguna mesa asignada.",
+            customerGroup.SetState(CustomerGroupState.Finished);
+
+            Debug.Log(
+                $"Grupo {finishedGroupId} ha abandonado el restaurante " +
+                "después de completar su servicio de barra.",
                 this
             );
 
+            Destroy(gameObject, destructionDelay);
             return;
         }
-
-        int finishedGroupId =
-            customerGroup.GroupId;
 
         int previousTableId =
             previousTable.TableId;

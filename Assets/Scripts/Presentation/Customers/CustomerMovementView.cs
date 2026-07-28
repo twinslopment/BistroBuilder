@@ -155,6 +155,29 @@ public sealed class CustomerMovementView : MonoBehaviour
     }
 
     /// <summary>
+    /// Envía al grupo a su plaza de barra sin convertirla en una mesa.
+    /// WaitingAtBar puede conservar WaitingForTable mientras se desplaza.
+    /// </summary>
+    public bool MoveToBarPoint(BistroBuilderBarServiceSpot barSpot)
+    {
+        if (barSpot == null || customerGroup == null ||
+            !ReferenceEquals(customerGroup.AssignedBarSpot, barSpot))
+        {
+            return false;
+        }
+
+        Transform destination = barSpot.CustomerPoint;
+
+        if (destination == null)
+        {
+            return false;
+        }
+
+        BeginMovement(destination);
+        return true;
+    }
+
+    /// <summary>
     /// Reacciona a los estados que implican un desplazamiento automático.
     /// </summary>
     private void HandleStateChanged(
@@ -166,6 +189,9 @@ public sealed class CustomerMovementView : MonoBehaviour
         {
             CustomerGroupState.WalkingToTable =>
                 GetTableDestination(group),
+
+            CustomerGroupState.WalkingToBar =>
+                GetBarDestination(group),
 
             CustomerGroupState.Leaving =>
                 GetExitDestination(),
@@ -214,6 +240,20 @@ public sealed class CustomerMovementView : MonoBehaviour
         }
 
         return assignedTable.CustomerApproachPoint;
+    }
+
+    private Transform GetBarDestination(CustomerGroup group)
+    {
+        if (group == null || group.AssignedBarSpot == null)
+        {
+            Debug.LogError(
+                "El grupo no tiene una plaza de barra asignada.",
+                this
+            );
+            return null;
+        }
+
+        return group.AssignedBarSpot.CustomerPoint;
     }
 
     /// <summary>
