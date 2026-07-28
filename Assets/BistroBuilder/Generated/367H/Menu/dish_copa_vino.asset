@@ -22,7 +22,7 @@ MonoBehaviour:
   requiredStation: 7
   basePreparationSeconds: 8
   complexity: 1
-  recipeId: 
+  recipeId: recipe_copa_vino
   basePriceCents: 350
   shareable: 0
   minimumConsumers: 1

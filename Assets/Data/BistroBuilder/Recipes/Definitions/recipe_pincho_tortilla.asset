@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_pincho_tortilla
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_pincho_tortilla
+  dish: {fileID: 11400000, guid: 0818dba413941c74aaacd3c524482bc7, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 1000
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: 762af75bf0c200248bd8848a134e7785, type: 2}
+    amount: 180
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: 82d091f43ad4fde4590f9f1c38e9523e, type: 2}
+    amount: 1.5
+    unit: 4
+  - ingredient: {fileID: 11400000, guid: fb055fe37487bec45a83615d0f9e8cbb, type: 2}
+    amount: 35
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: b95de29709a682b4dbfeb884a6cf77ab, type: 2}
+    amount: 15
+    unit: 2
+  - ingredient: {fileID: 11400000, guid: 2395e95a8306cd34da524c89dbc3f755, type: 2}
+    amount: 1
+    unit: 0
+  notes: Pincho preparado desde ingredientes base; admite huevo fraccionado.

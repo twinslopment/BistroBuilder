@@ -22,7 +22,7 @@ MonoBehaviour:
   requiredStation: 7
   basePreparationSeconds: 5
   complexity: 1
-  recipeId: 
+  recipeId: recipe_agua_mineral
   basePriceCents: 220
   shareable: 0
   minimumConsumers: 1

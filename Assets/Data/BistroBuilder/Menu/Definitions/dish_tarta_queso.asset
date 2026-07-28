@@ -18,6 +18,7 @@ MonoBehaviour:
   category: 2
   course: 4
   defaultAvailability: 6
+  allowedServiceModes: 1
   requiredStation: 6
   basePreparationSeconds: 180
   complexity: 2

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_copa_vino
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_copa_vino
+  dish: {fileID: 11400000, guid: 3166656680f95144292bd8448ec74c80, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 300
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: d0d48c8ff421a18489494b611fa78a8d, type: 2}
+    amount: 150
+    unit: 2
+  notes: Incluye merma orientativa por servicio de botella.

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_merluza_plancha
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_merluza_plancha
+  dish: {fileID: 11400000, guid: f7c95ce4276240d4bb57e6300cc81019, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 600
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: 65372eb4abe31614184cdad49e9955d3, type: 2}
+    amount: 220
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: b95de29709a682b4dbfeb884a6cf77ab, type: 2}
+    amount: 12
+    unit: 2
+  - ingredient: {fileID: 11400000, guid: c37e2c1554fa6c441afacdf742384112, type: 2}
+    amount: 4
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: 3197a5c782f89f543b003198fdba25fb, type: 2}
+    amount: 25
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: 2395e95a8306cd34da524c89dbc3f755, type: 2}
+    amount: 2
+    unit: 0
+  notes: "Raci\xF3n individual de merluza a la plancha."

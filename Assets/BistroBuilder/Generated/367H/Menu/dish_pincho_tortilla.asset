@@ -22,7 +22,7 @@ MonoBehaviour:
   requiredStation: 7
   basePreparationSeconds: 25
   complexity: 1
-  recipeId: 
+  recipeId: recipe_pincho_tortilla
   basePriceCents: 450
   shareable: 0
   minimumConsumers: 1

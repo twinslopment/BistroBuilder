@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_refresco
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_refresco
+  dish: {fileID: 11400000, guid: dbdbd1f317fa8be4aacb8cb0f06181a5, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 0
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: 2cd9ee91fe7d6094abfeaaa9cc3522b1, type: 2}
+    amount: 1
+    unit: 4
+  notes: "Art\xEDculo directo de barra."

@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: BistroBuilderDishCatalog
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishCatalog
   definitions:
+  - {fileID: 11400000, guid: e3548ae3db1829e459e5a5b4791c6f65, type: 2}
+  - {fileID: 11400000, guid: 99b5117fbd1480847a1d6a6f969f766e, type: 2}
+  - {fileID: 11400000, guid: 3166656680f95144292bd8448ec74c80, type: 2}
   - {fileID: 11400000, guid: 2c3d9eec08f1a1c4d8cb44bc01bb0f14, type: 2}
   - {fileID: 11400000, guid: f7c95ce4276240d4bb57e6300cc81019, type: 2}
-  - {fileID: 11400000, guid: f86737e8d15f7d048b93254e50a8d41e, type: 2}
-  - {fileID: 11400000, guid: 99b5117fbd1480847a1d6a6f969f766e, type: 2}
-  - {fileID: 11400000, guid: dbdbd1f317fa8be4aacb8cb0f06181a5, type: 2}
-  - {fileID: 11400000, guid: 3166656680f95144292bd8448ec74c80, type: 2}
-  - {fileID: 11400000, guid: e3548ae3db1829e459e5a5b4791c6f65, type: 2}
   - {fileID: 11400000, guid: 0818dba413941c74aaacd3c524482bc7, type: 2}
+  - {fileID: 11400000, guid: dbdbd1f317fa8be4aacb8cb0f06181a5, type: 2}
+  - {fileID: 11400000, guid: f86737e8d15f7d048b93254e50a8d41e, type: 2}

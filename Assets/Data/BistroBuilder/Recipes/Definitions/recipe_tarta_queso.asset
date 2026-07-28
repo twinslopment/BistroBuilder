@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_tarta_queso
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_tarta_queso
+  dish: {fileID: 11400000, guid: f86737e8d15f7d048b93254e50a8d41e, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 700
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: 82d09e486e84af743bcec2b68aebe357, type: 2}
+    amount: 120
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: bf7876baf893b2e4d86590a743d3cef5, type: 2}
+    amount: 60
+    unit: 2
+  - ingredient: {fileID: 11400000, guid: 82d091f43ad4fde4590f9f1c38e9523e, type: 2}
+    amount: 1
+    unit: 4
+  - ingredient: {fileID: 11400000, guid: d46d9b96f82b66c4690e8d82bf824636, type: 2}
+    amount: 35
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: e4baf3ac39d6cc742958e2694d63beec, type: 2}
+    amount: 40
+    unit: 0
+  - ingredient: {fileID: 11400000, guid: 0b155921ad6ccf840aed181a71e16f34, type: 2}
+    amount: 20
+    unit: 0
+  notes: "Coste por porci\xF3n de tarta de queso."

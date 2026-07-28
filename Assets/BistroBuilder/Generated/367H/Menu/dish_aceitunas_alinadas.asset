@@ -22,7 +22,7 @@ MonoBehaviour:
   requiredStation: 1
   basePreparationSeconds: 10
   complexity: 1
-  recipeId: 
+  recipeId: recipe_aceitunas_alinadas
   basePriceCents: 300
   shareable: 0
   minimumConsumers: 1

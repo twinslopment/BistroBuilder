@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9295bc6fca0140039becbd7d9c4530f8, type: 3}
+  m_Name: recipe_aceitunas_alinadas
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeDefinition
+  recipeId: recipe_aceitunas_alinadas
+  dish: {fileID: 11400000, guid: e3548ae3db1829e459e5a5b4791c6f65, type: 2}
+  yieldPortions: 1
+  wasteBasisPoints: 500
+  ingredients:
+  - ingredient: {fileID: 11400000, guid: 8ad99ecd016db834292cfda878917778, type: 2}
+    amount: 90
+    unit: 0
+  notes: "Raci\xF3n r\xE1pida de barra."

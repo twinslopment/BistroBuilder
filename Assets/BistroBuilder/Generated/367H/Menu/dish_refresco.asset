@@ -22,7 +22,7 @@ MonoBehaviour:
   requiredStation: 7
   basePreparationSeconds: 7
   complexity: 1
-  recipeId: 
+  recipeId: recipe_refresco
   basePriceCents: 280
   shareable: 0
   minimumConsumers: 1
