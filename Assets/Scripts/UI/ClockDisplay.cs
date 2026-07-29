@@ -1,6 +1,9 @@
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// Presentación compacta del reloj de simulación.
+/// </summary>
 public sealed class ClockDisplay : MonoBehaviour
 {
     [SerializeField]
@@ -9,10 +12,16 @@ public sealed class ClockDisplay : MonoBehaviour
     [SerializeField]
     private TMP_Text clockText;
 
+    public GameClock GameClock => gameClock;
+
+    public TMP_Text ClockText => clockText;
+
     private void Awake()
     {
         if (clockText == null)
+        {
             clockText = GetComponent<TMP_Text>();
+        }
     }
 
     private void OnEnable()
@@ -28,6 +37,7 @@ public sealed class ClockDisplay : MonoBehaviour
             return;
         }
 
+        gameClock.TimeChanged -= HandleTimeChanged;
         gameClock.TimeChanged += HandleTimeChanged;
         UpdateDisplay(gameClock.Hour, gameClock.Minute);
     }
@@ -35,7 +45,9 @@ public sealed class ClockDisplay : MonoBehaviour
     private void OnDisable()
     {
         if (gameClock != null)
+        {
             gameClock.TimeChanged -= HandleTimeChanged;
+        }
     }
 
     private void HandleTimeChanged(int hour, int minute)
@@ -46,6 +58,8 @@ public sealed class ClockDisplay : MonoBehaviour
     private void UpdateDisplay(int hour, int minute)
     {
         if (clockText != null)
+        {
             clockText.text = $"{hour:00}:{minute:00}";
+        }
     }
 }

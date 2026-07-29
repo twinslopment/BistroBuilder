@@ -729,6 +729,8 @@ public sealed class BistroBuilderRecipeAuthoringWindow : EditorWindow
             Undo.RecordObject(catalog, "Actualizar catálogo 368A");
             BistroBuilderIngredientsRecipesEditorUtility
                 .RebuildIngredientCatalog(catalog);
+            BistroBuilderCanonicalInventoryInstaller
+                .EnsureOpeningStockProfileForCatalog(catalog);
 
             EditorUtility.SetDirty(target);
             AssetDatabase.SaveAssets();

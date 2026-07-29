@@ -1092,6 +1092,27 @@ public static class BistroBuilderIngredientsRecipesInstaller
                     "_s" + slot.SlotIndex.ToString("D2")
                 );
 
+                RestaurantAreaMember tableAreaMember =
+                    table.GetComponent<RestaurantAreaMember>();
+                RestaurantAreaMember chairAreaMember =
+                    chairObject.GetComponent<RestaurantAreaMember>();
+
+                if (tableAreaMember == null ||
+                    tableAreaMember.AssignedArea == null ||
+                    chairAreaMember == null)
+                {
+                    throw new InvalidOperationException(
+                        chairObject.name +
+                        " no puede heredar el área de su mesa."
+                    );
+                }
+
+                Undo.RecordObject(
+                    chairAreaMember,
+                    "Asignar área de silla visual 368A"
+                );
+                chairAreaMember.SetArea(tableAreaMember.AssignedArea);
+                EditorUtility.SetDirty(chairAreaMember);
                 EditorUtility.SetDirty(chairObject);
             }
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -254,6 +254,54 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         if (!result.Succeeded)
         {
             error = result.Message;
+            return false;
+        }
+
+        BistroBuilderOrderInventoryLifecycleService inventoryLifecycle =
+            UnityEngine.Object.FindFirstObjectByType<
+                BistroBuilderOrderInventoryLifecycleService>();
+
+        if (inventoryLifecycle == null)
+        {
+            BistroBuilderCanonicalOrderOperationResult rollbackInventory =
+                canonicalOrderService.TryTransitionLine(
+                    line.LineId,
+                    BistroBuilderCanonicalOrderLineState.Queued,
+                    "inventory_service_missing_rollback"
+                );
+
+            error = "No se pudo consumir la reserva de ingredientes porque " +
+                    "falta BistroBuilderOrderInventoryLifecycleService.";
+            if (!rollbackInventory.Succeeded)
+            {
+                error += " Además, falló el rollback canónico: " +
+                         rollbackInventory.Message;
+            }
+            return false;
+        }
+
+        string inventoryError;
+        if (!inventoryLifecycle.TryConsumeLine(
+                order,
+                line.LineId,
+                out inventoryError))
+        {
+            BistroBuilderCanonicalOrderOperationResult rollbackInventory =
+                canonicalOrderService.TryTransitionLine(
+                    line.LineId,
+                    BistroBuilderCanonicalOrderLineState.Queued,
+                    "inventory_consumption_rollback"
+                );
+
+            error = "No se pudo consumir la reserva de ingredientes: " +
+                    (string.IsNullOrWhiteSpace(inventoryError)
+                        ? "error de inventario no especificado."
+                        : inventoryError);
+            if (!rollbackInventory.Succeeded)
+            {
+                error += " Además, falló el rollback canónico: " +
+                         rollbackInventory.Message;
+            }
             return false;
         }
 

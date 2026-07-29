@@ -129,7 +129,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 8.85
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -137,7 +137,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.83500004
+      value: -4.485
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -171,6 +171,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t01_s01
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T01_S01
@@ -442,23 +446,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: x2
+  m_text: "2\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4291281854
+  m_fontColor: {r: 0.74509805, g: 0.7647059, b: 0.78039217, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -475,26 +479,26 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 15
+  m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: 0.8
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -572,6 +576,7 @@ GameObject:
   - component: {fileID: 94632343}
   - component: {fileID: 94632342}
   - component: {fileID: 94632341}
+  - component: {fileID: 94632345}
   m_Layer: 5
   m_Name: SpeedButtonX1
   m_TagString: Untagged
@@ -592,12 +597,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1334741142}
-  m_Father: {fileID: 890497793}
+  m_Father: {fileID: 935590812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -150, y: -65}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &94632341
 MonoBehaviour:
@@ -614,6 +619,10 @@ MonoBehaviour:
   gameClock: {fileID: 263644898}
   speedMultiplier: 1
   buttonText: {fileID: 1334741143}
+  normalBackground: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+  activeBackground: {r: 0.28235295, g: 0.44313726, b: 0.36862746, a: 1}
+  normalText: {r: 0.74509805, g: 0.7647059, b: 0.78039217, a: 1}
+  activeText: {r: 0.96862745, g: 0.972549, b: 0.9647059, a: 1}
 --- !u!114 &94632342
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -635,13 +644,13 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_NormalColor: {r: 0.28235295, g: 0.44313726, b: 0.36862746, a: 1}
+    m_HighlightedColor: {r: 0.3684706, g: 0.5099608, b: 0.44439217, a: 1}
+    m_PressedColor: {r: 0.23152941, g: 0.36337253, b: 0.30227453, a: 1}
+    m_SelectedColor: {r: 0.3684706, g: 0.5099608, b: 0.44439217, a: 1}
+    m_DisabledColor: {r: 0.28235295, g: 0.44313726, b: 0.36862746, a: 0.45}
     m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
+    m_FadeDuration: 0.08
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
     m_PressedSprite: {fileID: 0}
@@ -696,6 +705,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 94632339}
   m_CullTransparentMesh: 1
+--- !u!114 &94632345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 94632339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 40
+  m_MinHeight: 44
+  m_PreferredWidth: 40
+  m_PreferredHeight: 44
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!1 &118067099
 GameObject:
   m_ObjectHideFlags: 0
@@ -1055,6 +1084,8 @@ GameObject:
   - component: {fileID: 263644968}
   - component: {fileID: 263644967}
   - component: {fileID: 263644969}
+  - component: {fileID: 263644970}
+  - component: {fileID: 263644971}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2264,6 +2295,37 @@ MonoBehaviour:
   recipeCatalog: {fileID: 11400000, guid: 0110a4294f98adc4d921fe065564da47, type: 2}
   dishCatalogService: {fileID: 263644960}
   logInitialization: 1
+--- !u!114 &263644970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8f5d55e6f514177a4b39efd014e551c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInventoryService
+  recipeCatalogService: {fileID: 263644969}
+  openingStockProfile: {fileID: 11400000, guid: 2c5d44d9768dca744a9874cd19ee6f38, type: 2}
+  logInitialization: 1
+--- !u!114 &263644971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 40de99647335411aa0a81dcc00028a4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderInventoryLifecycleService
+  orderSystem: {fileID: 263644903}
+  inventoryService: {fileID: 263644970}
+  recipeCatalogService: {fileID: 263644969}
+  logTransitions: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -3130,7 +3192,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.8
+      value: 6.3500004
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -3138,7 +3200,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.9650002
+      value: -2.815
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3172,6 +3234,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t03_s00
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T03_S00
@@ -3602,7 +3668,7 @@ Transform:
   m_GameObject: {fileID: 537685203}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.5, y: 0.5, z: 0}
+  m_LocalPosition: {x: -8.65, y: 0.5, z: -3.65}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3956,6 +4022,7 @@ GameObject:
   - component: {fileID: 731130290}
   - component: {fileID: 731130289}
   - component: {fileID: 731130288}
+  - component: {fileID: 731130291}
   m_Layer: 5
   m_Name: ClockText
   m_TagString: Untagged
@@ -3975,12 +4042,12 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 890497793}
+  m_Father: {fileID: 935590812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &731130288
 MonoBehaviour:
@@ -4018,15 +4085,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 08:00
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4293390836
+  m_fontColor: {r: 0.95686275, g: 0.94509804, b: 0.90588236, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -4043,26 +4110,26 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: 1.5
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -4096,6 +4163,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 731130286}
   m_CullTransparentMesh: 1
+--- !u!114 &731130291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 731130286}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 80
+  m_MinHeight: 44
+  m_PreferredWidth: 80
+  m_PreferredHeight: 44
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!1 &740089704
 GameObject:
   m_ObjectHideFlags: 0
@@ -4109,6 +4196,7 @@ GameObject:
   - component: {fileID: 740089708}
   - component: {fileID: 740089707}
   - component: {fileID: 740089706}
+  - component: {fileID: 740089710}
   m_Layer: 5
   m_Name: SpeedButtonX3
   m_TagString: Untagged
@@ -4129,12 +4217,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1740383681}
-  m_Father: {fileID: 890497793}
+  m_Father: {fileID: 935590812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 150, y: -65}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &740089706
 MonoBehaviour:
@@ -4151,6 +4239,10 @@ MonoBehaviour:
   gameClock: {fileID: 263644898}
   speedMultiplier: 3
   buttonText: {fileID: 1740383682}
+  normalBackground: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+  activeBackground: {r: 0.28235295, g: 0.44313726, b: 0.36862746, a: 1}
+  normalText: {r: 0.74509805, g: 0.7647059, b: 0.78039217, a: 1}
+  activeText: {r: 0.96862745, g: 0.972549, b: 0.9647059, a: 1}
 --- !u!114 &740089707
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4172,13 +4264,13 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_NormalColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+    m_HighlightedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_PressedColor: {r: 0.15435295, g: 0.17043138, b: 0.18972549, a: 1}
+    m_SelectedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_DisabledColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 0.45}
     m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
+    m_FadeDuration: 0.08
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
     m_PressedSprite: {fileID: 0}
@@ -4233,6 +4325,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 740089704}
   m_CullTransparentMesh: 1
+--- !u!114 &740089710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 740089704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 40
+  m_MinHeight: 44
+  m_PreferredWidth: 40
+  m_PreferredHeight: 44
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!1 &792939159
 GameObject:
   m_ObjectHideFlags: 0
@@ -4557,11 +4669,7 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 731130287}
-  - {fileID: 1491242207}
-  - {fileID: 94632340}
-  - {fileID: 1226454612}
-  - {fileID: 740089705}
+  - {fileID: 935590812}
   m_Father: {fileID: 1208060064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4632,6 +4740,136 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &935590811
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 935590812}
+  - component: {fileID: 935590816}
+  - component: {fileID: 935590815}
+  - component: {fileID: 935590814}
+  - component: {fileID: 935590813}
+  m_Layer: 0
+  m_Name: BB_368B_TimeControlsDock
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &935590812
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935590811}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 731130287}
+  - {fileID: 1491242207}
+  - {fileID: 94632340}
+  - {fileID: 1226454612}
+  - {fileID: 740089705}
+  m_Father: {fileID: 890497793}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: -18, y: 18}
+  m_SizeDelta: {x: 324, y: 56}
+  m_Pivot: {x: 1, y: 0}
+--- !u!114 &935590813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935590811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51741c0364d9423b8d83db5fea7a4a96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368BInstalledHudDock
+  installedRevision: 368B
+  dockRect: {fileID: 935590812}
+  background: {fileID: 935590815}
+  clockDisplay: {fileID: 731130288}
+  clockText: {fileID: 731130289}
+  pauseButton: {fileID: 1491242208}
+  speedButtons:
+  - {fileID: 94632341}
+  - {fileID: 1226454613}
+  - {fileID: 740089706}
+--- !u!114 &935590814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935590811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
+  m_Padding:
+    m_Left: 8
+    m_Right: 8
+    m_Top: 6
+    m_Bottom: 6
+  m_ChildAlignment: 4
+  m_Spacing: 6
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 1
+  m_ChildControlHeight: 1
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
+--- !u!114 &935590815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935590811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.10980392, g: 0.12156863, b: 0.13725491, a: 0.93333334}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &935590816
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935590811}
+  m_CullTransparentMesh: 1
 --- !u!1 &940261256
 GameObject:
   m_ObjectHideFlags: 0
@@ -5023,7 +5261,7 @@ Transform:
   m_GameObject: {fileID: 976940930}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.4, y: 0.5, z: -4.8}
+  m_LocalPosition: {x: 8.85, y: 0.5, z: 0.8499999}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5844,7 +6082,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.8
+      value: 6.3500004
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5852,7 +6090,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.635
+      value: -4.485
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5886,6 +6124,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t03_s01
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T03_S01
@@ -6153,6 +6395,7 @@ GameObject:
   - component: {fileID: 1226454615}
   - component: {fileID: 1226454614}
   - component: {fileID: 1226454613}
+  - component: {fileID: 1226454617}
   m_Layer: 5
   m_Name: SpeedButtonX2
   m_TagString: Untagged
@@ -6173,12 +6416,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 77738446}
-  m_Father: {fileID: 890497793}
+  m_Father: {fileID: 935590812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -65}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1226454613
 MonoBehaviour:
@@ -6195,6 +6438,10 @@ MonoBehaviour:
   gameClock: {fileID: 263644898}
   speedMultiplier: 2
   buttonText: {fileID: 77738447}
+  normalBackground: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+  activeBackground: {r: 0.28235295, g: 0.44313726, b: 0.36862746, a: 1}
+  normalText: {r: 0.74509805, g: 0.7647059, b: 0.78039217, a: 1}
+  activeText: {r: 0.96862745, g: 0.972549, b: 0.9647059, a: 1}
 --- !u!114 &1226454614
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6216,13 +6463,13 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_NormalColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+    m_HighlightedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_PressedColor: {r: 0.15435295, g: 0.17043138, b: 0.18972549, a: 1}
+    m_SelectedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_DisabledColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 0.45}
     m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
+    m_FadeDuration: 0.08
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
     m_PressedSprite: {fileID: 0}
@@ -6277,6 +6524,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1226454611}
   m_CullTransparentMesh: 1
+--- !u!114 &1226454617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1226454611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 40
+  m_MinHeight: 44
+  m_PreferredWidth: 40
+  m_PreferredHeight: 44
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!1 &1266159312
 GameObject:
   m_ObjectHideFlags: 0
@@ -6705,23 +6972,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: x1
+  m_text: "1\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4294375671
+  m_fontColor: {r: 0.96862745, g: 0.972549, b: 0.9647059, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -6738,26 +7005,26 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 15
+  m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: 0.8
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -7090,7 +7357,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.4
+      value: 8.85
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -7098,7 +7365,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -5.635
+      value: 0.0149998665
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7132,6 +7399,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t04_s01
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T04_S01
@@ -7214,23 +7485,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Pausar
+  m_text: PAUSA
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4293979884
+  m_fontColor: {r: 0.9254902, g: 0.93333334, b: 0.9411765, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -7247,26 +7518,26 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: 0.8
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -7653,6 +7924,7 @@ GameObject:
   - component: {fileID: 1491242210}
   - component: {fileID: 1491242209}
   - component: {fileID: 1491242208}
+  - component: {fileID: 1491242212}
   m_Layer: 5
   m_Name: PauseButton
   m_TagString: Untagged
@@ -7673,12 +7945,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1436205813}
-  m_Father: {fileID: 890497793}
+  m_Father: {fileID: 935590812}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 46}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1491242208
 MonoBehaviour:
@@ -7694,6 +7966,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PauseButtonController
   gameClock: {fileID: 263644898}
   buttonText: {fileID: 1436205814}
+  normalBackground: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+  pausedBackground: {r: 0.7372549, g: 0.54509807, b: 0.24313726, a: 1}
+  normalText: {r: 0.9254902, g: 0.93333334, b: 0.9411765, a: 1}
+  pausedText: {r: 0.09803922, g: 0.105882354, b: 0.11764706, a: 1}
 --- !u!114 &1491242209
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7715,13 +7991,13 @@ MonoBehaviour:
     m_SelectOnRight: {fileID: 0}
   m_Transition: 1
   m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
-    m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
+    m_NormalColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 1}
+    m_HighlightedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_PressedColor: {r: 0.15435295, g: 0.17043138, b: 0.18972549, a: 1}
+    m_SelectedColor: {r: 0.28564706, g: 0.30290195, b: 0.32360783, a: 1}
+    m_DisabledColor: {r: 0.1882353, g: 0.20784314, b: 0.23137255, a: 0.45}
     m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
+    m_FadeDuration: 0.08
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
     m_PressedSprite: {fileID: 0}
@@ -7776,6 +8052,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1491242206}
   m_CullTransparentMesh: 1
+--- !u!114 &1491242212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1491242206}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: 80
+  m_MinHeight: 44
+  m_PreferredWidth: 80
+  m_PreferredHeight: 44
+  m_FlexibleWidth: 0
+  m_FlexibleHeight: 0
+  m_LayoutPriority: 1
 --- !u!1 &1492161881
 GameObject:
   m_ObjectHideFlags: 0
@@ -8541,23 +8837,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: x3
+  m_text: "3\xD7"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
+  m_sharedMaterial: {fileID: 2180264, guid: 2e498d1c8094910479dc3e1b768306a4, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4291281854
+  m_fontColor: {r: 0.74509805, g: 0.7647059, b: 0.78039217, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -8574,26 +8870,26 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
-  m_fontSizeBase: 24
+  m_fontSize: 15
+  m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: 0
+  m_characterSpacing: 0.8
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 3
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -8873,7 +9169,7 @@ Transform:
   m_GameObject: {fileID: 1746116963}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.8, y: 0.5, z: -4.8}
+  m_LocalPosition: {x: 6.3500004, y: 0.5, z: -3.65}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8971,7 +9267,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.5
+      value: -8.65
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8979,7 +9275,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.83500004
+      value: -2.815
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9013,6 +9309,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t02_s00
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T02_S00
@@ -9195,7 +9495,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.5
+      value: -8.65
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9203,7 +9503,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.83500004
+      value: -4.485
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9237,6 +9537,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t02_s01
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T02_S01
@@ -9846,7 +10150,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -6.4
+      value: 8.85
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9854,7 +10158,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -3.9650002
+      value: 1.685
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9888,6 +10192,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t04_s00
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T04_S00
@@ -9929,7 +10237,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 8.85
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.y
@@ -9937,7 +10245,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.83500004
+      value: -2.815
       objectReference: {fileID: 0}
     - target: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9971,6 +10279,10 @@ PrefabInstance:
       propertyPath: instanceId
       value: placeable_368a_chair_t01_s00
       objectReference: {fileID: 0}
+    - target: {fileID: 7578441647165179245, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      propertyPath: assignedArea
+      value: 
+      objectReference: {fileID: 1309290907}
     - target: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
       propertyPath: m_Name
       value: BB_368A_Chair_T01_S00
@@ -10077,7 +10389,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5129049623191013583, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 8.85
       objectReference: {fileID: 0}
     - target: {fileID: 5129049623191013583, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
       propertyPath: m_LocalPosition.y
@@ -10085,7 +10397,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5129049623191013583, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -3.65
       objectReference: {fileID: 0}
     - target: {fileID: 5129049623191013583, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
       propertyPath: m_LocalRotation.w
