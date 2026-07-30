@@ -355,8 +355,8 @@ public static class BistroBuilderPersistenceFoundationValidator
             else
             {
                 result.AddOk(
-                    "El guardado de servicio activo queda reservado a " +
-                    "service.runtime sin acoplar el núcleo."
+                    "El guardado activo exige service.runtime e " +
+                    "inventory.canonical sin acoplar el núcleo."
                 );
             }
         }

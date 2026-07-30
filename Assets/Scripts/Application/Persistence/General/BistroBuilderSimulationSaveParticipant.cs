@@ -2,10 +2,10 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Congela el reloj mediante un bloqueo apilable durante snapshots y
-/// cargas. El valor persistente de pausa y velocidad puede restaurarse
-/// mientras el bloqueo permanece activo, sin reanudar el mundo antes de
-/// finalizar todas las secciones.
+/// Congela la simulación mediante el bloqueo apilable de GameClock durante
+/// guardados y cargas. GameClock continúa siendo la única autoridad sobre
+/// Time.timeScale, por lo que al terminar una carga se aplica la velocidad y
+/// pausa restauradas, no las que existían antes de iniciar la operación.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -63,6 +63,10 @@ public sealed class BistroBuilderSimulationSaveParticipant :
             return false;
         }
 
+        // AcquireSimulationLock aplica Time.timeScale = 0 y conserva de forma
+        // apilable la pausa temporal. No guardamos/restauramos Time.timeScale
+        // manualmente: al liberar el token, GameClock debe aplicar el estado
+        // que acaba de ser cargado (pausa y multiplicador incluidos).
         simulationLock = gameClock.AcquireSimulationLock(
             "BistroBuilder persistence operation"
         );

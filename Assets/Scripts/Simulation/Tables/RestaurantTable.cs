@@ -230,6 +230,55 @@ public sealed class RestaurantTable :
         );
     }
 
+
+    public void ClearRuntimeStateForLoad()
+    {
+        assignedCustomerGroup = null;
+        currentState = TableState.Free;
+    }
+
+    public bool TryRestoreRuntimeState(
+        TableState restoredState,
+        bool notify,
+        out string error
+    )
+    {
+        if (!Enum.IsDefined(typeof(TableState), restoredState))
+        {
+            error = "El estado persistente de la mesa no es válido.";
+            return false;
+        }
+
+        if (assignedCustomerGroup == null &&
+            restoredState != TableState.Free &&
+            restoredState != TableState.Dirty)
+        {
+            error = "Una mesa sin grupo no puede restaurar " + restoredState + ".";
+            return false;
+        }
+
+        if (assignedCustomerGroup != null && restoredState == TableState.Free)
+        {
+            error = "Una mesa ocupada no puede restaurarse como libre.";
+            return false;
+        }
+
+        currentState = restoredState;
+        error = string.Empty;
+
+        if (notify)
+        {
+            StateChanged?.Invoke(this, currentState);
+        }
+
+        return true;
+    }
+
+    public void NotifyRestoredRuntimeState()
+    {
+        StateChanged?.Invoke(this, currentState);
+    }
+
 #if UNITY_EDITOR
     private void OnValidate()
     {

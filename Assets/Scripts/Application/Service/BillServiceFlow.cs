@@ -85,6 +85,21 @@ public sealed class BillServiceFlow : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Detiene una entrega o cobro transitorio antes de reconstruir el
+    /// servicio cargado. No completa ni cancela la comanda por su cuenta.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        if (activeRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(activeRoutine);
+        activeRoutine = null;
+    }
+
     private void HandleDestinationReached(
         WaiterMovementView movementView
     )

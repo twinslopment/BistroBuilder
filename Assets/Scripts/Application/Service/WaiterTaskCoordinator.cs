@@ -769,6 +769,120 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     /// Los elementos creados posteriormente deberán registrarse
     /// mediante los métodos públicos correspondientes.
     /// </summary>
+
+    /// <summary>
+    /// Cancela despachos y elimina tareas transitorias antes de aplicar un
+    /// checkpoint de servicio. No crea tareas nuevas ni interpreta el estado
+    /// antiguo de mesas, cocina o comandas.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        EnsureTaskQueueCreated();
+
+        if (dispatchRoutine != null)
+        {
+            StopCoroutine(dispatchRoutine);
+            dispatchRoutine = null;
+        }
+
+        if (deferredDeliveryDispatchRoutine != null)
+        {
+            StopCoroutine(deferredDeliveryDispatchRoutine);
+            deferredDeliveryDispatchRoutine = null;
+        }
+
+        dispatchRequested = false;
+        isDispatching = false;
+        deferredDeliveryDispatchAtRealtime = float.PositiveInfinity;
+        taskQueue.Clear();
+        kitchenByOrderLineId.Clear();
+        deliveryTaskReadyRealtimeByLineId.Clear();
+    }
+
+    public bool RebuildTasksAfterRuntimeLoad(
+        OrderSystem orderSystem,
+        out string error
+    )
+    {
+        error = string.Empty;
+        ResolveLineExecutionService();
+
+        if (orderSystem == null || lineExecutionService == null)
+        {
+            error = "Faltan OrderSystem o el ejecutor de líneas.";
+            return false;
+        }
+
+        ResetForRuntimeLoad();
+
+        foreach (Waiter waiter in registeredWaiters)
+        {
+            waiter?.ClearAssignment();
+        }
+
+        SynchronizeAllTables();
+
+        KitchenSystem fallbackKitchen = null;
+        foreach (KitchenSystem kitchen in registeredKitchens)
+        {
+            if (kitchen != null)
+            {
+                fallbackKitchen = kitchen;
+                break;
+            }
+        }
+
+        IReadOnlyList<RestaurantOrder> orders = orderSystem.ActiveOrders;
+
+        for (int orderIndex = 0; orderIndex < orders.Count; orderIndex++)
+        {
+            RestaurantOrder order = orders[orderIndex];
+
+            if (order == null || !order.HasCanonicalOrder ||
+                !orderSystem.CanonicalIntegrationService
+                    .CanonicalOrderService.TryGetOrderSnapshot(
+                        order.CanonicalOrderId,
+                        out BistroBuilderCanonicalOrder canonical
+                    ) || canonical == null)
+            {
+                continue;
+            }
+
+            for (int lineIndex = 0;
+                 lineIndex < canonical.Lines.Count;
+                 lineIndex++)
+            {
+                BistroBuilderCanonicalOrderLine line =
+                    canonical.Lines[lineIndex];
+
+                if (line != null &&
+                    line.State ==
+                        BistroBuilderCanonicalOrderLineState.ReadyForPickup &&
+                    fallbackKitchen != null)
+                {
+                    CreateFoodDeliveryTask(
+                        fallbackKitchen,
+                        order,
+                        line.LineId
+                    );
+                }
+            }
+        }
+
+        RequestDispatch();
+        return true;
+    }
+
+    /// <summary>
+    /// Reanuda el reparto que quedó aplazado mientras service.runtime
+    /// reconstruía el mundo. Debe invocarse únicamente desde la fase final
+    /// de carga, cuando el estado general del servicio ya es autoritativo.
+    /// </summary>
+    public void ResumeAfterRuntimeLoad()
+    {
+        RequestDispatch();
+    }
+
     private void DiscoverExistingSceneObjects()
     {
         KitchenSystem[] kitchens =
@@ -1288,6 +1402,14 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
         dispatchRequested = true;
 
+        // Durante la reconstrucción 368EF acumulamos la intención, pero no
+        // asignamos tareas hasta que mesas, grupos, barra y estado general
+        // hayan sido restaurados de forma atómica.
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         if (dispatchRoutine != null)
         {
             return;
@@ -1315,6 +1437,12 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             // la petición.
             yield return null;
 
+            if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+            {
+                dispatchRequested = true;
+                break;
+            }
+
             DispatchPendingTasks();
         }
 
@@ -1329,7 +1457,8 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     {
         if (!isActiveAndEnabled ||
             isDispatching ||
-            taskQueue == null)
+            taskQueue == null ||
+            BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
         {
             return;
         }

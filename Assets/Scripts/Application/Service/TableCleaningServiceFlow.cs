@@ -60,6 +60,21 @@ public sealed class TableCleaningServiceFlow : MonoBehaviour
     }
 
     /// <summary>
+    /// Detiene una limpieza transitoria antes de aplicar el estado cargado.
+    /// El estado de la mesa y del camarero se restauran desde service.runtime.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        if (activeRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(activeRoutine);
+        activeRoutine = null;
+    }
+
+    /// <summary>
     /// Detecta que el camarero ha llegado a su destino.
     /// Solo comienza la limpieza si estaba desplazándose
     /// específicamente hacia una mesa sucia.

@@ -47,8 +47,8 @@ public sealed class TableAssignmentSystem :
             new HashSet<RestaurantTable>();
 
     // Reserva lógica de una mesa mientras WaitingAtBar termina su consumo.
-    // No cambia el estado de RestaurantTable y solo existe durante el
-    // servicio activo, cuyo guardado continúa bloqueado globalmente.
+    // No cambia el estado de RestaurantTable. Desde 368EF se captura y
+    // restaura explícitamente dentro de service.runtime.
     private readonly Dictionary<CustomerGroup, RestaurantTable>
         pendingBarTableReservations =
             new Dictionary<CustomerGroup, RestaurantTable>();
@@ -71,6 +71,90 @@ public sealed class TableAssignmentSystem :
         {
             return registeredTables.Count;
         }
+    }
+
+    /// <summary>
+    /// Consulta la reserva lógica de transición a mesa de un grupo que sigue
+    /// ocupando barra. La reserva no modifica el estado público de la mesa.
+    /// </summary>
+    public bool TryGetPendingBarTransitionTable(
+        CustomerGroup group,
+        out RestaurantTable table
+    )
+    {
+        table = null;
+
+        return group != null &&
+               pendingBarTableReservations.TryGetValue(group, out table) &&
+               table != null &&
+               reservedForBarTransitions.Contains(table);
+    }
+
+    /// <summary>
+    /// Elimina exclusivamente las reservas lógicas transitorias antes de una
+    /// carga. Las asignaciones reales grupo-mesa se limpian por sus propios
+    /// agregados.
+    /// </summary>
+    public void ClearPendingBarTransitionReservationsForRuntimeLoad()
+    {
+        pendingBarTableReservations.Clear();
+        reservedForBarTransitions.Clear();
+    }
+
+    /// <summary>
+    /// Reconstruye una reserva WaitingAtBar desde service.runtime sin ejecutar
+    /// una nueva selección de mesa ni publicar eventos prematuros.
+    /// </summary>
+    public bool TryRestorePendingBarTransitionReservation(
+        CustomerGroup group,
+        RestaurantTable table,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (group == null || table == null)
+        {
+            error = "No puede restaurarse una reserva de transición nula.";
+            return false;
+        }
+
+        if (!registeredGroups.Contains(group) ||
+            !registeredTables.Contains(table))
+        {
+            error = "El grupo o la mesa de transición no están registrados.";
+            return false;
+        }
+
+        if (group.RequestedServiceMode !=
+                BistroBuilderServiceMode.WaitingAtBar ||
+            group.CurrentServiceMode !=
+                BistroBuilderServiceMode.WaitingAtBar ||
+            !group.IsOccupyingBar || group.HasAssignedTable)
+        {
+            error = "La reserva de transición no pertenece a un grupo " +
+                    "WaitingAtBar coherente.";
+            return false;
+        }
+
+        if (table.CurrentState != TableState.Free ||
+            table.AssignedCustomerGroup != null ||
+            !table.CanSeatGroup(group.GroupSize))
+        {
+            error = "La mesa persistida ya no puede reservarse para el grupo.";
+            return false;
+        }
+
+        if (pendingBarTableReservations.ContainsKey(group) ||
+            reservedForBarTransitions.Contains(table))
+        {
+            error = "La reserva de transición está duplicada.";
+            return false;
+        }
+
+        pendingBarTableReservations.Add(group, table);
+        reservedForBarTransitions.Add(table);
+        return true;
     }
 
     private void Awake()

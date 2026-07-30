@@ -48,6 +48,10 @@ public sealed class BistroBuilderGeneralGameSaveData
     public int serviceState;
     public int snapshotMode;
 
+    // None identifica partidas 366 anteriores a 368EF. Las capturas nuevas
+    // siempre guardan Breakfast, Lunch o Dinner.
+    public int currentMealService;
+
     /// <summary>
     /// Identificador reservado para el futuro checkpoint de servicio.
     /// Permanecerá vacío en fotografías con el restaurante cerrado.

@@ -86,6 +86,23 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Detiene una recogida o entrega transitoria antes de reconstruir un
+    /// servicio cargado. A diferencia de OnDisable, no devuelve líneas a
+    /// ReadyForPickup ni notifica un fallo: el checkpoint canónico que se
+    /// aplicará a continuación es la autoridad de recuperación.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        if (activeRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(activeRoutine);
+        activeRoutine = null;
+    }
+
     private void OnDisable()
     {
         if (waiterMovementView != null)

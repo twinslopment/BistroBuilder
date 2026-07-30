@@ -419,6 +419,21 @@ public sealed class WaiterMovementView : MonoBehaviour
     }
 
     /// <summary>
+    /// Cancela cualquier desplazamiento transitorio antes de reconstruir
+    /// un servicio cargado. No emite DestinationReached ni modifica la
+    /// posición restaurada posteriormente por el proveedor de guardado.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        CancelDeferredArrival();
+
+        currentDestination = null;
+        isMoving = false;
+        HasReachedDestination = false;
+        movementRequestVersion++;
+    }
+
+    /// <summary>
     /// Cancela únicamente una llegada diferida pendiente.
     /// No modifica una solicitud de movimiento válida.
     /// </summary>

@@ -311,6 +311,26 @@ public sealed class BistroBuilderCanonicalOrder
         return true;
     }
 
+
+    internal void NormalizeForActiveServiceCheckpoint()
+    {
+        bool changed = false;
+
+        for (int index = 0; index < lines.Count; index++)
+        {
+            BistroBuilderCanonicalOrderLine line = lines[index];
+            BistroBuilderCanonicalOrderLineState before = line.State;
+            line.NormalizeForActiveServiceCheckpoint();
+            changed |= before != line.State;
+        }
+
+        if (changed)
+        {
+            revision++;
+            RefreshDerivedState();
+        }
+    }
+
     internal BistroBuilderCanonicalOrder Clone()
     {
         List<BistroBuilderCanonicalOrderLine> clonedLines =

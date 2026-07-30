@@ -1247,6 +1247,284 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         return true;
     }
 
+
+    public void UnregisterCustomerGroupForRuntimeLoad(CustomerGroup group)
+    {
+        if (group == null)
+        {
+            return;
+        }
+
+        if (sessionsByGroup.TryGetValue(group, out Session session))
+        {
+            StopSessionRoutine(session);
+            ReleaseSessionWaiter(session);
+            sessionsByGroup.Remove(group);
+            if (session.Order != null)
+            {
+                sessionsByOrder.Remove(session.Order);
+            }
+        }
+
+        registeredGroups.Remove(group);
+        group.StateChanged -= HandleGroupStateChanged;
+
+        CustomerMovementView movement = group.GetComponent<CustomerMovementView>();
+        if (movement != null)
+        {
+            movement.DestinationReached -= HandleCustomerDestinationReached;
+            groupByMovementView.Remove(movement);
+        }
+    }
+
+    public void ClearRuntimeForLoad()
+    {
+        var sessions = new List<Session>(sessionsByGroup.Values);
+        for (int index = 0; index < sessions.Count; index++)
+        {
+            StopSessionRoutine(sessions[index]);
+            ReleaseSessionWaiter(sessions[index]);
+        }
+
+        sessionsByGroup.Clear();
+        sessionsByOrder.Clear();
+        waiterAssignments.Clear();
+        transferredCharges.Clear();
+    }
+
+    public bool TryCaptureRuntimeSaveRecords(
+        List<BistroBuilderBarSessionSaveRecord> sessionDestination,
+        List<BistroBuilderTransferredBarChargeSaveRecord> chargeDestination,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (sessionDestination == null || chargeDestination == null)
+        {
+            error = "Los destinos de snapshot de barra son nulos.";
+            return false;
+        }
+
+        sessionDestination.Clear();
+        chargeDestination.Clear();
+
+        foreach (KeyValuePair<CustomerGroup, Session> pair in sessionsByGroup)
+        {
+            Session session = pair.Value;
+            if (session == null || session.Group == null || session.Spot == null)
+            {
+                error = "Existe una sesión de barra incompleta.";
+                return false;
+            }
+
+            var occupied = new List<BistroBuilderBarServiceSpot>();
+            barRegistry.GetOccupiedSpots(session.Group, occupied);
+            var record = new BistroBuilderBarSessionSaveRecord
+            {
+                groupId = session.Group.GroupId,
+                anchorBarSpotId = session.Spot.BarSpotId,
+                serviceMode = (int)session.Mode,
+                canonicalOrderId = session.Order != null
+                    ? session.Order.CanonicalOrderId
+                    : string.Empty,
+                phase = (int)ToPublicPhase(session.State),
+                chargeCents = session.ChargeCents,
+                tableRequested = session.TableRequested
+            };
+
+            for (int index = 0; index < occupied.Count; index++)
+            {
+                record.occupiedBarSpotIds.Add(occupied[index].BarSpotId);
+            }
+            foreach (string lineId in session.ServedLineIds)
+            {
+                record.servedLineIds.Add(lineId);
+            }
+            sessionDestination.Add(record);
+        }
+
+        for (int index = 0; index < transferredCharges.Count; index++)
+        {
+            TransferredCharge charge = transferredCharges[index];
+            chargeDestination.Add(new BistroBuilderTransferredBarChargeSaveRecord
+            {
+                groupId = charge.GroupId,
+                sourceOrderId = charge.SourceOrderId,
+                amountCents = charge.AmountCents,
+                settled = charge.Settled
+            });
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreRuntimeSaveRecords(
+        IList<BistroBuilderBarSessionSaveRecord> sessionRecords,
+        IList<BistroBuilderTransferredBarChargeSaveRecord> chargeRecords,
+        IReadOnlyDictionary<int, CustomerGroup> groupsById,
+        IReadOnlyDictionary<string, RestaurantOrder> ordersByCanonicalId,
+        out string error
+    )
+    {
+        error = string.Empty;
+        ResolveDependencies();
+        ClearRuntimeForLoad();
+
+        if (sessionRecords == null || chargeRecords == null ||
+            groupsById == null || ordersByCanonicalId == null ||
+            barRegistry == null)
+        {
+            error = "Faltan datos para restaurar el servicio de barra.";
+            return false;
+        }
+
+        for (int index = 0; index < chargeRecords.Count; index++)
+        {
+            BistroBuilderTransferredBarChargeSaveRecord record =
+                chargeRecords[index];
+            if (record == null || !record.TryValidate(out error))
+            {
+                return false;
+            }
+            transferredCharges.Add(new TransferredCharge
+            {
+                GroupId = record.groupId,
+                SourceOrderId = record.sourceOrderId,
+                AmountCents = record.amountCents,
+                Settled = record.settled
+            });
+        }
+
+        for (int index = 0; index < sessionRecords.Count; index++)
+        {
+            BistroBuilderBarSessionSaveRecord record = sessionRecords[index];
+            if (record == null || !record.TryValidate(out error) ||
+                !groupsById.TryGetValue(record.groupId, out CustomerGroup group) ||
+                group == null || group.AssignedBarSpot == null)
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "No se pudo resolver una sesión de barra.";
+                }
+                return false;
+            }
+
+            RestaurantOrder order = null;
+            if (!string.IsNullOrWhiteSpace(record.canonicalOrderId) &&
+                !ordersByCanonicalId.TryGetValue(record.canonicalOrderId, out order))
+            {
+                error = "No se pudo resolver la comanda de una sesión de barra.";
+                return false;
+            }
+
+            var session = new Session
+            {
+                Group = group,
+                Spot = group.AssignedBarSpot,
+                Mode = (BistroBuilderServiceMode)record.serviceMode,
+                Order = order,
+                State = ResolveRestoredSessionState(record, order),
+                ChargeCents = record.chargeCents,
+                TableRequested = record.tableRequested
+            };
+
+            for (int lineIndex = 0; lineIndex < record.servedLineIds.Count; lineIndex++)
+            {
+                session.ServedLineIds.Add(record.servedLineIds[lineIndex]);
+            }
+
+            sessionsByGroup.Add(group, session);
+            if (order != null)
+            {
+                sessionsByOrder.Add(order, session);
+            }
+        }
+
+        return true;
+    }
+
+    public void ResumeRestoredRuntime()
+    {
+        foreach (Session session in sessionsByGroup.Values)
+        {
+            if (session == null || session.Group == null)
+            {
+                continue;
+            }
+
+            switch (session.State)
+            {
+                case SessionState.CustomerWalking:
+                    session.Group.NotifyRestoredRuntimeState();
+                    break;
+                case SessionState.WaitingForOrderWaiter:
+                    TryAssignWaiterForSession(session, false);
+                    break;
+                case SessionState.WaitingForItems:
+                    break;
+                case SessionState.Consuming:
+                    session.Routine = StartCoroutine(ConsumeAndCloseRoutine(session));
+                    break;
+                case SessionState.WaitingForPaymentWaiter:
+                    TryAssignWaiterForSession(session, true);
+                    break;
+                case SessionState.ClosingForTable:
+                case SessionState.WaitingForTableAfterConsumption:
+                    if (!TryCloseWaitingSessionForTable(session, out _))
+                    {
+                        session.State = SessionState.WaitingForTableAfterConsumption;
+                    }
+                    break;
+            }
+        }
+    }
+
+    private SessionState ResolveRestoredSessionState(
+        BistroBuilderBarSessionSaveRecord record,
+        RestaurantOrder order
+    )
+    {
+        BistroBuilderBarSessionPhase phase =
+            (BistroBuilderBarSessionPhase)record.phase;
+
+        if (phase == BistroBuilderBarSessionPhase.ClosingForTable)
+        {
+            return SessionState.ClosingForTable;
+        }
+
+        if (phase ==
+            BistroBuilderBarSessionPhase.WaitingForTableAfterConsumption)
+        {
+            return SessionState.WaitingForTableAfterConsumption;
+        }
+
+        if (phase == BistroBuilderBarSessionPhase.WalkingToBar ||
+            phase == BistroBuilderBarSessionPhase.Allocated)
+        {
+            return SessionState.CustomerWalking;
+        }
+
+        if (order == null)
+        {
+            return SessionState.WaitingForOrderWaiter;
+        }
+
+        if (order.CurrentState == OrderState.Served)
+        {
+            return SessionState.Consuming;
+        }
+
+        if (order.CurrentState == OrderState.Completed)
+        {
+            return record.serviceMode == (int)BistroBuilderServiceMode.WaitingAtBar
+                ? SessionState.ClosingForTable
+                : SessionState.WaitingForPaymentWaiter;
+        }
+
+        return SessionState.WaitingForItems;
+    }
+
     private bool AreAllLinesServed(RestaurantOrder order)
     {
         if (!TryGetCanonicalOrder(order, out var snapshot, out _))

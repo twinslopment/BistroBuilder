@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -31,6 +33,121 @@ public sealed class BistroBuilderOrderInventoryLifecycleService : MonoBehaviour
     private bool subscribed;
 
     public int ActiveSessionCount => sessionsByLegacyOrderId.Count;
+
+    /// <summary>
+    /// Retira únicamente los enlaces transitorios entre comandas legacy y
+    /// reservas. El inventario autoritativo se restaura por su propio proveedor.
+    /// </summary>
+    public void ClearRuntimeForLoad()
+    {
+        foreach (KeyValuePair<int, OrderInventorySession> pair
+                 in sessionsByLegacyOrderId)
+        {
+            if (pair.Value != null && pair.Value.Order != null)
+            {
+                pair.Value.Order.StateChanged -= HandleOrderStateChanged;
+            }
+        }
+
+        sessionsByLegacyOrderId.Clear();
+    }
+
+    /// <summary>
+    /// Reconstruye los enlaces de 368CD desde las identidades deterministas
+    /// de OrderId/LineId y las reservas ya restauradas por inventory.canonical.
+    /// No recalcula recetas ni vuelve a reservar, de modo que una actualización
+    /// de contenido no reinterpreta una comanda que estaba en curso.
+    /// </summary>
+    public bool TryRestoreSessionsFromOrders(out string error)
+    {
+        error = string.Empty;
+        CacheDependenciesIfNeeded();
+        ClearRuntimeForLoad();
+
+        if (!ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        IReadOnlyList<RestaurantOrder> orders = orderSystem.ActiveOrders;
+        BistroBuilderCanonicalOrderIntegrationService integration =
+            orderSystem.CanonicalIntegrationService;
+
+        if (integration == null || integration.CanonicalOrderService == null)
+        {
+            error = "No está disponible la autoridad canónica para restaurar 368CD.";
+            return false;
+        }
+
+        for (int orderIndex = 0; orderIndex < orders.Count; orderIndex++)
+        {
+            RestaurantOrder order = orders[orderIndex];
+            if (order == null || order.IsFinished)
+            {
+                continue;
+            }
+
+            if (!integration.CanonicalOrderService.TryGetOrderSnapshot(
+                    order.CanonicalOrderId,
+                    out BistroBuilderCanonicalOrder canonicalOrder
+                ) || canonicalOrder == null)
+            {
+                error = "No se pudo resolver la comanda canónica " +
+                        order.CanonicalOrderId + ".";
+                ClearRuntimeForLoad();
+                return false;
+            }
+
+            var session = new OrderInventorySession(order);
+
+            for (int lineIndex = 0;
+                 lineIndex < canonicalOrder.Lines.Count;
+                 lineIndex++)
+            {
+                BistroBuilderCanonicalOrderLine line =
+                    canonicalOrder.Lines[lineIndex];
+
+                if (line == null)
+                {
+                    error = "La comanda restaurada contiene una línea nula.";
+                    ClearRuntimeForLoad();
+                    return false;
+                }
+
+                string reservationId = BuildReservationId(
+                    order.CanonicalOrderId,
+                    line.LineId
+                );
+
+                if (!inventoryService.TryGetReservationSnapshot(
+                        reservationId,
+                        out BistroBuilderInventoryReservationSnapshot reservation
+                    ) || reservation == null)
+                {
+                    error = "Falta la reserva persistida " + reservationId +
+                            " para la línea " + line.LineId + ".";
+                    ClearRuntimeForLoad();
+                    return false;
+                }
+
+                if (!IsReservationStatusCompatible(line.State, reservation.Status))
+                {
+                    error = "La reserva " + reservationId + " está " +
+                            reservation.Status + " pero la línea " +
+                            line.LineId + " está " + line.State + ".";
+                    ClearRuntimeForLoad();
+                    return false;
+                }
+
+                session.ReservationIdByLineId.Add(line.LineId, reservationId);
+            }
+
+            sessionsByLegacyOrderId.Add(order.OrderId, session);
+            order.StateChanged += HandleOrderStateChanged;
+        }
+
+        return true;
+    }
 
     private void Awake()
     {
@@ -166,19 +283,14 @@ public sealed class BistroBuilderOrderInventoryLifecycleService : MonoBehaviour
         orderSystem.OrderCancelled -= HandleOrderFinished;
         subscribed = false;
 
-        foreach (KeyValuePair<int, OrderInventorySession> pair in sessionsByLegacyOrderId)
-        {
-            if (pair.Value.Order != null)
-            {
-                pair.Value.Order.StateChanged -= HandleOrderStateChanged;
-            }
-        }
-        sessionsByLegacyOrderId.Clear();
+        ClearRuntimeForLoad();
     }
 
     private void HandleOrderCreated(RestaurantOrder order)
     {
-        if (order == null || sessionsByLegacyOrderId.ContainsKey(order.OrderId))
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring ||
+            order == null ||
+            sessionsByLegacyOrderId.ContainsKey(order.OrderId))
         {
             return;
         }
@@ -440,6 +552,38 @@ public sealed class BistroBuilderOrderInventoryLifecycleService : MonoBehaviour
         sessionsByLegacyOrderId.Remove(order.OrderId);
     }
 
+    private static bool IsReservationStatusCompatible(
+        BistroBuilderCanonicalOrderLineState lineState,
+        BistroBuilderInventoryReservationStatus reservationStatus
+    )
+    {
+        switch (lineState)
+        {
+            case BistroBuilderCanonicalOrderLineState.Draft:
+            case BistroBuilderCanonicalOrderLineState.Submitted:
+            case BistroBuilderCanonicalOrderLineState.Queued:
+                return reservationStatus ==
+                       BistroBuilderInventoryReservationStatus.Active;
+
+            case BistroBuilderCanonicalOrderLineState.Preparing:
+            case BistroBuilderCanonicalOrderLineState.ReadyForPickup:
+            case BistroBuilderCanonicalOrderLineState.AssignedForDelivery:
+            case BistroBuilderCanonicalOrderLineState.InTransit:
+            case BistroBuilderCanonicalOrderLineState.Served:
+            case BistroBuilderCanonicalOrderLineState.Consumed:
+                return reservationStatus ==
+                       BistroBuilderInventoryReservationStatus.Consumed;
+
+            case BistroBuilderCanonicalOrderLineState.Cancelled:
+            case BistroBuilderCanonicalOrderLineState.Failed:
+                return reservationStatus !=
+                       BistroBuilderInventoryReservationStatus.Active;
+
+            default:
+                return false;
+        }
+    }
+
     private void CacheDependenciesIfNeeded()
     {
         if (orderSystem == null) TryGetComponent(out orderSystem);
@@ -461,25 +605,76 @@ public sealed class BistroBuilderOrderInventoryLifecycleService : MonoBehaviour
         {
             throw new ArgumentOutOfRangeException();
         }
-        return checked((numerator + denominator - 1L) / denominator);
+        long quotient = numerator / denominator;
+        return numerator % denominator == 0L ? quotient : quotient + 1L;
     }
 
     internal static string BuildReservationId(string orderId, string lineId)
     {
-        return "inventory_reservation_" + NormalizeForId(orderId) + "_" + NormalizeForId(lineId);
+        return BoundRuntimeId(
+            "inventory_reservation_" + NormalizeForId(orderId) + "_" +
+            NormalizeForId(lineId)
+        );
     }
 
-    internal static string BuildOperationId(string action, string orderId, string lineId, string suffix)
+    internal static string BuildOperationId(
+        string action,
+        string orderId,
+        string lineId,
+        string suffix
+    )
     {
         string value = "inventory_" + NormalizeForId(action) + "_" +
-                       NormalizeForId(orderId) + "_" + NormalizeForId(lineId);
-        if (!string.IsNullOrWhiteSpace(suffix)) value += "_" + NormalizeForId(suffix);
-        return value;
+                       NormalizeForId(orderId) + "_" +
+                       NormalizeForId(lineId);
+
+        if (!string.IsNullOrWhiteSpace(suffix))
+        {
+            value += "_" + NormalizeForId(suffix);
+        }
+
+        return BoundRuntimeId(value);
     }
 
     private static string BuildSourceId(string orderId, string lineId)
     {
-        return "order_line_" + NormalizeForId(orderId) + "_" + NormalizeForId(lineId);
+        return BoundRuntimeId(
+            "order_line_" + NormalizeForId(orderId) + "_" +
+            NormalizeForId(lineId)
+        );
+    }
+
+    /// <summary>
+    /// Conserva el texto completo mientras respeta el contrato runtime. Si
+    /// una combinación futura de IDs supera 160 caracteres, mantiene un
+    /// prefijo legible y añade una huella SHA-256 determinista para evitar
+    /// truncados ambiguos y colisiones prácticas entre operaciones.
+    /// </summary>
+    private static string BoundRuntimeId(string value)
+    {
+        string normalized = value != null ? value.Trim() : string.Empty;
+        int maximumLength =
+            BistroBuilderInventoryRuntimeIdUtility.MaximumRuntimeIdLength;
+
+        if (normalized.Length <= maximumLength)
+        {
+            return normalized;
+        }
+
+        byte[] hash;
+        using (SHA256 algorithm = SHA256.Create())
+        {
+            hash = algorithm.ComputeHash(Encoding.UTF8.GetBytes(normalized));
+        }
+
+        var suffix = new StringBuilder(32);
+        for (int index = 0; index < 16; index++)
+        {
+            suffix.Append(hash[index].ToString("x2"));
+        }
+
+        int prefixLength = maximumLength - suffix.Length - 1;
+        return normalized.Substring(0, prefixLength) + "_" + suffix;
     }
 
     private static string NormalizeForId(string value)

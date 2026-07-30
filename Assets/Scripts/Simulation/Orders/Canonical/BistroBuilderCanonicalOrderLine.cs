@@ -199,6 +199,18 @@ public sealed class BistroBuilderCanonicalOrderLine
         return true;
     }
 
+
+    internal void NormalizeForActiveServiceCheckpoint()
+    {
+        if (state == BistroBuilderCanonicalOrderLineState.AssignedForDelivery ||
+            state == BistroBuilderCanonicalOrderLineState.InTransit)
+        {
+            state = BistroBuilderCanonicalOrderLineState.ReadyForPickup;
+            revision++;
+            lastActorReferenceId = "service.runtime";
+        }
+    }
+
     internal BistroBuilderCanonicalOrderLine Clone()
     {
         return new BistroBuilderCanonicalOrderLine

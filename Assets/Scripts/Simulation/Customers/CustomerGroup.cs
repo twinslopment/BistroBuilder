@@ -366,4 +366,83 @@ public sealed class CustomerGroup : MonoBehaviour
     {
         waitingTime = 0f;
     }
+
+    /// <summary>
+    /// Inicializa identidad y tiempo para una reconstrucción de service.runtime.
+    /// No publica eventos hasta que todas las referencias cruzadas existan.
+    /// </summary>
+    public bool TryRestoreRuntimeIdentity(
+        int restoredGroupId,
+        int restoredGroupSize,
+        BistroBuilderServiceMode restoredRequestedMode,
+        float restoredWaitingTime,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (restoredGroupId < 1 || restoredGroupSize < 1 ||
+            !BistroBuilderServiceModeUtility.IsDefined(restoredRequestedMode) ||
+            float.IsNaN(restoredWaitingTime) ||
+            float.IsInfinity(restoredWaitingTime) ||
+            restoredWaitingTime < 0f)
+        {
+            error = "Los datos persistentes del grupo no son válidos.";
+            return false;
+        }
+
+        if (assignedTable != null || assignedBarSpot != null)
+        {
+            error = "El grupo conserva asignaciones previas durante la carga.";
+            return false;
+        }
+
+        groupId = restoredGroupId;
+        groupSize = restoredGroupSize;
+        requestedServiceMode = restoredRequestedMode;
+        currentServiceMode = BistroBuilderServiceMode.TableService;
+        waitingTime = restoredWaitingTime;
+        currentState = CustomerGroupState.Entering;
+        return true;
+    }
+
+    public bool TryRestoreRuntimeState(
+        CustomerGroupState restoredState,
+        BistroBuilderServiceMode restoredCurrentMode,
+        bool notify,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (!Enum.IsDefined(typeof(CustomerGroupState), restoredState) ||
+            !BistroBuilderServiceModeUtility.IsDefined(restoredCurrentMode))
+        {
+            error = "El estado persistente del grupo no es válido.";
+            return false;
+        }
+
+        if (BistroBuilderServiceModeUtility.IsBarMode(restoredCurrentMode) &&
+            assignedBarSpot == null)
+        {
+            error = "El grupo declara modalidad de barra sin plaza asignada.";
+            return false;
+        }
+
+        currentServiceMode = restoredCurrentMode;
+        currentState = restoredState;
+
+        if (notify)
+        {
+            StateChanged?.Invoke(this, currentState);
+        }
+
+        return true;
+    }
+
+    public void NotifyRestoredRuntimeState()
+    {
+        StateChanged?.Invoke(this, currentState);
+    }
+
 }

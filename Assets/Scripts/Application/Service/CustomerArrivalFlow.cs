@@ -32,9 +32,12 @@ public sealed class CustomerArrivalFlow : MonoBehaviour
             return;
         }
 
-        arrivalRoutine = StartCoroutine(
-            ArrivalRoutine()
-        );
+        if (!BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            arrivalRoutine = StartCoroutine(
+                ArrivalRoutine()
+            );
+        }
     }
 
     private void OnDisable()

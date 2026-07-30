@@ -282,6 +282,83 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
         return true;
     }
 
+
+    public bool TryRestoreGroupAllocation(
+        CustomerGroup group,
+        string anchorBarSpotId,
+        IList<string> occupiedSpotIds,
+        BistroBuilderServiceMode serviceMode,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (group == null || occupiedSpotIds == null ||
+            occupiedSpotIds.Count == 0 || group.HasAssignedBarSpot ||
+            !BistroBuilderServiceModeUtility.IsBarMode(serviceMode))
+        {
+            error = "La ocupación persistente de barra no es válida.";
+            return false;
+        }
+
+        reservationBuffer.Clear();
+        int capacity = 0;
+
+        for (int index = 0; index < occupiedSpotIds.Count; index++)
+        {
+            if (!TryGetSpot(occupiedSpotIds[index], out var spot) ||
+                spot == null || !spot.IsFree || reservationBuffer.Contains(spot))
+            {
+                error = "No se pudo reconstruir una plaza de barra.";
+                reservationBuffer.Clear();
+                return false;
+            }
+
+            reservationBuffer.Add(spot);
+            capacity += spot.Capacity;
+        }
+
+        if (capacity < group.GroupSize ||
+            !TryGetSpot(anchorBarSpotId, out var anchor) ||
+            anchor == null || !reservationBuffer.Contains(anchor))
+        {
+            error = "La ocupación persistente no cubre el grupo o su ancla.";
+            reservationBuffer.Clear();
+            return false;
+        }
+
+        int occupied = 0;
+
+        for (int index = 0; index < reservationBuffer.Count; index++)
+        {
+            if (!reservationBuffer[index].TryOccupy(group))
+            {
+                for (int rollback = occupied - 1; rollback >= 0; rollback--)
+                {
+                    reservationBuffer[rollback].TryRelease(group);
+                }
+                error = "La ocupación de barra no pudo aplicarse atómicamente.";
+                reservationBuffer.Clear();
+                return false;
+            }
+            occupied++;
+        }
+
+        if (!group.TryAssignBarSpot(anchor, serviceMode))
+        {
+            for (int rollback = reservationBuffer.Count - 1; rollback >= 0; rollback--)
+            {
+                reservationBuffer[rollback].TryRelease(group);
+            }
+            error = "No se pudo restaurar la plaza ancla del grupo.";
+            reservationBuffer.Clear();
+            return false;
+        }
+
+        reservationBuffer.Clear();
+        return true;
+    }
+
     public int GetReservedCapacity(CustomerGroup group)
     {
         if (group == null)

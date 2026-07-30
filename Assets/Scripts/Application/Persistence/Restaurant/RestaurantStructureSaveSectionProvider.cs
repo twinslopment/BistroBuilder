@@ -194,6 +194,23 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 yield break;
             }
 
+            int functionalTableId = 0;
+            if (placeable.TryGetComponent(
+                    out RestaurantTable functionalTable
+                ))
+            {
+                if (functionalTable.TableId < 1)
+                {
+                    context.Fail(
+                        placeable.DisplayName +
+                        " tiene una identidad funcional de mesa inválida."
+                    );
+                    yield break;
+                }
+
+                functionalTableId = functionalTable.TableId;
+            }
+
             data.placeables.Add(
                 new RestaurantPlaceableSaveRecord
                 {
@@ -201,6 +218,7 @@ public sealed class RestaurantStructureSaveSectionProvider :
                     itemId = NormalizeId(
                         placeable.ItemDefinition.ItemId
                     ),
+                    functionalTableId = functionalTableId,
                     worldPosition =
                         new BistroBuilderSaveVector3(
                             placeable.transform.position
@@ -315,6 +333,8 @@ public sealed class RestaurantStructureSaveSectionProvider :
             new HashSet<string>(StringComparer.Ordinal);
         HashSet<string> seatIds =
             new HashSet<string>(StringComparer.Ordinal);
+        HashSet<int> functionalTableIds =
+            new HashSet<int>();
         Dictionary<string, int> tableCapacities =
             new Dictionary<string, int>(StringComparer.Ordinal);
 
@@ -374,6 +394,35 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 Mathf.Abs(scale.z) <= 0.000001f)
             {
                 error = instanceId + " contiene una escala nula.";
+                return false;
+            }
+
+            RestaurantTable tableComponent =
+                definition.Prefab.GetComponent<RestaurantTable>();
+
+            if (tableComponent != null)
+            {
+                if (record.functionalTableId < 0)
+                {
+                    error = instanceId +
+                            " contiene una identidad funcional de mesa negativa.";
+                    return false;
+                }
+
+                // Cero se acepta solo como compatibilidad con partidas 366
+                // anteriores a la persistencia de la identidad funcional.
+                if (record.functionalTableId > 0 &&
+                    !functionalTableIds.Add(record.functionalTableId))
+                {
+                    error = "El TableId " + record.functionalTableId +
+                            " está duplicado en restaurant.structure.";
+                    return false;
+                }
+            }
+            else if (record.functionalTableId != 0)
+            {
+                error = instanceId +
+                        " conserva un TableId pero no es una mesa.";
                 return false;
             }
 
@@ -632,6 +681,33 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 position,
                 rotation
             );
+
+            if (record.functionalTableId > 0)
+            {
+                if (!placeable.TryGetComponent(
+                        out RestaurantTable tableForIdentityRestore
+                    ))
+                {
+                    DestroyUnregisteredInstance(placeable);
+                    context.Fail(
+                        restoredInstanceId +
+                        " conserva un TableId pero no contiene RestaurantTable."
+                    );
+                    yield break;
+                }
+
+                if (tableForIdentityRestore.TableId != record.functionalTableId &&
+                    !tableForIdentityRestore.AssignTableId(record.functionalTableId))
+                {
+                    DestroyUnregisteredInstance(placeable);
+                    context.Fail(
+                        "No se pudo restaurar el TableId " +
+                        record.functionalTableId +
+                        " de " + restoredInstanceId + "."
+                    );
+                    yield break;
+                }
+            }
 
             if (!placeable.TryGetComponent(
                     out RestaurantAreaMember member

@@ -24,6 +24,9 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     MonoBehaviour,
     IRestaurantOrderTransitionGate
 {
+    public event Action<BistroBuilderMealServiceAvailability>
+        CurrentMealServiceChanged;
+
     [Header("Dependencias")]
 
     [SerializeField]
@@ -185,8 +188,15 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             return false;
         }
 
+        if (currentMealService == mealService)
+        {
+            error = string.Empty;
+            return true;
+        }
+
         currentMealService = mealService;
         initialized = false;
+        CurrentMealServiceChanged?.Invoke(currentMealService);
         error = string.Empty;
         return true;
     }
@@ -932,6 +942,13 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         }
 
         return true;
+    }
+
+
+    public void ClearRuntimeLinksForLoad()
+    {
+        canonicalByLegacyOrderId.Clear();
+        legacyByCanonicalOrderId.Clear();
     }
 
     public bool TryGetLinkedCanonicalOrderId(

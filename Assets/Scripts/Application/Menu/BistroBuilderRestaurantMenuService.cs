@@ -21,6 +21,9 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
     [SerializeField]
     private BistroBuilderDishCatalogService catalogService;
 
+    [SerializeField]
+    private BistroBuilderDishAvailabilityService availabilityService;
+
     [Header("Inicialización")]
 
     [Tooltip(
@@ -679,6 +682,18 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+
+        if (availabilityService != null &&
+            !availabilityService.IsDishOrderable(
+                item.DishId,
+                service,
+                out rejectionReason
+            ))
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -887,6 +902,11 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         if (catalogService == null)
         {
             TryGetComponent(out catalogService);
+        }
+
+        if (availabilityService == null)
+        {
+            TryGetComponent(out availabilityService);
         }
     }
 

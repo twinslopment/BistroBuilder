@@ -25,6 +25,13 @@ public sealed class RestaurantPlaceableSaveRecord
 {
     public string instanceId = string.Empty;
     public string itemId = string.Empty;
+
+    // Identidad funcional de RestaurantTable. Se mantiene separada de la
+    // identidad genérica del colocable para que comandas, grupos y reservas
+    // vuelvan a enlazar con la misma mesa después de reconstruir la escena.
+    // Cero representa una partida antigua que todavía no guardaba este dato.
+    public int functionalTableId;
+
     public BistroBuilderSaveVector3 worldPosition;
     public BistroBuilderSaveQuaternion worldRotation;
     public BistroBuilderSaveVector3 localScale;

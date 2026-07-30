@@ -62,6 +62,20 @@ public sealed class BistroBuilderCanonicalOrderRuntimeSnapshot
         );
     }
 
+
+    public BistroBuilderCanonicalOrderRuntimeSnapshot
+        CreateActiveServiceCheckpointSnapshot()
+    {
+        BistroBuilderCanonicalOrderRuntimeSnapshot clone = Clone();
+
+        for (int index = 0; index < clone.orders.Count; index++)
+        {
+            clone.orders[index]?.NormalizeForActiveServiceCheckpoint();
+        }
+
+        return clone;
+    }
+
     public bool TryValidate(out string error)
     {
         if (schemaVersion != CurrentSchemaVersion)

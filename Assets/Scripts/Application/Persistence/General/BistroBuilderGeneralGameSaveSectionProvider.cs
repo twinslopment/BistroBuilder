@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -41,6 +42,9 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
 
     [SerializeField]
     private RestaurantServiceStateService serviceStateService;
+
+    [SerializeField]
+    private BistroBuilderCanonicalOrderIntegrationService orderIntegration;
 
     [Header("Depuración")]
 
@@ -124,6 +128,14 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
             return false;
         }
 
+        if (orderIntegration == null ||
+            !IsConcreteMealService(orderIntegration.CurrentMealService))
+        {
+            error = "Falta un servicio gastronómico concreto en la " +
+                    "integración canónica.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -169,14 +181,38 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
                 clockSpeedMultiplier = gameClock.SpeedMultiplier,
                 clockIsPaused = gameClock.IsPaused,
                 serviceState = (int)serviceState,
-                snapshotMode = (int)snapshotMode
+                snapshotMode = (int)snapshotMode,
+                currentMealService =
+                    (int)orderIntegration.CurrentMealService
             };
 
         if (snapshotMode ==
             BistroBuilderSaveSnapshotMode.ActiveService)
         {
+            saveGameService.RefreshExtensions();
+            bool hasInventoryProvider = saveGameService.HasProvider(
+                BistroBuilderInventorySaveSectionProvider.StableSectionId
+            );
+            bool hasServiceProvider = saveGameService.HasProvider(
+                FutureActiveServiceSectionId
+            );
+
+            if (!hasInventoryProvider || !hasServiceProvider)
+            {
+                context.Fail(
+                    "No puede capturarse un servicio activo sin sus " +
+                    "secciones autoritativas. inventory.canonical=" +
+                    hasInventoryProvider + ", service.runtime=" +
+                    hasServiceProvider + "."
+                );
+                yield break;
+            }
+
             data.activeServiceCheckpointId =
-                Guid.NewGuid().ToString("N");
+                "service_checkpoint_" + Guid.NewGuid().ToString("N");
+            data.requiredRuntimeSectionIds.Add(
+                BistroBuilderInventorySaveSectionProvider.StableSectionId
+            );
             data.requiredRuntimeSectionIds.Add(
                 FutureActiveServiceSectionId
             );
@@ -212,6 +248,12 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
             string.IsNullOrWhiteSpace(data.restaurantName) ||
             !DateTime.TryParse(
                 data.createdUtc,
+                null,
+                System.Globalization.DateTimeStyles.RoundtripKind,
+                out _
+            ) ||
+            !DateTime.TryParse(
+                data.capturedUtc,
                 null,
                 System.Globalization.DateTimeStyles.RoundtripKind,
                 out _
@@ -260,12 +302,31 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
             (RestaurantServiceState)data.serviceState;
         BistroBuilderSaveSnapshotMode snapshotMode =
             (BistroBuilderSaveSnapshotMode)data.snapshotMode;
+        BistroBuilderMealServiceAvailability mealService =
+            (BistroBuilderMealServiceAvailability)data.currentMealService;
+
+        if (mealService != BistroBuilderMealServiceAvailability.None &&
+            !IsConcreteMealService(mealService))
+        {
+            error = "El servicio gastronómico persistido es inválido.";
+            return false;
+        }
 
         if (snapshotMode ==
                 BistroBuilderSaveSnapshotMode.ClosedRestaurant &&
             serviceState != RestaurantServiceState.Closed)
         {
             error = "Un snapshot cerrado no puede declarar servicio activo.";
+            return false;
+        }
+
+        if (snapshotMode ==
+                BistroBuilderSaveSnapshotMode.ClosedRestaurant &&
+            (!string.IsNullOrWhiteSpace(data.activeServiceCheckpointId) ||
+             data.requiredRuntimeSectionIds == null ||
+             data.requiredRuntimeSectionIds.Count != 0))
+        {
+            error = "Un snapshot cerrado contiene requisitos de servicio activo.";
             return false;
         }
 
@@ -278,14 +339,44 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(
+            if (!BistroBuilderMenuIdUtility.IsValidStableId(
                     data.activeServiceCheckpointId
                 ) ||
                 data.requiredRuntimeSectionIds == null ||
                 data.requiredRuntimeSectionIds.Count == 0)
             {
                 error = "El snapshot activo no declara su checkpoint " +
-                        "ni secciones de runtime.";
+                        "ni secciones de runtime válidas.";
+                return false;
+            }
+
+            var requiredIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0;
+                 index < data.requiredRuntimeSectionIds.Count;
+                 index++)
+            {
+                string requiredId = data.requiredRuntimeSectionIds[index] != null
+                    ? data.requiredRuntimeSectionIds[index]
+                        .Trim().ToLowerInvariant()
+                    : string.Empty;
+
+                data.requiredRuntimeSectionIds[index] = requiredId;
+                if (!BistroBuilderOrderIdUtility.IsValid(requiredId) ||
+                    !requiredIds.Add(requiredId))
+                {
+                    error = "El snapshot activo contiene una sección " +
+                            "obligatoria inválida o duplicada.";
+                    return false;
+                }
+            }
+
+            if (!requiredIds.Contains(FutureActiveServiceSectionId) ||
+                !requiredIds.Contains(
+                    BistroBuilderInventorySaveSectionProvider.StableSectionId
+                ))
+            {
+                error = "El snapshot activo no exige service.runtime e " +
+                        "inventory.canonical.";
                 return false;
             }
         }
@@ -382,6 +473,28 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
             yield break;
         }
 
+        BistroBuilderMealServiceAvailability restoredMealService =
+            (BistroBuilderMealServiceAvailability)data.currentMealService;
+        if (restoredMealService ==
+            BistroBuilderMealServiceAvailability.None)
+        {
+            // Migración determinista de game.general 366/366B.
+            restoredMealService =
+                BistroBuilderMealServiceAvailability.Lunch;
+        }
+
+        if (!orderIntegration.TrySetCurrentMealService(
+                restoredMealService,
+                out string mealServiceError
+            ))
+        {
+            context.Fail(
+                "No se pudo restaurar el servicio gastronómico. " +
+                mealServiceError
+            );
+            yield break;
+        }
+
         if (!gameClock.TryRestoreState(
                 data.clockHour,
                 data.clockMinute,
@@ -424,6 +537,34 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
         if (context.HasFailed || !hasPendingServiceState)
         {
             return;
+        }
+
+        if (pendingSnapshotMode ==
+            BistroBuilderSaveSnapshotMode.ActiveService &&
+            context.SharedData.TryGet(
+                SharedStateKey,
+                out BistroBuilderGeneralGameSaveData loadedGeneral
+            ) &&
+            loadedGeneral != null)
+        {
+            for (int index = 0;
+                 index < loadedGeneral.requiredRuntimeSectionIds.Count;
+                 index++)
+            {
+                string sectionId =
+                    loadedGeneral.requiredRuntimeSectionIds[index];
+                string markerKey = "save.loaded_section." + sectionId;
+
+                if (!context.SharedData.TryGet(markerKey, out bool loaded) ||
+                    !loaded)
+                {
+                    context.Fail(
+                        "La partida activa no contiene la sección " +
+                        "obligatoria " + sectionId + "."
+                    );
+                    return;
+                }
+            }
         }
 
         if (!serviceStateService.TryRestoreState(
@@ -482,6 +623,20 @@ public sealed class BistroBuilderGeneralGameSaveSectionProvider :
         {
             TryGetComponent(out serviceStateService);
         }
+
+        if (orderIntegration == null)
+        {
+            TryGetComponent(out orderIntegration);
+        }
+    }
+
+    private static bool IsConcreteMealService(
+        BistroBuilderMealServiceAvailability mealService
+    )
+    {
+        return mealService == BistroBuilderMealServiceAvailability.Breakfast ||
+               mealService == BistroBuilderMealServiceAvailability.Lunch ||
+               mealService == BistroBuilderMealServiceAvailability.Dinner;
     }
 
     private static bool IsValidDate(

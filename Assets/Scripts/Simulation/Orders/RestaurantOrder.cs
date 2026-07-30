@@ -196,6 +196,24 @@ public sealed class RestaurantOrder
         LastTransitionError = string.Empty;
     }
 
+
+    internal bool TryRestoreRuntimeState(
+        OrderState restoredState,
+        out string error
+    )
+    {
+        if (!Enum.IsDefined(typeof(OrderState), restoredState))
+        {
+            error = "El estado legacy persistente no es válido.";
+            return false;
+        }
+
+        CurrentState = restoredState;
+        LastTransitionError = string.Empty;
+        error = string.Empty;
+        return true;
+    }
+
     public bool TrySetState(OrderState newState)
     {
         LastTransitionError = string.Empty;

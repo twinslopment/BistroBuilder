@@ -1,9 +1,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Impide guardar un servicio activo hasta que exista el proveedor de
-/// runtime completo. Cuando service.runtime se instale, esta misma regla
-/// permitirá el guardado sin sustituir la plataforma 366B.
+/// Garantiza que guardar y cargar durante un servicio activo solo se permita
+/// cuando está registrado el proveedor autoritativo service.runtime. En 368EF
+/// ese proveedor forma parte obligatoria de la instalación y la regla deja de
+/// forzar al jugador a terminar el servicio antes de salir.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -23,6 +24,10 @@ public sealed class BistroBuilderActiveServiceSaveGuard :
     private string requiredRuntimeSectionId =
         BistroBuilderGeneralGameSaveSectionProvider
             .FutureActiveServiceSectionId;
+
+    [SerializeField]
+    private string requiredInventorySectionId =
+        BistroBuilderInventorySaveSectionProvider.StableSectionId;
 
     [SerializeField]
     private int priority = 500;
@@ -52,17 +57,25 @@ public sealed class BistroBuilderActiveServiceSaveGuard :
             return true;
         }
 
-        if (saveGameService.HasProvider(requiredRuntimeSectionId))
+        bool hasRuntime = saveGameService.HasProvider(
+            requiredRuntimeSectionId
+        );
+        bool hasInventory = saveGameService.HasProvider(
+            requiredInventorySectionId
+        );
+
+        if (hasRuntime && hasInventory)
         {
             rejectionMessage = string.Empty;
             return true;
         }
 
         rejectionMessage =
-            "Todavía no puede guardarse con el restaurante abierto. " +
-            "Falta la sección de runtime " + requiredRuntimeSectionId +
-            ", que restaurará clientes, comandas, cocina y tareas en " +
-            "curso.";
+            "No puede guardarse este servicio activo porque faltan " +
+            "secciones autoritativas de 368EF. service.runtime=" +
+            hasRuntime + ", inventory.canonical=" + hasInventory +
+            ". Reinstala 368EF antes de continuar para no perder clientes, " +
+            "comandas, cocina, reservas ni tareas en curso.";
         return false;
     }
 
@@ -78,17 +91,25 @@ public sealed class BistroBuilderActiveServiceSaveGuard :
             return false;
         }
 
+        bool hasRuntime = saveGameService.HasProvider(
+            requiredRuntimeSectionId
+        );
+        bool hasInventory = saveGameService.HasProvider(
+            requiredInventorySectionId
+        );
+
         if (!serviceStateService.IsServiceInProgress ||
-            saveGameService.HasProvider(requiredRuntimeSectionId))
+            hasRuntime && hasInventory)
         {
             rejectionMessage = string.Empty;
             return true;
         }
 
         rejectionMessage =
-            "No puede cargarse otra partida mientras el servicio está " +
-            "activo hasta instalar " + requiredRuntimeSectionId +
-            ". Cierra primero el restaurante.";
+            "No puede cargarse de forma segura durante el servicio porque " +
+            "faltan secciones autoritativas de 368EF. service.runtime=" +
+            hasRuntime + ", inventory.canonical=" + hasInventory +
+            ". Reinstala 368EF; cerrar el restaurante no debe ser un requisito.";
         return false;
     }
 
@@ -108,9 +129,20 @@ public sealed class BistroBuilderActiveServiceSaveGuard :
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(requiredRuntimeSectionId))
+        if (!string.Equals(
+                requiredRuntimeSectionId,
+                BistroBuilderGeneralGameSaveSectionProvider
+                    .FutureActiveServiceSectionId,
+                System.StringComparison.Ordinal
+            ) ||
+            !string.Equals(
+                requiredInventorySectionId,
+                BistroBuilderInventorySaveSectionProvider.StableSectionId,
+                System.StringComparison.Ordinal
+            ))
         {
-            error = "No se ha definido la sección de runtime requerida.";
+            error = "La regla de servicio activo no exige exactamente " +
+                    "service.runtime e inventory.canonical.";
             return false;
         }
 
@@ -145,6 +177,12 @@ public sealed class BistroBuilderActiveServiceSaveGuard :
             ? BistroBuilderGeneralGameSaveSectionProvider
                 .FutureActiveServiceSectionId
             : requiredRuntimeSectionId.Trim().ToLowerInvariant();
+
+        requiredInventorySectionId = string.IsNullOrWhiteSpace(
+            requiredInventorySectionId
+        )
+            ? BistroBuilderInventorySaveSectionProvider.StableSectionId
+            : requiredInventorySectionId.Trim().ToLowerInvariant();
 
         CacheDependenciesIfNeeded();
     }

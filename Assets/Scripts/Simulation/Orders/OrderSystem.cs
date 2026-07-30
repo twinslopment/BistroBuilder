@@ -64,6 +64,192 @@ public sealed class OrderSystem : MonoBehaviour
         return true;
     }
 
+
+    public int NextOrderId => Mathf.Max(1, nextOrderId);
+
+    /// <summary>
+    /// Restaura la siguiente identidad legacy incluso cuando el restaurante
+    /// estaba cerrado y no existían comandas activas en service.runtime.
+    /// Evita reutilizar OrderId antiguos después de cargar.
+    /// </summary>
+    public bool TryRestoreNextOrderId(int restoredNextOrderId)
+    {
+        if (restoredNextOrderId < 1)
+        {
+            return false;
+        }
+
+        nextOrderId = restoredNextOrderId;
+        return true;
+    }
+
+    public void ClearRuntimeForLoad()
+    {
+        for (int index = 0; index < activeOrders.Count; index++)
+        {
+            canonicalIntegrationService?.NotifyLegacyOrderRemoved(
+                activeOrders[index]
+            );
+        }
+
+        activeOrders.Clear();
+        canonicalIntegrationService?.ClearRuntimeLinksForLoad();
+    }
+
+    public bool TryRestoreRuntimeOrders(
+        IList<BistroBuilderLegacyOrderSaveRecord> records,
+        IReadOnlyDictionary<int, CustomerGroup> groupsById,
+        RestaurantTableRegistry tableRegistry,
+        BistroBuilderBarServiceRegistry barRegistry,
+        IReadOnlyDictionary<int, Waiter> waitersById,
+        int restoredNextOrderId,
+        Dictionary<string, RestaurantOrder> ordersByCanonicalId,
+        out string error
+    )
+    {
+        error = string.Empty;
+        CacheDependenciesIfNeeded();
+
+        if (records == null || groupsById == null || tableRegistry == null ||
+            barRegistry == null || waitersById == null ||
+            ordersByCanonicalId == null || restoredNextOrderId < 1 ||
+            canonicalIntegrationService == null)
+        {
+            error = "Faltan datos o dependencias para restaurar las comandas.";
+            return false;
+        }
+
+        ClearRuntimeForLoad();
+        ordersByCanonicalId.Clear();
+        var legacyIds = new HashSet<int>();
+        var canonicalIds = new HashSet<string>(StringComparer.Ordinal);
+
+        for (int index = 0; index < records.Count; index++)
+        {
+            BistroBuilderLegacyOrderSaveRecord record = records[index];
+
+            if (record == null || !record.TryValidate(out error) ||
+                !legacyIds.Add(record.legacyOrderId) ||
+                !canonicalIds.Add(record.canonicalOrderId))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "Las comandas legacy persistidas contienen duplicados.";
+                }
+                ClearRuntimeForLoad();
+                return false;
+            }
+
+            if (!groupsById.TryGetValue(record.groupId, out CustomerGroup group) ||
+                group == null ||
+                !waitersById.TryGetValue(record.waiterId, out Waiter waiter) ||
+                waiter == null)
+            {
+                error = "No se pudo resolver el grupo o camarero de una comanda.";
+                ClearRuntimeForLoad();
+                return false;
+            }
+
+            RestaurantOrder order;
+            BistroBuilderServiceMode mode =
+                (BistroBuilderServiceMode)record.serviceMode;
+
+            try
+            {
+                if (mode == BistroBuilderServiceMode.TableService)
+                {
+                    if (!tableRegistry.TryGetTableById(
+                            record.tableId,
+                            out RestaurantTable table
+                        ) || table == null)
+                    {
+                        error = "No se pudo resolver la mesa de una comanda.";
+                        ClearRuntimeForLoad();
+                        return false;
+                    }
+
+                    order = new RestaurantOrder(
+                        record.legacyOrderId,
+                        table,
+                        group,
+                        waiter,
+                        record.canonicalOrderId,
+                        canonicalIntegrationService
+                    );
+                }
+                else
+                {
+                    if (!barRegistry.TryGetSpot(
+                            record.barSpotId,
+                            out BistroBuilderBarServiceSpot spot
+                        ) || spot == null)
+                    {
+                        error = "No se pudo resolver la plaza de barra de una comanda.";
+                        ClearRuntimeForLoad();
+                        return false;
+                    }
+
+                    order = new RestaurantOrder(
+                        record.legacyOrderId,
+                        spot,
+                        group,
+                        waiter,
+                        mode,
+                        record.canonicalOrderId,
+                        canonicalIntegrationService
+                    );
+                }
+            }
+            catch (Exception exception)
+            {
+                error = "No se pudo reconstruir una comanda legacy. " +
+                        exception.Message;
+                ClearRuntimeForLoad();
+                return false;
+            }
+
+            if (!order.TryRestoreRuntimeState(
+                    (OrderState)record.orderState,
+                    out error
+                ) ||
+                !canonicalIntegrationService.TryRegisterLegacyOrder(
+                    order,
+                    out error
+                ))
+            {
+                ClearRuntimeForLoad();
+                return false;
+            }
+
+            activeOrders.Add(order);
+            ordersByCanonicalId.Add(order.CanonicalOrderId, order);
+            OrderCreated?.Invoke(order);
+        }
+
+        nextOrderId = restoredNextOrderId;
+        return true;
+    }
+
+    public bool TryResumeCreatedOrders(out string error)
+    {
+        error = string.Empty;
+
+        for (int index = 0; index < activeOrders.Count; index++)
+        {
+            RestaurantOrder order = activeOrders[index];
+
+            if (order != null && order.CurrentState == OrderState.Created &&
+                !order.TrySetState(OrderState.SentToKitchen))
+            {
+                error = "No se pudo reanudar la comanda " + order.OrderId +
+                        ". " + order.LastTransitionError;
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public RestaurantOrder CreateOrder(
         RestaurantTable table,
         Waiter waiter

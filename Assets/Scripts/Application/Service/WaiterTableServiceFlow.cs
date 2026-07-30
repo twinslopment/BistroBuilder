@@ -48,6 +48,22 @@ public sealed class WaiterTableServiceFlow : MonoBehaviour
         ValidateConfiguration();
     }
 
+    /// <summary>
+    /// Detiene la toma de comanda transitoria antes de aplicar un estado
+    /// cargado. La comanda y los estados autoritativos se reconstruyen
+    /// después desde service.runtime.
+    /// </summary>
+    public void ResetForRuntimeLoad()
+    {
+        if (activeServiceRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(activeServiceRoutine);
+        activeServiceRoutine = null;
+    }
+
     private void HandleDestinationReached(
         WaiterMovementView movementView
     )

@@ -1086,6 +1086,9 @@ GameObject:
   - component: {fileID: 263644969}
   - component: {fileID: 263644970}
   - component: {fileID: 263644971}
+  - component: {fileID: 263644974}
+  - component: {fileID: 263644973}
+  - component: {fileID: 263644972}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1972,6 +1975,7 @@ MonoBehaviour:
   saveGameService: {fileID: 263644953}
   serviceStateService: {fileID: 263644923}
   requiredRuntimeSectionId: service.runtime
+  requiredInventorySectionId: inventory.canonical
   priority: 500
 --- !u!114 &263644955
 MonoBehaviour:
@@ -2003,6 +2007,7 @@ MonoBehaviour:
   generalGameState: {fileID: 263644957}
   gameClock: {fileID: 263644898}
   serviceStateService: {fileID: 263644923}
+  orderIntegration: {fileID: 263644962}
   logLoadSummary: 1
 --- !u!114 &263644957
 MonoBehaviour:
@@ -2054,6 +2059,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRestaurantMenuService
   catalogService: {fileID: 263644960}
+  availabilityService: {fileID: 0}
   initializeCatalogDishesWhenEmpty: 1
   defaultDishEnabled: 1
   defaultDishUnlocked: 1
@@ -2326,6 +2332,66 @@ MonoBehaviour:
   inventoryService: {fileID: 263644970}
   recipeCatalogService: {fileID: 263644969}
   logTransitions: 1
+--- !u!114 &263644972
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f70f080b01449c79246aefd685d2e08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderActiveServiceSaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  serviceStateService: {fileID: 263644923}
+  customerGroupSpawner: {fileID: 263644909}
+  tableRegistry: {fileID: 263644926}
+  tableAssignmentSystem: {fileID: 263644908}
+  barRegistry: {fileID: 263644968}
+  barServiceSystem: {fileID: 263644967}
+  orderSystem: {fileID: 263644903}
+  canonicalOrderService: {fileID: 263644961}
+  orderIntegration: {fileID: 263644962}
+  courseAndSharingService: {fileID: 263644965}
+  customerDiningService: {fileID: 263644964}
+  waiterTaskCoordinator: {fileID: 263644911}
+  orderInventoryLifecycleService: {fileID: 263644971}
+  logLoadSummary: 1
+--- !u!114 &263644973
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 521779c96c3a48c68298bd50ec2926d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInventorySaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  inventoryService: {fileID: 263644970}
+  availabilityService: {fileID: 263644974}
+--- !u!114 &263644974
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26b046c4186f47d98f1d99e063bf6502, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishAvailabilityService
+  recipeCatalogService: {fileID: 263644969}
+  inventoryService: {fileID: 263644970}
+  menuService: {fileID: 263644959}
+  orderIntegration: {fileID: 263644962}
+  lowStockPortionThreshold: 3
+  logChanges: 0
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

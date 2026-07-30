@@ -109,6 +109,248 @@ public sealed class CustomerGroupSpawner :
         diagnosticServiceModes =
             new Queue<BistroBuilderServiceMode>();
 
+    private readonly Queue<PlannedArrival> plannedArrivals =
+        new Queue<PlannedArrival>();
+
+    private bool spawnScheduleInitialized;
+    private bool spawnScheduleCompleted;
+    private bool restoredScheduleAwaitingServiceActivation;
+    private float secondsUntilNextArrival;
+
+    public int NextGroupId => Mathf.Max(1, nextGroupId);
+    public int PendingArrivalCount => plannedArrivals.Count;
+    public bool HasInitializedSpawnSchedule => spawnScheduleInitialized;
+    public bool HasCompletedSpawnSchedule => spawnScheduleCompleted;
+
+    public void StopForRuntimeLoad()
+    {
+        StopSpawning();
+        ClearSpawnSchedule();
+        diagnosticGroupSizes.Clear();
+        diagnosticServiceModes.Clear();
+    }
+
+    public void UnregisterAndDestroyGroupForRuntimeLoad(CustomerGroup group)
+    {
+        if (group == null)
+        {
+            return;
+        }
+
+        barServiceSystem?.UnregisterCustomerGroupForRuntimeLoad(group);
+        customerWaitingAreaSystem?.UnregisterCustomerGroup(group);
+        tableAssignmentSystem?.UnregisterCustomerGroup(group);
+
+        if (group.HasAssignedTable)
+        {
+            group.ClearAssignedTable();
+        }
+
+        if (group.HasAssignedBarSpot)
+        {
+            BistroBuilderBarServiceRegistry registry =
+                FindFirstObjectByType<BistroBuilderBarServiceRegistry>();
+
+            if (registry != null)
+            {
+                registry.ReleaseGroup(group);
+            }
+            else
+            {
+                group.TryReleaseBarSpot();
+            }
+        }
+
+        group.gameObject.SetActive(false);
+        Destroy(group.gameObject);
+    }
+
+    public bool TryCreateRestoredGroup(
+        BistroBuilderCustomerGroupSaveRecord record,
+        out CustomerGroup group,
+        out string error
+    )
+    {
+        group = null;
+        error = string.Empty;
+
+        if (record == null || !record.TryValidate(out error) ||
+            customerGroupPrefab == null || spawnPoint == null ||
+            restaurantExitPoint == null || tableAssignmentSystem == null ||
+            customerWaitingAreaSystem == null)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "El generador no puede reconstruir grupos.";
+            }
+            return false;
+        }
+
+        CustomerGroup candidate = Instantiate(
+            customerGroupPrefab,
+            record.worldPosition.ToVector3(),
+            record.worldRotation.ToQuaternion()
+        );
+        candidate.gameObject.name = "CustomerGroup_" + record.groupId;
+
+        if (!candidate.TryRestoreRuntimeIdentity(
+                record.groupId,
+                record.groupSize,
+                (BistroBuilderServiceMode)record.requestedServiceMode,
+                record.waitingTime,
+                out error
+            ))
+        {
+            Destroy(candidate.gameObject);
+            return false;
+        }
+
+        CustomerMovementView movement =
+            candidate.GetComponent<CustomerMovementView>();
+
+        if (movement == null)
+        {
+            error = "El prefab restaurado no contiene CustomerMovementView.";
+            Destroy(candidate.gameObject);
+            return false;
+        }
+
+        movement.ConfigureExitPoint(restaurantExitPoint);
+
+        if (!tableAssignmentSystem.RegisterCustomerGroup(candidate) ||
+            !customerWaitingAreaSystem.RegisterCustomerGroup(candidate) ||
+            (barServiceSystem != null &&
+             !barServiceSystem.RegisterCustomerGroup(candidate)))
+        {
+            customerWaitingAreaSystem.UnregisterCustomerGroup(candidate);
+            tableAssignmentSystem.UnregisterCustomerGroup(candidate);
+            error = "No se pudo registrar un grupo restaurado.";
+            Destroy(candidate.gameObject);
+            return false;
+        }
+
+        nextGroupId = Mathf.Max(nextGroupId, record.groupId + 1);
+        group = candidate;
+        return true;
+    }
+
+    public void RestoreNextGroupId(int value)
+    {
+        nextGroupId = Mathf.Max(1, value);
+    }
+
+    /// <summary>
+    /// Captura el calendario pendiente de llegadas. Los grupos futuros ya
+    /// están materializados como tamaño + modalidad, por lo que una carga no
+    /// vuelve a tirar números aleatorios ni duplica el servicio.
+    /// </summary>
+    public bool TryCaptureRuntimeSpawnState(
+        out BistroBuilderCustomerSpawnerRuntimeSaveRecord snapshot,
+        out string error
+    )
+    {
+        snapshot = new BistroBuilderCustomerSpawnerRuntimeSaveRecord
+        {
+            scheduleInitialized = spawnScheduleInitialized,
+            scheduleCompleted = spawnScheduleCompleted,
+            secondsUntilNextArrival = Mathf.Max(
+                0f,
+                secondsUntilNextArrival
+            )
+        };
+
+        foreach (PlannedArrival arrival in plannedArrivals)
+        {
+            if (arrival == null || arrival.GroupSize < 1 ||
+                !BistroBuilderServiceModeUtility.IsDefined(
+                    arrival.ServiceMode
+                ))
+            {
+                error = "El calendario runtime de llegadas es inválido.";
+                snapshot = null;
+                return false;
+            }
+
+            snapshot.pendingArrivals.Add(
+                new BistroBuilderCustomerArrivalPlanSaveRecord
+                {
+                    groupSize = arrival.GroupSize,
+                    serviceMode = (int)arrival.ServiceMode
+                }
+            );
+        }
+
+        return snapshot.TryValidate(out error);
+    }
+
+    /// <summary>
+    /// Restaura el calendario pendiente sin generar clientes hasta que
+    /// game.general reactive el estado Open al final de la carga.
+    /// </summary>
+    public bool TryRestoreRuntimeSpawnState(
+        BistroBuilderCustomerSpawnerRuntimeSaveRecord snapshot,
+        out string error
+    )
+    {
+        error = string.Empty;
+        StopSpawning();
+        ClearSpawnSchedule();
+
+        if (snapshot == null || !snapshot.TryValidate(out error))
+        {
+            return false;
+        }
+
+        spawnScheduleInitialized = snapshot.scheduleInitialized;
+        spawnScheduleCompleted = snapshot.scheduleCompleted;
+        secondsUntilNextArrival = Mathf.Max(
+            0f,
+            snapshot.secondsUntilNextArrival
+        );
+
+        for (int index = 0; index < snapshot.pendingArrivals.Count; index++)
+        {
+            BistroBuilderCustomerArrivalPlanSaveRecord record =
+                snapshot.pendingArrivals[index];
+            plannedArrivals.Enqueue(
+                new PlannedArrival(
+                    record.groupSize,
+                    (BistroBuilderServiceMode)record.serviceMode
+                )
+            );
+        }
+
+        restoredScheduleAwaitingServiceActivation =
+            spawnScheduleInitialized;
+
+        if (serviceStateService != null &&
+            serviceStateService.AcceptsNewCustomers)
+        {
+            restoredScheduleAwaitingServiceActivation = false;
+            StartSpawningIfNeeded(false);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Reanuda el calendario restaurado cuando service.runtime ya ha
+    /// finalizado todas sus referencias cruzadas. No crea un plan nuevo ni
+    /// altera las próximas llegadas guardadas.
+    /// </summary>
+    public void ResumeAfterRuntimeLoad()
+    {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring ||
+            serviceStateService == null ||
+            !serviceStateService.AcceptsNewCustomers)
+        {
+            return;
+        }
+
+        restoredScheduleAwaitingServiceActivation = false;
+        StartSpawningIfNeeded(false);
+    }
+
     /// <summary>
     /// Configura una secuencia temporal y determinista de tamaños de grupo.
     /// No se serializa y desaparece al salir de Play Mode.
@@ -236,7 +478,50 @@ public sealed class CustomerGroupSpawner :
         RestaurantServiceState currentState
     )
     {
-        SynchronizeWithServiceState();
+        if (!configurationIsValid)
+        {
+            return;
+        }
+
+        if (currentState == RestaurantServiceState.Open)
+        {
+            if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+            {
+                // game.general reactiva Open antes de que service.runtime
+                // termine de publicar mesas, grupos, barra y tareas. Incluso
+                // con Time.timeScale=0 una corrutina con espera cero podría
+                // generar un grupo de forma síncrona al iniciarse.
+                restoredScheduleAwaitingServiceActivation =
+                    spawnScheduleInitialized;
+                return;
+            }
+
+            if (restoredScheduleAwaitingServiceActivation)
+            {
+                restoredScheduleAwaitingServiceActivation = false;
+                StartSpawningIfNeeded(false);
+                return;
+            }
+
+            if (previousState != RestaurantServiceState.Open)
+            {
+                BeginNewServiceSchedule();
+            }
+
+            StartSpawningIfNeeded(false);
+            return;
+        }
+
+        StopSpawning();
+
+        if (currentState == RestaurantServiceState.Closed)
+        {
+            ClearSpawnSchedule();
+        }
+        else if (currentState == RestaurantServiceState.Closing)
+        {
+            MarkSpawnScheduleCompleted();
+        }
     }
 
     /// <summary>
@@ -252,68 +537,133 @@ public sealed class CustomerGroupSpawner :
 
         if (serviceStateService.AcceptsNewCustomers)
         {
-            StartSpawningIfNeeded();
+            if (!spawnScheduleInitialized)
+            {
+                BeginNewServiceSchedule();
+            }
+
+            StartSpawningIfNeeded(false);
             return;
         }
 
         StopSpawning();
     }
 
-    /// <summary>
-    /// Inicia una única rutina para el servicio actual.
-    /// </summary>
-    private void StartSpawningIfNeeded()
+    private void BeginNewServiceSchedule()
     {
-        if (spawnRoutine != null ||
-            !isActiveAndEnabled)
+        StopSpawning();
+        plannedArrivals.Clear();
+
+        for (int index = 0; index < numberOfGroups; index++)
+        {
+            int groupSize = diagnosticGroupSizes.Count > 0
+                ? diagnosticGroupSizes.Dequeue()
+                : Random.Range(
+                    minimumGroupSize,
+                    maximumGroupSize + 1
+                );
+            BistroBuilderServiceMode mode = ResolveServiceMode(groupSize);
+            plannedArrivals.Enqueue(
+                new PlannedArrival(groupSize, mode)
+            );
+        }
+
+        spawnScheduleInitialized = true;
+        spawnScheduleCompleted = plannedArrivals.Count == 0;
+        restoredScheduleAwaitingServiceActivation = false;
+        secondsUntilNextArrival = spawnScheduleCompleted
+            ? 0f
+            : Mathf.Max(0f, firstSpawnDelay);
+    }
+
+    /// <summary>
+    /// Inicia una única rutina para el calendario actual.
+    /// </summary>
+    private void StartSpawningIfNeeded(bool createScheduleIfMissing)
+    {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            restoredScheduleAwaitingServiceActivation =
+                spawnScheduleInitialized;
+            return;
+        }
+
+        if (spawnRoutine != null || !isActiveAndEnabled ||
+            serviceStateService == null ||
+            !serviceStateService.AcceptsNewCustomers)
         {
             return;
         }
 
-        spawnRoutine =
-            StartCoroutine(
-                SpawnGroupsRoutine()
-            );
+        if (!spawnScheduleInitialized && createScheduleIfMissing)
+        {
+            BeginNewServiceSchedule();
+        }
+
+        if (!spawnScheduleInitialized || spawnScheduleCompleted ||
+            plannedArrivals.Count == 0)
+        {
+            return;
+        }
+
+        spawnRoutine = StartCoroutine(SpawnGroupsRoutine());
     }
 
     /// <summary>
-    /// Detiene inmediatamente futuras llegadas.
+    /// Detiene inmediatamente futuras llegadas sin perder el calendario.
     /// Los grupos ya generados continúan su flujo normal.
     /// </summary>
     private void StopSpawning()
     {
-        if (spawnRoutine == null)
+        if (spawnRoutine != null)
         {
-            return;
+            StopCoroutine(spawnRoutine);
+            spawnRoutine = null;
         }
+    }
 
-        StopCoroutine(
-            spawnRoutine
-        );
+    private void ClearSpawnSchedule()
+    {
+        plannedArrivals.Clear();
+        spawnScheduleInitialized = false;
+        spawnScheduleCompleted = false;
+        restoredScheduleAwaitingServiceActivation = false;
+        secondsUntilNextArrival = 0f;
+    }
 
-        spawnRoutine = null;
+    private void MarkSpawnScheduleCompleted()
+    {
+        plannedArrivals.Clear();
+        spawnScheduleInitialized = true;
+        spawnScheduleCompleted = true;
+        restoredScheduleAwaitingServiceActivation = false;
+        secondsUntilNextArrival = 0f;
     }
 
     /// <summary>
-    /// Genera los grupos dejando un intervalo entre llegadas.
+    /// Genera grupos desde un plan materializado y persistible. El contador
+    /// de espera se conserva para poder guardar en mitad del intervalo.
     /// </summary>
     private IEnumerator SpawnGroupsRoutine()
     {
-        if (firstSpawnDelay > 0f)
+        while (plannedArrivals.Count > 0)
         {
-            yield return new WaitForSeconds(
-                firstSpawnDelay
-            );
-        }
+            while (secondsUntilNextArrival > 0f)
+            {
+                if (serviceStateService == null ||
+                    !serviceStateService.AcceptsNewCustomers)
+                {
+                    spawnRoutine = null;
+                    yield break;
+                }
 
-        for (int index = 0;
-             index < numberOfGroups;
-             index++)
-        {
-            /*
-             * Se vuelve a comprobar antes de cada llegada para que
-             * el cierre del servicio detenga nuevas admisiones.
-             */
+                secondsUntilNextArrival = Mathf.Max(
+                    0f,
+                    secondsUntilNextArrival - Time.deltaTime
+                );
+                yield return null;
+            }
+
             if (serviceStateService == null ||
                 !serviceStateService.AcceptsNewCustomers)
             {
@@ -321,52 +671,42 @@ public sealed class CustomerGroupSpawner :
                 yield break;
             }
 
-            int groupId =
-                nextGroupId;
-
+            PlannedArrival arrival = plannedArrivals.Dequeue();
+            int groupId = nextGroupId;
             nextGroupId++;
 
             SpawnCustomerGroup(
-                groupId
+                groupId,
+                arrival.GroupSize,
+                arrival.ServiceMode
             );
 
-            bool isLastGroup =
-                index ==
-                numberOfGroups - 1;
+            secondsUntilNextArrival = plannedArrivals.Count > 0
+                ? Mathf.Max(0.1f, timeBetweenGroups)
+                : 0f;
 
-            if (!isLastGroup)
-            {
-                yield return new WaitForSeconds(
-                    timeBetweenGroups
-                );
-            }
+            yield return null;
         }
 
+        spawnScheduleCompleted = true;
+        spawnRoutine = null;
+
         Debug.Log(
-            "CustomerGroupSpawner ha generado " +
-            numberOfGroups +
-            " grupo(s) durante el servicio.",
+            "CustomerGroupSpawner ha completado el calendario de " +
+            "llegadas del servicio.",
             this
         );
-
-        spawnRoutine = null;
     }
 
     /// <summary>
     /// Crea y configura una instancia concreta del prefab.
     /// </summary>
     private void SpawnCustomerGroup(
-        int groupId
+        int groupId,
+        int groupSize,
+        BistroBuilderServiceMode serviceMode
     )
     {
-        // Random.Range con enteros no incluye el límite superior.
-        int groupSize = diagnosticGroupSizes.Count > 0
-            ? diagnosticGroupSizes.Dequeue()
-            : Random.Range(
-                minimumGroupSize,
-                maximumGroupSize + 1
-            );
-
         CustomerGroup newGroup =
             Instantiate(
                 customerGroupPrefab,
@@ -377,9 +717,6 @@ public sealed class CustomerGroupSpawner :
         newGroup.gameObject.name =
             "CustomerGroup_" +
             groupId;
-
-        BistroBuilderServiceMode serviceMode =
-            ResolveServiceMode(groupSize);
 
         bool initialized =
             newGroup.Initialize(
@@ -671,6 +1008,21 @@ public sealed class CustomerGroupSpawner :
         }
 
         return isValid;
+    }
+
+    private sealed class PlannedArrival
+    {
+        public int GroupSize { get; }
+        public BistroBuilderServiceMode ServiceMode { get; }
+
+        public PlannedArrival(
+            int groupSize,
+            BistroBuilderServiceMode serviceMode
+        )
+        {
+            GroupSize = Mathf.Max(1, groupSize);
+            ServiceMode = serviceMode;
+        }
     }
 
 #if UNITY_EDITOR

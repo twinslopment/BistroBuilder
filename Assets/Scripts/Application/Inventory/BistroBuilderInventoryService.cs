@@ -1633,20 +1633,11 @@ public sealed class BistroBuilderInventoryService : MonoBehaviour
         out string error
     )
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            error = fieldName + " no puede estar vacío.";
-            return false;
-        }
-
-        if (value.Length > 160)
-        {
-            error = fieldName + " excede 160 caracteres.";
-            return false;
-        }
-
-        error = string.Empty;
-        return true;
+        return BistroBuilderInventoryRuntimeIdUtility.TryValidateNormalized(
+            value,
+            fieldName,
+            out error
+        );
     }
 
     private static string NormalizeIngredientId(string value)
@@ -1656,7 +1647,7 @@ public sealed class BistroBuilderInventoryService : MonoBehaviour
 
     private static string NormalizeRuntimeId(string value)
     {
-        return value != null ? value.Trim() : string.Empty;
+        return BistroBuilderInventoryRuntimeIdUtility.Normalize(value);
     }
 
     private static string SanitizeReason(string value)
@@ -1677,6 +1668,518 @@ public sealed class BistroBuilderInventoryService : MonoBehaviour
         {
             TryGetComponent(out recipeCatalogService);
         }
+    }
+
+
+    /// <summary>
+    /// Captura una fotografía profunda del inventario, incluido el libro y
+    /// las operaciones idempotentes. Es segura para guardados con el servicio
+    /// abierto porque el orquestador congela la simulación antes de invocarla.
+    /// </summary>
+    public bool TryCaptureRuntimeSnapshot(
+        out BistroBuilderInventoryRuntimeSnapshot snapshot,
+        out string error
+    )
+    {
+        snapshot = null;
+        error = string.Empty;
+
+        if (!EnsureInitialized(out error) ||
+            !ValidateRuntimeState(out error))
+        {
+            return false;
+        }
+
+        var captured = new BistroBuilderInventoryRuntimeSnapshot
+        {
+            nextTransactionSequence = nextTransactionSequence,
+            runtimeRevision = runtimeRevision
+        };
+
+        var ingredientIds = new List<string>(stockByIngredientId.Keys);
+        ingredientIds.Sort(StringComparer.Ordinal);
+
+        for (int index = 0; index < ingredientIds.Count; index++)
+        {
+            StockState state = stockByIngredientId[ingredientIds[index]];
+            captured.stock.Add(
+                new BistroBuilderInventoryStockSaveRecord
+                {
+                    ingredientId = state.IngredientId,
+                    storageLocationId = state.StorageLocationId,
+                    onHandCanonicalMilliUnits = state.OnHand,
+                    reservedCanonicalMilliUnits = state.Reserved,
+                    consumedCanonicalMilliUnits = state.Consumed,
+                    wastedCanonicalMilliUnits = state.Wasted,
+                    revision = state.Revision
+                }
+            );
+        }
+
+        var reservationIds = new List<string>(reservationsById.Keys);
+        reservationIds.Sort(StringComparer.Ordinal);
+
+        for (int index = 0; index < reservationIds.Count; index++)
+        {
+            ReservationState reservation =
+                reservationsById[reservationIds[index]];
+            var record = new BistroBuilderInventoryReservationSaveRecord
+            {
+                reservationId = reservation.ReservationId,
+                sourceId = reservation.SourceId,
+                status = (int)reservation.Status,
+                revision = reservation.Revision
+            };
+
+            for (int lineIndex = 0;
+                 lineIndex < reservation.Lines.Count;
+                 lineIndex++)
+            {
+                ReservationLineState line = reservation.Lines[lineIndex];
+                record.lines.Add(
+                    new BistroBuilderInventoryReservationLineSaveRecord
+                    {
+                        ingredientId = line.IngredientId,
+                        canonicalMilliUnits = line.Quantity
+                    }
+                );
+            }
+
+            record.lines.Sort(
+                (left, right) => string.CompareOrdinal(
+                    left != null ? left.ingredientId : string.Empty,
+                    right != null ? right.ingredientId : string.Empty
+                )
+            );
+            captured.reservations.Add(record);
+        }
+
+        var operationIds = new List<string>(operationsById.Keys);
+        operationIds.Sort(StringComparer.Ordinal);
+
+        for (int index = 0; index < operationIds.Count; index++)
+        {
+            string operationId = operationIds[index];
+            captured.operations.Add(
+                new BistroBuilderInventoryOperationSaveRecord
+                {
+                    operationId = operationId,
+                    fingerprint = operationsById[operationId].Fingerprint
+                }
+            );
+        }
+
+        for (int index = 0; index < ledger.Count; index++)
+        {
+            captured.ledger.Add(
+                BistroBuilderInventoryTransactionSaveRecord.FromSnapshot(
+                    ledger[index]
+                )
+            );
+        }
+
+        if (!captured.TryValidateBasic(out error))
+        {
+            return false;
+        }
+
+        snapshot = captured;
+        return true;
+    }
+
+    /// <summary>
+    /// Sustituye el inventario de forma atómica desde una fotografía.
+    /// Ingredientes añadidos por una versión posterior del juego se crean con
+    /// stock cero; ingredientes desconocidos contenidos en la partida bloquean
+    /// la carga para no perder ni reinterpretar mercancía silenciosamente.
+    /// </summary>
+    public bool TryReplaceFromRuntimeSnapshot(
+        BistroBuilderInventoryRuntimeSnapshot snapshot,
+        bool notify,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        if (snapshot == null)
+        {
+            error = "El snapshot de inventario es nulo.";
+            return false;
+        }
+
+        if (!snapshot.TryValidateBasic(out error))
+        {
+            return false;
+        }
+
+        CacheDependenciesIfNeeded();
+
+        if (recipeCatalogService == null)
+        {
+            error = "Falta BistroBuilderRecipeCatalogService.";
+            return false;
+        }
+
+        if (recipeCatalogService.IngredientCatalog == null)
+        {
+            error = "El catálogo canónico de ingredientes no está disponible.";
+            return false;
+        }
+
+        if (!recipeCatalogService.ValidateConfiguration(out error))
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "El catálogo de ingredientes y recetas no es válido.";
+            }
+            return false;
+        }
+
+        BistroBuilderInventoryRuntimeSnapshot rollback = null;
+
+        if (initialized &&
+            !TryCaptureRuntimeSnapshot(out rollback, out error))
+        {
+            return false;
+        }
+
+        if (!TryBuildRuntimeFromSnapshot(
+                snapshot,
+                out Dictionary<string, StockState> candidateStock,
+                out Dictionary<string, ReservationState> candidateReservations,
+                out Dictionary<string, OperationRecord> candidateOperations,
+                out List<BistroBuilderInventoryTransactionSnapshot>
+                    candidateLedger,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        ApplyRuntimeReplacement(
+            candidateStock,
+            candidateReservations,
+            candidateOperations,
+            candidateLedger,
+            snapshot.nextTransactionSequence,
+            snapshot.runtimeRevision
+        );
+
+        if (!ValidateRuntimeState(out error))
+        {
+            if (rollback != null &&
+                TryBuildRuntimeFromSnapshot(
+                    rollback,
+                    out Dictionary<string, StockState> rollbackStock,
+                    out Dictionary<string, ReservationState>
+                        rollbackReservations,
+                    out Dictionary<string, OperationRecord>
+                        rollbackOperations,
+                    out List<BistroBuilderInventoryTransactionSnapshot>
+                        rollbackLedger,
+                    out _
+                ))
+            {
+                ApplyRuntimeReplacement(
+                    rollbackStock,
+                    rollbackReservations,
+                    rollbackOperations,
+                    rollbackLedger,
+                    rollback.nextTransactionSequence,
+                    rollback.runtimeRevision
+                );
+            }
+
+            return false;
+        }
+
+        if (notify)
+        {
+            foreach (KeyValuePair<string, StockState> pair
+                     in stockByIngredientId)
+            {
+                StockChanged?.Invoke(pair.Value.ToSnapshot());
+            }
+
+            foreach (KeyValuePair<string, ReservationState> pair
+                     in reservationsById)
+            {
+                ReservationChanged?.Invoke(pair.Value.ToSnapshot());
+            }
+        }
+
+        return true;
+    }
+
+    private bool TryBuildRuntimeFromSnapshot(
+        BistroBuilderInventoryRuntimeSnapshot snapshot,
+        out Dictionary<string, StockState> candidateStock,
+        out Dictionary<string, ReservationState> candidateReservations,
+        out Dictionary<string, OperationRecord> candidateOperations,
+        out List<BistroBuilderInventoryTransactionSnapshot> candidateLedger,
+        out string error
+    )
+    {
+        candidateStock = new Dictionary<string, StockState>(
+            StringComparer.Ordinal
+        );
+        candidateReservations = new Dictionary<string, ReservationState>(
+            StringComparer.Ordinal
+        );
+        candidateOperations = new Dictionary<string, OperationRecord>(
+            StringComparer.Ordinal
+        );
+        candidateLedger =
+            new List<BistroBuilderInventoryTransactionSnapshot>(
+                snapshot.ledger.Count
+            );
+        error = string.Empty;
+
+        BistroBuilderIngredientCatalog catalog =
+            recipeCatalogService.IngredientCatalog;
+        var savedStockById =
+            new Dictionary<string, BistroBuilderInventoryStockSaveRecord>(
+                StringComparer.Ordinal
+            );
+
+        for (int index = 0; index < snapshot.stock.Count; index++)
+        {
+            BistroBuilderInventoryStockSaveRecord record =
+                snapshot.stock[index];
+
+            if (!catalog.TryGetDefinition(
+                    record.ingredientId,
+                    out BistroBuilderIngredientDefinition definition
+                ) ||
+                definition == null)
+            {
+                error = "La partida contiene el ingrediente desconocido " +
+                        record.ingredientId + ".";
+                return false;
+            }
+
+            savedStockById.Add(record.ingredientId, record);
+        }
+
+        IReadOnlyList<BistroBuilderIngredientDefinition> definitions =
+            catalog.Definitions;
+
+        for (int index = 0; index < definitions.Count; index++)
+        {
+            BistroBuilderIngredientDefinition definition = definitions[index];
+
+            if (definition == null)
+            {
+                error = "El catálogo actual contiene un ingrediente nulo.";
+                return false;
+            }
+
+            var state = new StockState(
+                definition,
+                BistroBuilderInventoryStorageLocationIds
+                    .FromIngredientStorage(definition.StorageType)
+            );
+
+            if (savedStockById.TryGetValue(
+                    definition.IngredientId,
+                    out BistroBuilderInventoryStockSaveRecord record
+                ))
+            {
+                state.StorageLocationId = record.storageLocationId;
+                state.OnHand = record.onHandCanonicalMilliUnits;
+                state.Reserved = record.reservedCanonicalMilliUnits;
+                state.Consumed = record.consumedCanonicalMilliUnits;
+                state.Wasted = record.wastedCanonicalMilliUnits;
+                state.Revision = record.revision;
+            }
+
+            candidateStock.Add(definition.IngredientId, state);
+        }
+
+        for (int index = 0; index < snapshot.reservations.Count; index++)
+        {
+            BistroBuilderInventoryReservationSaveRecord record =
+                snapshot.reservations[index];
+            var lines = new List<ReservationLineState>(record.lines.Count);
+
+            for (int lineIndex = 0;
+                 lineIndex < record.lines.Count;
+                 lineIndex++)
+            {
+                BistroBuilderInventoryReservationLineSaveRecord line =
+                    record.lines[lineIndex];
+
+                if (!candidateStock.ContainsKey(line.ingredientId))
+                {
+                    error = "La reserva " + record.reservationId +
+                            " referencia el ingrediente desconocido " +
+                            line.ingredientId + ".";
+                    return false;
+                }
+
+                lines.Add(
+                    new ReservationLineState(
+                        line.ingredientId,
+                        line.canonicalMilliUnits
+                    )
+                );
+            }
+
+            var reservation = new ReservationState(
+                record.reservationId,
+                record.sourceId,
+                lines
+            )
+            {
+                Status =
+                    (BistroBuilderInventoryReservationStatus)record.status,
+                Revision = record.revision
+            };
+
+            candidateReservations.Add(record.reservationId, reservation);
+        }
+
+        for (int index = 0; index < snapshot.operations.Count; index++)
+        {
+            BistroBuilderInventoryOperationSaveRecord record =
+                snapshot.operations[index];
+            candidateOperations.Add(
+                record.operationId,
+                new OperationRecord(record.fingerprint)
+            );
+        }
+
+        for (int index = 0; index < snapshot.ledger.Count; index++)
+        {
+            BistroBuilderInventoryTransactionSaveRecord record =
+                snapshot.ledger[index];
+
+            if (!candidateStock.ContainsKey(record.ingredientId))
+            {
+                error = "El libro de inventario referencia el ingrediente " +
+                        "desconocido " + record.ingredientId + ".";
+                return false;
+            }
+
+            candidateLedger.Add(record.ToSnapshot());
+        }
+
+        return TryValidateCandidateRuntime(
+            candidateStock,
+            candidateReservations,
+            candidateLedger,
+            snapshot.nextTransactionSequence,
+            out error
+        );
+    }
+
+    private static bool TryValidateCandidateRuntime(
+        Dictionary<string, StockState> candidateStock,
+        Dictionary<string, ReservationState> candidateReservations,
+        List<BistroBuilderInventoryTransactionSnapshot> candidateLedger,
+        long candidateNextSequence,
+        out string error
+    )
+    {
+        error = string.Empty;
+        var reservedByIngredient = new Dictionary<string, long>(
+            StringComparer.Ordinal
+        );
+
+        foreach (KeyValuePair<string, ReservationState> pair
+                 in candidateReservations)
+        {
+            ReservationState reservation = pair.Value;
+
+            if (reservation == null ||
+                reservation.Status !=
+                    BistroBuilderInventoryReservationStatus.Active)
+            {
+                continue;
+            }
+
+            for (int index = 0; index < reservation.Lines.Count; index++)
+            {
+                ReservationLineState line = reservation.Lines[index];
+                reservedByIngredient.TryGetValue(
+                    line.IngredientId,
+                    out long current
+                );
+
+                try
+                {
+                    reservedByIngredient[line.IngredientId] =
+                        checked(current + line.Quantity);
+                }
+                catch (OverflowException)
+                {
+                    error = "Las reservas persistidas desbordan el rango.";
+                    return false;
+                }
+            }
+        }
+
+        foreach (KeyValuePair<string, StockState> pair in candidateStock)
+        {
+            StockState state = pair.Value;
+            reservedByIngredient.TryGetValue(pair.Key, out long expected);
+
+            if (state == null || state.OnHand < 0L || state.Reserved < 0L ||
+                state.Reserved > state.OnHand || state.Reserved != expected ||
+                state.Consumed < 0L || state.Wasted < 0L ||
+                state.Revision < 0L)
+            {
+                error = "El balance restaurado de " + pair.Key +
+                        " no coincide con sus reservas.";
+                return false;
+            }
+        }
+
+        if (candidateNextSequence != candidateLedger.Count + 1L)
+        {
+            error = "La secuencia restaurada del libro es inválida.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ApplyRuntimeReplacement(
+        Dictionary<string, StockState> candidateStock,
+        Dictionary<string, ReservationState> candidateReservations,
+        Dictionary<string, OperationRecord> candidateOperations,
+        List<BistroBuilderInventoryTransactionSnapshot> candidateLedger,
+        long candidateNextSequence,
+        long candidateRevision
+    )
+    {
+        stockByIngredientId.Clear();
+        reservationsById.Clear();
+        operationsById.Clear();
+        ledger.Clear();
+
+        foreach (KeyValuePair<string, StockState> pair in candidateStock)
+        {
+            stockByIngredientId.Add(pair.Key, pair.Value);
+        }
+
+        foreach (KeyValuePair<string, ReservationState> pair
+                 in candidateReservations)
+        {
+            reservationsById.Add(pair.Key, pair.Value);
+        }
+
+        foreach (KeyValuePair<string, OperationRecord> pair
+                 in candidateOperations)
+        {
+            operationsById.Add(pair.Key, pair.Value);
+        }
+
+        ledger.AddRange(candidateLedger);
+        nextTransactionSequence = candidateNextSequence;
+        runtimeRevision = candidateRevision;
+        initialized = true;
+        enabled = true;
     }
 
 #if UNITY_EDITOR
