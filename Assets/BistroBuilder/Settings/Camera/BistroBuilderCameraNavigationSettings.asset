@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 091cefa116783c5d6fa4282cec1cb80d, type: 3}
+  m_Name: BistroBuilderCameraNavigationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder.CameraSystem.BistroBuilderCameraNavigationSettings
+  keyboardPanEnabled: 1
+  keyboardElevationEnabled: 1
+  edgePanEnabled: 1
+  middleMouseDragEnabled: 1
+  rightMouseRotationEnabled: 1
+  mousePitchEnabled: 1
+  orbitAroundPointer: 1
+  blockPointerInputOverUi: 1
+  blockKeyboardWhileTyping: 1
+  requireApplicationFocus: 1
+  maximumPointerDeltaPerFrame: 180
+  panSpeedNear: 6.5
+  panSpeedFar: 26
+  fastPanMultiplier: 1.75
+  panAccelerationTime: 0.16
+  panDecelerationTime: 0.24
+  positionDampingTime: 0.13
+  dragPositionDampingTime: 0.055
+  middleMouseDragSensitivity: 1
+  middleMouseDragDeadZonePixels: 0.35
+  keyboardElevationSpeed: 3.25
+  elevationAccelerationTime: 0.2
+  elevationDecelerationTime: 0.34
+  minimumElevatorHeight: 10
+  maximumElevatorHeight: 22
+  elevatorSoftLimitRange: 2.75
+  edgeMarginNormalized: 0.025
+  edgeMarginMinimumPixels: 14
+  edgeMarginMaximumPixels: 54
+  edgePanStrength: 1
+  keyboardYawSpeed: 82
+  mouseYawDegreesPerPixel: 0.12
+  mousePitchDegreesPerPixel: 0.1
+  yawAccelerationTime: 0.12
+  yawDecelerationTime: 0.17
+  rotationDampingTime: 0.18
+  minimumPitch: 22
+  maximumPitch: 72
+  fallbackPitch: 48
+  minimumCameraHeight: 4.5
+  maximumCameraHeight: 46
+  minimumDistance: 7
+  maximumDistance: 58
+  fallbackDistance: 24
+  logarithmicZoomStep: 0.032
+  zoomDampingTime: 0.3
+  maximumScrollNotchesPerFrame: 1
+  zoomInputSmoothingTime: 0.16
+  maximumQueuedScrollNotches: 3
+  minimumOperationalDistance: 10.5
+  maximumOperationalDistance: 32
+  maximumSimulationDeltaTime: 0.05
+  maximumPanSpeedSafetyMultiplier: 2.25
+  useUnscaledTime: 1
+  interactionProfileVersion: 7

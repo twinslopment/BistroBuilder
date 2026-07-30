@@ -2548,6 +2548,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585548}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2673,6 +2674,24 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &330585548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6634c2f342e7a0699f8ada6b3852b9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder.CameraSystem.BistroBuilderProfessionalCameraController
+  controlledCamera: {fileID: 330585545}
+  settings: {fileID: 11400000, guid: b4eb3cf0e4fa3624186215efbad27862, type: 2}
+  navigationBounds: {fileID: 376082218}
+  inputEnabled: 1
+  initializeFromCurrentCamera: 1
+  fallbackGroundHeight: 0
 --- !u!1 &339113440
 GameObject:
   m_ObjectHideFlags: 0
@@ -2908,6 +2927,57 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 537685209}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &376082217
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 376082219}
+  - component: {fileID: 376082218}
+  m_Layer: 0
+  m_Name: BB_CameraBounds_369A
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &376082218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376082217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31e6b565f35f536461019a029026886c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder.CameraSystem.BistroBuilderCameraBounds
+  localCenter: {x: 0, y: 5, z: 0}
+  localSize: {x: 20, y: 10, z: 20}
+  localGroundHeight: 0
+  horizontalPadding: 1.25
+  cameraEnvelopePadding: 8
+  constraintMode: 2
+  drawGizmo: 1
+--- !u!4 &376082219
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376082217}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1.110223e-16, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &380124770
 GameObject:
@@ -10539,3 +10609,4 @@ SceneRoots:
   - {fileID: 1128614907}
   - {fileID: 2114942780}
   - {fileID: 1408517569}
+  - {fileID: 376082219}
