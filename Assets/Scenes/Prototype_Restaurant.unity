@@ -2059,7 +2059,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRestaurantMenuService
   catalogService: {fileID: 263644960}
-  availabilityService: {fileID: 0}
+  availabilityService: {fileID: 263644974}
   initializeCatalogDishesWhenEmpty: 1
   defaultDishEnabled: 1
   defaultDishUnlocked: 1

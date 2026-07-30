@@ -82,3 +82,93 @@ public readonly struct BistroBuilderBarServiceCompletedEvent
         ChargeTransferredToTableBill = chargeTransferredToTableBill;
     }
 }
+
+/// <summary>
+/// Política pura de reconciliación de una sesión de barra tras cargar.
+///
+/// La fase persistida es una pista, pero la autoridad real es la combinación
+/// de la comanda legacy, las líneas canónicas y si existe una mesa solicitada.
+/// Esto evita reanudar un cierre cuando la cocina todavía está preparando.
+/// </summary>
+public static class BistroBuilderBarSessionRecoveryPolicy
+{
+    public static BistroBuilderBarSessionPhase ResolveRestoredPhase(
+        BistroBuilderBarSessionPhase persistedPhase,
+        BistroBuilderServiceMode serviceMode,
+        bool hasOrder,
+        OrderState orderState,
+        bool allLinesServed,
+        bool allLinesConsumed,
+        bool tableRequested
+    )
+    {
+        if (!BistroBuilderServiceModeUtility.IsBarMode(serviceMode))
+        {
+            return BistroBuilderBarSessionPhase.Cancelled;
+        }
+
+        if (!hasOrder)
+        {
+            return persistedPhase == BistroBuilderBarSessionPhase.Allocated ||
+                   persistedPhase == BistroBuilderBarSessionPhase.WalkingToBar
+                ? BistroBuilderBarSessionPhase.WalkingToBar
+                : BistroBuilderBarSessionPhase.WaitingForOrder;
+        }
+
+        if (orderState == OrderState.Cancelled)
+        {
+            return BistroBuilderBarSessionPhase.Cancelled;
+        }
+
+        if (allLinesConsumed)
+        {
+            if (serviceMode == BistroBuilderServiceMode.WaitingAtBar)
+            {
+                if (orderState == OrderState.Served)
+                {
+                    return tableRequested
+                        ? BistroBuilderBarSessionPhase.ClosingForTable
+                        : BistroBuilderBarSessionPhase
+                            .WaitingForTableAfterConsumption;
+                }
+
+                return orderState == OrderState.Completed
+                    ? BistroBuilderBarSessionPhase.Completed
+                    : BistroBuilderBarSessionPhase.WaitingForItems;
+            }
+
+            if (orderState == OrderState.Completed)
+            {
+                return BistroBuilderBarSessionPhase.Completed;
+            }
+
+            return orderState == OrderState.Served
+                ? BistroBuilderBarSessionPhase.WaitingForPayment
+                : BistroBuilderBarSessionPhase.WaitingForItems;
+        }
+
+        if (allLinesServed || orderState == OrderState.Served)
+        {
+            return BistroBuilderBarSessionPhase.Consuming;
+        }
+
+        if (orderState == OrderState.Completed)
+        {
+            return serviceMode == BistroBuilderServiceMode.WaitingAtBar
+                ? BistroBuilderBarSessionPhase
+                    .WaitingForTableAfterConsumption
+                : BistroBuilderBarSessionPhase.Completed;
+        }
+
+        return BistroBuilderBarSessionPhase.WaitingForItems;
+    }
+
+    public static bool CanCompleteWaitingAtBarOrder(
+        OrderState orderState,
+        bool allLinesConsumed
+    )
+    {
+        return allLinesConsumed && orderState == OrderState.Served;
+    }
+}
+

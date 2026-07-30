@@ -129,7 +129,24 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
             if (customerGroup.CurrentState ==
                 CustomerGroupState.WaitingForTable)
             {
-                AddGroupToWaitingQueue(customerGroup);
+                // WaitingAtBar conserva el estado lógico de espera de mesa,
+                // pero ya ocupa una plaza física de barra. No debe consumir
+                // también un punto de la zona de espera al restaurar.
+                if (customerGroup.IsOccupyingBar)
+                {
+                    bool wasWaitingAtEntrance =
+                        waitingGroups.Remove(customerGroup);
+                    assignedWaitingPoints.Remove(customerGroup);
+
+                    if (wasWaitingAtEntrance)
+                    {
+                        ReorganizeWaitingQueue();
+                    }
+                }
+                else
+                {
+                    AddGroupToWaitingQueue(customerGroup);
+                }
             }
 
             return;
@@ -158,8 +175,12 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
         CustomerGroup customerGroup
     )
     {
-        if (waitingGroups.Contains(customerGroup))
+        if (customerGroup == null ||
+            customerGroup.IsOccupyingBar ||
+            waitingGroups.Contains(customerGroup))
+        {
             return;
+        }
 
         waitingGroups.Add(customerGroup);
 

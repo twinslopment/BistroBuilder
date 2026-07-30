@@ -334,7 +334,12 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
 
         // Una comanda ya consumida puede cerrarse sin repetir el tiempo de
         // consumo. La transferencia y el cierre son atómicos para el grupo.
-        if (AreAllLinesConsumed(session.Order))
+        bool allLinesConsumed = AreAllLinesConsumed(session.Order);
+        if (BistroBuilderBarSessionRecoveryPolicy
+                .CanCompleteWaitingAtBarOrder(
+                    session.Order.CurrentState,
+                    allLinesConsumed
+                ))
         {
             if (!TryCloseWaitingSessionForTable(session, out reason))
             {
@@ -344,11 +349,34 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
             return true;
         }
 
-        session.State = SessionState.ClosingForTable;
+        if (allLinesConsumed)
+        {
+            // Defensa ante un snapshot incoherente: no repetimos consumo ni
+            // saltamos Preparing/ReadyForPickup. La mesa sigue reservada hasta
+            // que la fachada legacy alcance Served de forma legal.
+            session.State =
+                SessionState.WaitingForTableAfterConsumption;
+            reason =
+                "La comanda consumida espera sincronizar su estado antes " +
+                "de cerrar la sesión de barra.";
+            return false;
+        }
 
+        // Solicitar mesa no significa que la comanda esté lista para cerrarse.
+        // Mientras cocina o reparto sigan activos, la fase operativa debe
+        // continuar en WaitingForItems/Consuming. TableRequested conserva la
+        // intención de sentar al grupo en cuanto termine el consumo.
         if (session.Routine == null && AreAllLinesServed(session.Order))
         {
-            session.Routine = StartCoroutine(ConsumeAndCloseRoutine(session));
+            session.Routine = StartCoroutine(
+                ConsumeAndCloseRoutine(session)
+            );
+        }
+        else if (session.State == SessionState.ClosingForTable ||
+                 session.State ==
+                    SessionState.WaitingForTableAfterConsumption)
+        {
+            session.State = SessionState.WaitingForItems;
         }
 
         reason =
@@ -844,9 +872,11 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         session.Order = order;
         session.ResponsibleWaiter = waiter;
         session.ChargeCents = CalculateOrderTotalCents(order);
-        session.State = session.TableRequested
-            ? SessionState.ClosingForTable
-            : SessionState.WaitingForItems;
+
+        // Aunque ya exista una mesa reservada, la comanda acaba de entrar en
+        // producción. ClosingForTable se reserva exclusivamente para una
+        // comanda consumida y legalmente completables.
+        session.State = SessionState.WaitingForItems;
         sessionsByOrder[order] = session;
 
         if (session.Mode == BistroBuilderServiceMode.BarService)
@@ -896,7 +926,17 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
             {
                 if (!TryCloseWaitingSessionForTable(session, out error))
                 {
-                    Debug.LogError(error, this);
+                    // Una desincronización transitoria entre consumo canónico
+                    // y fachada legacy no debe generar un cierre ilegal ni
+                    // ensuciar Console. La sesión conserva barra y mesa
+                    // reservada hasta que la transición sea legal.
+                    session.State =
+                        SessionState.WaitingForTableAfterConsumption;
+                    tableAssignmentSystem.RequestReevaluation();
+                    Log(
+                        "Cierre WaitingAtBar aplazado para el grupo " +
+                        session.Group.GroupId + ": " + error
+                    );
                 }
 
                 yield break;
@@ -1114,6 +1154,18 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
             return false;
         }
 
+        bool allLinesConsumed = AreAllLinesConsumed(session.Order);
+        if (!BistroBuilderBarSessionRecoveryPolicy
+                .CanCompleteWaitingAtBarOrder(
+                    session.Order.CurrentState,
+                    allLinesConsumed
+                ))
+        {
+            error =
+                "La comanda WaitingAtBar todavía no está lista para cerrarse.";
+            return false;
+        }
+
         if (!orderSystem.CompleteOrder(session.Order))
         {
             error = "No se pudo cerrar la comanda de espera en barra.";
@@ -1320,6 +1372,26 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
 
             var occupied = new List<BistroBuilderBarServiceSpot>();
             barRegistry.GetOccupiedSpots(session.Group, occupied);
+
+            bool hasOrder = session.Order != null;
+            bool allLinesServed =
+                hasOrder && AreAllLinesServed(session.Order);
+            bool allLinesConsumed =
+                hasOrder && AreAllLinesConsumed(session.Order);
+            OrderState orderState = hasOrder
+                ? session.Order.CurrentState
+                : OrderState.Created;
+            BistroBuilderBarSessionPhase checkpointPhase =
+                BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                    ToPublicPhase(session.State),
+                    session.Mode,
+                    hasOrder,
+                    orderState,
+                    allLinesServed,
+                    allLinesConsumed,
+                    session.TableRequested
+                );
+
             var record = new BistroBuilderBarSessionSaveRecord
             {
                 groupId = session.Group.GroupId,
@@ -1328,7 +1400,7 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
                 canonicalOrderId = session.Order != null
                     ? session.Order.CanonicalOrderId
                     : string.Empty,
-                phase = (int)ToPublicPhase(session.State),
+                phase = (int)checkpointPhase,
                 chargeCents = session.ChargeCents,
                 tableRequested = session.TableRequested
             };
@@ -1471,10 +1543,7 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
                     break;
                 case SessionState.ClosingForTable:
                 case SessionState.WaitingForTableAfterConsumption:
-                    if (!TryCloseWaitingSessionForTable(session, out _))
-                    {
-                        session.State = SessionState.WaitingForTableAfterConsumption;
-                    }
+                    ResumeRestoredWaitingAtBarSession(session);
                     break;
             }
         }
@@ -1485,44 +1554,121 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         RestaurantOrder order
     )
     {
-        BistroBuilderBarSessionPhase phase =
+        BistroBuilderBarSessionPhase persistedPhase =
             (BistroBuilderBarSessionPhase)record.phase;
+        BistroBuilderServiceMode serviceMode =
+            (BistroBuilderServiceMode)record.serviceMode;
 
-        if (phase == BistroBuilderBarSessionPhase.ClosingForTable)
+        bool hasOrder = order != null;
+        bool allLinesServed = hasOrder && AreAllLinesServed(order);
+        bool allLinesConsumed = hasOrder && AreAllLinesConsumed(order);
+        OrderState orderState = hasOrder
+            ? order.CurrentState
+            : OrderState.Created;
+
+        BistroBuilderBarSessionPhase resolvedPhase =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                persistedPhase,
+                serviceMode,
+                hasOrder,
+                orderState,
+                allLinesServed,
+                allLinesConsumed,
+                record.tableRequested
+            );
+
+        return FromPublicPhase(resolvedPhase);
+    }
+
+    private void ResumeRestoredWaitingAtBarSession(Session session)
+    {
+        if (session == null || session.Group == null)
         {
-            return SessionState.ClosingForTable;
+            return;
         }
 
-        if (phase ==
-            BistroBuilderBarSessionPhase.WaitingForTableAfterConsumption)
+        if (session.Order == null)
         {
-            return SessionState.WaitingForTableAfterConsumption;
+            session.State = SessionState.WaitingForOrderWaiter;
+            TryAssignWaiterForSession(session, false);
+            return;
         }
 
-        if (phase == BistroBuilderBarSessionPhase.WalkingToBar ||
-            phase == BistroBuilderBarSessionPhase.Allocated)
+        bool allLinesConsumed = AreAllLinesConsumed(session.Order);
+        if (BistroBuilderBarSessionRecoveryPolicy
+                .CanCompleteWaitingAtBarOrder(
+                    session.Order.CurrentState,
+                    allLinesConsumed
+                ))
         {
-            return SessionState.CustomerWalking;
+            if (!TryCloseWaitingSessionForTable(session, out string error))
+            {
+                session.State =
+                    SessionState.WaitingForTableAfterConsumption;
+                Log(
+                    "Cierre WaitingAtBar aplazado para el grupo " +
+                    session.Group.GroupId + ": " + error
+                );
+            }
+
+            return;
         }
 
-        if (order == null)
+        if (allLinesConsumed)
         {
-            return SessionState.WaitingForOrderWaiter;
+            session.State =
+                SessionState.WaitingForTableAfterConsumption;
+            return;
         }
 
-        if (order.CurrentState == OrderState.Served)
+        if (AreAllLinesServed(session.Order))
         {
-            return SessionState.Consuming;
+            session.State = SessionState.Consuming;
+            if (session.Routine == null)
+            {
+                session.Routine = StartCoroutine(
+                    ConsumeAndCloseRoutine(session)
+                );
+            }
+
+            return;
         }
 
-        if (order.CurrentState == OrderState.Completed)
-        {
-            return record.serviceMode == (int)BistroBuilderServiceMode.WaitingAtBar
-                ? SessionState.ClosingForTable
-                : SessionState.WaitingForPaymentWaiter;
-        }
+        // Caso normal del checkpoint: la mesa ya está reservada, pero la
+        // cocina continúa preparando. No se intenta completar la comanda.
+        session.State = SessionState.WaitingForItems;
+    }
 
-        return SessionState.WaitingForItems;
+    private static SessionState FromPublicPhase(
+        BistroBuilderBarSessionPhase phase
+    )
+    {
+        return phase switch
+        {
+            BistroBuilderBarSessionPhase.Allocated =>
+                SessionState.Allocated,
+            BistroBuilderBarSessionPhase.WalkingToBar =>
+                SessionState.CustomerWalking,
+            BistroBuilderBarSessionPhase.WaitingForOrder =>
+                SessionState.WaitingForOrderWaiter,
+            BistroBuilderBarSessionPhase.TakingOrder =>
+                SessionState.TakingOrder,
+            BistroBuilderBarSessionPhase.WaitingForItems =>
+                SessionState.WaitingForItems,
+            BistroBuilderBarSessionPhase.Consuming =>
+                SessionState.Consuming,
+            BistroBuilderBarSessionPhase.WaitingForPayment =>
+                SessionState.WaitingForPaymentWaiter,
+            BistroBuilderBarSessionPhase.Paying =>
+                SessionState.Paying,
+            BistroBuilderBarSessionPhase.ClosingForTable =>
+                SessionState.ClosingForTable,
+            BistroBuilderBarSessionPhase.WaitingForTableAfterConsumption =>
+                SessionState.WaitingForTableAfterConsumption,
+            BistroBuilderBarSessionPhase.Completed =>
+                SessionState.Completed,
+            _ => SessionState.Cancelled
+        };
     }
 
     private bool AreAllLinesServed(RestaurantOrder order)

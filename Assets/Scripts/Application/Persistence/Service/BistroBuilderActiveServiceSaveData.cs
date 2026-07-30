@@ -740,6 +740,30 @@ public sealed class BistroBuilderBarSessionSaveRecord
             return false;
         }
 
+        BistroBuilderBarSessionPhase sessionPhase =
+            (BistroBuilderBarSessionPhase)phase;
+        BistroBuilderServiceMode mode =
+            (BistroBuilderServiceMode)serviceMode;
+
+        if (sessionPhase == BistroBuilderBarSessionPhase.ClosingForTable &&
+            (mode != BistroBuilderServiceMode.WaitingAtBar ||
+             !tableRequested))
+        {
+            error =
+                "ClosingForTable exige WaitingAtBar y una mesa solicitada.";
+            return false;
+        }
+
+        if (sessionPhase ==
+                BistroBuilderBarSessionPhase.WaitingForTableAfterConsumption &&
+            mode != BistroBuilderServiceMode.WaitingAtBar)
+        {
+            error =
+                "WaitingForTableAfterConsumption solo es válido en " +
+                "WaitingAtBar.";
+            return false;
+        }
+
         var spotIds = new HashSet<string>(StringComparer.Ordinal);
         for (int index = 0; index < occupiedBarSpotIds.Count; index++)
         {

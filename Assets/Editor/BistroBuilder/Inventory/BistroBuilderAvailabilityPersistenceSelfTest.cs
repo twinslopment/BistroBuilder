@@ -626,6 +626,228 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
             "Un calendario completado impide duplicar clientes al cargar."
         );
 
+        BistroBuilderBarSessionPhase preparingWithReservedTable =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.ClosingForTable,
+                BistroBuilderServiceMode.WaitingAtBar,
+                true,
+                OrderState.Preparing,
+                false,
+                false,
+                true
+            );
+        check(
+            preparingWithReservedTable ==
+                BistroBuilderBarSessionPhase.WaitingForItems,
+            "Una mesa reservada no cierra una comanda todavía Preparing."
+        );
+
+        BistroBuilderBarSessionPhase servedPendingConsumption =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.ClosingForTable,
+                BistroBuilderServiceMode.WaitingAtBar,
+                true,
+                OrderState.Served,
+                true,
+                false,
+                true
+            );
+        check(
+            servedPendingConsumption ==
+                BistroBuilderBarSessionPhase.Consuming,
+            "Una comanda servida reanuda el consumo antes del cierre."
+        );
+
+        BistroBuilderBarSessionPhase consumedWithReservedTable =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.WaitingForItems,
+                BistroBuilderServiceMode.WaitingAtBar,
+                true,
+                OrderState.Served,
+                true,
+                true,
+                true
+            );
+        check(
+            consumedWithReservedTable ==
+                BistroBuilderBarSessionPhase.ClosingForTable,
+            "Una comanda consumida y con mesa reservada puede cerrarse."
+        );
+
+        BistroBuilderBarSessionPhase consumedWithoutTable =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.Consuming,
+                BistroBuilderServiceMode.WaitingAtBar,
+                true,
+                OrderState.Served,
+                true,
+                true,
+                false
+            );
+        check(
+            consumedWithoutTable ==
+                BistroBuilderBarSessionPhase
+                    .WaitingForTableAfterConsumption,
+            "Una comanda consumida sin mesa continúa esperando desde barra."
+        );
+
+        check(
+            !BistroBuilderBarSessionRecoveryPolicy
+                .CanCompleteWaitingAtBarOrder(
+                    OrderState.Preparing,
+                    true
+                ),
+            "Preparing nunca puede saltar directamente a Completed."
+        );
+
+        check(
+            BistroBuilderBarSessionRecoveryPolicy
+                .CanCompleteWaitingAtBarOrder(
+                    OrderState.Served,
+                    true
+                ),
+            "Solo Served con todas las líneas consumidas puede completarse."
+        );
+
+        BistroBuilderBarSessionPhase walkingWithoutOrder =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.WalkingToBar,
+                BistroBuilderServiceMode.WaitingAtBar,
+                false,
+                OrderState.Created,
+                false,
+                false,
+                false
+            );
+        check(
+            walkingWithoutOrder ==
+                BistroBuilderBarSessionPhase.WalkingToBar,
+            "Una sesión sin comanda conserva el trayecto hacia barra."
+        );
+
+        BistroBuilderBarSessionPhase directBarConsumedButPreparing =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.WaitingForPayment,
+                BistroBuilderServiceMode.BarService,
+                true,
+                OrderState.Preparing,
+                true,
+                true,
+                false
+            );
+        check(
+            directBarConsumedButPreparing ==
+                BistroBuilderBarSessionPhase.WaitingForItems,
+            "BarService no cobra mientras la fachada siga Preparing."
+        );
+
+        BistroBuilderBarSessionPhase directBarReadyForPayment =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.WaitingForItems,
+                BistroBuilderServiceMode.BarService,
+                true,
+                OrderState.Served,
+                true,
+                true,
+                false
+            );
+        check(
+            directBarReadyForPayment ==
+                BistroBuilderBarSessionPhase.WaitingForPayment,
+            "BarService cobra solo cuando la comanda ya está Served."
+        );
+
+        BistroBuilderBarSessionPhase invalidNonBarMode =
+            BistroBuilderBarSessionRecoveryPolicy.ResolveRestoredPhase(
+                BistroBuilderBarSessionPhase.WaitingForItems,
+                BistroBuilderServiceMode.TableService,
+                true,
+                OrderState.Preparing,
+                false,
+                false,
+                false
+            );
+        check(
+            invalidNonBarMode == BistroBuilderBarSessionPhase.Cancelled,
+            "La recuperación rechaza modalidades que no sean de barra."
+        );
+
+        var validClosingSession =
+            new BistroBuilderBarSessionSaveRecord
+            {
+                groupId = 31,
+                anchorBarSpotId = "bar_spot_policy_01",
+                serviceMode =
+                    (int)BistroBuilderServiceMode.WaitingAtBar,
+                phase =
+                    (int)BistroBuilderBarSessionPhase.ClosingForTable,
+                tableRequested = true
+            };
+        validClosingSession.occupiedBarSpotIds.Add(
+            "bar_spot_policy_01"
+        );
+        check(
+            validClosingSession.TryValidate(out error),
+            "ClosingForTable exige y acepta WaitingAtBar con mesa solicitada."
+        );
+
+        var closingWithoutRequestedTable =
+            new BistroBuilderBarSessionSaveRecord
+            {
+                groupId = 32,
+                anchorBarSpotId = "bar_spot_policy_02",
+                serviceMode =
+                    (int)BistroBuilderServiceMode.WaitingAtBar,
+                phase =
+                    (int)BistroBuilderBarSessionPhase.ClosingForTable,
+                tableRequested = false
+            };
+        closingWithoutRequestedTable.occupiedBarSpotIds.Add(
+            "bar_spot_policy_02"
+        );
+        check(
+            !closingWithoutRequestedTable.TryValidate(out error),
+            "ClosingForTable sin mesa solicitada se rechaza."
+        );
+
+        var closingInDirectBarService =
+            new BistroBuilderBarSessionSaveRecord
+            {
+                groupId = 33,
+                anchorBarSpotId = "bar_spot_policy_03",
+                serviceMode =
+                    (int)BistroBuilderServiceMode.BarService,
+                phase =
+                    (int)BistroBuilderBarSessionPhase.ClosingForTable,
+                tableRequested = true
+            };
+        closingInDirectBarService.occupiedBarSpotIds.Add(
+            "bar_spot_policy_03"
+        );
+        check(
+            !closingInDirectBarService.TryValidate(out error),
+            "BarService no puede persistir ClosingForTable."
+        );
+
+        var waitingForTableInDirectBarService =
+            new BistroBuilderBarSessionSaveRecord
+            {
+                groupId = 34,
+                anchorBarSpotId = "bar_spot_policy_04",
+                serviceMode =
+                    (int)BistroBuilderServiceMode.BarService,
+                phase = (int)BistroBuilderBarSessionPhase
+                    .WaitingForTableAfterConsumption,
+                tableRequested = false
+            };
+        waitingForTableInDirectBarService.occupiedBarSpotIds.Add(
+            "bar_spot_policy_04"
+        );
+        check(
+            !waitingForTableInDirectBarService.TryValidate(out error),
+            "BarService no puede esperar una transición posterior a mesa."
+        );
+
         string checkpointId =
             "service_checkpoint_" + Guid.NewGuid().ToString("N");
         check(

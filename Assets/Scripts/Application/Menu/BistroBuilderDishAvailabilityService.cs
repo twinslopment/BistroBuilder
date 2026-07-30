@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -46,8 +47,11 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
     private readonly List<BistroBuilderMenuItemRuntimeState> menuBuffer =
         new List<BistroBuilderMenuItemRuntimeState>(32);
 
+    private const int EnableRecalculationMaximumWaitFrames = 60;
+
     private bool initialized;
     private bool hasStarted;
+    private Coroutine enableRecalculationRoutine;
 
     public event Action<BistroBuilderDishAvailabilityChangedEvent>
         AvailabilityChanged;
@@ -70,18 +74,20 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         Subscribe();
 
         // Durante el arranque Unity no garantiza el orden de OnEnable entre
-        // componentes. Esperamos a Start para que inventario, recetas y carta
-        // hayan completado todos sus Awake. En reactivaciones posteriores sí
-        // recalculamos inmediatamente.
-        if (hasStarted && !RecalculateAll(out string error))
+        // componentes. Start realiza el primer cálculo cuando todos los Awake
+        // han finalizado. Las reactivaciones posteriores se difieren porque
+        // guardado/carga y la salida de Play Mode pueden reactivar componentes
+        // mientras el inventario está sustituyendo temporalmente su estado.
+        if (hasStarted && Application.isPlaying)
         {
-            Debug.LogError(error, this);
+            RequestRecalculationAfterEnable();
         }
     }
 
     private void Start()
     {
         hasStarted = true;
+        CancelEnableRecalculation();
 
         if (!RecalculateAll(out string error))
         {
@@ -91,7 +97,101 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelEnableRecalculation();
         Unsubscribe();
+    }
+
+    private void RequestRecalculationAfterEnable()
+    {
+        CancelEnableRecalculation();
+
+        if (!Application.isPlaying || !isActiveAndEnabled)
+        {
+            return;
+        }
+
+        enableRecalculationRoutine =
+            StartCoroutine(RecalculateAfterEnableRoutine());
+    }
+
+    private void CancelEnableRecalculation()
+    {
+        if (enableRecalculationRoutine == null)
+        {
+            return;
+        }
+
+        StopCoroutine(enableRecalculationRoutine);
+        enableRecalculationRoutine = null;
+    }
+
+    private IEnumerator RecalculateAfterEnableRoutine()
+    {
+        for (int frame = 0;
+             frame < EnableRecalculationMaximumWaitFrames;
+             frame++)
+        {
+            // Esperar al menos un frame permite que el proveedor de guardado
+            // termine de sustituir inventario y carta antes de validar.
+            yield return null;
+
+            if (!Application.isPlaying || !isActiveAndEnabled)
+            {
+                enableRecalculationRoutine = null;
+                yield break;
+            }
+
+            CacheDependenciesIfNeeded();
+
+            if (!AreRuntimeDependenciesReady())
+            {
+                continue;
+            }
+
+            enableRecalculationRoutine = null;
+
+            if (!RecalculateAll(out string error))
+            {
+                Debug.LogError(error, this);
+            }
+
+            yield break;
+        }
+
+        enableRecalculationRoutine = null;
+
+        // Si la reactivación no era transitoria, mantenemos un diagnóstico
+        // real tras dar tiempo suficiente a la reconstrucción. Durante la
+        // salida de Play Mode esta rama no se ejecuta.
+        if (Application.isPlaying && isActiveAndEnabled &&
+            !RecalculateAll(out string finalError))
+        {
+            Debug.LogError(finalError, this);
+        }
+    }
+
+    private bool AreRuntimeDependenciesReady()
+    {
+        CacheDependenciesIfNeeded();
+
+        if (recipeCatalogService == null ||
+            inventoryService == null ||
+            menuService == null ||
+            orderIntegration == null)
+        {
+            return false;
+        }
+
+        if (!inventoryService.IsInitialized)
+        {
+            return false;
+        }
+
+        int expectedIngredientCount = recipeCatalogService.IngredientCount;
+
+        return expectedIngredientCount >= 0 &&
+               inventoryService.StockEntryCount == expectedIngredientCount &&
+               IsConcreteMealService(orderIntegration.CurrentMealService);
     }
 
     public bool ValidateConfiguration(out string error)
