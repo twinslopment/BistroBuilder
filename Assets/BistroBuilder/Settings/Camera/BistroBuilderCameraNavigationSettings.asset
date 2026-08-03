@@ -19,6 +19,8 @@ MonoBehaviour:
   rightMouseRotationEnabled: 1
   mousePitchEnabled: 1
   orbitAroundPointer: 1
+  keyboardOrbitAroundPointer: 1
+  zoomAroundPointer: 1
   blockPointerInputOverUi: 1
   blockKeyboardWhileTyping: 1
   requireApplicationFocus: 1
@@ -32,12 +34,14 @@ MonoBehaviour:
   dragPositionDampingTime: 0.055
   middleMouseDragSensitivity: 1
   middleMouseDragDeadZonePixels: 0.35
-  keyboardElevationSpeed: 3.25
-  elevationAccelerationTime: 0.2
-  elevationDecelerationTime: 0.34
-  minimumElevatorHeight: 10
-  maximumElevatorHeight: 22
-  elevatorSoftLimitRange: 2.75
+  keyboardElevationSpeed: 1.8
+  elevationAccelerationTime: 0.18
+  elevationDecelerationTime: 0.28
+  minimumElevatorHeight: 1.8
+  maximumElevatorHeight: 14
+  elevatorUpwardTravel: 3.5
+  elevatorDownwardTravel: 6
+  elevatorSoftLimitRange: 1.1
   edgeMarginNormalized: 0.025
   edgeMarginMinimumPixels: 14
   edgeMarginMaximumPixels: 54
@@ -51,19 +55,25 @@ MonoBehaviour:
   minimumPitch: 22
   maximumPitch: 72
   fallbackPitch: 48
-  minimumCameraHeight: 4.5
-  maximumCameraHeight: 46
-  minimumDistance: 7
-  maximumDistance: 58
-  fallbackDistance: 24
-  logarithmicZoomStep: 0.032
-  zoomDampingTime: 0.3
+  minimumCameraHeight: 1.5
+  maximumCameraHeight: 30
+  minimumDistance: 3.5
+  maximumDistance: 45
+  fallbackDistance: 12
+  zoomSpeedNear: 6.5
+  zoomSpeedFar: 26
+  zoomAccelerationTime: 0.16
+  zoomDecelerationTime: 0.24
+  zoomDampingTime: 0.13
+  zoomIntentDurationPerNotch: 0.075
+  maximumZoomIntentDuration: 0.22
   maximumScrollNotchesPerFrame: 1
+  minimumOperationalDistance: 4
+  maximumOperationalDistance: 26
+  logarithmicZoomStep: 0.032
   zoomInputSmoothingTime: 0.16
   maximumQueuedScrollNotches: 3
-  minimumOperationalDistance: 10.5
-  maximumOperationalDistance: 32
   maximumSimulationDeltaTime: 0.05
   maximumPanSpeedSafetyMultiplier: 2.25
   useUnscaledTime: 1
-  interactionProfileVersion: 7
+  interactionProfileVersion: 11

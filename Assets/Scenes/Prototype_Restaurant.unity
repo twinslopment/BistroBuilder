@@ -2692,6 +2692,7 @@ MonoBehaviour:
   inputEnabled: 1
   initializeFromCurrentCamera: 1
   fallbackGroundHeight: 0
+  showRuntimeDiagnostics: 0
 --- !u!1 &339113440
 GameObject:
   m_ObjectHideFlags: 0
@@ -2961,8 +2962,8 @@ MonoBehaviour:
   localSize: {x: 20, y: 10, z: 20}
   localGroundHeight: 0
   horizontalPadding: 1.25
-  cameraEnvelopePadding: 8
-  constraintMode: 2
+  cameraEnvelopePadding: 0
+  constraintMode: 0
   drawGizmo: 1
 --- !u!4 &376082219
 Transform:

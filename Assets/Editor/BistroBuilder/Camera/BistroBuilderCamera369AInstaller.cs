@@ -42,25 +42,25 @@ namespace BistroBuilder.CameraSystem.Editor
                     report.Pass("La configuración canónica de cámara 369A ya existía y se conserva.");
                 }
 
-                bool interactionProfileUpgraded = UpgradeInteractionProfile369A8(settings);
+                bool interactionProfileUpgraded = UpgradeInteractionProfile369A12(settings);
                 if (interactionProfileUpgraded)
                 {
-                    report.Pass("Se ha aplicado el perfil acumulativo 369A8 con órbita bajo cursor, zoom continuo y envolvente de encuadre.");
+                    report.Pass("Se ha aplicado el perfil acumulativo 369A12 con banda vertical contextual, navegación interior libre y zoom anclado.");
                 }
                 else
                 {
-                    report.Pass("El perfil de interacción 369A8 ya estaba instalado y se conserva.");
+                    report.Pass("El perfil de interacción 369A12 ya estaba instalado y se conserva.");
                 }
 
                 int runtimeRevision = BistroBuilderProfessionalCameraController.RuntimeRevision;
                 int diagnosticRevision = BistroBuilderCamera369AFunctionalTestWindow.DiagnosticRevision;
-                if (runtimeRevision >= 8 && diagnosticRevision >= 8)
+                if (runtimeRevision >= 12 && diagnosticRevision >= 12)
                 {
-                    report.Pass("Los hotfixes 369A3–369A8 de asentamiento, elevación recta, órbita contextual, zoom continuo y encuadre están instalados.");
+                    report.Pass("Los hotfixes 369A3–369A12 de asentamiento, elevación recta, encuadre, pivotes contextuales y navegación interior están instalados.");
                 }
                 else
                 {
-                    report.Fail("Falta el runtime o el diagnóstico acumulativo 369A8.");
+                    report.Fail("Falta el runtime o el diagnóstico acumulativo 369A12.");
                 }
 
                 string configurationReason;
@@ -173,16 +173,18 @@ namespace BistroBuilder.CameraSystem.Editor
 
                 Undo.RecordObject(navigationBounds, "Configure Bistro Builder camera framing bounds");
                 navigationBounds.ConfigureConstraintMode(
-                    BistroBuilderCameraBoundsConstraintMode.FocusPointAndFramingEnvelope);
+                    BistroBuilderCameraBoundsConstraintMode.FocusPointOnly);
                 if (!floorBoundsApplied)
                 {
                     navigationBounds.ConfigureHorizontalPadding(1.25f);
                 }
 
-                float framingPadding = CalculateFramingEnvelopePadding(navigationBounds.LocalSize);
-                navigationBounds.ConfigureCameraEnvelopePadding(framingPadding);
+                // 369A11 limita únicamente el punto de mirada en X/Z. La cámara física puede salir
+                // de la huella cuando el encuadre lo exige; el rango global de distancia y altura sigue
+                // actuando como protección. El framing completo se resolverá como vista explícita 369B.
+                navigationBounds.ConfigureCameraEnvelopePadding(0.0f);
                 EditorUtility.SetDirty(navigationBounds);
-                report.Pass("El foco queda dentro del local y la cámara usa una envolvente exterior controlada para poder encuadrarlo completo.");
+                report.Pass("La navegación normal limita solo el punto observado; la cámara física ya no queda pegada al perímetro del suelo.");
 
                 SerializedObject controllerObject = new SerializedObject(controller);
                 controllerObject.FindProperty("controlledCamera").objectReferenceValue = camera;
@@ -205,9 +207,11 @@ namespace BistroBuilder.CameraSystem.Editor
                 report.Pass("La cámara usa un estado objetivo desacoplado y preparado para 369B/369C.");
                 report.Pass("El movimiento utiliza tiempo no escalado y sigue operativo durante pausa.");
                 report.Pass("El arrastre central usa delta de puntero escalado al encuadre y no retroalimenta la cámara.");
-                report.Pass("La rueda distribuye cada muesca en una orden continua y amortiguada, sin saltos escalonados.");
+                report.Pass("La rueda usa dolly continuo y conserva bajo el cursor el punto interior elegido.");
                 report.Pass("El botón derecho orbita con sensibilidad reducida alrededor del punto elegido bajo el cursor.");
-                report.Pass("R eleva y F desciende la cámara en Y con trayectoria recta, velocidad contenida y topes de uso reducidos.");
+                report.Pass("Q/E capturan un pivote contextual bajo el cursor y no fuerzan el centro geométrico del plano.");
+                report.Pass("El punto de mirada conserva una altura independiente del plano de suelo.");
+                report.Pass("R/F trasladan verticalmente la pose completa sin alterar pitch, distancia ni coordenadas X/Z.");
 
                 EditorSceneManager.MarkSceneDirty(activeScene);
                 AssetDatabase.SaveAssets();
@@ -224,7 +228,7 @@ namespace BistroBuilder.CameraSystem.Editor
             }
         }
 
-        private static bool UpgradeInteractionProfile369A8(
+        private static bool UpgradeInteractionProfile369A12(
             BistroBuilderCameraNavigationSettings settings)
         {
             if (settings == null ||
@@ -242,23 +246,35 @@ namespace BistroBuilder.CameraSystem.Editor
             SetFloat(serializedSettings, "middleMouseDragSensitivity", 1.0f);
             SetFloat(serializedSettings, "middleMouseDragDeadZonePixels", 0.35f);
             SetBool(serializedSettings, "orbitAroundPointer", true);
+            SetBool(serializedSettings, "keyboardOrbitAroundPointer", true);
+            SetBool(serializedSettings, "zoomAroundPointer", true);
             SetFloat(serializedSettings, "mouseYawDegreesPerPixel", 0.12f);
             SetFloat(serializedSettings, "mousePitchDegreesPerPixel", 0.10f);
             SetFloat(serializedSettings, "rotationDampingTime", 0.18f);
             SetFloat(serializedSettings, "minimumPitch", 22.0f);
-            SetFloat(serializedSettings, "logarithmicZoomStep", 0.032f);
-            SetFloat(serializedSettings, "zoomDampingTime", 0.30f);
+            SetFloat(serializedSettings, "minimumCameraHeight", 1.5f);
+            SetFloat(serializedSettings, "maximumCameraHeight", 30.0f);
+            SetFloat(serializedSettings, "minimumDistance", 3.5f);
+            SetFloat(serializedSettings, "maximumDistance", 45.0f);
+            SetFloat(serializedSettings, "fallbackDistance", 12.0f);
+            SetFloat(serializedSettings, "zoomSpeedNear", 6.5f);
+            SetFloat(serializedSettings, "zoomSpeedFar", 26.0f);
+            SetFloat(serializedSettings, "zoomAccelerationTime", 0.16f);
+            SetFloat(serializedSettings, "zoomDecelerationTime", 0.24f);
+            SetFloat(serializedSettings, "zoomDampingTime", 0.13f);
+            SetFloat(serializedSettings, "zoomIntentDurationPerNotch", 0.075f);
+            SetFloat(serializedSettings, "maximumZoomIntentDuration", 0.22f);
             SetFloat(serializedSettings, "maximumScrollNotchesPerFrame", 1.0f);
-            SetFloat(serializedSettings, "zoomInputSmoothingTime", 0.16f);
-            SetFloat(serializedSettings, "maximumQueuedScrollNotches", 3.0f);
-            SetFloat(serializedSettings, "minimumOperationalDistance", 10.5f);
-            SetFloat(serializedSettings, "maximumOperationalDistance", 32.0f);
-            SetFloat(serializedSettings, "keyboardElevationSpeed", 3.25f);
-            SetFloat(serializedSettings, "elevationAccelerationTime", 0.20f);
-            SetFloat(serializedSettings, "elevationDecelerationTime", 0.34f);
-            SetFloat(serializedSettings, "minimumElevatorHeight", 10.0f);
-            SetFloat(serializedSettings, "maximumElevatorHeight", 22.0f);
-            SetFloat(serializedSettings, "elevatorSoftLimitRange", 2.75f);
+            SetFloat(serializedSettings, "minimumOperationalDistance", 4.0f);
+            SetFloat(serializedSettings, "maximumOperationalDistance", 26.0f);
+            SetFloat(serializedSettings, "keyboardElevationSpeed", 1.8f);
+            SetFloat(serializedSettings, "elevationAccelerationTime", 0.18f);
+            SetFloat(serializedSettings, "elevationDecelerationTime", 0.28f);
+            SetFloat(serializedSettings, "minimumElevatorHeight", 1.8f);
+            SetFloat(serializedSettings, "maximumElevatorHeight", 14.0f);
+            SetFloat(serializedSettings, "elevatorUpwardTravel", 3.5f);
+            SetFloat(serializedSettings, "elevatorDownwardTravel", 6.0f);
+            SetFloat(serializedSettings, "elevatorSoftLimitRange", 1.1f);
 
             SerializedProperty version = serializedSettings.FindProperty("interactionProfileVersion");
             if (version != null)

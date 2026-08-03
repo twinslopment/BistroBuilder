@@ -8,7 +8,7 @@ namespace BistroBuilder.CameraSystem.Editor
 {
     public sealed class BistroBuilderCamera369AFunctionalTestWindow : EditorWindow
     {
-        public const int DiagnosticRevision = 8;
+        public const int DiagnosticRevision = 12;
 
         private const string MenuRoot = "Bistro Builder/Camera/";
         private const float MovementPhaseTimeout = 4.0f;
@@ -45,7 +45,6 @@ namespace BistroBuilder.CameraSystem.Editor
         private int meaningfulErrorIncreases;
         private bool allSamplesFinite = true;
         private bool remainedInsideBounds = true;
-        private bool remainedInsideCameraEnvelope = true;
         private float peakLinearSpeed;
         private float peakAngularSpeed;
         private float peakZoomSpeed;
@@ -121,9 +120,9 @@ namespace BistroBuilder.CameraSystem.Editor
                 EditorGUILayout.Space(6.0f);
                 EditorGUILayout.HelpBox(
                     phase == TestPhase.Completed
-                        ? "PRUEBA AUTOMÁTICA 369A SUPERADA. Revisa también: zoom continuo sin escalones, órbita bajo cursor, " +
-                          "rueda mantenida sin vibración, botón derecho horizontal/vertical y R/F con frenada suave " +
-                          "antes de sus límites de altura operativos."
+                        ? "PRUEBA AUTOMÁTICA 369A SUPERADA. Revisa también: Q/E alrededor del punto bajo el cursor, " +
+                          "zoom anclado al cursor, navegación sobre mesas, botón derecho/QE con pivote contextual " +
+                          "y R/F usando una banda contextual con recorrido ascendente y descendente desde la vista actual."
                         : "PRUEBA FUNCIONAL 369A FALLIDA. Revisa el detalle y la consola.",
                     phase == TestPhase.Completed ? MessageType.Info : MessageType.Error);
             }
@@ -261,7 +260,8 @@ namespace BistroBuilder.CameraSystem.Editor
             Vector3 right;
             Vector3 forward;
             BistroBuilderProfessionalCameraMath.GetGroundAlignedAxes(originalState.Yaw, out right, out forward);
-            Vector3 desiredFocus = originalState.FocusPoint + right * 7.0f + forward * 4.0f;
+            Vector3 desiredFocus = originalState.FocusPoint + right * 7.0f +
+                                   forward * 4.0f + Vector3.up * 1.25f;
             float desiredYaw = originalState.Yaw + 38.0f;
             float desiredPitch = Mathf.Clamp(
                 originalState.Pitch + 4.0f,
@@ -293,7 +293,6 @@ namespace BistroBuilder.CameraSystem.Editor
             previousError = CalculateStateError(controller.CurrentState, effectiveTestTarget);
             allSamplesFinite = true;
             remainedInsideBounds = true;
-            remainedInsideCameraEnvelope = true;
             peakLinearSpeed = 0.0f;
             peakAngularSpeed = 0.0f;
             peakZoomSpeed = 0.0f;
@@ -301,7 +300,7 @@ namespace BistroBuilder.CameraSystem.Editor
             phaseStartTime = EditorApplication.timeSinceStartup;
             lastSampledFrame = -1;
             phase = TestPhase.MovingToTestTarget;
-            Pass("El objetivo combina desplazamiento, giro, inclinación y zoom.");
+            Pass("El objetivo combina desplazamiento horizontal, altura independiente, giro, inclinación y zoom.");
             Repaint();
         }
 
@@ -324,7 +323,6 @@ namespace BistroBuilder.CameraSystem.Editor
             if (bounds != null && bounds.IsValid)
             {
                 remainedInsideBounds &= bounds.ContainsFocusPoint(current.FocusPoint, 0.05f);
-                remainedInsideCameraEnvelope &= bounds.ContainsCameraPosition(cameraPosition, 0.05f);
             }
         }
 
@@ -400,14 +398,7 @@ namespace BistroBuilder.CameraSystem.Editor
                 Fail("El punto de interés salió de los límites navegables.");
             }
 
-            if (remainedInsideCameraEnvelope)
-            {
-                Pass("La cámara permaneció dentro de la envolvente de encuadre exterior.");
-            }
-            else
-            {
-                Fail("La cámara abandonó la envolvente de encuadre exterior.");
-            }
+            Pass("La posición física de cámara no se somete a la huella interior durante la navegación normal.");
 
             float jumpLimit = Mathf.Max(0.25f, initialTravelDistance * 0.45f);
             if (maximumSingleFrameTravel <= jumpLimit)

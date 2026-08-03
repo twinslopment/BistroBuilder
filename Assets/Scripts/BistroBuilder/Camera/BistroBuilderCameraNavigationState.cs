@@ -5,12 +5,14 @@ namespace BistroBuilder.CameraSystem
 {
     /// <summary>
     /// Estado neutral de navegación preparado para vistas 369B, inspección 369C y futura persistencia.
+    /// Desde 369A11 FocusPoint representa el punto de mirada tridimensional, no una intersección
+    /// obligatoria con el suelo. Esto permite trasladar la pose verticalmente sin curvarla.
     /// 369A todavía no lo registra como proveedor de guardado para no acoplar la cámara al sistema 366.
     /// </summary>
     [Serializable]
     public struct BistroBuilderCameraNavigationState
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         [SerializeField] private int version;
         [SerializeField] private Vector3 focusPoint;

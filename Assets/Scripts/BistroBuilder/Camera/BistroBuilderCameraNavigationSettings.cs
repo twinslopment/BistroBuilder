@@ -12,7 +12,7 @@ namespace BistroBuilder.CameraSystem
         menuName = "Bistro Builder/Camera/369A Camera Navigation Settings")]
     public sealed class BistroBuilderCameraNavigationSettings : ScriptableObject
     {
-        public const int CurrentInteractionProfileVersion = 7;
+        public const int CurrentInteractionProfileVersion = 11;
 
         [Header("Entrada")]
         [SerializeField] private bool keyboardPanEnabled = true;
@@ -22,6 +22,8 @@ namespace BistroBuilder.CameraSystem
         [SerializeField] private bool rightMouseRotationEnabled = true;
         [SerializeField] private bool mousePitchEnabled = true;
         [SerializeField] private bool orbitAroundPointer = true;
+        [SerializeField] private bool keyboardOrbitAroundPointer = true;
+        [SerializeField] private bool zoomAroundPointer = true;
         [SerializeField] private bool blockPointerInputOverUi = true;
         [SerializeField] private bool blockKeyboardWhileTyping = true;
         [SerializeField] private bool requireApplicationFocus = true;
@@ -50,17 +52,21 @@ namespace BistroBuilder.CameraSystem
 
         [Header("Elevación vertical recta")]
         [Min(0.01f)]
-        [SerializeField] private float keyboardElevationSpeed = 3.25f;
+        [SerializeField] private float keyboardElevationSpeed = 1.8f;
         [Min(0.01f)]
-        [SerializeField] private float elevationAccelerationTime = 0.20f;
+        [SerializeField] private float elevationAccelerationTime = 0.18f;
         [Min(0.01f)]
-        [SerializeField] private float elevationDecelerationTime = 0.34f;
+        [SerializeField] private float elevationDecelerationTime = 0.28f;
         [Min(0.1f)]
-        [SerializeField] private float minimumElevatorHeight = 10.0f;
+        [SerializeField] private float minimumElevatorHeight = 1.8f;
         [Min(0.2f)]
-        [SerializeField] private float maximumElevatorHeight = 22.0f;
+        [SerializeField] private float maximumElevatorHeight = 14.0f;
+        [Min(0.1f)]
+        [SerializeField] private float elevatorUpwardTravel = 3.5f;
+        [Min(0.1f)]
+        [SerializeField] private float elevatorDownwardTravel = 6.0f;
         [Min(0.0f)]
-        [SerializeField] private float elevatorSoftLimitRange = 2.75f;
+        [SerializeField] private float elevatorSoftLimitRange = 1.1f;
 
         [Header("Bordes de pantalla")]
         [Range(0.005f, 0.15f)]
@@ -92,31 +98,43 @@ namespace BistroBuilder.CameraSystem
         [Range(10.0f, 89.0f)]
         [SerializeField] private float fallbackPitch = 48.0f;
         [Min(0.1f)]
-        [SerializeField] private float minimumCameraHeight = 4.5f;
+        [SerializeField] private float minimumCameraHeight = 1.5f;
         [Min(0.2f)]
-        [SerializeField] private float maximumCameraHeight = 46.0f;
+        [SerializeField] private float maximumCameraHeight = 30.0f;
 
-        [Header("Zoom")]
+        [Header("Zoom continuo anclado al cursor")]
         [Min(0.1f)]
-        [SerializeField] private float minimumDistance = 7.0f;
+        [SerializeField] private float minimumDistance = 3.5f;
         [Min(0.2f)]
-        [SerializeField] private float maximumDistance = 58.0f;
+        [SerializeField] private float maximumDistance = 45.0f;
         [Min(0.1f)]
-        [SerializeField] private float fallbackDistance = 24.0f;
-        [Range(0.01f, 0.5f)]
-        [SerializeField] private float logarithmicZoomStep = 0.032f;
+        [SerializeField] private float fallbackDistance = 12.0f;
         [Min(0.01f)]
-        [SerializeField] private float zoomDampingTime = 0.30f;
+        [SerializeField] private float zoomSpeedNear = 6.5f;
+        [Min(0.01f)]
+        [SerializeField] private float zoomSpeedFar = 26.0f;
+        [Min(0.01f)]
+        [SerializeField] private float zoomAccelerationTime = 0.16f;
+        [Min(0.01f)]
+        [SerializeField] private float zoomDecelerationTime = 0.24f;
+        [Min(0.01f)]
+        [SerializeField] private float zoomDampingTime = 0.13f;
+        [Range(0.02f, 0.30f)]
+        [SerializeField] private float zoomIntentDurationPerNotch = 0.075f;
+        [Range(0.05f, 0.60f)]
+        [SerializeField] private float maximumZoomIntentDuration = 0.22f;
         [Range(0.1f, 8.0f)]
         [SerializeField] private float maximumScrollNotchesPerFrame = 1.0f;
-        [Min(0.01f)]
-        [SerializeField] private float zoomInputSmoothingTime = 0.16f;
-        [Range(0.5f, 8.0f)]
-        [SerializeField] private float maximumQueuedScrollNotches = 3.0f;
         [Min(0.1f)]
-        [SerializeField] private float minimumOperationalDistance = 10.5f;
+        [SerializeField] private float minimumOperationalDistance = 4.0f;
         [Min(0.2f)]
-        [SerializeField] private float maximumOperationalDistance = 32.0f;
+        [SerializeField] private float maximumOperationalDistance = 26.0f;
+
+        // Campos heredados de 369A8. Se conservan ocultos para que Unity pueda migrar
+        // assets existentes sin perder datos durante una actualización acumulativa.
+        [SerializeField, HideInInspector] private float logarithmicZoomStep = 0.032f;
+        [SerializeField, HideInInspector] private float zoomInputSmoothingTime = 0.16f;
+        [SerializeField, HideInInspector] private float maximumQueuedScrollNotches = 3.0f;
 
         [Header("Estabilidad")]
         [Min(0.01f)]
@@ -134,6 +152,8 @@ namespace BistroBuilder.CameraSystem
         public bool RightMouseRotationEnabled { get { return rightMouseRotationEnabled; } }
         public bool MousePitchEnabled { get { return mousePitchEnabled; } }
         public bool OrbitAroundPointer { get { return orbitAroundPointer; } }
+        public bool KeyboardOrbitAroundPointer { get { return keyboardOrbitAroundPointer; } }
+        public bool ZoomAroundPointer { get { return zoomAroundPointer; } }
         public bool BlockPointerInputOverUi { get { return blockPointerInputOverUi; } }
         public bool BlockKeyboardWhileTyping { get { return blockKeyboardWhileTyping; } }
         public bool RequireApplicationFocus { get { return requireApplicationFocus; } }
@@ -153,6 +173,8 @@ namespace BistroBuilder.CameraSystem
         public float ElevationDecelerationTime { get { return elevationDecelerationTime; } }
         public float MinimumElevatorHeight { get { return minimumElevatorHeight; } }
         public float MaximumElevatorHeight { get { return maximumElevatorHeight; } }
+        public float ElevatorUpwardTravel { get { return elevatorUpwardTravel; } }
+        public float ElevatorDownwardTravel { get { return elevatorDownwardTravel; } }
         public float ElevatorSoftLimitRange { get { return elevatorSoftLimitRange; } }
 
         public float EdgeMarginNormalized { get { return edgeMarginNormalized; } }
@@ -175,11 +197,14 @@ namespace BistroBuilder.CameraSystem
         public float MinimumDistance { get { return minimumDistance; } }
         public float MaximumDistance { get { return maximumDistance; } }
         public float FallbackDistance { get { return fallbackDistance; } }
-        public float LogarithmicZoomStep { get { return logarithmicZoomStep; } }
+        public float ZoomSpeedNear { get { return zoomSpeedNear; } }
+        public float ZoomSpeedFar { get { return zoomSpeedFar; } }
+        public float ZoomAccelerationTime { get { return zoomAccelerationTime; } }
+        public float ZoomDecelerationTime { get { return zoomDecelerationTime; } }
         public float ZoomDampingTime { get { return zoomDampingTime; } }
+        public float ZoomIntentDurationPerNotch { get { return zoomIntentDurationPerNotch; } }
+        public float MaximumZoomIntentDuration { get { return maximumZoomIntentDuration; } }
         public float MaximumScrollNotchesPerFrame { get { return maximumScrollNotchesPerFrame; } }
-        public float ZoomInputSmoothingTime { get { return zoomInputSmoothingTime; } }
-        public float MaximumQueuedScrollNotches { get { return maximumQueuedScrollNotches; } }
         public float MinimumOperationalDistance { get { return minimumOperationalDistance; } }
         public float MaximumOperationalDistance { get { return maximumOperationalDistance; } }
 
@@ -222,10 +247,13 @@ namespace BistroBuilder.CameraSystem
             if (minimumElevatorHeight < minimumCameraHeight ||
                 maximumElevatorHeight > maximumCameraHeight ||
                 maximumElevatorHeight <= minimumElevatorHeight ||
+                elevatorUpwardTravel <= 0.0f || elevatorDownwardTravel <= 0.0f ||
+                elevatorUpwardTravel > (maximumElevatorHeight - minimumElevatorHeight) ||
+                elevatorDownwardTravel > (maximumElevatorHeight - minimumElevatorHeight) ||
                 elevatorSoftLimitRange < 0.0f ||
                 elevatorSoftLimitRange > (maximumElevatorHeight - minimumElevatorHeight) * 0.5f)
             {
-                reason = "El rango operativo o la zona de frenada de R/F no son válidos.";
+                reason = "La banda de seguridad, el recorrido contextual o la frenada de R/F no son válidos.";
                 return false;
             }
 
@@ -280,11 +308,13 @@ namespace BistroBuilder.CameraSystem
                 return false;
             }
 
-            if (logarithmicZoomStep <= 0.0f || zoomDampingTime <= 0.0f ||
-                maximumScrollNotchesPerFrame <= 0.0f || zoomInputSmoothingTime <= 0.0f ||
-                maximumQueuedScrollNotches < maximumScrollNotchesPerFrame)
+            if (zoomSpeedNear <= 0.0f || zoomSpeedFar < zoomSpeedNear ||
+                zoomAccelerationTime <= 0.0f || zoomDecelerationTime <= 0.0f ||
+                zoomDampingTime <= 0.0f || zoomIntentDurationPerNotch <= 0.0f ||
+                maximumZoomIntentDuration < zoomIntentDurationPerNotch ||
+                maximumScrollNotchesPerFrame <= 0.0f)
             {
-                reason = "Los parámetros de zoom o su cola de suavizado no son válidos.";
+                reason = "Los parámetros del zoom continuo por velocidad no son válidos.";
                 return false;
             }
 
@@ -350,6 +380,9 @@ namespace BistroBuilder.CameraSystem
                 maximumElevatorHeight,
                 minimumElevatorHeight + 0.1f,
                 maximumCameraHeight);
+            float elevatorHardSpan = maximumElevatorHeight - minimumElevatorHeight;
+            elevatorUpwardTravel = Mathf.Clamp(elevatorUpwardTravel, 0.1f, elevatorHardSpan);
+            elevatorDownwardTravel = Mathf.Clamp(elevatorDownwardTravel, 0.1f, elevatorHardSpan);
             elevatorSoftLimitRange = Mathf.Clamp(
                 elevatorSoftLimitRange,
                 0.0f,
@@ -365,9 +398,23 @@ namespace BistroBuilder.CameraSystem
                 maximumDistance,
                 minimumCameraHeight,
                 maximumCameraHeight);
-            logarithmicZoomStep = Mathf.Clamp(logarithmicZoomStep, 0.01f, 0.5f);
+            zoomSpeedNear = Mathf.Max(0.01f, zoomSpeedNear);
+            zoomSpeedFar = Mathf.Max(zoomSpeedNear, zoomSpeedFar);
+            zoomAccelerationTime = Mathf.Max(0.01f, zoomAccelerationTime);
+            zoomDecelerationTime = Mathf.Max(0.01f, zoomDecelerationTime);
             zoomDampingTime = Mathf.Max(0.01f, zoomDampingTime);
+            zoomIntentDurationPerNotch = Mathf.Clamp(
+                zoomIntentDurationPerNotch,
+                0.02f,
+                0.30f);
+            maximumZoomIntentDuration = Mathf.Clamp(
+                maximumZoomIntentDuration,
+                zoomIntentDurationPerNotch,
+                0.60f);
             maximumScrollNotchesPerFrame = Mathf.Clamp(maximumScrollNotchesPerFrame, 0.1f, 8.0f);
+
+            // Conservamos los datos heredados dentro de rangos sanos aunque 369A11 ya no los use.
+            logarithmicZoomStep = Mathf.Clamp(logarithmicZoomStep, 0.01f, 0.5f);
             zoomInputSmoothingTime = Mathf.Max(0.01f, zoomInputSmoothingTime);
             maximumQueuedScrollNotches = Mathf.Clamp(
                 maximumQueuedScrollNotches,

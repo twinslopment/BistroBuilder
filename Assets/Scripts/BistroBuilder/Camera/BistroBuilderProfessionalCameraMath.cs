@@ -54,6 +54,37 @@ namespace BistroBuilder.CameraSystem
         }
 
         /// <summary>
+        /// Devuelve la velocidad de dolly de la rueda para la distancia actual. Usa la misma
+        /// progresión por escala que WASD: velocidad contenida cerca y más rápida cuando el
+        /// encuadre es amplio, sin convertir cada muesca en un salto de distancia.
+        /// </summary>
+        public static float CalculateContinuousZoomSpeed(
+            float currentDistance,
+            float minimumOperationalDistance,
+            float maximumOperationalDistance,
+            float speedNear,
+            float speedFar)
+        {
+            if (!IsFinite(currentDistance) ||
+                !IsFinite(minimumOperationalDistance) ||
+                !IsFinite(maximumOperationalDistance) ||
+                !IsFinite(speedNear) ||
+                !IsFinite(speedFar) ||
+                maximumOperationalDistance <= minimumOperationalDistance ||
+                speedNear <= 0.0f ||
+                speedFar < speedNear)
+            {
+                return 0.0f;
+            }
+
+            float ratio = DistanceRatio(
+                currentDistance,
+                minimumOperationalDistance,
+                maximumOperationalDistance);
+            return Mathf.Lerp(speedNear, speedFar, ratio);
+        }
+
+        /// <summary>
         /// Zoom multiplicativo: cada muesca representa el mismo cambio perceptual en cualquier escala.
         /// Evita que el zoom sea excesivo cerca y lento cuando la cámara está lejos.
         /// </summary>
@@ -98,9 +129,10 @@ namespace BistroBuilder.CameraSystem
         }
 
         /// <summary>
-        /// Orbita una pose objetivo alrededor de un punto del mundo aplicando la misma rotación a
-        /// la posición y a la orientación. Así el punto elegido bajo el cursor conserva su posición
-        /// visual durante el gesto. El resultado vuelve a expresarse como estado foco/yaw/pitch/distancia.
+        /// Orbita una pose alrededor de un pivote del mundo aplicando la misma rotación a la posición
+        /// física de cámara y a su orientación. 369A11 conserva la distancia al punto de mirada y no
+        /// vuelve a proyectar el foco sobre el suelo; así Q/E y el botón derecho no recentran la vista
+        /// ni reintroducen la dependencia entre altura, distancia y límites horizontales.
         /// </summary>
         public static bool TryOrbitStateAroundPivot(
             Vector3 currentFocusPoint,
@@ -145,25 +177,17 @@ namespace BistroBuilder.CameraSystem
             Quaternion rotationDelta = nextRotation * Quaternion.Inverse(currentRotation);
             Vector3 nextCameraPosition =
                 worldPivot + rotationDelta * (currentCameraPosition - worldPivot);
+            float safeDistance = Mathf.Clamp(currentDistance, minimumDistance, maximumDistance);
+            Vector3 nextFocusPoint =
+                nextCameraPosition + nextRotation * Vector3.forward * safeDistance;
 
-            Vector3 nextFocusPoint;
-            if (!TryRayGroundPlane(
-                new Ray(nextCameraPosition, nextRotation * Vector3.forward),
-                groundHeight,
-                out nextFocusPoint))
-            {
-                return false;
-            }
-
-            float nextDistance = Vector3.Distance(nextCameraPosition, nextFocusPoint);
-            if (!IsFinite(nextCameraPosition) || !IsFinite(nextFocusPoint) ||
-                !IsFinite(nextDistance) || nextDistance <= 0.0001f)
+            if (!IsFinite(nextCameraPosition) || !IsFinite(nextFocusPoint))
             {
                 return false;
             }
 
             resultFocusPoint = nextFocusPoint;
-            resultDistance = Mathf.Clamp(nextDistance, minimumDistance, maximumDistance);
+            resultDistance = safeDistance;
             return true;
         }
 

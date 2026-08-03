@@ -10,14 +10,12 @@ namespace BistroBuilder.CameraSystem
     }
 
     /// <summary>
-    /// Define dos zonas relacionadas, pero no idénticas:
-    /// - La huella navegable: el punto observado siempre permanece dentro del restaurante.
-    /// - La envolvente de encuadre: la cámara puede situarse un margen controlado fuera de la
-    ///   huella para mostrar el local completo sin atravesar un límite exterior absurdo.
+    /// Define la huella navegable del punto observado. En 369A11 la navegación normal no limita
+    /// horizontalmente la posición física de la cámara: eso permite entrar sobre mesas y encuadrar
+    /// el local desde fuera de la huella sin que el foco sea empujado hacia el perímetro.
     ///
-    /// Separar ambas zonas evita el conflicto entre "no abandonar el restaurante" y "poder
-    /// encuadrarlo entero". Las coordenadas locales permiten mover o rotar el restaurante sin
-    /// recalcular manualmente los límites.
+    /// Los modos de envolvente anteriores se conservan por compatibilidad y para futuras vistas
+    /// explícitas de 369B, pero el perfil de gameplay utiliza FocusPointOnly.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BistroBuilderCameraBounds : MonoBehaviour
@@ -30,7 +28,7 @@ namespace BistroBuilder.CameraSystem
         [Min(0.0f)]
         [SerializeField] private float cameraEnvelopePadding = 18.0f;
         [SerializeField] private BistroBuilderCameraBoundsConstraintMode constraintMode =
-            BistroBuilderCameraBoundsConstraintMode.FocusPointAndFramingEnvelope;
+            BistroBuilderCameraBoundsConstraintMode.FocusPointOnly;
         [SerializeField] private bool drawGizmo = true;
 
         public Vector3 LocalCenter { get { return localCenter; } }
@@ -63,78 +61,82 @@ namespace BistroBuilder.CameraSystem
             float maximumZ;
             GetFocusHorizontalLimits(out minimumX, out maximumX, out minimumZ, out maximumZ);
 
+            float preservedWorldHeight = worldPoint.y;
             localPoint.x = Mathf.Clamp(localPoint.x, minimumX, maximumX);
             localPoint.z = Mathf.Clamp(localPoint.z, minimumZ, maximumZ);
-            localPoint.y = localGroundHeight;
-            return transform.TransformPoint(localPoint);
+            Vector3 constrained = transform.TransformPoint(localPoint);
+            constrained.y = preservedWorldHeight;
+            return constrained;
         }
 
         /// <summary>
-        /// Limita el foco a la huella navegable. En los modos que también protegen la cámara,
-        /// calcula el intervalo común en el que el foco sigue dentro y la posición física de la
-        /// cámara permanece dentro de su zona permitida.
+        /// Variante para pivotes de suelo. Conserva las mismas restricciones X/Z y fuerza la altura
+        /// del plano navegable, útil para órbita contextual y zoom anclado al cursor.
+        /// </summary>
+        public Vector3 ClampGroundPoint(Vector3 worldPoint)
+        {
+            Vector3 constrained = ClampFocusPoint(worldPoint);
+            constrained.y = GroundHeight;
+            return constrained;
+        }
+
+        /// <summary>
+        /// Limita únicamente las coordenadas horizontales del punto observado a la huella navegable.
+        /// La altura del punto de mirada se conserva: 369A11 desacopla la elevación R/F del plano de
+        /// suelo para que la cámara pueda trasladarse verticalmente sin curvar la trayectoria.
         /// </summary>
         public Vector3 Constrain(
             Vector3 desiredFocusPoint,
             Quaternion cameraRotation,
             float cameraDistance)
         {
-            Vector3 localFocus = transform.InverseTransformPoint(desiredFocusPoint);
-            localFocus.y = localGroundHeight;
+            return ClampFocusPoint(desiredFocusPoint);
+        }
 
-            float focusMinimumX;
-            float focusMaximumX;
-            float focusMinimumZ;
-            float focusMaximumZ;
-            GetFocusHorizontalLimits(
-                out focusMinimumX,
-                out focusMaximumX,
-                out focusMinimumZ,
-                out focusMaximumZ);
-
-            if (constraintMode != BistroBuilderCameraBoundsConstraintMode.FocusPointOnly &&
-                cameraDistance > 0.0f)
+        /// <summary>
+        /// Calcula la distancia máxima disponible desde un foco concreto hasta la envolvente
+        /// exterior de cámara. El foco no se desplaza: si una órbita larga no cabe, se reduce
+        /// exclusivamente la distancia. Así la cámara puede recorrer el interior y situarse sobre
+        /// cualquier mesa, conservando a la vez un límite exterior de seguridad.
+        /// </summary>
+        public float CalculateMaximumDistanceFromFocus(
+            Vector3 worldFocusPoint,
+            Quaternion cameraRotation,
+            float requestedMaximumDistance)
+        {
+            if (constraintMode == BistroBuilderCameraBoundsConstraintMode.FocusPointOnly ||
+                requestedMaximumDistance <= 0.0f)
             {
-                float cameraMinimumX;
-                float cameraMaximumX;
-                float cameraMinimumZ;
-                float cameraMaximumZ;
-                GetCameraHorizontalLimits(
-                    out cameraMinimumX,
-                    out cameraMaximumX,
-                    out cameraMinimumZ,
-                    out cameraMaximumZ);
-
-                Vector3 worldCameraOffset = cameraRotation * Vector3.back * cameraDistance;
-                Vector3 localCameraOffset = transform.InverseTransformVector(worldCameraOffset);
-
-                float commonMinimumX = Mathf.Max(
-                    focusMinimumX,
-                    cameraMinimumX - localCameraOffset.x);
-                float commonMaximumX = Mathf.Min(
-                    focusMaximumX,
-                    cameraMaximumX - localCameraOffset.x);
-                float commonMinimumZ = Mathf.Max(
-                    focusMinimumZ,
-                    cameraMinimumZ - localCameraOffset.z);
-                float commonMaximumZ = Mathf.Min(
-                    focusMaximumZ,
-                    cameraMaximumZ - localCameraOffset.z);
-
-                localFocus.x = commonMinimumX <= commonMaximumX
-                    ? Mathf.Clamp(localFocus.x, commonMinimumX, commonMaximumX)
-                    : Mathf.Clamp(localFocus.x, focusMinimumX, focusMaximumX);
-                localFocus.z = commonMinimumZ <= commonMaximumZ
-                    ? Mathf.Clamp(localFocus.z, commonMinimumZ, commonMaximumZ)
-                    : Mathf.Clamp(localFocus.z, focusMinimumZ, focusMaximumZ);
-            }
-            else
-            {
-                localFocus.x = Mathf.Clamp(localFocus.x, focusMinimumX, focusMaximumX);
-                localFocus.z = Mathf.Clamp(localFocus.z, focusMinimumZ, focusMaximumZ);
+                return requestedMaximumDistance;
             }
 
-            return transform.TransformPoint(localFocus);
+            Vector3 localFocus = transform.InverseTransformPoint(ClampFocusPoint(worldFocusPoint));
+            float cameraMinimumX;
+            float cameraMaximumX;
+            float cameraMinimumZ;
+            float cameraMaximumZ;
+            GetCameraHorizontalLimits(
+                out cameraMinimumX,
+                out cameraMaximumX,
+                out cameraMinimumZ,
+                out cameraMaximumZ);
+
+            Vector3 worldOffsetPerUnit = cameraRotation * Vector3.back;
+            Vector3 localOffsetPerUnit = transform.InverseTransformVector(worldOffsetPerUnit);
+
+            float maximumByX = CalculatePositiveRayDistanceToInterval(
+                localFocus.x,
+                localOffsetPerUnit.x,
+                cameraMinimumX,
+                cameraMaximumX);
+            float maximumByZ = CalculatePositiveRayDistanceToInterval(
+                localFocus.z,
+                localOffsetPerUnit.z,
+                cameraMinimumZ,
+                cameraMaximumZ);
+
+            float result = Mathf.Min(requestedMaximumDistance, Mathf.Min(maximumByX, maximumByZ));
+            return Mathf.Max(0.0f, result);
         }
 
         /// <summary>
@@ -245,6 +247,25 @@ namespace BistroBuilder.CameraSystem
         public void ConfigureCameraEnvelopePadding(float padding)
         {
             cameraEnvelopePadding = Mathf.Max(0.0f, padding);
+        }
+
+        private static float CalculatePositiveRayDistanceToInterval(
+            float origin,
+            float direction,
+            float minimum,
+            float maximum)
+        {
+            const float epsilon = 0.0001f;
+            if (Mathf.Abs(direction) <= epsilon)
+            {
+                return origin >= minimum - epsilon && origin <= maximum + epsilon
+                    ? Mathf.Infinity
+                    : 0.0f;
+            }
+
+            float boundary = direction > 0.0f ? maximum : minimum;
+            float distance = (boundary - origin) / direction;
+            return Mathf.Max(0.0f, distance);
         }
 
         private static bool ContainsHorizontalPoint(

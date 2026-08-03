@@ -9,10 +9,10 @@ namespace BistroBuilder.CameraSystem
     /// - El jugador modifica un estado objetivo (punto de interés, giro, inclinación y distancia).
     /// - El estado visible persigue ese objetivo con amortiguación crítica, sin interpolaciones lineales.
     /// - El teclado utiliza aceleración/deceleración separadas para evitar arranques y frenadas mecánicas.
-    /// - El zoom es logarítmico, usa un rango operativo separado y una transición más lenta para
-    ///   evitar extremos o saltos bruscos al girar la rueda.
-    /// - R/F ejecutan una elevación vertical recta: la cámara cambia su Y sin variar la inclinación.
-    ///   El rango operativo es corto, la velocidad es contenida y frena antes de los topes.
+    /// - La rueda alimenta una velocidad de dolly continua y anclada al cursor: el punto del suelo
+    ///   elegido permanece estable en pantalla mientras la cámara se acerca o se aleja.
+    /// - R/F trasladan verticalmente la pose completa (cámara y punto de mirada) sin recalcular la
+    ///   distancia orbital ni curvar la trayectoria.
     /// - El arrastre central convierte el delta del puntero a unidades del encuadre visible, evitando
     ///   realimentación y vibraciones mientras conserva una respuesta proporcional al zoom.
     /// - Se utiliza tiempo no escalado por defecto: la cámara continúa operativa con el juego en pausa.
@@ -21,7 +21,7 @@ namespace BistroBuilder.CameraSystem
     [RequireComponent(typeof(UnityEngine.Camera))]
     public sealed class BistroBuilderProfessionalCameraController : MonoBehaviour
     {
-        public const int RuntimeRevision = 8;
+        public const int RuntimeRevision = 12;
 
         [Header("Referencias")]
         [SerializeField] private UnityEngine.Camera controlledCamera;
@@ -56,12 +56,31 @@ namespace BistroBuilder.CameraSystem
         private float yawVelocitySmoothReference;
         private float currentElevationVelocity;
         private float elevationVelocitySmoothReference;
+        private bool verticalElevationGestureActive;
+        private bool elevatorReferenceValid;
+        private float elevatorReferenceHeight;
+        private float effectiveElevatorMinimumHeight;
+        private float effectiveElevatorMaximumHeight;
 
         private bool middleDragActive;
         private bool rightDragActive;
         private Vector3 rightOrbitPivot;
         private bool rightOrbitPivotValid;
-        private float pendingZoomLogAmount;
+
+        private bool keyboardOrbitActive;
+        private Vector3 keyboardOrbitPivot;
+        private bool keyboardOrbitPivotValid;
+
+        private float currentZoomVelocity;
+        private float zoomVelocitySmoothReference;
+        private float zoomIntentTimeRemaining;
+        private float zoomIntentDirection;
+        private bool zoomAnchorActive;
+        private Vector3 zoomAnchorWorldPoint;
+        private Vector2 zoomAnchorScreenPoint;
+
+        [Header("Diagnóstico")]
+        [SerializeField] private bool showRuntimeDiagnostics;
 
         private Vector3 previousAppliedPosition;
         private Quaternion previousAppliedRotation;
@@ -73,7 +92,7 @@ namespace BistroBuilder.CameraSystem
         public BistroBuilderCameraBounds NavigationBounds { get { return navigationBounds; } }
         public bool InputEnabled { get { return inputEnabled; } }
         public bool IsInitialized { get { return initialized; } }
-        public bool IsDirectManipulationActive { get { return middleDragActive || rightDragActive; } }
+        public bool IsDirectManipulationActive { get { return middleDragActive || rightDragActive || keyboardOrbitActive; } }
         public float LastFrameLinearSpeed { get; private set; }
         public float LastFrameAngularSpeed { get; private set; }
         public float LastFrameZoomSpeed { get; private set; }
@@ -153,7 +172,9 @@ namespace BistroBuilder.CameraSystem
                 yawVelocitySmoothReference = 0.0f;
                 currentElevationVelocity = 0.0f;
                 elevationVelocitySmoothReference = 0.0f;
-                pendingZoomLogAmount = 0.0f;
+                verticalElevationGestureActive = false;
+                InvalidateElevatorReference();
+                StopZoomImmediately();
             }
         }
 
@@ -173,6 +194,7 @@ namespace BistroBuilder.CameraSystem
                 return;
             }
 
+            InvalidateElevatorReference();
             targetFocusPoint = state.FocusPoint;
             targetYaw = BistroBuilderProfessionalCameraMath.NormalizeSignedAngle(state.Yaw);
             targetPitch = Mathf.Clamp(state.Pitch, settings.MinimumPitch, settings.MaximumPitch);
@@ -197,6 +219,7 @@ namespace BistroBuilder.CameraSystem
                 return;
             }
 
+            InvalidateElevatorReference();
             targetFocusPoint = worldFocusPoint;
             ConstrainTargetState();
             if (immediate)
@@ -329,6 +352,7 @@ namespace BistroBuilder.CameraSystem
             {
                 CancelDirectManipulation();
                 SmoothKeyboardVelocity(Vector2.zero, 0.0f, 0.0f, false, deltaTime);
+                StopZoomImmediately();
                 ConstrainTargetState();
                 return;
             }
@@ -373,6 +397,23 @@ namespace BistroBuilder.CameraSystem
                 panInput.Normalize();
             }
 
+            bool nonElevationNavigationRequested =
+                panInput.sqrMagnitude > 0.0001f ||
+                Mathf.Abs(yawInput) > 0.0001f ||
+                input.MiddlePressed || input.MiddleHeld ||
+                input.RightPressed || input.RightHeld ||
+                Mathf.Abs(input.RawScroll) > 0.0001f;
+            if (nonElevationNavigationRequested && !verticalElevationGestureActive)
+            {
+                InvalidateElevatorReference();
+            }
+
+            bool elevationRequested = Mathf.Abs(elevationInput) > 0.0001f;
+            if (elevationRequested && !verticalElevationGestureActive)
+            {
+                BeginVerticalElevationGesture();
+            }
+
             HandleMiddleMouseDrag(input, pointerBlocked);
             HandleRightMouseRotation(input, pointerBlocked);
 
@@ -388,6 +429,11 @@ namespace BistroBuilder.CameraSystem
                 yawInput = 0.0f;
                 currentYawVelocity = 0.0f;
                 yawVelocitySmoothReference = 0.0f;
+                CancelKeyboardOrbit();
+            }
+            else
+            {
+                UpdateKeyboardOrbitGesture(yawInput, input, pointerBlocked);
             }
 
             SmoothKeyboardVelocity(panInput, yawInput, elevationInput, input.FastModifier, deltaTime);
@@ -399,38 +445,25 @@ namespace BistroBuilder.CameraSystem
 
             if (!rightDragActive)
             {
-                targetYaw += currentYawVelocity * deltaTime;
+                ApplyKeyboardYawMovement(currentYawVelocity * deltaTime);
             }
 
             ApplyVerticalElevatorMovement(currentElevationVelocity * deltaTime);
 
-            if (!pointerBlocked && input.PointerAvailable)
+            // R/F es un canal de altura explícito. Mientras el gesto está activo no mezclamos una
+            // segunda transformación de distancia que pudiera inclinar perceptualmente la trayectoria.
+            if (!verticalElevationGestureActive && !pointerBlocked && input.PointerAvailable)
             {
                 float normalizedScroll = BistroBuilderProfessionalCameraMath.NormalizeScroll(
                     input.RawScroll,
                     settings.MaximumScrollNotchesPerFrame);
-                if (Mathf.Abs(normalizedScroll) > 0.0001f)
-                {
-                    float maximumQueuedLog =
-                        settings.MaximumQueuedScrollNotches * settings.LogarithmicZoomStep;
-                    pendingZoomLogAmount = Mathf.Clamp(
-                        pendingZoomLogAmount - normalizedScroll * settings.LogarithmicZoomStep,
-                        -maximumQueuedLog,
-                        maximumQueuedLog);
-                }
+                RegisterZoomIntent(normalizedScroll, input.PointerPosition);
             }
 
-            float consumedZoomLog =
-                BistroBuilderProfessionalCameraMath.ConsumeSmoothedZoomLogAmount(
-                    ref pendingZoomLogAmount,
-                    settings.ZoomInputSmoothingTime,
-                    deltaTime);
-            if (Mathf.Abs(consumedZoomLog) > 0.000001f)
+            UpdateZoomVelocity(deltaTime);
+            if (!elevationRequested && Mathf.Abs(currentElevationVelocity) <= 0.01f)
             {
-                targetDistance = Mathf.Clamp(
-                    targetDistance * Mathf.Exp(consumedZoomLog),
-                    settings.MinimumOperationalDistance,
-                    settings.MaximumOperationalDistance);
+                verticalElevationGestureActive = false;
             }
 
             targetYaw = BistroBuilderProfessionalCameraMath.NormalizeSignedAngle(targetYaw);
@@ -439,7 +472,26 @@ namespace BistroBuilder.CameraSystem
                 targetDistance,
                 settings.MinimumDistance,
                 settings.MaximumDistance);
+
+            float distanceBeforeConstraint = targetDistance;
             ConstrainTargetState();
+            if (zoomAnchorActive)
+            {
+                PreserveZoomAnchor(
+                    ref targetFocusPoint,
+                    targetYaw,
+                    targetPitch,
+                    targetDistance);
+            }
+            bool zoomBlockedByConstraint =
+                (distanceBeforeConstraint > targetDistance + 0.0001f &&
+                 currentZoomVelocity > 0.0f) ||
+                (distanceBeforeConstraint < targetDistance - 0.0001f &&
+                 currentZoomVelocity < 0.0f);
+            if (zoomBlockedByConstraint)
+            {
+                StopZoomImmediately();
+            }
         }
 
         private void SmoothKeyboardVelocity(
@@ -510,6 +562,65 @@ namespace BistroBuilder.CameraSystem
                 deltaTime);
         }
 
+        private void BeginVerticalElevationGesture()
+        {
+            // Partimos exactamente de la pose visible. Esto elimina cualquier diferencia Y que
+            // estuviera todavía amortiguándose por una acción anterior y garantiza que R/F sea
+            // una traslación vertical pura desde el primer fotograma hasta la frenada final.
+            targetFocusPoint.y = currentFocusPoint.y;
+            focusSmoothVelocity.y = 0.0f;
+            verticalElevationGestureActive = true;
+            StopZoomImmediately();
+
+            // 369A12 usa una banda contextual persistente. La vista canónica de 369A11 quedaba a
+            // unos 8,9 m dentro de un techo absoluto de 9,5 m, por lo que R apenas tenía recorrido.
+            // Capturamos una referencia local y reservamos recorrido útil en ambos sentidos. La
+            // referencia solo se reinicia cuando el jugador cambia encuadre mediante pan, órbita o zoom;
+            // soltar y volver a pulsar R/F no permite acumular altura indefinidamente.
+            if (!elevatorReferenceValid)
+            {
+                CaptureElevatorReference();
+            }
+        }
+
+        private void CaptureElevatorReference()
+        {
+            float groundHeight = GetGroundHeight();
+            float currentHeight = CalculateCameraHeightAboveGround(
+                currentFocusPoint,
+                currentYaw,
+                currentPitch,
+                currentDistance,
+                groundHeight);
+
+            elevatorReferenceHeight = Mathf.Clamp(
+                currentHeight,
+                settings.MinimumElevatorHeight,
+                settings.MaximumElevatorHeight);
+            effectiveElevatorMinimumHeight = Mathf.Max(
+                settings.MinimumElevatorHeight,
+                elevatorReferenceHeight - settings.ElevatorDownwardTravel);
+            effectiveElevatorMaximumHeight = Mathf.Min(
+                settings.MaximumElevatorHeight,
+                elevatorReferenceHeight + settings.ElevatorUpwardTravel);
+
+            if (effectiveElevatorMaximumHeight <= effectiveElevatorMinimumHeight + 0.01f)
+            {
+                effectiveElevatorMinimumHeight = settings.MinimumElevatorHeight;
+                effectiveElevatorMaximumHeight = settings.MaximumElevatorHeight;
+            }
+
+            elevatorReferenceValid = true;
+        }
+
+        private void InvalidateElevatorReference()
+        {
+            elevatorReferenceValid = false;
+            elevatorReferenceHeight = 0.0f;
+            effectiveElevatorMinimumHeight = 0.0f;
+            effectiveElevatorMaximumHeight = 0.0f;
+        }
+
         private void ApplyVerticalElevatorMovement(float requestedHeightDelta)
         {
             if (Mathf.Abs(requestedHeightDelta) <= 0.000001f)
@@ -517,92 +628,282 @@ namespace BistroBuilder.CameraSystem
                 return;
             }
 
+            if (!elevatorReferenceValid)
+            {
+                CaptureElevatorReference();
+            }
+
             float groundHeight = GetGroundHeight();
-            float targetHeight =
-                BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
-                    targetFocusPoint,
-                    targetYaw,
-                    targetPitch,
-                    targetDistance).y - groundHeight;
-            float currentHeight =
-                BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
-                    currentFocusPoint,
-                    currentYaw,
-                    currentPitch,
-                    currentDistance).y - groundHeight;
+            float targetHeight = CalculateCameraHeightAboveGround(
+                targetFocusPoint,
+                targetYaw,
+                targetPitch,
+                targetDistance,
+                groundHeight);
+            float currentHeight = CalculateCameraHeightAboveGround(
+                currentFocusPoint,
+                currentYaw,
+                currentPitch,
+                currentDistance,
+                groundHeight);
+
+            float contextualSpan = effectiveElevatorMaximumHeight - effectiveElevatorMinimumHeight;
+            float softLimitRange = Mathf.Min(
+                settings.ElevatorSoftLimitRange,
+                Mathf.Max(0.0f, contextualSpan * 0.5f));
 
             float targetLimitedDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
                     targetHeight,
                     requestedHeightDelta,
-                    settings.MinimumElevatorHeight,
-                    settings.MaximumElevatorHeight,
-                    settings.ElevatorSoftLimitRange);
+                    effectiveElevatorMinimumHeight,
+                    effectiveElevatorMaximumHeight,
+                    softLimitRange);
             float currentLimitedDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
                     currentHeight,
                     requestedHeightDelta,
-                    settings.MinimumElevatorHeight,
-                    settings.MaximumElevatorHeight,
-                    settings.ElevatorSoftLimitRange);
+                    effectiveElevatorMinimumHeight,
+                    effectiveElevatorMaximumHeight,
+                    softLimitRange);
 
-            // Objetivo y estado visible reciben exactamente el mismo delta. Elegimos el más restrictivo
-            // para que ninguno atraviese el rango operativo durante una transición amortiguada.
             float effectiveHeightDelta = Mathf.Sign(requestedHeightDelta) * Mathf.Min(
                 Mathf.Abs(targetLimitedDelta),
                 Mathf.Abs(currentLimitedDelta));
             if (Mathf.Abs(effectiveHeightDelta) <= 0.000001f)
             {
-                // Al tocar un límite eliminamos la presión residual. Así, invertir R/F responde
-                // inmediatamente en lugar de tener que vencer una velocidad acumulada contra el tope.
                 currentElevationVelocity = 0.0f;
                 elevationVelocitySmoothReference = 0.0f;
                 return;
             }
 
-            Vector3 nextTargetFocusPoint;
-            float nextTargetDistance;
-            if (BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                targetFocusPoint,
-                targetYaw,
-                targetPitch,
-                targetDistance,
-                effectiveHeightDelta,
-                groundHeight,
-                settings.MinimumDistance,
-                settings.MaximumDistance,
-                settings.MinimumCameraHeight,
-                settings.MaximumCameraHeight,
-                out nextTargetFocusPoint,
-                out nextTargetDistance))
+            // Trasladamos cámara y punto de mirada por el mismo vector vertical. Como la pose se
+            // reconstruye desde foco + rotación + distancia, esto produce una trayectoria Y recta,
+            // mantiene yaw/pitch y no obliga al foco a deslizarse por el suelo ni por los bounds.
+            targetFocusPoint.y += effectiveHeightDelta;
+            currentFocusPoint.y += effectiveHeightDelta;
+        }
+
+        private void UpdateKeyboardOrbitGesture(
+            float yawInput,
+            BistroBuilderCameraInputFrame input,
+            bool pointerBlocked)
+        {
+            bool yawRequested = Mathf.Abs(yawInput) > 0.0001f;
+            if (yawRequested && !keyboardOrbitActive)
             {
-                targetFocusPoint = nextTargetFocusPoint;
-                targetDistance = nextTargetDistance;
+                // Q/E toma un pivote contextual en el momento de iniciar el gesto. Se prioriza
+                // el punto bajo el cursor y, si no es válido, el centro visible de la pantalla.
+                // Nunca se fuerza el centro geométrico del plano.
+                targetFocusPoint = currentFocusPoint;
+                targetYaw = currentYaw;
+                targetPitch = currentPitch;
+                targetDistance = currentDistance;
+                focusSmoothVelocity = Vector3.zero;
+                yawSmoothVelocity = 0.0f;
+                pitchSmoothVelocity = 0.0f;
+                distanceSmoothVelocity = 0.0f;
+
+                keyboardOrbitActive = true;
+                keyboardOrbitPivotValid = false;
+                if (settings.KeyboardOrbitAroundPointer &&
+                    !pointerBlocked &&
+                    input.PointerAvailable)
+                {
+                    keyboardOrbitPivotValid =
+                        TryResolvePointerOrbitPivot(input.PointerPosition, out keyboardOrbitPivot);
+                }
+
+                if (!keyboardOrbitPivotValid)
+                {
+                    keyboardOrbitPivotValid = TryResolveViewportCenterOrbitPivot(
+                        out keyboardOrbitPivot);
+                }
+
+                if (!keyboardOrbitPivotValid)
+                {
+                    keyboardOrbitPivot = targetFocusPoint;
+                    keyboardOrbitPivotValid = true;
+                }
             }
 
-            // La velocidad vertical ya está amortiguada. Aplicar el mismo desplazamiento al estado
-            // visible y al objetivo evita que dos SmoothDamp independientes dibujen un arco lateral.
-            Vector3 nextCurrentFocusPoint;
-            float nextCurrentDistance;
-            if (BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                currentFocusPoint,
-                currentYaw,
-                currentPitch,
-                currentDistance,
-                effectiveHeightDelta,
-                groundHeight,
-                settings.MinimumDistance,
-                settings.MaximumDistance,
-                settings.MinimumCameraHeight,
-                settings.MaximumCameraHeight,
-                out nextCurrentFocusPoint,
-                out nextCurrentDistance))
+            // Conservamos el pivote durante la desaceleración para que el final de la órbita
+            // no cambie de centro. Se libera cuando la tecla está suelta y la velocidad es mínima.
+            if (!yawRequested && Mathf.Abs(currentYawVelocity) <= 0.05f)
             {
-                currentFocusPoint = nextCurrentFocusPoint;
-                currentDistance = nextCurrentDistance;
+                CancelKeyboardOrbit();
+            }
+        }
+
+        private void ApplyKeyboardYawMovement(float yawDelta)
+        {
+            if (Mathf.Abs(yawDelta) <= 0.000001f)
+            {
+                return;
             }
 
-            // El pitch no cambia: R/F desplazan la cámara únicamente en Y.
+            float nextYaw = BistroBuilderProfessionalCameraMath.NormalizeSignedAngle(
+                targetYaw + yawDelta);
+            Vector3 orbitFocus;
+            float orbitDistance;
+            if (keyboardOrbitActive &&
+                keyboardOrbitPivotValid &&
+                BistroBuilderProfessionalCameraMath.TryOrbitStateAroundPivot(
+                    targetFocusPoint,
+                    targetYaw,
+                    targetPitch,
+                    targetDistance,
+                    keyboardOrbitPivot,
+                    nextYaw,
+                    targetPitch,
+                    GetGroundHeight(),
+                    settings.MinimumDistance,
+                    settings.MaximumDistance,
+                    out orbitFocus,
+                    out orbitDistance))
+            {
+                targetFocusPoint = orbitFocus;
+                targetDistance = orbitDistance;
+                targetYaw = nextYaw;
+                return;
+            }
+
+            targetYaw = nextYaw;
+        }
+
+        private bool TryResolveViewportCenterOrbitPivot(out Vector3 pivot)
+        {
+            pivot = targetFocusPoint;
+            if (controlledCamera == null)
+            {
+                return false;
+            }
+
+            Vector2 viewportCenter = controlledCamera.pixelRect.center;
+            return TryResolvePointerOrbitPivot(viewportCenter, out pivot);
+        }
+
+        private void CancelKeyboardOrbit()
+        {
+            keyboardOrbitActive = false;
+            keyboardOrbitPivotValid = false;
+        }
+
+        private void RegisterZoomIntent(float normalizedScroll, Vector2 pointerPosition)
+        {
+            if (Mathf.Abs(normalizedScroll) <= 0.0001f)
+            {
+                return;
+            }
+
+            float direction = normalizedScroll > 0.0f ? -1.0f : 1.0f;
+            float addedDuration =
+                Mathf.Abs(normalizedScroll) * settings.ZoomIntentDurationPerNotch;
+
+            if (zoomIntentTimeRemaining <= 0.0f ||
+                Mathf.Sign(zoomIntentDirection) != Mathf.Sign(direction))
+            {
+                zoomIntentDirection = direction;
+                zoomIntentTimeRemaining = addedDuration;
+            }
+            else
+            {
+                zoomIntentTimeRemaining += addedDuration;
+            }
+
+            zoomIntentTimeRemaining = Mathf.Clamp(
+                zoomIntentTimeRemaining,
+                0.0f,
+                settings.MaximumZoomIntentDuration);
+
+            Vector3 anchor;
+            if (settings.ZoomAroundPointer &&
+                TryResolvePointerGroundPoint(pointerPosition, out anchor))
+            {
+                zoomAnchorActive = true;
+                zoomAnchorWorldPoint = anchor;
+                zoomAnchorScreenPoint = pointerPosition;
+            }
+        }
+
+        private void UpdateZoomVelocity(float deltaTime)
+        {
+            bool intentActive = zoomIntentTimeRemaining > 0.0001f;
+            float desiredZoomVelocity = 0.0f;
+            if (intentActive)
+            {
+                float zoomSpeed =
+                    BistroBuilderProfessionalCameraMath.CalculateContinuousZoomSpeed(
+                        targetDistance,
+                        settings.MinimumOperationalDistance,
+                        settings.MaximumOperationalDistance,
+                        settings.ZoomSpeedNear,
+                        settings.ZoomSpeedFar);
+                desiredZoomVelocity = zoomIntentDirection * zoomSpeed;
+                zoomIntentTimeRemaining = Mathf.Max(
+                    0.0f,
+                    zoomIntentTimeRemaining - deltaTime);
+            }
+            else
+            {
+                zoomIntentDirection = 0.0f;
+            }
+
+            float smoothTime = intentActive
+                ? settings.ZoomAccelerationTime
+                : settings.ZoomDecelerationTime;
+            currentZoomVelocity = Mathf.SmoothDamp(
+                currentZoomVelocity,
+                desiredZoomVelocity,
+                ref zoomVelocitySmoothReference,
+                smoothTime,
+                settings.ZoomSpeedFar * settings.MaximumPanSpeedSafetyMultiplier,
+                deltaTime);
+
+            if (Mathf.Abs(currentZoomVelocity) <= 0.0001f)
+            {
+                currentZoomVelocity = 0.0f;
+            }
+
+            float previousTargetDistance = targetDistance;
+            targetDistance = Mathf.Clamp(
+                targetDistance + currentZoomVelocity * deltaTime,
+                settings.MinimumOperationalDistance,
+                settings.MaximumOperationalDistance);
+
+            if (zoomAnchorActive && !Mathf.Approximately(previousTargetDistance, targetDistance))
+            {
+                PreserveZoomAnchor(
+                    ref targetFocusPoint,
+                    targetYaw,
+                    targetPitch,
+                    targetDistance);
+            }
+
+            bool blockedAtNearLimit =
+                targetDistance <= settings.MinimumOperationalDistance + 0.0001f &&
+                currentZoomVelocity < 0.0f;
+            bool blockedAtFarLimit =
+                targetDistance >= settings.MaximumOperationalDistance - 0.0001f &&
+                currentZoomVelocity > 0.0f;
+            if (blockedAtNearLimit || blockedAtFarLimit ||
+                (Mathf.Approximately(previousTargetDistance, targetDistance) &&
+                 Mathf.Abs(currentZoomVelocity) > 0.0001f))
+            {
+                currentZoomVelocity = 0.0f;
+                zoomVelocitySmoothReference = 0.0f;
+                zoomIntentTimeRemaining = 0.0f;
+                zoomIntentDirection = 0.0f;
+            }
+        }
+
+        private void StopZoomImmediately()
+        {
+            currentZoomVelocity = 0.0f;
+            zoomVelocitySmoothReference = 0.0f;
+            zoomIntentTimeRemaining = 0.0f;
+            zoomIntentDirection = 0.0f;
+            zoomAnchorActive = false;
         }
 
         private void HandleMiddleMouseDrag(
@@ -672,7 +973,8 @@ namespace BistroBuilder.CameraSystem
                 yawSmoothVelocity = 0.0f;
                 pitchSmoothVelocity = 0.0f;
                 distanceSmoothVelocity = 0.0f;
-                pendingZoomLogAmount = 0.0f;
+                StopZoomImmediately();
+                CancelKeyboardOrbit();
 
                 rightDragActive = true;
                 rightOrbitPivotValid = settings.OrbitAroundPointer &&
@@ -756,7 +1058,7 @@ namespace BistroBuilder.CameraSystem
 
             if (navigationBounds != null && navigationBounds.IsValid)
             {
-                pivot = navigationBounds.ClampFocusPoint(pivot);
+                pivot = navigationBounds.ClampGroundPoint(pivot);
             }
 
             pivot.y = GetGroundHeight();
@@ -776,7 +1078,6 @@ namespace BistroBuilder.CameraSystem
                 positionDamping,
                 Mathf.Infinity,
                 deltaTime);
-            currentFocusPoint.y = GetGroundHeight();
 
             currentYaw = Mathf.SmoothDampAngle(
                 currentYaw,
@@ -799,17 +1100,35 @@ namespace BistroBuilder.CameraSystem
                 settings.ZoomDampingTime,
                 Mathf.Infinity,
                 deltaTime);
-            currentDistance = BistroBuilderProfessionalCameraMath.ClampDistanceForHeight(
+            currentDistance = Mathf.Clamp(
                 currentDistance,
-                currentPitch,
                 settings.MinimumDistance,
-                settings.MaximumDistance,
-                settings.MinimumCameraHeight,
-                settings.MaximumCameraHeight);
+                settings.MaximumDistance);
+
             ConstrainCurrentState();
+
+            // El anclaje se aplica al final, una vez resueltas altura global y huella X/Z. Así ni el
+            // clamp de seguridad ni la amortiguación pueden desplazar el punto elegido en pantalla.
+            if (zoomAnchorActive)
+            {
+                PreserveZoomAnchor(
+                    ref currentFocusPoint,
+                    currentYaw,
+                    currentPitch,
+                    currentDistance);
+            }
 
             ApplyCurrentTransform();
             UpdateMotionMetrics(deltaTime);
+
+            if (zoomAnchorActive &&
+                zoomIntentTimeRemaining <= 0.0001f &&
+                Mathf.Abs(currentZoomVelocity) <= 0.02f &&
+                Mathf.Abs(distanceSmoothVelocity) <= 0.02f &&
+                Mathf.Abs(targetDistance - currentDistance) <= 0.02f)
+            {
+                zoomAnchorActive = false;
+            }
         }
 
         private void ApplyCurrentTransform()
@@ -868,63 +1187,42 @@ namespace BistroBuilder.CameraSystem
         private void ConstrainTargetState()
         {
             targetPitch = Mathf.Clamp(targetPitch, settings.MinimumPitch, settings.MaximumPitch);
-            targetDistance = BistroBuilderProfessionalCameraMath.ClampDistanceForHeight(
+            targetDistance = Mathf.Clamp(
                 targetDistance,
-                targetPitch,
                 settings.MinimumDistance,
-                settings.MaximumDistance,
+                settings.MaximumDistance);
+
+            if (navigationBounds != null && navigationBounds.IsValid)
+            {
+                targetFocusPoint = navigationBounds.ClampFocusPoint(targetFocusPoint);
+            }
+
+            ClampCameraHeightByTranslatingFocus(
+                ref targetFocusPoint,
+                targetYaw,
+                targetPitch,
+                targetDistance,
                 settings.MinimumCameraHeight,
                 settings.MaximumCameraHeight);
-            targetFocusPoint.y = GetGroundHeight();
-            if (navigationBounds == null || !navigationBounds.IsValid)
-            {
-                return;
-            }
-
-            Quaternion targetRotation = Quaternion.Euler(targetPitch, targetYaw, 0.0f);
-            float boundsMaximumDistance = navigationBounds.CalculateMaximumDistanceForCameraAndFocus(
-                targetRotation,
-                settings.MaximumDistance);
-            if (BistroBuilderProfessionalCameraMath.IsFinite(boundsMaximumDistance))
-            {
-                targetDistance = Mathf.Min(
-                    targetDistance,
-                    Mathf.Max(settings.MinimumDistance, boundsMaximumDistance));
-            }
-
-            targetFocusPoint = navigationBounds.Constrain(
-                targetFocusPoint,
-                targetRotation,
-                targetDistance);
-            targetFocusPoint.y = GetGroundHeight();
         }
 
         private void ConstrainCurrentState()
         {
             currentPitch = Mathf.Clamp(currentPitch, settings.MinimumPitch, settings.MaximumPitch);
-            currentFocusPoint.y = GetGroundHeight();
-            if (navigationBounds == null || !navigationBounds.IsValid)
-            {
-                return;
-            }
-
             Vector3 unconstrainedFocus = currentFocusPoint;
-            Quaternion currentRotation = Quaternion.Euler(currentPitch, currentYaw, 0.0f);
-            float boundsMaximumDistance = navigationBounds.CalculateMaximumDistanceForCameraAndFocus(
-                currentRotation,
-                settings.MaximumDistance);
-            if (BistroBuilderProfessionalCameraMath.IsFinite(boundsMaximumDistance))
+
+            if (navigationBounds != null && navigationBounds.IsValid)
             {
-                currentDistance = Mathf.Min(
-                    currentDistance,
-                    Mathf.Max(settings.MinimumDistance, boundsMaximumDistance));
+                currentFocusPoint = navigationBounds.ClampFocusPoint(currentFocusPoint);
             }
 
-            currentFocusPoint = navigationBounds.Constrain(
-                currentFocusPoint,
-                currentRotation,
-                currentDistance);
-            currentFocusPoint.y = GetGroundHeight();
+            ClampCameraHeightByTranslatingFocus(
+                ref currentFocusPoint,
+                currentYaw,
+                currentPitch,
+                currentDistance,
+                settings.MinimumCameraHeight,
+                settings.MaximumCameraHeight);
 
             Vector3 correction = currentFocusPoint - unconstrainedFocus;
             if (Mathf.Abs(correction.x) > 0.0001f)
@@ -940,6 +1238,162 @@ namespace BistroBuilder.CameraSystem
                 currentPanVelocity.z = 0.0f;
                 panVelocitySmoothReference.z = 0.0f;
             }
+        }
+
+        private float CalculateCameraHeightAboveGround(
+            Vector3 focusPoint,
+            float yaw,
+            float pitch,
+            float distance,
+            float groundHeight)
+        {
+            Vector3 cameraPosition = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
+                focusPoint,
+                yaw,
+                pitch,
+                distance);
+            return cameraPosition.y - groundHeight;
+        }
+
+        private void ClampCameraHeightByTranslatingFocus(
+            ref Vector3 focusPoint,
+            float yaw,
+            float pitch,
+            float distance,
+            float minimumHeight,
+            float maximumHeight)
+        {
+            float height = CalculateCameraHeightAboveGround(
+                focusPoint,
+                yaw,
+                pitch,
+                distance,
+                GetGroundHeight());
+            float clampedHeight = Mathf.Clamp(height, minimumHeight, maximumHeight);
+            focusPoint.y += clampedHeight - height;
+        }
+
+        private bool TryResolvePointerGroundPoint(Vector2 pointerPosition, out Vector3 worldPoint)
+        {
+            worldPoint = default(Vector3);
+            if (controlledCamera == null ||
+                !BistroBuilderProfessionalCameraMath.IsFinite(pointerPosition.x) ||
+                !BistroBuilderProfessionalCameraMath.IsFinite(pointerPosition.y))
+            {
+                return false;
+            }
+
+            Ray ray = controlledCamera.ScreenPointToRay(pointerPosition);
+            if (!BistroBuilderProfessionalCameraMath.TryRayGroundPlane(
+                ray,
+                GetGroundHeight(),
+                out worldPoint))
+            {
+                return false;
+            }
+
+            if (navigationBounds != null && navigationBounds.IsValid)
+            {
+                worldPoint = navigationBounds.ClampGroundPoint(worldPoint);
+            }
+
+            return BistroBuilderProfessionalCameraMath.IsFinite(worldPoint);
+        }
+
+        private void PreserveZoomAnchor(
+            ref Vector3 focusPoint,
+            float yaw,
+            float pitch,
+            float distance)
+        {
+            if (!zoomAnchorActive || controlledCamera == null)
+            {
+                return;
+            }
+
+            Ray ray;
+            if (!TryBuildScreenRayForPose(
+                zoomAnchorScreenPoint,
+                focusPoint,
+                yaw,
+                pitch,
+                distance,
+                out ray))
+            {
+                return;
+            }
+
+            Vector3 projectedGroundPoint;
+            if (!BistroBuilderProfessionalCameraMath.TryRayGroundPlane(
+                ray,
+                GetGroundHeight(),
+                out projectedGroundPoint))
+            {
+                return;
+            }
+
+            Vector3 correction = zoomAnchorWorldPoint - projectedGroundPoint;
+            correction.y = 0.0f;
+            if (!BistroBuilderProfessionalCameraMath.IsFinite(correction))
+            {
+                return;
+            }
+
+            focusPoint += correction;
+            if (navigationBounds != null && navigationBounds.IsValid)
+            {
+                focusPoint = navigationBounds.ClampFocusPoint(focusPoint);
+            }
+        }
+
+        private bool TryBuildScreenRayForPose(
+            Vector2 screenPoint,
+            Vector3 focusPoint,
+            float yaw,
+            float pitch,
+            float distance,
+            out Ray ray)
+        {
+            ray = default(Ray);
+            if (controlledCamera == null || controlledCamera.pixelRect.width <= 0.0f ||
+                controlledCamera.pixelRect.height <= 0.0f)
+            {
+                return false;
+            }
+
+            Rect pixelRect = controlledCamera.pixelRect;
+            float viewportX = (screenPoint.x - pixelRect.xMin) / pixelRect.width;
+            float viewportY = (screenPoint.y - pixelRect.yMin) / pixelRect.height;
+            if (!BistroBuilderProfessionalCameraMath.IsFinite(viewportX) ||
+                !BistroBuilderProfessionalCameraMath.IsFinite(viewportY))
+            {
+                return false;
+            }
+
+            // Extraemos el rayo en espacio local de la cámara real. Esto respeta perspectiva,
+            // ortográfica, lens shift y cualquier matriz de proyección configurada por el proyecto.
+            Ray referenceRay = controlledCamera.ViewportPointToRay(
+                new Vector3(viewportX, viewportY, 0.0f));
+            Transform cameraTransform = controlledCamera.transform;
+            Vector3 localOrigin = Quaternion.Inverse(cameraTransform.rotation) *
+                                  (referenceRay.origin - cameraTransform.position);
+            Vector3 localDirection = Quaternion.Inverse(cameraTransform.rotation) *
+                                     referenceRay.direction;
+
+            Quaternion targetRotation = Quaternion.Euler(pitch, yaw, 0.0f);
+            Vector3 targetCameraPosition =
+                focusPoint - targetRotation * Vector3.forward * distance;
+            Vector3 targetOrigin = targetCameraPosition + targetRotation * localOrigin;
+            Vector3 targetDirection = targetRotation * localDirection;
+            if (!BistroBuilderProfessionalCameraMath.IsFinite(targetOrigin) ||
+                !BistroBuilderProfessionalCameraMath.IsFinite(targetDirection) ||
+                targetDirection.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            ray = new Ray(targetOrigin, targetDirection.normalized);
+            return true;
         }
 
         private float GetVisibleVerticalSpan()
@@ -977,7 +1431,10 @@ namespace BistroBuilder.CameraSystem
             yawVelocitySmoothReference = 0.0f;
             currentElevationVelocity = 0.0f;
             elevationVelocitySmoothReference = 0.0f;
-            pendingZoomLogAmount = 0.0f;
+            verticalElevationGestureActive = false;
+            InvalidateElevatorReference();
+            StopZoomImmediately();
+            CancelKeyboardOrbit();
         }
 
         private void CancelDirectManipulation()
@@ -985,7 +1442,35 @@ namespace BistroBuilder.CameraSystem
             middleDragActive = false;
             rightDragActive = false;
             rightOrbitPivotValid = false;
+            verticalElevationGestureActive = false;
+            CancelKeyboardOrbit();
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void OnGUI()
+        {
+            if (!showRuntimeDiagnostics || controlledCamera == null || settings == null)
+            {
+                return;
+            }
+
+            float height = controlledCamera.transform.position.y - GetGroundHeight();
+            string text =
+                "369A12 CAMERA\n" +
+                "Pos: " + controlledCamera.transform.position.ToString("F2") + "\n" +
+                "Foco: " + currentFocusPoint.ToString("F2") + "\n" +
+                "Altura: " + height.ToString("F2") + " m\n" +
+                "Distancia: " + currentDistance.ToString("F2") + " m\n" +
+                "Yaw/Pitch: " + currentYaw.ToString("F1") + " / " + currentPitch.ToString("F1") + "\n" +
+                "Zoom anclado: " + (zoomAnchorActive ? "sí" : "no") + "\n" +
+                "R/F: " + (elevatorReferenceValid
+                    ? effectiveElevatorMinimumHeight.ToString("F1") + "–" +
+                      effectiveElevatorMaximumHeight.ToString("F1") + " m"
+                    : "pendiente de referencia");
+
+            GUI.Box(new Rect(12.0f, 12.0f, 275.0f, 138.0f), text);
+        }
+#endif
 
 #if UNITY_EDITOR
         private void OnValidate()

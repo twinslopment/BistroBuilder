@@ -57,29 +57,29 @@ namespace BistroBuilder.CameraSystem.Editor
                 settings.InteractionProfileVersion >=
                 BistroBuilderCameraNavigationSettings.CurrentInteractionProfileVersion)
             {
-                report.Pass("El perfil de interacción 369A8 está aplicado.");
+                report.Pass("El perfil de interacción 369A12 está aplicado.");
             }
             else
             {
-                report.Fail("Falta aplicar el perfil de interacción 369A8.");
+                report.Fail("Falta aplicar el perfil de interacción 369A12.");
             }
 
             int runtimeRevision = BistroBuilderProfessionalCameraController.RuntimeRevision;
             int diagnosticRevision = BistroBuilderCamera369AFunctionalTestWindow.DiagnosticRevision;
-            if (runtimeRevision >= 8 && diagnosticRevision >= 8)
+            if (runtimeRevision >= 12 && diagnosticRevision >= 12)
             {
-                report.Pass("El runtime acumulativo 369A8 conserva el asentamiento y añade órbita bajo cursor, zoom continuo y envolvente de encuadre.");
+                report.Pass("El runtime acumulativo 369A12 añade una banda R/F contextual con recorrido útil en ambas direcciones.");
             }
             else
             {
-                report.Fail("Falta el runtime o diagnóstico acumulativo 369A8.");
+                report.Fail("Falta el runtime o diagnóstico acumulativo 369A12.");
             }
 
             if (settings != null &&
                 settings.KeyboardElevationEnabled &&
                 settings.KeyboardElevationSpeed > 0.0f)
             {
-                report.Pass("R/F controlan la altura Y de la cámara mediante elevación vertical recta.");
+                report.Pass("R/F trasladan verticalmente la pose completa con pitch y distancia constantes.");
             }
             else
             {
@@ -101,13 +101,20 @@ namespace BistroBuilder.CameraSystem.Editor
                 settings.MinimumElevatorHeight >= settings.MinimumCameraHeight &&
                 settings.MaximumElevatorHeight <= settings.MaximumCameraHeight &&
                 settings.MaximumElevatorHeight > settings.MinimumElevatorHeight &&
+                settings.MinimumElevatorHeight <= 2.0f &&
+                settings.MaximumElevatorHeight >= 12.0f &&
+                settings.MaximumElevatorHeight <= 14.5f &&
+                settings.ElevatorUpwardTravel >= 3.0f &&
+                settings.ElevatorUpwardTravel <= 4.5f &&
+                settings.ElevatorDownwardTravel >= 5.0f &&
+                settings.ElevatorDownwardTravel <= 7.0f &&
                 settings.ElevatorSoftLimitRange > 0.0f)
             {
-                report.Pass("R/F usan un rango de altura contenido y desaceleran antes de ambos límites.");
+                report.Pass("R/F reservan recorrido contextual útil por encima y por debajo de la vista actual, sin permitir acumulación indefinida.");
             }
             else
             {
-                report.Fail("El rango operativo o la frenada suave de R/F no están configurados correctamente.");
+                report.Fail("La banda contextual o la frenada suave de R/F no están configuradas correctamente.");
             }
 
             if (settings != null && settings.MousePitchEnabled && settings.OrbitAroundPointer &&
@@ -117,27 +124,40 @@ namespace BistroBuilder.CameraSystem.Editor
             }
             else
             {
-                report.Fail("La órbita contextual o su sensibilidad no están configuradas como exige 369A8.");
+                report.Fail("La órbita contextual del botón derecho no está configurada correctamente.");
             }
 
-            if (settings != null &&
-                settings.LogarithmicZoomStep >= 0.025f &&
-                settings.LogarithmicZoomStep <= 0.038f &&
-                settings.ZoomDampingTime >= 0.25f &&
-                settings.ZoomDampingTime <= 0.40f &&
-                settings.MaximumScrollNotchesPerFrame <= 1.1f &&
-                settings.ZoomInputSmoothingTime >= 0.10f &&
-                settings.ZoomInputSmoothingTime <= 0.25f &&
-                settings.MaximumQueuedScrollNotches >= settings.MaximumScrollNotchesPerFrame &&
-                settings.MinimumOperationalDistance >= settings.MinimumDistance &&
-                settings.MaximumOperationalDistance <= settings.MaximumDistance &&
-                settings.MaximumOperationalDistance > settings.MinimumOperationalDistance)
+            if (settings != null && settings.KeyboardOrbitAroundPointer)
             {
-                report.Pass("La rueda reparte cada muesca durante varios fotogramas y mantiene un paso fino dentro de su rango operativo.");
+                report.Pass("Q/E capturan un pivote contextual bajo el cursor y no fuerzan el centro geométrico del plano.");
             }
             else
             {
-                report.Fail("El perfil de zoom continuo no tiene la cola temporal y contención previstas para 369A8.");
+                report.Fail("Q/E no tienen habilitado el pivote contextual exigido por 369A12.");
+            }
+
+            if (settings != null &&
+                settings.ZoomAroundPointer &&
+                settings.ZoomSpeedNear > 0.0f &&
+                settings.ZoomSpeedFar >= settings.ZoomSpeedNear &&
+                Mathf.Abs(settings.ZoomSpeedNear - settings.PanSpeedNear) <= 0.01f &&
+                Mathf.Abs(settings.ZoomSpeedFar - settings.PanSpeedFar) <= 0.01f &&
+                Mathf.Abs(settings.ZoomAccelerationTime - settings.PanAccelerationTime) <= 0.01f &&
+                Mathf.Abs(settings.ZoomDecelerationTime - settings.PanDecelerationTime) <= 0.01f &&
+                Mathf.Abs(settings.ZoomDampingTime - settings.PositionDampingTime) <= 0.01f &&
+                settings.ZoomIntentDurationPerNotch > 0.0f &&
+                settings.MaximumZoomIntentDuration >= settings.ZoomIntentDurationPerNotch &&
+                settings.MaximumScrollNotchesPerFrame <= 1.1f &&
+                settings.MinimumOperationalDistance >= settings.MinimumDistance &&
+                settings.MinimumOperationalDistance <= 6.0f &&
+                settings.MaximumOperationalDistance <= settings.MaximumDistance &&
+                settings.MaximumOperationalDistance > settings.MinimumOperationalDistance)
+            {
+                report.Pass("La rueda usa el perfil cinemático de WASD y conserva el punto interior bajo el cursor.");
+            }
+            else
+            {
+                report.Fail("El zoom no comparte todavía el perfil cinemático de desplazamiento exigido por 369A12.");
             }
 
             if (settings != null &&
@@ -238,14 +258,14 @@ namespace BistroBuilder.CameraSystem.Editor
             }
 
             if (bounds != null &&
-                bounds.ConstraintMode == BistroBuilderCameraBoundsConstraintMode.FocusPointAndFramingEnvelope &&
-                bounds.CameraEnvelopePadding > 0.0f)
+                bounds.ConstraintMode == BistroBuilderCameraBoundsConstraintMode.FocusPointOnly &&
+                bounds.CameraEnvelopePadding <= 0.001f)
             {
-                report.Pass("El foco queda dentro del local y la cámara dispone de una envolvente exterior controlada para encuadrarlo completo.");
+                report.Pass("Los límites actúan solo sobre el punto observado; la cámara física puede encuadrar desde fuera de la huella.");
             }
             else
             {
-                report.Fail("Falta separar la huella navegable de la envolvente de encuadre de la cámara.");
+                report.Fail("La navegación normal sigue imponiendo una envolvente física a la cámara.");
             }
 
             if (BistroBuilderProfessionalCameraInput.HasSupportedBackend)

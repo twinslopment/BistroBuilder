@@ -89,24 +89,26 @@ namespace BistroBuilder.CameraSystem.Editor
             check(Approximately(BistroBuilderProfessionalCameraMath.NormalizeScroll(1200, 2), 2), "Scroll limitado");
             check(Approximately(BistroBuilderProfessionalCameraMath.NormalizeScroll(float.NaN, 2), 0), "Scroll NaN seguro");
 
-            float zoomIn = BistroBuilderProfessionalCameraMath.ApplyLogarithmicZoom(20, 1, 0.032f, 10.5f, 32.0f);
-            float zoomOut = BistroBuilderProfessionalCameraMath.ApplyLogarithmicZoom(20, -1, 0.032f, 10.5f, 32.0f);
-            check(zoomIn < 20, "Zoom hacia dentro reduce distancia");
-            check(zoomOut > 20, "Zoom hacia fuera aumenta distancia");
-            check(Approximately(BistroBuilderProfessionalCameraMath.ApplyLogarithmicZoom(10.5f, 4, 0.032f, 10.5f, 32.0f), 10.5f), "Zoom respeta mínimo");
-            check(Approximately(BistroBuilderProfessionalCameraMath.ApplyLogarithmicZoom(32.0f, -4, 0.032f, 10.5f, 32.0f), 32.0f), "Zoom respeta máximo");
-            float reversible = BistroBuilderProfessionalCameraMath.ApplyLogarithmicZoom(zoomIn, -1, 0.032f, 10.5f, 32.0f);
-            check(Mathf.Abs(reversible - 20) < 0.001f, "Zoom logarítmico reversible sin clamp");
-
-            float pendingZoom = -0.032f;
-            float firstConsumed = BistroBuilderProfessionalCameraMath.ConsumeSmoothedZoomLogAmount(
-                ref pendingZoom, 0.16f, 1.0f / 60.0f);
-            float secondConsumed = BistroBuilderProfessionalCameraMath.ConsumeSmoothedZoomLogAmount(
-                ref pendingZoom, 0.16f, 1.0f / 60.0f);
-            check(firstConsumed < 0.0f && secondConsumed < 0.0f,
-                "Una muesca se reparte en varios fotogramas");
-            check(Mathf.Abs(firstConsumed) < 0.032f && Mathf.Abs(pendingZoom) > 0.0f,
-                "La cola de zoom no se consume de golpe");
+            float nearZoomSpeed =
+                BistroBuilderProfessionalCameraMath.CalculateContinuousZoomSpeed(
+                    4.0f, 4.0f, 26.0f, 6.5f, 26.0f);
+            float middleZoomSpeed =
+                BistroBuilderProfessionalCameraMath.CalculateContinuousZoomSpeed(
+                    15.0f, 4.0f, 26.0f, 6.5f, 26.0f);
+            float farZoomSpeed =
+                BistroBuilderProfessionalCameraMath.CalculateContinuousZoomSpeed(
+                    26.0f, 4.0f, 26.0f, 6.5f, 26.0f);
+            check(Approximately(nearZoomSpeed, 6.5f, 0.001f),
+                "Zoom continuo usa velocidad cercana equivalente a WASD");
+            check(Approximately(farZoomSpeed, 26.0f, 0.001f),
+                "Zoom continuo usa velocidad lejana equivalente a WASD");
+            check(middleZoomSpeed > nearZoomSpeed && middleZoomSpeed < farZoomSpeed,
+                "Zoom continuo interpola velocidad según el encuadre");
+            check(Approximately(
+                    BistroBuilderProfessionalCameraMath.CalculateContinuousZoomSpeed(
+                        20.0f, 26.0f, 4.0f, 6.5f, 26.0f),
+                    0.0f),
+                "Zoom continuo rechaza rangos inválidos");
 
             Vector2 center = BistroBuilderProfessionalCameraMath.CalculateEdgePan(new Vector2(500, 500), 1000, 1000, 0.025f, 14, 54);
             Vector2 left = BistroBuilderProfessionalCameraMath.CalculateEdgePan(new Vector2(0, 500), 1000, 1000, 0.025f, 14, 54);
@@ -171,12 +173,17 @@ namespace BistroBuilder.CameraSystem.Editor
             Vector3 orbitPivot = new Vector3(6.0f, 0.0f, 3.0f);
             bool orbitSolved = BistroBuilderProfessionalCameraMath.TryOrbitStateAroundPivot(
                 Vector3.zero, 0.0f, 48.0f, 24.0f, orbitPivot, 20.0f, 48.0f, 0.0f,
-                7.0f, 58.0f, out orbitFocus, out orbitDistance);
+                3.5f, 45.0f, out orbitFocus, out orbitDistance);
             check(orbitSolved, "La órbita contextual produce un estado válido");
             check(BistroBuilderProfessionalCameraMath.IsFinite(orbitFocus) &&
                   BistroBuilderProfessionalCameraMath.IsFinite(orbitDistance),
                 "La órbita contextual se mantiene finita");
-            check(orbitDistance > 0.0f, "La órbita contextual conserva distancia positiva");
+            check(Approximately(orbitDistance, 24.0f, 0.001f),
+                "La órbita contextual conserva exactamente la distancia de mirada");
+            Vector3 orbitCamera = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
+                orbitFocus, 20.0f, 48.0f, orbitDistance);
+            check(BistroBuilderProfessionalCameraMath.IsFinite(orbitCamera),
+                "La órbita contextual produce una posición física válida");
 
             check(Approximately(BistroBuilderProfessionalCameraMath.DistanceRatio(7, 7, 58), 0), "Ratio zoom mínimo");
             check(Approximately(BistroBuilderProfessionalCameraMath.DistanceRatio(58, 7, 58), 1), "Ratio zoom máximo");
@@ -194,70 +201,46 @@ namespace BistroBuilder.CameraSystem.Editor
 
             const float elevatorYaw = 30.0f;
             const float elevatorPitch = 45.0f;
-            Vector3 elevatorStartFocus = Vector3.zero;
-            float elevatorStartDistance = 20.0f;
+            Vector3 elevatorStartFocus = new Vector3(1.0f, 0.75f, -2.0f);
+            const float elevatorStartDistance = 12.0f;
             Vector3 elevatorStartPosition = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
                 elevatorStartFocus, elevatorYaw, elevatorPitch, elevatorStartDistance);
 
-            Vector3 raisedFocus;
-            float raisedDistance;
-            bool elevatorRaised = BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                elevatorStartFocus, elevatorYaw, elevatorPitch, elevatorStartDistance, 2.0f, 0.0f,
-                7.0f, 58.0f, 4.5f, 46.0f, out raisedFocus, out raisedDistance);
+            Vector3 raisedFocus = elevatorStartFocus + Vector3.up * 2.0f;
             Vector3 raisedPosition = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
-                raisedFocus, elevatorYaw, elevatorPitch, raisedDistance);
-            check(elevatorRaised, "Elevación recta calcula un estado válido");
-            check(raisedPosition.y > elevatorStartPosition.y + 1.9f,
-                "R aumenta la altura real de cámara");
+                raisedFocus, elevatorYaw, elevatorPitch, elevatorStartDistance);
+            check(Approximately(raisedPosition.y - elevatorStartPosition.y, 2.0f, 0.001f),
+                "R aumenta exactamente la altura real de cámara");
             check(Mathf.Abs(raisedPosition.x - elevatorStartPosition.x) < 0.001f &&
                   Mathf.Abs(raisedPosition.z - elevatorStartPosition.z) < 0.001f,
                 "R desplaza la cámara solo en Y, sin arco horizontal");
-            check(Mathf.Abs(raisedFocus.y) < 0.0001f,
-                "El punto de interés recalculado permanece sobre el suelo");
+            check(Approximately(raisedFocus.y - elevatorStartFocus.y, 2.0f, 0.001f),
+                "R traslada el punto de mirada por el mismo vector vertical");
 
-            Vector3 loweredFocus;
-            float loweredDistance;
-            bool elevatorLowered = BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                raisedFocus, elevatorYaw, elevatorPitch, raisedDistance, -2.0f, 0.0f,
-                7.0f, 58.0f, 4.5f, 46.0f, out loweredFocus, out loweredDistance);
+            Vector3 loweredFocus = raisedFocus - Vector3.up * 2.0f;
             Vector3 loweredPosition = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
-                loweredFocus, elevatorYaw, elevatorPitch, loweredDistance);
-            check(elevatorLowered && Vector3.Distance(loweredPosition, elevatorStartPosition) < 0.001f &&
+                loweredFocus, elevatorYaw, elevatorPitch, elevatorStartDistance);
+            check(Vector3.Distance(loweredPosition, elevatorStartPosition) < 0.001f &&
                   Vector3.Distance(loweredFocus, elevatorStartFocus) < 0.001f,
                 "F revierte la elevación sin deriva geométrica");
 
-            Vector3 clampedFocus;
-            float clampedDistance;
-            bool elevatorClamped = BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                elevatorStartFocus, elevatorYaw, elevatorPitch, elevatorStartDistance, 1000.0f, 0.0f,
-                7.0f, 58.0f, 4.5f, 46.0f, out clampedFocus, out clampedDistance);
-            Vector3 clampedPosition = BistroBuilderProfessionalCameraMath.CalculateCameraPosition(
-                clampedFocus, elevatorYaw, elevatorPitch, clampedDistance);
-            check(elevatorClamped && clampedPosition.y <= 46.0001f && clampedDistance <= 58.0001f,
-                "Elevación recta respeta altura y distancia máximas");
-            check(Mathf.Abs(clampedPosition.x - elevatorStartPosition.x) < 0.001f &&
-                  Mathf.Abs(clampedPosition.z - elevatorStartPosition.z) < 0.001f,
-                "El límite superior no curva ni desplaza lateralmente la cámara");
-            check(!BistroBuilderProfessionalCameraMath.TryCalculateVerticalElevatorState(
-                new Vector3(float.NaN, 0.0f, 0.0f), elevatorYaw, elevatorPitch, elevatorStartDistance,
-                1.0f, 0.0f, 7.0f, 58.0f, 4.5f, 46.0f, out clampedFocus, out clampedDistance),
-                "Elevación recta rechaza estados no finitos");
-
+            const float contextualMinimumHeight = 2.9f;
+            const float contextualMaximumHeight = 12.4f;
             float unrestrictedElevatorDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
-                    16.0f, 0.25f, 10.0f, 22.0f, 2.75f);
+                    8.9f, 0.25f, contextualMinimumHeight, contextualMaximumHeight, 1.1f);
             float softenedUpperDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
-                    21.5f, 0.25f, 10.0f, 22.0f, 2.75f);
+                    12.1f, 0.25f, contextualMinimumHeight, contextualMaximumHeight, 1.1f);
             float blockedUpperDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
-                    22.0f, 0.25f, 10.0f, 22.0f, 2.75f);
+                    contextualMaximumHeight, 0.25f, contextualMinimumHeight, contextualMaximumHeight, 1.1f);
             float softenedLowerDelta =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
-                    10.5f, -0.25f, 10.0f, 22.0f, 2.75f);
+                    3.2f, -0.25f, contextualMinimumHeight, contextualMaximumHeight, 1.1f);
             float recoverFromBelow =
                 BistroBuilderProfessionalCameraMath.CalculateSoftLimitedHeightDelta(
-                    9.0f, 0.25f, 10.0f, 22.0f, 2.75f);
+                    2.0f, 0.25f, contextualMinimumHeight, contextualMaximumHeight, 1.1f);
             check(Approximately(unrestrictedElevatorDelta, 0.25f, 0.0001f),
                 "R/F conservan velocidad nominal lejos de los topes");
             check(softenedUpperDelta > 0.0f && softenedUpperDelta < unrestrictedElevatorDelta,
@@ -323,35 +306,46 @@ namespace BistroBuilder.CameraSystem.Editor
                 BistroBuilderCameraBounds bounds = temporary.AddComponent<BistroBuilderCameraBounds>();
                 bounds.ConfigureFromWorldBounds(new Bounds(Vector3.zero, new Vector3(40, 10, 30)));
                 bounds.ConfigureConstraintMode(
-                    BistroBuilderCameraBoundsConstraintMode.FocusPointAndFramingEnvelope);
-                bounds.ConfigureCameraEnvelopePadding(12.0f);
+                    BistroBuilderCameraBoundsConstraintMode.FocusPointOnly);
+                bounds.ConfigureCameraEnvelopePadding(0.0f);
 
                 check(bounds.IsValid, "Bounds válidos");
                 check(Approximately(bounds.GroundHeight, -5.0f), "Altura de suelo derivada del mínimo Y");
 
-                Vector3 inside = bounds.ClampFocusPoint(new Vector3(2, 99, 3));
-                check(Approximately(inside.x, 2) && Approximately(inside.z, 3), "Punto interior conserva XZ");
-                check(Approximately(inside.y, bounds.GroundHeight), "Punto interior cae al plano de suelo");
+                Vector3 inside = bounds.ClampFocusPoint(new Vector3(2, 7, 3));
+                check(Approximately(inside.x, 2) && Approximately(inside.z, 3),
+                    "Punto interior conserva XZ");
+                check(Approximately(inside.y, 7.0f),
+                    "El clamp horizontal conserva la altura independiente del punto de mirada");
 
-                Vector3 outside = bounds.ClampFocusPoint(new Vector3(100, 0, -100));
+                Vector3 groundPoint = bounds.ClampGroundPoint(new Vector3(2, 99, 3));
+                check(Approximately(groundPoint.y, bounds.GroundHeight),
+                    "Los pivotes contextuales sí se proyectan al suelo");
+
+                Vector3 outside = bounds.ClampFocusPoint(new Vector3(100, 4, -100));
                 check(bounds.ContainsFocusPoint(outside), "Punto exterior queda dentro tras clamp");
+                check(Approximately(outside.y, 4.0f), "El clamp exterior no modifica la altura");
                 check(outside.x < 20 && outside.z > -15, "Padding horizontal aplicado");
 
                 Quaternion rotation = Quaternion.Euler(48, 45, 0);
-                Vector3 constrained = bounds.Constrain(new Vector3(500, 0, 500), rotation, 20);
+                Vector3 interiorFocus = new Vector3(2.0f, 1.5f, 3.0f);
+                Vector3 interiorConstrained = bounds.Constrain(interiorFocus, rotation, 20.0f);
+                check(Vector3.Distance(interiorConstrained, interiorFocus) < 0.0001f,
+                    "Los límites no empujan un foco interior hacia los bordes");
+
+                Vector3 constrained = bounds.Constrain(new Vector3(500, 2, 500), rotation, 20);
                 check(bounds.ContainsFocusPoint(constrained), "Constrain mantiene foco dentro");
-                Vector3 constrainedCamera =
-                    BistroBuilderProfessionalCameraMath.CalculateCameraPosition(constrained, 45, 48, 20);
-                check(bounds.ConstraintMode ==
-                      BistroBuilderCameraBoundsConstraintMode.FocusPointAndFramingEnvelope,
-                    "Bounds separan huella navegable y envolvente de encuadre");
-                check(bounds.CameraEnvelopePadding > 0.0f,
-                    "La envolvente exterior dispone de margen controlado");
-                check(bounds.ContainsCameraPosition(constrainedCamera),
-                    "La órbita en el borde mantiene la cámara dentro de su envolvente");
-                check(!bounds.ContainsFocusPoint(new Vector3(24.0f, bounds.GroundHeight, 0.0f)) &&
-                      bounds.ContainsCameraPosition(new Vector3(24.0f, bounds.GroundHeight, 0.0f)),
-                    "La cámara puede salir de la huella sin abandonar la envolvente de encuadre");
+                check(Approximately(constrained.y, 2.0f),
+                    "Constrain conserva la altura del foco");
+                check(bounds.ConstraintMode == BistroBuilderCameraBoundsConstraintMode.FocusPointOnly,
+                    "La navegación normal limita exclusivamente el punto observado");
+
+                Vector3 cameraOutside = new Vector3(80.0f, 12.0f, -65.0f);
+                check(!bounds.ContainsCameraPosition(cameraOutside),
+                    "La cámara física puede salir de la huella sin alterar el foco interior");
+                check(Approximately(bounds.CalculateMaximumDistanceFromFocus(
+                        constrained, rotation, 40.0f), 40.0f),
+                    "Los bounds no reducen la distancia orbital en navegación normal");
             }
             finally
             {
@@ -380,11 +374,11 @@ namespace BistroBuilder.CameraSystem.Editor
                     "Distancia inicial interior a límites");
                 check(settings.InteractionProfileVersion >=
                       BistroBuilderCameraNavigationSettings.CurrentInteractionProfileVersion,
-                    "Perfil de interacción 369A8 aplicado");
-                check(BistroBuilderProfessionalCameraController.RuntimeRevision >= 8,
-                    "Runtime 369A8 con límites verticales suaves y pitch constante");
-                check(BistroBuilderCamera369AFunctionalTestWindow.DiagnosticRevision >= 8,
-                    "Diagnóstico 369A8 con asentamiento y revisión manual de zoom y R/F");
+                    "Perfil de interacción 369A12 aplicado");
+                check(BistroBuilderProfessionalCameraController.RuntimeRevision >= 12,
+                    "Runtime 369A12 con banda vertical contextual persistente");
+                check(BistroBuilderCamera369AFunctionalTestWindow.DiagnosticRevision >= 12,
+                    "Diagnóstico 369A12 con asentamiento y revisión manual de recorrido vertical contextual");
                 check(settings.MousePitchEnabled,
                     "Inclinación vertical con botón derecho activada");
                 check(settings.OrbitAroundPointer,
@@ -393,18 +387,25 @@ namespace BistroBuilder.CameraSystem.Editor
                     "Sensibilidad horizontal del botón derecho contenida");
                 check(settings.MinimumPitch <= 22.5f,
                     "Rango de inclinación permite acercar el plano al suelo");
-                check(settings.LogarithmicZoomStep >= 0.025f && settings.LogarithmicZoomStep <= 0.038f,
-                    "Paso de zoom fino y controlado");
-                check(settings.ZoomDampingTime >= 0.25f && settings.ZoomDampingTime <= 0.40f,
-                    "Zoom con amortiguación cinematográfica");
+                check(settings.KeyboardOrbitAroundPointer,
+                    "Q/E capturan un pivote contextual bajo el cursor");
+                check(settings.ZoomAroundPointer,
+                    "La rueda conserva el punto del suelo bajo el cursor");
+                check(Mathf.Abs(settings.ZoomSpeedNear - settings.PanSpeedNear) <= 0.01f &&
+                      Mathf.Abs(settings.ZoomSpeedFar - settings.PanSpeedFar) <= 0.01f,
+                    "Zoom y WASD comparten velocidades cercana y lejana");
+                check(Mathf.Abs(settings.ZoomAccelerationTime - settings.PanAccelerationTime) <= 0.01f &&
+                      Mathf.Abs(settings.ZoomDecelerationTime - settings.PanDecelerationTime) <= 0.01f,
+                    "Zoom y WASD comparten aceleración y frenada");
+                check(Mathf.Abs(settings.ZoomDampingTime - settings.PositionDampingTime) <= 0.01f,
+                    "Zoom y WASD comparten amortiguación visible");
+                check(settings.ZoomIntentDurationPerNotch > 0.0f &&
+                      settings.MaximumZoomIntentDuration >= settings.ZoomIntentDurationPerNotch,
+                    "La rueda genera impulsos temporales continuos y limitados");
                 check(settings.MaximumScrollNotchesPerFrame <= 1.1f,
-                    "Ráfagas de rueda limitadas");
-                check(settings.ZoomInputSmoothingTime >= 0.10f &&
-                      settings.ZoomInputSmoothingTime <= 0.25f,
-                    "Cada muesca se distribuye temporalmente");
-                check(settings.MaximumQueuedScrollNotches >= settings.MaximumScrollNotchesPerFrame,
-                    "La cola de zoom admite al menos una ráfaga completa");
+                    "Ráfagas de rueda normalizadas");
                 check(settings.MinimumOperationalDistance >= settings.MinimumDistance &&
+                      settings.MinimumOperationalDistance <= 6.0f &&
                       settings.MaximumOperationalDistance <= settings.MaximumDistance &&
                       settings.MaximumOperationalDistance > settings.MinimumOperationalDistance,
                     "Rango operativo de rueda contenido dentro de los límites globales");
@@ -418,14 +419,21 @@ namespace BistroBuilder.CameraSystem.Editor
                     "Zona muerta anti-vibración válida");
                 check(settings.KeyboardElevationEnabled,
                     "Elevación vertical R/F activada");
-                check(settings.KeyboardElevationSpeed > 0.0f && settings.KeyboardElevationSpeed <= 3.5f,
+                check(settings.KeyboardElevationSpeed > 0.0f && settings.KeyboardElevationSpeed <= 3.0f,
                     "Velocidad vertical positiva y contenida");
                 check(settings.ElevationDecelerationTime >= settings.ElevationAccelerationTime,
                     "La elevación frena de forma igual o más progresiva que su arranque");
                 check(settings.MinimumElevatorHeight >= settings.MinimumCameraHeight &&
-                      settings.MaximumElevatorHeight <= settings.MaximumCameraHeight &&
-                      settings.MaximumElevatorHeight > settings.MinimumElevatorHeight,
-                    "Rango operativo R/F contenido dentro de los límites de seguridad");
+                      settings.MinimumElevatorHeight <= 2.0f &&
+                      settings.MaximumElevatorHeight >= 12.0f &&
+                      settings.MaximumElevatorHeight <= settings.MaximumCameraHeight,
+                    "Banda absoluta R/F contenida dentro de los límites de seguridad");
+                check(settings.ElevatorUpwardTravel >= 3.0f &&
+                      settings.ElevatorUpwardTravel <= 4.5f,
+                    "R/F reservan recorrido ascendente útil desde la vista actual");
+                check(settings.ElevatorDownwardTravel >= 5.0f &&
+                      settings.ElevatorDownwardTravel <= 7.0f,
+                    "R/F reservan recorrido descendente propio de gameplay");
                 check(settings.ElevatorSoftLimitRange > 0.0f,
                     "Zona de frenada suave vertical activa");
             }
@@ -444,11 +452,13 @@ namespace BistroBuilder.CameraSystem.Editor
             highlights.Add("La posición, rotación y distancia usan amortiguación crítica.");
             highlights.Add("La prueba funcional separa convergencia geométrica y asentamiento sostenido.");
             highlights.Add("La velocidad angular incluye yaw y pitch mediante la rotación orbital completa.");
-            highlights.Add("La rueda distribuye cada muesca durante varios fotogramas y evita saltos escalonados.");
+            highlights.Add("La rueda genera dolly continuo con perfil WASD y anclaje exacto al cursor.");
             highlights.Add("El arrastre central usa delta planar estable con zona muerta anti-vibración.");
             highlights.Add("El botón derecho orbita con sensibilidad reducida alrededor del punto bajo el cursor.");
-            highlights.Add("R/F elevan y descienden la cámara en Y con recorrido corto, pitch constante y topes suaves.");
-            highlights.Add("El foco permanece en el local y la cámara usa una envolvente exterior para encuadrarlo completo.");
+            highlights.Add("Q/E capturan un pivote contextual bajo el cursor y no fuerzan el centro del plano.");
+            highlights.Add("R/F trasladan la pose completa en Y sin alterar pitch, distancia ni X/Z.");
+            highlights.Add("El foco conserva altura independiente y puede recorrer cualquier mesa del interior.");
+            highlights.Add("Los límites no restringen la posición física de cámara durante la navegación normal.");
             highlights.Add("La entrada evita conflictos con UI y campos de texto.");
             highlights.Add("La cámara sigue respondiendo durante pausa mediante tiempo no escalado.");
             highlights.Add("El estado queda preparado para vistas 369B e inspección 369C.");
