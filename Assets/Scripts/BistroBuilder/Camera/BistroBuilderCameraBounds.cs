@@ -52,6 +52,55 @@ namespace BistroBuilder.CameraSystem
             }
         }
 
+        /// <summary>
+        /// Centro horizontal de la huella navegable a una altura concreta sobre el suelo.
+        /// Se utiliza por 369B para construir vistas independientes de la posición de la escena.
+        /// </summary>
+        public Vector3 GetWorldFocusCenter(float heightAboveGround)
+        {
+            Vector3 worldCenter = transform.TransformPoint(
+                new Vector3(localCenter.x, localGroundHeight, localCenter.z));
+            worldCenter.y = GroundHeight + Mathf.Max(0.0f, heightAboveGround);
+            return worldCenter;
+        }
+
+        /// <summary>
+        /// Devuelve las ocho esquinas del volumen visual usado para encuadrar el local. El volumen
+        /// comparte la huella real del foco y una altura de contenido indicada por la vista.
+        /// </summary>
+        public bool TryGetWorldFramingCorners(float contentHeight, Vector3[] corners)
+        {
+            if (!IsValid || corners == null || corners.Length < 8)
+            {
+                return false;
+            }
+
+            float minimumX;
+            float maximumX;
+            float minimumZ;
+            float maximumZ;
+            GetFocusHorizontalLimits(out minimumX, out maximumX, out minimumZ, out maximumZ);
+
+            float bottomY = localGroundHeight;
+            float topY = localGroundHeight + Mathf.Max(0.1f, contentHeight);
+            int index = 0;
+            for (int yIndex = 0; yIndex < 2; yIndex++)
+            {
+                float y = yIndex == 0 ? bottomY : topY;
+                for (int xIndex = 0; xIndex < 2; xIndex++)
+                {
+                    float x = xIndex == 0 ? minimumX : maximumX;
+                    for (int zIndex = 0; zIndex < 2; zIndex++)
+                    {
+                        float z = zIndex == 0 ? minimumZ : maximumZ;
+                        corners[index++] = transform.TransformPoint(new Vector3(x, y, z));
+                    }
+                }
+            }
+
+            return true;
+        }
+
         public Vector3 ClampFocusPoint(Vector3 worldPoint)
         {
             Vector3 localPoint = transform.InverseTransformPoint(worldPoint);

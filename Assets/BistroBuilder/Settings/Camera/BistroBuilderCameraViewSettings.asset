@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46b5621a6b804a289ff4795909efc1e1, type: 3}
+  m_Name: BistroBuilderCameraViewSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder.CameraSystem.BistroBuilderCameraViewSettings
+  profileVersion: 1
+  generalView:
+    id: 1
+    displayName: General
+    focusMode: 0
+    yawMode: 1
+    framingMode: 0
+    fixedYaw: 45
+    pitch: 50
+    fixedDistance: 18
+    framingMargin: 1.14
+    framingContentHeight: 4.5
+    focusHeight: 2.25
+    allowExtendedPitch: 0
+    extendedMinimumPitch: 0
+    extendedMaximumPitch: 0
+  isometricView:
+    id: 2
+    displayName: "Isom\xE9trica"
+    focusMode: 0
+    yawMode: 0
+    framingMode: 0
+    fixedYaw: 45
+    pitch: 48
+    fixedDistance: 18
+    framingMargin: 1.08
+    framingContentHeight: 4.5
+    focusHeight: 2.25
+    allowExtendedPitch: 0
+    extendedMinimumPitch: 0
+    extendedMaximumPitch: 0
+  topDownView:
+    id: 3
+    displayName: Cenital
+    focusMode: 0
+    yawMode: 0
+    framingMode: 0
+    fixedYaw: 0
+    pitch: 88
+    fixedDistance: 18
+    framingMargin: 1.06
+    framingContentHeight: 4.5
+    focusHeight: 2.25
+    allowExtendedPitch: 1
+    extendedMinimumPitch: 84
+    extendedMaximumPitch: 89
+  closeView:
+    id: 4
+    displayName: Cercana
+    focusMode: 1
+    yawMode: 1
+    framingMode: 1
+    fixedYaw: 45
+    pitch: 34
+    fixedDistance: 7.25
+    framingMargin: 1.05
+    framingContentHeight: 4.5
+    focusHeight: 1.4
+    allowExtendedPitch: 0
+    extendedMinimumPitch: 0
+    extendedMaximumPitch: 0

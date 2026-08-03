@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62e6258e919eaaffdd07c6ffb3d35ed7, type: 3}
+  m_Name: BistroBuilderCameraInspectionSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder.CameraSystem.BistroBuilderCameraInspectionSettings
+  profileVersion: 1
+  framingMargin: 1.18
+  boundsPadding: 0.35
+  defaultInspectionPitch: 36
+  minimumInspectionDistance: 3.5
+  maximumInspectionDistance: 22
+  fallbackBoundsSize: 1
+  includeRelatedSeatingByDefault: 1
+  relatedSeatSearchRadius: 2.6
+  maximumRelatedSeats: 8
+  includeInactiveGeometry: 0
+  rotationStep: 45
+  trackTargetWhileInspecting: 1
+  trackingPositionEpsilon: 0.025
+  restorePreviousModeOnExit: 1

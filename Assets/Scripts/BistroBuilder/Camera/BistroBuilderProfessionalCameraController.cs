@@ -21,7 +21,7 @@ namespace BistroBuilder.CameraSystem
     [RequireComponent(typeof(UnityEngine.Camera))]
     public sealed class BistroBuilderProfessionalCameraController : MonoBehaviour
     {
-        public const int RuntimeRevision = 12;
+        public const int RuntimeRevision = 13;
 
         [Header("Referencias")]
         [SerializeField] private UnityEngine.Camera controlledCamera;
@@ -82,6 +82,13 @@ namespace BistroBuilder.CameraSystem
         [Header("Diagnóstico")]
         [SerializeField] private bool showRuntimeDiagnostics;
 
+        // 369B puede solicitar temporalmente un pitch fuera de los límites de navegación manual
+        // (por ejemplo, la vista cenital). El override se desactiva en cuanto el jugador retoma
+        // el control o el servicio de vistas lo libera.
+        private bool externalPitchRangeActive;
+        private float externalMinimumPitch;
+        private float externalMaximumPitch;
+
         private Vector3 previousAppliedPosition;
         private Quaternion previousAppliedRotation;
         private float previousAppliedDistance;
@@ -93,6 +100,8 @@ namespace BistroBuilder.CameraSystem
         public bool InputEnabled { get { return inputEnabled; } }
         public bool IsInitialized { get { return initialized; } }
         public bool IsDirectManipulationActive { get { return middleDragActive || rightDragActive || keyboardOrbitActive; } }
+        public bool HadNavigationInputThisFrame { get; private set; }
+        public bool ExternalPitchRangeActive { get { return externalPitchRangeActive; } }
         public float LastFrameLinearSpeed { get; private set; }
         public float LastFrameAngularSpeed { get; private set; }
         public float LastFrameZoomSpeed { get; private set; }
@@ -139,6 +148,8 @@ namespace BistroBuilder.CameraSystem
 
         private void LateUpdate()
         {
+            HadNavigationInputThisFrame = false;
+
             if (!InitializeIfPossible())
             {
                 return;
@@ -187,6 +198,36 @@ namespace BistroBuilder.CameraSystem
             }
         }
 
+        /// <summary>
+        /// Permite a 369B usar una inclinación especial durante una vista predefinida sin ampliar
+        /// los límites de navegación manual aceptados en 369A. Al desactivarlo, el objetivo vuelve
+        /// suavemente al intervalo normal si estaba fuera de él.
+        /// </summary>
+        public void SetExternalPitchRange(bool enabled, float minimumPitch, float maximumPitch)
+        {
+            if (enabled &&
+                BistroBuilderProfessionalCameraMath.IsFinite(minimumPitch) &&
+                BistroBuilderProfessionalCameraMath.IsFinite(maximumPitch) &&
+                maximumPitch > minimumPitch)
+            {
+                externalPitchRangeActive = true;
+                externalMinimumPitch = Mathf.Clamp(minimumPitch, 0.1f, 89.0f);
+                externalMaximumPitch = Mathf.Clamp(maximumPitch, externalMinimumPitch + 0.1f, 89.5f);
+            }
+            else
+            {
+                externalPitchRangeActive = false;
+                externalMinimumPitch = 0.0f;
+                externalMaximumPitch = 0.0f;
+            }
+
+            if (initialized)
+            {
+                targetPitch = Mathf.Clamp(targetPitch, GetActiveMinimumPitch(), GetActiveMaximumPitch());
+                ConstrainTargetState();
+            }
+        }
+
         public void SetTargetState(BistroBuilderCameraNavigationState state, bool immediate)
         {
             if (!state.IsFinite || !InitializeIfPossible())
@@ -197,7 +238,7 @@ namespace BistroBuilder.CameraSystem
             InvalidateElevatorReference();
             targetFocusPoint = state.FocusPoint;
             targetYaw = BistroBuilderProfessionalCameraMath.NormalizeSignedAngle(state.Yaw);
-            targetPitch = Mathf.Clamp(state.Pitch, settings.MinimumPitch, settings.MaximumPitch);
+            targetPitch = Mathf.Clamp(state.Pitch, GetActiveMinimumPitch(), GetActiveMaximumPitch());
             targetDistance = Mathf.Clamp(
                 state.Distance,
                 settings.MinimumDistance,
@@ -290,8 +331,8 @@ namespace BistroBuilder.CameraSystem
                 cameraTransform.eulerAngles.y);
             float inferredPitch = BistroBuilderProfessionalCameraMath.ClampPitch(
                 cameraTransform.eulerAngles.x,
-                settings.MinimumPitch,
-                settings.MaximumPitch);
+                GetActiveMinimumPitch(),
+                GetActiveMaximumPitch());
 
             // Inicializamos siempre ambos valores. El operador && puede omitir la llamada con
             // parámetro out cuando initializeFromCurrentCamera es false; una inicialización
@@ -409,6 +450,8 @@ namespace BistroBuilder.CameraSystem
             }
 
             bool elevationRequested = Mathf.Abs(elevationInput) > 0.0001f;
+            HadNavigationInputThisFrame = nonElevationNavigationRequested || elevationRequested;
+
             if (elevationRequested && !verticalElevationGestureActive)
             {
                 BeginVerticalElevationGesture();
@@ -467,7 +510,7 @@ namespace BistroBuilder.CameraSystem
             }
 
             targetYaw = BistroBuilderProfessionalCameraMath.NormalizeSignedAngle(targetYaw);
-            targetPitch = Mathf.Clamp(targetPitch, settings.MinimumPitch, settings.MaximumPitch);
+            targetPitch = Mathf.Clamp(targetPitch, GetActiveMinimumPitch(), GetActiveMaximumPitch());
             targetDistance = Mathf.Clamp(
                 targetDistance,
                 settings.MinimumDistance,
@@ -998,8 +1041,8 @@ namespace BistroBuilder.CameraSystem
                 {
                     nextPitch = Mathf.Clamp(
                         targetPitch - safePointerDelta.y * settings.MousePitchDegreesPerPixel,
-                        settings.MinimumPitch,
-                        settings.MaximumPitch);
+                        GetActiveMinimumPitch(),
+                        GetActiveMaximumPitch());
                 }
 
                 Vector3 orbitFocus;
@@ -1184,9 +1227,23 @@ namespace BistroBuilder.CameraSystem
             LastFrameZoomSpeed = 0.0f;
         }
 
+        private float GetActiveMinimumPitch()
+        {
+            return externalPitchRangeActive
+                ? externalMinimumPitch
+                : settings.MinimumPitch;
+        }
+
+        private float GetActiveMaximumPitch()
+        {
+            return externalPitchRangeActive
+                ? externalMaximumPitch
+                : settings.MaximumPitch;
+        }
+
         private void ConstrainTargetState()
         {
-            targetPitch = Mathf.Clamp(targetPitch, settings.MinimumPitch, settings.MaximumPitch);
+            targetPitch = Mathf.Clamp(targetPitch, GetActiveMinimumPitch(), GetActiveMaximumPitch());
             targetDistance = Mathf.Clamp(
                 targetDistance,
                 settings.MinimumDistance,
@@ -1208,7 +1265,7 @@ namespace BistroBuilder.CameraSystem
 
         private void ConstrainCurrentState()
         {
-            currentPitch = Mathf.Clamp(currentPitch, settings.MinimumPitch, settings.MaximumPitch);
+            currentPitch = Mathf.Clamp(currentPitch, GetActiveMinimumPitch(), GetActiveMaximumPitch());
             Vector3 unconstrainedFocus = currentFocusPoint;
 
             if (navigationBounds != null && navigationBounds.IsValid)
