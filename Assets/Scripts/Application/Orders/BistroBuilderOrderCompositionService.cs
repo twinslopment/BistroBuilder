@@ -20,6 +20,9 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
     private BistroBuilderRestaurantMenuService menuService;
 
     [SerializeField]
+    private BistroBuilderMenuOfferService offerService;
+
+    [SerializeField]
     private BistroBuilderOrderCompositionProfile compositionProfile;
 
     [Header("Depuración")]
@@ -27,8 +30,8 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
     [SerializeField]
     private bool logComposition;
 
-    private readonly List<BistroBuilderMenuItemRuntimeState> menuBuffer =
-        new List<BistroBuilderMenuItemRuntimeState>(32);
+    private readonly List<BistroBuilderMenuOfferItemSnapshot> offerBuffer =
+        new List<BistroBuilderMenuOfferItemSnapshot>(32);
 
     private readonly List<string> orderableDishIds =
         new List<string>(32);
@@ -46,6 +49,7 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         new List<string>(32);
 
     public BistroBuilderRestaurantMenuService MenuService => menuService;
+    public BistroBuilderMenuOfferService OfferService => offerService;
     public BistroBuilderOrderCompositionProfile CompositionProfile =>
         compositionProfile;
 
@@ -71,6 +75,13 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
 
         if (!menuService.ValidateConfiguration(out error))
         {
+            return false;
+        }
+
+        if (offerService != null &&
+            !ReferenceEquals(offerService.MenuService, menuService))
+        {
+            error = "El compositor no comparte la oferta canónica.";
             return false;
         }
 
@@ -126,7 +137,8 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
                 externalReferenceId = externalReferenceId,
                 tableReferenceId = tableReferenceId,
                 customerGroupReferenceId = customerGroupReferenceId,
-                mealService = mealService
+                mealService = mealService,
+                serviceMode = BistroBuilderServiceMode.TableService
             };
 
         coveredCustomerIds.Clear();
@@ -333,32 +345,72 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         out string error
     )
     {
-        menuBuffer.Clear();
+        offerBuffer.Clear();
         orderableDishIds.Clear();
 
-        if (!menuService.TryGetSnapshot(menuBuffer, out error))
+        if (offerService != null)
         {
-            return false;
-        }
-
-        for (int index = 0; index < menuBuffer.Count; index++)
-        {
-            BistroBuilderMenuItemRuntimeState item = menuBuffer[index];
-
-            if (item != null &&
-                menuService.IsDishOrderable(
-                    item.DishId,
+            if (!offerService.TryGetOffer(
                     mealService,
-                    out _
+                    BistroBuilderServiceMode.TableService,
+                    false,
+                    offerBuffer,
+                    out error
                 ))
             {
-                orderableDishIds.Add(item.DishId);
+                return false;
+            }
+
+            for (int index = 0; index < offerBuffer.Count; index++)
+            {
+                BistroBuilderMenuOfferItemSnapshot item = offerBuffer[index];
+
+                if (item.IsOrderable)
+                {
+                    orderableDishIds.Add(item.DishId);
+                }
+            }
+        }
+        else
+        {
+            // Compatibilidad de los autotests aislados 367F. La escena
+            // instalada por 2.1C siempre recibe offerService y el validador lo
+            // exige; esta rama no se utiliza en el juego.
+            List<BistroBuilderMenuItemRuntimeState> legacyItems =
+                new List<BistroBuilderMenuItemRuntimeState>();
+
+            if (!menuService.TryGetSnapshot(legacyItems, out error))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < legacyItems.Count; index++)
+            {
+                BistroBuilderMenuItemRuntimeState item = legacyItems[index];
+
+                if (item != null &&
+                    menuService.IsDishOrderable(
+                        item.DishId,
+                        mealService,
+                        out _
+                    ) &&
+                    menuService.CatalogService.TryGetDefinition(
+                        item.DishId,
+                        out BistroBuilderDishDefinition definition
+                    ) &&
+                    definition.IsAvailableForServiceMode(
+                        BistroBuilderServiceMode.TableService
+                    ))
+                {
+                    orderableDishIds.Add(item.DishId);
+                }
             }
         }
 
         if (orderableDishIds.Count == 0)
         {
-            error = "No existen platos pedibles para componer la comanda.";
+            error = "No existen platos pedibles para componer la comanda " +
+                    "de mesa.";
             return false;
         }
 
@@ -396,6 +448,11 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         if (menuService == null)
         {
             TryGetComponent(out menuService);
+        }
+
+        if (offerService == null)
+        {
+            TryGetComponent(out offerService);
         }
     }
 

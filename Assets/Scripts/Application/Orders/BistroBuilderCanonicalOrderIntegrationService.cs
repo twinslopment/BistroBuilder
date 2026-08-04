@@ -38,6 +38,9 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     [SerializeField]
     private BistroBuilderCourseAndSharingService courseAndSharingService;
 
+    [SerializeField]
+    private BistroBuilderMenuOfferService offerService;
+
     [Header("Servicio provisional")]
 
     [Tooltip(
@@ -101,6 +104,8 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
     public BistroBuilderCourseAndSharingService CourseAndSharingService =>
         courseAndSharingService;
 
+    public BistroBuilderMenuOfferService OfferService => offerService;
+
     public int ActiveLinkCount => canonicalByLegacyOrderId.Count;
 
     private void Awake()
@@ -133,6 +138,14 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
             initialized = false;
             error =
                 "La integración necesita un servicio concreto válido.";
+            return false;
+        }
+
+        if (offerService != null &&
+            !ReferenceEquals(offerService.OrderIntegration, this))
+        {
+            initialized = false;
+            error = "La integración no comparte la oferta canónica 2.1C.";
             return false;
         }
 
@@ -447,16 +460,45 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
                 dishIds[index]
             );
 
-            if (!menu.IsDishOrderable(
+            string rejection = string.Empty;
+            bool orderable;
+
+            if (offerService != null)
+            {
+                orderable = offerService.IsDishOrderable(
                     dishId,
                     currentMealService,
-                    out string rejection
-                ) ||
-                !menu.CatalogService.TryGetDefinition(
+                    serviceMode,
+                    out rejection
+                );
+            }
+            else
+            {
+                orderable = menu.IsDishOrderable(
                     dishId,
-                    out BistroBuilderDishDefinition definition
-                ) ||
-                !definition.IsAvailableForServiceMode(serviceMode))
+                    currentMealService,
+                    out rejection
+                );
+
+                if (orderable)
+                {
+                    orderable =
+                        menu.CatalogService.TryGetDefinition(
+                            dishId,
+                            out BistroBuilderDishDefinition definition
+                        ) &&
+                        definition.IsAvailableForServiceMode(serviceMode);
+
+                    if (!orderable && string.IsNullOrWhiteSpace(rejection))
+                    {
+                        rejection =
+                            "El artículo no está disponible en esta " +
+                            "modalidad de servicio.";
+                    }
+                }
+            }
+
+            if (!orderable)
             {
                 error = string.IsNullOrWhiteSpace(rejection)
                     ? "El artículo " + dishId +
@@ -1074,6 +1116,11 @@ public sealed class BistroBuilderCanonicalOrderIntegrationService :
         if (courseAndSharingService == null)
         {
             TryGetComponent(out courseAndSharingService);
+        }
+
+        if (offerService == null)
+        {
+            TryGetComponent(out offerService);
         }
     }
 

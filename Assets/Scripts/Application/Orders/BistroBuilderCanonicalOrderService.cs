@@ -20,6 +20,9 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     [SerializeField]
     private BistroBuilderRestaurantMenuService menuService;
 
+    [SerializeField]
+    private BistroBuilderMenuOfferService offerService;
+
     [Header("Estado runtime")]
 
     [SerializeField]
@@ -49,6 +52,9 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     private readonly List<BistroBuilderMenuItemRuntimeState> menuBuffer =
         new List<BistroBuilderMenuItemRuntimeState>(32);
 
+    private readonly List<BistroBuilderMenuOfferItemSnapshot> offerBuffer =
+        new List<BistroBuilderMenuOfferItemSnapshot>(32);
+
     private readonly List<string> orderableDishIds =
         new List<string>(32);
 
@@ -58,6 +64,7 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         OrdersChanged;
 
     public BistroBuilderRestaurantMenuService MenuService => menuService;
+    public BistroBuilderMenuOfferService OfferService => offerService;
     public int OrderCount => orders != null ? orders.Count : 0;
     public int Revision { get; private set; }
     public long NextSequenceNumber => nextSequenceNumber;
@@ -82,6 +89,13 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
 
         if (!menuService.ValidateConfiguration(out error))
         {
+            return false;
+        }
+
+        if (offerService != null &&
+            !ReferenceEquals(offerService.MenuService, menuService))
+        {
+            error = "Comandas no comparte la oferta canónica 2.1C.";
             return false;
         }
 
@@ -173,7 +187,13 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
             );
         }
 
-        MenuDishResolver resolver = new MenuDishResolver(menuService);
+        MenuDishResolver resolver = new MenuDishResolver(
+            menuService,
+            offerService,
+            request != null
+                ? request.serviceMode
+                : BistroBuilderServiceMode.TableService
+        );
 
         if (!BistroBuilderCanonicalOrderFactory.TryCreate(
                 request,
@@ -1653,35 +1673,78 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     )
     {
         orderableDishIds.Clear();
-        menuBuffer.Clear();
 
-        if (!EnsureInitialized(out error) ||
-            !menuService.TryGetSnapshot(menuBuffer, out error))
+        if (!EnsureInitialized(out error))
         {
             return false;
         }
 
-        menuBuffer.Sort(CompareMenuItems);
-
-        for (int index = 0; index < menuBuffer.Count; index++)
+        if (offerService != null)
         {
-            BistroBuilderMenuItemRuntimeState item = menuBuffer[index];
+            offerBuffer.Clear();
 
-            if (item != null &&
-                menuService.IsDishOrderable(
-                    item.DishId,
+            if (!offerService.TryGetOffer(
                     mealService,
-                    out _
+                    BistroBuilderServiceMode.TableService,
+                    false,
+                    offerBuffer,
+                    out error
                 ))
             {
-                orderableDishIds.Add(item.DishId);
+                return false;
+            }
+
+            for (int index = 0; index < offerBuffer.Count; index++)
+            {
+                BistroBuilderMenuOfferItemSnapshot item = offerBuffer[index];
+
+                if (item.IsOrderable)
+                {
+                    orderableDishIds.Add(item.DishId);
+                }
+            }
+        }
+        else
+        {
+            // Compatibilidad defensiva para autotests antiguos y escenas
+            // todavía no reparadas por 2.1C. La modalidad de mesa se valida
+            // también contra la definición, evitando el bypass histórico.
+            menuBuffer.Clear();
+
+            if (!menuService.TryGetSnapshot(menuBuffer, out error))
+            {
+                return false;
+            }
+
+            menuBuffer.Sort(CompareMenuItems);
+
+            for (int index = 0; index < menuBuffer.Count; index++)
+            {
+                BistroBuilderMenuItemRuntimeState item = menuBuffer[index];
+
+                if (item != null &&
+                    menuService.IsDishOrderable(
+                        item.DishId,
+                        mealService,
+                        out _
+                    ) &&
+                    menuService.CatalogService.TryGetDefinition(
+                        item.DishId,
+                        out BistroBuilderDishDefinition definition
+                    ) &&
+                    definition.IsAvailableForServiceMode(
+                        BistroBuilderServiceMode.TableService
+                    ))
+                {
+                    orderableDishIds.Add(item.DishId);
+                }
             }
         }
 
         if (orderableDishIds.Count == 0)
         {
             error = "No existe ningún plato pedible para el servicio " +
-                    mealService + ".";
+                    mealService + " en modalidad de mesa.";
             return false;
         }
 
@@ -1908,6 +1971,11 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         {
             TryGetComponent(out menuService);
         }
+
+        if (offerService == null)
+        {
+            TryGetComponent(out offerService);
+        }
     }
 
     private static BistroBuilderCanonicalOrderState
@@ -2029,12 +2097,18 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         IBistroBuilderOrderDishResolver
     {
         private readonly BistroBuilderRestaurantMenuService menu;
+        private readonly BistroBuilderMenuOfferService offer;
+        private readonly BistroBuilderServiceMode serviceMode;
 
         public MenuDishResolver(
-            BistroBuilderRestaurantMenuService menu
+            BistroBuilderRestaurantMenuService menu,
+            BistroBuilderMenuOfferService offer,
+            BistroBuilderServiceMode serviceMode
         )
         {
             this.menu = menu;
+            this.offer = offer;
+            this.serviceMode = serviceMode;
         }
 
         public bool TryResolveOrderableDish(
@@ -2052,6 +2126,41 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 return false;
             }
 
+            if (offer != null)
+            {
+                if (!offer.TryEvaluateDish(
+                        dishId,
+                        mealService,
+                        serviceMode,
+                        out BistroBuilderMenuOfferItemSnapshot item,
+                        out rejectionReason
+                    ))
+                {
+                    return false;
+                }
+
+                if (!item.IsOrderable)
+                {
+                    rejectionReason = string.IsNullOrWhiteSpace(
+                        item.RejectionMessage
+                    )
+                        ? "El plato no está disponible."
+                        : item.RejectionMessage;
+                    return false;
+                }
+
+                dish = new BistroBuilderResolvedOrderDish(
+                    item.DishId,
+                    item.PriceCents,
+                    item.DisplayOrder
+                );
+                rejectionReason = string.Empty;
+                return true;
+            }
+
+            // Compatibilidad defensiva: incluso sin la fachada 2.1C se valida
+            // la modalidad, cerrando la incoherencia de las llamadas directas
+            // a TryCreateOrder.
             if (!menu.IsDishOrderable(
                     dishId,
                     mealService,
@@ -2063,18 +2172,30 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
 
             if (!menu.TryGetItemSnapshot(
                     dishId,
-                    out BistroBuilderMenuItemRuntimeState item
+                    out BistroBuilderMenuItemRuntimeState legacyItem
+                ) ||
+                menu.CatalogService == null ||
+                !menu.CatalogService.TryGetDefinition(
+                    dishId,
+                    out BistroBuilderDishDefinition definition
                 ))
             {
                 rejectionReason =
-                    "No se pudo obtener el estado runtime del plato.";
+                    "No se pudo resolver el plato en la carta canónica.";
+                return false;
+            }
+
+            if (!definition.IsAvailableForServiceMode(serviceMode))
+            {
+                rejectionReason =
+                    "El plato no está disponible en esta modalidad de servicio.";
                 return false;
             }
 
             dish = new BistroBuilderResolvedOrderDish(
-                item.DishId,
-                item.CurrentPriceCents,
-                item.DisplayOrder
+                legacyItem.DishId,
+                legacyItem.CurrentPriceCents,
+                legacyItem.DisplayOrder
             );
             rejectionReason = string.Empty;
             return true;

@@ -72,6 +72,9 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     private BistroBuilderRestaurantMenuService menuService;
 
     [SerializeField]
+    private BistroBuilderMenuOfferService offerService;
+
+    [SerializeField]
     private TableAssignmentSystem tableAssignmentSystem;
 
     [SerializeField]
@@ -115,8 +118,8 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     private readonly List<TransferredCharge> transferredCharges =
         new List<TransferredCharge>();
 
-    private readonly List<BistroBuilderMenuItemRuntimeState> menuBuffer =
-        new List<BistroBuilderMenuItemRuntimeState>(32);
+    private readonly List<BistroBuilderMenuOfferItemSnapshot> offerBuffer =
+        new List<BistroBuilderMenuOfferItemSnapshot>(32);
 
     private readonly List<string> dishBuffer = new List<string>(8);
     private readonly List<string> lineBuffer = new List<string>(8);
@@ -136,6 +139,10 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
 
     public event Action<BistroBuilderBarServiceCompletedEvent>
         SessionCompleted;
+
+    public BistroBuilderRestaurantMenuService MenuService => menuService;
+
+    public BistroBuilderMenuOfferService OfferService => offerService;
 
     public int ActiveSessionCount => sessionsByGroup.Count;
     public int CompletedBarServiceCount { get; private set; }
@@ -554,6 +561,18 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
             {
                 error = "BistroBuilderRestaurantMenuService no es válido.";
             }
+            return false;
+        }
+
+        if (offerService == null)
+        {
+            error = "Falta BistroBuilderMenuOfferService.";
+            return false;
+        }
+
+        if (!ReferenceEquals(offerService.MenuService, menuService))
+        {
+            error = "La barra no comparte la oferta canónica 2.1C.";
             return false;
         }
 
@@ -1000,8 +1019,20 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     )
     {
         destination.Clear();
+        offerBuffer.Clear();
 
-        if (!menuService.TryGetSnapshot(menuBuffer, out error))
+        if (session == null || session.Group == null)
+        {
+            error = "La sesión de barra no contiene un grupo válido.";
+            return false;
+        }
+
+        if (!offerService.TryGetCurrentOffer(
+                session.Mode,
+                false,
+                offerBuffer,
+                out error
+            ))
         {
             return false;
         }
@@ -1013,26 +1044,20 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         );
 
         for (int index = 0;
-             index < menuBuffer.Count && destination.Count < targetCount;
+             index < offerBuffer.Count && destination.Count < targetCount;
              index++)
         {
-            BistroBuilderMenuItemRuntimeState item = menuBuffer[index];
+            BistroBuilderMenuOfferItemSnapshot item = offerBuffer[index];
 
-            if (item == null || !item.Enabled || !item.Unlocked ||
-                item.ManuallySoldOut ||
-                !catalogService.TryGetDefinition(
-                    item.DishId,
-                    out BistroBuilderDishDefinition definition
-                ) ||
-                !definition.IsAvailableForServiceMode(session.Mode))
+            if (!item.IsOrderable)
             {
                 continue;
             }
 
             bool isQuickWaitingItem =
-                definition.RequiredStation ==
+                item.RequiredStation ==
                     BistroBuilderKitchenStationType.Bar ||
-                definition.RequiredStation ==
+                item.RequiredStation ==
                     BistroBuilderKitchenStationType.ColdPreparation;
 
             if (session.Mode == BistroBuilderServiceMode.WaitingAtBar &&
@@ -1041,15 +1066,16 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
                 continue;
             }
 
-            destination.Add(definition.DishId);
+            destination.Add(item.DishId);
         }
 
         if (destination.Count < session.Group.GroupSize)
         {
             error =
-                "No hay suficientes artículos de barra activos para cubrir " +
-                "a todos los clientes del grupo " + session.Group.GroupId +
-                ".";
+                "No hay suficientes artículos pedibles para la modalidad " +
+                session.Mode + " y el servicio " +
+                offerService.CurrentMealService + " del grupo " +
+                session.Group.GroupId + ".";
             return false;
         }
 
@@ -1851,6 +1877,13 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         {
             menuService = FindFirstObjectByType<
                 BistroBuilderRestaurantMenuService
+            >();
+        }
+
+        if (offerService == null)
+        {
+            offerService = FindFirstObjectByType<
+                BistroBuilderMenuOfferService
             >();
         }
 

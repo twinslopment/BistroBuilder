@@ -216,8 +216,7 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
             return false;
         }
 
-        if (!inventoryService.ValidateConfiguration(out error) ||
-            !inventoryService.ValidateRuntimeState(out error))
+        if (!inventoryService.ValidateConfiguration(out error))
         {
             return false;
         }
@@ -255,11 +254,39 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         return true;
     }
 
-    public bool RecalculateAll(out string error)
+    /// <summary>
+    /// Comprueba que las dependencias runtime están preparadas para calcular
+    /// disponibilidad. A diferencia de ValidateConfiguration, esta validación
+    /// exige que el inventario ya haya construido todos sus balances.
+    /// </summary>
+    public bool ValidateRuntimeReadiness(out string error)
     {
         error = string.Empty;
 
         if (!ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        if (!inventoryService.IsInitialized)
+        {
+            error = "El inventario canónico no está inicializado.";
+            return false;
+        }
+
+        if (!inventoryService.ValidateRuntimeState(out error))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool RecalculateAll(out string error)
+    {
+        error = string.Empty;
+
+        if (!ValidateRuntimeReadiness(out error))
         {
             initialized = false;
             return false;
@@ -334,6 +361,11 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         if (!IsConcreteMealService(mealService))
         {
             error = "Debe indicarse un servicio concreto.";
+            return false;
+        }
+
+        if (!ValidateRuntimeReadiness(out error))
+        {
             return false;
         }
 

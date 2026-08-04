@@ -1093,6 +1093,7 @@ GameObject:
   - component: {fileID: 263644975}
   - component: {fileID: 263644978}
   - component: {fileID: 263644977}
+  - component: {fileID: 263644979}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2162,6 +2163,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCanonicalOrderService
   menuService: {fileID: 263644959}
+  offerService: {fileID: 263644979}
   nextSequenceNumber: 1
   orders: []
   logChanges: 1
@@ -2180,6 +2182,7 @@ MonoBehaviour:
   canonicalOrderService: {fileID: 263644961}
   orderCompositionService: {fileID: 263644966}
   courseAndSharingService: {fileID: 263644965}
+  offerService: {fileID: 263644979}
   currentMealService: 2
   defaultCourseIndex: 1
   individualLineExecutionEnabled: 1
@@ -2250,6 +2253,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderCompositionService
   menuService: {fileID: 263644959}
+  offerService: {fileID: 263644979}
   compositionProfile: {fileID: 11400000, guid: 66e06e88b46dfb94498cd6e1e3d156bd, type: 2}
   logComposition: 0
 --- !u!114 &263644967
@@ -2268,6 +2272,7 @@ MonoBehaviour:
   orderSystem: {fileID: 263644903}
   catalogService: {fileID: 263644960}
   menuService: {fileID: 263644959}
+  offerService: {fileID: 263644979}
   tableAssignmentSystem: {fileID: 263644908}
   waitingAreaSystem: {fileID: 263644910}
   maximumItemsPerBarOrder: 4
@@ -2529,6 +2534,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishCategoryCatalogService
   catalog: {fileID: 11400000, guid: 1b4ba6563ddd4464a85245534450165d, type: 2}
   logInitialization: 1
+--- !u!114 &263644979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36db24b8ec54af8861bb4cb50915895, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuOfferService
+  menuService: {fileID: 263644959}
+  collectionService: {fileID: 263644976}
+  catalogService: {fileID: 263644960}
+  availabilityService: {fileID: 263644974}
+  orderIntegration: {fileID: 263644962}
+  logChanges: 0
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

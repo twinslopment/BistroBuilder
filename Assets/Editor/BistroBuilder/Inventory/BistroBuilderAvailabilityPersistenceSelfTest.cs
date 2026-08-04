@@ -78,160 +78,204 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
         );
 
         string error = string.Empty;
-        bool availabilityValid = availability != null &&
-            availability.ValidateConfiguration(out error) &&
-            availability.RecalculateAll(out error);
-        check(
-            availabilityValid,
-            string.IsNullOrWhiteSpace(error)
-                ? "La disponibilidad se recalcula sin errores."
-                : "La disponibilidad se recalcula: " + error
+        GameObject runtimePreviewRoot = null;
+        BistroBuilderInventoryService runtimeInventory = null;
+        BistroBuilderDishAvailabilityService runtimeAvailability = null;
+
+        bool previewCreated = TryCreateRuntimePreview(
+            inventory,
+            availability,
+            recipes,
+            menu,
+            integration,
+            out runtimePreviewRoot,
+            out runtimeInventory,
+            out runtimeAvailability,
+            out error
         );
 
-        if (availabilityValid)
+        try
         {
+            bool availabilityValid = previewCreated &&
+                runtimeAvailability.ValidateConfiguration(out error) &&
+                runtimeAvailability.RecalculateAll(out error);
             check(
-                availability.DishCount == 8,
-                "Los 8 platos canónicos tienen disponibilidad derivada."
+                availabilityValid,
+                string.IsNullOrWhiteSpace(error)
+                    ? "La disponibilidad se recalcula sin errores."
+                    : "La disponibilidad se recalcula: " + error
             );
 
-            var menuItems = new List<BistroBuilderMenuItemRuntimeState>();
-            bool menuSnapshotValid = menu != null &&
-                menu.TryGetSnapshot(menuItems, out error);
-            check(
-                menuSnapshotValid && menuItems.Count == 8,
-                "La carta expone 8 entradas evaluables."
-            );
-
-            if (menuSnapshotValid && recipes != null && inventory != null)
+            if (availabilityValid)
             {
-                BistroBuilderMealServiceAvailability mealService =
-                    integration != null
-                        ? integration.CurrentMealService
-                        : BistroBuilderMealServiceAvailability.Lunch;
+                check(
+                    runtimeAvailability.DishCount == 8,
+                    "Los 8 platos canónicos tienen disponibilidad derivada."
+                );
 
-                for (int index = 0; index < menuItems.Count; index++)
+                var menuItems = new List<BistroBuilderMenuItemRuntimeState>();
+                bool menuSnapshotValid = menu != null &&
+                    menu.TryGetSnapshot(menuItems, out error);
+                check(
+                    menuSnapshotValid && menuItems.Count == 8,
+                    "La carta expone 8 entradas evaluables."
+                );
+
+                if (menuSnapshotValid && recipes != null &&
+                    runtimeInventory != null)
                 {
-                    BistroBuilderMenuItemRuntimeState item = menuItems[index];
-                    bool found = availability.TryGetSnapshot(
-                        item.DishId,
-                        out BistroBuilderDishAvailabilitySnapshot snapshot
-                    );
-                    check(found, "Existe disponibilidad para " + item.DishId + ".");
+                    BistroBuilderMealServiceAvailability mealService =
+                        integration != null
+                            ? integration.CurrentMealService
+                            : BistroBuilderMealServiceAvailability.Lunch;
 
-                    if (!found)
+                    for (int index = 0; index < menuItems.Count; index++)
                     {
-                        continue;
-                    }
-
-                    check(
-                        snapshot.AvailablePortions >= 0L &&
-                        BistroBuilderMenuIdUtility.IsValidStableId(
-                            snapshot.DishId
-                        ),
-                        "La fotografía de " + item.DishId + " es válida."
-                    );
-
-                    BistroBuilderDishAvailabilityState expectedTerminal;
-                    if (TryGetTerminalState(item, mealService, out expectedTerminal))
-                    {
-                        check(
-                            snapshot.State == expectedTerminal,
-                            "La prioridad comercial de " + item.DishId +
-                            " prevalece sobre el stock."
-                        );
-                        continue;
-                    }
-
-                    if (!recipes.TryGetRecipeByDishId(
+                        BistroBuilderMenuItemRuntimeState item =
+                            menuItems[index];
+                        bool found = runtimeAvailability.TryGetSnapshot(
                             item.DishId,
-                            out BistroBuilderRecipeDefinition recipe
-                        ) ||
-                        recipe == null ||
-                        !TryCalculateExpectedAvailability(
-                            recipe,
-                            inventory,
-                            out long expectedPortions,
-                            out string expectedLimitingIngredient,
-                            out error
-                        ))
-                    {
-                        check(false, "No se pudo auditar " + item.DishId + ".");
-                        continue;
+                            out BistroBuilderDishAvailabilitySnapshot snapshot
+                        );
+                        check(
+                            found,
+                            "Existe disponibilidad para " + item.DishId + "."
+                        );
+
+                        if (!found)
+                        {
+                            continue;
+                        }
+
+                        check(
+                            snapshot.AvailablePortions >= 0L &&
+                            BistroBuilderMenuIdUtility.IsValidStableId(
+                                snapshot.DishId
+                            ),
+                            "La fotografía de " + item.DishId + " es válida."
+                        );
+
+                        if (TryGetTerminalState(
+                                item,
+                                mealService,
+                                out BistroBuilderDishAvailabilityState
+                                    expectedTerminal
+                            ))
+                        {
+                            check(
+                                snapshot.State == expectedTerminal,
+                                "La prioridad comercial de " + item.DishId +
+                                " prevalece sobre el stock."
+                            );
+                            continue;
+                        }
+
+                        if (!recipes.TryGetRecipeByDishId(
+                                item.DishId,
+                                out BistroBuilderRecipeDefinition recipe
+                            ) ||
+                            recipe == null ||
+                            !TryCalculateExpectedAvailability(
+                                recipe,
+                                runtimeInventory,
+                                out long expectedPortions,
+                                out string expectedLimitingIngredient,
+                                out error
+                            ))
+                        {
+                            check(
+                                false,
+                                "No se pudo auditar " + item.DishId + "."
+                            );
+                            continue;
+                        }
+
+                        check(
+                            snapshot.AvailablePortions == expectedPortions,
+                            "Las raciones de " + item.DishId +
+                            " coinciden con el ingrediente limitante."
+                        );
+                        check(
+                            string.Equals(
+                                snapshot.LimitingIngredientId,
+                                expectedLimitingIngredient,
+                                StringComparison.Ordinal
+                            ),
+                            "El ingrediente limitante de " + item.DishId +
+                            " es determinista."
+                        );
+
+                        BistroBuilderDishAvailabilityState expectedState =
+                            expectedPortions <= 0L
+                                ? BistroBuilderDishAvailabilityState.OutOfStock
+                                : expectedPortions <=
+                                    runtimeAvailability
+                                        .LowStockPortionThreshold
+                                    ? BistroBuilderDishAvailabilityState
+                                        .LowStock
+                                    : BistroBuilderDishAvailabilityState
+                                        .Available;
+                        check(
+                            snapshot.State == expectedState,
+                            "El estado de stock de " + item.DishId +
+                            " coincide con sus raciones."
+                        );
                     }
-
-                    check(
-                        snapshot.AvailablePortions == expectedPortions,
-                        "Las raciones de " + item.DishId +
-                        " coinciden con el ingrediente limitante."
-                    );
-                    check(
-                        string.Equals(
-                            snapshot.LimitingIngredientId,
-                            expectedLimitingIngredient,
-                            StringComparison.Ordinal
-                        ),
-                        "El ingrediente limitante de " + item.DishId +
-                        " es determinista."
-                    );
-
-                    BistroBuilderDishAvailabilityState expectedState =
-                        expectedPortions <= 0L
-                            ? BistroBuilderDishAvailabilityState.OutOfStock
-                            : expectedPortions <=
-                                availability.LowStockPortionThreshold
-                                ? BistroBuilderDishAvailabilityState.LowStock
-                                : BistroBuilderDishAvailabilityState.Available;
-                    check(
-                        snapshot.State == expectedState,
-                        "El estado de stock de " + item.DishId +
-                        " coincide con sus raciones."
-                    );
                 }
             }
-        }
 
-        BistroBuilderInventoryRuntimeSnapshot capturedInventory = null;
-        bool inventoryCaptured = inventory != null &&
-            inventory.TryCaptureRuntimeSnapshot(
-                out capturedInventory,
-                out error
-            );
-        check(inventoryCaptured, "El inventario captura un snapshot completo.");
-
-        if (inventoryCaptured)
-        {
-            string json = JsonUtility.ToJson(capturedInventory, false);
-            BistroBuilderInventoryRuntimeSnapshot roundTrip =
-                JsonUtility.FromJson<BistroBuilderInventoryRuntimeSnapshot>(
-                    json
+            BistroBuilderInventoryRuntimeSnapshot capturedInventory = null;
+            bool inventoryCaptured = previewCreated &&
+                runtimeInventory.TryCaptureRuntimeSnapshot(
+                    out capturedInventory,
+                    out error
                 );
-            bool roundTripValid = roundTrip != null &&
-                roundTrip.TryValidateBasic(out error);
             check(
-                roundTripValid,
-                "El snapshot de inventario supera un ciclo JSON completo."
-            );
-            check(
-                roundTripValid &&
-                roundTrip.stock.Count == capturedInventory.stock.Count &&
-                roundTrip.reservations.Count ==
-                    capturedInventory.reservations.Count &&
-                roundTrip.operations.Count ==
-                    capturedInventory.operations.Count &&
-                roundTrip.ledger.Count == capturedInventory.ledger.Count,
-                "El ciclo JSON conserva balances, reservas, operaciones y libro."
+                inventoryCaptured,
+                "El inventario captura un snapshot completo."
             );
 
-            BistroBuilderInventorySaveSectionProvider inventoryProvider =
-                UnityEngine.Object.FindFirstObjectByType<
-                    BistroBuilderInventorySaveSectionProvider
-                >();
-            check(
-                inventoryProvider != null &&
-                inventoryProvider.ValidateState(roundTrip, out error),
-                "inventory.canonical acepta el snapshot reconstruido."
-            );
+            if (inventoryCaptured)
+            {
+                string json = JsonUtility.ToJson(capturedInventory, false);
+                BistroBuilderInventoryRuntimeSnapshot roundTrip =
+                    JsonUtility.FromJson<
+                        BistroBuilderInventoryRuntimeSnapshot
+                    >(json);
+                bool roundTripValid = roundTrip != null &&
+                    roundTrip.TryValidateBasic(out error);
+                check(
+                    roundTripValid,
+                    "El snapshot de inventario supera un ciclo JSON completo."
+                );
+                check(
+                    roundTripValid &&
+                    roundTrip.stock.Count == capturedInventory.stock.Count &&
+                    roundTrip.reservations.Count ==
+                        capturedInventory.reservations.Count &&
+                    roundTrip.operations.Count ==
+                        capturedInventory.operations.Count &&
+                    roundTrip.ledger.Count == capturedInventory.ledger.Count,
+                    "El ciclo JSON conserva balances, reservas, operaciones y libro."
+                );
+
+                BistroBuilderInventorySaveSectionProvider inventoryProvider =
+                    UnityEngine.Object.FindFirstObjectByType<
+                        BistroBuilderInventorySaveSectionProvider
+                    >();
+                check(
+                    inventoryProvider != null &&
+                    inventoryProvider.ValidateState(roundTrip, out error),
+                    "inventory.canonical acepta el snapshot reconstruido."
+                );
+            }
+        }
+        finally
+        {
+            if (runtimePreviewRoot != null)
+            {
+                UnityEngine.Object.DestroyImmediate(runtimePreviewRoot);
+            }
         }
 
         string runtimeOrderId =
@@ -938,6 +982,208 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
         return service == BistroBuilderMealServiceAvailability.Breakfast ||
                service == BistroBuilderMealServiceAvailability.Lunch ||
                service == BistroBuilderMealServiceAvailability.Dinner;
+    }
+
+    private static bool TryCreateRuntimePreview(
+        BistroBuilderInventoryService sourceInventory,
+        BistroBuilderDishAvailabilityService sourceAvailability,
+        BistroBuilderRecipeCatalogService recipes,
+        BistroBuilderRestaurantMenuService menu,
+        BistroBuilderCanonicalOrderIntegrationService integration,
+        out GameObject root,
+        out BistroBuilderInventoryService runtimeInventory,
+        out BistroBuilderDishAvailabilityService runtimeAvailability,
+        out string error
+    )
+    {
+        root = null;
+        runtimeInventory = null;
+        runtimeAvailability = null;
+        error = string.Empty;
+
+        if (sourceInventory == null || sourceAvailability == null ||
+            recipes == null || menu == null || integration == null)
+        {
+            error = "No están disponibles todas las dependencias para la " +
+                    "previsualización runtime aislada de 368EF.";
+            return false;
+        }
+
+        if (sourceInventory.OpeningStockProfile == null)
+        {
+            error = "Falta el perfil de stock inicial de 368EF.";
+            return false;
+        }
+
+        try
+        {
+            root = new GameObject("BB_368EF_RuntimePreview");
+            root.hideFlags = HideFlags.HideAndDontSave;
+            root.SetActive(false);
+
+            runtimeInventory =
+                root.AddComponent<BistroBuilderInventoryService>();
+
+            if (!TrySetObjectReference(
+                    runtimeInventory,
+                    "recipeCatalogService",
+                    recipes,
+                    out error
+                ) ||
+                !TrySetObjectReference(
+                    runtimeInventory,
+                    "openingStockProfile",
+                    sourceInventory.OpeningStockProfile,
+                    out error
+                ) ||
+                !TrySetBoolean(
+                    runtimeInventory,
+                    "logInitialization",
+                    false,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            if (!runtimeInventory.TryInitialize(out error))
+            {
+                return false;
+            }
+
+            runtimeAvailability =
+                root.AddComponent<BistroBuilderDishAvailabilityService>();
+
+            if (!TrySetObjectReference(
+                    runtimeAvailability,
+                    "recipeCatalogService",
+                    recipes,
+                    out error
+                ) ||
+                !TrySetObjectReference(
+                    runtimeAvailability,
+                    "inventoryService",
+                    runtimeInventory,
+                    out error
+                ) ||
+                !TrySetObjectReference(
+                    runtimeAvailability,
+                    "menuService",
+                    menu,
+                    out error
+                ) ||
+                !TrySetObjectReference(
+                    runtimeAvailability,
+                    "orderIntegration",
+                    integration,
+                    out error
+                ) ||
+                !TrySetInteger(
+                    runtimeAvailability,
+                    "lowStockPortionThreshold",
+                    sourceAvailability.LowStockPortionThreshold,
+                    out error
+                ) ||
+                !TrySetBoolean(
+                    runtimeAvailability,
+                    "logChanges",
+                    false,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            return runtimeAvailability.ValidateConfiguration(out error);
+        }
+        catch (Exception exception)
+        {
+            error = "No se pudo construir la previsualización aislada de " +
+                    "368EF: " + exception.Message;
+            return false;
+        }
+        finally
+        {
+            if (!string.IsNullOrWhiteSpace(error) && root != null)
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                root = null;
+                runtimeInventory = null;
+                runtimeAvailability = null;
+            }
+        }
+    }
+
+    private static bool TrySetObjectReference(
+        UnityEngine.Object target,
+        string propertyName,
+        UnityEngine.Object value,
+        out string error
+    )
+    {
+        SerializedObject serialized = new SerializedObject(target);
+        SerializedProperty property = serialized.FindProperty(propertyName);
+
+        if (property == null ||
+            property.propertyType != SerializedPropertyType.ObjectReference)
+        {
+            error = "No existe la referencia serializada '" + propertyName +
+                    "'.";
+            return false;
+        }
+
+        property.objectReferenceValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TrySetInteger(
+        UnityEngine.Object target,
+        string propertyName,
+        int value,
+        out string error
+    )
+    {
+        SerializedObject serialized = new SerializedObject(target);
+        SerializedProperty property = serialized.FindProperty(propertyName);
+
+        if (property == null ||
+            property.propertyType != SerializedPropertyType.Integer)
+        {
+            error = "No existe el entero serializado '" + propertyName +
+                    "'.";
+            return false;
+        }
+
+        property.intValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TrySetBoolean(
+        UnityEngine.Object target,
+        string propertyName,
+        bool value,
+        out string error
+    )
+    {
+        SerializedObject serialized = new SerializedObject(target);
+        SerializedProperty property = serialized.FindProperty(propertyName);
+
+        if (property == null ||
+            property.propertyType != SerializedPropertyType.Boolean)
+        {
+            error = "No existe el booleano serializado '" + propertyName +
+                    "'.";
+            return false;
+        }
+
+        property.boolValue = value;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        error = string.Empty;
+        return true;
     }
 
     private static bool TryGetTerminalState(

@@ -92,34 +92,79 @@ public static class BistroBuilderAvailabilityPersistenceValidator
         }
         else
         {
+            BistroBuilderDishAvailabilityService availability =
+                availabilityServices[0];
             string error = string.Empty;
-            if (availabilityServices[0].ValidateConfiguration(out error) &&
-                availabilityServices[0].RecalculateAll(out error))
-            {
-                result.Ok(
-                    "El motor de disponibilidad dinámica es válido y recalculable."
-                );
-                if (availabilityServices[0].DishCount == 8)
-                {
-                    result.Ok(
-                        "Los 8 platos canónicos tienen disponibilidad derivada."
-                    );
-                }
-                else
-                {
-                    result.Error(
-                        "Se esperaban 8 disponibilidades y existen " +
-                        availabilityServices[0].DishCount + "."
-                    );
-                }
-            }
-            else
+
+            if (!availability.ValidateConfiguration(out error))
             {
                 result.Error(
                     string.IsNullOrWhiteSpace(error)
                         ? "El motor de disponibilidad no es válido."
                         : error
                 );
+            }
+            else if (Application.isPlaying)
+            {
+                if (availability.RecalculateAll(out error))
+                {
+                    result.Ok(
+                        "El motor de disponibilidad dinámica es válido y recalculable."
+                    );
+                    if (availability.DishCount == 8)
+                    {
+                        result.Ok(
+                            "Los 8 platos canónicos tienen disponibilidad derivada."
+                        );
+                    }
+                    else
+                    {
+                        result.Error(
+                            "Se esperaban 8 disponibilidades y existen " +
+                            availability.DishCount + "."
+                        );
+                    }
+                }
+                else
+                {
+                    result.Error(
+                        string.IsNullOrWhiteSpace(error)
+                            ? "La disponibilidad runtime no pudo recalcularse."
+                            : error
+                    );
+                }
+            }
+            else
+            {
+                result.Ok(
+                    "El motor de disponibilidad dinámica tiene una " +
+                    "configuración estructural válida."
+                );
+
+                BistroBuilderRestaurantMenuService menu =
+                    Object.FindFirstObjectByType<
+                        BistroBuilderRestaurantMenuService
+                    >();
+                var menuItems =
+                    new List<BistroBuilderMenuItemRuntimeState>();
+
+                if (menu != null &&
+                    menu.TryGetSnapshot(menuItems, out error) &&
+                    menuItems.Count == 8)
+                {
+                    result.Ok(
+                        "Los 8 platos canónicos están preparados para el " +
+                        "recalculo runtime de disponibilidad."
+                    );
+                }
+                else
+                {
+                    result.Error(
+                        string.IsNullOrWhiteSpace(error)
+                            ? "La carta no expone 8 platos evaluables."
+                            : error
+                    );
+                }
             }
         }
 
@@ -286,20 +331,33 @@ public static class BistroBuilderAvailabilityPersistenceValidator
 
         BistroBuilderInventoryService inventory =
             Object.FindFirstObjectByType<BistroBuilderInventoryService>();
-        string inventorySnapshotError = string.Empty;
-        bool inventorySnapshotValid = false;
 
-        if (inventory != null &&
-            inventory.TryCaptureRuntimeSnapshot(
-                out BistroBuilderInventoryRuntimeSnapshot snapshot,
-                out inventorySnapshotError
-            ))
+        if (inventory == null)
         {
-            inventorySnapshotValid =
-                snapshot.TryValidateBasic(out inventorySnapshotError);
+            result.Error("Falta BistroBuilderInventoryService.");
         }
-
-        if (inventorySnapshotValid)
+        else if (!inventory.ValidateConfiguration(
+                     out string inventoryConfigurationError
+                 ))
+        {
+            result.Error(inventoryConfigurationError);
+        }
+        else if (!inventory.IsInitialized)
+        {
+            // Los diccionarios del inventario son estado runtime no
+            // serializado. Un validador estructural ejecutado tras abrir Unity
+            // no debe depender de haber entrado antes en Play Mode ni de que
+            // otro autotest haya inicializado accidentalmente el componente.
+            result.Ok(
+                "El inventario tiene configuración persistible; la captura " +
+                "runtime se valida de forma aislada en el autotest 368EF."
+            );
+        }
+        else if (inventory.TryCaptureRuntimeSnapshot(
+                     out BistroBuilderInventoryRuntimeSnapshot snapshot,
+                     out string inventorySnapshotError
+                 ) &&
+                 snapshot.TryValidateBasic(out inventorySnapshotError))
         {
             result.Ok(
                 "El inventario captura balances, reservas, operaciones y libro auditables."
@@ -308,11 +366,9 @@ public static class BistroBuilderAvailabilityPersistenceValidator
         else
         {
             result.Error(
-                inventory == null
-                    ? "Falta BistroBuilderInventoryService."
-                    : string.IsNullOrWhiteSpace(inventorySnapshotError)
-                        ? "El snapshot de inventario no es válido."
-                        : inventorySnapshotError
+                string.IsNullOrWhiteSpace(inventorySnapshotError)
+                    ? "El snapshot de inventario no es válido."
+                    : inventorySnapshotError
             );
         }
 
