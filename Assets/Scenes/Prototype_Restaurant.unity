@@ -1089,6 +1089,8 @@ GameObject:
   - component: {fileID: 263644974}
   - component: {fileID: 263644973}
   - component: {fileID: 263644972}
+  - component: {fileID: 263644976}
+  - component: {fileID: 263644975}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2044,6 +2046,7 @@ MonoBehaviour:
   saveGameService: {fileID: 263644953}
   menuService: {fileID: 263644959}
   catalogService: {fileID: 263644960}
+  collectionService: {fileID: 263644976}
   captureItemsPerFrame: 64
   logLoadSummary: 1
 --- !u!114 &263644959
@@ -2392,6 +2395,105 @@ MonoBehaviour:
   orderIntegration: {fileID: 263644962}
   lowStockPortionThreshold: 3
   logChanges: 0
+--- !u!114 &263644975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22f87fdffefb4b95a8f74244da225133, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuStateV1ToV2Migration
+  defaultRestaurantId: restaurant_primary
+--- !u!114 &263644976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f6ea45bd8f4a91b8eeed66fa25c9e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRestaurantMenuCollectionService
+  menuService: {fileID: 263644959}
+  catalogService: {fileID: 263644960}
+  initialRestaurantId: restaurant_primary
+  activeRestaurantId: restaurant_primary
+  restaurantStates:
+  - restaurantId: restaurant_primary
+    revision: 0
+    items:
+    - dishId: dish_fabada_asturiana
+      currentPriceCents: 1850
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 6
+      displayOrder: 0
+    - dishId: dish_merluza_plancha
+      currentPriceCents: 2100
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 6
+      displayOrder: 1
+    - dishId: dish_tarta_queso
+      currentPriceCents: 750
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 6
+      displayOrder: 2
+    - dishId: dish_agua_mineral
+      currentPriceCents: 220
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 7
+      displayOrder: 3
+    - dishId: dish_refresco
+      currentPriceCents: 280
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 7
+      displayOrder: 4
+    - dishId: dish_copa_vino
+      currentPriceCents: 350
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 7
+      displayOrder: 5
+    - dishId: dish_aceitunas_alinadas
+      currentPriceCents: 300
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 7
+      displayOrder: 6
+    - dishId: dish_pincho_tortilla
+      currentPriceCents: 450
+      unlocked: 1
+      enabled: 1
+      manuallySoldOut: 0
+      signatureDish: 0
+      availableServices: 7
+      displayOrder: 7
+    unresolvedItems: []
+  logChanges: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

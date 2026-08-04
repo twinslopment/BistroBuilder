@@ -124,8 +124,12 @@ public static class BistroBuilderMenuFoundationSelfTest
                 root.AddComponent<BistroBuilderDishCatalogService>();
             BistroBuilderRestaurantMenuService menuService =
                 root.AddComponent<BistroBuilderRestaurantMenuService>();
+            BistroBuilderRestaurantMenuCollectionService collectionService =
+                root.AddComponent<BistroBuilderRestaurantMenuCollectionService>();
             BistroBuilderMenuSaveSectionProvider provider =
                 root.AddComponent<BistroBuilderMenuSaveSectionProvider>();
+            BistroBuilderMenuStateV1ToV2Migration migration =
+                root.AddComponent<BistroBuilderMenuStateV1ToV2Migration>();
 
             ConfigureReference(catalogService, "catalog", catalog);
             ConfigureBool(catalogService, "logInitialization", false);
@@ -143,6 +147,17 @@ public static class BistroBuilderMenuFoundationSelfTest
             ConfigureBool(menuService, "defaultDishUnlocked", true);
             ConfigureBool(menuService, "logChanges", false);
             ConfigureReference(
+                collectionService,
+                "menuService",
+                menuService
+            );
+            ConfigureReference(
+                collectionService,
+                "catalogService",
+                catalogService
+            );
+            ConfigureBool(collectionService, "logChanges", false);
+            ConfigureReference(
                 provider,
                 "saveGameService",
                 saveGameService
@@ -152,6 +167,11 @@ public static class BistroBuilderMenuFoundationSelfTest
                 provider,
                 "catalogService",
                 catalogService
+            );
+            ConfigureReference(
+                provider,
+                "collectionService",
+                collectionService
             );
             ConfigureBool(provider, "logLoadSummary", false);
 
@@ -172,6 +192,15 @@ public static class BistroBuilderMenuFoundationSelfTest
                 "Configuración de carta válida."
             );
             report.Check(
+                collectionService
+                    .RebuildRuntimeIndexAndEnsurePrimaryRestaurant(out _),
+                "Colección por restaurante inicializada."
+            );
+            report.Check(
+                collectionService.ValidateConfiguration(out _),
+                "Colección por restaurante válida."
+            );
+            report.Check(
                 provider.ValidateConfiguration(out _),
                 "Proveedor menu.state válido."
             );
@@ -180,8 +209,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 "Identidad estable de sección."
             );
             report.Check(
-                provider.SectionVersion == 1,
-                "Versión inicial de sección."
+                provider.SectionVersion == 2,
+                "Versión 2 de sección por restaurante."
             );
             report.Check(
                 provider.LoadOrder == 20,
@@ -190,6 +219,51 @@ public static class BistroBuilderMenuFoundationSelfTest
             report.Check(
                 !provider.IsRequired,
                 "Compatibilidad con partidas 366B."
+            );
+
+            report.Check(
+                collectionService.TryCreateRestaurantFromCatalogDefaults(
+                    "restaurant_secondary",
+                    false,
+                    out _
+                ),
+                "Segunda carta creada desde valores canónicos."
+            );
+            report.Check(
+                menuService.TrySetPriceCents(
+                    "dish_fabada_asturiana",
+                    1990
+                ).Succeeded,
+                "Precio específico guardado en el restaurante principal."
+            );
+            report.Check(
+                collectionService.TryActivateRestaurant(
+                    "restaurant_secondary",
+                    out _
+                ) &&
+                menuService.TryGetItemSnapshot(
+                    "dish_fabada_asturiana",
+                    out BistroBuilderMenuItemRuntimeState secondaryFabada
+                ) &&
+                secondaryFabada.CurrentPriceCents == 1850,
+                "La segunda carta mantiene un precio independiente."
+            );
+            report.Check(
+                menuService.TrySetPriceCents(
+                    "dish_fabada_asturiana",
+                    2250
+                ).Succeeded &&
+                collectionService.TryActivateRestaurant(
+                    BistroBuilderRestaurantMenuCollectionService
+                        .DefaultRestaurantId,
+                    out _
+                ) &&
+                menuService.TryGetItemSnapshot(
+                    "dish_fabada_asturiana",
+                    out BistroBuilderMenuItemRuntimeState primaryFabada
+                ) &&
+                primaryFabada.CurrentPriceCents == 1990,
+                "Cambiar de restaurante restaura su carta exacta."
             );
 
             int eventCount = 0;
@@ -435,38 +509,72 @@ public static class BistroBuilderMenuFoundationSelfTest
             BistroBuilderMenuSaveData saveData =
                 (BistroBuilderMenuSaveData)captureContext.State;
             report.Check(
-                saveData.items.Count == 2,
-                "Captura conserva todas las entradas."
+                saveData.restaurants.Count == 2,
+                "Captura conserva las dos cartas independientes."
+            );
+            report.Check(
+                saveData.activeRestaurantId ==
+                    BistroBuilderRestaurantMenuCollectionService
+                        .DefaultRestaurantId,
+                "Captura conserva el RestaurantId activo."
+            );
+            report.Check(
+                saveData.restaurants[0].items.Count == 2,
+                "Captura conserva todas las entradas activas."
             );
             report.Check(
                 provider.ValidateState(saveData, out _),
-                "Estado persistente validado."
+                "Estado persistente v2 validado."
             );
 
             string json = JsonUtility.ToJson(saveData, true);
             BistroBuilderMenuSaveData roundTrip =
                 JsonUtility.FromJson<BistroBuilderMenuSaveData>(json);
             report.Check(
-                roundTrip != null && roundTrip.items.Count == 2,
-                "Round-trip JSON conserva la lista."
+                roundTrip != null &&
+                roundTrip.restaurants.Count == 2 &&
+                roundTrip.restaurants[0].items.Count == 2,
+                "Round-trip JSON conserva cartas y platos."
             );
             report.Check(
-                roundTrip.items[0].currentPriceCents ==
-                    saveData.items[0].currentPriceCents,
+                roundTrip.restaurants[0].items[0].currentPriceCents ==
+                    saveData.restaurants[0].items[0].currentPriceCents,
                 "Round-trip JSON conserva céntimos exactos."
             );
             report.Check(
-                roundTrip.items[0].dishId == saveData.items[0].dishId,
+                roundTrip.restaurants[0].items[0].dishId ==
+                    saveData.restaurants[0].items[0].dishId,
                 "Round-trip JSON conserva DishId."
             );
 
-            BistroBuilderMenuSaveData corrupted =
-                JsonUtility.FromJson<BistroBuilderMenuSaveData>(json);
-            corrupted.items[0].dishId = "dish_missing";
+            BistroBuilderMenuSaveDataV1 legacy =
+                new BistroBuilderMenuSaveDataV1
+                {
+                    schemaVersion = 1,
+                    items = saveData.restaurants[0].items
+                };
             report.Check(
-                !provider.ValidateState(corrupted, out string missingError) &&
-                missingError.Contains("inexistente"),
-                "Persistencia rechaza referencias rotas."
+                migration.TryMigrate(
+                    Encoding.UTF8.GetBytes(JsonUtility.ToJson(legacy)),
+                    out byte[] migratedPayload,
+                    out _
+                ),
+                "Migración pura menu.state v1 a v2 completada."
+            );
+            BistroBuilderMenuSaveData migrated =
+                JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+                    Encoding.UTF8.GetString(migratedPayload)
+                );
+            report.Check(
+                migrated != null &&
+                migrated.schemaVersion == 2 &&
+                migrated.restaurants.Count == 1 &&
+                migrated.restaurants[0].items.Count == 2,
+                "Migración conserva íntegramente la carta histórica."
+            );
+            report.Check(
+                provider.ValidateState(migrated, out _),
+                "Resultado migrado aceptado por el proveedor v2."
             );
 
             menuService.ResetToCatalogDefaults();
@@ -476,20 +584,42 @@ public static class BistroBuilderMenuFoundationSelfTest
             RunEnumerator(provider.ApplyState(roundTrip, loadContext));
             report.Check(
                 !loadContext.HasFailed,
-                "Aplicación menu.state completada."
+                "Aplicación menu.state v2 completada."
             );
             report.Check(
                 menuService.ItemCount == 2,
                 "Carga restaura el número exacto de entradas."
             );
+            BistroBuilderMenuItemSaveData firstSaved =
+                roundTrip.restaurants[0].items[0];
             report.Check(
                 menuService.TryGetItemSnapshot(
-                    roundTrip.items[0].dishId,
+                    firstSaved.dishId,
                     out BistroBuilderMenuItemRuntimeState restoredItem
                 ) &&
                 restoredItem.CurrentPriceCents ==
-                    roundTrip.items[0].currentPriceCents,
+                    firstSaved.currentPriceCents,
                 "Carga restaura precio e identidad."
+            );
+
+            BistroBuilderMenuSaveData unresolvedState =
+                JsonUtility.FromJson<BistroBuilderMenuSaveData>(json);
+            unresolvedState.restaurants[0].items[0].dishId =
+                "dish_temporarily_missing";
+            report.Check(
+                provider.ValidateState(unresolvedState, out _),
+                "Persistencia admite DishId temporalmente ausente sin perderlo."
+            );
+            BistroBuilderSaveLoadContext unresolvedContext =
+                new BistroBuilderSaveLoadContext(78, false, 1);
+            RunEnumerator(provider.ApplyState(
+                unresolvedState,
+                unresolvedContext
+            ));
+            report.Check(
+                !unresolvedContext.HasFailed &&
+                collectionService.UnresolvedItemCount == 1,
+                "Carga clasifica y conserva el DishId no resuelto."
             );
 
             BistroBuilderMenuValidationResult projectValidation =

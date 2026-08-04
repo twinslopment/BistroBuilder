@@ -4,6 +4,10 @@ using UnityEngine;
 /// <summary>
 /// Estado modificable de un plato concreto dentro de la carta de una
 /// partida. No contiene la definición completa: solo referencia DishId.
+///
+/// El mismo tipo se utiliza para entradas resueltas y para entradas
+/// temporalmente no resueltas durante una migración. Por eso separa la
+/// validación estructural de la validación contra el catálogo actual.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderMenuItemRuntimeState
@@ -114,21 +118,16 @@ public sealed class BistroBuilderMenuItemRuntimeState
         );
     }
 
-    public bool TryValidate(
-        BistroBuilderDishCatalogService catalogService,
-        out string error
-    )
+    /// <summary>
+    /// Valida únicamente los datos propios de la entrada. No exige que el
+    /// DishId exista en el catálogo actual, lo que permite conservar datos de
+    /// una partida cuando una definición falta temporalmente.
+    /// </summary>
+    public bool TryValidateStructure(out string error)
     {
         if (!BistroBuilderMenuIdUtility.IsValidStableId(dishId))
         {
             error = "La entrada de carta contiene un DishId inválido.";
-            return false;
-        }
-
-        if (catalogService == null ||
-            !catalogService.TryGetDefinition(dishId, out _))
-        {
-            error = "La carta referencia un plato inexistente: " + dishId + ".";
             return false;
         }
 
@@ -153,6 +152,27 @@ public sealed class BistroBuilderMenuItemRuntimeState
         {
             error = "El orden de presentación de " + dishId +
                     " no puede ser negativo.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryValidate(
+        BistroBuilderDishCatalogService catalogService,
+        out string error
+    )
+    {
+        if (!TryValidateStructure(out error))
+        {
+            return false;
+        }
+
+        if (catalogService == null ||
+            !catalogService.TryGetDefinition(dishId, out _))
+        {
+            error = "La carta referencia un plato inexistente: " + dishId + ".";
             return false;
         }
 

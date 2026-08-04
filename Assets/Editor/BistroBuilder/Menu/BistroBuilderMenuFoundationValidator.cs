@@ -157,8 +157,14 @@ public static class BistroBuilderMenuFoundationValidator
             gameSystems.GetComponent<BistroBuilderDishCatalogService>();
         BistroBuilderRestaurantMenuService menuService =
             gameSystems.GetComponent<BistroBuilderRestaurantMenuService>();
+        BistroBuilderRestaurantMenuCollectionService collectionService =
+            gameSystems.GetComponent<
+                BistroBuilderRestaurantMenuCollectionService
+            >();
         BistroBuilderMenuSaveSectionProvider menuProvider =
             gameSystems.GetComponent<BistroBuilderMenuSaveSectionProvider>();
+        BistroBuilderMenuStateV1ToV2Migration menuMigration =
+            gameSystems.GetComponent<BistroBuilderMenuStateV1ToV2Migration>();
         BistroBuilderSaveGameService saveGameService =
             gameSystems.GetComponent<BistroBuilderSaveGameService>();
 
@@ -173,8 +179,18 @@ public static class BistroBuilderMenuFoundationValidator
             result
         );
         ValidateComponent(
+            collectionService,
+            "BistroBuilderRestaurantMenuCollectionService instalado.",
+            result
+        );
+        ValidateComponent(
             menuProvider,
             "BistroBuilderMenuSaveSectionProvider instalado.",
+            result
+        );
+        ValidateComponent(
+            menuMigration,
+            "Migración menu.state v1 a v2 instalada.",
             result
         );
         ValidateComponent(
@@ -241,10 +257,38 @@ public static class BistroBuilderMenuFoundationValidator
             }
         }
 
+        if (collectionService != null)
+        {
+            if (collectionService.MenuService != menuService ||
+                collectionService.CatalogService != catalogService)
+            {
+                result.AddError(
+                    "La colección de cartas no usa los servicios canónicos."
+                );
+            }
+            else if (!collectionService.ValidateConfiguration(
+                         out string collectionError
+                     ))
+            {
+                result.AddError(collectionError);
+            }
+            else
+            {
+                result.AddCorrect(
+                    "Colección válida con " +
+                    collectionService.RestaurantCount +
+                    " restaurante(s) y " +
+                    collectionService.UnresolvedItemCount +
+                    " entrada(s) no resuelta(s)."
+                );
+            }
+        }
+
         if (menuProvider != null)
         {
             if (menuProvider.MenuService != menuService ||
-                menuProvider.CatalogService != catalogService)
+                menuProvider.CatalogService != catalogService ||
+                menuProvider.CollectionService != collectionService)
             {
                 result.AddError(
                     "menu.state no tiene sus dependencias correctamente asignadas."
@@ -264,7 +308,33 @@ public static class BistroBuilderMenuFoundationValidator
             }
             else
             {
-                result.AddCorrect("La sección menu.state está preparada.");
+                result.AddCorrect(
+                    "La sección menu.state v" +
+                    menuProvider.SectionVersion + " está preparada."
+                );
+            }
+        }
+
+        if (menuMigration != null)
+        {
+            if (menuMigration.SectionId !=
+                    BistroBuilderMenuSaveSectionProvider.StableSectionId ||
+                menuMigration.FromVersion != 1 ||
+                menuMigration.ToVersion != 2 ||
+                menuMigration.FromSerializerId !=
+                    BistroBuilderJsonSaveSerializer.StableSerializerId ||
+                menuMigration.ToSerializerId !=
+                    BistroBuilderJsonSaveSerializer.StableSerializerId)
+            {
+                result.AddError(
+                    "La migración menu.state v1 a v2 no cumple el contrato."
+                );
+            }
+            else
+            {
+                result.AddCorrect(
+                    "Migración consecutiva menu.state v1 a v2 preparada."
+                );
             }
         }
 

@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Proveedor versionado de la sección menu.state.
+/// Proveedor versionado de menu.state.
 ///
-/// Se integra en la plataforma 366 sin conocer archivos ni rutas. La carta
-/// se captura y restaura de forma atómica mediante DishId estables.
+/// V2 persiste cartas independientes por RestaurantId, el restaurante activo
+/// y las entradas no resueltas. La aplicación se realiza de forma atómica a
+/// través de BistroBuilderRestaurantMenuCollectionService; el servicio de
+/// carta activo sigue siendo la autoridad operativa consumida por comandas.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Persistence/Menu Save Provider")]
@@ -17,7 +19,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     IBistroBuilderSaveSectionPhaseOrdering
 {
     public const string StableSectionId = "menu.state";
-    public const int StableSectionVersion = 1;
+    public const int StableSectionVersion = 2;
 
     [Header("Dependencias")]
 
@@ -30,6 +32,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     [SerializeField]
     private BistroBuilderDishCatalogService catalogService;
 
+    [SerializeField]
+    private BistroBuilderRestaurantMenuCollectionService collectionService;
+
     [Header("Rendimiento")]
 
     [SerializeField]
@@ -41,8 +46,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     [SerializeField]
     private bool logLoadSummary = true;
 
-    private readonly List<BistroBuilderMenuItemRuntimeState> captureBuffer =
-        new List<BistroBuilderMenuItemRuntimeState>(32);
+    private readonly List<BistroBuilderRestaurantMenuRuntimeState>
+        restaurantBuffer =
+            new List<BistroBuilderRestaurantMenuRuntimeState>(4);
 
     public string SectionId => StableSectionId;
 
@@ -50,7 +56,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
 
     public int LoadOrder => 20;
 
-    // Se mantiene opcional para poder abrir partidas 366/366B anteriores.
+    // Sigue siendo opcional para abrir partidas 366/366B sin menu.state.
     public bool IsRequired => false;
 
     public Type StateType => typeof(BistroBuilderMenuSaveData);
@@ -67,6 +73,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     public BistroBuilderRestaurantMenuService MenuService => menuService;
 
     public BistroBuilderDishCatalogService CatalogService => catalogService;
+
+    public BistroBuilderRestaurantMenuCollectionService CollectionService =>
+        collectionService;
 
     private void Awake()
     {
@@ -105,13 +114,29 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
+        if (collectionService == null)
+        {
+            error = "Falta BistroBuilderRestaurantMenuCollectionService.";
+            return false;
+        }
+
+        if (collectionService.MenuService != menuService ||
+            collectionService.CatalogService != catalogService)
+        {
+            error = "La colección de cartas no comparte las dependencias canónicas.";
+            return false;
+        }
+
+        if (!collectionService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
 
-    public IEnumerator CaptureState(
-        BistroBuilderSaveCaptureContext context
-    )
+    public IEnumerator CaptureState(BistroBuilderSaveCaptureContext context)
     {
         if (!ValidateConfiguration(out string configurationError))
         {
@@ -119,8 +144,8 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             yield break;
         }
 
-        if (!menuService.TryGetSnapshot(
-                captureBuffer,
+        if (!collectionService.TryGetAllRestaurantSnapshots(
+                restaurantBuffer,
                 out string snapshotError
             ))
         {
@@ -128,10 +153,21 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             yield break;
         }
 
-        BistroBuilderMenuSaveData data = new BistroBuilderMenuSaveData();
-        int batchSize = Mathf.Max(1, captureItemsPerFrame);
+        BistroBuilderMenuSaveData data = new BistroBuilderMenuSaveData
+        {
+            schemaVersion = StableSectionVersion,
+            activeRestaurantId = collectionService.ActiveRestaurantId,
+            restaurants = new List<BistroBuilderRestaurantMenuSaveData>(
+                restaurantBuffer.Count
+            )
+        };
 
-        for (int index = 0; index < captureBuffer.Count; index++)
+        int batchSize = Mathf.Max(1, captureItemsPerFrame);
+        int capturedItems = 0;
+
+        for (int restaurantIndex = 0;
+             restaurantIndex < restaurantBuffer.Count;
+             restaurantIndex++)
         {
             if (context.IsCancellationRequested)
             {
@@ -139,26 +175,42 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
                 yield break;
             }
 
-            BistroBuilderMenuItemRuntimeState item = captureBuffer[index];
-
-            data.items.Add(
-                new BistroBuilderMenuItemSaveData
+            BistroBuilderRestaurantMenuRuntimeState source =
+                restaurantBuffer[restaurantIndex];
+            BistroBuilderRestaurantMenuSaveData target =
+                new BistroBuilderRestaurantMenuSaveData
                 {
-                    dishId = item.DishId,
-                    currentPriceCents = item.CurrentPriceCents,
-                    unlocked = item.Unlocked,
-                    enabled = item.Enabled,
-                    manuallySoldOut = item.ManuallySoldOut,
-                    signatureDish = item.SignatureDish,
-                    availableServices = (int)item.AvailableServices,
-                    displayOrder = item.DisplayOrder
-                }
-            );
+                    restaurantId = source.RestaurantId,
+                    revision = source.Revision
+                };
 
-            if ((index + 1) % batchSize == 0)
+            for (int index = 0; index < source.Items.Count; index++)
             {
-                yield return null;
+                target.items.Add(ToSaveData(source.Items[index]));
+                capturedItems++;
+
+                if (capturedItems % batchSize == 0)
+                {
+                    yield return null;
+                }
             }
+
+            for (int index = 0;
+                 index < source.UnresolvedItems.Count;
+                 index++)
+            {
+                target.unresolvedItems.Add(
+                    ToSaveData(source.UnresolvedItems[index])
+                );
+                capturedItems++;
+
+                if (capturedItems % batchSize == 0)
+                {
+                    yield return null;
+                }
+            }
+
+            data.restaurants.Add(target);
         }
 
         context.Complete(data);
@@ -178,9 +230,17 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
-        if (data.items == null)
+        if (!BistroBuilderMenuIdUtility.IsValidStableId(
+                data.activeRestaurantId
+            ))
         {
-            error = "La lista persistente de carta es nula.";
+            error = "menu.state contiene un RestaurantId activo inválido.";
+            return false;
+        }
+
+        if (data.restaurants == null || data.restaurants.Count == 0)
+        {
+            error = "menu.state no contiene cartas por restaurante.";
             return false;
         }
 
@@ -195,75 +255,90 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
-        HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> restaurantIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        bool activeFound = false;
 
-        for (int index = 0; index < data.items.Count; index++)
+        for (int restaurantIndex = 0;
+             restaurantIndex < data.restaurants.Count;
+             restaurantIndex++)
         {
-            BistroBuilderMenuItemSaveData item = data.items[index];
+            BistroBuilderRestaurantMenuSaveData restaurant =
+                data.restaurants[restaurantIndex];
 
-            if (item == null)
+            if (restaurant == null)
             {
-                error = "menu.state contiene una entrada nula.";
+                error = "menu.state contiene una carta de restaurante nula.";
                 return false;
             }
 
-            if (!BistroBuilderMenuIdUtility.IsValidStableId(item.dishId))
-            {
-                error = "menu.state contiene un DishId inválido.";
-                return false;
-            }
-
-            if (!ids.Add(item.dishId))
-            {
-                error = "menu.state contiene el DishId duplicado " +
-                        item.dishId + ".";
-                return false;
-            }
-
-            if (!catalogService.TryGetDefinition(item.dishId, out _))
-            {
-                error = "menu.state referencia el plato inexistente " +
-                        item.dishId + ".";
-                return false;
-            }
-
-            if (item.currentPriceCents < 0 ||
-                item.currentPriceCents >
-                    BistroBuilderDishDefinition.MaximumPriceCents)
-            {
-                error = "menu.state contiene un precio inválido para " +
-                        item.dishId + ".";
-                return false;
-            }
-
-            BistroBuilderMealServiceAvailability availability =
-                (BistroBuilderMealServiceAvailability)item.availableServices;
-
-            if (!BistroBuilderMenuIdUtility.IsValidServiceMask(
-                    availability,
-                    true
+            if (!BistroBuilderMenuIdUtility.IsValidStableId(
+                    restaurant.restaurantId
                 ))
             {
-                error = "menu.state contiene servicios inválidos para " +
-                        item.dishId + ".";
+                error = "menu.state contiene un RestaurantId inválido.";
                 return false;
             }
 
-            if (item.displayOrder < 0)
+            if (!restaurantIds.Add(restaurant.restaurantId))
             {
-                error = "menu.state contiene un orden negativo para " +
-                        item.dishId + ".";
+                error = "menu.state contiene el RestaurantId duplicado " +
+                        restaurant.restaurantId + ".";
                 return false;
             }
+
+            if (restaurant.revision < 0)
+            {
+                error = "menu.state contiene una revisión negativa para " +
+                        restaurant.restaurantId + ".";
+                return false;
+            }
+
+            if (restaurant.items == null ||
+                restaurant.unresolvedItems == null)
+            {
+                error = "menu.state contiene listas nulas para " +
+                        restaurant.restaurantId + ".";
+                return false;
+            }
+
+            HashSet<string> dishIds =
+                new HashSet<string>(StringComparer.Ordinal);
+
+            if (!ValidateItems(
+                    restaurant.items,
+                    dishIds,
+                    restaurant.restaurantId,
+                    out error
+                ) ||
+                !ValidateItems(
+                    restaurant.unresolvedItems,
+                    dishIds,
+                    restaurant.restaurantId,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            activeFound |= string.Equals(
+                restaurant.restaurantId,
+                data.activeRestaurantId,
+                StringComparison.Ordinal
+            );
+        }
+
+        if (!activeFound)
+        {
+            error = "menu.state no contiene la carta del restaurante activo.";
+            return false;
         }
 
         error = string.Empty;
         return true;
     }
 
-    public IEnumerator PrepareForLoad(
-        BistroBuilderSaveLoadContext context
-    )
+    public IEnumerator PrepareForLoad(BistroBuilderSaveLoadContext context)
     {
         if (!ValidateConfiguration(out string error))
         {
@@ -284,15 +359,18 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             yield break;
         }
 
-        BistroBuilderMenuSaveData data =
-            (BistroBuilderMenuSaveData)state;
-
-        List<BistroBuilderMenuItemRuntimeState> replacement =
-            new List<BistroBuilderMenuItemRuntimeState>(data.items.Count);
+        BistroBuilderMenuSaveData data = (BistroBuilderMenuSaveData)state;
+        List<BistroBuilderRestaurantMenuRuntimeState> replacement =
+            new List<BistroBuilderRestaurantMenuRuntimeState>(
+                data.restaurants.Count
+            );
 
         int batchSize = Mathf.Max(1, context.ObjectsPerFrame);
+        int convertedItems = 0;
 
-        for (int index = 0; index < data.items.Count; index++)
+        for (int restaurantIndex = 0;
+             restaurantIndex < data.restaurants.Count;
+             restaurantIndex++)
         {
             if (context.IsCancellationRequested)
             {
@@ -300,30 +378,56 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
                 yield break;
             }
 
-            BistroBuilderMenuItemSaveData item = data.items[index];
+            BistroBuilderRestaurantMenuSaveData source =
+                data.restaurants[restaurantIndex];
+            List<BistroBuilderMenuItemRuntimeState> resolved =
+                new List<BistroBuilderMenuItemRuntimeState>(
+                    source.items.Count
+                );
+            List<BistroBuilderMenuItemRuntimeState> unresolved =
+                new List<BistroBuilderMenuItemRuntimeState>(
+                    source.unresolvedItems.Count
+                );
+
+            for (int index = 0; index < source.items.Count; index++)
+            {
+                resolved.Add(ToRuntimeState(source.items[index]));
+                convertedItems++;
+
+                if (convertedItems % batchSize == 0)
+                {
+                    yield return null;
+                }
+            }
+
+            for (int index = 0;
+                 index < source.unresolvedItems.Count;
+                 index++)
+            {
+                unresolved.Add(
+                    ToRuntimeState(source.unresolvedItems[index])
+                );
+                convertedItems++;
+
+                if (convertedItems % batchSize == 0)
+                {
+                    yield return null;
+                }
+            }
 
             replacement.Add(
-                new BistroBuilderMenuItemRuntimeState(
-                    item.dishId,
-                    item.currentPriceCents,
-                    item.unlocked,
-                    item.enabled,
-                    item.manuallySoldOut,
-                    item.signatureDish,
-                    (BistroBuilderMealServiceAvailability)
-                        item.availableServices,
-                    item.displayOrder
+                new BistroBuilderRestaurantMenuRuntimeState(
+                    source.restaurantId,
+                    source.revision,
+                    resolved,
+                    unresolved
                 )
             );
-
-            if ((index + 1) % batchSize == 0)
-            {
-                yield return null;
-            }
         }
 
-        if (!menuService.TryReplaceAll(
+        if (!collectionService.TryReplaceAllRestaurantStates(
                 replacement,
+                data.activeRestaurantId,
                 true,
                 out string applyError
             ))
@@ -340,9 +444,121 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         }
 
         Debug.Log(
-            "menu.state restaurada con " + menuService.ItemCount +
-            " plato(s) y revisión " + menuService.Revision + ".",
+            "menu.state v2 restaurada con " +
+            collectionService.RestaurantCount + " restaurante(s), " +
+            menuService.ItemCount + " plato(s) activos y " +
+            collectionService.UnresolvedItemCount +
+            " entrada(s) no resuelta(s).",
             this
+        );
+    }
+
+    private bool ValidateItems(
+        List<BistroBuilderMenuItemSaveData> items,
+        HashSet<string> ids,
+        string restaurantId,
+        out string error
+    )
+    {
+        for (int index = 0; index < items.Count; index++)
+        {
+            BistroBuilderMenuItemSaveData item = items[index];
+
+            if (item == null)
+            {
+                error = "menu.state contiene una entrada nula en " +
+                        restaurantId + ".";
+                return false;
+            }
+
+            if (!TryValidateItemStructure(item, out error))
+            {
+                return false;
+            }
+
+            if (!ids.Add(item.dishId))
+            {
+                error = "menu.state contiene el DishId duplicado " +
+                        item.dishId + " en " + restaurantId + ".";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TryValidateItemStructure(
+        BistroBuilderMenuItemSaveData item,
+        out string error
+    )
+    {
+        if (!BistroBuilderMenuIdUtility.IsValidStableId(item.dishId))
+        {
+            error = "menu.state contiene un DishId inválido.";
+            return false;
+        }
+
+        if (item.currentPriceCents < 0 ||
+            item.currentPriceCents >
+                BistroBuilderDishDefinition.MaximumPriceCents)
+        {
+            error = "menu.state contiene un precio inválido para " +
+                    item.dishId + ".";
+            return false;
+        }
+
+        if (!BistroBuilderMenuIdUtility.IsValidServiceMask(
+                (BistroBuilderMealServiceAvailability)item.availableServices,
+                true
+            ))
+        {
+            error = "menu.state contiene servicios inválidos para " +
+                    item.dishId + ".";
+            return false;
+        }
+
+        if (item.displayOrder < 0)
+        {
+            error = "menu.state contiene un orden negativo para " +
+                    item.dishId + ".";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static BistroBuilderMenuItemSaveData ToSaveData(
+        BistroBuilderMenuItemRuntimeState item
+    )
+    {
+        return new BistroBuilderMenuItemSaveData
+        {
+            dishId = item.DishId,
+            currentPriceCents = item.CurrentPriceCents,
+            unlocked = item.Unlocked,
+            enabled = item.Enabled,
+            manuallySoldOut = item.ManuallySoldOut,
+            signatureDish = item.SignatureDish,
+            availableServices = (int)item.AvailableServices,
+            displayOrder = item.DisplayOrder
+        };
+    }
+
+    private static BistroBuilderMenuItemRuntimeState ToRuntimeState(
+        BistroBuilderMenuItemSaveData item
+    )
+    {
+        return new BistroBuilderMenuItemRuntimeState(
+            item.dishId,
+            item.currentPriceCents,
+            item.unlocked,
+            item.enabled,
+            item.manuallySoldOut,
+            item.signatureDish,
+            (BistroBuilderMealServiceAvailability)item.availableServices,
+            item.displayOrder
         );
     }
 
@@ -361,6 +577,11 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         if (menuService == null)
         {
             TryGetComponent(out menuService);
+        }
+
+        if (collectionService == null)
+        {
+            TryGetComponent(out collectionService);
         }
     }
 

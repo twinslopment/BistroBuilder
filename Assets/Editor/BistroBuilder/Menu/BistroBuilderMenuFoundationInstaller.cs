@@ -155,8 +155,16 @@ public static class BistroBuilderMenuFoundationInstaller
                 GetOrAddComponent<BistroBuilderRestaurantMenuService>(
                     gameSystems
                 );
+            BistroBuilderRestaurantMenuCollectionService collectionService =
+                GetOrAddComponent<BistroBuilderRestaurantMenuCollectionService>(
+                    gameSystems
+                );
             BistroBuilderMenuSaveSectionProvider menuProvider =
                 GetOrAddComponent<BistroBuilderMenuSaveSectionProvider>(
+                    gameSystems
+                );
+            BistroBuilderMenuStateV1ToV2Migration menuMigration =
+                GetOrAddComponent<BistroBuilderMenuStateV1ToV2Migration>(
                     gameSystems
                 );
             BistroBuilderSaveGameService saveGameService =
@@ -164,19 +172,36 @@ public static class BistroBuilderMenuFoundationInstaller
 
             ConfigureCatalogService(catalogService, catalog);
             ConfigureMenuService(menuService, catalogService);
+            ConfigureCollectionService(
+                collectionService,
+                menuService,
+                catalogService
+            );
             ConfigureSaveProvider(
                 menuProvider,
                 saveGameService,
                 menuService,
-                catalogService
+                catalogService,
+                collectionService
             );
+            ConfigureMigration(menuMigration);
+
+            if (!collectionService
+                    .RebuildRuntimeIndexAndEnsurePrimaryRestaurant(
+                        out string collectionError
+                    ))
+            {
+                throw new InvalidOperationException(collectionError);
+            }
 
             saveGameService.RefreshExtensions();
 
             EditorUtility.SetDirty(catalog);
             EditorUtility.SetDirty(catalogService);
             EditorUtility.SetDirty(menuService);
+            EditorUtility.SetDirty(collectionService);
             EditorUtility.SetDirty(menuProvider);
+            EditorUtility.SetDirty(menuMigration);
             EditorUtility.SetDirty(saveGameService);
             EditorSceneManager.MarkSceneDirty(scene);
 
@@ -474,11 +499,50 @@ public static class BistroBuilderMenuFoundationInstaller
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
+
+    private static void ConfigureCollectionService(
+        BistroBuilderRestaurantMenuCollectionService service,
+        BistroBuilderRestaurantMenuService menuService,
+        BistroBuilderDishCatalogService catalogService
+    )
+    {
+        SerializedObject serialized = new SerializedObject(service);
+        RequireProperty(serialized, "menuService").objectReferenceValue =
+            menuService;
+        RequireProperty(serialized, "catalogService").objectReferenceValue =
+            catalogService;
+        RequireProperty(serialized, "initialRestaurantId").stringValue =
+            BistroBuilderRestaurantMenuCollectionService.DefaultRestaurantId;
+
+        SerializedProperty active =
+            RequireProperty(serialized, "activeRestaurantId");
+
+        if (string.IsNullOrWhiteSpace(active.stringValue))
+        {
+            active.stringValue =
+                BistroBuilderRestaurantMenuCollectionService.DefaultRestaurantId;
+        }
+
+        RequireProperty(serialized, "logChanges").boolValue = true;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureMigration(
+        BistroBuilderMenuStateV1ToV2Migration migration
+    )
+    {
+        SerializedObject serialized = new SerializedObject(migration);
+        RequireProperty(serialized, "defaultRestaurantId").stringValue =
+            BistroBuilderRestaurantMenuCollectionService.DefaultRestaurantId;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     private static void ConfigureSaveProvider(
         BistroBuilderMenuSaveSectionProvider provider,
         BistroBuilderSaveGameService saveGameService,
         BistroBuilderRestaurantMenuService menuService,
-        BistroBuilderDishCatalogService catalogService
+        BistroBuilderDishCatalogService catalogService,
+        BistroBuilderRestaurantMenuCollectionService collectionService
     )
     {
         SerializedObject serialized = new SerializedObject(provider);
@@ -488,6 +552,8 @@ public static class BistroBuilderMenuFoundationInstaller
             menuService;
         RequireProperty(serialized, "catalogService").objectReferenceValue =
             catalogService;
+        RequireProperty(serialized, "collectionService").objectReferenceValue =
+            collectionService;
         RequireProperty(serialized, "captureItemsPerFrame").intValue = 64;
         RequireProperty(serialized, "logLoadSummary").boolValue = true;
         serialized.ApplyModifiedPropertiesWithoutUndo();
