@@ -463,12 +463,22 @@ public static class BistroBuilderBarServiceInstaller
     {
         Undo.RecordObject(definition, "Configurar artículo 367H");
         SerializedObject serialized = new SerializedObject(definition);
+        SerializedProperty definitionVersion =
+            RequireProperty(serialized, "definitionVersion");
+        definitionVersion.intValue = Mathf.Max(
+            BistroBuilderDishDefinition.CurrentDefinitionVersion,
+            definitionVersion.intValue
+        );
         RequireProperty(serialized, "dishId").stringValue = seed.Id;
         RequireProperty(serialized, "displayName").stringValue = seed.Name;
         RequireProperty(serialized, "description").stringValue =
             seed.Description;
         RequireProperty(serialized, "category").enumValueIndex =
             (int)seed.Category;
+        RequireProperty(serialized, "categoryId").stringValue =
+            BistroBuilderDishCategoryIdUtility.FromLegacyCategory(
+                seed.Category
+            );
         RequireProperty(serialized, "course").enumValueIndex =
             (int)seed.Course;
         RequireProperty(serialized, "defaultAvailability").intValue =

@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af4b9d22e7c54d8674c13d02b2f31f0e, type: 3}
   m_Name: dish_merluza_plancha
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishDefinition
+  definitionVersion: 1
   dishId: dish_merluza_plancha
   displayName: Merluza a la plancha
   description: Merluza preparada a la plancha y servida como principal.
   category: 1
+  categoryId: category_main_course
   course: 3
   defaultAvailability: 6
   allowedServiceModes: 1

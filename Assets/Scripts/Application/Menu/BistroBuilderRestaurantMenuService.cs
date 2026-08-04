@@ -24,6 +24,9 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
     [SerializeField]
     private BistroBuilderDishAvailabilityService availabilityService;
 
+    [SerializeField]
+    private BistroBuilderMenuCommercialPolicy commercialPolicy;
+
     [Header("Inicialización")]
 
     [Tooltip(
@@ -65,6 +68,9 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
 
     public BistroBuilderDishCatalogService CatalogService => catalogService;
 
+    public BistroBuilderMenuCommercialPolicy CommercialPolicy =>
+        commercialPolicy;
+
     public int ItemCount => items != null ? items.Count : 0;
 
     public int Revision { get; private set; }
@@ -91,6 +97,12 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         }
 
         if (!catalogService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        if (commercialPolicy != null &&
+            !commercialPolicy.TryValidate(out error))
         {
             return false;
         }
@@ -125,6 +137,15 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
                         item.DishId + ".";
                 return false;
             }
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidateMenu(
+                items,
+                commercialPolicy,
+                out error
+            ))
+        {
+            return false;
         }
 
         error = string.Empty;
@@ -169,6 +190,17 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         }
 
         NormalizeDisplayOrder(items);
+
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidateMenu(
+                items,
+                commercialPolicy,
+                out error
+            ))
+        {
+            initialized = false;
+            return false;
+        }
+
         initialized = true;
         error = string.Empty;
         return true;
@@ -290,6 +322,15 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
 
         NormalizeDisplayOrder(candidate);
 
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidateMenu(
+                candidate,
+                commercialPolicy,
+                out error
+            ))
+        {
+            return false;
+        }
+
         items.Clear();
         items.AddRange(candidate);
 
@@ -324,6 +365,18 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return Failure(
                 BistroBuilderMenuMutationFailureReason.InvalidConfiguration,
                 error
+            );
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.CanAddDish(
+                items.Count,
+                commercialPolicy,
+                out string policyError
+            ))
+        {
+            return Failure(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                policyError
             );
         }
 
@@ -422,6 +475,22 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return NoChange("El estado activo ya tenía ese valor.");
         }
 
+        if (!BistroBuilderMenuPolicyEvaluator
+                .CanApplySignatureDependentState(
+                    item,
+                    value,
+                    item.Unlocked,
+                    item.AvailableServices,
+                    commercialPolicy,
+                    out string policyError
+                ))
+        {
+            return Failure(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                policyError
+            );
+        }
+
         item.SetEnabled(value);
         CommitItemChange(
             item,
@@ -449,6 +518,22 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return NoChange("El desbloqueo ya tenía ese valor.");
         }
 
+        if (!BistroBuilderMenuPolicyEvaluator
+                .CanApplySignatureDependentState(
+                    item,
+                    item.Enabled,
+                    value,
+                    item.AvailableServices,
+                    commercialPolicy,
+                    out string policyError
+                ))
+        {
+            return Failure(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                policyError
+            );
+        }
+
         item.SetUnlocked(value);
         CommitItemChange(
             item,
@@ -466,12 +551,15 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         int priceCents
     )
     {
-        if (priceCents < 0 ||
-            priceCents > BistroBuilderDishDefinition.MaximumPriceCents)
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidatePrice(
+                priceCents,
+                commercialPolicy,
+                out string priceError
+            ))
         {
             return Failure(
                 BistroBuilderMenuMutationFailureReason.InvalidPrice,
-                "El precio queda fuera del rango permitido."
+                priceError
             );
         }
 
@@ -521,6 +609,22 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         if (item.AvailableServices == availability)
         {
             return NoChange("El plato ya tenía esa disponibilidad.");
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator
+                .CanApplySignatureDependentState(
+                    item,
+                    item.Enabled,
+                    item.Unlocked,
+                    availability,
+                    commercialPolicy,
+                    out string policyError
+                ))
+        {
+            return Failure(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                policyError
+            );
         }
 
         item.SetAvailableServices(availability);
@@ -575,6 +679,21 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
         if (item.SignatureDish == value)
         {
             return NoChange("El estado de plato firma ya tenía ese valor.");
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.CanSetSignatureDish(
+                items,
+                item,
+                value,
+                commercialPolicy,
+                out BistroBuilderMenuMutationFailureReason failureReason,
+                out string policyError
+            ))
+        {
+            return Failure(
+                failureReason,
+                policyError
+            );
         }
 
         item.SetSignatureDish(value);
@@ -865,6 +984,17 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
     {
         Revision++;
         PublishChange(changeType, item.DishId, description);
+    }
+
+    internal void PublishStateReplaced(string description)
+    {
+        PublishChange(
+            BistroBuilderMenuChangeType.StateReplaced,
+            string.Empty,
+            string.IsNullOrWhiteSpace(description)
+                ? "La carta activa se ha sustituido de forma atómica."
+                : description
+        );
     }
 
     private void PublishChange(

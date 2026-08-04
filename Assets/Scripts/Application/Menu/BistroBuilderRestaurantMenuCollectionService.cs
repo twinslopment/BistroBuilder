@@ -173,7 +173,8 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
                 return false;
             }
 
-            if (!state.TryValidate(catalogService, out error))
+            if (!state.TryValidate(catalogService, out error) ||
+                !TryValidateRestaurantPolicy(state, out error))
             {
                 return false;
             }
@@ -263,7 +264,8 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
             );
         }
 
-        if (!TryReconcileAndBuildIndex(restaurantStates, out error))
+        if (!TryReconcileAndBuildIndex(restaurantStates, out error) ||
+            !TryValidateAllRestaurantPolicies(restaurantStates, out error))
         {
             initialized = false;
             return false;
@@ -404,7 +406,8 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
                 Array.Empty<BistroBuilderMenuItemRuntimeState>()
             );
 
-        if (!state.TryValidate(catalogService, out error))
+        if (!state.TryValidate(catalogService, out error) ||
+            !TryValidateRestaurantPolicy(state, out error))
         {
             return false;
         }
@@ -476,7 +479,7 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
         {
             replaced = menuService.TryReplaceAll(
                 replacementBuffer,
-                true,
+                false,
                 out error
             );
         }
@@ -497,6 +500,10 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
             return false;
         }
 
+        PublishMenuStateReplacedWithoutRecapture(
+            "La carta operativa cambió al restaurante " +
+            activeRestaurantId + "."
+        );
         ActiveRestaurantChanged?.Invoke(
             previousRestaurantId,
             activeRestaurantId
@@ -511,6 +518,121 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
             );
         }
 
+        return true;
+    }
+
+    /// <summary>
+    /// Reemplaza de forma atómica la carta del restaurante activo y conserva
+    /// su agregado 2.1A en la misma operación. Los parámetros de revisión
+    /// implementan concurrencia optimista para impedir sobrescrituras desde
+    /// una sesión de edición obsoleta.
+    /// </summary>
+    public bool TryReplaceActiveRestaurantItems(
+        IList<BistroBuilderMenuItemRuntimeState> replacement,
+        int expectedRestaurantRevision,
+        int expectedMenuRevision,
+        bool notify,
+        out int previousRestaurantRevision,
+        out int currentRestaurantRevision,
+        out string error
+    )
+    {
+        previousRestaurantRevision = 0;
+        currentRestaurantRevision = 0;
+
+        if (!EnsureInitialized(out error))
+        {
+            return false;
+        }
+
+        if (replacement == null)
+        {
+            error = "El reemplazo de la carta activa es nulo.";
+            return false;
+        }
+
+        if (!byRestaurantId.TryGetValue(
+                activeRestaurantId,
+                out BistroBuilderRestaurantMenuRuntimeState activeState
+            ))
+        {
+            error = "No existe el agregado del restaurante activo.";
+            return false;
+        }
+
+        previousRestaurantRevision = activeState.Revision;
+        currentRestaurantRevision = activeState.Revision;
+
+        if (expectedRestaurantRevision >= 0 &&
+            activeState.Revision != expectedRestaurantRevision)
+        {
+            error = "La revisión del restaurante activo cambió de " +
+                    expectedRestaurantRevision + " a " +
+                    activeState.Revision + ".";
+            return false;
+        }
+
+        if (expectedMenuRevision >= 0 &&
+            menuService.Revision != expectedMenuRevision)
+        {
+            error = "La revisión de la carta operativa cambió de " +
+                    expectedMenuRevision + " a " +
+                    menuService.Revision + ".";
+            return false;
+        }
+
+        replacementBuffer.Clear();
+
+        for (int index = 0; index < replacement.Count; index++)
+        {
+            BistroBuilderMenuItemRuntimeState item = replacement[index];
+
+            if (item == null)
+            {
+                error = "El reemplazo contiene una entrada de carta nula.";
+                return false;
+            }
+
+            replacementBuffer.Add(item.Clone());
+        }
+
+        NormalizeDisplayOrder(replacementBuffer);
+        suppressMenuEvents = true;
+
+        bool applied;
+        try
+        {
+            applied = menuService.TryReplaceAll(
+                replacementBuffer,
+                false,
+                out error
+            );
+        }
+        finally
+        {
+            suppressMenuEvents = false;
+        }
+
+        if (!applied)
+        {
+            return false;
+        }
+
+        int nextRevision = activeState.Revision + 1;
+        activeState.ReplaceResolvedItems(
+            replacementBuffer,
+            nextRevision
+        );
+        currentRestaurantRevision = nextRevision;
+
+        if (notify)
+        {
+            PublishMenuStateReplacedWithoutRecapture(
+                "La edición transaccional sustituyó la carta activa."
+            );
+        }
+
+        error = string.Empty;
         return true;
     }
 
@@ -596,6 +718,11 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
             return false;
         }
 
+        if (!TryValidateAllRestaurantPolicies(candidate, out error))
+        {
+            return false;
+        }
+
         CopyItems(activeCandidate.Items, replacementBuffer);
         suppressMenuEvents = true;
 
@@ -604,7 +731,7 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
         {
             applied = menuService.TryReplaceAll(
                 replacementBuffer,
-                notify,
+                false,
                 out error
             );
         }
@@ -635,6 +762,13 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
         if (!CaptureActiveRestaurant(false, out error))
         {
             return false;
+        }
+
+        if (notify)
+        {
+            PublishMenuStateReplacedWithoutRecapture(
+                "Persistencia sustituyó todas las cartas por restaurante."
+            );
         }
 
         if (notify && !string.Equals(
@@ -824,6 +958,76 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
         return true;
     }
 
+    private bool TryValidateAllRestaurantPolicies(
+        IList<BistroBuilderRestaurantMenuRuntimeState> states,
+        out string error
+    )
+    {
+        if (states == null)
+        {
+            error = "La colección de cartas para validar es nula.";
+            return false;
+        }
+
+        for (int index = 0; index < states.Count; index++)
+        {
+            BistroBuilderRestaurantMenuRuntimeState state = states[index];
+
+            if (!TryValidateRestaurantPolicy(state, out error))
+            {
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryValidateRestaurantPolicy(
+        BistroBuilderRestaurantMenuRuntimeState state,
+        out string error
+    )
+    {
+        BistroBuilderMenuCommercialPolicy policy =
+            menuService != null ? menuService.CommercialPolicy : null;
+
+        // 2.1A sigue siendo compatible por sí solo. La política pasa a ser
+        // obligatoria únicamente después de instalar 2.1B.
+        if (policy == null)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        if (state == null)
+        {
+            error = "No se puede validar la política de una carta nula.";
+            return false;
+        }
+
+        List<BistroBuilderMenuItemRuntimeState> resolved =
+            new List<BistroBuilderMenuItemRuntimeState>(state.ItemCount);
+
+        for (int index = 0; index < state.Items.Count; index++)
+        {
+            BistroBuilderMenuItemRuntimeState item = state.Items[index];
+            resolved.Add(item != null ? item.Clone() : null);
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidateMenu(
+                resolved,
+                policy,
+                out error
+            ))
+        {
+            error = "La carta de " + state.RestaurantId + ": " + error;
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
     private bool EnsureInitialized(out string error)
     {
         if (initialized)
@@ -833,6 +1037,22 @@ public sealed class BistroBuilderRestaurantMenuCollectionService :
         }
 
         return RebuildRuntimeIndexAndEnsurePrimaryRestaurant(out error);
+    }
+
+    private void PublishMenuStateReplacedWithoutRecapture(
+        string description
+    )
+    {
+        suppressMenuEvents = true;
+
+        try
+        {
+            menuService.PublishStateReplaced(description);
+        }
+        finally
+        {
+            suppressMenuEvents = false;
+        }
     }
 
     private void HandleMenuChanged(BistroBuilderMenuChangedEvent change)

@@ -324,6 +324,24 @@ public static class BistroBuilderMenuFoundationInstaller
             idProperty.stringValue = dishId;
         }
 
+        SerializedProperty definitionVersionProperty =
+            RequireProperty(serialized, "definitionVersion");
+        definitionVersionProperty.intValue = Mathf.Max(
+            BistroBuilderDishDefinition.CurrentDefinitionVersion,
+            definitionVersionProperty.intValue
+        );
+
+        SerializedProperty categoryIdProperty =
+            RequireProperty(serialized, "categoryId");
+
+        if (string.IsNullOrWhiteSpace(categoryIdProperty.stringValue))
+        {
+            categoryIdProperty.stringValue =
+                BistroBuilderDishCategoryIdUtility.FromLegacyCategory(
+                    category
+                );
+        }
+
         SetStringIfCreatedOrEmpty(
             serialized,
             "displayName",

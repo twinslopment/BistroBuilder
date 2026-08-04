@@ -1091,6 +1091,8 @@ GameObject:
   - component: {fileID: 263644972}
   - component: {fileID: 263644976}
   - component: {fileID: 263644975}
+  - component: {fileID: 263644978}
+  - component: {fileID: 263644977}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2063,6 +2065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRestaurantMenuService
   catalogService: {fileID: 263644960}
   availabilityService: {fileID: 263644974}
+  commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
   initializeCatalogDishesWhenEmpty: 1
   defaultDishEnabled: 1
   defaultDishUnlocked: 1
@@ -2494,6 +2497,38 @@ MonoBehaviour:
       displayOrder: 7
     unresolvedItems: []
   logChanges: 1
+--- !u!114 &263644977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51d7d3bc499f42d494f3b23f92a4b480, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuEditSessionService
+  menuService: {fileID: 263644959}
+  collectionService: {fileID: 263644976}
+  catalogService: {fileID: 263644960}
+  categoryCatalogService: {fileID: 263644978}
+  commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
+  logChanges: 1
+--- !u!114 &263644978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 372c65c42a104b8d93f38cd789b6fbe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishCategoryCatalogService
+  catalog: {fileID: 11400000, guid: 1b4ba6563ddd4464a85245534450165d, type: 2}
+  logInitialization: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

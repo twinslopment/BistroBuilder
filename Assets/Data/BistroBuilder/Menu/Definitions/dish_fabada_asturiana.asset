@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af4b9d22e7c54d8674c13d02b2f31f0e, type: 3}
   m_Name: dish_fabada_asturiana
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishDefinition
+  definitionVersion: 1
   dishId: dish_fabada_asturiana
   displayName: Fabada asturiana
   description: "Plato principal de cocci\xF3n lenta basado en fabes y compango."
   category: 1
+  categoryId: category_main_course
   course: 3
   defaultAvailability: 6
   allowedServiceModes: 1

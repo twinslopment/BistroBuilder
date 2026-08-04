@@ -32,7 +32,12 @@ public enum BistroBuilderMenuMutationFailureReason
     InvalidPrice = 6,
     InvalidAvailability = 7,
     InvalidState = 8,
-    NoChange = 9
+    NoChange = 9,
+    InvalidCategory = 10,
+    PolicyViolation = 11,
+    SignatureLimitReached = 12,
+    NoActiveEditSession = 13,
+    StaleRevision = 14
 }
 
 /// <summary>

@@ -14,10 +14,19 @@ using UnityEngine;
 )]
 public sealed class BistroBuilderDishDefinition : ScriptableObject
 {
+    public const int CurrentDefinitionVersion = 1;
     public const int MaximumPriceCents = 100000000;
     public const int MaximumPreparationSeconds = 86400;
 
     [Header("Identidad estable")]
+
+    [Tooltip(
+        "Versión de contenido de esta definición. Se incrementará cuando " +
+        "una migración de definición cambie su contrato canónico."
+    )]
+    [SerializeField]
+    [Min(1)]
+    private int definitionVersion = CurrentDefinitionVersion;
 
     [SerializeField]
     private string dishId = string.Empty;
@@ -34,6 +43,13 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
     [SerializeField]
     private BistroBuilderDishCategory category =
         BistroBuilderDishCategory.MainCourse;
+
+    [Tooltip(
+        "Identidad estable de categoría. El enum anterior se conserva solo " +
+        "como compatibilidad de autoría y migración."
+    )]
+    [SerializeField]
+    private string categoryId = string.Empty;
 
     [SerializeField]
     private BistroBuilderDishCourse course =
@@ -91,6 +107,8 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
     [Min(1)]
     private int maximumConsumers = 1;
 
+    public int DefinitionVersion => definitionVersion;
+
     public string DishId => dishId;
 
     public string DisplayName => displayName;
@@ -98,6 +116,29 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
     public string Description => description;
 
     public BistroBuilderDishCategory Category => category;
+
+    public string CategoryId
+    {
+        get
+        {
+            string normalized =
+                BistroBuilderMenuIdUtility.NormalizeStableId(categoryId);
+
+            if (BistroBuilderMenuIdUtility.IsValidStableId(normalized))
+            {
+                return normalized;
+            }
+
+            return BistroBuilderDishCategoryIdUtility.FromLegacyCategory(
+                category
+            );
+        }
+    }
+
+    public bool HasExplicitCategoryId =>
+        BistroBuilderMenuIdUtility.IsValidStableId(
+            BistroBuilderMenuIdUtility.NormalizeStableId(categoryId)
+        );
 
     public BistroBuilderDishCourse Course => course;
 
@@ -155,6 +196,53 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
         if (string.IsNullOrWhiteSpace(displayName))
         {
             error = "El plato " + dishId + " no tiene nombre visible.";
+            return false;
+        }
+
+        if (definitionVersion < 1 ||
+            definitionVersion > CurrentDefinitionVersion)
+        {
+            error = "La versión de definición del plato " + dishId +
+                    " no está soportada: " + definitionVersion + ".";
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(categoryId))
+        {
+            string normalizedCategoryId =
+                BistroBuilderMenuIdUtility.NormalizeStableId(categoryId);
+
+            if (!BistroBuilderMenuIdUtility.IsValidStableId(
+                    normalizedCategoryId
+                ) ||
+                !string.Equals(
+                    categoryId,
+                    normalizedCategoryId,
+                    System.StringComparison.Ordinal
+                ))
+            {
+                error = "El CategoryId del plato " + dishId +
+                        " no es estable o válido.";
+                return false;
+            }
+        }
+
+        if (!BistroBuilderMenuIdUtility.IsValidStableId(CategoryId))
+        {
+            error = "El plato " + dishId +
+                    " no puede resolver una categoría estable.";
+            return false;
+        }
+
+        if (BistroBuilderDishCategoryIdUtility.TryGetLegacyCategory(
+                CategoryId,
+                out BistroBuilderDishCategory mappedLegacyCategory
+            ) &&
+            mappedLegacyCategory != category)
+        {
+            error = "El plato " + dishId +
+                    " contiene una categoría estable distinta de su " +
+                    "clasificación histórica.";
             return false;
         }
 
@@ -248,7 +336,13 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
 #if UNITY_EDITOR
     private void OnValidate()
     {
+        // No se limita al máximo conocido: una versión futura debe
+        // conservarse para que TryValidate la rechace explícitamente, no
+        // degradarse en silencio al abrir el asset con una versión anterior.
+        definitionVersion = Mathf.Max(1, definitionVersion);
         dishId = BistroBuilderMenuIdUtility.NormalizeStableId(dishId);
+        categoryId =
+            BistroBuilderMenuIdUtility.NormalizeStableId(categoryId);
         recipeId = BistroBuilderMenuIdUtility.NormalizeStableId(recipeId);
         displayName = displayName != null ? displayName.Trim() : string.Empty;
         basePriceCents = Mathf.Clamp(
