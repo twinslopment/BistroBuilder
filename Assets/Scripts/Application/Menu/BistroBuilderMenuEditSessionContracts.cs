@@ -30,7 +30,9 @@ public enum BistroBuilderMenuDraftChangeType
     OrderChanged = 9,
     SessionCommitted = 10,
     SessionDiscarded = 11,
-    SessionConflict = 12
+    SessionConflict = 12,
+    DefaultsRestored = 13,
+    CategoryOrderChanged = 14
 }
 
 /// <summary>

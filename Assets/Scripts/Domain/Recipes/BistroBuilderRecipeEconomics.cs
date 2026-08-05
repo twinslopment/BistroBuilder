@@ -52,7 +52,29 @@ public static class BistroBuilderRecipeEconomics
         out string error
     )
     {
-        snapshot = default;
+        return TryBuildSnapshot(
+            dish,
+            recipe,
+            dish != null ? dish.BasePriceCents : 0,
+            out snapshot,
+            out error
+        );
+    }
+
+    /// <summary>
+    /// Calcula el escandallo con un precio de venta runtime exacto. Permite
+    /// que la UI previsualice el margen del borrador sin escribir en la
+    /// definición canónica ni duplicar la lógica económica.
+    /// </summary>
+    public static bool TryBuildSnapshot(
+        BistroBuilderDishDefinition dish,
+        BistroBuilderRecipeDefinition recipe,
+        int salePriceCents,
+        out BistroBuilderRecipeEconomicsSnapshot snapshot,
+        out string error
+    )
+    {
+        snapshot = default(BistroBuilderRecipeEconomicsSnapshot);
         error = string.Empty;
 
         if (dish == null)
@@ -64,6 +86,13 @@ public static class BistroBuilderRecipeEconomics
         if (recipe == null)
         {
             error = "Falta la definición de receta.";
+            return false;
+        }
+
+        if (salePriceCents < 0 ||
+            salePriceCents > BistroBuilderDishDefinition.MaximumPriceCents)
+        {
+            error = "El precio de venta queda fuera del rango permitido.";
             return false;
         }
 
@@ -85,7 +114,6 @@ public static class BistroBuilderRecipeEconomics
             return false;
         }
 
-        int salePriceCents = dish.BasePriceCents;
         int grossMarginCents = salePriceCents - costCents;
         int marginBasisPoints = salePriceCents > 0
             ? (int)decimal.Round(

@@ -387,6 +387,46 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Evalúa una entrada arbitraria de carta usando la misma autoridad de
+    /// receta e inventario que 368EF. Está pensado para borradores de UI:
+    /// no consulta ni modifica la carta operativa y nunca persiste el
+    /// resultado derivado.
+    /// </summary>
+    public bool TryEvaluateMenuItem(
+        BistroBuilderMenuItemRuntimeState item,
+        BistroBuilderMealServiceAvailability mealService,
+        out BistroBuilderDishAvailabilitySnapshot snapshot,
+        out string error
+    )
+    {
+        snapshot = default(BistroBuilderDishAvailabilitySnapshot);
+
+        if (!IsConcreteMealService(mealService))
+        {
+            error = "Debe indicarse un servicio concreto.";
+            return false;
+        }
+
+        if (!ValidateRuntimeReadiness(out error))
+        {
+            return false;
+        }
+
+        if (item == null)
+        {
+            error = "No puede evaluarse una entrada de carta nula.";
+            return false;
+        }
+
+        return TryCalculateSnapshot(
+            item,
+            mealService,
+            out snapshot,
+            out error
+        );
+    }
+
     public bool IsDishOrderable(
         string dishId,
         BistroBuilderMealServiceAvailability mealService,

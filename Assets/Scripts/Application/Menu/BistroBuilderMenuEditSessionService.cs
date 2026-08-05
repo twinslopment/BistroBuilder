@@ -50,6 +50,10 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
     private readonly List<BistroBuilderDishDefinition> definitionBuffer =
         new List<BistroBuilderDishDefinition>(32);
 
+    private readonly List<BistroBuilderMenuItemRuntimeState>
+        categoryOrderBuffer =
+            new List<BistroBuilderMenuItemRuntimeState>(16);
+
     private string sessionRestaurantId = string.Empty;
     private int baseRestaurantRevision;
     private int baseMenuRevision;
@@ -705,6 +709,198 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         );
         return BistroBuilderMenuMutationResult.Success(
             "Orden actualizado en el borrador."
+        );
+    }
+
+    /// <summary>
+    /// Restaura de forma atómica los valores editables publicados por la
+    /// definición canónica. Conserva el desbloqueo y la posición actual,
+    /// porque pertenecen respectivamente a progresión y organización del
+    /// restaurante, no a los valores por defecto del plato.
+    /// </summary>
+    public BistroBuilderMenuMutationResult TryRestoreDishDefaults(
+        string dishId
+    )
+    {
+        if (!TryResolveDraftItem(dishId, out var item, out var failure))
+        {
+            return failure;
+        }
+
+        if (!catalogService.TryGetDefinition(
+                item.DishId,
+                out BistroBuilderDishDefinition definition
+            ) ||
+            definition == null)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason
+                    .DishDefinitionNotFound,
+                "No existe una definición canónica para " +
+                item.DishId + "."
+            );
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidatePrice(
+                definition.BasePriceCents,
+                commercialPolicy,
+                out string priceError
+            ))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidPrice,
+                priceError
+            );
+        }
+
+        bool changed =
+            item.CurrentPriceCents != definition.BasePriceCents ||
+            !item.Enabled ||
+            item.ManuallySoldOut ||
+            item.SignatureDish ||
+            item.AvailableServices != definition.DefaultAvailability;
+
+        if (!changed)
+        {
+            return NoChange(
+                "El plato ya usa sus valores editables predeterminados."
+            );
+        }
+
+        int previousPrice = item.CurrentPriceCents;
+        bool previousEnabled = item.Enabled;
+        bool previousSoldOut = item.ManuallySoldOut;
+        bool previousSignature = item.SignatureDish;
+        BistroBuilderMealServiceAvailability previousAvailability =
+            item.AvailableServices;
+
+        item.SetPriceCents(definition.BasePriceCents);
+        item.SetEnabled(true);
+        item.SetManuallySoldOut(false);
+        item.SetSignatureDish(false);
+        item.SetAvailableServices(definition.DefaultAvailability);
+
+        if (!TryValidateDraft(out string validationError))
+        {
+            item.SetPriceCents(previousPrice);
+            item.SetEnabled(previousEnabled);
+            item.SetManuallySoldOut(previousSoldOut);
+            item.SetSignatureDish(previousSignature);
+            item.SetAvailableServices(previousAvailability);
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                validationError
+            );
+        }
+
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType.DefaultsRestored,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Valores predeterminados restaurados en el borrador."
+        );
+    }
+
+    /// <summary>
+    /// Desplaza un plato dentro de su categoría visible sin alterar el orden
+    /// relativo de otras categorías. Intercambia órdenes globales ya
+    /// existentes, por lo que nunca crea posiciones duplicadas.
+    /// </summary>
+    public BistroBuilderMenuMutationResult TryMoveDishWithinCategory(
+        string dishId,
+        int direction
+    )
+    {
+        if (direction != -1 && direction != 1)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidState,
+                "La dirección debe ser -1 o 1."
+            );
+        }
+
+        if (!TryResolveDraftItem(dishId, out var item, out var failure))
+        {
+            return failure;
+        }
+
+        if (!catalogService.TryGetDefinition(
+                item.DishId,
+                out BistroBuilderDishDefinition definition
+            ) ||
+            definition == null)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason
+                    .DishDefinitionNotFound,
+                "No existe una definición canónica para " +
+                item.DishId + "."
+            );
+        }
+
+        categoryOrderBuffer.Clear();
+
+        for (int index = 0; index < draftItems.Count; index++)
+        {
+            BistroBuilderMenuItemRuntimeState candidate = draftItems[index];
+
+            if (candidate != null &&
+                catalogService.TryGetDefinition(
+                    candidate.DishId,
+                    out BistroBuilderDishDefinition candidateDefinition
+                ) &&
+                candidateDefinition != null &&
+                string.Equals(
+                    candidateDefinition.CategoryId,
+                    definition.CategoryId,
+                    StringComparison.Ordinal
+                ))
+            {
+                categoryOrderBuffer.Add(candidate);
+            }
+        }
+
+        categoryOrderBuffer.Sort(CompareItems);
+        int currentIndex = categoryOrderBuffer.IndexOf(item);
+        int targetIndex = currentIndex + direction;
+
+        if (currentIndex < 0 ||
+            targetIndex < 0 ||
+            targetIndex >= categoryOrderBuffer.Count)
+        {
+            return NoChange(
+                direction < 0
+                    ? "El plato ya es el primero de su categoría."
+                    : "El plato ya es el último de su categoría."
+            );
+        }
+
+        BistroBuilderMenuItemRuntimeState other =
+            categoryOrderBuffer[targetIndex];
+        int currentOrder = item.DisplayOrder;
+        int otherOrder = other.DisplayOrder;
+        item.SetDisplayOrder(otherOrder);
+        other.SetDisplayOrder(currentOrder);
+        draftItems.Sort(CompareItems);
+
+        if (!TryValidateDraft(out string validationError))
+        {
+            item.SetDisplayOrder(currentOrder);
+            other.SetDisplayOrder(otherOrder);
+            draftItems.Sort(CompareItems);
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                validationError
+            );
+        }
+
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType.CategoryOrderChanged,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Orden dentro de la categoría actualizado."
         );
     }
 

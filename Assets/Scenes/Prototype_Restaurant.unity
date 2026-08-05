@@ -1096,6 +1096,7 @@ GameObject:
   - component: {fileID: 263644979}
   - component: {fileID: 263644980}
   - component: {fileID: 263644981}
+  - component: {fileID: 263644982}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2586,6 +2587,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSignatureDishTelemetryService
   selectionService: {fileID: 263644980}
   canonicalOrderService: {fileID: 263644961}
+  logChanges: 0
+--- !u!114 &263644982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98ec36f6d27a45b4a90a56f9b84c260f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuEditorService
+  editSessionService: {fileID: 263644977}
+  menuService: {fileID: 263644959}
+  collectionService: {fileID: 263644976}
+  catalogService: {fileID: 263644960}
+  categoryCatalogService: {fileID: 263644978}
+  offerService: {fileID: 263644979}
+  availabilityService: {fileID: 263644974}
+  recipeCatalogService: {fileID: 263644969}
+  commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
   logChanges: 0
 --- !u!1 &295579756
 GameObject:
@@ -5059,6 +5082,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 935590812}
+  - {fileID: 1691563766}
   m_Father: {fileID: 1208060064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -9029,6 +9053,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1746116975}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1691563765
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1691563766}
+  - component: {fileID: 1691563767}
+  m_Layer: 5
+  m_Name: BB_2_1E_MenuEditorUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1691563766
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691563765}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 890497793}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1691563767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691563765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4164b12a5f3c44c5ae930bb7d660a801, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuEditorRuntimeView
+  editorService: {fileID: 263644982}
+  cameraController: {fileID: 330585548}
+  editInteractionController: {fileID: 263644933}
+  showOpenButton: 1
 --- !u!1 &1716211573
 GameObject:
   m_ObjectHideFlags: 0
