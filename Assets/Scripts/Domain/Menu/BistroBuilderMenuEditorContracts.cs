@@ -152,6 +152,14 @@ public sealed class BistroBuilderMenuEditorDishSnapshot
 
     public int CurrentPriceCents { get; }
 
+    public int DefaultPreparationDifficulty { get; }
+
+    public int PreparationDifficulty { get; }
+
+    public int DefaultPreparationSeconds { get; }
+
+    public int PreparationSeconds { get; }
+
     public bool Included { get; }
 
     public bool Unlocked { get; }
@@ -214,6 +222,10 @@ public sealed class BistroBuilderMenuEditorDishSnapshot
         BistroBuilderDishServiceModeAvailability allowedServiceModes,
         int basePriceCents,
         int currentPriceCents,
+        int defaultPreparationDifficulty,
+        int preparationDifficulty,
+        int defaultPreparationSeconds,
+        int preparationSeconds,
         bool included,
         bool unlocked,
         bool enabled,
@@ -248,6 +260,34 @@ public sealed class BistroBuilderMenuEditorDishSnapshot
         AllowedServiceModes = allowedServiceModes;
         BasePriceCents = Math.Max(0, basePriceCents);
         CurrentPriceCents = Math.Max(0, currentPriceCents);
+        DefaultPreparationDifficulty = Math.Max(
+            BistroBuilderDishDefinition.MinimumPreparationDifficulty,
+            Math.Min(
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty,
+                defaultPreparationDifficulty
+            )
+        );
+        PreparationDifficulty = Math.Max(
+            BistroBuilderDishDefinition.MinimumPreparationDifficulty,
+            Math.Min(
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty,
+                preparationDifficulty
+            )
+        );
+        DefaultPreparationSeconds = Math.Max(
+            BistroBuilderDishDefinition.MinimumPreparationSeconds,
+            Math.Min(
+                BistroBuilderDishDefinition.MaximumPreparationSeconds,
+                defaultPreparationSeconds
+            )
+        );
+        PreparationSeconds = Math.Max(
+            BistroBuilderDishDefinition.MinimumPreparationSeconds,
+            Math.Min(
+                BistroBuilderDishDefinition.MaximumPreparationSeconds,
+                preparationSeconds
+            )
+        );
         Included = included;
         Unlocked = unlocked;
         Enabled = enabled;

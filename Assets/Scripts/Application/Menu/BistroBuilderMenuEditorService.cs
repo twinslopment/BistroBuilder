@@ -590,6 +590,34 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         );
     }
 
+    public BistroBuilderMenuMutationResult TrySetPreparationDifficulty(
+        string dishId,
+        int difficulty
+    )
+    {
+        return ApplyMutation(
+            editSessionService.TrySetPreparationDifficulty(
+                dishId,
+                difficulty
+            ),
+            dishId
+        );
+    }
+
+    public BistroBuilderMenuMutationResult TrySetBasePreparationSeconds(
+        string dishId,
+        int preparationSeconds
+    )
+    {
+        return ApplyMutation(
+            editSessionService.TrySetBasePreparationSeconds(
+                dishId,
+                preparationSeconds
+            ),
+            dishId
+        );
+    }
+
     public BistroBuilderMenuMutationResult TrySetAvailability(
         string dishId,
         BistroBuilderMealServiceAvailability value
@@ -812,6 +840,13 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 availablePortions = availability.AvailablePortions;
             }
 
+            int preparationDifficulty = included
+                ? draftItem.ResolvePreparationDifficulty(definition)
+                : definition.Complexity;
+            int preparationSeconds = included
+                ? draftItem.ResolveBasePreparationSeconds(definition)
+                : definition.BasePreparationSeconds;
+
             BistroBuilderMenuEditorDishSnapshot snapshot =
                 new BistroBuilderMenuEditorDishSnapshot(
                     definition.DishId,
@@ -827,6 +862,10 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                     definition.AllowedServiceModes,
                     definition.BasePriceCents,
                     currentPrice,
+                    definition.Complexity,
+                    preparationDifficulty,
+                    definition.BasePreparationSeconds,
+                    preparationSeconds,
                     included,
                     included && draftItem.Unlocked,
                     included && draftItem.Enabled,
@@ -1124,7 +1163,9 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                left.ManuallySoldOut == right.ManuallySoldOut &&
                left.SignatureDish == right.SignatureDish &&
                left.AvailableServices == right.AvailableServices &&
-               left.DisplayOrder == right.DisplayOrder;
+               left.DisplayOrder == right.DisplayOrder &&
+               left.PreparationDifficulty == right.PreparationDifficulty &&
+               left.BasePreparationSeconds == right.BasePreparationSeconds;
     }
 
     private static int CompareSnapshots(

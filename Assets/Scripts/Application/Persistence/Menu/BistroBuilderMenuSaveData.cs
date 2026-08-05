@@ -17,6 +17,11 @@ public sealed class BistroBuilderMenuItemSaveData
     public bool signatureDish;
     public int availableServices;
     public int displayOrder;
+
+    // 0/0 significa heredar de la definición canónica. Es el estado que
+    // produce la migración V2 -> V3 para no inventar valores históricos.
+    public int preparationDifficulty;
+    public int basePreparationSeconds;
 }
 
 /// <summary>
@@ -42,14 +47,14 @@ public sealed class BistroBuilderRestaurantMenuSaveData
 /// <summary>
 /// Formato actual de la sección menu.state.
 ///
-/// La versión 2 sustituye la carta global por un agregado por restaurante,
-/// conserva el restaurante activo y admite entradas no resueltas sin pérdida
-/// de datos. No guarda disponibilidad derivada del inventario.
+/// La versión 3 conserva la arquitectura multirrestaurante de V2 y añade
+/// dificultad y tiempo de preparación editables por plato. No guarda
+/// disponibilidad derivada del inventario.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderMenuSaveData
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 
     public int schemaVersion = CurrentSchemaVersion;
     public string activeRestaurantId =

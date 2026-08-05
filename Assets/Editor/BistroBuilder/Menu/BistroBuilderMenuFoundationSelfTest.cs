@@ -130,6 +130,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 root.AddComponent<BistroBuilderMenuSaveSectionProvider>();
             BistroBuilderMenuStateV1ToV2Migration migration =
                 root.AddComponent<BistroBuilderMenuStateV1ToV2Migration>();
+            BistroBuilderMenuStateV2ToV3Migration migrationV2ToV3 =
+                root.AddComponent<BistroBuilderMenuStateV2ToV3Migration>();
 
             ConfigureReference(catalogService, "catalog", catalog);
             ConfigureBool(catalogService, "logInitialization", false);
@@ -209,8 +211,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 "Identidad estable de sección."
             );
             report.Check(
-                provider.SectionVersion == 2,
-                "Versión 2 de sección por restaurante."
+                provider.SectionVersion == 3,
+                "Versión 3 de sección por restaurante."
             );
             report.Check(
                 provider.LoadOrder == 20,
@@ -524,7 +526,7 @@ public static class BistroBuilderMenuFoundationSelfTest
             );
             report.Check(
                 provider.ValidateState(saveData, out _),
-                "Estado persistente v2 validado."
+                "Estado persistente v3 validado."
             );
 
             string json = JsonUtility.ToJson(saveData, true);
@@ -561,20 +563,37 @@ public static class BistroBuilderMenuFoundationSelfTest
                 ),
                 "Migración pura menu.state v1 a v2 completada."
             );
-            BistroBuilderMenuSaveData migrated =
+            BistroBuilderMenuSaveData migratedV2 =
                 JsonUtility.FromJson<BistroBuilderMenuSaveData>(
                     Encoding.UTF8.GetString(migratedPayload)
                 );
             report.Check(
-                migrated != null &&
-                migrated.schemaVersion == 2 &&
-                migrated.restaurants.Count == 1 &&
-                migrated.restaurants[0].items.Count == 2,
-                "Migración conserva íntegramente la carta histórica."
+                migratedV2 != null &&
+                migratedV2.schemaVersion == 2 &&
+                migratedV2.restaurants.Count == 1 &&
+                migratedV2.restaurants[0].items.Count == 2,
+                "Migración v1 -> v2 conserva la carta histórica."
+            );
+            byte[] migratedV3Payload = null;
+            bool migratedToV3 = migratedV2 != null &&
+                migrationV2ToV3.TryMigrate(
+                    migratedPayload,
+                    out migratedV3Payload,
+                    out _
+                );
+            BistroBuilderMenuSaveData migrated = migratedToV3
+                ? JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+                    Encoding.UTF8.GetString(migratedV3Payload)
+                )
+                : null;
+            report.Check(
+                migratedToV3 && migrated != null &&
+                migrated.schemaVersion == 3,
+                "Migración consecutiva v2 -> v3 completada."
             );
             report.Check(
-                provider.ValidateState(migrated, out _),
-                "Resultado migrado aceptado por el proveedor v2."
+                migrated != null && provider.ValidateState(migrated, out _),
+                "Resultado migrado aceptado por el proveedor v3."
             );
 
             menuService.ResetToCatalogDefaults();
@@ -584,7 +603,7 @@ public static class BistroBuilderMenuFoundationSelfTest
             RunEnumerator(provider.ApplyState(roundTrip, loadContext));
             report.Check(
                 !loadContext.HasFailed,
-                "Aplicación menu.state v2 completada."
+                "Aplicación menu.state v3 completada."
             );
             report.Check(
                 menuService.ItemCount == 2,

@@ -92,7 +92,7 @@ public sealed class BistroBuilderMenuStateV1ToV2Migration :
 
         BistroBuilderMenuSaveData target = new BistroBuilderMenuSaveData
         {
-            schemaVersion = BistroBuilderMenuSaveData.CurrentSchemaVersion,
+            schemaVersion = 2,
             activeRestaurantId = restaurantId,
             restaurants = new List<BistroBuilderRestaurantMenuSaveData>
             {
@@ -203,7 +203,9 @@ public sealed class BistroBuilderMenuStateV1ToV2Migration :
                     manuallySoldOut = item.manuallySoldOut,
                     signatureDish = item.signatureDish,
                     availableServices = item.availableServices,
-                    displayOrder = item.displayOrder
+                    displayOrder = item.displayOrder,
+                    preparationDifficulty = item.preparationDifficulty,
+                    basePreparationSeconds = item.basePreparationSeconds
                 }
             );
         }

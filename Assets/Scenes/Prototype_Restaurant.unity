@@ -1097,6 +1097,7 @@ GameObject:
   - component: {fileID: 263644980}
   - component: {fileID: 263644981}
   - component: {fileID: 263644982}
+  - component: {fileID: 263644983}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2082,6 +2083,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 6
     displayOrder: 0
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_merluza_plancha
     currentPriceCents: 2100
     unlocked: 1
@@ -2090,6 +2093,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 6
     displayOrder: 1
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_tarta_queso
     currentPriceCents: 750
     unlocked: 1
@@ -2098,6 +2103,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 6
     displayOrder: 2
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_agua_mineral
     currentPriceCents: 220
     unlocked: 1
@@ -2106,6 +2113,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 7
     displayOrder: 3
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_refresco
     currentPriceCents: 280
     unlocked: 1
@@ -2114,6 +2123,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 7
     displayOrder: 4
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_copa_vino
     currentPriceCents: 350
     unlocked: 1
@@ -2122,6 +2133,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 7
     displayOrder: 5
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_aceitunas_alinadas
     currentPriceCents: 300
     unlocked: 1
@@ -2130,6 +2143,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 7
     displayOrder: 6
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   - dishId: dish_pincho_tortilla
     currentPriceCents: 450
     unlocked: 1
@@ -2138,6 +2153,8 @@ MonoBehaviour:
     signatureDish: 0
     availableServices: 7
     displayOrder: 7
+    preparationDifficulty: 0
+    basePreparationSeconds: 0
   logChanges: 1
 --- !u!114 &263644960
 MonoBehaviour:
@@ -2450,6 +2467,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 6
       displayOrder: 0
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_merluza_plancha
       currentPriceCents: 2100
       unlocked: 1
@@ -2458,6 +2477,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 6
       displayOrder: 1
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_tarta_queso
       currentPriceCents: 750
       unlocked: 1
@@ -2466,6 +2487,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 6
       displayOrder: 2
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_agua_mineral
       currentPriceCents: 220
       unlocked: 1
@@ -2474,6 +2497,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 7
       displayOrder: 3
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_refresco
       currentPriceCents: 280
       unlocked: 1
@@ -2482,6 +2507,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 7
       displayOrder: 4
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_copa_vino
       currentPriceCents: 350
       unlocked: 1
@@ -2490,6 +2517,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 7
       displayOrder: 5
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_aceitunas_alinadas
       currentPriceCents: 300
       unlocked: 1
@@ -2498,6 +2527,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 7
       displayOrder: 6
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     - dishId: dish_pincho_tortilla
       currentPriceCents: 450
       unlocked: 1
@@ -2506,6 +2537,8 @@ MonoBehaviour:
       signatureDish: 0
       availableServices: 7
       displayOrder: 7
+      preparationDifficulty: 0
+      basePreparationSeconds: 0
     unresolvedItems: []
   logChanges: 1
 --- !u!114 &263644977
@@ -2610,6 +2643,18 @@ MonoBehaviour:
   recipeCatalogService: {fileID: 263644969}
   commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
   logChanges: 0
+--- !u!114 &263644983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f886b9aec188408f8dd81a678629f248, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuStateV2ToV3Migration
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0

@@ -72,6 +72,160 @@ public static class BistroBuilderMenuEditorUtility
         return true;
     }
 
+    public static string FormatPreparationDuration(int seconds)
+    {
+        int clamped = Math.Max(
+            BistroBuilderDishDefinition.MinimumPreparationSeconds,
+            Math.Min(
+                BistroBuilderDishDefinition.MaximumPreparationSeconds,
+                seconds
+            )
+        );
+        TimeSpan duration = TimeSpan.FromSeconds(clamped);
+
+        return duration.TotalHours >= 1d
+            ? ((int)duration.TotalHours).ToString("0") + ":" +
+              duration.Minutes.ToString("00") + ":" +
+              duration.Seconds.ToString("00")
+            : ((int)duration.TotalMinutes).ToString("0") + ":" +
+              duration.Seconds.ToString("00");
+    }
+
+    public static bool TryParsePreparationDifficulty(
+        string text,
+        out int difficulty,
+        out string error
+    )
+    {
+        difficulty = 0;
+
+        if (!int.TryParse(
+                text != null ? text.Trim() : string.Empty,
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out difficulty
+            ) ||
+            difficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+            difficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty)
+        {
+            difficulty = 0;
+            error = "La dificultad debe ser un entero entre " +
+                    BistroBuilderDishDefinition.MinimumPreparationDifficulty +
+                    " y " +
+                    BistroBuilderDishDefinition.MaximumPreparationDifficulty +
+                    ".";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    public static string GetPreparationDifficultyLabel(int difficulty)
+    {
+        if (difficulty <= 2)
+        {
+            return "Muy fácil";
+        }
+
+        if (difficulty <= 4)
+        {
+            return "Fácil";
+        }
+
+        if (difficulty <= 6)
+        {
+            return "Media";
+        }
+
+        if (difficulty <= 8)
+        {
+            return "Difícil";
+        }
+
+        return "Muy difícil";
+    }
+
+    public static bool TryParsePreparationDuration(
+        string text,
+        out int seconds,
+        out string error
+    )
+    {
+        seconds = 0;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            error = "Introduce un tiempo de preparación.";
+            return false;
+        }
+
+        string trimmed = text.Trim();
+        string[] parts = trimmed.Split(':');
+        long totalSeconds;
+
+        if (parts.Length == 2 || parts.Length == 3)
+        {
+            int hours = 0;
+            int minutes = 0;
+            int parsedSeconds = 0;
+
+            bool valid = parts.Length == 2
+                ? int.TryParse(parts[0], out minutes) &&
+                  int.TryParse(parts[1], out parsedSeconds)
+                : int.TryParse(parts[0], out hours) &&
+                  int.TryParse(parts[1], out minutes) &&
+                  int.TryParse(parts[2], out parsedSeconds);
+
+            if (!valid || hours < 0 || minutes < 0 ||
+                parsedSeconds < 0 || parsedSeconds > 59 ||
+                (parts.Length == 3 && minutes > 59))
+            {
+                error = "Usa minutos:segundos o horas:minutos:segundos.";
+                return false;
+            }
+
+            totalSeconds = hours * 3600L + minutes * 60L + parsedSeconds;
+        }
+        else
+        {
+            string normalized = NormalizeDecimalText(trimmed);
+
+            if (!decimal.TryParse(
+                    normalized,
+                    NumberStyles.AllowDecimalPoint |
+                    NumberStyles.AllowLeadingSign,
+                    CultureInfo.InvariantCulture,
+                    out decimal minutesValue
+                ) || minutesValue <= 0m)
+            {
+                error = "Introduce minutos o un tiempo mm:ss válido.";
+                return false;
+            }
+
+            totalSeconds = (long)decimal.Round(
+                minutesValue * 60m,
+                0,
+                MidpointRounding.AwayFromZero
+            );
+        }
+
+        if (totalSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+            totalSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds)
+        {
+            error = "El tiempo debe quedar entre 1 segundo y 24 horas.";
+            return false;
+        }
+
+        seconds = (int)totalSeconds;
+        error = string.Empty;
+        return true;
+    }
+
     public static bool Matches(
         BistroBuilderMenuEditorDishSnapshot item,
         string categoryId,

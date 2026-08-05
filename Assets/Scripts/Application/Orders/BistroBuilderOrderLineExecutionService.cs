@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -153,6 +153,44 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
     {
         durationSeconds = 0f;
 
+        if (!TryGetLineSnapshot(
+                order,
+                orderLineId,
+                out _,
+                out BistroBuilderCanonicalOrderLine line,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        return TryResolveDishPreparationDurationSeconds(
+            line.DishId,
+            durationScale,
+            minimumDuration,
+            maximumDuration,
+            out durationSeconds,
+            out error
+        );
+    }
+
+    /// <summary>
+    /// Resuelve la duración que KitchenSystem captura al encolar una línea.
+    /// Una vez creada la unidad de trabajo, sus tiempos total y restante son
+    /// autónomos y no cambian aunque la carta se edite después.
+    /// </summary>
+    public bool TryResolveDishPreparationDurationSeconds(
+        string dishId,
+        float durationScale,
+        float minimumDuration,
+        float maximumDuration,
+        out float durationSeconds,
+        out string error
+    )
+    {
+        durationSeconds = 0f;
+        CacheDependenciesIfNeeded();
+
         if (float.IsNaN(durationScale) ||
             float.IsInfinity(durationScale) ||
             durationScale <= 0f)
@@ -172,46 +210,29 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
-        if (!TryGetLineSnapshot(
-                order,
-                orderLineId,
+        BistroBuilderRestaurantMenuService menu =
+            canonicalOrderService != null
+                ? canonicalOrderService.MenuService
+                : null;
+
+        if (menu == null)
+        {
+            error = "La comanda canónica no tiene una carta operativa.";
+            return false;
+        }
+
+        if (!menu.TryResolvePreparationSettings(
+                dishId,
                 out _,
-                out BistroBuilderCanonicalOrderLine line,
+                out int preparationSeconds,
                 out error
             ))
         {
             return false;
         }
 
-        BistroBuilderDishCatalogService catalog =
-            canonicalOrderService.MenuService != null
-                ? canonicalOrderService.MenuService.CatalogService
-                : null;
-
-        if (catalog == null)
-        {
-            error = "La carta canónica no tiene catálogo de platos.";
-            return false;
-        }
-
-        if (!catalog.TryGetDefinition(
-                line.DishId,
-                out BistroBuilderDishDefinition definition
-            ))
-        {
-            error = "No se encontró la definición del plato " +
-                    line.DishId + ".";
-            return false;
-        }
-
-        if (definition == null)
-        {
-            error = "La definición del plato " + line.DishId + " es nula.";
-            return false;
-        }
-
         durationSeconds = Mathf.Clamp(
-            definition.BasePreparationSeconds * durationScale,
+            preparationSeconds * durationScale,
             minimumDuration,
             maximumDuration
         );

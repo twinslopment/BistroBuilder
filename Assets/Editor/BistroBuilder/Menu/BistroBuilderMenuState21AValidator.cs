@@ -215,7 +215,7 @@ public static class BistroBuilderMenuState21AValidator
         {
             if (provider.SectionId !=
                     BistroBuilderMenuSaveSectionProvider.StableSectionId ||
-                provider.SectionVersion != 2 ||
+                provider.SectionVersion < 2 ||
                 provider.StateType != typeof(BistroBuilderMenuSaveData))
             {
                 result.AddError("menu.state no expone el contrato v2 esperado.");
@@ -237,7 +237,7 @@ public static class BistroBuilderMenuState21AValidator
             else
             {
                 result.AddCorrect(
-                    "menu.state v2 está configurada y preparada."
+                    "menu.state v2 o posterior está configurada y preparada."
                 );
             }
         }

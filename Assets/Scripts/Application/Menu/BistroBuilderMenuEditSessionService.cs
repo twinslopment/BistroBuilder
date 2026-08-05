@@ -556,6 +556,122 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         );
     }
 
+    public BistroBuilderMenuMutationResult TrySetPreparationDifficulty(
+        string dishId,
+        int difficulty
+    )
+    {
+        if (difficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+            difficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidState,
+                "La dificultad debe estar entre " +
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty +
+                " y " +
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty +
+                "."
+            );
+        }
+
+        if (!TryResolveDraftItem(dishId, out var item, out var failure))
+        {
+            return failure;
+        }
+
+        if (!catalogService.TryGetDefinition(
+                item.DishId,
+                out BistroBuilderDishDefinition definition
+            ) || definition == null)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason
+                    .DishDefinitionNotFound,
+                "No existe una definición canónica para " +
+                item.DishId + "."
+            );
+        }
+
+        int currentDifficulty =
+            item.ResolvePreparationDifficulty(definition);
+        int currentSeconds =
+            item.ResolveBasePreparationSeconds(definition);
+
+        if (currentDifficulty == difficulty)
+        {
+            return NoChange("El plato ya tenía esa dificultad.");
+        }
+
+        item.SetPreparationSettings(difficulty, currentSeconds);
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType
+                .PreparationDifficultyChanged,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Dificultad actualizada en el borrador."
+        );
+    }
+
+    public BistroBuilderMenuMutationResult TrySetBasePreparationSeconds(
+        string dishId,
+        int preparationSeconds
+    )
+    {
+        if (preparationSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+            preparationSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidState,
+                "El tiempo de preparación queda fuera del rango permitido."
+            );
+        }
+
+        if (!TryResolveDraftItem(dishId, out var item, out var failure))
+        {
+            return failure;
+        }
+
+        if (!catalogService.TryGetDefinition(
+                item.DishId,
+                out BistroBuilderDishDefinition definition
+            ) || definition == null)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason
+                    .DishDefinitionNotFound,
+                "No existe una definición canónica para " +
+                item.DishId + "."
+            );
+        }
+
+        int currentDifficulty =
+            item.ResolvePreparationDifficulty(definition);
+        int currentSeconds =
+            item.ResolveBasePreparationSeconds(definition);
+
+        if (currentSeconds == preparationSeconds)
+        {
+            return NoChange("El plato ya tenía ese tiempo de preparación.");
+        }
+
+        item.SetPreparationSettings(
+            currentDifficulty,
+            preparationSeconds
+        );
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType.PreparationTimeChanged,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Tiempo de preparación actualizado en el borrador."
+        );
+    }
+
     public BistroBuilderMenuMutationResult TrySetAvailability(
         string dishId,
         BistroBuilderMealServiceAvailability availability
@@ -758,7 +874,11 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             !item.Enabled ||
             item.ManuallySoldOut ||
             item.SignatureDish ||
-            item.AvailableServices != definition.DefaultAvailability;
+            item.AvailableServices != definition.DefaultAvailability ||
+            item.ResolvePreparationDifficulty(definition) !=
+                definition.Complexity ||
+            item.ResolveBasePreparationSeconds(definition) !=
+                definition.BasePreparationSeconds;
 
         if (!changed)
         {
@@ -773,12 +893,18 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         bool previousSignature = item.SignatureDish;
         BistroBuilderMealServiceAvailability previousAvailability =
             item.AvailableServices;
+        int previousDifficulty = item.PreparationDifficulty;
+        int previousPreparationSeconds = item.BasePreparationSeconds;
 
         item.SetPriceCents(definition.BasePriceCents);
         item.SetEnabled(true);
         item.SetManuallySoldOut(false);
         item.SetSignatureDish(false);
         item.SetAvailableServices(definition.DefaultAvailability);
+        item.SetPreparationSettings(
+            definition.Complexity,
+            definition.BasePreparationSeconds
+        );
 
         if (!TryValidateDraft(out string validationError))
         {
@@ -787,6 +913,10 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             item.SetManuallySoldOut(previousSoldOut);
             item.SetSignatureDish(previousSignature);
             item.SetAvailableServices(previousAvailability);
+            item.SetPreparationSettings(
+                previousDifficulty,
+                previousPreparationSeconds
+            );
             return Fail(
                 BistroBuilderMenuMutationFailureReason.PolicyViolation,
                 validationError

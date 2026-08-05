@@ -234,6 +234,82 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
     }
 
     /// <summary>
+    /// Resuelve los valores efectivos de producción de un plato. Las cartas
+    /// migradas pueden heredar 0/0 del catálogo; las decisiones 2.1F usan
+    /// valores explícitos por restaurante.
+    /// </summary>
+    public bool TryResolvePreparationSettings(
+        string dishId,
+        out int difficulty,
+        out int preparationSeconds,
+        out string error
+    )
+    {
+        difficulty = 0;
+        preparationSeconds = 0;
+
+        if (!EnsureInitialized(out error))
+        {
+            return false;
+        }
+
+        string normalized =
+            BistroBuilderMenuIdUtility.NormalizeStableId(dishId);
+
+        if (!BistroBuilderMenuIdUtility.IsValidStableId(normalized))
+        {
+            error = "El DishId indicado no es válido.";
+            return false;
+        }
+
+        if (!catalogService.TryGetDefinition(
+                normalized,
+                out BistroBuilderDishDefinition definition
+            ) || definition == null)
+        {
+            error = "No existe una definición canónica para " +
+                    normalized + ".";
+            return false;
+        }
+
+        if (byDishId.TryGetValue(
+                normalized,
+                out BistroBuilderMenuItemRuntimeState item
+            ))
+        {
+            difficulty = item.ResolvePreparationDifficulty(definition);
+            preparationSeconds =
+                item.ResolveBasePreparationSeconds(definition);
+        }
+        else
+        {
+            // Una línea ya enviada puede sobrevivir a la retirada posterior
+            // del plato de la carta. En ese caso se conserva el valor base.
+            difficulty = definition.Complexity;
+            preparationSeconds = definition.BasePreparationSeconds;
+        }
+
+        if (difficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+            difficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty ||
+            preparationSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+            preparationSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds)
+        {
+            difficulty = 0;
+            preparationSeconds = 0;
+            error = "La preparación efectiva de " + normalized +
+                    " es inválida.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    /// <summary>
     /// Copia una fotografía ordenada e independiente del estado interno.
     /// </summary>
     public bool TryGetSnapshot(

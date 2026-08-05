@@ -78,6 +78,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Text recipeText;
     private InputField searchInput;
     private InputField priceInput;
+    private InputField preparationDifficultyInput;
+    private InputField preparationTimeInput;
+    private Text preparationSummaryText;
     private Toggle enabledToggle;
     private Toggle breakfastToggle;
     private Toggle lunchToggle;
@@ -268,6 +271,14 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                 (listContent == null || listContent.rect.height <= 1f))
             {
                 error = "El contenido de la lista no tiene altura visible.";
+                return false;
+            }
+
+            if (preparationDifficultyInput == null ||
+                preparationTimeInput == null ||
+                preparationSummaryText == null)
+            {
+                error = "El detalle no contiene los controles 2.1F de preparación.";
                 return false;
             }
 
@@ -674,6 +685,63 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.SetLayoutHeight(priceInput, 38f);
 
+        Text difficultyLabel = AddDetailText(
+            content,
+            "Dificultad de preparación (1-10)",
+            13,
+            22f,
+            true
+        );
+        difficultyLabel.color =
+            BistroBuilderMenuEditorUiFactory.TextSecondary;
+        preparationDifficultyInput =
+            BistroBuilderMenuEditorUiFactory.CreateInputField(
+                "PreparationDifficulty",
+                content,
+                "1-10",
+                null,
+                HandlePreparationDifficultyEndEdit
+            );
+        preparationDifficultyInput.contentType =
+            InputField.ContentType.IntegerNumber;
+        preparationDifficultyInput.characterValidation =
+            InputField.CharacterValidation.Integer;
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(
+            preparationDifficultyInput,
+            38f
+        );
+
+        Text preparationTimeLabel = AddDetailText(
+            content,
+            "Tiempo base de preparación",
+            13,
+            22f,
+            true
+        );
+        preparationTimeLabel.color =
+            BistroBuilderMenuEditorUiFactory.TextSecondary;
+        preparationTimeInput =
+            BistroBuilderMenuEditorUiFactory.CreateInputField(
+                "PreparationTime",
+                content,
+                "minutos o mm:ss",
+                null,
+                HandlePreparationTimeEndEdit
+            );
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(
+            preparationTimeInput,
+            38f
+        );
+        preparationSummaryText = AddDetailText(
+            content,
+            string.Empty,
+            12,
+            42f,
+            false
+        );
+        preparationSummaryText.color =
+            BistroBuilderMenuEditorUiFactory.TextSecondary;
+
         AddDetailText(content, "Servicios", 13, 22f, true).color =
             BistroBuilderMenuEditorUiFactory.TextSecondary;
         breakfastToggle = AddDetailToggle(content, "Desayuno", HandleBreakfastChanged);
@@ -1056,6 +1124,60 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
         HandleMutationResult(
             editorService.TrySetPriceCents(selectedSnapshot.DishId, cents)
+        );
+    }
+
+    private void HandlePreparationDifficultyEndEdit(string value)
+    {
+        if (suppressCallbacks || selectedSnapshot == null ||
+            !selectedSnapshot.Included)
+        {
+            return;
+        }
+
+        if (!BistroBuilderMenuEditorUtility.TryParsePreparationDifficulty(
+                value,
+                out int difficulty,
+                out string parseError
+            ))
+        {
+            ShowStatus(parseError, true);
+            RefreshDetail();
+            return;
+        }
+
+        HandleMutationResult(
+            editorService.TrySetPreparationDifficulty(
+                selectedSnapshot.DishId,
+                difficulty
+            )
+        );
+    }
+
+    private void HandlePreparationTimeEndEdit(string value)
+    {
+        if (suppressCallbacks || selectedSnapshot == null ||
+            !selectedSnapshot.Included)
+        {
+            return;
+        }
+
+        if (!BistroBuilderMenuEditorUtility.TryParsePreparationDuration(
+                value,
+                out int preparationSeconds,
+                out string parseError
+            ))
+        {
+            ShowStatus(parseError, true);
+            RefreshDetail();
+            return;
+        }
+
+        HandleMutationResult(
+            editorService.TrySetBasePreparationSeconds(
+                selectedSnapshot.DishId,
+                preparationSeconds
+            )
         );
     }
 
@@ -1495,6 +1617,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             lunchToggle.interactable = editable;
             dinnerToggle.interactable = editable;
             priceInput.interactable = editable;
+            preparationDifficultyInput.interactable = editable;
+            preparationTimeInput.interactable = editable;
             moveUpButton.interactable = editable;
             moveDownButton.interactable = editable;
             restoreDefaultsButton.interactable = editable;
@@ -1529,6 +1653,28 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                     selectedSnapshot.CurrentPriceCents
                 )
             );
+            preparationDifficultyInput.SetTextWithoutNotify(
+                selectedSnapshot.PreparationDifficulty.ToString()
+            );
+            preparationTimeInput.SetTextWithoutNotify(
+                BistroBuilderMenuEditorUtility.FormatPreparationDuration(
+                    selectedSnapshot.PreparationSeconds
+                )
+            );
+            preparationSummaryText.text =
+                BistroBuilderMenuEditorUtility.GetPreparationDifficultyLabel(
+                    selectedSnapshot.PreparationDifficulty
+                ) + " · " +
+                selectedSnapshot.PreparationDifficulty + "/10 · " +
+                BistroBuilderMenuEditorUtility.FormatPreparationDuration(
+                    selectedSnapshot.PreparationSeconds
+                ) +
+                (selectedSnapshot.PreparationDifficulty !=
+                    selectedSnapshot.DefaultPreparationDifficulty ||
+                 selectedSnapshot.PreparationSeconds !=
+                    selectedSnapshot.DefaultPreparationSeconds
+                    ? " · Modificado"
+                    : " · Predeterminado");
 
             economicsText.text = selectedSnapshot.HasValidEconomics
                 ? "Escandallo por ración\n" +

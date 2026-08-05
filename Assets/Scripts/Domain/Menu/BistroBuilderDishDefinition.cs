@@ -16,7 +16,10 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
 {
     public const int CurrentDefinitionVersion = 1;
     public const int MaximumPriceCents = 100000000;
+    public const int MinimumPreparationSeconds = 1;
     public const int MaximumPreparationSeconds = 86400;
+    public const int MinimumPreparationDifficulty = 1;
+    public const int MaximumPreparationDifficulty = 10;
 
     [Header("Identidad estable")]
 
@@ -78,12 +81,12 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
         BistroBuilderKitchenStationType.HotKitchen;
 
     [SerializeField]
-    [Min(1)]
+    [Min(MinimumPreparationSeconds)]
     private int basePreparationSeconds = 300;
 
     [SerializeField]
-    [Range(1, 10)]
-    private int complexity = 1;
+    [Range(MinimumPreparationDifficulty, MaximumPreparationDifficulty)]
+    private int complexity = MinimumPreparationDifficulty;
 
     [SerializeField]
     private string recipeId = string.Empty;
@@ -292,7 +295,7 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
             return false;
         }
 
-        if (basePreparationSeconds < 1 ||
+        if (basePreparationSeconds < MinimumPreparationSeconds ||
             basePreparationSeconds > MaximumPreparationSeconds)
         {
             error = "El tiempo de preparación del plato " + dishId +
@@ -300,10 +303,13 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
             return false;
         }
 
-        if (complexity < 1 || complexity > 10)
+        if (complexity < MinimumPreparationDifficulty ||
+            complexity > MaximumPreparationDifficulty)
         {
             error = "La complejidad del plato " + dishId +
-                    " debe estar entre 1 y 10.";
+                    " debe estar entre " +
+                    MinimumPreparationDifficulty + " y " +
+                    MaximumPreparationDifficulty + ".";
             return false;
         }
 
@@ -352,10 +358,14 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
         );
         basePreparationSeconds = Mathf.Clamp(
             basePreparationSeconds,
-            1,
+            MinimumPreparationSeconds,
             MaximumPreparationSeconds
         );
-        complexity = Mathf.Clamp(complexity, 1, 10);
+        complexity = Mathf.Clamp(
+            complexity,
+            MinimumPreparationDifficulty,
+            MaximumPreparationDifficulty
+        );
         if (allowedServiceModes ==
             BistroBuilderDishServiceModeAvailability.None)
         {

@@ -6,8 +6,9 @@ using UnityEngine;
 /// <summary>
 /// Proveedor versionado de menu.state.
 ///
-/// V2 persiste cartas independientes por RestaurantId, el restaurante activo
-/// y las entradas no resueltas. La aplicación se realiza de forma atómica a
+/// V3 persiste cartas independientes por RestaurantId, el restaurante activo,
+/// las entradas no resueltas y la preparación configurable 2.1F. La aplicación
+/// se realiza de forma atómica a
 /// través de BistroBuilderRestaurantMenuCollectionService; el servicio de
 /// carta activo sigue siendo la autoridad operativa consumida por comandas.
 /// </summary>
@@ -19,7 +20,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     IBistroBuilderSaveSectionPhaseOrdering
 {
     public const string StableSectionId = "menu.state";
-    public const int StableSectionVersion = 2;
+    public const int StableSectionVersion = 3;
 
     [Header("Dependencias")]
 
@@ -444,7 +445,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         }
 
         Debug.Log(
-            "menu.state v2 restaurada con " +
+            "menu.state v3 restaurada con " +
             collectionService.RestaurantCount + " restaurante(s), " +
             menuService.ItemCount + " plato(s) activos y " +
             collectionService.UnresolvedItemCount +
@@ -525,6 +526,42 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
+        bool inheritedDifficulty =
+            item.preparationDifficulty ==
+                BistroBuilderMenuItemRuntimeState.InheritedPreparationValue;
+        bool inheritedTime =
+            item.basePreparationSeconds ==
+                BistroBuilderMenuItemRuntimeState.InheritedPreparationValue;
+
+        if (inheritedDifficulty != inheritedTime)
+        {
+            error = "menu.state mezcla preparación heredada y explícita para " +
+                    item.dishId + ".";
+            return false;
+        }
+
+        if (!inheritedDifficulty &&
+            (item.preparationDifficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+             item.preparationDifficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty))
+        {
+            error = "menu.state contiene una dificultad inválida para " +
+                    item.dishId + ".";
+            return false;
+        }
+
+        if (!inheritedTime &&
+            (item.basePreparationSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+             item.basePreparationSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds))
+        {
+            error = "menu.state contiene un tiempo inválido para " +
+                    item.dishId + ".";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -542,7 +579,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             manuallySoldOut = item.ManuallySoldOut,
             signatureDish = item.SignatureDish,
             availableServices = (int)item.AvailableServices,
-            displayOrder = item.DisplayOrder
+            displayOrder = item.DisplayOrder,
+            preparationDifficulty = item.PreparationDifficulty,
+            basePreparationSeconds = item.BasePreparationSeconds
         };
     }
 
@@ -558,7 +597,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             item.manuallySoldOut,
             item.signatureDish,
             (BistroBuilderMealServiceAvailability)item.availableServices,
-            item.displayOrder
+            item.displayOrder,
+            item.preparationDifficulty,
+            item.basePreparationSeconds
         );
     }
 

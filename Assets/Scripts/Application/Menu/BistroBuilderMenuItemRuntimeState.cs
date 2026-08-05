@@ -5,13 +5,15 @@ using UnityEngine;
 /// Estado modificable de un plato concreto dentro de la carta de una
 /// partida. No contiene la definición completa: solo referencia DishId.
 ///
-/// El mismo tipo se utiliza para entradas resueltas y para entradas
-/// temporalmente no resueltas durante una migración. Por eso separa la
-/// validación estructural de la validación contra el catálogo actual.
+/// Los valores de preparación usan 0/0 como marcador histórico de
+/// "heredar del catálogo". Este marcador permite migrar menu.state antiguos
+/// sin inventar datos para platos temporalmente no resueltos.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderMenuItemRuntimeState
 {
+    public const int InheritedPreparationValue = 0;
+
     [SerializeField]
     private string dishId = string.Empty;
 
@@ -37,24 +39,57 @@ public sealed class BistroBuilderMenuItemRuntimeState
     [SerializeField]
     private int displayOrder;
 
+    [SerializeField]
+    private int preparationDifficulty;
+
+    [SerializeField]
+    private int basePreparationSeconds;
+
     public string DishId => dishId;
-
     public int CurrentPriceCents => currentPriceCents;
-
     public bool Unlocked => unlocked;
-
     public bool Enabled => enabled;
-
     public bool ManuallySoldOut => manuallySoldOut;
-
     public bool SignatureDish => signatureDish;
-
     public BistroBuilderMealServiceAvailability AvailableServices =>
         availableServices;
-
     public int DisplayOrder => displayOrder;
+    public int PreparationDifficulty => preparationDifficulty;
+    public int BasePreparationSeconds => basePreparationSeconds;
+
+    public bool InheritsPreparationFromCatalog =>
+        preparationDifficulty == InheritedPreparationValue &&
+        basePreparationSeconds == InheritedPreparationValue;
 
     public BistroBuilderMenuItemRuntimeState()
+    {
+    }
+
+    /// <summary>
+    /// Constructor histórico. Conserva compatibilidad con pruebas y código
+    /// anterior a 2.1F usando herencia de los valores canónicos.
+    /// </summary>
+    public BistroBuilderMenuItemRuntimeState(
+        string dishId,
+        int currentPriceCents,
+        bool unlocked,
+        bool enabled,
+        bool manuallySoldOut,
+        bool signatureDish,
+        BistroBuilderMealServiceAvailability availableServices,
+        int displayOrder
+    ) : this(
+        dishId,
+        currentPriceCents,
+        unlocked,
+        enabled,
+        manuallySoldOut,
+        signatureDish,
+        availableServices,
+        displayOrder,
+        InheritedPreparationValue,
+        InheritedPreparationValue
+    )
     {
     }
 
@@ -66,7 +101,9 @@ public sealed class BistroBuilderMenuItemRuntimeState
         bool manuallySoldOut,
         bool signatureDish,
         BistroBuilderMealServiceAvailability availableServices,
-        int displayOrder
+        int displayOrder,
+        int preparationDifficulty,
+        int basePreparationSeconds
     )
     {
         this.dishId =
@@ -78,6 +115,8 @@ public sealed class BistroBuilderMenuItemRuntimeState
         this.signatureDish = signatureDish;
         this.availableServices = availableServices;
         this.displayOrder = displayOrder;
+        this.preparationDifficulty = preparationDifficulty;
+        this.basePreparationSeconds = basePreparationSeconds;
     }
 
     public static BistroBuilderMenuItemRuntimeState FromDefinition(
@@ -100,7 +139,9 @@ public sealed class BistroBuilderMenuItemRuntimeState
             false,
             false,
             definition.DefaultAvailability,
-            displayOrder
+            displayOrder,
+            definition.Complexity,
+            definition.BasePreparationSeconds
         );
     }
 
@@ -114,8 +155,28 @@ public sealed class BistroBuilderMenuItemRuntimeState
             manuallySoldOut,
             signatureDish,
             availableServices,
-            displayOrder
+            displayOrder,
+            preparationDifficulty,
+            basePreparationSeconds
         );
+    }
+
+    public int ResolvePreparationDifficulty(
+        BistroBuilderDishDefinition definition
+    )
+    {
+        return InheritsPreparationFromCatalog && definition != null
+            ? definition.Complexity
+            : preparationDifficulty;
+    }
+
+    public int ResolveBasePreparationSeconds(
+        BistroBuilderDishDefinition definition
+    )
+    {
+        return InheritsPreparationFromCatalog && definition != null
+            ? definition.BasePreparationSeconds
+            : basePreparationSeconds;
     }
 
     /// <summary>
@@ -155,6 +216,40 @@ public sealed class BistroBuilderMenuItemRuntimeState
             return false;
         }
 
+        bool inheritedDifficulty =
+            preparationDifficulty == InheritedPreparationValue;
+        bool inheritedTime =
+            basePreparationSeconds == InheritedPreparationValue;
+
+        if (inheritedDifficulty != inheritedTime)
+        {
+            error = "La preparación de " + dishId +
+                    " mezcla valores heredados y explícitos.";
+            return false;
+        }
+
+        if (!inheritedDifficulty &&
+            (preparationDifficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+             preparationDifficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty))
+        {
+            error = "La dificultad de preparación de " + dishId +
+                    " queda fuera del rango permitido.";
+            return false;
+        }
+
+        if (!inheritedTime &&
+            (basePreparationSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+             basePreparationSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds))
+        {
+            error = "El tiempo de preparación de " + dishId +
+                    " queda fuera del rango permitido.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -180,30 +275,11 @@ public sealed class BistroBuilderMenuItemRuntimeState
         return true;
     }
 
-    internal void SetPriceCents(int value)
-    {
-        currentPriceCents = value;
-    }
-
-    internal void SetUnlocked(bool value)
-    {
-        unlocked = value;
-    }
-
-    internal void SetEnabled(bool value)
-    {
-        enabled = value;
-    }
-
-    internal void SetManuallySoldOut(bool value)
-    {
-        manuallySoldOut = value;
-    }
-
-    internal void SetSignatureDish(bool value)
-    {
-        signatureDish = value;
-    }
+    internal void SetPriceCents(int value) => currentPriceCents = value;
+    internal void SetUnlocked(bool value) => unlocked = value;
+    internal void SetEnabled(bool value) => enabled = value;
+    internal void SetManuallySoldOut(bool value) => manuallySoldOut = value;
+    internal void SetSignatureDish(bool value) => signatureDish = value;
 
     internal void SetAvailableServices(
         BistroBuilderMealServiceAvailability value
@@ -212,8 +288,14 @@ public sealed class BistroBuilderMenuItemRuntimeState
         availableServices = value;
     }
 
-    internal void SetDisplayOrder(int value)
+    internal void SetDisplayOrder(int value) => displayOrder = value;
+
+    internal void SetPreparationSettings(
+        int difficulty,
+        int preparationSeconds
+    )
     {
-        displayOrder = value;
+        preparationDifficulty = difficulty;
+        basePreparationSeconds = preparationSeconds;
     }
 }
