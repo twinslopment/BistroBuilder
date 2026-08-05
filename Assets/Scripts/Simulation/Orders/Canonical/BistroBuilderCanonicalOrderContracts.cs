@@ -287,16 +287,43 @@ public readonly struct BistroBuilderResolvedOrderDish
     public string DishId { get; }
     public int PriceCents { get; }
     public int DisplayOrder { get; }
+    public bool SignatureDish { get; }
+    public string RestaurantId { get; }
+    public int MenuOfferRevision { get; }
 
     public BistroBuilderResolvedOrderDish(
         string dishId,
         int priceCents,
         int displayOrder
     )
+        : this(
+            dishId,
+            priceCents,
+            displayOrder,
+            false,
+            string.Empty,
+            0
+        )
+    {
+    }
+
+    public BistroBuilderResolvedOrderDish(
+        string dishId,
+        int priceCents,
+        int displayOrder,
+        bool signatureDish,
+        string restaurantId,
+        int menuOfferRevision
+    )
     {
         DishId = BistroBuilderOrderIdUtility.Normalize(dishId);
         PriceCents = priceCents;
         DisplayOrder = displayOrder;
+        SignatureDish = signatureDish;
+        RestaurantId = BistroBuilderMenuIdUtility.NormalizeStableId(
+            restaurantId
+        );
+        MenuOfferRevision = Math.Max(0, menuOfferRevision);
     }
 }
 

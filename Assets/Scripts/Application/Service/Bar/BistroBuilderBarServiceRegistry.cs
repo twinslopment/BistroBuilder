@@ -107,23 +107,64 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
 
     public bool RegisterSpot(BistroBuilderBarServiceSpot spot)
     {
-        if (spot == null || registeredSpots.Contains(spot))
+        return RegisterSpotInternal(spot, true, out _);
+    }
+
+    /// <summary>
+    /// Intenta registrar una plaza sin escribir errores esperados en Console.
+    /// Está pensado para validadores, autotests y herramientas que necesitan
+    /// comprobar un rechazo de forma deliberada sin contaminar el diagnóstico
+    /// global de Unity. El comportamiento y los eventos de un alta válida son
+    /// exactamente los mismos que en RegisterSpot.
+    /// </summary>
+    public bool TryRegisterSpot(
+        BistroBuilderBarServiceSpot spot,
+        out string rejectionReason
+    )
+    {
+        return RegisterSpotInternal(spot, false, out rejectionReason);
+    }
+
+    private bool RegisterSpotInternal(
+        BistroBuilderBarServiceSpot spot,
+        bool logRejection,
+        out string rejectionReason
+    )
+    {
+        rejectionReason = string.Empty;
+
+        if (spot == null)
         {
+            rejectionReason = "No se puede registrar una plaza de barra nula.";
             return false;
         }
 
-        if (!spot.ValidateConfiguration(out string error))
+        if (registeredSpots.Contains(spot))
         {
-            Debug.LogError(error, spot);
+            rejectionReason = "La plaza de barra ya está registrada.";
+            return false;
+        }
+
+        if (!spot.ValidateConfiguration(out rejectionReason))
+        {
+            if (logRejection)
+            {
+                Debug.LogError(rejectionReason, spot);
+            }
+
             return false;
         }
 
         if (byId.ContainsKey(spot.BarSpotId))
         {
-            Debug.LogError(
-                "BarSpotId duplicado: " + spot.BarSpotId + ".",
-                spot
-            );
+            rejectionReason =
+                "BarSpotId duplicado: " + spot.BarSpotId + ".";
+
+            if (logRejection)
+            {
+                Debug.LogError(rejectionReason, spot);
+            }
+
             return false;
         }
 

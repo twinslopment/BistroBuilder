@@ -75,6 +75,9 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     private BistroBuilderMenuOfferService offerService;
 
     [SerializeField]
+    private BistroBuilderMenuSelectionService selectionService;
+
+    [SerializeField]
     private TableAssignmentSystem tableAssignmentSystem;
 
     [SerializeField]
@@ -122,6 +125,12 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         new List<BistroBuilderMenuOfferItemSnapshot>(32);
 
     private readonly List<string> dishBuffer = new List<string>(8);
+    private readonly List<BistroBuilderMenuOfferItemSnapshot>
+        selectionCandidateBuffer =
+            new List<BistroBuilderMenuOfferItemSnapshot>(32);
+    private readonly List<BistroBuilderMenuSelectionResult>
+        selectionResultBuffer =
+            new List<BistroBuilderMenuSelectionResult>(8);
     private readonly List<string> lineBuffer = new List<string>(8);
     private readonly HashSet<CustomerGroup> registeredGroups =
         new HashSet<CustomerGroup>();
@@ -143,6 +152,9 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     public BistroBuilderRestaurantMenuService MenuService => menuService;
 
     public BistroBuilderMenuOfferService OfferService => offerService;
+
+    public BistroBuilderMenuSelectionService SelectionService =>
+        selectionService;
 
     public int ActiveSessionCount => sessionsByGroup.Count;
     public int CompletedBarServiceCount { get; private set; }
@@ -574,6 +586,23 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         {
             error = "La barra no comparte la oferta canónica 2.1C.";
             return false;
+        }
+
+        if (selectionService != null)
+        {
+            if (!selectionService.ValidateConfiguration(out error))
+            {
+                return false;
+            }
+
+            if (!ReferenceEquals(
+                    selectionService.OfferService,
+                    offerService
+                ))
+            {
+                error = "La barra no comparte la selección canónica 2.1D.";
+                return false;
+            }
         }
 
         if (tableAssignmentSystem == null)
@@ -1020,6 +1049,8 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
     {
         destination.Clear();
         offerBuffer.Clear();
+        selectionCandidateBuffer.Clear();
+        selectionResultBuffer.Clear();
 
         if (session == null || session.Group == null)
         {
@@ -1043,9 +1074,7 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
             Mathf.Max(1, maximumItemsPerBarOrder)
         );
 
-        for (int index = 0;
-             index < offerBuffer.Count && destination.Count < targetCount;
-             index++)
+        for (int index = 0; index < offerBuffer.Count; index++)
         {
             BistroBuilderMenuOfferItemSnapshot item = offerBuffer[index];
 
@@ -1066,7 +1095,52 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
                 continue;
             }
 
-            destination.Add(item.DishId);
+            selectionCandidateBuffer.Add(item);
+        }
+
+        if (selectionService != null)
+        {
+            BistroBuilderMenuSelectionContext context =
+                new BistroBuilderMenuSelectionContext(
+                    offerService.CurrentMealService,
+                    session.Mode,
+                    "group_" + session.Group.GroupId,
+                    0,
+                    0,
+                    0
+                );
+
+            if (!selectionService.TrySelectDistinctFromCandidates(
+                    context,
+                    selectionCandidateBuffer,
+                    targetCount,
+                    null,
+                    selectionResultBuffer,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            for (int index = 0;
+                 index < selectionResultBuffer.Count;
+                 index++)
+            {
+                destination.Add(selectionResultBuffer[index].DishId);
+            }
+        }
+        else
+        {
+            // Compatibilidad de escenas y autotests anteriores a 2.1D. Si no
+            // hay pesos distintos, el servicio 2.1D conserva exactamente este
+            // mismo orden de presentación.
+            for (int index = 0;
+                 index < selectionCandidateBuffer.Count &&
+                 destination.Count < targetCount;
+                 index++)
+            {
+                destination.Add(selectionCandidateBuffer[index].DishId);
+            }
         }
 
         if (destination.Count < session.Group.GroupSize)
@@ -1884,6 +1958,13 @@ public sealed class BistroBuilderBarServiceSystem : MonoBehaviour
         {
             offerService = FindFirstObjectByType<
                 BistroBuilderMenuOfferService
+            >();
+        }
+
+        if (selectionService == null)
+        {
+            selectionService = FindFirstObjectByType<
+                BistroBuilderMenuSelectionService
             >();
         }
 

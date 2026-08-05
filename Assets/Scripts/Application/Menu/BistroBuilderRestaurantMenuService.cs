@@ -752,11 +752,15 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
     }
 
     /// <summary>
-    /// Comprueba si un plato puede pedirse en un servicio concreto.
-    /// Inventario podrá añadir después una razón adicional sin cambiar la
-    /// autoridad de carta.
+    /// Comprueba únicamente las reglas persistentes de la carta para un
+    /// servicio concreto. No consulta inventario ni disponibilidad derivada.
+    ///
+    /// Esta separación permite que herramientas y autotests aislados validen
+    /// el contrato de carta sin depender de que el inventario runtime de la
+    /// escena esté inicializado. El juego normal debe consultar la oferta 2.1C
+    /// o IsDishOrderable, que sí incorporan la disponibilidad dinámica.
     /// </summary>
-    public bool IsDishOrderable(
+    public bool IsDishEligibleByMenuState(
         string dishId,
         BistroBuilderMealServiceAvailability service,
         out string rejectionReason
@@ -801,11 +805,22 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return false;
         }
 
-        CacheDependenciesIfNeeded();
+        return true;
+    }
 
-        if (availabilityService != null &&
-            !availabilityService.IsDishOrderable(
-                item.DishId,
+    /// <summary>
+    /// Comprueba si un plato puede pedirse en un servicio concreto, combinando
+    /// el estado persistente de carta con la disponibilidad dinámica derivada
+    /// de recetas e inventario.
+    /// </summary>
+    public bool IsDishOrderable(
+        string dishId,
+        BistroBuilderMealServiceAvailability service,
+        out string rejectionReason
+    )
+    {
+        if (!IsDishEligibleByMenuState(
+                dishId,
                 service,
                 out rejectionReason
             ))
@@ -813,6 +828,19 @@ public sealed class BistroBuilderRestaurantMenuService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+
+        if (availabilityService != null &&
+            !availabilityService.IsDishOrderable(
+                dishId,
+                service,
+                out rejectionReason
+            ))
+        {
+            return false;
+        }
+
+        rejectionReason = string.Empty;
         return true;
     }
 

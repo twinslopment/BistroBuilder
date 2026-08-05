@@ -21,6 +21,15 @@ public sealed class BistroBuilderCanonicalOrderLine
     private int priceCentsAtOrder;
 
     [SerializeField]
+    private bool wasSignatureDishAtOrder;
+
+    [SerializeField]
+    private string restaurantIdAtOrder;
+
+    [SerializeField]
+    private int menuOfferRevisionAtOrder;
+
+    [SerializeField]
     private string primaryCustomerId;
 
     [SerializeField]
@@ -41,6 +50,9 @@ public sealed class BistroBuilderCanonicalOrderLine
     public string LineId => lineId ?? string.Empty;
     public string DishId => dishId ?? string.Empty;
     public int PriceCentsAtOrder => priceCentsAtOrder;
+    public bool WasSignatureDishAtOrder => wasSignatureDishAtOrder;
+    public string RestaurantIdAtOrder => restaurantIdAtOrder ?? string.Empty;
+    public int MenuOfferRevisionAtOrder => menuOfferRevisionAtOrder;
     public string PrimaryCustomerId => primaryCustomerId ?? string.Empty;
     public IReadOnlyList<string> ConsumerCustomerIds => consumerCustomerIds;
     public int CourseIndex => courseIndex;
@@ -63,6 +75,10 @@ public sealed class BistroBuilderCanonicalOrderLine
         this.lineId = BistroBuilderOrderIdUtility.Normalize(lineId);
         dishId = BistroBuilderOrderIdUtility.Normalize(dish.DishId);
         priceCentsAtOrder = dish.PriceCents;
+        wasSignatureDishAtOrder = dish.SignatureDish;
+        restaurantIdAtOrder =
+            BistroBuilderMenuIdUtility.NormalizeStableId(dish.RestaurantId);
+        menuOfferRevisionAtOrder = Math.Max(0, dish.MenuOfferRevision);
         this.primaryCustomerId =
             BistroBuilderOrderIdUtility.Normalize(primaryCustomerId);
         consumerCustomerIds = consumers != null
@@ -143,6 +159,21 @@ public sealed class BistroBuilderCanonicalOrderLine
             return false;
         }
 
+        if (!string.IsNullOrEmpty(RestaurantIdAtOrder) &&
+            !BistroBuilderMenuIdUtility.IsValidStableId(RestaurantIdAtOrder))
+        {
+            error = "La línea " + LineId +
+                    " contiene un RestaurantId histórico inválido.";
+            return false;
+        }
+
+        if (menuOfferRevisionAtOrder < 0)
+        {
+            error = "La línea " + LineId +
+                    " contiene una revisión de oferta negativa.";
+            return false;
+        }
+
         if (courseIndex < 0 || courseIndex > 20)
         {
             error = "La línea " + LineId + " contiene un pase inválido.";
@@ -218,6 +249,9 @@ public sealed class BistroBuilderCanonicalOrderLine
             lineId = LineId,
             dishId = DishId,
             priceCentsAtOrder = priceCentsAtOrder,
+            wasSignatureDishAtOrder = wasSignatureDishAtOrder,
+            restaurantIdAtOrder = RestaurantIdAtOrder,
+            menuOfferRevisionAtOrder = menuOfferRevisionAtOrder,
             primaryCustomerId = PrimaryCustomerId,
             consumerCustomerIds =
                 new List<string>(consumerCustomerIds),

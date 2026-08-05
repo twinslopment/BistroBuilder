@@ -23,6 +23,9 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
     private BistroBuilderMenuOfferService offerService;
 
     [SerializeField]
+    private BistroBuilderMenuSelectionService selectionService;
+
+    [SerializeField]
     private BistroBuilderOrderCompositionProfile compositionProfile;
 
     [Header("Depuración")]
@@ -50,6 +53,8 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
 
     public BistroBuilderRestaurantMenuService MenuService => menuService;
     public BistroBuilderMenuOfferService OfferService => offerService;
+    public BistroBuilderMenuSelectionService SelectionService =>
+        selectionService;
     public BistroBuilderOrderCompositionProfile CompositionProfile =>
         compositionProfile;
 
@@ -83,6 +88,24 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         {
             error = "El compositor no comparte la oferta canónica.";
             return false;
+        }
+
+        if (selectionService != null)
+        {
+            if (!selectionService.ValidateConfiguration(out error))
+            {
+                return false;
+            }
+
+            if (offerService == null ||
+                !ReferenceEquals(
+                    selectionService.OfferService,
+                    offerService
+                ))
+            {
+                error = "El compositor no comparte la selección 2.1D.";
+                return false;
+            }
         }
 
         if (compositionProfile == null)
@@ -161,12 +184,17 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
                     .SharedAllCustomers:
                     consumerBuffer.Clear();
                     consumerBuffer.AddRange(normalizedCustomerIds);
-                    AddLine(
-                        candidate,
-                        rule,
-                        0,
-                        consumerBuffer
-                    );
+                    if (!TryAddLine(
+                            candidate,
+                            rule,
+                            0,
+                            consumerBuffer,
+                            out error
+                        ))
+                    {
+                        return false;
+                    }
+
                     generatedLineCount++;
                     break;
 
@@ -180,12 +208,16 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
                         consumerBuffer.Add(
                             normalizedCustomerIds[customerIndex]
                         );
-                        AddLine(
-                            candidate,
-                            rule,
-                            customerIndex,
-                            consumerBuffer
-                        );
+                        if (!TryAddLine(
+                                candidate,
+                                rule,
+                                customerIndex,
+                                consumerBuffer,
+                                out error
+                            ))
+                        {
+                            return false;
+                        }
                     }
 
                     generatedLineCount += normalizedCustomerIds.Count;
@@ -215,12 +247,17 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
                             );
                         }
 
-                        AddLine(
-                            candidate,
-                            rule,
-                            groupOrdinal,
-                            consumerBuffer
-                        );
+                        if (!TryAddLine(
+                                candidate,
+                                rule,
+                                groupOrdinal,
+                                consumerBuffer,
+                                out error
+                            ))
+                        {
+                            return false;
+                        }
+
                         generatedLineCount++;
                         groupOrdinal++;
                     }
@@ -268,26 +305,61 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         return true;
     }
 
-    private void AddLine(
+    private bool TryAddLine(
         BistroBuilderCanonicalOrderCreationRequest request,
         BistroBuilderCourseCompositionRule rule,
         int selectionOrdinal,
-        List<string> consumers
+        List<string> consumers,
+        out string error
     )
     {
-        int dishIndex = PositiveModulo(
-            rule.MenuDisplayOffset + selectionOrdinal,
-            orderableDishIds.Count
-        );
-
         string primaryCustomerId =
             consumers != null && consumers.Count > 0
                 ? consumers[0]
                 : string.Empty;
+        string dishId;
+
+        if (selectionService != null)
+        {
+            string selectionReferenceId =
+                BistroBuilderOrderIdUtility.IsValid(primaryCustomerId)
+                    ? primaryCustomerId
+                    : request.customerGroupReferenceId;
+            BistroBuilderMenuSelectionContext context =
+                new BistroBuilderMenuSelectionContext(
+                    request.mealService,
+                    BistroBuilderServiceMode.TableService,
+                    selectionReferenceId,
+                    rule.CourseIndex,
+                    selectionOrdinal,
+                    rule.MenuDisplayOffset + selectionOrdinal
+                );
+
+            if (!selectionService.TrySelectFromCandidates(
+                    context,
+                    offerBuffer,
+                    null,
+                    out BistroBuilderMenuSelectionResult selection,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            dishId = selection.DishId;
+        }
+        else
+        {
+            int dishIndex = PositiveModulo(
+                rule.MenuDisplayOffset + selectionOrdinal,
+                orderableDishIds.Count
+            );
+            dishId = orderableDishIds[dishIndex];
+        }
 
         request.lines.Add(
             new BistroBuilderCanonicalOrderLineRequest(
-                orderableDishIds[dishIndex],
+                dishId,
                 primaryCustomerId,
                 consumers,
                 rule.CourseIndex
@@ -298,6 +370,9 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         {
             coveredCustomerIds.Add(consumers[index]);
         }
+
+        error = string.Empty;
+        return true;
     }
 
     private bool TryNormalizeCustomers(
@@ -375,7 +450,8 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         {
             // Compatibilidad de los autotests aislados 367F. La escena
             // instalada por 2.1C siempre recibe offerService y el validador lo
-            // exige; esta rama no se utiliza en el juego.
+            // exige; esta rama solo evalúa el estado persistente de carta y no
+            // depende del inventario runtime de la escena.
             List<BistroBuilderMenuItemRuntimeState> legacyItems =
                 new List<BistroBuilderMenuItemRuntimeState>();
 
@@ -389,7 +465,7 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
                 BistroBuilderMenuItemRuntimeState item = legacyItems[index];
 
                 if (item != null &&
-                    menuService.IsDishOrderable(
+                    menuService.IsDishEligibleByMenuState(
                         item.DishId,
                         mealService,
                         out _
@@ -453,6 +529,11 @@ public sealed class BistroBuilderOrderCompositionService : MonoBehaviour
         if (offerService == null)
         {
             TryGetComponent(out offerService);
+        }
+
+        if (selectionService == null)
+        {
+            TryGetComponent(out selectionService);
         }
     }
 

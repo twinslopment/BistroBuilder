@@ -1094,6 +1094,8 @@ GameObject:
   - component: {fileID: 263644978}
   - component: {fileID: 263644977}
   - component: {fileID: 263644979}
+  - component: {fileID: 263644980}
+  - component: {fileID: 263644981}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2164,6 +2166,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCanonicalOrderService
   menuService: {fileID: 263644959}
   offerService: {fileID: 263644979}
+  selectionService: {fileID: 263644980}
   nextSequenceNumber: 1
   orders: []
   logChanges: 1
@@ -2254,6 +2257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderCompositionService
   menuService: {fileID: 263644959}
   offerService: {fileID: 263644979}
+  selectionService: {fileID: 263644980}
   compositionProfile: {fileID: 11400000, guid: 66e06e88b46dfb94498cd6e1e3d156bd, type: 2}
   logComposition: 0
 --- !u!114 &263644967
@@ -2273,6 +2277,7 @@ MonoBehaviour:
   catalogService: {fileID: 263644960}
   menuService: {fileID: 263644959}
   offerService: {fileID: 263644979}
+  selectionService: {fileID: 263644980}
   tableAssignmentSystem: {fileID: 263644908}
   waitingAreaSystem: {fileID: 263644910}
   maximumItemsPerBarOrder: 4
@@ -2551,6 +2556,36 @@ MonoBehaviour:
   catalogService: {fileID: 263644960}
   availabilityService: {fileID: 263644974}
   orderIntegration: {fileID: 263644962}
+  logChanges: 0
+--- !u!114 &263644980
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce5f984033f14e678f700be1e8833f16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuSelectionService
+  offerService: {fileID: 263644979}
+  menuService: {fileID: 263644959}
+  logSelections: 0
+--- !u!114 &263644981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25ab56b04cac41ad9370a78a2c52b43d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSignatureDishTelemetryService
+  selectionService: {fileID: 263644980}
+  canonicalOrderService: {fileID: 263644961}
   logChanges: 0
 --- !u!1 &295579756
 GameObject:

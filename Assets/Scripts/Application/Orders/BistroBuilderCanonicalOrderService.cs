@@ -23,6 +23,9 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     [SerializeField]
     private BistroBuilderMenuOfferService offerService;
 
+    [SerializeField]
+    private BistroBuilderMenuSelectionService selectionService;
+
     [Header("Estado runtime")]
 
     [SerializeField]
@@ -58,6 +61,12 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     private readonly List<string> orderableDishIds =
         new List<string>(32);
 
+    private readonly List<string> normalizedCustomerBuffer =
+        new List<string>(16);
+
+    private readonly HashSet<string> uniqueCustomerBuffer =
+        new HashSet<string>(StringComparer.Ordinal);
+
     private bool initialized;
 
     public event Action<BistroBuilderCanonicalOrderChangedEvent>
@@ -65,6 +74,8 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
 
     public BistroBuilderRestaurantMenuService MenuService => menuService;
     public BistroBuilderMenuOfferService OfferService => offerService;
+    public BistroBuilderMenuSelectionService SelectionService =>
+        selectionService;
     public int OrderCount => orders != null ? orders.Count : 0;
     public int Revision { get; private set; }
     public long NextSequenceNumber => nextSequenceNumber;
@@ -97,6 +108,24 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         {
             error = "Comandas no comparte la oferta canónica 2.1C.";
             return false;
+        }
+
+        if (selectionService != null)
+        {
+            if (!selectionService.ValidateConfiguration(out error))
+            {
+                return false;
+            }
+
+            if (offerService == null ||
+                !ReferenceEquals(
+                    selectionService.OfferService,
+                    offerService
+                ))
+            {
+                error = "Comandas no comparte la selección canónica 2.1D.";
+                return false;
+            }
         }
 
         if (orders == null)
@@ -235,11 +264,9 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     }
 
     /// <summary>
-    /// Política provisional y determinista para probar el dominio: asigna los
-    /// platos disponibles por orden de carta y rota entre ellos.
-    ///
-    /// Las preferencias de cliente sustituirán esta selección, no el modelo
-    /// de comanda.
+    /// Crea una línea individual por cliente. Desde 2.1D delega la elección
+    /// en la autoridad ponderada de carta; la rotación histórica permanece
+    /// únicamente como compatibilidad para escenas anteriores al instalador.
     /// </summary>
     public BistroBuilderCanonicalOrderOperationResult
         TryCreateIndividualOrder(
@@ -308,9 +335,12 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 mealService = mealService
             };
 
-        HashSet<string> uniqueCustomers =
-            new HashSet<string>(StringComparer.Ordinal);
+        normalizedCustomerBuffer.Clear();
+        uniqueCustomerBuffer.Clear();
 
+        // Valida el conjunto completo antes de publicar la primera decisión
+        // 2.1D. Así una referencia inválida o duplicada nunca deja una
+        // selección parcial observable en telemetría.
         for (int index = 0; index < customerIds.Count; index++)
         {
             string customerId = BistroBuilderOrderIdUtility.Normalize(
@@ -326,7 +356,7 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 );
             }
 
-            if (!uniqueCustomers.Add(customerId))
+            if (!uniqueCustomerBuffer.Add(customerId))
             {
                 return Failure(
                     BistroBuilderCanonicalOrderFailureReason
@@ -335,8 +365,51 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 );
             }
 
-            string dishId =
-                orderableDishIds[index % orderableDishIds.Count];
+            normalizedCustomerBuffer.Add(customerId);
+        }
+
+        for (int index = 0;
+             index < normalizedCustomerBuffer.Count;
+             index++)
+        {
+            string customerId = normalizedCustomerBuffer[index];
+            string dishId;
+
+            if (selectionService != null)
+            {
+                BistroBuilderMenuSelectionContext selectionContext =
+                    new BistroBuilderMenuSelectionContext(
+                        mealService,
+                        BistroBuilderServiceMode.TableService,
+                        customerId,
+                        courseIndex,
+                        index,
+                        index
+                    );
+
+                if (!selectionService.TrySelectFromCandidates(
+                        selectionContext,
+                        offerBuffer,
+                        null,
+                        out BistroBuilderMenuSelectionResult selection,
+                        out string selectionError
+                    ))
+                {
+                    return Failure(
+                        BistroBuilderCanonicalOrderFailureReason
+                            .NoOrderableDishes,
+                        selectionError
+                    );
+                }
+
+                dishId = selection.DishId;
+            }
+            else
+            {
+                dishId = orderableDishIds[
+                    index % orderableDishIds.Count
+                ];
+            }
 
             request.lines.Add(
                 new BistroBuilderCanonicalOrderLineRequest(
@@ -1707,8 +1780,9 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         else
         {
             // Compatibilidad defensiva para autotests antiguos y escenas
-            // todavía no reparadas por 2.1C. La modalidad de mesa se valida
-            // también contra la definición, evitando el bypass histórico.
+            // todavía no reparadas por 2.1C. Solo se evalúa el estado
+            // persistente de carta; la modalidad se valida después contra la
+            // definición y no se exige inventario runtime inicializado.
             menuBuffer.Clear();
 
             if (!menuService.TryGetSnapshot(menuBuffer, out error))
@@ -1723,7 +1797,7 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 BistroBuilderMenuItemRuntimeState item = menuBuffer[index];
 
                 if (item != null &&
-                    menuService.IsDishOrderable(
+                    menuService.IsDishEligibleByMenuState(
                         item.DishId,
                         mealService,
                         out _
@@ -1976,6 +2050,11 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         {
             TryGetComponent(out offerService);
         }
+
+        if (selectionService == null)
+        {
+            TryGetComponent(out selectionService);
+        }
     }
 
     private static BistroBuilderCanonicalOrderState
@@ -2152,16 +2231,20 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
                 dish = new BistroBuilderResolvedOrderDish(
                     item.DishId,
                     item.PriceCents,
-                    item.DisplayOrder
+                    item.DisplayOrder,
+                    item.SignatureDish,
+                    item.RestaurantId,
+                    item.OfferRevision
                 );
                 rejectionReason = string.Empty;
                 return true;
             }
 
-            // Compatibilidad defensiva: incluso sin la fachada 2.1C se valida
-            // la modalidad, cerrando la incoherencia de las llamadas directas
-            // a TryCreateOrder.
-            if (!menu.IsDishOrderable(
+            // Compatibilidad defensiva: sin la fachada 2.1C se comprueba el
+            // estado persistente de carta y después la modalidad. No se exige
+            // inventario runtime, porque esta ruta existe para escenas antiguas
+            // y autotests aislados; el juego instalado usa siempre la oferta.
+            if (!menu.IsDishEligibleByMenuState(
                     dishId,
                     mealService,
                     out rejectionReason
@@ -2195,7 +2278,10 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
             dish = new BistroBuilderResolvedOrderDish(
                 legacyItem.DishId,
                 legacyItem.CurrentPriceCents,
-                legacyItem.DisplayOrder
+                legacyItem.DisplayOrder,
+                legacyItem.SignatureDish,
+                string.Empty,
+                menu.Revision
             );
             rejectionReason = string.Empty;
             return true;

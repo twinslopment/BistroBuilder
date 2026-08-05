@@ -218,9 +218,18 @@ public static class BistroBuilderBarServiceSelfTest
         duplicateRoot.transform.SetParent(root.transform, false);
         BistroBuilderBarServiceSpot duplicate =
             ConfigureSpot(duplicateRoot, first.BarSpotId);
+        bool duplicateRejected = !registry.TryRegisterSpot(
+            duplicate,
+            out string duplicateRejectionReason
+        );
         Check(
-            !registry.RegisterSpot(duplicate),
-            "El registro rechaza BarSpotId duplicados."
+            duplicateRejected &&
+            string.Equals(
+                duplicateRejectionReason,
+                "BarSpotId duplicado: " + first.BarSpotId + ".",
+                StringComparison.Ordinal
+            ),
+            "El registro rechaza BarSpotId duplicados sin contaminar Console."
         );
         Check(
             registry.RegisteredSpotCount == 3,
