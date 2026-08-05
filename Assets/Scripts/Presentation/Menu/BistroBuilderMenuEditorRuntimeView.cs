@@ -28,6 +28,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     [SerializeField]
     private RestaurantEditInteractionController editInteractionController;
 
+    [SerializeField]
+    private BistroBuilderDishRecipeAuthoringRuntimeView authoringView;
+
     [Header("Comportamiento")]
 
     [SerializeField]
@@ -93,6 +96,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Button restoreDefaultsButton;
     private Button mealServiceButton;
     private Button serviceModeButton;
+    private Button newDishButton;
+    private Button editDishRecipeButton;
     private Button applyButton;
     private Button discardButton;
     private Button reloadButton;
@@ -120,6 +125,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     public RestaurantEditInteractionController EditInteractionController =>
         editInteractionController;
 
+    public BistroBuilderDishRecipeAuthoringRuntimeView AuthoringView =>
+        authoringView;
+
     public bool VisualTreeBuilt => visualTreeBuilt;
 
     private void Awake()
@@ -145,6 +153,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     {
         if (!Application.isPlaying || modalRoot == null ||
             !modalRoot.gameObject.activeSelf)
+        {
+            return;
+        }
+
+        if (authoringView != null && authoringView.IsOpen)
         {
             return;
         }
@@ -309,6 +322,12 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             return false;
         }
 
+        if (authoringView == null ||
+            !authoringView.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
         if (GetComponentInParent<Canvas>() == null)
         {
             error = "La vista 2.1E debe estar bajo un Canvas.";
@@ -457,7 +476,17 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             new Color(0.16f, 0.20f, 0.18f, 1f),
             14
         );
-        SetAnchoredColumn(serviceModeButton, 0.68f, 0.83f, 9f);
+        SetAnchoredColumn(serviceModeButton, 0.68f, 0.79f, 9f);
+
+        newDishButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "NewDish",
+            header,
+            "Nuevo plato",
+            OpenNewDishAuthoring,
+            BistroBuilderMenuEditorUiFactory.Positive,
+            13
+        );
+        SetAnchoredColumn(newDishButton, 0.80f, 0.89f, 9f);
 
         Button closeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Close",
@@ -467,7 +496,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             new Color(0.25f, 0.15f, 0.14f, 1f),
             14
         );
-        SetAnchoredColumn(closeButton, 0.88f, 0.985f, 9f);
+        SetAnchoredColumn(closeButton, 0.90f, 0.985f, 9f);
     }
 
     private void BuildBody(RectTransform panel)
@@ -668,6 +697,12 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         detailTitleText = AddDetailText(content, "Selecciona un plato", 21, 38f, true);
         detailSubtitleText = AddDetailText(content, string.Empty, 12, 26f, false);
         descriptionText = AddDetailText(content, string.Empty, 14, 64f, false);
+        editDishRecipeButton = AddDetailButton(
+            content,
+            "Editar plato y receta",
+            OpenSelectedDishAuthoring,
+            38f
+        );
         includeButton = AddDetailButton(content, "Añadir a carta", ToggleIncluded, 38f);
 
         enabledToggle = AddDetailToggle(content, "Activo en la carta", HandleEnabledChanged);
@@ -1016,6 +1051,34 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         {
             ShowStatus(error, true);
         }
+    }
+
+    private void OpenNewDishAuthoring()
+    {
+        if (authoringView == null)
+        {
+            ShowStatus("Falta la vista de creación de platos 2.1G.", true);
+            return;
+        }
+
+        authoringView.OpenNew();
+    }
+
+    private void OpenSelectedDishAuthoring()
+    {
+        if (authoringView == null || selectedSnapshot == null)
+        {
+            ShowStatus("Selecciona un plato para editarlo.", true);
+            return;
+        }
+
+        authoringView.OpenExisting(selectedSnapshot.DishId);
+    }
+
+    private void HandleAuthoringSaved(string dishId)
+    {
+        selectedDishId = dishId ?? string.Empty;
+        RefreshSnapshot("Plato y receta guardados en el borrador.");
     }
 
     private void ToggleIncluded()
@@ -1611,6 +1674,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             }
 
             bool editable = selectedSnapshot.Included;
+            editDishRecipeButton.interactable = true;
             enabledToggle.interactable = editable;
             soldOutToggle.interactable = editable;
             breakfastToggle.interactable = editable;
@@ -1762,6 +1826,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
     private void SetEditorVisible(bool visible)
     {
+        if (!visible && authoringView != null && authoringView.IsOpen)
+        {
+            authoringView.Close();
+        }
+
         if (modalRoot != null)
         {
             modalRoot.gameObject.SetActive(visible);
@@ -1828,6 +1897,12 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
 
         editorService.EditorChanged += HandleEditorChanged;
+
+        if (authoringView != null)
+        {
+            authoringView.Saved += HandleAuthoringSaved;
+        }
+
         subscribed = true;
     }
 
@@ -1841,6 +1916,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         if (editorService != null)
         {
             editorService.EditorChanged -= HandleEditorChanged;
+        }
+
+        if (authoringView != null)
+        {
+            authoringView.Saved -= HandleAuthoringSaved;
         }
 
         subscribed = false;
@@ -1867,6 +1947,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             editInteractionController = FindFirstObjectByType<
                 RestaurantEditInteractionController
             >();
+        }
+
+        if (authoringView == null)
+        {
+            TryGetComponent(out authoringView);
         }
     }
 

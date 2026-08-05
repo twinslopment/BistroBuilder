@@ -498,6 +498,19 @@ public sealed class BistroBuilderMenuOfferService : MonoBehaviour
         );
     }
 
+    private void HandleDishCatalogChanged()
+    {
+        // La deduplicación histórica solo observaba carta e inventario.
+        // Invalidamos su tupla para publicar cambios de nombre, categoría,
+        // estación o modalidades aunque la carta mantenga la misma revisión.
+        hasPublishedSourceState = false;
+        Publish(
+            BistroBuilderMenuOfferChangeType.DependenciesRebound,
+            string.Empty,
+            "Cambió el catálogo runtime de platos."
+        );
+    }
+
     private void Publish(
         BistroBuilderMenuOfferChangeType changeType,
         string dishId,
@@ -574,6 +587,11 @@ public sealed class BistroBuilderMenuOfferService : MonoBehaviour
             menuService.MenuChanged += HandleMenuChanged;
         }
 
+        if (catalogService != null)
+        {
+            catalogService.CatalogChanged += HandleDishCatalogChanged;
+        }
+
         if (availabilityService != null)
         {
             availabilityService.AvailabilityChanged +=
@@ -605,6 +623,11 @@ public sealed class BistroBuilderMenuOfferService : MonoBehaviour
         if (menuService != null)
         {
             menuService.MenuChanged -= HandleMenuChanged;
+        }
+
+        if (catalogService != null)
+        {
+            catalogService.CatalogChanged -= HandleDishCatalogChanged;
         }
 
         if (availabilityService != null)

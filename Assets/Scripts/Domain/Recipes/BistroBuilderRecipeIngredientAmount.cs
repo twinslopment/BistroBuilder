@@ -41,6 +41,26 @@ public sealed class BistroBuilderRecipeIngredientAmount
         this.unit = unit;
     }
 
+    public BistroBuilderRecipeIngredientAmount Clone()
+    {
+        return new BistroBuilderRecipeIngredientAmount(
+            ingredient,
+            amount,
+            unit
+        );
+    }
+
+    public void InitializeRuntime(
+        BistroBuilderIngredientDefinition runtimeIngredient,
+        double runtimeAmount,
+        BistroBuilderMeasurementUnit runtimeUnit
+    )
+    {
+        ingredient = runtimeIngredient;
+        amount = runtimeAmount;
+        unit = runtimeUnit;
+    }
+
     public bool TryGetCanonicalMilliUnits(
         out long canonicalMilliUnits,
         out string error

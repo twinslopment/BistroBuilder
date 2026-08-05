@@ -1,9 +1,13 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Puerta runtime de solo lectura a ingredientes, recetas y escandallos.
-/// Centraliza los catálogos y evita búsquedas por AssetDatabase durante la
-/// simulación.
+/// Puerta runtime a ingredientes, recetas y escandallos.
+///
+/// Los ingredientes continúan siendo canónicos en 2.1G1/2. Las recetas
+/// admiten una capa runtime para sobrescribir recetas existentes y registrar
+/// las de platos creados por el jugador. Su persistencia llegará en 2.1G3.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -25,6 +29,26 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
     [SerializeField]
     private bool logInitialization = true;
 
+    private readonly List<BistroBuilderRecipeDefinition> runtimeRecipes =
+        new List<BistroBuilderRecipeDefinition>(16);
+
+    private readonly Dictionary<string, BistroBuilderRecipeDefinition>
+        runtimeByDishId =
+            new Dictionary<string, BistroBuilderRecipeDefinition>(
+                StringComparer.Ordinal
+            );
+
+    private readonly Dictionary<string, BistroBuilderRecipeDefinition>
+        runtimeByRecipeId =
+            new Dictionary<string, BistroBuilderRecipeDefinition>(
+                StringComparer.Ordinal
+            );
+
+    private readonly List<BistroBuilderDishDefinition> dishBuffer =
+        new List<BistroBuilderDishDefinition>(48);
+
+    public event Action CatalogChanged;
+
     public BistroBuilderIngredientCatalog IngredientCatalog =>
         ingredientCatalog;
 
@@ -37,9 +61,35 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
         ? ingredientCatalog.DefinitionCount
         : 0;
 
-    public int RecipeCount => recipeCatalog != null
+    public int CanonicalRecipeCount => recipeCatalog != null
         ? recipeCatalog.DefinitionCount
         : 0;
+
+    public int RuntimeRecipeCount => runtimeRecipes.Count;
+
+    public int RecipeCount
+    {
+        get
+        {
+            int count = CanonicalRecipeCount;
+
+            for (int index = 0; index < runtimeRecipes.Count; index++)
+            {
+                BistroBuilderRecipeDefinition recipe = runtimeRecipes[index];
+
+                if (recipe != null &&
+                    (recipeCatalog == null ||
+                     !recipeCatalog.TryGetByDishId(recipe.DishId, out _)))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    public int Revision { get; private set; }
 
     private void Awake()
     {
@@ -56,8 +106,9 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
             Debug.Log(
                 nameof(BistroBuilderRecipeCatalogService) +
                 " ha cargado " + IngredientCount +
-                " ingrediente(s) y " + RecipeCount +
-                " receta(s) canónica(s).",
+                " ingrediente(s), " + CanonicalRecipeCount +
+                " receta(s) canónica(s) y " + RuntimeRecipeCount +
+                " receta(s) runtime.",
                 this
             );
         }
@@ -108,16 +159,17 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
             return false;
         }
 
-        if (!dishCatalogService.ValidateConfiguration(out error))
+        if (!dishCatalogService.ValidateConfiguration(out error) ||
+            !TryRebuildRuntimeIndexes(out error))
         {
             return false;
         }
 
-        var dishes = dishCatalogService.Catalog.Definitions;
+        dishCatalogService.CopyDefinitionsTo(dishBuffer);
 
-        for (int index = 0; index < dishes.Count; index++)
+        for (int index = 0; index < dishBuffer.Count; index++)
         {
-            BistroBuilderDishDefinition dish = dishes[index];
+            BistroBuilderDishDefinition dish = dishBuffer[index];
 
             if (dish == null || string.IsNullOrWhiteSpace(dish.RecipeId))
             {
@@ -125,14 +177,19 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
                 return false;
             }
 
-            if (!recipeCatalog.TryGetByRecipeId(
-                    dish.RecipeId,
+            if (!TryGetRecipeByDishId(
+                    dish.DishId,
                     out BistroBuilderRecipeDefinition recipe
                 ) ||
                 recipe == null ||
-                recipe.Dish != dish)
+                !string.Equals(
+                    recipe.RecipeId,
+                    dish.RecipeId,
+                    StringComparison.Ordinal
+                ) ||
+                !ReferenceEquals(recipe.Dish, dish))
             {
-                error = "No existe una receta canónica coherente para " +
+                error = "No existe una receta coherente para " +
                         dish.DishId + ".";
                 return false;
             }
@@ -160,15 +217,185 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
                );
     }
 
+    public void CopyIngredientsTo(
+        List<BistroBuilderIngredientDefinition> destination
+    )
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+
+        if (ingredientCatalog == null)
+        {
+            destination.Clear();
+            return;
+        }
+
+        ingredientCatalog.CopyDefinitionsTo(destination);
+    }
+
     public bool TryGetRecipeByDishId(
         string dishId,
         out BistroBuilderRecipeDefinition recipe
     )
     {
         recipe = null;
+        string normalized = BistroBuilderMenuIdUtility.NormalizeStableId(
+            dishId
+        );
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return false;
+        }
+
+        if (runtimeByDishId.TryGetValue(normalized, out recipe))
+        {
+            return recipe != null;
+        }
 
         return recipeCatalog != null &&
-               recipeCatalog.TryGetByDishId(dishId, out recipe);
+               recipeCatalog.TryGetByDishId(normalized, out recipe);
+    }
+
+    public bool TryGetRecipeByRecipeId(
+        string recipeId,
+        out BistroBuilderRecipeDefinition recipe
+    )
+    {
+        recipe = null;
+        string normalized = BistroBuilderMenuIdUtility.NormalizeStableId(
+            recipeId
+        );
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return false;
+        }
+
+        if (runtimeByRecipeId.TryGetValue(normalized, out recipe))
+        {
+            return recipe != null;
+        }
+
+        return recipeCatalog != null &&
+               recipeCatalog.TryGetByRecipeId(normalized, out recipe);
+    }
+
+    public void CopyRuntimeRecipesTo(
+        List<BistroBuilderRecipeDefinition> destination
+    )
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+
+        destination.Clear();
+
+        for (int index = 0; index < runtimeRecipes.Count; index++)
+        {
+            BistroBuilderRecipeDefinition recipe = runtimeRecipes[index];
+
+            if (recipe != null)
+            {
+                destination.Add(recipe);
+            }
+        }
+    }
+
+    public bool TryReplaceRuntimeRecipes(
+        IList<BistroBuilderRecipeDefinition> recipes,
+        out string error,
+        bool publishChange = true
+    )
+    {
+        Dictionary<string, BistroBuilderRecipeDefinition> nextByDish =
+            new Dictionary<string, BistroBuilderRecipeDefinition>(
+                StringComparer.Ordinal
+            );
+        Dictionary<string, BistroBuilderRecipeDefinition> nextByRecipe =
+            new Dictionary<string, BistroBuilderRecipeDefinition>(
+                StringComparer.Ordinal
+            );
+        List<BistroBuilderRecipeDefinition> nextList =
+            new List<BistroBuilderRecipeDefinition>(
+                recipes != null ? recipes.Count : 0
+            );
+
+        if (recipes != null)
+        {
+            for (int index = 0; index < recipes.Count; index++)
+            {
+                BistroBuilderRecipeDefinition recipe = recipes[index];
+
+                if (recipe == null)
+                {
+                    error = "La capa runtime contiene una receta nula.";
+                    return false;
+                }
+
+                if (!recipe.TryValidate(out error) ||
+                    !TryValidateCanonicalIngredients(recipe, out error))
+                {
+                    return false;
+                }
+
+                if (!dishCatalogService.TryGetDefinition(
+                        recipe.DishId,
+                        out BistroBuilderDishDefinition effectiveDish
+                    ) ||
+                    !ReferenceEquals(effectiveDish, recipe.Dish))
+                {
+                    error = "La receta runtime " + recipe.RecipeId +
+                            " no referencia la definición efectiva de " +
+                            recipe.DishId + ".";
+                    return false;
+                }
+
+                if (nextByDish.ContainsKey(recipe.DishId))
+                {
+                    error = "La capa runtime repite la receta de " +
+                            recipe.DishId + ".";
+                    return false;
+                }
+
+                if (nextByRecipe.ContainsKey(recipe.RecipeId))
+                {
+                    error = "La capa runtime repite el RecipeId " +
+                            recipe.RecipeId + ".";
+                    return false;
+                }
+
+                nextByDish.Add(recipe.DishId, recipe);
+                nextByRecipe.Add(recipe.RecipeId, recipe);
+                nextList.Add(recipe);
+            }
+        }
+
+        runtimeRecipes.Clear();
+        runtimeRecipes.AddRange(nextList);
+        runtimeByDishId.Clear();
+        runtimeByRecipeId.Clear();
+
+        foreach (KeyValuePair<string, BistroBuilderRecipeDefinition> pair in nextByDish)
+        {
+            runtimeByDishId.Add(pair.Key, pair.Value);
+        }
+
+        foreach (KeyValuePair<string, BistroBuilderRecipeDefinition> pair in nextByRecipe)
+        {
+            runtimeByRecipeId.Add(pair.Key, pair.Value);
+        }
+
+        if (publishChange)
+        {
+            PublishChanged();
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     public bool TryGetEconomics(
@@ -177,7 +404,7 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
         out string error
     )
     {
-        snapshot = default;
+        snapshot = default(BistroBuilderRecipeEconomicsSnapshot);
         error = string.Empty;
 
         if (dishCatalogService == null ||
@@ -205,6 +432,88 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
             out snapshot,
             out error
         );
+    }
+
+    public void PublishChanged()
+    {
+        Revision++;
+        CatalogChanged?.Invoke();
+    }
+
+    private bool TryRebuildRuntimeIndexes(out string error)
+    {
+        error = string.Empty;
+        runtimeByDishId.Clear();
+        runtimeByRecipeId.Clear();
+
+        for (int index = 0; index < runtimeRecipes.Count; index++)
+        {
+            BistroBuilderRecipeDefinition recipe = runtimeRecipes[index];
+
+            if (recipe == null)
+            {
+                error = "La capa runtime contiene una receta nula.";
+                return false;
+            }
+
+            if (!recipe.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (!TryValidateCanonicalIngredients(recipe, out error))
+            {
+                return false;
+            }
+
+            if (runtimeByDishId.ContainsKey(recipe.DishId) ||
+                runtimeByRecipeId.ContainsKey(recipe.RecipeId))
+            {
+                error = "La capa runtime contiene identidades de receta " +
+                        "duplicadas.";
+                return false;
+            }
+
+            runtimeByDishId.Add(recipe.DishId, recipe);
+            runtimeByRecipeId.Add(recipe.RecipeId, recipe);
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+
+    private bool TryValidateCanonicalIngredients(
+        BistroBuilderRecipeDefinition recipe,
+        out string error
+    )
+    {
+        if (recipe == null)
+        {
+            error = "No puede validarse una receta nula.";
+            return false;
+        }
+
+        for (int index = 0; index < recipe.Ingredients.Count; index++)
+        {
+            BistroBuilderRecipeIngredientAmount line =
+                recipe.Ingredients[index];
+
+            if (line == null || line.Ingredient == null ||
+                !TryGetIngredient(
+                    line.Ingredient.IngredientId,
+                    out BistroBuilderIngredientDefinition canonical
+                ) ||
+                !ReferenceEquals(canonical, line.Ingredient))
+            {
+                error = "La receta runtime " + recipe.RecipeId +
+                        " contiene un ingrediente ajeno al catálogo canónico.";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     private void CacheDependenciesIfNeeded()

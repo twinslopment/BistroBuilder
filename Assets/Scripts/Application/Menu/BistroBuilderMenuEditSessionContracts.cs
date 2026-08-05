@@ -34,7 +34,8 @@ public enum BistroBuilderMenuDraftChangeType
     DefaultsRestored = 13,
     CategoryOrderChanged = 14,
     PreparationDifficultyChanged = 15,
-    PreparationTimeChanged = 16
+    PreparationTimeChanged = 16,
+    DishAuthoringChanged = 17
 }
 
 /// <summary>

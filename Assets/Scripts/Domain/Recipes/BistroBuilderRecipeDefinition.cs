@@ -69,6 +69,81 @@ public sealed class BistroBuilderRecipeDefinition : ScriptableObject
 
     public string Notes => notes;
 
+    /// <summary>
+    /// Crea una receta runtime sin alterar los assets canónicos.
+    /// </summary>
+    public static BistroBuilderRecipeDefinition CreateRuntime(
+        string recipeId,
+        BistroBuilderDishDefinition dish,
+        int yieldPortions,
+        int wasteBasisPoints,
+        IList<BistroBuilderRecipeIngredientAmount> ingredients,
+        string notes
+    )
+    {
+        BistroBuilderRecipeDefinition recipe =
+            CreateInstance<BistroBuilderRecipeDefinition>();
+        recipe.hideFlags = HideFlags.DontSave;
+        recipe.InitializeRuntime(
+            recipeId,
+            dish,
+            yieldPortions,
+            wasteBasisPoints,
+            ingredients,
+            notes
+        );
+        return recipe;
+    }
+
+    public void InitializeRuntime(
+        string runtimeRecipeId,
+        BistroBuilderDishDefinition runtimeDish,
+        int runtimeYieldPortions,
+        int runtimeWasteBasisPoints,
+        IList<BistroBuilderRecipeIngredientAmount> runtimeIngredients,
+        string runtimeNotes
+    )
+    {
+        recipeId = BistroBuilderMenuIdUtility.NormalizeStableId(
+            runtimeRecipeId
+        );
+        dish = runtimeDish;
+        yieldPortions = runtimeYieldPortions;
+        wasteBasisPoints = runtimeWasteBasisPoints;
+        notes = runtimeNotes != null ? runtimeNotes.Trim() : string.Empty;
+        ingredients = new List<BistroBuilderRecipeIngredientAmount>();
+
+        if (runtimeIngredients == null)
+        {
+            return;
+        }
+
+        for (int index = 0; index < runtimeIngredients.Count; index++)
+        {
+            BistroBuilderRecipeIngredientAmount line =
+                runtimeIngredients[index];
+
+            if (line != null)
+            {
+                ingredients.Add(line.Clone());
+            }
+        }
+    }
+
+    public BistroBuilderRecipeDefinition CloneRuntime(
+        BistroBuilderDishDefinition runtimeDish
+    )
+    {
+        return CreateRuntime(
+            RecipeId,
+            runtimeDish,
+            YieldPortions,
+            WasteBasisPoints,
+            ingredients,
+            Notes
+        );
+    }
+
     public bool TryCalculateCostPerPortionMicroCents(
         out long costPerPortionMicroCents,
         out string error

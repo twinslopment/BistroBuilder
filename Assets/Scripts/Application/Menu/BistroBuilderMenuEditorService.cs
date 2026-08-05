@@ -45,6 +45,9 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
     private BistroBuilderRecipeCatalogService recipeCatalogService;
 
     [SerializeField]
+    private BistroBuilderDishRecipeAuthoringService authoringService;
+
+    [SerializeField]
     private BistroBuilderMenuCommercialPolicy commercialPolicy;
 
     [Header("Depuración")]
@@ -119,14 +122,20 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
     public BistroBuilderRecipeCatalogService RecipeCatalogService =>
         recipeCatalogService;
 
+    public BistroBuilderDishRecipeAuthoringService AuthoringService =>
+        authoringService;
+
     public BistroBuilderMenuCommercialPolicy CommercialPolicy =>
         commercialPolicy;
 
     public bool IsOpen => editorOpen;
 
     public bool HasPendingChanges =>
-        editorOpen && editSessionService != null &&
-        editSessionService.HasPendingChanges;
+        editorOpen &&
+        ((editSessionService != null &&
+          editSessionService.HasPendingChanges) ||
+         (authoringService != null &&
+          authoringService.HasPendingChanges));
 
     public bool HasExternalConflict => externalConflict;
 
@@ -210,6 +219,12 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             return false;
         }
 
+        if (authoringService == null)
+        {
+            error = "Falta BistroBuilderDishRecipeAuthoringService.";
+            return false;
+        }
+
         if (commercialPolicy == null)
         {
             error = "Falta BistroBuilderMenuCommercialPolicy.";
@@ -219,6 +234,7 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         if (!editSessionService.ValidateConfiguration(out error) ||
             !offerService.ValidateConfiguration(out error) ||
             !recipeCatalogService.ValidateConfiguration(out error) ||
+            !authoringService.ValidateConfiguration(out error) ||
             !commercialPolicy.TryValidate(out error))
         {
             return false;
@@ -267,6 +283,23 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             return false;
         }
 
+        if (!ReferenceEquals(
+                authoringService.DishCatalogService,
+                catalogService
+            ) ||
+            !ReferenceEquals(
+                authoringService.RecipeCatalogService,
+                recipeCatalogService
+            ) ||
+            !ReferenceEquals(
+                authoringService.EditSessionService,
+                editSessionService
+            ))
+        {
+            error = "El editor no comparte la autoría transaccional 2.1G.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -296,6 +329,12 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         {
             if (!editSessionService.TryBeginActiveSession(out error))
             {
+                return false;
+            }
+
+            if (!authoringService.TryBeginSession(out error))
+            {
+                editSessionService.TryDiscard(out _);
                 return false;
             }
 
@@ -340,6 +379,8 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
 
         try
         {
+            authoringService.DiscardSession();
+
             if (editSessionService.HasOpenSession &&
                 !editSessionService.TryDiscard(out error))
             {
@@ -381,11 +422,20 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         }
 
         internalTransition = true;
+        BistroBuilderDishRecipeAuthoringService.RollbackState rollback = null;
+        int authoringChanges = authoringService.DraftChangeCount;
 
         try
         {
+            if (!authoringService.TryApplyRuntime(out rollback, out error))
+            {
+                return false;
+            }
+
             if (!editSessionService.TryCommit(out result, out error))
             {
+                authoringService.Rollback(rollback);
+
                 if (editSessionService.State ==
                     BistroBuilderMenuEditSessionState.Conflict)
                 {
@@ -400,6 +450,22 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 return false;
             }
 
+            if (authoringChanges > 0)
+            {
+                result = new BistroBuilderMenuEditCommitResult(
+                    true,
+                    true,
+                    result.RestaurantId,
+                    result.PreviousRestaurantRevision,
+                    result.CurrentRestaurantRevision,
+                    result.AppliedChangeCount + authoringChanges,
+                    "La carta, los platos y las recetas se aplicaron de " +
+                    "forma atómica."
+                );
+            }
+
+            authoringService.CompleteCommit();
+
             if (!editSessionService.TryBeginActiveSession(
                     out string reopenError
                 ))
@@ -408,6 +474,23 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 externalConflict = false;
                 error = "La carta se aplicó, pero el editor no pudo reabrir " +
                         "un borrador limpio: " + reopenError;
+                Publish(
+                    BistroBuilderMenuEditorChangeType.Applied,
+                    string.Empty,
+                    error
+                );
+                return true;
+            }
+
+            if (!authoringService.TryBeginSession(
+                    out string authoringReopenError
+                ))
+            {
+                editSessionService.TryDiscard(out _);
+                editorOpen = false;
+                externalConflict = false;
+                error = "La carta se aplicó, pero la autoría no pudo " +
+                        "reabrirse: " + authoringReopenError;
                 Publish(
                     BistroBuilderMenuEditorChangeType.Applied,
                     string.Empty,
@@ -442,6 +525,8 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
 
         try
         {
+            authoringService.DiscardSession();
+
             if (!editSessionService.TryDiscard(out error))
             {
                 return false;
@@ -455,6 +540,23 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 externalConflict = false;
                 error = "Los cambios se descartaron, pero no pudo abrirse " +
                         "un borrador limpio: " + reopenError;
+                Publish(
+                    BistroBuilderMenuEditorChangeType.Closed,
+                    string.Empty,
+                    error
+                );
+                return false;
+            }
+
+            if (!authoringService.TryBeginSession(
+                    out string authoringReopenError
+                ))
+            {
+                editSessionService.TryDiscard(out _);
+                editorOpen = false;
+                externalConflict = false;
+                error = "Los cambios se descartaron, pero la autoría no " +
+                        "pudo reabrirse: " + authoringReopenError;
                 Publish(
                     BistroBuilderMenuEditorChangeType.Closed,
                     string.Empty,
@@ -489,6 +591,8 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
 
         try
         {
+            authoringService.DiscardSession();
+
             if (editSessionService.HasOpenSession &&
                 !editSessionService.TryDiscard(out error))
             {
@@ -503,6 +607,23 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 externalConflict = false;
                 error = "La sesión en conflicto se cerró, pero no pudo " +
                         "recargarse: " + reopenError;
+                Publish(
+                    BistroBuilderMenuEditorChangeType.Closed,
+                    string.Empty,
+                    error
+                );
+                return false;
+            }
+
+            if (!authoringService.TryBeginSession(
+                    out string authoringReopenError
+                ))
+            {
+                editSessionService.TryDiscard(out _);
+                editorOpen = false;
+                externalConflict = false;
+                error = "La carta se recargó, pero la autoría no pudo " +
+                        "reabrirse: " + authoringReopenError;
                 Publish(
                     BistroBuilderMenuEditorChangeType.Closed,
                     string.Empty,
@@ -672,6 +793,56 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         );
     }
 
+    public BistroBuilderDishRecipeAuthoringRequest
+        CreateNewDishAuthoringRequest()
+    {
+        return authoringService != null
+            ? authoringService.CreateNewRequest()
+            : new BistroBuilderDishRecipeAuthoringRequest();
+    }
+
+    public bool TryGetDishAuthoringRequest(
+        string dishId,
+        out BistroBuilderDishRecipeAuthoringRequest request,
+        out string error
+    )
+    {
+        request = null;
+
+        if (!EnsureOpen(out error))
+        {
+            return false;
+        }
+
+        return authoringService.TryGetAuthoringRequest(
+            dishId,
+            out request,
+            out error
+        );
+    }
+
+    public BistroBuilderDishRecipeAuthoringResult
+        TryCreateOrUpdateDishRecipe(
+            BistroBuilderDishRecipeAuthoringRequest request
+        )
+    {
+        if (!editorOpen || authoringService == null)
+        {
+            return BistroBuilderDishRecipeAuthoringResult.Failure(
+                "El editor de carta no está abierto."
+            );
+        }
+
+        return authoringService.TryCreateOrUpdate(request);
+    }
+
+    public void CopyIngredientOptionsTo(
+        List<BistroBuilderIngredientOptionSnapshot> destination
+    )
+    {
+        authoringService.CopyIngredientOptionsTo(destination);
+    }
+
     public bool TryBuildSnapshot(
         List<BistroBuilderMenuEditorDishSnapshot> destination,
         out BistroBuilderMenuEditorSummarySnapshot summary,
@@ -702,7 +873,7 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             return false;
         }
 
-        catalogService.CopyDefinitionsTo(definitionBuffer);
+        authoringService.CopyDraftDefinitionsTo(definitionBuffer);
         categoryCatalogService.CopyDefinitionsTo(categoryBuffer);
         RebuildIndexes();
 
@@ -745,9 +916,10 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             int currentPrice = included
                 ? draftItem.CurrentPriceCents
                 : definition.BasePriceCents;
-            bool isModified = !AreEquivalent(draftItem, operationalItem);
+            bool isModified = !AreEquivalent(draftItem, operationalItem) ||
+                authoringService.IsDishModified(definition.DishId);
 
-            bool hasRecipe = recipeCatalogService.TryGetRecipeByDishId(
+            bool hasRecipe = authoringService.TryResolveDraftRecipe(
                 definition.DishId,
                 out BistroBuilderRecipeDefinition recipe
             ) && recipe != null && recipe.TryValidate(out _);
@@ -802,9 +974,10 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
                 isLowStock = false;
                 availablePortions = 0L;
             }
-            else if (!availabilityService.TryEvaluateMenuItem(
+            else if (!availabilityService.TryEvaluateMenuItemWithRecipe(
                     draftItem,
                     previewMealService,
+                    recipe,
                     out BistroBuilderDishAvailabilitySnapshot availability,
                     out error
                 ) ||
@@ -922,7 +1095,8 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             previewMealService,
             previewServiceMode,
             editSessionService.State,
-            editSessionService.DraftChangeCount,
+            editSessionService.DraftChangeCount +
+                authoringService.DraftChangeCount,
             definitionBuffer.Count,
             includedCount,
             activeCount,
@@ -1211,6 +1385,20 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             );
     }
 
+    private void HandleAuthoringChanged(string dishId)
+    {
+        if (!editorOpen || internalTransition)
+        {
+            return;
+        }
+
+        Publish(
+            BistroBuilderMenuEditorChangeType.DraftChanged,
+            dishId,
+            "El borrador de plato o receta cambió."
+        );
+    }
+
     private void HandleSessionChanged(
         BistroBuilderMenuEditSessionChangedEvent change
     )
@@ -1318,6 +1506,11 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
             editSessionService.SessionChanged += HandleSessionChanged;
         }
 
+        if (authoringService != null)
+        {
+            authoringService.DraftChanged += HandleAuthoringChanged;
+        }
+
         if (menuService != null)
         {
             menuService.MenuChanged += HandleMenuChanged;
@@ -1347,6 +1540,11 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         if (editSessionService != null)
         {
             editSessionService.SessionChanged -= HandleSessionChanged;
+        }
+
+        if (authoringService != null)
+        {
+            authoringService.DraftChanged -= HandleAuthoringChanged;
         }
 
         if (menuService != null)
@@ -1408,6 +1606,11 @@ public sealed class BistroBuilderMenuEditorService : MonoBehaviour
         if (recipeCatalogService == null)
         {
             TryGetComponent(out recipeCatalogService);
+        }
+
+        if (authoringService == null)
+        {
+            TryGetComponent(out authoringService);
         }
 
         if (commercialPolicy == null && menuService != null)

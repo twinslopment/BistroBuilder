@@ -427,6 +427,46 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Variante de previsualización que evalúa una receta de borrador sin
+    /// publicarla todavía en el catálogo operativo.
+    /// </summary>
+    public bool TryEvaluateMenuItemWithRecipe(
+        BistroBuilderMenuItemRuntimeState item,
+        BistroBuilderMealServiceAvailability mealService,
+        BistroBuilderRecipeDefinition recipe,
+        out BistroBuilderDishAvailabilitySnapshot snapshot,
+        out string error
+    )
+    {
+        snapshot = default(BistroBuilderDishAvailabilitySnapshot);
+
+        if (!IsConcreteMealService(mealService))
+        {
+            error = "Debe indicarse un servicio concreto.";
+            return false;
+        }
+
+        if (!ValidateRuntimeReadiness(out error))
+        {
+            return false;
+        }
+
+        if (item == null)
+        {
+            error = "No puede evaluarse una entrada de carta nula.";
+            return false;
+        }
+
+        return TryCalculateSnapshot(
+            item,
+            mealService,
+            recipe,
+            out snapshot,
+            out error
+        );
+    }
+
     public bool IsDishOrderable(
         string dishId,
         BistroBuilderMealServiceAvailability mealService,
@@ -483,7 +523,24 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         out string error
     )
     {
-        snapshot = default;
+        return TryCalculateSnapshot(
+            item,
+            mealService,
+            null,
+            out snapshot,
+            out error
+        );
+    }
+
+    private bool TryCalculateSnapshot(
+        BistroBuilderMenuItemRuntimeState item,
+        BistroBuilderMealServiceAvailability mealService,
+        BistroBuilderRecipeDefinition explicitRecipe,
+        out BistroBuilderDishAvailabilitySnapshot snapshot,
+        out string error
+    )
+    {
+        snapshot = default(BistroBuilderDishAvailabilitySnapshot);
         error = string.Empty;
 
         if (item == null)
@@ -535,16 +592,33 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         }
 
         string recipeError = string.Empty;
-        if (!recipeCatalogService.TryGetRecipeByDishId(
-                dishId,
-                out BistroBuilderRecipeDefinition recipe
-            ) ||
-            recipe == null)
+        BistroBuilderRecipeDefinition recipe = explicitRecipe;
+
+        if (recipe == null &&
+            (!recipeCatalogService.TryGetRecipeByDishId(
+                 dishId,
+                 out recipe
+             ) ||
+             recipe == null))
         {
             snapshot = BuildTerminalSnapshot(
                 dishId,
                 BistroBuilderDishAvailabilityState.InvalidRecipe,
                 "El plato no tiene una receta válida."
+            );
+            return true;
+        }
+
+        if (!string.Equals(
+                recipe.DishId,
+                dishId,
+                StringComparison.Ordinal
+            ))
+        {
+            snapshot = BuildTerminalSnapshot(
+                dishId,
+                BistroBuilderDishAvailabilityState.InvalidRecipe,
+                "La receta de borrador no corresponde al plato evaluado."
             );
             return true;
         }
@@ -835,6 +909,11 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         RecalculateAll(out string ignoredError);
     }
 
+    private void HandleRecipeCatalogChanged()
+    {
+        RecalculateAll(out string ignoredError);
+    }
+
     private void HandleMealServiceChanged(
         BistroBuilderMealServiceAvailability mealService
     )
@@ -857,6 +936,12 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
             menuService.MenuChanged += HandleMenuChanged;
         }
 
+        if (recipeCatalogService != null)
+        {
+            recipeCatalogService.CatalogChanged +=
+                HandleRecipeCatalogChanged;
+        }
+
         if (orderIntegration != null)
         {
             orderIntegration.CurrentMealServiceChanged +=
@@ -875,6 +960,12 @@ public sealed class BistroBuilderDishAvailabilityService : MonoBehaviour
         if (menuService != null)
         {
             menuService.MenuChanged -= HandleMenuChanged;
+        }
+
+        if (recipeCatalogService != null)
+        {
+            recipeCatalogService.CatalogChanged -=
+                HandleRecipeCatalogChanged;
         }
 
         if (orderIntegration != null)

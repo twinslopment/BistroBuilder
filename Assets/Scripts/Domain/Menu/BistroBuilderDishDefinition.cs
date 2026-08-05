@@ -185,6 +185,127 @@ public sealed class BistroBuilderDishDefinition : ScriptableObject
     public int MaximumConsumers => maximumConsumers;
 
     /// <summary>
+    /// Crea una definición runtime desacoplada de los assets canónicos.
+    /// Se usa para platos creados o sobrescritos por el jugador; nunca
+    /// modifica el ScriptableObject original del proyecto.
+    /// </summary>
+    public static BistroBuilderDishDefinition CreateRuntime(
+        string dishId,
+        string displayName,
+        string description,
+        string categoryId,
+        BistroBuilderDishCourse course,
+        BistroBuilderMealServiceAvailability defaultAvailability,
+        BistroBuilderDishServiceModeAvailability allowedServiceModes,
+        BistroBuilderKitchenStationType requiredStation,
+        int basePreparationSeconds,
+        int complexity,
+        string recipeId,
+        int basePriceCents,
+        bool shareable = false,
+        int minimumConsumers = 1,
+        int maximumConsumers = 1
+    )
+    {
+        BistroBuilderDishDefinition definition =
+            CreateInstance<BistroBuilderDishDefinition>();
+        definition.hideFlags = HideFlags.DontSave;
+        definition.InitializeRuntime(
+            dishId,
+            displayName,
+            description,
+            categoryId,
+            course,
+            defaultAvailability,
+            allowedServiceModes,
+            requiredStation,
+            basePreparationSeconds,
+            complexity,
+            recipeId,
+            basePriceCents,
+            shareable,
+            minimumConsumers,
+            maximumConsumers
+        );
+        return definition;
+    }
+
+    public void InitializeRuntime(
+        string runtimeDishId,
+        string runtimeDisplayName,
+        string runtimeDescription,
+        string runtimeCategoryId,
+        BistroBuilderDishCourse runtimeCourse,
+        BistroBuilderMealServiceAvailability runtimeDefaultAvailability,
+        BistroBuilderDishServiceModeAvailability runtimeAllowedServiceModes,
+        BistroBuilderKitchenStationType runtimeRequiredStation,
+        int runtimeBasePreparationSeconds,
+        int runtimeComplexity,
+        string runtimeRecipeId,
+        int runtimeBasePriceCents,
+        bool runtimeShareable = false,
+        int runtimeMinimumConsumers = 1,
+        int runtimeMaximumConsumers = 1
+    )
+    {
+        definitionVersion = CurrentDefinitionVersion;
+        dishId = BistroBuilderMenuIdUtility.NormalizeStableId(runtimeDishId);
+        displayName = runtimeDisplayName != null
+            ? runtimeDisplayName.Trim()
+            : string.Empty;
+        description = runtimeDescription != null
+            ? runtimeDescription.Trim()
+            : string.Empty;
+        categoryId = BistroBuilderMenuIdUtility.NormalizeStableId(
+            runtimeCategoryId
+        );
+        category = BistroBuilderDishCategoryIdUtility.TryGetLegacyCategory(
+            categoryId,
+            out BistroBuilderDishCategory legacyCategory
+        )
+            ? legacyCategory
+            : BistroBuilderDishCategory.MainCourse;
+        course = runtimeCourse;
+        defaultAvailability = runtimeDefaultAvailability;
+        allowedServiceModes = runtimeAllowedServiceModes;
+        requiredStation = runtimeRequiredStation;
+        basePreparationSeconds = runtimeBasePreparationSeconds;
+        complexity = runtimeComplexity;
+        recipeId = BistroBuilderMenuIdUtility.NormalizeStableId(
+            runtimeRecipeId
+        );
+        basePriceCents = runtimeBasePriceCents;
+        shareable = runtimeShareable;
+        minimumConsumers = runtimeShareable
+            ? runtimeMinimumConsumers
+            : 1;
+        maximumConsumers = runtimeShareable
+            ? runtimeMaximumConsumers
+            : 1;
+    }
+
+    public BistroBuilderDishDefinition CloneRuntime()
+    {
+        return CreateRuntime(
+            DishId,
+            DisplayName,
+            Description,
+            CategoryId,
+            Course,
+            DefaultAvailability,
+            AllowedServiceModes,
+            RequiredStation,
+            BasePreparationSeconds,
+            Complexity,
+            RecipeId,
+            BasePriceCents,
+            Shareable,
+            MinimumConsumers,
+            MaximumConsumers
+        );
+    }
+
+    /// <summary>
     /// Valida todos los invariantes que deben cumplirse antes de que el
     /// plato pueda entrar en el catálogo o en una partida guardada.
     /// </summary>

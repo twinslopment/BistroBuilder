@@ -1098,6 +1098,7 @@ GameObject:
   - component: {fileID: 263644981}
   - component: {fileID: 263644982}
   - component: {fileID: 263644983}
+  - component: {fileID: 263644984}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2557,6 +2558,7 @@ MonoBehaviour:
   collectionService: {fileID: 263644976}
   catalogService: {fileID: 263644960}
   categoryCatalogService: {fileID: 263644978}
+  authoringService: {fileID: 263644984}
   commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
   logChanges: 1
 --- !u!114 &263644978
@@ -2641,6 +2643,7 @@ MonoBehaviour:
   offerService: {fileID: 263644979}
   availabilityService: {fileID: 263644974}
   recipeCatalogService: {fileID: 263644969}
+  authoringService: {fileID: 263644984}
   commercialPolicy: {fileID: 11400000, guid: b9096aa2fb375f04295bbc298f06a733, type: 2}
   logChanges: 0
 --- !u!114 &263644983
@@ -2655,6 +2658,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f886b9aec188408f8dd81a678629f248, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuStateV2ToV3Migration
+--- !u!114 &263644984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306eef53cdd142d69aec6af4eaa15252, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishRecipeAuthoringService
+  dishCatalogService: {fileID: 263644960}
+  recipeCatalogService: {fileID: 263644969}
+  categoryCatalogService: {fileID: 263644978}
+  editSessionService: {fileID: 263644977}
+  logChanges: 1
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -9108,6 +9128,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1691563766}
   - component: {fileID: 1691563767}
+  - component: {fileID: 1691563768}
   m_Layer: 5
   m_Name: BB_2_1E_MenuEditorUI
   m_TagString: Untagged
@@ -9149,7 +9170,21 @@ MonoBehaviour:
   editorService: {fileID: 263644982}
   cameraController: {fileID: 330585548}
   editInteractionController: {fileID: 263644933}
+  authoringView: {fileID: 1691563768}
   showOpenButton: 1
+--- !u!114 &1691563768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691563765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d1c1195e8e4f23b1c2cce7ef467e80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishRecipeAuthoringRuntimeView
+  editorService: {fileID: 263644982}
 --- !u!1 &1716211573
 GameObject:
   m_ObjectHideFlags: 0

@@ -31,6 +31,9 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
     private BistroBuilderDishCategoryCatalogService categoryCatalogService;
 
     [SerializeField]
+    private BistroBuilderDishRecipeAuthoringService authoringService;
+
+    [SerializeField]
     private BistroBuilderMenuCommercialPolicy commercialPolicy;
 
     [Header("Depuración")]
@@ -75,6 +78,9 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
 
     public BistroBuilderDishCategoryCatalogService CategoryCatalogService =>
         categoryCatalogService;
+
+    public BistroBuilderDishRecipeAuthoringService AuthoringService =>
+        authoringService;
 
     public BistroBuilderMenuCommercialPolicy CommercialPolicy =>
         commercialPolicy;
@@ -168,7 +174,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             return false;
         }
 
-        catalogService.CopyDefinitionsTo(definitionBuffer);
+        CopyDefinitionsForDraft(definitionBuffer);
 
         for (int index = 0; index < definitionBuffer.Count; index++)
         {
@@ -304,6 +310,181 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         return true;
     }
 
+    public bool TryGetDraftItem(
+        string dishId,
+        out BistroBuilderMenuItemRuntimeState snapshot
+    )
+    {
+        return TryGetDraftItemSnapshot(dishId, out snapshot);
+    }
+
+    /// <summary>
+    /// Añade al borrador una definición runtime todavía no publicada en el
+    /// catálogo operativo. Es el punto de entrada seguro para platos nuevos
+    /// creados por 2.1G1/2.
+    /// </summary>
+    public BistroBuilderMenuMutationResult TryAddDishDefinition(
+        BistroBuilderDishDefinition definition
+    )
+    {
+        if (!EnsureSession(out BistroBuilderMenuMutationResult failure))
+        {
+            return failure;
+        }
+
+        string definitionError = string.Empty;
+
+        if (definition == null ||
+            !definition.TryValidate(out definitionError))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason
+                    .DishDefinitionNotFound,
+                string.IsNullOrWhiteSpace(definitionError)
+                    ? "La definición runtime es nula o inválida."
+                    : definitionError
+            );
+        }
+
+        if (draftByDishId.ContainsKey(definition.DishId))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.DishAlreadyExists,
+                "El plato ya está incluido en el borrador."
+            );
+        }
+
+        if (!categoryCatalogService.TryGetDefinition(
+                definition.CategoryId,
+                out _
+            ))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidCategory,
+                "La categoría del plato nuevo no está registrada."
+            );
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.CanAddDish(
+                draftItems.Count,
+                commercialPolicy,
+                out string policyError
+            ) ||
+            !BistroBuilderMenuPolicyEvaluator.TryValidatePrice(
+                definition.BasePriceCents,
+                commercialPolicy,
+                out policyError
+            ))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                policyError
+            );
+        }
+
+        BistroBuilderMenuItemRuntimeState item =
+            BistroBuilderMenuItemRuntimeState.FromDefinition(
+                definition,
+                draftItems.Count,
+                true,
+                true
+            );
+        draftItems.Add(item);
+        draftByDishId.Add(item.DishId, item);
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType.DishAuthoringChanged,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Plato nuevo añadido al borrador."
+        );
+    }
+
+    /// <summary>
+    /// Actualiza precio, dificultad y tiempo en una única mutación de
+    /// borrador para que la autoría de plato no publique estados parciales.
+    /// </summary>
+    public BistroBuilderMenuMutationResult TrySetCommercialAndPreparation(
+        string dishId,
+        int priceCents,
+        int difficulty,
+        int preparationSeconds
+    )
+    {
+        if (!TryResolveDraftItem(
+                dishId,
+                out BistroBuilderMenuItemRuntimeState item,
+                out BistroBuilderMenuMutationResult failure
+            ))
+        {
+            return failure;
+        }
+
+        if (!BistroBuilderMenuPolicyEvaluator.TryValidatePrice(
+                priceCents,
+                commercialPolicy,
+                out string error
+            ))
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidPrice,
+                error
+            );
+        }
+
+        if (difficulty <
+                BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
+            difficulty >
+                BistroBuilderDishDefinition.MaximumPreparationDifficulty ||
+            preparationSeconds <
+                BistroBuilderDishDefinition.MinimumPreparationSeconds ||
+            preparationSeconds >
+                BistroBuilderDishDefinition.MaximumPreparationSeconds)
+        {
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.InvalidState,
+                "La dificultad o el tiempo de preparación quedan fuera " +
+                "del rango permitido."
+            );
+        }
+
+        if (item.CurrentPriceCents == priceCents &&
+            item.PreparationDifficulty == difficulty &&
+            item.BasePreparationSeconds == preparationSeconds)
+        {
+            return NoChange(
+                "El plato ya usa esos valores comerciales y de preparación."
+            );
+        }
+
+        int previousPrice = item.CurrentPriceCents;
+        int previousDifficulty = item.PreparationDifficulty;
+        int previousSeconds = item.BasePreparationSeconds;
+        item.SetPriceCents(priceCents);
+        item.SetPreparationSettings(difficulty, preparationSeconds);
+
+        if (!TryValidateDraft(out error))
+        {
+            item.SetPriceCents(previousPrice);
+            item.SetPreparationSettings(
+                previousDifficulty,
+                previousSeconds
+            );
+            return Fail(
+                BistroBuilderMenuMutationFailureReason.PolicyViolation,
+                error
+            );
+        }
+
+        CompleteDraftChange(
+            BistroBuilderMenuDraftChangeType.DishAuthoringChanged,
+            item.DishId
+        );
+        return BistroBuilderMenuMutationResult.Success(
+            "Datos comerciales y de preparación actualizados."
+        );
+    }
+
     public bool TryGetDraftSnapshot(
         List<BistroBuilderMenuItemRuntimeState> destination,
         out string error
@@ -371,7 +552,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             );
         }
 
-        if (!catalogService.TryGetDefinition(
+        if (!TryResolveDefinition(
                 normalized,
                 out BistroBuilderDishDefinition definition
             ))
@@ -581,7 +762,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             return failure;
         }
 
-        if (!catalogService.TryGetDefinition(
+        if (!TryResolveDefinition(
                 item.DishId,
                 out BistroBuilderDishDefinition definition
             ) || definition == null)
@@ -636,7 +817,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             return failure;
         }
 
-        if (!catalogService.TryGetDefinition(
+        if (!TryResolveDefinition(
                 item.DishId,
                 out BistroBuilderDishDefinition definition
             ) || definition == null)
@@ -843,7 +1024,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             return failure;
         }
 
-        if (!catalogService.TryGetDefinition(
+        if (!TryResolveDefinition(
                 item.DishId,
                 out BistroBuilderDishDefinition definition
             ) ||
@@ -955,7 +1136,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             return failure;
         }
 
-        if (!catalogService.TryGetDefinition(
+        if (!TryResolveDefinition(
                 item.DishId,
                 out BistroBuilderDishDefinition definition
             ) ||
@@ -976,7 +1157,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
             BistroBuilderMenuItemRuntimeState candidate = draftItems[index];
 
             if (candidate != null &&
-                catalogService.TryGetDefinition(
+                TryResolveDefinition(
                     candidate.DishId,
                     out BistroBuilderDishDefinition candidateDefinition
                 ) &&
@@ -1180,7 +1361,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         {
             BistroBuilderMenuItemRuntimeState item = draftItems[index];
 
-            if (!item.TryValidate(catalogService, out error))
+            if (!item.TryValidateStructure(out error))
             {
                 return false;
             }
@@ -1192,7 +1373,7 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
                 return false;
             }
 
-            if (!catalogService.TryGetDefinition(
+            if (!TryResolveDefinition(
                     item.DishId,
                     out BistroBuilderDishDefinition definition
                 ) ||
@@ -1390,6 +1571,45 @@ public sealed class BistroBuilderMenuEditSessionService : MonoBehaviour
         {
             TryGetComponent(out categoryCatalogService);
         }
+
+        if (authoringService == null)
+        {
+            TryGetComponent(out authoringService);
+        }
+    }
+
+    private bool TryResolveDefinition(
+        string dishId,
+        out BistroBuilderDishDefinition definition
+    )
+    {
+        definition = null;
+
+        if (authoringService != null &&
+            authoringService.TryResolveDraftDefinition(
+                dishId,
+                out definition
+            ))
+        {
+            return definition != null;
+        }
+
+        return catalogService != null &&
+               catalogService.TryGetDefinition(dishId, out definition);
+    }
+
+    private void CopyDefinitionsForDraft(
+        List<BistroBuilderDishDefinition> destination
+    )
+    {
+        if (authoringService != null &&
+            authoringService.HasOpenSession)
+        {
+            authoringService.CopyDraftDefinitionsTo(destination);
+            return;
+        }
+
+        catalogService.CopyDefinitionsTo(destination);
     }
 
     private static void NormalizeDisplayOrder(
