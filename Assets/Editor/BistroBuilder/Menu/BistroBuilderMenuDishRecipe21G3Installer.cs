@@ -6,23 +6,23 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Instalador acumulativo, idempotente y transaccional de 2.1G1/2.
-/// Añade una única autoridad de autoría runtime y la integra en el editor
-/// 2.1E sin crear persistencia paralela. 2.1G3 amplía menu.state.
+/// Instalador acumulativo, idempotente y transaccional de 2.1G3.
+/// Registra la persistencia de autoría dentro de menu.state v4 y la migración
+/// consecutiva v3 -> v4 sin crear una segunda fuente de guardado.
 /// </summary>
-public static class BistroBuilderMenuDishRecipe21G12Installer
+public static class BistroBuilderMenuDishRecipe21G3Installer
 {
     private const string MenuPath =
-        "Tools/Bistro Builder/Menu/Install or Repair 2.1G1-2 Dish and Recipe Authoring";
+        "Tools/Bistro Builder/Menu/Install or Repair 2.1G3 Dish Recipe Persistence";
 
-    [MenuItem(MenuPath, false, 190)]
+    [MenuItem(MenuPath, false, 194)]
     private static void InstallOrRepair()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Sal de Play Mode antes de instalar 2.1G1/2.",
+                "Sal de Play Mode antes de instalar 2.1G3.",
                 "Aceptar"
             );
             return;
@@ -68,6 +68,12 @@ public static class BistroBuilderMenuDishRecipe21G12Installer
                 );
             }
 
+            BistroBuilderSaveGameService saveGameService =
+                RequireComponent<BistroBuilderSaveGameService>(gameSystems);
+            BistroBuilderMenuSaveSectionProvider provider =
+                RequireComponent<BistroBuilderMenuSaveSectionProvider>(
+                    gameSystems
+                );
             BistroBuilderDishCatalogService dishCatalog =
                 RequireComponent<BistroBuilderDishCatalogService>(gameSystems);
             BistroBuilderRecipeCatalogService recipeCatalog =
@@ -76,73 +82,70 @@ public static class BistroBuilderMenuDishRecipe21G12Installer
                 RequireComponent<BistroBuilderDishCategoryCatalogService>(
                     gameSystems
                 );
-            BistroBuilderMenuEditSessionService editSession =
-                RequireComponent<BistroBuilderMenuEditSessionService>(
+            BistroBuilderDishRecipeAuthoringService authoring =
+                RequireComponent<BistroBuilderDishRecipeAuthoringService>(
                     gameSystems
                 );
-            BistroBuilderMenuEditorService editorService =
-                RequireComponent<BistroBuilderMenuEditorService>(gameSystems);
+            RequireComponent<BistroBuilderMenuStateV1ToV2Migration>(
+                gameSystems
+            );
+            RequireComponent<BistroBuilderMenuStateV2ToV3Migration>(
+                gameSystems
+            );
 
             Undo.RegisterCompleteObjectUndo(
                 gameSystems,
-                "Instalar autoría de platos y recetas 2.1G1/2"
+                "Instalar persistencia de platos y recetas 2.1G3"
             );
 
-            BistroBuilderDishRecipeAuthoringService authoringService =
-                GetOrAddComponent<BistroBuilderDishRecipeAuthoringService>(
+            BistroBuilderDishRecipePersistenceService persistence =
+                GetOrAddComponent<BistroBuilderDishRecipePersistenceService>(
                     gameSystems
                 );
-            SetReference(
-                authoringService,
+            BistroBuilderMenuStateV3ToV4Migration migration =
+                GetOrAddComponent<BistroBuilderMenuStateV3ToV4Migration>(
+                    gameSystems
+                );
+
+            BistroBuilderMenuDishRecipe21G12Installer.SetReference(
+                persistence,
                 "dishCatalogService",
                 dishCatalog
             );
-            SetReference(
-                authoringService,
+            BistroBuilderMenuDishRecipe21G12Installer.SetReference(
+                persistence,
                 "recipeCatalogService",
                 recipeCatalog
             );
-            SetReference(
-                authoringService,
+            BistroBuilderMenuDishRecipe21G12Installer.SetReference(
+                persistence,
                 "categoryCatalogService",
                 categoryCatalog
             );
-            SetReference(
-                authoringService,
-                "editSessionService",
-                editSession
+            BistroBuilderMenuDishRecipe21G12Installer.SetReference(
+                provider,
+                "dishRecipePersistenceService",
+                persistence
             );
-            SetReference(editSession, "authoringService", authoringService);
-            SetReference(editorService, "authoringService", authoringService);
+            BistroBuilderMenuDishRecipe21G12Installer.SetReference(
+                authoring,
+                "persistenceService",
+                persistence
+            );
 
-            BistroBuilderMenuEditorRuntimeView editorView =
-                FindSingle<BistroBuilderMenuEditorRuntimeView>(scene);
-
-            if (editorView == null)
-            {
-                throw new InvalidOperationException(
-                    "No se encontró la vista runtime única del editor 2.1E."
-                );
-            }
-
-            BistroBuilderDishRecipeAuthoringRuntimeView authoringView =
-                GetOrAddComponent<
-                    BistroBuilderDishRecipeAuthoringRuntimeView
-                >(editorView.gameObject);
-            SetReference(authoringView, "editorService", editorService);
-            SetReference(editorView, "authoringView", authoringView);
-
-            EditorUtility.SetDirty(authoringService);
-            EditorUtility.SetDirty(editSession);
-            EditorUtility.SetDirty(editorService);
-            EditorUtility.SetDirty(authoringView);
-            EditorUtility.SetDirty(editorView);
+            EditorUtility.SetDirty(persistence);
+            EditorUtility.SetDirty(migration);
+            EditorUtility.SetDirty(provider);
+            EditorUtility.SetDirty(authoring);
+            EditorUtility.SetDirty(saveGameService);
             EditorSceneManager.MarkSceneDirty(scene);
 
-            if (!authoringService.ValidateConfiguration(out string error) ||
-                !editorService.ValidateConfiguration(out error) ||
-                !authoringView.ValidateConfiguration(out error) ||
-                !editorView.ValidateConfiguration(out error))
+            saveGameService.RefreshExtensions();
+
+            if (!persistence.ValidateConfiguration(out string error) ||
+                !authoring.ValidateConfiguration(out error) ||
+                !provider.ValidateConfiguration(out error) ||
+                !saveGameService.ValidateConfiguration(out error))
             {
                 throw new InvalidOperationException(error);
             }
@@ -156,9 +159,10 @@ public static class BistroBuilderMenuDishRecipe21G12Installer
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+            saveGameService.RefreshExtensions();
 
-            BistroBuilderMenuDishRecipe21G12ValidationResult result =
-                BistroBuilderMenuDishRecipe21G12Validator
+            BistroBuilderMenuDishRecipe21G3ValidationResult result =
+                BistroBuilderMenuDishRecipe21G3Validator
                     .ValidateCurrentProject();
 
             if (result.ErrorCount > 0)
@@ -167,12 +171,12 @@ public static class BistroBuilderMenuDishRecipe21G12Installer
             }
 
             Debug.Log(
-                "BISTRO BUILDER - 2.1G1/2 INSTALADO\n" +
+                "BISTRO BUILDER - 2.1G3 INSTALADO\n" +
                 result.BuildReport()
             );
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "2.1G1/2 instalado correctamente.\n\n" +
+                "2.1G3 instalado correctamente.\n\n" +
                 "Correctos: " + result.CorrectCount +
                 "\nAdvertencias: " + result.WarningCount +
                 "\nErrores: " + result.ErrorCount,
@@ -185,38 +189,11 @@ public static class BistroBuilderMenuDishRecipe21G12Installer
             RestoreScene(scenePath, absoluteScenePath, backup);
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "La instalación de 2.1G1/2 falló y la escena fue " +
+                "La instalación de 2.1G3 falló y la escena fue " +
                 "restaurada.\n\n" + exception.Message,
                 "Aceptar"
             );
         }
-    }
-
-    internal static void SetReference(
-        UnityEngine.Object target,
-        string propertyName,
-        UnityEngine.Object value
-    )
-    {
-        SerializedObject serialized = new SerializedObject(target);
-        SerializedProperty property = serialized.FindProperty(propertyName);
-
-        if (property == null)
-        {
-            throw new InvalidOperationException(
-                target.GetType().Name + " no contiene " + propertyName + "."
-            );
-        }
-
-        property.objectReferenceValue = value;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
-    }
-
-    private static T FindSingle<T>(Scene scene) where T : Component
-    {
-        var values = BistroBuilderMenuEditor21EInstaller
-            .FindSceneComponents<T>(scene);
-        return values.Count == 1 ? values[0] : null;
     }
 
     private static T GetOrAddComponent<T>(GameObject target)

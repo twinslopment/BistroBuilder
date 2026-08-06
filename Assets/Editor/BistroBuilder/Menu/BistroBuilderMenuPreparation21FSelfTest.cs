@@ -161,7 +161,7 @@ public static class BistroBuilderMenuPreparation21FSelfTest
         TestReport report
     )
     {
-        BistroBuilderMenuSaveData legacy = new BistroBuilderMenuSaveData
+        BistroBuilderMenuSaveDataV2 legacy = new BistroBuilderMenuSaveDataV2
         {
             schemaVersion = 2,
             activeRestaurantId =
@@ -197,8 +197,8 @@ public static class BistroBuilderMenuPreparation21FSelfTest
             out byte[] payload,
             out _
         );
-        BistroBuilderMenuSaveData current = migrated
-            ? JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+        BistroBuilderMenuSaveDataV3 current = migrated
+            ? JsonUtility.FromJson<BistroBuilderMenuSaveDataV3>(
                 Encoding.UTF8.GetString(payload)
             )
             : null;

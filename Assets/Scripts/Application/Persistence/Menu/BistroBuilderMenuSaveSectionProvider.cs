@@ -6,11 +6,10 @@ using UnityEngine;
 /// <summary>
 /// Proveedor versionado de menu.state.
 ///
-/// V3 persiste cartas independientes por RestaurantId, el restaurante activo,
-/// las entradas no resueltas y la preparación configurable 2.1F. La aplicación
-/// se realiza de forma atómica a
-/// través de BistroBuilderRestaurantMenuCollectionService; el servicio de
-/// carta activo sigue siendo la autoridad operativa consumida por comandas.
+/// V4 persiste cartas independientes por RestaurantId, preparación configurable
+/// y las capas runtime de platos y recetas creadas por el jugador. La sección
+/// sigue siendo única: la restauración aplica primero la autoría efectiva y
+/// después reclasifica las cartas contra ese catálogo, con rollback conjunto.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Persistence/Menu Save Provider")]
@@ -20,7 +19,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     IBistroBuilderSaveSectionPhaseOrdering
 {
     public const string StableSectionId = "menu.state";
-    public const int StableSectionVersion = 3;
+    public const int StableSectionVersion = 4;
 
     [Header("Dependencias")]
 
@@ -35,6 +34,10 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
 
     [SerializeField]
     private BistroBuilderRestaurantMenuCollectionService collectionService;
+
+    [SerializeField]
+    private BistroBuilderDishRecipePersistenceService
+        dishRecipePersistenceService;
 
     [Header("Rendimiento")]
 
@@ -77,6 +80,9 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
 
     public BistroBuilderRestaurantMenuCollectionService CollectionService =>
         collectionService;
+
+    public BistroBuilderDishRecipePersistenceService
+        DishRecipePersistenceService => dishRecipePersistenceService;
 
     private void Awake()
     {
@@ -129,6 +135,20 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         }
 
         if (!collectionService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
+        // Compatibilidad estructural: una escena antigua sin el servicio G3
+        // puede seguir cargando estados v4 que no contengan autoría. El
+        // instalador y el validador 2.1G3 lo hacen obligatorio para el proyecto
+        // actualizado y cualquier estado con platos/recetas creados lo exige.
+        if (dishRecipePersistenceService != null &&
+            (!dishRecipePersistenceService.ValidateConfiguration(out error) ||
+             !ReferenceEquals(
+                 dishRecipePersistenceService.DishCatalogService,
+                 catalogService
+             )))
         {
             return false;
         }
@@ -214,6 +234,22 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             data.restaurants.Add(target);
         }
 
+        if (dishRecipePersistenceService != null)
+        {
+            if (!dishRecipePersistenceService.TryCapture(
+                    out List<BistroBuilderDishRecipeSaveData> authored,
+                    out List<BistroBuilderDishRecipeSaveData>
+                        unresolvedAuthored,
+                    out string authoringError
+                ))
+            {
+                context.Fail(authoringError);
+                yield break;
+            }
+
+            data.authoredDishRecipes = authored;
+            data.unresolvedAuthoredDishRecipes = unresolvedAuthored;
+        }
         context.Complete(data);
     }
 
@@ -242,6 +278,13 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         if (data.restaurants == null || data.restaurants.Count == 0)
         {
             error = "menu.state no contiene cartas por restaurante.";
+            return false;
+        }
+
+        if (data.authoredDishRecipes == null ||
+            data.unresolvedAuthoredDishRecipes == null)
+        {
+            error = "menu.state no contiene las colecciones de autoría v4.";
             return false;
         }
 
@@ -335,6 +378,34 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
+        if (dishRecipePersistenceService != null)
+        {
+            if (!dishRecipePersistenceService.TryValidatePersistentCollections(
+                    data.authoredDishRecipes,
+                    data.unresolvedAuthoredDishRecipes,
+                    out error
+                ))
+            {
+                return false;
+            }
+        }
+        else if (data.authoredDishRecipes.Count > 0 ||
+                 data.unresolvedAuthoredDishRecipes.Count > 0)
+        {
+            error = "menu.state contiene autoría 2.1G3, pero la escena no " +
+                    "tiene BistroBuilderDishRecipePersistenceService.";
+            return false;
+        }
+        else if (!BistroBuilderDishRecipeSaveDataUtility
+                     .TryValidatePairCollections(
+                         data.authoredDishRecipes,
+                         data.unresolvedAuthoredDishRecipes,
+                         out error
+                     ))
+        {
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -344,6 +415,22 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         if (!ValidateConfiguration(out string error))
         {
             context.Fail(error);
+            yield break;
+        }
+
+        BistroBuilderMenuEditSessionService editSession =
+            GetComponent<BistroBuilderMenuEditSessionService>();
+        BistroBuilderDishRecipeAuthoringService authoringSession =
+            GetComponent<BistroBuilderDishRecipeAuthoringService>();
+
+        if ((editSession != null && editSession.HasOpenSession) ||
+            (authoringSession != null && authoringSession.HasOpenSession))
+        {
+            context.Fail(
+                "Cierra o descarta el editor de carta antes de cargar una " +
+                "partida. Una sesión de autoría abierta no puede mezclarse " +
+                "con menu.state."
+            );
         }
 
         yield break;
@@ -426,6 +513,48 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             );
         }
 
+        List<BistroBuilderRestaurantMenuRuntimeState> previousRestaurants =
+            new List<BistroBuilderRestaurantMenuRuntimeState>();
+
+        if (!collectionService.TryGetAllRestaurantSnapshots(
+                previousRestaurants,
+                out string snapshotError
+            ))
+        {
+            context.Fail(snapshotError);
+            yield break;
+        }
+
+        string previousActiveRestaurantId =
+            collectionService.ActiveRestaurantId;
+
+        BistroBuilderDishRecipePersistenceService.RollbackState
+            authoringRollback = null;
+        bool hasAuthoredState = data.authoredDishRecipes.Count > 0 ||
+            data.unresolvedAuthoredDishRecipes.Count > 0;
+
+        if (dishRecipePersistenceService == null)
+        {
+            if (hasAuthoredState)
+            {
+                context.Fail(
+                    "menu.state contiene autoría 2.1G3, pero la escena no " +
+                    "tiene BistroBuilderDishRecipePersistenceService."
+                );
+                yield break;
+            }
+        }
+        else if (!dishRecipePersistenceService.TryApply(
+                     data.authoredDishRecipes,
+                     data.unresolvedAuthoredDishRecipes,
+                     out authoringRollback,
+                     out string authoringError
+                 ))
+        {
+            context.Fail(authoringError);
+            yield break;
+        }
+
         if (!collectionService.TryReplaceAllRestaurantStates(
                 replacement,
                 data.activeRestaurantId,
@@ -433,7 +562,29 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
                 out string applyError
             ))
         {
+            if (dishRecipePersistenceService != null)
+            {
+                dishRecipePersistenceService.Rollback(authoringRollback);
+            }
+
+            if (!collectionService.TryReplaceAllRestaurantStates(
+                    previousRestaurants,
+                    previousActiveRestaurantId,
+                    false,
+                    out string collectionRollbackError
+                ))
+            {
+                applyError += " Rollback de carta fallido: " +
+                              collectionRollbackError;
+            }
+
             context.Fail(applyError);
+            yield break;
+        }
+
+        if (dishRecipePersistenceService != null)
+        {
+            dishRecipePersistenceService.CompleteApply(authoringRollback);
         }
     }
 
@@ -445,11 +596,15 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         }
 
         Debug.Log(
-            "menu.state v3 restaurada con " +
+            "menu.state v4 restaurada con " +
             collectionService.RestaurantCount + " restaurante(s), " +
-            menuService.ItemCount + " plato(s) activos y " +
+            menuService.ItemCount + " plato(s) activos, " +
             collectionService.UnresolvedItemCount +
-            " entrada(s) no resuelta(s).",
+            " entrada(s) de carta no resuelta(s) y " +
+            (dishRecipePersistenceService != null
+                ? dishRecipePersistenceService.UnresolvedPairCount
+                : 0) +
+            " par(es) de autoría no resuelto(s).",
             this
         );
     }
@@ -623,6 +778,11 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         if (collectionService == null)
         {
             TryGetComponent(out collectionService);
+        }
+
+        if (dishRecipePersistenceService == null)
+        {
+            TryGetComponent(out dishRecipePersistenceService);
         }
     }
 

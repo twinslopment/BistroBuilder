@@ -152,7 +152,7 @@ public static class BistroBuilderMenuPreparation21FValidator
             if (saveServices[0].ValidateConfiguration(out string saveError))
             {
                 result.AddCorrect(
-                    "La plataforma de guardado registra la cadena V1 -> V2 -> V3."
+                    "La plataforma de guardado registra la cadena histórica hasta la versión actual."
                 );
             }
             else
@@ -202,7 +202,9 @@ public static class BistroBuilderMenuPreparation21FValidator
 
         if (providers.Count == 1)
         {
-            bool correctVersion = providers[0].SectionVersion == 3;
+            bool correctVersion = providers[0].SectionVersion ==
+                BistroBuilderMenuSaveData.CurrentSchemaVersion &&
+                providers[0].SectionVersion >= 3;
             bool valid = providers[0].ValidateConfiguration(
                 out string providerError
             );
@@ -210,13 +212,13 @@ public static class BistroBuilderMenuPreparation21FValidator
             if (correctVersion && valid)
             {
                 result.AddCorrect(
-                    "menu.state v3 está configurado y operativo."
+                    "menu.state actual está configurado y mantiene preparación configurable."
                 );
             }
             else
             {
                 result.AddError(
-                    "menu.state v3 no es válido: " +
+                    "menu.state actual no es válido: " +
                     (!correctVersion
                         ? "versión incorrecta"
                         : providerError)
@@ -291,14 +293,19 @@ public static class BistroBuilderMenuPreparation21FValidator
             result.AddError("Falta la integración carta-cocina 2.1F.");
         }
 
-        int currentSchemaVersion =
-            BistroBuilderMenuSaveData.CurrentSchemaVersion;
-        int stableSectionVersion =
-            BistroBuilderMenuSaveSectionProvider.StableSectionVersion;
+        int currentSchemaVersion = Convert.ToInt32(
+            BistroBuilderMenuSaveData.CurrentSchemaVersion
+        );
+        int stableSectionVersion = Convert.ToInt32(
+            BistroBuilderMenuSaveSectionProvider.StableSectionVersion
+        );
 
-        if (currentSchemaVersion == 3 && stableSectionVersion == 3)
+        if (currentSchemaVersion == stableSectionVersion &&
+            currentSchemaVersion >= 3)
         {
-            result.AddCorrect("El contrato persistente actual es menu.state v3.");
+            result.AddCorrect(
+                "El contrato persistente actual conserva la preparación de 2.1F."
+            );
         }
         else
         {

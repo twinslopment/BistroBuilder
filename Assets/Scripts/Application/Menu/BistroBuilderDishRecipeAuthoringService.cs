@@ -30,6 +30,9 @@ public sealed class BistroBuilderDishRecipeAuthoringService : MonoBehaviour
     [SerializeField]
     private BistroBuilderMenuEditSessionService editSessionService;
 
+    [SerializeField]
+    private BistroBuilderDishRecipePersistenceService persistenceService;
+
     [Header("Depuración")]
 
     [SerializeField]
@@ -82,6 +85,9 @@ public sealed class BistroBuilderDishRecipeAuthoringService : MonoBehaviour
 
     public BistroBuilderMenuEditSessionService EditSessionService =>
         editSessionService;
+
+    public BistroBuilderDishRecipePersistenceService PersistenceService =>
+        persistenceService;
 
     public bool HasOpenSession => sessionOpen;
 
@@ -155,6 +161,20 @@ public sealed class BistroBuilderDishRecipeAuthoringService : MonoBehaviour
             ))
         {
             error = "La autoría no comparte la sesión canónica de carta.";
+            return false;
+        }
+
+        if (persistenceService != null &&
+            (!ReferenceEquals(
+                 persistenceService.DishCatalogService,
+                 dishCatalogService
+             ) ||
+             !ReferenceEquals(
+                 persistenceService.RecipeCatalogService,
+                 recipeCatalogService
+             )))
+        {
+            error = "La autoría y la persistencia no comparten catálogos.";
             return false;
         }
 
@@ -942,14 +962,30 @@ public sealed class BistroBuilderDishRecipeAuthoringService : MonoBehaviour
         string candidate = baseId;
         int suffix = 2;
 
-        while (dishCatalogService.Contains(candidate) ||
-               draftByDishId.ContainsKey(candidate))
+        while (IsGeneratedIdentityUnavailable(candidate))
         {
             candidate = baseId + "_" + suffix;
             suffix++;
         }
 
         return candidate;
+    }
+
+    private bool IsGeneratedIdentityUnavailable(string dishId)
+    {
+        string recipeId = ResolveRecipeId(dishId);
+        bool recipeAlreadyExists = recipeCatalogService != null &&
+            recipeCatalogService.TryGetRecipeByRecipeId(recipeId, out _);
+        bool persistentDishReserved = persistenceService != null &&
+            persistenceService.IsDishIdReserved(dishId);
+        bool persistentRecipeReserved = persistenceService != null &&
+            persistenceService.IsRecipeIdReserved(recipeId);
+
+        return dishCatalogService.Contains(dishId) ||
+               draftByDishId.ContainsKey(dishId) ||
+               recipeAlreadyExists ||
+               persistentDishReserved ||
+               persistentRecipeReserved;
     }
 
     private static string ResolveRecipeId(string dishId)
@@ -1017,6 +1053,11 @@ public sealed class BistroBuilderDishRecipeAuthoringService : MonoBehaviour
         if (editSessionService == null)
         {
             TryGetComponent(out editSessionService);
+        }
+
+        if (persistenceService == null)
+        {
+            TryGetComponent(out persistenceService);
         }
     }
 

@@ -226,8 +226,8 @@ public static class BistroBuilderMenuDishRecipe21G12SelfTest
 
             Check(
                 result,
-                BistroBuilderMenuSaveData.CurrentSchemaVersion == 3,
-                "G1/2 mantiene menu.state v3 hasta implementar G3."
+                BistroBuilderMenuSaveData.CurrentSchemaVersion >= 3,
+                "G1/2 mantiene una única sección menu.state compatible con ampliaciones."
             );
         }
         catch (Exception exception)

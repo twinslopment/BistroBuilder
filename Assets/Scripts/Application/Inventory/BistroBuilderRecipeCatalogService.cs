@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Los ingredientes continúan siendo canónicos en 2.1G1/2. Las recetas
 /// admiten una capa runtime para sobrescribir recetas existentes y registrar
-/// las de platos creados por el jugador. Su persistencia llegará en 2.1G3.
+/// las de platos creados por el jugador. 2.1G3 las persiste en menu.state.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -47,6 +47,9 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
     private readonly List<BistroBuilderDishDefinition> dishBuffer =
         new List<BistroBuilderDishDefinition>(48);
 
+    private readonly List<string> suppressedDishIdBuffer =
+        new List<string>(16);
+
     public event Action CatalogChanged;
 
     public BistroBuilderIngredientCatalog IngredientCatalog =>
@@ -72,6 +75,30 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
         get
         {
             int count = CanonicalRecipeCount;
+
+            if (recipeCatalog != null && dishCatalogService != null)
+            {
+                suppressedDishIdBuffer.Clear();
+                dishCatalogService.CopySuppressedCanonicalDishIdsTo(
+                    suppressedDishIdBuffer
+                );
+
+                for (int index = 0;
+                     index < suppressedDishIdBuffer.Count;
+                     index++)
+                {
+                    if (!runtimeByDishId.ContainsKey(
+                            suppressedDishIdBuffer[index]
+                        ) &&
+                        recipeCatalog.TryGetByDishId(
+                            suppressedDishIdBuffer[index],
+                            out _
+                        ))
+                    {
+                        count--;
+                    }
+                }
+            }
 
             for (int index = 0; index < runtimeRecipes.Count; index++)
             {
@@ -255,6 +282,13 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
             return recipe != null;
         }
 
+        if (dishCatalogService != null &&
+            dishCatalogService.IsCanonicalDefinitionSuppressed(normalized))
+        {
+            recipe = null;
+            return false;
+        }
+
         return recipeCatalog != null &&
                recipeCatalog.TryGetByDishId(normalized, out recipe);
     }
@@ -279,8 +313,22 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
             return recipe != null;
         }
 
-        return recipeCatalog != null &&
-               recipeCatalog.TryGetByRecipeId(normalized, out recipe);
+        if (recipeCatalog == null ||
+            !recipeCatalog.TryGetByRecipeId(normalized, out recipe) ||
+            recipe == null)
+        {
+            recipe = null;
+            return false;
+        }
+
+        if (dishCatalogService != null &&
+            dishCatalogService.IsCanonicalDefinitionSuppressed(recipe.DishId))
+        {
+            recipe = null;
+            return false;
+        }
+
+        return true;
     }
 
     public void CopyRuntimeRecipesTo(
@@ -337,7 +385,8 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
                 }
 
                 if (!recipe.TryValidate(out error) ||
-                    !TryValidateCanonicalIngredients(recipe, out error))
+                    !TryValidateCanonicalIngredients(recipe, out error) ||
+                    !TryValidateCanonicalRecipeIdentity(recipe, out error))
                 {
                     return false;
                 }
@@ -461,7 +510,8 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
                 return false;
             }
 
-            if (!TryValidateCanonicalIngredients(recipe, out error))
+            if (!TryValidateCanonicalIngredients(recipe, out error) ||
+                !TryValidateCanonicalRecipeIdentity(recipe, out error))
             {
                 return false;
             }
@@ -482,6 +532,57 @@ public sealed class BistroBuilderRecipeCatalogService : MonoBehaviour
         return true;
     }
 
+
+
+    private bool TryValidateCanonicalRecipeIdentity(
+        BistroBuilderRecipeDefinition recipe,
+        out string error
+    )
+    {
+        if (recipe == null)
+        {
+            error = "No puede validarse la identidad de una receta nula.";
+            return false;
+        }
+
+        if (recipeCatalog != null &&
+            recipeCatalog.TryGetByDishId(
+                recipe.DishId,
+                out BistroBuilderRecipeDefinition canonicalByDish
+            ) &&
+            canonicalByDish != null &&
+            !string.Equals(
+                canonicalByDish.RecipeId,
+                recipe.RecipeId,
+                StringComparison.Ordinal
+            ))
+        {
+            error = "La sobrescritura runtime de " + recipe.DishId +
+                    " cambia indebidamente su RecipeId canónico.";
+            return false;
+        }
+
+        if (recipeCatalog != null &&
+            recipeCatalog.TryGetByRecipeId(
+                recipe.RecipeId,
+                out BistroBuilderRecipeDefinition canonicalByRecipe
+            ) &&
+            canonicalByRecipe != null &&
+            !string.Equals(
+                canonicalByRecipe.DishId,
+                recipe.DishId,
+                StringComparison.Ordinal
+            ))
+        {
+            error = "El RecipeId runtime " + recipe.RecipeId +
+                    " pertenece al plato canónico " +
+                    canonicalByRecipe.DishId + ".";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
 
     private bool TryValidateCanonicalIngredients(
         BistroBuilderRecipeDefinition recipe,

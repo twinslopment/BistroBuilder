@@ -112,9 +112,9 @@ public static class BistroBuilderMenuState21ASelfTest
                 "RestaurantId principal estable."
             );
             report.Check(
-                provider.SectionVersion == 3 &&
+                provider.SectionVersion == BistroBuilderMenuSaveData.CurrentSchemaVersion &&
                 provider.ValidateConfiguration(out _),
-                "Proveedor menu.state v3 válido."
+                "Proveedor menu.state actual válido."
             );
 
             report.Check(
@@ -164,19 +164,19 @@ public static class BistroBuilderMenuState21ASelfTest
             report.Check(
                 !captureContext.HasFailed &&
                 captureContext.State is BistroBuilderMenuSaveData,
-                "Captura v3 completada."
+                "Captura menu.state completada."
             );
 
             BistroBuilderMenuSaveData captured =
                 (BistroBuilderMenuSaveData)captureContext.State;
             report.Check(
-                captured.schemaVersion == 3 &&
+                captured.schemaVersion == BistroBuilderMenuSaveData.CurrentSchemaVersion &&
                 captured.restaurants.Count == 2,
                 "Captura conserva dos restaurantes."
             );
             report.Check(
                 provider.ValidateState(captured, out _),
-                "Snapshot v3 validado."
+                "Snapshot menu.state validado."
             );
 
             string json = JsonUtility.ToJson(captured, true);
@@ -575,7 +575,7 @@ public static class BistroBuilderMenuState21ASelfTest
             if (Failed == 0)
             {
                 builder.Append(
-                    "Aislamiento por restaurante, menu.state v3, migración y " +
+                    "Aislamiento por restaurante, menu.state, migración y " +
                     "conservación de DishId ausentes validados."
                 );
             }

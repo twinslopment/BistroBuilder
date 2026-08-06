@@ -6,7 +6,7 @@ using UnityEngine;
 
 /// <summary>
 /// Prueba funcional runtime de 2.1F. Modifica un plato, valida aislamiento del
-/// borrador, descarte, commit, consumo por cocina y captura menu.state v3.
+/// borrador, descarte, commit, consumo por cocina y captura menu.state.
 /// Restaura la carta original antes de terminar.
 /// </summary>
 public sealed class BistroBuilderMenuPreparation21FFunctionalTestWindow :
@@ -242,10 +242,11 @@ public sealed class BistroBuilderMenuPreparation21FFunctionalTestWindow :
             );
             Check(
                 !capture.HasFailed && data != null &&
-                data.schemaVersion == 3 && saved != null &&
+                data.schemaVersion == BistroBuilderMenuSaveData.CurrentSchemaVersion &&
+                saved != null &&
                 saved.preparationDifficulty == nextDifficulty &&
                 saved.basePreparationSeconds == nextSeconds,
-                "menu.state v3 captura las decisiones editables.",
+                "menu.state actual captura las decisiones editables.",
                 correct,
                 failures
             );

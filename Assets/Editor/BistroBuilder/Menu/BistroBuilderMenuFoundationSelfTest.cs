@@ -132,6 +132,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 root.AddComponent<BistroBuilderMenuStateV1ToV2Migration>();
             BistroBuilderMenuStateV2ToV3Migration migrationV2ToV3 =
                 root.AddComponent<BistroBuilderMenuStateV2ToV3Migration>();
+            BistroBuilderMenuStateV3ToV4Migration migrationV3ToV4 =
+                root.AddComponent<BistroBuilderMenuStateV3ToV4Migration>();
 
             ConfigureReference(catalogService, "catalog", catalog);
             ConfigureBool(catalogService, "logInitialization", false);
@@ -211,8 +213,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 "Identidad estable de sección."
             );
             report.Check(
-                provider.SectionVersion == 3,
-                "Versión 3 de sección por restaurante."
+                provider.SectionVersion == BistroBuilderMenuSaveData.CurrentSchemaVersion,
+                "Versión actual de sección por restaurante."
             );
             report.Check(
                 provider.LoadOrder == 20,
@@ -526,7 +528,7 @@ public static class BistroBuilderMenuFoundationSelfTest
             );
             report.Check(
                 provider.ValidateState(saveData, out _),
-                "Estado persistente v3 validado."
+                "Estado persistente actual validado."
             );
 
             string json = JsonUtility.ToJson(saveData, true);
@@ -563,8 +565,8 @@ public static class BistroBuilderMenuFoundationSelfTest
                 ),
                 "Migración pura menu.state v1 a v2 completada."
             );
-            BistroBuilderMenuSaveData migratedV2 =
-                JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+            BistroBuilderMenuSaveDataV2 migratedV2 =
+                JsonUtility.FromJson<BistroBuilderMenuSaveDataV2>(
                     Encoding.UTF8.GetString(migratedPayload)
                 );
             report.Check(
@@ -581,19 +583,37 @@ public static class BistroBuilderMenuFoundationSelfTest
                     out migratedV3Payload,
                     out _
                 );
-            BistroBuilderMenuSaveData migrated = migratedToV3
-                ? JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+            BistroBuilderMenuSaveDataV3 migratedV3 = migratedToV3
+                ? JsonUtility.FromJson<BistroBuilderMenuSaveDataV3>(
                     Encoding.UTF8.GetString(migratedV3Payload)
                 )
                 : null;
             report.Check(
-                migratedToV3 && migrated != null &&
-                migrated.schemaVersion == 3,
+                migratedToV3 && migratedV3 != null &&
+                migratedV3.schemaVersion == 3,
                 "Migración consecutiva v2 -> v3 completada."
+            );
+            byte[] migratedV4Payload = null;
+            bool migratedToV4 = migratedV3 != null &&
+                migrationV3ToV4.TryMigrate(
+                    migratedV3Payload,
+                    out migratedV4Payload,
+                    out _
+                );
+            BistroBuilderMenuSaveData migrated = migratedToV4
+                ? JsonUtility.FromJson<BistroBuilderMenuSaveData>(
+                    Encoding.UTF8.GetString(migratedV4Payload)
+                )
+                : null;
+            report.Check(
+                migratedToV4 && migrated != null &&
+                migrated.schemaVersion ==
+                    BistroBuilderMenuSaveData.CurrentSchemaVersion,
+                "Migración consecutiva v3 -> versión actual completada."
             );
             report.Check(
                 migrated != null && provider.ValidateState(migrated, out _),
-                "Resultado migrado aceptado por el proveedor v3."
+                "Resultado migrado aceptado por el proveedor actual."
             );
 
             menuService.ResetToCatalogDefaults();
@@ -603,7 +623,7 @@ public static class BistroBuilderMenuFoundationSelfTest
             RunEnumerator(provider.ApplyState(roundTrip, loadContext));
             report.Check(
                 !loadContext.HasFailed,
-                "Aplicación menu.state v3 completada."
+                "Aplicación menu.state actual completada."
             );
             report.Check(
                 menuService.ItemCount == 2,

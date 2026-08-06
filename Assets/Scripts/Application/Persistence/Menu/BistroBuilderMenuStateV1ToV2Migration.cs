@@ -90,7 +90,7 @@ public sealed class BistroBuilderMenuStateV1ToV2Migration :
                 unresolvedItems = new List<BistroBuilderMenuItemSaveData>()
             };
 
-        BistroBuilderMenuSaveData target = new BistroBuilderMenuSaveData
+        BistroBuilderMenuSaveDataV2 target = new BistroBuilderMenuSaveDataV2
         {
             schemaVersion = 2,
             activeRestaurantId = restaurantId,

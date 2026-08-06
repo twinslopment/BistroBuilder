@@ -16,6 +16,7 @@ using UnityEngine;
 )]
 public sealed class BistroBuilderRecipeDefinition : ScriptableObject
 {
+    public const int CurrentDefinitionVersion = 1;
     public const int MaximumYieldPortions = 10000;
     public const int MaximumWasteBasisPoints = 10000;
     public const int BasisPointsScale = 10000;

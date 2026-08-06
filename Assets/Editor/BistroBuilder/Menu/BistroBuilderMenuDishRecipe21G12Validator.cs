@@ -328,15 +328,16 @@ public static class BistroBuilderMenuDishRecipe21G12Validator
             BistroBuilderMenuSaveSectionProvider.StableSectionVersion
         );
 
-        if (currentSchemaVersion == 3 && stableSectionVersion == 3)
+        if (currentSchemaVersion == stableSectionVersion &&
+            currentSchemaVersion >= 3)
         {
             result.AddCorrect(
-                "2.1G1/2 no introduce persistencia paralela; menu.state sigue en v3."
+                "2.1G1/2 conserva una única sección menu.state compatible con 2.1G3."
             );
         }
         else
         {
-            result.AddError("2.1G1/2 alteró indebidamente la versión persistente.");
+            result.AddError("menu.state publica versiones internas incompatibles.");
         }
     }
 

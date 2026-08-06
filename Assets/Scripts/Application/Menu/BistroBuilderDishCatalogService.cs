@@ -7,7 +7,7 @@ using UnityEngine;
 ///
 /// Conserva los assets canónicos como base inmutable y permite aplicar una
 /// capa runtime de sobrescrituras y platos creados por el jugador. La capa
-/// runtime no se persiste todavía; 2.1G3 añadirá su captura y restauración.
+/// runtime se captura y restaura dentro de menu.state desde 2.1G3.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Menu/Dish Catalog Service")]
@@ -33,6 +33,12 @@ public sealed class BistroBuilderDishCatalogService : MonoBehaviour
     private readonly List<BistroBuilderDishDefinition> canonicalBuffer =
         new List<BistroBuilderDishDefinition>(32);
 
+    // Un plato canónico queda suprimido cuando existe una sobrescritura
+    // persistente que no puede reconstruirse temporalmente. Así evitamos que
+    // una receta editada vuelva silenciosamente a su definición canónica.
+    private readonly HashSet<string> suppressedCanonicalDishIds =
+        new HashSet<string>(StringComparer.Ordinal);
+
     public event Action CatalogChanged;
 
     public BistroBuilderDishCatalog Catalog => catalog;
@@ -43,11 +49,26 @@ public sealed class BistroBuilderDishCatalogService : MonoBehaviour
 
     public int RuntimeDefinitionCount => runtimeDefinitions.Count;
 
+    public int SuppressedCanonicalDefinitionCount =>
+        suppressedCanonicalDishIds.Count;
+
     public int DefinitionCount
     {
         get
         {
             int count = CanonicalDefinitionCount;
+
+            if (catalog != null)
+            {
+                foreach (string suppressedId in suppressedCanonicalDishIds)
+                {
+                    if (!runtimeByDishId.ContainsKey(suppressedId) &&
+                        catalog.Contains(suppressedId))
+                    {
+                        count--;
+                    }
+                }
+            }
 
             for (int index = 0; index < runtimeDefinitions.Count; index++)
             {
@@ -134,6 +155,12 @@ public sealed class BistroBuilderDishCatalogService : MonoBehaviour
             return definition != null;
         }
 
+        if (suppressedCanonicalDishIds.Contains(normalized))
+        {
+            definition = null;
+            return false;
+        }
+
         return catalog != null &&
                catalog.TryGetDefinition(normalized, out definition);
     }
@@ -171,12 +198,14 @@ public sealed class BistroBuilderDishCatalogService : MonoBehaviour
                 continue;
             }
 
-            BistroBuilderDishDefinition effective =
-                runtimeByDishId.TryGetValue(
-                    canonical.DishId,
-                    out BistroBuilderDishDefinition runtime
-                )
-                    ? runtime
+            bool hasRuntime = runtimeByDishId.TryGetValue(
+                canonical.DishId,
+                out BistroBuilderDishDefinition runtime
+            );
+            BistroBuilderDishDefinition effective = hasRuntime
+                ? runtime
+                : suppressedCanonicalDishIds.Contains(canonical.DishId)
+                    ? null
                     : canonical;
 
             if (effective != null && copied.Add(effective.DishId))
@@ -217,6 +246,86 @@ public sealed class BistroBuilderDishCatalogService : MonoBehaviour
                 destination.Add(definition);
             }
         }
+    }
+
+    public bool IsCanonicalDefinitionSuppressed(string dishId)
+    {
+        string normalized = BistroBuilderMenuIdUtility.NormalizeStableId(
+            dishId
+        );
+        return !string.IsNullOrWhiteSpace(normalized) &&
+               suppressedCanonicalDishIds.Contains(normalized);
+    }
+
+    public void CopySuppressedCanonicalDishIdsTo(List<string> destination)
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+
+        destination.Clear();
+        destination.AddRange(suppressedCanonicalDishIds);
+        destination.Sort(StringComparer.Ordinal);
+    }
+
+    public bool TryReplaceSuppressedCanonicalDishIds(
+        IList<string> dishIds,
+        out string error,
+        bool publishChange = true
+    )
+    {
+        HashSet<string> next = new HashSet<string>(StringComparer.Ordinal);
+
+        if (dishIds != null)
+        {
+            for (int index = 0; index < dishIds.Count; index++)
+            {
+                string normalized = BistroBuilderMenuIdUtility.NormalizeStableId(
+                    dishIds[index]
+                );
+
+                if (!BistroBuilderMenuIdUtility.IsValidStableId(normalized) ||
+                    !string.Equals(
+                        normalized,
+                        dishIds[index],
+                        StringComparison.Ordinal
+                    ))
+                {
+                    error = "La supresión canónica contiene un DishId inválido.";
+                    return false;
+                }
+
+                if (catalog == null || !catalog.Contains(normalized))
+                {
+                    error = "La supresión canónica referencia un plato que no " +
+                            "existe en el catálogo base: " + normalized + ".";
+                    return false;
+                }
+
+                if (!next.Add(normalized))
+                {
+                    error = "La supresión canónica repite el DishId " +
+                            normalized + ".";
+                    return false;
+                }
+            }
+        }
+
+        suppressedCanonicalDishIds.Clear();
+
+        foreach (string dishId in next)
+        {
+            suppressedCanonicalDishIds.Add(dishId);
+        }
+
+        if (publishChange)
+        {
+            PublishChanged();
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     /// <summary>
