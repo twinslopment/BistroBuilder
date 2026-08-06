@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_PFBBChairMaster001White
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: pf_bb_chair_master_001_white
+  displayName: "Silla contempor\xE1nea \u2014 Blanca"
+  category: 1
+  description: "Silla contempor\xE1nea de restaurante con estructura de madera y
+    tapizado blanco roto."
+  catalogIcon: {fileID: 21300000, guid: eb6881d18286f214cb8b25ae81a710d3, type: 3}
+  prefab: {fileID: 6217160869183040038, guid: 724508c36b8036b49be6d100f888b239, type: 3}
+  editableDefinition: {fileID: 11400000, guid: bd594e319ec4f95409f95dcac0db635f, type: 2}
+  purchasePrice: 10

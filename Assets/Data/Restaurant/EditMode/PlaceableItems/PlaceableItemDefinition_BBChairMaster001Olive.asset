@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_BBChairMaster001Olive
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: item_id:_bb_chair_master_001_olive_functional_test
+  displayName: "Silla contempor\xE1nea \u2014 Oliva (prueba)"
+  category: 1
+  description: "Silla de restaurante contempor\xE1nea con estructura de madera y
+    tapizado verde oliva."
+  catalogIcon: {fileID: 21300000, guid: 66fde45dc6135bb459b159d44035136f, type: 3}
+  prefab: {fileID: 6217160869183040038, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 4e24900826436cd42b998fb52d5a1364, type: 2}
+  purchasePrice: 60

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_BBChairMaster001Final
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_chair_master_001_final
+  displayName: B B Chair Master 001 Final
+  category: 1
+  description: 'Asiento: B B Chair Master 001 Final.'
+  catalogIcon: {fileID: 21300000, guid: 66fde45dc6135bb459b159d44035136f, type: 3}
+  prefab: {fileID: 6217160869183040038, guid: d5774e88c68f0784e9cd7cbab7c81553, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 9e746ab2de45bca44bc045747abc0e64, type: 2}
+  purchasePrice: 60
