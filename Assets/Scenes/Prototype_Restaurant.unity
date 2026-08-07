@@ -1101,6 +1101,9 @@ GameObject:
   - component: {fileID: 263644984}
   - component: {fileID: 263644985}
   - component: {fileID: 263644986}
+  - component: {fileID: 263644988}
+  - component: {fileID: 263644987}
+  - component: {fileID: 263644989}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2058,6 +2061,8 @@ MonoBehaviour:
   catalogService: {fileID: 263644960}
   collectionService: {fileID: 263644976}
   dishRecipePersistenceService: {fileID: 263644985}
+  portfolioService: {fileID: 263644987}
+  contextService: {fileID: 263644988}
   captureItemsPerFrame: 64
   logLoadSummary: 1
 --- !u!114 &263644959
@@ -2706,6 +2711,146 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6166dafabc6d443db48a35cacc23028c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuStateV3ToV4Migration
+--- !u!114 &263644987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d365669dea0a4f139844d8263ad2ee9d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuPortfolioService
+  collectionService: {fileID: 263644976}
+  menuService: {fileID: 263644959}
+  catalogService: {fileID: 263644960}
+  contextService: {fileID: 263644988}
+  editSessionService: {fileID: 263644977}
+  portfolios:
+  - restaurantId: restaurant_primary
+    revision: 0
+    fallbackMenuId: menu_default
+    activeMenuId: menu_default
+    manualOverrideMenuId: 
+    menus:
+    - menuId: menu_default
+      displayName: Carta principal
+      revision: 0
+      items:
+      - dishId: dish_fabada_asturiana
+        currentPriceCents: 1850
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 6
+        displayOrder: 0
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_merluza_plancha
+        currentPriceCents: 2100
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 6
+        displayOrder: 1
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_tarta_queso
+        currentPriceCents: 750
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 6
+        displayOrder: 2
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_agua_mineral
+        currentPriceCents: 220
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 7
+        displayOrder: 3
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_refresco
+        currentPriceCents: 280
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 7
+        displayOrder: 4
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_copa_vino
+        currentPriceCents: 350
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 7
+        displayOrder: 5
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_aceitunas_alinadas
+        currentPriceCents: 300
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 7
+        displayOrder: 6
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      - dishId: dish_pincho_tortilla
+        currentPriceCents: 450
+        unlocked: 1
+        enabled: 1
+        manuallySoldOut: 0
+        signatureDish: 0
+        availableServices: 7
+        displayOrder: 7
+        preparationDifficulty: 0
+        basePreparationSeconds: 0
+      unresolvedItems: []
+    rules: []
+  logResolutionChanges: 1
+--- !u!114 &263644988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b62dc15052d4d89870facbd485074e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuActivationContextService
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  offerService: {fileID: 263644979}
+  activeEventIds: []
+  activePromotionIds: []
+--- !u!114 &263644989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d68b39f0d3f5420b883614ffcfdc5cd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuStateV4ToV5Migration
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -9160,6 +9305,7 @@ GameObject:
   - component: {fileID: 1691563766}
   - component: {fileID: 1691563767}
   - component: {fileID: 1691563768}
+  - component: {fileID: 1691563769}
   m_Layer: 5
   m_Name: BB_2_1E_MenuEditorUI
   m_TagString: Untagged
@@ -9216,6 +9362,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishRecipeAuthoringRuntimeView
   editorService: {fileID: 263644982}
+--- !u!114 &1691563769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1691563765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 387cb4eff3cb458696a36d7f8322b07c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMenuPortfolioRuntimeView
+  portfolioService: {fileID: 263644987}
+  menuEditorView: {fileID: 1691563767}
+  showOpenButton: 1
 --- !u!1 &1716211573
 GameObject:
   m_ObjectHideFlags: 0

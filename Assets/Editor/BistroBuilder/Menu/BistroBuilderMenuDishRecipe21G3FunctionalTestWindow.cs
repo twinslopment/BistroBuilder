@@ -104,8 +104,10 @@ public sealed class BistroBuilderMenuDishRecipe21G3FunctionalTestWindow :
 
             original = Capture(provider);
             Expect(
-                original != null && original.schemaVersion == 4,
-                "Se captura el estado original como menu.state v4."
+                original != null &&
+                original.schemaVersion ==
+                    BistroBuilderMenuSaveData.CurrentSchemaVersion,
+                "Se captura el estado original con la versión actual de menu.state."
             );
 
             BistroBuilderMenuSaveData testState = Clone(original);
@@ -262,10 +264,33 @@ public sealed class BistroBuilderMenuDishRecipe21G3FunctionalTestWindow :
             );
             active.revision++;
 
+            BistroBuilderRestaurantMenuPortfolioSaveData activePortfolio =
+                FindPortfolio(
+                    testState,
+                    testState.activeRestaurantId
+                );
+            BistroBuilderNamedMenuSaveData activeNamedMenu =
+                FindNamedMenu(
+                    activePortfolio,
+                    activePortfolio != null
+                        ? activePortfolio.activeMenuId
+                        : string.Empty
+                );
+            if (activeNamedMenu == null)
+            {
+                throw new InvalidOperationException(
+                    "No existe la carta nombrada activa del portfolio."
+                );
+            }
+            activeNamedMenu.items.Add(
+                CloneMenuItem(active.items[active.items.Count - 1])
+            );
+            activeNamedMenu.revision++;
+
             Expect(
                 provider.ValidateState(testState, out string stateError),
                 string.IsNullOrWhiteSpace(stateError)
-                    ? "El estado v4 con plato y receta creados es válido."
+                    ? "El estado actual con plato y receta creados es válido."
                     : stateError
             );
 
@@ -313,7 +338,9 @@ public sealed class BistroBuilderMenuDishRecipe21G3FunctionalTestWindow :
             BistroBuilderDishRecipeSaveData jsonPair =
                 FindPair(jsonRoundTrip.authoredDishRecipes, dishId);
             Expect(
-                jsonRoundTrip.schemaVersion == 4 && jsonPair != null &&
+                jsonRoundTrip.schemaVersion ==
+                    BistroBuilderMenuSaveData.CurrentSchemaVersion &&
+                jsonPair != null &&
                 Math.Abs(
                     jsonPair.recipe.ingredients[0].amount -
                     pair.recipe.ingredients[0].amount
@@ -371,7 +398,8 @@ public sealed class BistroBuilderMenuDishRecipe21G3FunctionalTestWindow :
 
             Expect(
                 provider.DishRecipePersistenceService != null &&
-                provider.SectionVersion == 4,
+                provider.SectionVersion ==
+                    BistroBuilderMenuSaveData.CurrentSchemaVersion,
                 "La persistencia se mantiene integrada en una única sección menu.state."
             );
         }
@@ -675,6 +703,79 @@ public sealed class BistroBuilderMenuDishRecipe21G3FunctionalTestWindow :
         }
 
         return maximum + 1;
+    }
+
+    private static BistroBuilderRestaurantMenuPortfolioSaveData
+        FindPortfolio(
+            BistroBuilderMenuSaveData data,
+            string restaurantId
+        )
+    {
+        if (data == null || data.portfolios == null)
+        {
+            return null;
+        }
+
+        for (int index = 0; index < data.portfolios.Count; index++)
+        {
+            BistroBuilderRestaurantMenuPortfolioSaveData portfolio =
+                data.portfolios[index];
+            if (portfolio != null && string.Equals(
+                    portfolio.restaurantId,
+                    restaurantId,
+                    StringComparison.Ordinal
+                ))
+            {
+                return portfolio;
+            }
+        }
+
+        return null;
+    }
+
+    private static BistroBuilderNamedMenuSaveData FindNamedMenu(
+        BistroBuilderRestaurantMenuPortfolioSaveData portfolio,
+        string menuId
+    )
+    {
+        if (portfolio == null || portfolio.menus == null)
+        {
+            return null;
+        }
+
+        for (int index = 0; index < portfolio.menus.Count; index++)
+        {
+            BistroBuilderNamedMenuSaveData menu = portfolio.menus[index];
+            if (menu != null && string.Equals(
+                    menu.menuId,
+                    menuId,
+                    StringComparison.Ordinal
+                ))
+            {
+                return menu;
+            }
+        }
+
+        return null;
+    }
+
+    private static BistroBuilderMenuItemSaveData CloneMenuItem(
+        BistroBuilderMenuItemSaveData source
+    )
+    {
+        return new BistroBuilderMenuItemSaveData
+        {
+            dishId = source.dishId,
+            currentPriceCents = source.currentPriceCents,
+            unlocked = source.unlocked,
+            enabled = source.enabled,
+            manuallySoldOut = source.manuallySoldOut,
+            signatureDish = source.signatureDish,
+            availableServices = source.availableServices,
+            displayOrder = source.displayOrder,
+            preparationDifficulty = source.preparationDifficulty,
+            basePreparationSeconds = source.basePreparationSeconds
+        };
     }
 
     private static void RunEnumerator(IEnumerator enumerator)

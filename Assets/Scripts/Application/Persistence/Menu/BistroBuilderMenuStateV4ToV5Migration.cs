@@ -4,25 +4,25 @@ using System.Text;
 using UnityEngine;
 
 /// <summary>
-/// Migración pura y consecutiva de menu.state v3 a v4.
+/// Migración pura y consecutiva de menu.state v4 a v5.
 ///
-/// V3 ya conservaba cartas por restaurante y preparación configurable, pero
-/// no almacenaba las capas runtime de platos y recetas. V4 copia literalmente
-/// la carta histórica e inicializa ambas colecciones de autoría vacías. Los
-/// DishId sin definición siguen preservados como entradas no resueltas.
+/// Cada carta histórica por restaurante se convierte en una Carta principal
+/// dentro de un portfolio sin reglas. De este modo una partida antigua sigue
+/// mostrando exactamente la misma oferta y queda preparada para crear cartas
+/// adicionales sin perder autoría ni revisiones.
 /// </summary>
 [DisallowMultipleComponent]
-[AddComponentMenu("Bistro Builder/Persistence/Menu State V3 To V4 Migration")]
-public sealed class BistroBuilderMenuStateV3ToV4Migration :
+[AddComponentMenu("Bistro Builder/Persistence/Menu State V4 To V5 Migration")]
+public sealed class BistroBuilderMenuStateV4ToV5Migration :
     MonoBehaviour,
     IBistroBuilderSaveSectionMigration
 {
     public string SectionId =>
         BistroBuilderMenuSaveSectionProvider.StableSectionId;
 
-    public int FromVersion => 3;
+    public int FromVersion => 4;
 
-    public int ToVersion => 4;
+    public int ToVersion => 5;
 
     public string FromSerializerId =>
         BistroBuilderJsonSaveSerializer.StableSerializerId;
@@ -40,44 +40,39 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
 
         if (sourcePayload == null || sourcePayload.Length == 0)
         {
-            error = "menu.state v3 no contiene datos para migrar.";
+            error = "menu.state v4 no contiene datos para migrar.";
             return false;
         }
 
-        BistroBuilderMenuSaveDataV3 source;
-
+        BistroBuilderMenuSaveDataV4 source;
         try
         {
-            string json = Encoding.UTF8.GetString(sourcePayload);
-            source = JsonUtility.FromJson<BistroBuilderMenuSaveDataV3>(json);
+            source = JsonUtility.FromJson<BistroBuilderMenuSaveDataV4>(
+                Encoding.UTF8.GetString(sourcePayload)
+            );
         }
         catch (Exception exception)
         {
-            error = "No se pudo leer menu.state v3: " + exception.Message;
+            error = "No se pudo leer menu.state v4: " + exception.Message;
             return false;
         }
 
-        if (source == null || source.schemaVersion != 3 ||
-            source.restaurants == null || source.restaurants.Count == 0)
-        {
-            error = "menu.state v3 no cumple su contrato histórico.";
-            return false;
-        }
-
-        if (!TryValidateHistoricalStructure(source, out error))
+        if (!TryValidateV4(source, out error))
         {
             return false;
         }
 
-        BistroBuilderMenuSaveDataV4 target = new BistroBuilderMenuSaveDataV4
+        BistroBuilderMenuSaveData target = new BistroBuilderMenuSaveData
         {
-            schemaVersion = 4,
+            schemaVersion = 5,
             activeRestaurantId = source.activeRestaurantId,
             restaurants = CloneRestaurants(source.restaurants),
-            authoredDishRecipes =
-                new List<BistroBuilderDishRecipeSaveData>(),
+            authoredDishRecipes = ClonePairs(source.authoredDishRecipes),
             unresolvedAuthoredDishRecipes =
-                new List<BistroBuilderDishRecipeSaveData>()
+                ClonePairs(source.unresolvedAuthoredDishRecipes),
+            portfolios = BuildDefaultPortfolios(source.restaurants),
+            activeEventIds = new List<string>(),
+            activePromotionIds = new List<string>()
         };
 
         try
@@ -89,7 +84,7 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
         catch (Exception exception)
         {
             migratedPayload = null;
-            error = "No se pudo escribir menu.state v4: " +
+            error = "No se pudo escribir menu.state v5: " +
                     exception.Message;
             return false;
         }
@@ -98,16 +93,20 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
         return true;
     }
 
-    private static bool TryValidateHistoricalStructure(
-        BistroBuilderMenuSaveDataV3 source,
+    private static bool TryValidateV4(
+        BistroBuilderMenuSaveDataV4 source,
         out string error
     )
     {
-        if (!BistroBuilderMenuIdUtility.IsValidStableId(
+        if (source == null || source.schemaVersion != 4 ||
+            !BistroBuilderMenuIdUtility.IsValidStableId(
                 source.activeRestaurantId
-            ))
+            ) ||
+            source.restaurants == null || source.restaurants.Count == 0 ||
+            source.authoredDishRecipes == null ||
+            source.unresolvedAuthoredDishRecipes == null)
         {
-            error = "menu.state v3 contiene un restaurante activo inválido.";
+            error = "menu.state v4 no cumple su contrato histórico.";
             return false;
         }
 
@@ -115,13 +114,10 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
             new HashSet<string>(StringComparer.Ordinal);
         bool activeFound = false;
 
-        for (int restaurantIndex = 0;
-             restaurantIndex < source.restaurants.Count;
-             restaurantIndex++)
+        for (int index = 0; index < source.restaurants.Count; index++)
         {
             BistroBuilderRestaurantMenuSaveData restaurant =
-                source.restaurants[restaurantIndex];
-
+                source.restaurants[index];
             if (restaurant == null ||
                 !BistroBuilderMenuIdUtility.IsValidStableId(
                     restaurant.restaurantId
@@ -131,13 +127,12 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
                 restaurant.items == null ||
                 restaurant.unresolvedItems == null)
             {
-                error = "menu.state v3 contiene una carta inválida.";
+                error = "menu.state v4 contiene una carta inválida.";
                 return false;
             }
 
             HashSet<string> dishIds =
                 new HashSet<string>(StringComparer.Ordinal);
-
             if (!TryValidateItems(restaurant.items, dishIds, out error) ||
                 !TryValidateItems(
                     restaurant.unresolvedItems,
@@ -157,7 +152,17 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
 
         if (!activeFound)
         {
-            error = "menu.state v3 no contiene la carta activa.";
+            error = "menu.state v4 no contiene el restaurante activo.";
+            return false;
+        }
+
+        if (!BistroBuilderDishRecipeSaveDataUtility
+                .TryValidatePairCollections(
+                    source.authoredDishRecipes,
+                    source.unresolvedAuthoredDishRecipes,
+                    out error
+                ))
+        {
             return false;
         }
 
@@ -166,7 +171,7 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
     }
 
     private static bool TryValidateItems(
-        List<BistroBuilderMenuItemSaveData> items,
+        IList<BistroBuilderMenuItemSaveData> items,
         HashSet<string> dishIds,
         out string error
     )
@@ -174,7 +179,6 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
         for (int index = 0; index < items.Count; index++)
         {
             BistroBuilderMenuItemSaveData item = items[index];
-
             if (item == null ||
                 !BistroBuilderMenuIdUtility.IsValidStableId(item.dishId) ||
                 !dishIds.Add(item.dishId) ||
@@ -188,30 +192,7 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
                 ) ||
                 item.displayOrder < 0)
             {
-                error = "menu.state v3 contiene una entrada inválida.";
-                return false;
-            }
-
-            bool inheritedDifficulty =
-                item.preparationDifficulty ==
-                    BistroBuilderMenuItemRuntimeState.InheritedPreparationValue;
-            bool inheritedTime =
-                item.basePreparationSeconds ==
-                    BistroBuilderMenuItemRuntimeState.InheritedPreparationValue;
-
-            if (inheritedDifficulty != inheritedTime ||
-                (!inheritedDifficulty &&
-                 (item.preparationDifficulty <
-                      BistroBuilderDishDefinition.MinimumPreparationDifficulty ||
-                  item.preparationDifficulty >
-                      BistroBuilderDishDefinition.MaximumPreparationDifficulty ||
-                  item.basePreparationSeconds <
-                      BistroBuilderDishDefinition.MinimumPreparationSeconds ||
-                  item.basePreparationSeconds >
-                      BistroBuilderDishDefinition.MaximumPreparationSeconds)))
-            {
-                error = "menu.state v3 contiene preparación inválida para " +
-                        item.dishId + ".";
+                error = "menu.state v4 contiene una entrada de carta inválida.";
                 return false;
             }
         }
@@ -220,28 +201,46 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
         return true;
     }
 
-    private static List<BistroBuilderRestaurantMenuSaveData> CloneRestaurants(
-        List<BistroBuilderRestaurantMenuSaveData> source
-    )
+    private static List<BistroBuilderRestaurantMenuPortfolioSaveData>
+        BuildDefaultPortfolios(
+            IList<BistroBuilderRestaurantMenuSaveData> restaurants
+        )
     {
-        List<BistroBuilderRestaurantMenuSaveData> result =
-            new List<BistroBuilderRestaurantMenuSaveData>(source.Count);
+        List<BistroBuilderRestaurantMenuPortfolioSaveData> result =
+            new List<BistroBuilderRestaurantMenuPortfolioSaveData>(
+                restaurants.Count
+            );
 
-        for (int restaurantIndex = 0;
-             restaurantIndex < source.Count;
-             restaurantIndex++)
+        for (int index = 0; index < restaurants.Count; index++)
         {
             BistroBuilderRestaurantMenuSaveData restaurant =
-                source[restaurantIndex];
+                restaurants[index];
             result.Add(
-                new BistroBuilderRestaurantMenuSaveData
+                new BistroBuilderRestaurantMenuPortfolioSaveData
                 {
                     restaurantId = restaurant.restaurantId,
-                    revision = restaurant.revision,
-                    items = CloneItems(restaurant.items),
-                    unresolvedItems = CloneItems(
-                        restaurant.unresolvedItems
-                    )
+                    revision = 0,
+                    fallbackMenuId =
+                        BistroBuilderMenuPortfolioService.DefaultMenuId,
+                    activeMenuId =
+                        BistroBuilderMenuPortfolioService.DefaultMenuId,
+                    manualOverrideMenuId = string.Empty,
+                    menus = new List<BistroBuilderNamedMenuSaveData>
+                    {
+                        new BistroBuilderNamedMenuSaveData
+                        {
+                            menuId =
+                                BistroBuilderMenuPortfolioService.DefaultMenuId,
+                            displayName =
+                                BistroBuilderMenuPortfolioService.DefaultMenuName,
+                            revision = restaurant.revision,
+                            items = CloneItems(restaurant.items),
+                            unresolvedItems =
+                                CloneItems(restaurant.unresolvedItems)
+                        }
+                    },
+                    rules =
+                        new List<BistroBuilderMenuActivationRuleSaveData>()
                 }
             );
         }
@@ -249,13 +248,35 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
         return result;
     }
 
+    private static List<BistroBuilderRestaurantMenuSaveData> CloneRestaurants(
+        IList<BistroBuilderRestaurantMenuSaveData> source
+    )
+    {
+        List<BistroBuilderRestaurantMenuSaveData> result =
+            new List<BistroBuilderRestaurantMenuSaveData>(source.Count);
+        for (int index = 0; index < source.Count; index++)
+        {
+            BistroBuilderRestaurantMenuSaveData restaurant = source[index];
+            result.Add(
+                new BistroBuilderRestaurantMenuSaveData
+                {
+                    restaurantId = restaurant.restaurantId,
+                    revision = restaurant.revision,
+                    items = CloneItems(restaurant.items),
+                    unresolvedItems =
+                        CloneItems(restaurant.unresolvedItems)
+                }
+            );
+        }
+        return result;
+    }
+
     private static List<BistroBuilderMenuItemSaveData> CloneItems(
-        List<BistroBuilderMenuItemSaveData> source
+        IList<BistroBuilderMenuItemSaveData> source
     )
     {
         List<BistroBuilderMenuItemSaveData> result =
             new List<BistroBuilderMenuItemSaveData>(source.Count);
-
         for (int index = 0; index < source.Count; index++)
         {
             BistroBuilderMenuItemSaveData item = source[index];
@@ -275,7 +296,19 @@ public sealed class BistroBuilderMenuStateV3ToV4Migration :
                 }
             );
         }
+        return result;
+    }
 
+    private static List<BistroBuilderDishRecipeSaveData> ClonePairs(
+        IList<BistroBuilderDishRecipeSaveData> source
+    )
+    {
+        List<BistroBuilderDishRecipeSaveData> result =
+            new List<BistroBuilderDishRecipeSaveData>(source.Count);
+        for (int index = 0; index < source.Count; index++)
+        {
+            result.Add(BistroBuilderDishRecipeSaveDataUtility.Clone(source[index]));
+        }
         return result;
     }
 }

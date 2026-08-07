@@ -6,10 +6,9 @@ using UnityEngine;
 /// <summary>
 /// Proveedor versionado de menu.state.
 ///
-/// V4 persiste cartas independientes por RestaurantId, preparación configurable
-/// y las capas runtime de platos y recetas creadas por el jugador. La sección
-/// sigue siendo única: la restauración aplica primero la autoría efectiva y
-/// después reclasifica las cartas contra ese catálogo, con rollback conjunto.
+/// V5 conserva la autoría de V4 y añade portfolios multicarte, reglas y
+/// señales de evento/promoción. La sección sigue siendo única: restaura
+/// autoría, proyección operativa y portfolio con rollback conjunto.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Persistence/Menu Save Provider")]
@@ -19,7 +18,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     IBistroBuilderSaveSectionPhaseOrdering
 {
     public const string StableSectionId = "menu.state";
-    public const int StableSectionVersion = 4;
+    public const int StableSectionVersion = 5;
 
     [Header("Dependencias")]
 
@@ -39,6 +38,12 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     private BistroBuilderDishRecipePersistenceService
         dishRecipePersistenceService;
 
+    [SerializeField]
+    private BistroBuilderMenuPortfolioService portfolioService;
+
+    [SerializeField]
+    private BistroBuilderMenuActivationContextService contextService;
+
     [Header("Rendimiento")]
 
     [SerializeField]
@@ -53,6 +58,13 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
     private readonly List<BistroBuilderRestaurantMenuRuntimeState>
         restaurantBuffer =
             new List<BistroBuilderRestaurantMenuRuntimeState>(4);
+
+    private readonly List<BistroBuilderRestaurantMenuPortfolioRuntimeState>
+        portfolioBuffer =
+            new List<BistroBuilderRestaurantMenuPortfolioRuntimeState>(4);
+
+    private readonly List<string> eventIdBuffer = new List<string>(8);
+    private readonly List<string> promotionIdBuffer = new List<string>(8);
 
     public string SectionId => StableSectionId;
 
@@ -83,6 +95,12 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
 
     public BistroBuilderDishRecipePersistenceService
         DishRecipePersistenceService => dishRecipePersistenceService;
+
+    public BistroBuilderMenuPortfolioService PortfolioService =>
+        portfolioService;
+
+    public BistroBuilderMenuActivationContextService ContextService =>
+        contextService;
 
     private void Awake()
     {
@@ -150,6 +168,24 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
                  catalogService
              )))
         {
+            return false;
+        }
+
+        if (portfolioService == null || contextService == null)
+        {
+            error = "Faltan los servicios de portfolios y reglas 2.1H/I.";
+            return false;
+        }
+
+        if (!portfolioService.ValidateConfiguration(out error) ||
+            !contextService.ValidateConfiguration(out error) ||
+            !ReferenceEquals(portfolioService.CollectionService, collectionService) ||
+            !ReferenceEquals(portfolioService.ContextService, contextService))
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "menu.state no comparte la autoridad de portfolios.";
+            }
             return false;
         }
 
@@ -250,6 +286,29 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             data.authoredDishRecipes = authored;
             data.unresolvedAuthoredDishRecipes = unresolvedAuthored;
         }
+
+        if (!portfolioService.TryGetAllPortfolioSnapshots(
+                portfolioBuffer,
+                out string portfolioError
+            ))
+        {
+            context.Fail(portfolioError);
+            yield break;
+        }
+
+        data.portfolios =
+            new List<BistroBuilderRestaurantMenuPortfolioSaveData>(
+                portfolioBuffer.Count
+            );
+        for (int index = 0; index < portfolioBuffer.Count; index++)
+        {
+            data.portfolios.Add(ToSaveData(portfolioBuffer[index]));
+        }
+
+        contextService.CopySignalsTo(eventIdBuffer, promotionIdBuffer);
+        data.activeEventIds = new List<string>(eventIdBuffer);
+        data.activePromotionIds = new List<string>(promotionIdBuffer);
+
         context.Complete(data);
     }
 
@@ -285,6 +344,14 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             data.unresolvedAuthoredDishRecipes == null)
         {
             error = "menu.state no contiene las colecciones de autoría v4.";
+            return false;
+        }
+
+        if (data.portfolios == null || data.portfolios.Count == 0 ||
+            data.activeEventIds == null ||
+            data.activePromotionIds == null)
+        {
+            error = "menu.state no contiene portfolios o señales v5.";
             return false;
         }
 
@@ -406,6 +473,41 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             return false;
         }
 
+        if (!TryValidateSignalIds(data.activeEventIds, "evento", out error) ||
+            !TryValidateSignalIds(
+                data.activePromotionIds,
+                "promoción",
+                out error
+            ))
+        {
+            return false;
+        }
+
+        HashSet<string> portfolioRestaurantIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < data.portfolios.Count; index++)
+        {
+            if (!TryValidatePortfolioSaveDataStructure(
+                    data.portfolios[index],
+                    out string portfolioRestaurantId,
+                    out error
+                ) ||
+                !portfolioRestaurantIds.Add(portfolioRestaurantId))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "menu.state contiene portfolios duplicados.";
+                }
+                return false;
+            }
+        }
+
+        if (!portfolioRestaurantIds.SetEquals(restaurantIds))
+        {
+            error = "menu.state no contiene un portfolio por cada restaurante.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -513,6 +615,28 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             );
         }
 
+        List<BistroBuilderRestaurantMenuPortfolioRuntimeState>
+            portfolioReplacement =
+                new List<BistroBuilderRestaurantMenuPortfolioRuntimeState>(
+                    data.portfolios.Count
+                );
+
+        for (int index = 0; index < data.portfolios.Count; index++)
+        {
+            if (!TryToRuntimeState(
+                    data.portfolios[index],
+                    out BistroBuilderRestaurantMenuPortfolioRuntimeState
+                        portfolio,
+                    out string portfolioConversionError
+                ))
+            {
+                context.Fail(portfolioConversionError);
+                yield break;
+            }
+
+            portfolioReplacement.Add(portfolio);
+        }
+
         List<BistroBuilderRestaurantMenuRuntimeState> previousRestaurants =
             new List<BistroBuilderRestaurantMenuRuntimeState>();
 
@@ -527,6 +651,25 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
 
         string previousActiveRestaurantId =
             collectionService.ActiveRestaurantId;
+
+        List<BistroBuilderRestaurantMenuPortfolioRuntimeState>
+            previousPortfolios =
+                new List<BistroBuilderRestaurantMenuPortfolioRuntimeState>();
+        if (!portfolioService.TryGetAllPortfolioSnapshots(
+                previousPortfolios,
+                out snapshotError
+            ))
+        {
+            context.Fail(snapshotError);
+            yield break;
+        }
+
+        List<string> previousEventIds = new List<string>();
+        List<string> previousPromotionIds = new List<string>();
+        contextService.CopySignalsTo(
+            previousEventIds,
+            previousPromotionIds
+        );
 
         BistroBuilderDishRecipePersistenceService.RollbackState
             authoringRollback = null;
@@ -555,11 +698,32 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             yield break;
         }
 
+        portfolioService.BeginExternalSynchronization();
+
         if (!collectionService.TryReplaceAllRestaurantStates(
                 replacement,
                 data.activeRestaurantId,
                 true,
                 out string applyError
+            ))
+        {
+            portfolioService.EndExternalSynchronization(false);
+
+            if (dishRecipePersistenceService != null)
+            {
+                dishRecipePersistenceService.Rollback(authoringRollback);
+            }
+
+            context.Fail(applyError);
+            yield break;
+        }
+
+        if (!portfolioService.TryReplaceAllPortfolios(
+                portfolioReplacement,
+                data.activeEventIds,
+                data.activePromotionIds,
+                false,
+                out applyError
             ))
         {
             if (dishRecipePersistenceService != null)
@@ -576,6 +740,54 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             {
                 applyError += " Rollback de carta fallido: " +
                               collectionRollbackError;
+            }
+
+            portfolioService.EndExternalSynchronization(false);
+            context.Fail(applyError);
+            yield break;
+        }
+
+        portfolioService.EndExternalSynchronization(false);
+
+        if (!portfolioService.TryApplyCurrentResolution(
+                true,
+                out applyError
+            ))
+        {
+            if (dishRecipePersistenceService != null)
+            {
+                dishRecipePersistenceService.Rollback(authoringRollback);
+            }
+
+            portfolioService.BeginExternalSynchronization();
+            bool collectionRolledBack =
+                collectionService.TryReplaceAllRestaurantStates(
+                    previousRestaurants,
+                    previousActiveRestaurantId,
+                    false,
+                    out string collectionRollbackError
+                );
+            bool portfolioRolledBack =
+                portfolioService.TryReplaceAllPortfolios(
+                    previousPortfolios,
+                    previousEventIds,
+                    previousPromotionIds,
+                    false,
+                    out string portfolioRollbackError
+                );
+            portfolioService.EndExternalSynchronization(false);
+            portfolioService.TryApplyCurrentResolution(true, out _);
+
+            if (!collectionRolledBack)
+            {
+                applyError += " Rollback de carta fallido: " +
+                              collectionRollbackError;
+            }
+
+            if (!portfolioRolledBack)
+            {
+                applyError += " Rollback de portfolio fallido: " +
+                              portfolioRollbackError;
             }
 
             context.Fail(applyError);
@@ -596,7 +808,7 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         }
 
         Debug.Log(
-            "menu.state v4 restaurada con " +
+            "menu.state v5 restaurada con " +
             collectionService.RestaurantCount + " restaurante(s), " +
             menuService.ItemCount + " plato(s) activos, " +
             collectionService.UnresolvedItemCount +
@@ -604,7 +816,10 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
             (dishRecipePersistenceService != null
                 ? dishRecipePersistenceService.UnresolvedPairCount
                 : 0) +
-            " par(es) de autoría no resuelto(s).",
+            " par(es) de autoría no resuelto(s), " +
+            portfolioService.PortfolioCount +
+            " portfolio(s) y carta efectiva " +
+            portfolioService.ActiveMenuId + ".",
             this
         );
     }
@@ -758,6 +973,339 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         );
     }
 
+    private static BistroBuilderRestaurantMenuPortfolioSaveData
+        ToSaveData(
+            BistroBuilderRestaurantMenuPortfolioRuntimeState source
+        )
+    {
+        BistroBuilderRestaurantMenuPortfolioSaveData target =
+            new BistroBuilderRestaurantMenuPortfolioSaveData
+            {
+                restaurantId = source.RestaurantId,
+                revision = source.Revision,
+                fallbackMenuId = source.FallbackMenuId,
+                activeMenuId = source.ActiveMenuId,
+                manualOverrideMenuId = source.ManualOverrideMenuId,
+                menus = new List<BistroBuilderNamedMenuSaveData>(
+                    source.MenuCount
+                ),
+                rules = new List<BistroBuilderMenuActivationRuleSaveData>(
+                    source.RuleCount
+                )
+            };
+
+        for (int index = 0; index < source.Menus.Count; index++)
+        {
+            BistroBuilderNamedMenuRuntimeState menu = source.Menus[index];
+            BistroBuilderNamedMenuSaveData menuSave =
+                new BistroBuilderNamedMenuSaveData
+                {
+                    menuId = menu.MenuId,
+                    displayName = menu.DisplayName,
+                    revision = menu.Revision,
+                    items = new List<BistroBuilderMenuItemSaveData>(
+                        menu.ItemCount
+                    ),
+                    unresolvedItems =
+                        new List<BistroBuilderMenuItemSaveData>(
+                            menu.UnresolvedItemCount
+                        )
+                };
+
+            for (int itemIndex = 0;
+                 itemIndex < menu.Items.Count;
+                 itemIndex++)
+            {
+                menuSave.items.Add(ToSaveData(menu.Items[itemIndex]));
+            }
+
+            for (int itemIndex = 0;
+                 itemIndex < menu.UnresolvedItems.Count;
+                 itemIndex++)
+            {
+                menuSave.unresolvedItems.Add(
+                    ToSaveData(menu.UnresolvedItems[itemIndex])
+                );
+            }
+
+            target.menus.Add(menuSave);
+        }
+
+        for (int index = 0; index < source.Rules.Count; index++)
+        {
+            BistroBuilderMenuActivationRuleRuntimeState rule =
+                source.Rules[index];
+            target.rules.Add(
+                new BistroBuilderMenuActivationRuleSaveData
+                {
+                    ruleId = rule.RuleId,
+                    displayName = rule.DisplayName,
+                    enabled = rule.Enabled,
+                    targetMenuId = rule.TargetMenuId,
+                    priority = rule.Priority,
+                    ruleType = (int)rule.RuleType,
+                    startDateKey = rule.StartDateKey,
+                    endDateKey = rule.EndDateKey,
+                    weekdayMask = rule.WeekdayMask,
+                    mealServices = (int)rule.MealServices,
+                    startMinute = rule.StartMinute,
+                    endMinute = rule.EndMinute,
+                    requiredEventId = rule.RequiredEventId,
+                    requiredPromotionId = rule.RequiredPromotionId
+                }
+            );
+        }
+
+        return target;
+    }
+
+    private bool TryToRuntimeState(
+        BistroBuilderRestaurantMenuPortfolioSaveData source,
+        out BistroBuilderRestaurantMenuPortfolioRuntimeState runtime,
+        out string error
+    )
+    {
+        runtime = null;
+
+        if (!TryValidatePortfolioSaveDataStructure(
+                source,
+                out _,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        List<BistroBuilderNamedMenuRuntimeState> menus =
+            new List<BistroBuilderNamedMenuRuntimeState>(source.menus.Count);
+        for (int index = 0; index < source.menus.Count; index++)
+        {
+            BistroBuilderNamedMenuSaveData menu = source.menus[index];
+            List<BistroBuilderMenuItemRuntimeState> items =
+                new List<BistroBuilderMenuItemRuntimeState>(
+                    menu.items.Count
+                );
+            List<BistroBuilderMenuItemRuntimeState> unresolved =
+                new List<BistroBuilderMenuItemRuntimeState>(
+                    menu.unresolvedItems.Count
+                );
+
+            for (int itemIndex = 0;
+                 itemIndex < menu.items.Count;
+                 itemIndex++)
+            {
+                items.Add(ToRuntimeState(menu.items[itemIndex]));
+            }
+
+            for (int itemIndex = 0;
+                 itemIndex < menu.unresolvedItems.Count;
+                 itemIndex++)
+            {
+                unresolved.Add(
+                    ToRuntimeState(menu.unresolvedItems[itemIndex])
+                );
+            }
+
+            menus.Add(
+                new BistroBuilderNamedMenuRuntimeState(
+                    menu.menuId,
+                    menu.displayName,
+                    menu.revision,
+                    items,
+                    unresolved
+                )
+            );
+        }
+
+        List<BistroBuilderMenuActivationRuleRuntimeState> rules =
+            new List<BistroBuilderMenuActivationRuleRuntimeState>(
+                source.rules.Count
+            );
+        for (int index = 0; index < source.rules.Count; index++)
+        {
+            BistroBuilderMenuActivationRuleSaveData rule =
+                source.rules[index];
+            rules.Add(
+                new BistroBuilderMenuActivationRuleRuntimeState(
+                    rule.ruleId,
+                    rule.displayName,
+                    rule.enabled,
+                    rule.targetMenuId,
+                    rule.priority,
+                    (BistroBuilderMenuActivationRuleType)rule.ruleType,
+                    rule.startDateKey,
+                    rule.endDateKey,
+                    rule.weekdayMask,
+                    (BistroBuilderMealServiceAvailability)
+                        rule.mealServices,
+                    rule.startMinute,
+                    rule.endMinute,
+                    rule.requiredEventId,
+                    rule.requiredPromotionId
+                )
+            );
+        }
+
+        runtime = new BistroBuilderRestaurantMenuPortfolioRuntimeState(
+            source.restaurantId,
+            source.revision,
+            source.fallbackMenuId,
+            source.activeMenuId,
+            source.manualOverrideMenuId,
+            menus,
+            rules
+        );
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryValidatePortfolioSaveDataStructure(
+        BistroBuilderRestaurantMenuPortfolioSaveData portfolio,
+        out string restaurantId,
+        out string error
+    )
+    {
+        restaurantId = string.Empty;
+
+        if (portfolio == null ||
+            !BistroBuilderMenuIdUtility.IsValidStableId(
+                portfolio.restaurantId
+            ) ||
+            portfolio.revision < 0 ||
+            portfolio.menus == null || portfolio.menus.Count == 0 ||
+            portfolio.rules == null)
+        {
+            error = "menu.state contiene un portfolio inválido.";
+            return false;
+        }
+
+        restaurantId = portfolio.restaurantId;
+        HashSet<string> menuIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        HashSet<string> names =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (int index = 0; index < portfolio.menus.Count; index++)
+        {
+            BistroBuilderNamedMenuSaveData menu = portfolio.menus[index];
+            if (menu == null ||
+                !BistroBuilderMenuIdUtility.IsValidStableId(menu.menuId) ||
+                string.IsNullOrWhiteSpace(menu.displayName) ||
+                menu.displayName.Length > 80 ||
+                menu.revision < 0 ||
+                menu.items == null || menu.unresolvedItems == null ||
+                !menuIds.Add(menu.menuId) ||
+                !names.Add(menu.displayName))
+            {
+                error = "menu.state contiene una carta nombrada inválida o duplicada.";
+                return false;
+            }
+
+            HashSet<string> dishIds =
+                new HashSet<string>(StringComparer.Ordinal);
+            if (!ValidateItems(
+                    menu.items,
+                    dishIds,
+                    portfolio.restaurantId + "/" + menu.menuId,
+                    out error
+                ) ||
+                !ValidateItems(
+                    menu.unresolvedItems,
+                    dishIds,
+                    portfolio.restaurantId + "/" + menu.menuId,
+                    out error
+                ))
+            {
+                return false;
+            }
+        }
+
+        if (!menuIds.Contains(portfolio.fallbackMenuId) ||
+            !menuIds.Contains(portfolio.activeMenuId) ||
+            (!string.IsNullOrEmpty(portfolio.manualOverrideMenuId) &&
+             !menuIds.Contains(portfolio.manualOverrideMenuId)))
+        {
+            error = "menu.state contiene referencias de carta inexistentes.";
+            return false;
+        }
+
+        HashSet<string> ruleIds =
+            new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < portfolio.rules.Count; index++)
+        {
+            BistroBuilderMenuActivationRuleSaveData source =
+                portfolio.rules[index];
+            if (source == null)
+            {
+                error = "menu.state contiene una regla nula.";
+                return false;
+            }
+
+            BistroBuilderMenuActivationRuleRuntimeState rule =
+                new BistroBuilderMenuActivationRuleRuntimeState(
+                    source.ruleId,
+                    source.displayName,
+                    source.enabled,
+                    source.targetMenuId,
+                    source.priority,
+                    (BistroBuilderMenuActivationRuleType)
+                        source.ruleType,
+                    source.startDateKey,
+                    source.endDateKey,
+                    source.weekdayMask,
+                    (BistroBuilderMealServiceAvailability)
+                        source.mealServices,
+                    source.startMinute,
+                    source.endMinute,
+                    source.requiredEventId,
+                    source.requiredPromotionId
+                );
+
+            if (!rule.TryValidate(out error) ||
+                !ruleIds.Add(rule.RuleId) ||
+                !menuIds.Contains(rule.TargetMenuId))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "menu.state contiene reglas duplicadas o huérfanas.";
+                }
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool TryValidateSignalIds(
+        IList<string> values,
+        string label,
+        out string error
+    )
+    {
+        if (values == null)
+        {
+            error = "La lista de " + label + " es nula.";
+            return false;
+        }
+
+        HashSet<string> ids =
+            new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < values.Count; index++)
+        {
+            if (!BistroBuilderMenuIdUtility.IsValidStableId(values[index]) ||
+                !ids.Add(values[index]))
+            {
+                error = "La lista de " + label +
+                        " contiene identidades inválidas o duplicadas.";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
     private void CacheDependenciesIfNeeded()
     {
         if (saveGameService == null)
@@ -783,6 +1331,16 @@ public sealed class BistroBuilderMenuSaveSectionProvider :
         if (dishRecipePersistenceService == null)
         {
             TryGetComponent(out dishRecipePersistenceService);
+        }
+
+        if (portfolioService == null)
+        {
+            TryGetComponent(out portfolioService);
+        }
+
+        if (contextService == null)
+        {
+            TryGetComponent(out contextService);
         }
     }
 

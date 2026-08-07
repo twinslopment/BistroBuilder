@@ -39,9 +39,11 @@ public static class BistroBuilderMenuDishRecipe21G3SelfTest
         try
         {
             report.Check(
-                BistroBuilderMenuSaveData.CurrentSchemaVersion == 4 &&
-                BistroBuilderMenuSaveSectionProvider.StableSectionVersion == 4,
-                "menu.state publica la versión 4 de forma coherente."
+                BistroBuilderMenuSaveData.CurrentSchemaVersion >= 4 &&
+                BistroBuilderMenuSaveSectionProvider.StableSectionVersion >= 4 &&
+                BistroBuilderMenuSaveData.CurrentSchemaVersion ==
+                    BistroBuilderMenuSaveSectionProvider.StableSectionVersion,
+                "menu.state conserva el contrato de autoría v4 dentro de la versión actual."
             );
 
             BistroBuilderDishRecipeSaveData pair = CreateValidPair();

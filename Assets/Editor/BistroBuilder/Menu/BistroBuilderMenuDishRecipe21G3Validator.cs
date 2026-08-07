@@ -188,16 +188,16 @@ public static class BistroBuilderMenuDishRecipe21G3Validator
                 BistroBuilderMenuSaveSectionProvider.StableSectionId &&
             provider.SectionVersion ==
                 BistroBuilderMenuSaveData.CurrentSchemaVersion &&
-            provider.SectionVersion == 4 &&
+            provider.SectionVersion >= 4 &&
             provider.StateType == typeof(BistroBuilderMenuSaveData))
         {
             result.AddCorrect(
-                "menu.state v4 es la única autoridad persistente de carta y autoría."
+                "La versión actual de menu.state conserva la autoría introducida en v4."
             );
         }
         else
         {
-            result.AddError("El contrato publicado de menu.state v4 es incoherente.");
+            result.AddError("El contrato publicado de menu.state no conserva la autoría v4.");
         }
 
         if (ReferenceEquals(provider.DishRecipePersistenceService, persistence))
@@ -252,7 +252,7 @@ public static class BistroBuilderMenuDishRecipe21G3Validator
 
         if (provider.ValidateConfiguration(out string providerError))
         {
-            result.AddCorrect("El proveedor menu.state v4 está operativo.");
+            result.AddCorrect("El proveedor menu.state actual está operativo.");
         }
         else
         {
@@ -271,7 +271,7 @@ public static class BistroBuilderMenuDishRecipe21G3Validator
         if (saveService.ValidateConfiguration(out string saveError))
         {
             result.AddCorrect(
-                "El guardado universal registra la cadena V1 -> V2 -> V3 -> V4."
+                "El guardado universal registra la cadena histórica hasta la versión actual."
             );
         }
         else

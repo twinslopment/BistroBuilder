@@ -117,20 +117,107 @@ public sealed class BistroBuilderDishRecipeSaveData
 }
 
 /// <summary>
+/// Carta nombrada persistente dentro de un portfolio.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderNamedMenuSaveData
+{
+    public string menuId = string.Empty;
+    public string displayName = string.Empty;
+    public int revision;
+
+    public List<BistroBuilderMenuItemSaveData> items =
+        new List<BistroBuilderMenuItemSaveData>();
+
+    public List<BistroBuilderMenuItemSaveData> unresolvedItems =
+        new List<BistroBuilderMenuItemSaveData>();
+}
+
+/// <summary>
+/// Regla persistente de selección de carta. Los enums se guardan como enteros
+/// y las fechas como yyyyMMdd para mantener un contrato simple y migrable.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderMenuActivationRuleSaveData
+{
+    public string ruleId = string.Empty;
+    public string displayName = string.Empty;
+    public bool enabled = true;
+    public string targetMenuId = string.Empty;
+    public int priority;
+    public int ruleType;
+    public int startDateKey;
+    public int endDateKey;
+    public int weekdayMask;
+    public int mealServices;
+    public int startMinute =
+        BistroBuilderMenuActivationRuleRuntimeState.AnyMinute;
+    public int endMinute =
+        BistroBuilderMenuActivationRuleRuntimeState.AnyMinute;
+    public string requiredEventId = string.Empty;
+    public string requiredPromotionId = string.Empty;
+}
+
+/// <summary>
+/// Portfolio persistente de un restaurante.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderRestaurantMenuPortfolioSaveData
+{
+    public string restaurantId = string.Empty;
+    public int revision;
+    public string fallbackMenuId = string.Empty;
+    public string activeMenuId = string.Empty;
+    public string manualOverrideMenuId = string.Empty;
+
+    public List<BistroBuilderNamedMenuSaveData> menus =
+        new List<BistroBuilderNamedMenuSaveData>();
+
+    public List<BistroBuilderMenuActivationRuleSaveData> rules =
+        new List<BistroBuilderMenuActivationRuleSaveData>();
+}
+
+/// <summary>
 /// Formato actual de la sección menu.state.
 ///
-/// V4 conserva la arquitectura multirrestaurante de V3 y añade una única capa
-/// global de autoría runtime para platos y recetas. Las parejas que no pueden
-/// resolverse temporalmente por contenido ausente se conservan aparte y se
-/// reintentan en cargas futuras. No guarda disponibilidad derivada del
-/// inventario ni duplica assets canónicos.
+/// V5 conserva toda la autoría de V4 y añade portfolios multicarte, reglas de
+/// temporada/evento/promoción y las señales activas que forman parte de su
+/// contexto. La lista restaurants permanece como proyección operativa para
+/// mantener compatibilidad con los sistemas 2.1A-2.1G y con las comandas.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderMenuSaveData
 {
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
 
     public int schemaVersion = CurrentSchemaVersion;
+    public string activeRestaurantId =
+        BistroBuilderRestaurantMenuCollectionService.DefaultRestaurantId;
+
+    public List<BistroBuilderRestaurantMenuSaveData> restaurants =
+        new List<BistroBuilderRestaurantMenuSaveData>();
+
+    public List<BistroBuilderDishRecipeSaveData> authoredDishRecipes =
+        new List<BistroBuilderDishRecipeSaveData>();
+
+    public List<BistroBuilderDishRecipeSaveData>
+        unresolvedAuthoredDishRecipes =
+            new List<BistroBuilderDishRecipeSaveData>();
+
+    public List<BistroBuilderRestaurantMenuPortfolioSaveData> portfolios =
+        new List<BistroBuilderRestaurantMenuPortfolioSaveData>();
+
+    public List<string> activeEventIds = new List<string>();
+    public List<string> activePromotionIds = new List<string>();
+}
+
+/// <summary>
+/// Contrato exacto de menu.state v4.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderMenuSaveDataV4
+{
+    public int schemaVersion = 4;
     public string activeRestaurantId =
         BistroBuilderRestaurantMenuCollectionService.DefaultRestaurantId;
 
