@@ -312,7 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1034478adb18de643951b7ee7cf231e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableObject
-  itemDefinition: {fileID: 11400000, guid: 54314689c10f5c14f9120409bde72483, type: 2}
+  itemDefinition: {fileID: 11400000, guid: 1b86be0e1088ef6468e0dbf68a8b7f23, type: 2}
   instanceId: 
   placementAnchor: {fileID: 7996605774367160035}
   synchronizeEditableDefinition: 1
@@ -531,6 +531,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -640069680912220765, guid: 2c5ad2428aaa84e4a9c52a5214e82d41, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 25746036eeca30545bd88a02791e5522, type: 2}
+    - target: {fileID: -235072784697774514, guid: 2c5ad2428aaa84e4a9c52a5214e82d41, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 25746036eeca30545bd88a02791e5522, type: 2}
     - target: {fileID: 919132149155446097, guid: 2c5ad2428aaa84e4a9c52a5214e82d41, type: 3}
       propertyPath: m_Name
       value: BB_Chair_Master_001_Final

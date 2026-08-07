@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: PlaceableItemDefinition_PFBBChairMaster001Yellow
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
   itemId: pf_bb_chair_master_001_yellow
-  displayName: P F B B Chair Master 001 Yellow
+  displayName: "Silla contempor\xE1nea \u2014 Amarilla"
   category: 1
-  description: 'Asiento: P F B B Chair Master 001 Yellow.'
+  description: "Silla contempor\xE1nea de restaurante con estructura de madera y
+    tapizado amarillo."
   catalogIcon: {fileID: 21300000, guid: 4ef86e171a2a0484c94527389f3e617a, type: 3}
   prefab: {fileID: 6217160869183040038, guid: 4b293236b8544dd498d01f9dc3b839e4, type: 3}
   editableDefinition: {fileID: 11400000, guid: 9e746ab2de45bca44bc045747abc0e64, type: 2}
