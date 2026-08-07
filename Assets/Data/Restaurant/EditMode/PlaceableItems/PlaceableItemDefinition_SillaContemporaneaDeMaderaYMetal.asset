@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_SillaContemporaneaDeMaderaYMetal
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_chair_master_002
+  displayName: "Silla contempor\xE1nea de madera y metal"
+  category: 1
+  description: "Silla contempor\xE1nea de restaurante con asiento y respaldo de madera
+    clara y estructura met\xE1lica negra."
+  catalogIcon: {fileID: 21300000, guid: f5aa65f44273b0c42b713a8ab6adc6bd, type: 3}
+  prefab: {fileID: 878901513199349812, guid: c29e755e080b87f4db1d7dd9127a287e, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 459759af79b246649aee7f368b5ad989, type: 2}
+  purchasePrice: 60

@@ -43,6 +43,19 @@ public static class BistroBuilderPlaceableFactoryEngine
     private const string WaiterServicePointName =
         "WaiterServicePoint";
 
+    private const string OperationalMotionRootName =
+        "OperationalMotionRoot";
+
+    private const string SeatPointName =
+        "SeatPoint";
+
+    private const string AssociationPointName =
+        "AssociationPoint";
+
+    private const string StandardDiningChairProfilePath =
+        "Assets/Data/Restaurant/Seating/SeatUseProfiles/" +
+        "SeatUseProfile_StandardDiningChair.asset";
+
     /// <summary>
     /// Recoge prefabs y modelos seleccionados en Project. También
     /// admite seleccionar carpetas completas.
@@ -409,6 +422,51 @@ public static class BistroBuilderPlaceableFactoryEngine
                     settings.Preset
                 );
 
+        if (settings.PreventDuplicateDisplayNames &&
+            TryFindExistingDefinitionByDisplayName(
+                displayName,
+                out RestaurantPlaceableItemDefinition existingDefinition,
+                out string existingDefinitionPath
+            ))
+        {
+            return new BistroBuilderPlaceableFactoryPlan(
+                source,
+                sourcePath,
+                BistroBuilderPlaceableFactoryPlanStatus.AlreadyConfigured,
+                "Ya existe un artículo de catálogo con el nombre '" +
+                displayName +
+                "'. Se bloquea la duplicación accidental. " +
+                "Definición existente: " +
+                existingDefinitionPath,
+                existingDefinition != null
+                    ? existingDefinition.ItemId
+                    : string.Empty,
+                displayName,
+                description,
+                SanitizeAssetStem(displayName),
+                existingDefinition != null &&
+                existingDefinition.Prefab != null
+                    ? AssetDatabase.GetAssetPath(
+                        existingDefinition.Prefab.gameObject
+                    )
+                    : string.Empty,
+                existingDefinition != null &&
+                existingDefinition.EditableDefinition != null
+                    ? AssetDatabase.GetAssetPath(
+                        existingDefinition.EditableDefinition
+                    )
+                    : string.Empty,
+                existingDefinitionPath,
+                existingDefinition != null
+                    ? existingDefinition.Category
+                    : ResolveCategory(settings.Preset),
+                default(Bounds),
+                false,
+                false,
+                false
+            );
+        }
+
         string baseItemId =
             NormalizeIdentifier(source.name);
 
@@ -516,6 +574,14 @@ public static class BistroBuilderPlaceableFactoryEngine
             statusMessage +=
                 " Se añadirá RestaurantTable y sus puntos de " +
                 "interacción.";
+        }
+        else if (settings.Preset ==
+                 BistroBuilderPlaceableFactoryPreset.Chair)
+        {
+            statusMessage +=
+                " Se creará una silla funcional completa: " +
+                "RestaurantSeat, puntos de asociación, movimiento " +
+                "operativo, espacio de retirada y giro de silla.";
         }
         else if (PresetHasFutureFunctionalAdapter(
                      settings.Preset
@@ -818,6 +884,12 @@ public static class BistroBuilderPlaceableFactoryEngine
             false
         );
 
+        if (settings.Preset ==
+            BistroBuilderPlaceableFactoryPreset.Chair)
+        {
+            RemoveCollidersFromVisualInstance(visualInstance);
+        }
+
         if (!TryCalculateLocalBounds(
                 root.transform,
                 out Bounds localBounds,
@@ -905,8 +977,342 @@ public static class BistroBuilderPlaceableFactoryEngine
                 settings
             );
         }
+        else if (settings.Preset ==
+                 BistroBuilderPlaceableFactoryPreset.Chair)
+        {
+            ConfigureFunctionalChair(
+                root,
+                visualInstance,
+                placeableObject,
+                localBounds,
+                settings
+            );
+        }
 
         return root;
+    }
+
+    /// <summary>
+    /// Convierte el núcleo universal en una silla operativa real.
+    ///
+    /// La geometría permanece como hijo visual; la funcionalidad se
+    /// calcula a partir de sus bounds y del perfil estándar de comedor.
+    /// De este modo un FBX nuevo no necesita copiar a mano una silla
+    /// antigua ni conservar referencias frágiles a otro prefab.
+    /// </summary>
+    private static void ConfigureFunctionalChair(
+        GameObject root,
+        GameObject visualInstance,
+        RestaurantPlaceableObject placeableObject,
+        Bounds localBounds,
+        BistroBuilderPlaceableFactorySettings settings
+    )
+    {
+        if (root == null ||
+            visualInstance == null ||
+            placeableObject == null)
+        {
+            throw new InvalidOperationException(
+                "No se puede configurar la silla porque faltan " +
+                "la raíz, el visual o RestaurantPlaceableObject."
+            );
+        }
+
+        RestaurantSeatUseProfileDefinition useProfile =
+            ResolveStandardDiningChairProfile();
+
+        Transform operationalMotionRoot =
+            CreateChildTransform(
+                root.transform,
+                OperationalMotionRootName,
+                Vector3.zero
+            );
+
+        visualInstance.transform.SetParent(
+            operationalMotionRoot,
+            false
+        );
+
+        visualInstance.name = VisualRootName;
+        visualInstance.transform.localPosition = Vector3.zero;
+        visualInstance.transform.localRotation = Quaternion.identity;
+        visualInstance.transform.localScale = Vector3.one;
+
+        float seatHeight =
+            settings.SeatHeightMeters > 0.05f
+                ? settings.SeatHeightMeters
+                : useProfile.SeatHeight;
+
+        seatHeight = Mathf.Clamp(
+            seatHeight,
+            localBounds.min.y + 0.05f,
+            localBounds.max.y - 0.05f
+        );
+
+        Transform seatPoint =
+            CreateChildTransform(
+                operationalMotionRoot,
+                SeatPointName,
+                new Vector3(
+                    localBounds.center.x,
+                    seatHeight,
+                    localBounds.center.z
+                )
+            );
+
+        Transform associationPoint =
+            CreateChildTransform(
+                root.transform,
+                AssociationPointName,
+                new Vector3(
+                    localBounds.center.x,
+                    localBounds.min.y,
+                    localBounds.max.z
+                )
+            );
+
+        float approachOffset =
+            useProfile.PullOutDistance +
+            useProfile.CustomerApproachDistance;
+
+        Transform customerApproachPoint =
+            CreateChildTransform(
+                root.transform,
+                CustomerApproachPointName,
+                new Vector3(
+                    localBounds.center.x,
+                    localBounds.min.y,
+                    localBounds.min.z - approachOffset
+                )
+            );
+
+        RestaurantSeat seat =
+            root.AddComponent<RestaurantSeat>();
+
+        SerializedObject serializedSeat =
+            new SerializedObject(seat);
+
+        SetObjectReference(
+            serializedSeat,
+            "useProfile",
+            useProfile
+        );
+
+        SetEnumIndex(
+            serializedSeat,
+            "facingAxis",
+            (int)RestaurantSeatFacingAxis.PositiveZ
+        );
+
+        SetObjectReference(
+            serializedSeat,
+            "placeableObject",
+            placeableObject
+        );
+
+        SetObjectReference(
+            serializedSeat,
+            "associationPoint",
+            associationPoint
+        );
+
+        SetObjectReference(
+            serializedSeat,
+            "operationalMotionRoot",
+            operationalMotionRoot
+        );
+
+        SetObjectReference(
+            serializedSeat,
+            "seatPoint",
+            seatPoint
+        );
+
+        SetObjectReference(
+            serializedSeat,
+            "customerApproachPoint",
+            customerApproachPoint
+        );
+
+        serializedSeat.ApplyModifiedPropertiesWithoutUndo();
+
+        RestaurantOperationalClearanceSet clearanceSet =
+            root.AddComponent<RestaurantOperationalClearanceSet>();
+
+        ConfigureChairOperationalClearance(
+            clearanceSet,
+            localBounds,
+            useProfile
+        );
+
+        if (!seat.ValidateConfiguration(out string seatError))
+        {
+            throw new InvalidOperationException(
+                "La silla generada no supera la validación funcional: " +
+                seatError
+            );
+        }
+    }
+
+    private static void ConfigureChairOperationalClearance(
+        RestaurantOperationalClearanceSet clearanceSet,
+        Bounds localBounds,
+        RestaurantSeatUseProfileDefinition useProfile
+    )
+    {
+        SerializedObject serialized =
+            new SerializedObject(clearanceSet);
+
+        SerializedProperty clearances =
+            RequireProperty(serialized, "clearances");
+
+        clearances.arraySize = 1;
+
+        SerializedProperty clearance =
+            clearances.GetArrayElementAtIndex(0);
+
+        float clearanceDepth =
+            Mathf.Max(
+                0.50f,
+                useProfile.PullOutDistance +
+                useProfile.CustomerApproachDistance +
+                useProfile.CustomerApproachRadius
+            );
+
+        float clearanceWidth =
+            Mathf.Max(
+                0.10f,
+                localBounds.size.x + 0.10f
+            );
+
+        SerializedProperty idProperty =
+            clearance.FindPropertyRelative("clearanceId");
+        SerializedProperty centerProperty =
+            clearance.FindPropertyRelative("localCenter");
+        SerializedProperty sizeProperty =
+            clearance.FindPropertyRelative("size");
+        SerializedProperty yawProperty =
+            clearance.FindPropertyRelative("localYawDegrees");
+        SerializedProperty messageProperty =
+            clearance.FindPropertyRelative("blockedUserMessage");
+
+        if (idProperty == null ||
+            centerProperty == null ||
+            sizeProperty == null ||
+            yawProperty == null ||
+            messageProperty == null)
+        {
+            throw new InvalidOperationException(
+                "RestaurantOperationalClearanceBox ha cambiado y " +
+                "la fábrica necesita actualizar su adaptador de silla."
+            );
+        }
+
+        idProperty.stringValue =
+            "seat_pullout_and_approach";
+
+        centerProperty.vector3Value =
+            new Vector3(
+                localBounds.center.x,
+                localBounds.min.y,
+                localBounds.min.z - clearanceDepth * 0.5f
+            );
+
+        sizeProperty.vector2Value =
+            new Vector2(
+                clearanceWidth,
+                clearanceDepth
+            );
+
+        yawProperty.floatValue = 0f;
+        messageProperty.stringValue =
+            "La silla no puede retirarse para sentar al cliente.";
+
+        SetBool(
+            serialized,
+            "blocksOtherPlacements",
+            true
+        );
+
+        SetBool(
+            serialized,
+            "requiresClearanceForOwner",
+            true
+        );
+
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static RestaurantSeatUseProfileDefinition
+        ResolveStandardDiningChairProfile()
+    {
+        RestaurantSeatUseProfileDefinition profile =
+            AssetDatabase.LoadAssetAtPath<
+                RestaurantSeatUseProfileDefinition
+            >(StandardDiningChairProfilePath);
+
+        if (profile != null)
+        {
+            return profile;
+        }
+
+        string[] guids =
+            AssetDatabase.FindAssets(
+                "t:RestaurantSeatUseProfileDefinition"
+            );
+
+        for (int index = 0;
+             index < guids.Length;
+             index++)
+        {
+            string path =
+                AssetDatabase.GUIDToAssetPath(guids[index]);
+
+            RestaurantSeatUseProfileDefinition candidate =
+                AssetDatabase.LoadAssetAtPath<
+                    RestaurantSeatUseProfileDefinition
+                >(path);
+
+            if (candidate != null &&
+                string.Equals(
+                    candidate.ProfileId,
+                    "standard_dining_chair",
+                    StringComparison.Ordinal
+                ))
+            {
+                return candidate;
+            }
+        }
+
+        throw new InvalidOperationException(
+            "No existe el perfil standard_dining_chair. " +
+            "Ejecuta primero la instalación del sistema de seating."
+        );
+    }
+
+    private static void RemoveCollidersFromVisualInstance(
+        GameObject visualInstance
+    )
+    {
+        if (visualInstance == null)
+        {
+            return;
+        }
+
+        Collider[] colliders =
+            visualInstance.GetComponentsInChildren<Collider>(true);
+
+        for (int index = colliders.Length - 1;
+             index >= 0;
+             index--)
+        {
+            if (colliders[index] != null)
+            {
+                UnityEngine.Object.DestroyImmediate(
+                    colliders[index]
+                );
+            }
+        }
     }
 
     private static void ConfigureEditableDefinition(
@@ -950,16 +1356,22 @@ public static class BistroBuilderPlaceableFactoryEngine
             settings.CanRotate
         );
 
+        bool isChair =
+            settings.Preset ==
+            BistroBuilderPlaceableFactoryPreset.Chair;
+
         SetBool(
             serialized,
             "useCustomGridSize",
-            false
+            isChair
         );
 
         SetFloat(
             serialized,
             "customGridSize",
-            0.25f
+            isChair
+                ? 0.05f
+                : 0.25f
         );
 
         SetBool(
@@ -1896,6 +2308,59 @@ public static class BistroBuilderPlaceableFactoryEngine
             extension == ".3ds";
     }
 
+    private static bool TryFindExistingDefinitionByDisplayName(
+        string displayName,
+        out RestaurantPlaceableItemDefinition definition,
+        out string definitionPath
+    )
+    {
+        definition = null;
+        definitionPath = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            return false;
+        }
+
+        RestaurantPlaceableCatalogDefinition catalog =
+            AssetDatabase.LoadAssetAtPath<
+                RestaurantPlaceableCatalogDefinition
+            >(MainCatalogPath);
+
+        if (catalog == null || catalog.Items == null)
+        {
+            return false;
+        }
+
+        for (int index = 0;
+             index < catalog.Items.Count;
+             index++)
+        {
+            RestaurantPlaceableItemDefinition candidate =
+                catalog.Items[index];
+
+            if (candidate == null)
+            {
+                continue;
+            }
+
+            if (!string.Equals(
+                    candidate.DisplayName,
+                    displayName.Trim(),
+                    StringComparison.OrdinalIgnoreCase
+                ))
+            {
+                continue;
+            }
+
+            definition = candidate;
+            definitionPath = AssetDatabase.GetAssetPath(candidate);
+            return true;
+        }
+
+        return false;
+    }
+
     private static RestaurantPlaceableItemCategory ResolveCategory(
         BistroBuilderPlaceableFactoryPreset preset
     )
@@ -1966,8 +2431,6 @@ public static class BistroBuilderPlaceableFactoryEngine
     )
     {
         return
-            preset ==
-                BistroBuilderPlaceableFactoryPreset.Chair ||
             preset ==
                 BistroBuilderPlaceableFactoryPreset.FloorLamp ||
             preset ==

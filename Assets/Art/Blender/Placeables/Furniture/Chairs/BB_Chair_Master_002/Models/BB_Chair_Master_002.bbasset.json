@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1.0",
+  "assetId": "BB_Chair_Master_002",
+  "displayName": "Silla contemporánea madera y metal",
+  "category": "DINING",
+  "assetType": "CHAIR",
+  "source": {
+    "mode": "MESHY_BLENDER",
+    "prompt": "",
+    "referenceImage": "",
+    "notes": "Preparado mediante Meshy Pro -> Blender -> Puente Bistro Builder."
+  },
+  "dimensions": {
+    "targetWidthM": 0.497,
+    "targetDepthM": 0.55,
+    "targetHeightM": 0.86,
+    "actualWidthM": 0.497,
+    "actualDepthM": 0.55,
+    "actualHeightM": 0.86,
+    "toleranceMm": 5.0
+  },
+  "functionalMeasurements": {
+    "seatHeightM": 0.46,
+    "worktopHeightM": 0.0,
+    "doorClearanceM": 0.0
+  },
+  "orientation": {
+    "blenderFront": "-Y",
+    "unityFront": "+Z",
+    "groundAxis": "Z",
+    "origin": "FOOTPRINT_CENTER_GROUND"
+  },
+  "geometry": {
+    "meshCount": 1,
+    "triangleCount": 20262,
+    "materialNames": [
+      "MAT_BB_Chair_Master_002_Wood",
+      "MAT_BB_Chair_Master_002_Metal"
+    ],
+    "uv0": true,
+    "topologyHash": ""
+  },
+  "variants": [
+    {
+      "id": "base",
+      "displayName": "Roble claro + metal negro",
+      "baseColor": [
+        0.62,
+        0.38,
+        0.2,
+        1.0
+      ],
+      "metallic": 0.0,
+      "roughness": 0.42,
+      "priceMultiplier": 1.0
+    }
+  ]
+}

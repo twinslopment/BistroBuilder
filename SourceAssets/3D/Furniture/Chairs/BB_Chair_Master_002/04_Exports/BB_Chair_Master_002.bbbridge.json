@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "1.0",
+  "pipeline": "BistroBuilder.BlenderBridge",
+  "generatorVersion": "1.0.6",
+  "assetId": "BB_Chair_Master_002",
+  "displayName": "Silla contemporánea madera y metal",
+  "itemType": "CHAIR",
+  "source": {
+    "workflow": "Meshy -> Meshy Bridge -> Blender -> Bistro Builder",
+    "blendFile": "",
+    "originalObjects": 1
+  },
+  "orientation": {
+    "blenderFront": "-Y",
+    "unityFront": "+Z",
+    "groundAxis": "Z",
+    "origin": "FOOTPRINT_CENTER_GROUND"
+  },
+  "dimensions": {
+    "widthM": 0.497284,
+    "depthM": 0.550315,
+    "heightM": 0.86,
+    "seatHeightM": 0.46
+  },
+  "geometry": {
+    "meshCount": 1,
+    "triangleCount": 20262,
+    "materialNames": [
+      "MAT_BB_Chair_Master_002_Metal",
+      "MAT_BB_Chair_Master_002_Wood"
+    ],
+    "missingUvMeshes": 0,
+    "rawNonManifoldEdgesBeforePreparation": 0,
+    "nonManifoldEdgesAfterSafeWeld": 0,
+    "safeMergedVertices": 0,
+    "degenerateFacesBeforePreparation": 0
+  },
+  "materials": {
+    "mode": "AUTO_WOOD_METAL",
+    "preset": "OAK_BLACK",
+    "confidence": "MEDIA",
+    "summary": "Meshy ha fusionado las piezas. He creado una separacion aproximada por superficies; revisa visualmente madera y metal. Si algo esta mal, usa 'Corregir materiales'.",
+    "roles": [
+      {
+        "name": "MAT_BB_Chair_Master_002_Metal",
+        "role": "METAL"
+      },
+      {
+        "name": "MAT_BB_Chair_Master_002_Wood",
+        "role": "WOOD"
+      }
+    ]
+  },
+  "quality": {
+    "analysisGrade": "LISTO",
+    "analysisSummary": "Geometria basica correcta para continuar."
+  },
+  "unity": {
+    "modelAssetPath": "Assets/Art/Blender/Placeables/Furniture/Chairs/BB_Chair_Master_002/Models/BB_Chair_Master_002.fbx"
+  },
+  "generatedAtUtc": "2026-08-07T11:11:14.917201+00:00"
+}

@@ -58,6 +58,15 @@ public sealed class BistroBuilderPlaceableFactorySettings
 
     public bool RunProjectHealthAfterCreation = true;
 
+    // Evita crear accidentalmente dos tarjetas con el mismo nombre
+    // visible. El usuario básico no debería tener que limpiar el
+    // catálogo después de cada importación.
+    public bool PreventDuplicateDisplayNames = true;
+
+    // Ajustes específicos de sillas. Un valor <= 0 utiliza el perfil
+    // estándar de comedor (0,46 m actualmente).
+    public float SeatHeightMeters;
+
     public string SingleDisplayNameOverride = string.Empty;
 
     public string SingleDescriptionOverride = string.Empty;
@@ -83,6 +92,9 @@ public sealed class BistroBuilderPlaceableFactorySettings
                 AddToMainCatalog = AddToMainCatalog,
                 RunProjectHealthAfterCreation =
                     RunProjectHealthAfterCreation,
+                PreventDuplicateDisplayNames =
+                    PreventDuplicateDisplayNames,
+                SeatHeightMeters = SeatHeightMeters,
                 SingleDisplayNameOverride =
                     SingleDisplayNameOverride,
                 SingleDescriptionOverride =

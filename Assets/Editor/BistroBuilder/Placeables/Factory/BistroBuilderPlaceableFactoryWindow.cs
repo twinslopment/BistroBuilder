@@ -794,6 +794,13 @@ public sealed class BistroBuilderPlaceableFactoryWindow :
                 minimumClearance = 0f;
                 break;
 
+            case BistroBuilderPlaceableFactoryPreset.Chair:
+                canMove = true;
+                canRotate = true;
+                rotationStepDegrees = 15f;
+                minimumClearance = 0f;
+                break;
+
             case BistroBuilderPlaceableFactoryPreset.Structural:
                 canMove = true;
                 canRotate = true;
@@ -824,6 +831,15 @@ public sealed class BistroBuilderPlaceableFactoryWindow :
                 break;
 
             case BistroBuilderPlaceableFactoryPreset.Chair:
+                EditorGUILayout.HelpBox(
+                    "Crea una silla funcional completa: RestaurantSeat, " +
+                    "SeatPoint, AssociationPoint, CustomerApproachPoint, " +
+                    "movimiento operativo, espacio de retirada, giro de " +
+                    "15° y capacidad de seating.",
+                    MessageType.Info
+                );
+                break;
+
             case BistroBuilderPlaceableFactoryPreset.FloorLamp:
             case BistroBuilderPlaceableFactoryPreset
                 .KitchenEquipment:
@@ -831,9 +847,8 @@ public sealed class BistroBuilderPlaceableFactoryWindow :
                 .ServiceEquipment:
                 EditorGUILayout.HelpBox(
                     "Se creará el artículo universal y su categoría. " +
-                    "El componente funcional específico se añadirá " +
-                    "cuando exista el sistema operativo correspondiente; " +
-                    "no se inventarán componentes provisionales.",
+                    "El adaptador funcional específico todavía no está " +
+                    "implementado para este tipo.",
                     MessageType.Info
                 );
                 break;

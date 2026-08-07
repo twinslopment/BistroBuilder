@@ -312,7 +312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1034478adb18de643951b7ee7cf231e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableObject
-  itemDefinition: {fileID: 11400000, guid: c747c083c153b6c4caf38147bbe43efd, type: 2}
+  itemDefinition: {fileID: 11400000, guid: 54314689c10f5c14f9120409bde72483, type: 2}
   instanceId: 
   placementAnchor: {fileID: 7996605774367160035}
   synchronizeEditableDefinition: 1
