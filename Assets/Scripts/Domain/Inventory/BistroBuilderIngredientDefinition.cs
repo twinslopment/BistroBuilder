@@ -267,6 +267,13 @@ public sealed class BistroBuilderIngredientDefinition : ScriptableObject
             return false;
         }
 
+        if (perishable && defaultShelfLifeDays <= 0)
+        {
+            error = "El ingrediente perecedero " + ingredientId +
+                    " debe declarar una vida útil positiva.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }

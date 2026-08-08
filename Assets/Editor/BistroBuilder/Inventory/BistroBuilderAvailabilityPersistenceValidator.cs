@@ -176,6 +176,7 @@ public static class BistroBuilderAvailabilityPersistenceValidator
         ValidateProviderCount(
             inventoryProviders,
             BistroBuilderInventorySaveSectionProvider.StableSectionId,
+            BistroBuilderInventorySaveSectionProvider.StableSectionVersion,
             "proveedor de inventario",
             result
         );
@@ -204,6 +205,7 @@ public static class BistroBuilderAvailabilityPersistenceValidator
         ValidateProviderCount(
             runtimeProviders,
             BistroBuilderActiveServiceSaveSectionProvider.StableSectionId,
+            BistroBuilderActiveServiceSaveSectionProvider.StableSectionVersion,
             "proveedor de servicio activo",
             result
         );
@@ -414,6 +416,7 @@ public static class BistroBuilderAvailabilityPersistenceValidator
     private static void ValidateProviderCount<T>(
         T[] providers,
         string expectedSectionId,
+        int expectedSectionVersion,
         string description,
         BistroBuilderAvailabilityPersistenceValidationResult result
     ) where T : MonoBehaviour, IBistroBuilderSaveSectionProvider
@@ -428,7 +431,7 @@ public static class BistroBuilderAvailabilityPersistenceValidator
         }
 
         if (providers[0].SectionId == expectedSectionId &&
-            providers[0].SectionVersion == 1)
+            providers[0].SectionVersion == expectedSectionVersion)
         {
             result.Ok(
                 "El " + description + " conserva identidad y versión estables."

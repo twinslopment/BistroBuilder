@@ -251,12 +251,13 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
                 check(
                     roundTripValid &&
                     roundTrip.stock.Count == capturedInventory.stock.Count &&
+                    roundTrip.lots.Count == capturedInventory.lots.Count &&
                     roundTrip.reservations.Count ==
                         capturedInventory.reservations.Count &&
                     roundTrip.operations.Count ==
                         capturedInventory.operations.Count &&
                     roundTrip.ledger.Count == capturedInventory.ledger.Count,
-                    "El ciclo JSON conserva balances, reservas, operaciones y libro."
+                    "El ciclo JSON conserva balances, lotes, reservas, operaciones y libro."
                 );
 
                 BistroBuilderInventorySaveSectionProvider inventoryProvider =
@@ -1024,6 +1025,11 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
             runtimeInventory =
                 root.AddComponent<BistroBuilderInventoryService>();
 
+            BistroBuilderGeneralGameStateService generalGameState =
+                UnityEngine.Object.FindFirstObjectByType<
+                    BistroBuilderGeneralGameStateService
+                >();
+
             if (!TrySetObjectReference(
                     runtimeInventory,
                     "recipeCatalogService",
@@ -1034,6 +1040,12 @@ public static class BistroBuilderAvailabilityPersistenceSelfTest
                     runtimeInventory,
                     "openingStockProfile",
                     sourceInventory.OpeningStockProfile,
+                    out error
+                ) ||
+                !TrySetObjectReference(
+                    runtimeInventory,
+                    "generalGameStateService",
+                    generalGameState,
                     out error
                 ) ||
                 !TrySetBoolean(

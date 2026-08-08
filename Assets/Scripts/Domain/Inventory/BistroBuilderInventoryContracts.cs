@@ -15,7 +15,21 @@ public enum BistroBuilderInventoryTransactionType
     ReservationRelease = 3,
     Consumption = 4,
     Waste = 5,
-    Correction = 6
+    Correction = 6,
+    Expiration = 7
+}
+
+/// <summary>
+/// Estado de antigüedad legible de una existencia. No modifica calidad:
+/// únicamente informa de la proximidad a su fecha de caducidad.
+/// </summary>
+public enum BistroBuilderInventoryFreshnessState
+{
+    Fresh = 0,
+    Good = 1,
+    Aging = 2,
+    NearExpiry = 3,
+    Expired = 4
 }
 
 /// <summary>
@@ -107,6 +121,9 @@ public readonly struct BistroBuilderInventoryStockSnapshot
     public long AvailableCanonicalMilliUnits { get; }
     public long ConsumedCanonicalMilliUnits { get; }
     public long WastedCanonicalMilliUnits { get; }
+    public long ExpiredCanonicalMilliUnits { get; }
+    public int NextExpirationDayIndex { get; }
+    public BistroBuilderInventoryFreshnessState FreshnessState { get; }
     public long Revision { get; }
 
     public BistroBuilderInventoryStockSnapshot(
@@ -117,6 +134,9 @@ public readonly struct BistroBuilderInventoryStockSnapshot
         long reservedCanonicalMilliUnits,
         long consumedCanonicalMilliUnits,
         long wastedCanonicalMilliUnits,
+        long expiredCanonicalMilliUnits,
+        int nextExpirationDayIndex,
+        BistroBuilderInventoryFreshnessState freshnessState,
         long revision
     )
     {
@@ -129,25 +149,100 @@ public readonly struct BistroBuilderInventoryStockSnapshot
             onHandCanonicalMilliUnits - reservedCanonicalMilliUnits;
         ConsumedCanonicalMilliUnits = consumedCanonicalMilliUnits;
         WastedCanonicalMilliUnits = wastedCanonicalMilliUnits;
+        ExpiredCanonicalMilliUnits = expiredCanonicalMilliUnits;
+        NextExpirationDayIndex = nextExpirationDayIndex;
+        FreshnessState = freshnessState;
         Revision = revision;
+    }
+}
+
+/// <summary>
+/// Lectura inmutable de un lote interno. Se expone para diagnóstico, UI
+/// agregada y pruebas, pero el jugador no selecciona lotes manualmente.
+/// </summary>
+public readonly struct BistroBuilderInventoryLotSnapshot
+{
+    public string LotId { get; }
+    public string IngredientId { get; }
+    public string SourceId { get; }
+    public int ReceivedDayIndex { get; }
+    public int ExpirationDayIndex { get; }
+    public long OnHandCanonicalMilliUnits { get; }
+    public long ReservedCanonicalMilliUnits { get; }
+    public long AvailableCanonicalMilliUnits { get; }
+    public BistroBuilderInventoryFreshnessState FreshnessState { get; }
+    public long Revision { get; }
+
+    public BistroBuilderInventoryLotSnapshot(
+        string lotId,
+        string ingredientId,
+        string sourceId,
+        int receivedDayIndex,
+        int expirationDayIndex,
+        long onHandCanonicalMilliUnits,
+        long reservedCanonicalMilliUnits,
+        BistroBuilderInventoryFreshnessState freshnessState,
+        long revision
+    )
+    {
+        LotId = lotId ?? string.Empty;
+        IngredientId = ingredientId ?? string.Empty;
+        SourceId = sourceId ?? string.Empty;
+        ReceivedDayIndex = receivedDayIndex;
+        ExpirationDayIndex = expirationDayIndex;
+        OnHandCanonicalMilliUnits = onHandCanonicalMilliUnits;
+        ReservedCanonicalMilliUnits = reservedCanonicalMilliUnits;
+        AvailableCanonicalMilliUnits =
+            onHandCanonicalMilliUnits - reservedCanonicalMilliUnits;
+        FreshnessState = freshnessState;
+        Revision = revision;
+    }
+}
+
+/// <summary>
+/// Asignación interna FEFO de una reserva a un lote concreto.
+/// </summary>
+public readonly struct BistroBuilderInventoryLotAllocationSnapshot
+{
+    public string LotId { get; }
+    public long CanonicalMilliUnits { get; }
+
+    public BistroBuilderInventoryLotAllocationSnapshot(
+        string lotId,
+        long canonicalMilliUnits
+    )
+    {
+        LotId = lotId ?? string.Empty;
+        CanonicalMilliUnits = canonicalMilliUnits;
     }
 }
 
 /// <summary>
 /// Línea inmutable de una reserva.
 /// </summary>
-public readonly struct BistroBuilderInventoryReservationLineSnapshot
+public sealed class BistroBuilderInventoryReservationLineSnapshot
 {
+    private readonly List<BistroBuilderInventoryLotAllocationSnapshot>
+        lotAllocations;
+
     public string IngredientId { get; }
     public long CanonicalMilliUnits { get; }
+    public IReadOnlyList<BistroBuilderInventoryLotAllocationSnapshot>
+        LotAllocations => lotAllocations;
 
     public BistroBuilderInventoryReservationLineSnapshot(
         string ingredientId,
-        long canonicalMilliUnits
+        long canonicalMilliUnits,
+        List<BistroBuilderInventoryLotAllocationSnapshot> lotAllocations = null
     )
     {
         IngredientId = ingredientId ?? string.Empty;
         CanonicalMilliUnits = canonicalMilliUnits;
+        this.lotAllocations = lotAllocations != null
+            ? new List<BistroBuilderInventoryLotAllocationSnapshot>(
+                lotAllocations
+            )
+            : new List<BistroBuilderInventoryLotAllocationSnapshot>();
     }
 }
 

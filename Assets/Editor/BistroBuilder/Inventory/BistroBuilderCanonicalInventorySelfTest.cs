@@ -157,6 +157,10 @@ public static class BistroBuilderCanonicalInventorySelfTest
                 BistroBuilderRecipeCatalogService
             >()
             : null;
+        BistroBuilderGeneralGameStateService generalGameState =
+            gameSystems != null
+                ? gameSystems.GetComponent<BistroBuilderGeneralGameStateService>()
+                : null;
         BistroBuilderOpeningStockProfile profile =
             AssetDatabase.LoadAssetAtPath<
                 BistroBuilderOpeningStockProfile
@@ -173,6 +177,8 @@ public static class BistroBuilderCanonicalInventorySelfTest
             .objectReferenceValue = recipeService;
         serialized.FindProperty("openingStockProfile")
             .objectReferenceValue = profile;
+        serialized.FindProperty("generalGameStateService")
+            .objectReferenceValue = generalGameState;
         serialized.FindProperty("logInitialization").boolValue = false;
         serialized.ApplyModifiedPropertiesWithoutUndo();
 

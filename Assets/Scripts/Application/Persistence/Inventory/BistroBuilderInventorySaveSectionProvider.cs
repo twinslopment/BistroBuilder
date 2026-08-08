@@ -3,9 +3,9 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// Sección autoritativa inventory.canonical 368EF.
+/// Sección autoritativa inventory.canonical 368EF + 2.2A.
 ///
-/// Persiste balances, reservas activas, operaciones idempotentes y libro.
+/// Persiste balances, lotes internos FEFO, reservas, operaciones idempotentes y libro.
 /// La disponibilidad de la carta no se guarda: se recalcula al finalizar la
 /// carga para impedir contradicciones con el inventario restaurado.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class BistroBuilderInventorySaveSectionProvider :
     IBistroBuilderSaveSectionPhaseOrdering
 {
     public const string StableSectionId = "inventory.canonical";
-    public const int StableSectionVersion = 1;
+    public const int StableSectionVersion = 2;
 
     [SerializeField]
     private BistroBuilderSaveGameService saveGameService;
@@ -196,6 +196,17 @@ public sealed class BistroBuilderInventorySaveSectionProvider :
                 );
                 return;
             }
+        }
+
+        if (!inventoryService.TryProcessShelfLifeForCurrentDay(
+                out string shelfLifeError
+            ))
+        {
+            context.Fail(
+                "El inventario se restauró, pero no pudo reconciliarse " +
+                "la caducidad del día cargado. " + shelfLifeError
+            );
+            return;
         }
 
         if (!availabilityService.RecalculateAll(out string error))
