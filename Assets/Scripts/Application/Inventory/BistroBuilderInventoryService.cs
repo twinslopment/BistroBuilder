@@ -543,6 +543,139 @@ public sealed class BistroBuilderInventoryService : MonoBehaviour
     }
 
     /// <summary>
+    /// Registra una recepción de compra con varias líneas como una única
+    /// transacción lógica. Todas las líneas se validan antes de modificar
+    /// balances o crear lotes; si una falla, no se aplica ninguna.
+    ///
+    /// OperationId actúa como ReceiptId idempotente para que una reejecución
+    /// tras guardado/carga no duplique mercancía.
+    /// </summary>
+    public bool TryReceivePurchaseBatch(
+        string operationId,
+        string sourceId,
+        IReadOnlyList<BistroBuilderInventoryQuantityLine> receivedLines,
+        string reason,
+        out bool wasReplayed,
+        out string error
+    )
+    {
+        wasReplayed = false;
+        error = string.Empty;
+
+        if (!EnsureInventoryReady(out error))
+        {
+            return false;
+        }
+
+        if (!TryAggregatePurchaseLines(
+                receivedLines,
+                out SortedDictionary<string, long> aggregated,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        string normalizedOperation = NormalizeRuntimeId(operationId);
+        string normalizedSource = NormalizeRuntimeId(sourceId);
+
+        if (!TryValidateRuntimeId(
+                normalizedOperation,
+                "OperationId de recepción",
+                out error
+            ) ||
+            !TryValidateRuntimeId(
+                normalizedSource,
+                "SourceId de recepción",
+                out error
+            ))
+        {
+            return false;
+        }
+
+        string fingerprint = BuildPurchaseBatchFingerprint(
+            normalizedSource,
+            aggregated
+        );
+        OperationReplay replay = EvaluateOperation(
+            normalizedOperation,
+            fingerprint,
+            out error
+        );
+
+        if (replay == OperationReplay.Conflict)
+        {
+            return false;
+        }
+
+        if (replay == OperationReplay.Replayed)
+        {
+            wasReplayed = true;
+            return true;
+        }
+
+        var pending = new List<PendingMutation>(aggregated.Count);
+        var orderedStates = new List<StockState>(aggregated.Count);
+        var orderedQuantities = new List<long>(aggregated.Count);
+
+        foreach (KeyValuePair<string, long> pair in aggregated)
+        {
+            if (!TryGetKnownState(
+                    pair.Key,
+                    out StockState state,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            if (!TryBuildMutation(
+                    state,
+                    BistroBuilderInventoryTransactionType.Purchase,
+                    pair.Value,
+                    pair.Value,
+                    0L,
+                    0L,
+                    0L,
+                    0L,
+                    normalizedOperation,
+                    normalizedSource,
+                    string.IsNullOrWhiteSpace(reason)
+                        ? "Recepción de mercancía " + normalizedOperation + "."
+                        : reason,
+                    out PendingMutation mutation,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            pending.Add(mutation);
+            orderedStates.Add(state);
+            orderedQuantities.Add(pair.Value);
+        }
+
+        // Los lotes se crean después de validar todos los balances para que
+        // un fallo intermedio no consuma secuencias ni deje estado parcial.
+        var lotMutations = new List<PendingLotMutation>(pending.Count);
+        for (int index = 0; index < orderedStates.Count; index++)
+        {
+            lotMutations.Add(
+                BuildNewLotMutation(
+                    orderedStates[index],
+                    orderedQuantities[index],
+                    normalizedSource,
+                    CurrentDayIndex
+                )
+            );
+        }
+
+        RememberOperation(normalizedOperation, fingerprint);
+        CommitMutations(pending, lotMutations);
+        return true;
+    }
+
+    /// <summary>
     /// Reserva varias líneas como una única transacción lógica.
     ///
     /// Primero valida y agrega todas las cantidades. Si falta cualquier
@@ -1618,6 +1751,92 @@ public sealed class BistroBuilderInventoryService : MonoBehaviour
 
         PublishReservationChanged(reservation.ToSnapshot());
         return true;
+    }
+
+    private bool TryAggregatePurchaseLines(
+        IReadOnlyList<BistroBuilderInventoryQuantityLine> receivedLines,
+        out SortedDictionary<string, long> aggregated,
+        out string error
+    )
+    {
+        aggregated = new SortedDictionary<string, long>(
+            StringComparer.Ordinal
+        );
+        error = string.Empty;
+
+        if (receivedLines == null || receivedLines.Count == 0)
+        {
+            error = "La recepción debe contener al menos una línea.";
+            return false;
+        }
+
+        for (int index = 0; index < receivedLines.Count; index++)
+        {
+            BistroBuilderInventoryQuantityLine line = receivedLines[index];
+            if (line == null)
+            {
+                error = "La recepción contiene una línea nula en la posición " +
+                        index + ".";
+                return false;
+            }
+
+            if (!TryGetKnownState(
+                    line.IngredientId,
+                    out StockState state,
+                    out error
+                ) ||
+                !TryValidatePositiveQuantity(
+                    line.CanonicalMilliUnits,
+                    out error
+                ))
+            {
+                return false;
+            }
+
+            aggregated.TryGetValue(state.IngredientId, out long current);
+            try
+            {
+                long combined = checked(current + line.CanonicalMilliUnits);
+                if (combined >
+                    BistroBuilderMeasurementUtility.MaximumCanonicalMilliUnits)
+                {
+                    error = "La recepción de " + state.IngredientId +
+                            " excede el rango permitido.";
+                    return false;
+                }
+
+                aggregated[state.IngredientId] = combined;
+            }
+            catch (OverflowException)
+            {
+                error = "La recepción de " + state.IngredientId +
+                        " excede el rango permitido.";
+                return false;
+            }
+        }
+
+        return aggregated.Count > 0;
+    }
+
+    private static string BuildPurchaseBatchFingerprint(
+        string sourceId,
+        SortedDictionary<string, long> lines
+    )
+    {
+        var builder = new StringBuilder(256);
+        builder.Append("purchase_batch");
+        builder.Append('|');
+        builder.Append(sourceId);
+
+        foreach (KeyValuePair<string, long> pair in lines)
+        {
+            builder.Append('|');
+            builder.Append(pair.Key);
+            builder.Append(':');
+            builder.Append(pair.Value);
+        }
+
+        return builder.ToString();
     }
 
     private bool TryAggregateLines(
