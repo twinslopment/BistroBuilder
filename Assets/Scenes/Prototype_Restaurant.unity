@@ -1107,6 +1107,8 @@ GameObject:
   - component: {fileID: 263644990}
   - component: {fileID: 263644992}
   - component: {fileID: 263644991}
+  - component: {fileID: 263644993}
+  - component: {fileID: 263644994}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -2902,6 +2904,39 @@ MonoBehaviour:
   inventoryService: {fileID: 263644970}
   generalGameStateService: {fileID: 263644957}
   logReceipts: 1
+--- !u!114 &263644993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e968237d9c064c8db7816233b120b66a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInventoryPlanningService
+  inventoryService: {fileID: 263644970}
+  recipeCatalogService: {fileID: 263644969}
+  generalGameStateService: {fileID: 263644957}
+  serviceStateService: {fileID: 263644923}
+  criticalThresholdRatio: 0.5
+  minimumHistoryDaysForForecast: 2
+  logOpeningWarnings: 1
+--- !u!114 &263644994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 546ba3c0ba2d44f28cd26277bc1abb05, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInventoryPolicySaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  planningService: {fileID: 263644993}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -5406,6 +5441,7 @@ RectTransform:
   m_Children:
   - {fileID: 935590812}
   - {fileID: 1691563766}
+  - {fileID: 1202883992}
   m_Father: {fileID: 1208060064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -7038,6 +7074,58 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1344869659}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1202883991
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1202883992}
+  - component: {fileID: 1202883993}
+  m_Layer: 5
+  m_Name: BB_2_2C_InventoryPlanningUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1202883992
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202883991}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 890497793}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1202883993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1202883991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 426d86df23404da5838cfd4343e5f763, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInventoryPlanningRuntimeView
+  planningService: {fileID: 263644993}
+  cameraController: {fileID: 330585548}
+  editInteractionController: {fileID: 263644933}
+  showOpenButton: 1
 --- !u!1 &1208060061
 GameObject:
   m_ObjectHideFlags: 0

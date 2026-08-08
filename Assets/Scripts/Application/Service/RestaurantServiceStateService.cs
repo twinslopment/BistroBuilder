@@ -53,6 +53,14 @@ public sealed class RestaurantServiceStateService :
     > StateChanged;
 
     /// <summary>
+    /// Se publica inmediatamente antes de pasar a Open. Permite a sistemas
+    /// consultivos (por ejemplo inventario 2.2C) evaluar avisos previos sin
+    /// introducir dependencias de dominio dentro del estado de servicio.
+    /// No es un veto: 2.2C informa, pero no bloquea la apertura.
+    /// </summary>
+    public event Action ServiceOpeningRequested;
+
+    /// <summary>
     /// Se ejecuta al comenzar a aceptar clientes.
     /// </summary>
     public event Action ServiceOpened;
@@ -169,6 +177,8 @@ public sealed class RestaurantServiceStateService :
         {
             return false;
         }
+
+        ServiceOpeningRequested?.Invoke();
 
         return ChangeState(
             RestaurantServiceState.Open
