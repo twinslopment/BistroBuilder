@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -38,6 +40,22 @@ namespace BistroBuilder.CameraSystem
         private static bool cachedSelectedObjectIsTextInput;
         private static Vector2 previousLegacyPointerPosition;
         private static bool previousLegacyPointerPositionValid;
+
+        // El EventSystem puede usar InputSystemUIInputModule, StandaloneInputModule o cambiar
+        // durante Play Mode. No dependemos únicamente de IsPointerOverGameObject(): hacemos
+        // además un raycast UI explícito y reutilizamos sus buffers para no generar basura.
+        private static EventSystem cachedRaycastEventSystem;
+        private static PointerEventData cachedPointerEventData;
+        private static readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>(24);
+
+        // Margen ortogonal usado al sondear una franja de borde ocupada por UI. De esta forma
+        // el edge-pan no se activa mientras el jugador cruza hacia una barra o botón pegado
+        // al borde, incluso si el píxel exacto bajo el cursor cae entre dos controles.
+        private const float EdgeUiProbeOrthogonalOffset = 24.0f;
+        private static readonly float[] edgeUiProbeDepthFactors =
+            { 0.20f, 0.45f, 0.70f, 0.95f };
+        private static readonly float[] edgeUiProbeOffsets =
+            { 0.0f, -EdgeUiProbeOrthogonalOffset, EdgeUiProbeOrthogonalOffset };
 
         public static string ActiveBackend
         {
@@ -131,7 +149,7 @@ namespace BistroBuilder.CameraSystem
             }
 #endif
 
-            frame.PointerOverUi = IsPointerOverUi();
+            frame.PointerOverUi = IsPointerOverUi(frame.PointerPosition);
             frame.TextInputFocused = IsTextInputFocused();
             return frame;
         }
@@ -262,10 +280,169 @@ namespace BistroBuilder.CameraSystem
         }
 #endif
 
-        private static bool IsPointerOverUi()
+        private static bool IsPointerOverUi(Vector2 pointerPosition)
         {
             EventSystem eventSystem = EventSystem.current;
-            return eventSystem != null && eventSystem.IsPointerOverGameObject();
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+            // Ruta rápida. Sigue siendo útil con StandaloneInputModule.
+            if (eventSystem.IsPointerOverGameObject())
+            {
+                return true;
+            }
+
+            // Ruta robusta para Input System y para configuraciones en las que la consulta
+            // parameterless no identifica correctamente el puntero activo. Solo aceptamos
+            // GraphicRaycaster para no confundir colliders del mundo con UI.
+            return IsUiAtScreenPoint(pointerPosition);
+        }
+
+        /// <summary>
+        /// Indica si la franja de borde hacia la que intenta desplazarse la cámara está
+        /// ocupada por UI. Se usa únicamente para proteger el edge-pan; no bloquea el
+        /// resto de navegación cuando el cursor está realmente sobre el mundo.
+        /// </summary>
+        public static bool IsUiProtectingEdge(
+            Vector2 pointerPosition,
+            Vector2 edgePanDirection,
+            int screenWidth,
+            int screenHeight,
+            float probeDepthPixels)
+        {
+            if (EventSystem.current == null ||
+                screenWidth <= 0 || screenHeight <= 0 ||
+                edgePanDirection.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            float width = Mathf.Max(1.0f, screenWidth);
+            float height = Mathf.Max(1.0f, screenHeight);
+            float depth = Mathf.Clamp(probeDepthPixels, 8.0f, 120.0f);
+            float x = Mathf.Clamp(pointerPosition.x, 0.0f, width - 1.0f);
+            float y = Mathf.Clamp(pointerPosition.y, 0.0f, height - 1.0f);
+
+            if (edgePanDirection.y > 0.0001f &&
+                ProbeHorizontalEdge(x, height, width, depth, true))
+            {
+                return true;
+            }
+
+            if (edgePanDirection.y < -0.0001f &&
+                ProbeHorizontalEdge(x, height, width, depth, false))
+            {
+                return true;
+            }
+
+            if (edgePanDirection.x < -0.0001f &&
+                ProbeVerticalEdge(y, width, height, depth, false))
+            {
+                return true;
+            }
+
+            if (edgePanDirection.x > 0.0001f &&
+                ProbeVerticalEdge(y, width, height, depth, true))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ProbeHorizontalEdge(
+            float pointerX,
+            float screenHeight,
+            float screenWidth,
+            float depth,
+            bool top)
+        {
+            for (int depthIndex = 0; depthIndex < edgeUiProbeDepthFactors.Length; depthIndex++)
+            {
+                float inward = depth * edgeUiProbeDepthFactors[depthIndex];
+                float y = top
+                    ? Mathf.Clamp(screenHeight - 1.0f - inward, 0.0f, screenHeight - 1.0f)
+                    : Mathf.Clamp(inward, 0.0f, screenHeight - 1.0f);
+
+                for (int offsetIndex = 0; offsetIndex < edgeUiProbeOffsets.Length; offsetIndex++)
+                {
+                    float x = Mathf.Clamp(
+                        pointerX + edgeUiProbeOffsets[offsetIndex],
+                        0.0f,
+                        screenWidth - 1.0f);
+                    if (IsUiAtScreenPoint(new Vector2(x, y)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ProbeVerticalEdge(
+            float pointerY,
+            float screenWidth,
+            float screenHeight,
+            float depth,
+            bool right)
+        {
+            for (int depthIndex = 0; depthIndex < edgeUiProbeDepthFactors.Length; depthIndex++)
+            {
+                float inward = depth * edgeUiProbeDepthFactors[depthIndex];
+                float x = right
+                    ? Mathf.Clamp(screenWidth - 1.0f - inward, 0.0f, screenWidth - 1.0f)
+                    : Mathf.Clamp(inward, 0.0f, screenWidth - 1.0f);
+
+                for (int offsetIndex = 0; offsetIndex < edgeUiProbeOffsets.Length; offsetIndex++)
+                {
+                    float y = Mathf.Clamp(
+                        pointerY + edgeUiProbeOffsets[offsetIndex],
+                        0.0f,
+                        screenHeight - 1.0f);
+                    if (IsUiAtScreenPoint(new Vector2(x, y)))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsUiAtScreenPoint(Vector2 screenPoint)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+            if (cachedRaycastEventSystem != eventSystem || cachedPointerEventData == null)
+            {
+                cachedRaycastEventSystem = eventSystem;
+                cachedPointerEventData = new PointerEventData(eventSystem);
+            }
+
+            cachedPointerEventData.Reset();
+            cachedPointerEventData.position = screenPoint;
+            uiRaycastResults.Clear();
+            eventSystem.RaycastAll(cachedPointerEventData, uiRaycastResults);
+
+            for (int index = 0; index < uiRaycastResults.Count; index++)
+            {
+                BaseRaycaster module = uiRaycastResults[index].module;
+                if (module is GraphicRaycaster)
+                {
+                    uiRaycastResults.Clear();
+                    return true;
+                }
+            }
+
+            uiRaycastResults.Clear();
+            return false;
         }
 
         private static bool IsTextInputFocused()

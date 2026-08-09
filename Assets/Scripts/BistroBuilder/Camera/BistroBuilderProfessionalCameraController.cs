@@ -21,7 +21,7 @@ namespace BistroBuilder.CameraSystem
     [RequireComponent(typeof(UnityEngine.Camera))]
     public sealed class BistroBuilderProfessionalCameraController : MonoBehaviour
     {
-        public const int RuntimeRevision = 13;
+        public const int RuntimeRevision = 14;
 
         [Header("Referencias")]
         [SerializeField] private UnityEngine.Camera controlledCamera;
@@ -402,6 +402,7 @@ namespace BistroBuilder.CameraSystem
             bool keyboardBlocked = settings.BlockKeyboardWhileTyping && input.TextInputFocused;
 
             Vector2 panInput = Vector2.zero;
+            Vector2 keyboardPanInput = Vector2.zero;
             float yawInput = 0.0f;
             float elevationInput = 0.0f;
 
@@ -409,7 +410,8 @@ namespace BistroBuilder.CameraSystem
             {
                 if (settings.KeyboardPanEnabled)
                 {
-                    panInput += input.Pan;
+                    keyboardPanInput = input.Pan;
+                    panInput += keyboardPanInput;
                 }
 
                 yawInput += input.Yaw;
@@ -420,6 +422,7 @@ namespace BistroBuilder.CameraSystem
                 }
             }
 
+            bool edgePanBlockedByUi = false;
             if (settings.EdgePanEnabled && input.PointerAvailable && !pointerBlocked &&
                 !middleDragActive && !rightDragActive)
             {
@@ -430,7 +433,39 @@ namespace BistroBuilder.CameraSystem
                     settings.EdgeMarginNormalized,
                     settings.EdgeMarginMinimumPixels,
                     settings.EdgeMarginMaximumPixels);
-                panInput += edgePan * settings.EdgePanStrength;
+
+                if (edgePan.sqrMagnitude > 0.0001f)
+                {
+                    float uiProbeDepth = Mathf.Max(
+                        settings.EdgeMarginMaximumPixels + 18.0f,
+                        72.0f);
+                    edgePanBlockedByUi =
+                        BistroBuilderProfessionalCameraInput.IsUiProtectingEdge(
+                            input.PointerPosition,
+                            edgePan,
+                            Screen.width,
+                            Screen.height,
+                            uiProbeDepth);
+
+                    if (!edgePanBlockedByUi)
+                    {
+                        panInput += edgePan * settings.EdgePanStrength;
+                    }
+                }
+            }
+
+            // Si el jugador entra en una zona UI o en la franja protegida que conduce a ella,
+            // detenemos inmediatamente la inercia que pudiera quedar del edge-pan. El teclado
+            // conserva su comportamiento normal cuando no se está escribiendo.
+            if ((pointerBlocked || edgePanBlockedByUi) &&
+                keyboardPanInput.sqrMagnitude <= 0.0001f)
+            {
+                StopPlanarPanImmediately();
+            }
+
+            if (pointerBlocked)
+            {
+                StopZoomImmediately();
             }
 
             if (panInput.sqrMagnitude > 1.0f)
@@ -438,12 +473,14 @@ namespace BistroBuilder.CameraSystem
                 panInput.Normalize();
             }
 
+            bool pointerNavigationRequested = !pointerBlocked &&
+                (input.MiddlePressed || input.MiddleHeld ||
+                 input.RightPressed || input.RightHeld ||
+                 Mathf.Abs(input.RawScroll) > 0.0001f);
             bool nonElevationNavigationRequested =
                 panInput.sqrMagnitude > 0.0001f ||
                 Mathf.Abs(yawInput) > 0.0001f ||
-                input.MiddlePressed || input.MiddleHeld ||
-                input.RightPressed || input.RightHeld ||
-                Mathf.Abs(input.RawScroll) > 0.0001f;
+                pointerNavigationRequested;
             if (nonElevationNavigationRequested && !verticalElevationGestureActive)
             {
                 InvalidateElevatorReference();
@@ -940,6 +977,12 @@ namespace BistroBuilder.CameraSystem
             }
         }
 
+        private void StopPlanarPanImmediately()
+        {
+            currentPanVelocity = Vector3.zero;
+            panVelocitySmoothReference = Vector3.zero;
+        }
+
         private void StopZoomImmediately()
         {
             currentZoomVelocity = 0.0f;
@@ -953,13 +996,13 @@ namespace BistroBuilder.CameraSystem
             BistroBuilderCameraInputFrame input,
             bool pointerBlocked)
         {
-            if (!settings.MiddleMouseDragEnabled)
+            if (!settings.MiddleMouseDragEnabled || pointerBlocked)
             {
                 middleDragActive = false;
                 return;
             }
 
-            if (input.MiddlePressed && !pointerBlocked && input.PointerAvailable)
+            if (input.MiddlePressed && input.PointerAvailable)
             {
                 middleDragActive = true;
             }
@@ -997,14 +1040,14 @@ namespace BistroBuilder.CameraSystem
             BistroBuilderCameraInputFrame input,
             bool pointerBlocked)
         {
-            if (!settings.RightMouseRotationEnabled)
+            if (!settings.RightMouseRotationEnabled || pointerBlocked)
             {
                 rightDragActive = false;
                 rightOrbitPivotValid = false;
                 return;
             }
 
-            if (input.RightPressed && !pointerBlocked && input.PointerAvailable)
+            if (input.RightPressed && input.PointerAvailable)
             {
                 // La manipulación directa toma como origen el encuadre que el jugador ve en ese
                 // instante, no un objetivo todavía en tránsito. Esto evita un tirón al iniciar la órbita.
