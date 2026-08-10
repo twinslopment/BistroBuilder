@@ -1,0 +1,585 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f437c88cd34d5c29c870db2e02ba78b7, type: 3}
+  m_Name: BistroBuilderSupplierCatalogSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierCatalogSettings
+  schemaVersion: 2
+  suppliers:
+  - supplierId: supplier_cantabrico_seleccion
+    displayName: "Cant\xE1brico Selecci\xF3n"
+    description: Proveedor de producto seleccionado con precio superior y plazo corto.
+    active: 1
+    minimumOrderCents: 8000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_despensa_profesional
+    displayName: Despensa Profesional
+    description: "Especialista en secos, b\xE1sicos y formatos de hosteler\xEDa."
+    active: 1
+    minimumOrderCents: 4000
+    standardLeadTimeDays: 2
+    currencyCode: EUR
+    priceFactorBasisPoints: 9400
+    legacyMinimumOrderValue: 40
+    legacyPriceFactor: 0.94
+  - supplierId: supplier_hosteleria_total
+    displayName: "Hosteler\xEDa Total"
+    description: Proveedor generalista con cobertura amplia y condiciones equilibradas.
+    active: 1
+    minimumOrderCents: 5000
+    standardLeadTimeDays: 2
+    currencyCode: EUR
+    priceFactorBasisPoints: 10000
+    legacyMinimumOrderValue: 50
+    legacyPriceFactor: 1
+  - supplierId: supplier_norte_frescos
+    displayName: Norte Frescos
+    description: "Especialista en producto fresco con entrega r\xE1pida."
+    active: 1
+    minimumOrderCents: 6000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 10600
+    legacyMinimumOrderValue: 60
+    legacyPriceFactor: 1.06
+  products:
+  - productId: supplier_cantabrico_seleccion_ingredient_chorizo
+    supplierId: supplier_cantabrico_seleccion
+    ingredientId: ingredient_chorizo
+    displayName: "Chorizo \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1161
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_cantabrico_seleccion_ingredient_merluza
+    supplierId: supplier_cantabrico_seleccion
+    ingredientId: ingredient_merluza
+    displayName: "Merluza \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2433
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_cantabrico_seleccion_ingredient_morcilla
+    supplierId: supplier_cantabrico_seleccion
+    ingredientId: ingredient_morcilla
+    displayName: "Morcilla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1051
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_cantabrico_seleccion_ingredient_panceta
+    supplierId: supplier_cantabrico_seleccion
+    ingredientId: ingredient_panceta
+    displayName: "Panceta \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 940
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_aceite_oliva
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_aceite_oliva
+    displayName: "Aceite de oliva \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 821
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_agua_cocina
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_agua_cocina
+    displayName: "Agua de cocina \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_azucar
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_azucar
+    displayName: "Az\xFAcar \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 137
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_botella_agua_mineral
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_botella_agua_mineral
+    displayName: "Botella de agua mineral \xB7 Caja 24 ud"
+    packageLabel: Caja 24 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 24000
+    packPriceCents: 875
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_fabes
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_fabes
+    displayName: "Fabes \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 593
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_galleta
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_galleta
+    displayName: "Galleta \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 365
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_refresco_lata
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_refresco_lata
+    displayName: "Refresco en lata \xB7 Caja 24 ud"
+    packageLabel: Caja 24 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 24000
+    packPriceCents: 1313
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_sal
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_sal
+    displayName: "Sal \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 73
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_despensa_profesional_ingredient_vino_casa
+    supplierId: supplier_despensa_profesional
+    ingredientId: ingredient_vino_casa
+    displayName: "Vino de la casa \xB7 Envase 750 ml"
+    packageLabel: Envase 750 ml
+    baseUnit: 2
+    packageCanonicalMilliUnits: 750000
+    packPriceCents: 456
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_aceite_oliva
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_aceite_oliva
+    displayName: "Aceite de oliva \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 900
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_aceitunas_alinadas
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_aceitunas_alinadas
+    displayName: "Aceitunas ali\xF1adas \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 550
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_agua_cocina
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_agua_cocina
+    displayName: "Agua de cocina \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_ajo
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_ajo
+    displayName: "Ajo \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 600
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_azucar
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_azucar
+    displayName: "Az\xFAcar \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 150
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_botella_agua_mineral
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_botella_agua_mineral
+    displayName: "Botella de agua mineral \xB7 Caja 24 ud"
+    packageLabel: Caja 24 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 24000
+    packPriceCents: 960
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_cebolla
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_cebolla
+    displayName: "Cebolla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 180
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_chorizo
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_chorizo
+    displayName: "Chorizo \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1050
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_fabes
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_fabes
+    displayName: "Fabes \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 650
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_galleta
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_galleta
+    displayName: "Galleta \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 400
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_huevo
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_huevo
+    displayName: "Huevo \xB7 Caja 12 ud"
+    packageLabel: Caja 12 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 12000
+    packPriceCents: 300
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_limon
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_limon
+    displayName: "Lim\xF3n \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 250
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_mantequilla
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_mantequilla
+    displayName: "Mantequilla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 900
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_merluza
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_merluza
+    displayName: "Merluza \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2200
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_morcilla
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_morcilla
+    displayName: "Morcilla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 950
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_nata
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_nata
+    displayName: "Nata \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 450
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_panceta
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_panceta
+    displayName: "Panceta \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 850
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_patata
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_patata
+    displayName: "Patata \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 140
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_queso_crema
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_queso_crema
+    displayName: "Queso crema \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 800
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_refresco_lata
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_refresco_lata
+    displayName: "Refresco en lata \xB7 Caja 24 ud"
+    packageLabel: Caja 24 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 24000
+    packPriceCents: 1440
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_sal
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_sal
+    displayName: "Sal \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 80
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_hosteleria_total_ingredient_vino_casa
+    supplierId: supplier_hosteleria_total
+    ingredientId: ingredient_vino_casa
+    displayName: "Vino de la casa \xB7 Envase 750 ml"
+    packageLabel: Envase 750 ml
+    baseUnit: 2
+    packageCanonicalMilliUnits: 750000
+    packPriceCents: 500
+    minimumPacks: 1
+    leadTimeDays: 2
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_aceitunas_alinadas
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_aceitunas_alinadas
+    displayName: "Aceitunas ali\xF1adas \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 566
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_ajo
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_ajo
+    displayName: "Ajo \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 617
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_cebolla
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_cebolla
+    displayName: "Cebolla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 185
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_huevo
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_huevo
+    displayName: "Huevo \xB7 Caja 12 ud"
+    packageLabel: Caja 12 ud
+    baseUnit: 4
+    packageCanonicalMilliUnits: 12000
+    packPriceCents: 308
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_limon
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_limon
+    displayName: "Lim\xF3n \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 257
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_mantequilla
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_mantequilla
+    displayName: "Mantequilla \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 925
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_nata
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_nata
+    displayName: "Nata \xB7 Envase 1 L"
+    packageLabel: Envase 1 L
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 463
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_patata
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_patata
+    displayName: "Patata \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 144
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: supplier_norte_frescos_ingredient_queso_crema
+    supplierId: supplier_norte_frescos
+    ingredientId: ingredient_queso_crema
+    displayName: "Queso crema \xB7 Envase 1 kg"
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 823
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
