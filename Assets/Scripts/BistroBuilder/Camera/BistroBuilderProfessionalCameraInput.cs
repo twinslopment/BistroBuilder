@@ -28,6 +28,11 @@ namespace BistroBuilder.CameraSystem
         public bool TextInputFocused;
         public bool ApplicationFocused;
         public bool PointerAvailable;
+        // En el Editor, Unity sigue exponiendo rueda/teclas globales aunque el usuario esté
+        // interactuando con otra EditorWindow. Estos flags permiten al controlador aceptar
+        // entrada solo cuando realmente procede del Game View. En un build siempre son true.
+        public bool EditorPointerInputAllowed;
+        public bool EditorKeyboardInputAllowed;
     }
 
     /// <summary>
@@ -80,6 +85,8 @@ namespace BistroBuilder.CameraSystem
         {
             BistroBuilderCameraInputFrame frame = new BistroBuilderCameraInputFrame();
             frame.ApplicationFocused = Application.isFocused;
+            frame.EditorPointerInputAllowed = true;
+            frame.EditorKeyboardInputAllowed = true;
 
 #if ENABLE_LEGACY_INPUT_MANAGER || !ENABLE_INPUT_SYSTEM
             // Solo son necesarios cuando existe una ruta de respaldo al Input Manager.
@@ -149,7 +156,47 @@ namespace BistroBuilder.CameraSystem
             }
 #endif
 
-            frame.PointerOverUi = IsPointerOverUi(frame.PointerPosition);
+#if UNITY_EDITOR
+            // En Play Mode, Input System/Input Manager pueden seguir reportando rueda, botones
+            // y teclas aunque el foco esté en una ventana de herramientas del Editor (por
+            // ejemplo Prueba 2.2D, Console o Inspector). Eso hacía que hacer scroll en esas
+            // ventanas provocase zoom y que mover el cursor por sus bordes activase edge-pan.
+            // La cámara solo recibe puntero cuando el ratón está realmente sobre Game View y
+            // solo recibe teclado cuando Game View posee el foco.
+            frame.EditorPointerInputAllowed = IsEditorPointerInputAllowed();
+            frame.EditorKeyboardInputAllowed = IsEditorKeyboardInputAllowed();
+
+            if (!frame.EditorKeyboardInputAllowed)
+            {
+                frame.Pan = Vector2.zero;
+                frame.Yaw = 0.0f;
+                frame.Elevation = 0.0f;
+                frame.FastModifier = false;
+            }
+
+            if (!frame.EditorPointerInputAllowed)
+            {
+                frame.PointerDelta = Vector2.zero;
+                frame.RawScroll = 0.0f;
+                frame.MiddlePressed = false;
+                frame.MiddleHeld = false;
+                frame.MiddleReleased = false;
+                frame.RightPressed = false;
+                frame.RightHeld = false;
+                frame.RightReleased = false;
+                frame.PointerAvailable = false;
+#if ENABLE_LEGACY_INPUT_MANAGER || !ENABLE_INPUT_SYSTEM
+                // Evita un delta grande al volver al Game View tras mover el ratón por otra
+                // ventana del Editor. El siguiente frame legacy reconstruirá la referencia.
+                previousLegacyPointerPositionValid = false;
+#endif
+            }
+#endif
+
+            // Fuera del Game View tratamos el puntero como bloqueado incluso aunque no exista
+            // un EventSystem uGUI bajo él. Dentro del Game View se conserva la protección D9.
+            frame.PointerOverUi = !frame.EditorPointerInputAllowed ||
+                                  IsPointerOverUi(frame.PointerPosition);
             frame.TextInputFocused = IsTextInputFocused();
             return frame;
         }
@@ -277,6 +324,30 @@ namespace BistroBuilder.CameraSystem
             }
 
             return elevation;
+        }
+#endif
+
+
+#if UNITY_EDITOR
+        private const string UnityGameViewTypeName = "UnityEditor.GameView";
+
+        private static bool IsEditorPointerInputAllowed()
+        {
+            return IsEditorGameViewWindow(UnityEditor.EditorWindow.mouseOverWindow);
+        }
+
+        private static bool IsEditorKeyboardInputAllowed()
+        {
+            return IsEditorGameViewWindow(UnityEditor.EditorWindow.focusedWindow);
+        }
+
+        private static bool IsEditorGameViewWindow(UnityEditor.EditorWindow window)
+        {
+            return window != null &&
+                   string.Equals(
+                       window.GetType().FullName,
+                       UnityGameViewTypeName,
+                       System.StringComparison.Ordinal);
         }
 #endif
 

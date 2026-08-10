@@ -21,7 +21,7 @@ namespace BistroBuilder.CameraSystem
     [RequireComponent(typeof(UnityEngine.Camera))]
     public sealed class BistroBuilderProfessionalCameraController : MonoBehaviour
     {
-        public const int RuntimeRevision = 14;
+        public const int RuntimeRevision = 15;
 
         [Header("Referencias")]
         [SerializeField] private UnityEngine.Camera controlledCamera;
@@ -398,8 +398,33 @@ namespace BistroBuilder.CameraSystem
                 return;
             }
 
-            bool pointerBlocked = settings.BlockPointerInputOverUi && input.PointerOverUi;
-            bool keyboardBlocked = settings.BlockKeyboardWhileTyping && input.TextInputFocused;
+            bool editorPointerBlocked = !input.EditorPointerInputAllowed;
+            bool editorKeyboardBlocked = !input.EditorKeyboardInputAllowed;
+            bool pointerBlocked = editorPointerBlocked ||
+                                  (settings.BlockPointerInputOverUi && input.PointerOverUi);
+            bool keyboardBlocked = editorKeyboardBlocked ||
+                                   (settings.BlockKeyboardWhileTyping && input.TextInputFocused);
+
+            // A diferencia de una UI del propio juego, una EditorWindow es externa al Game View.
+            // Si el usuario está usando Console/Inspector/Prueba 2.2D, cortamos inmediatamente
+            // cualquier inercia de teclado para que la cámara no continúe desplazándose detrás.
+            if (editorKeyboardBlocked)
+            {
+                StopPlanarPanImmediately();
+                currentYawVelocity = 0.0f;
+                yawVelocitySmoothReference = 0.0f;
+                currentElevationVelocity = 0.0f;
+                elevationVelocitySmoothReference = 0.0f;
+                verticalElevationGestureActive = false;
+                InvalidateElevatorReference();
+                CancelKeyboardOrbit();
+            }
+
+            if (editorPointerBlocked)
+            {
+                CancelDirectManipulation();
+                StopZoomImmediately();
+            }
 
             Vector2 panInput = Vector2.zero;
             Vector2 keyboardPanInput = Vector2.zero;
