@@ -229,6 +229,41 @@ public static class BistroBuilderInventoryWarehouse22DSelfTest
             result.Check(BistroBuilderInventoryPolicySaveData.CurrentSchemaVersion == 1,
                 "2.2D no modifica inventory.policy v1.");
 
+            // Regresión D12: un snapshot Closed debe sobrevivir exactamente al
+            // mismo ciclo unity-json-v1 que utiliza el guardado real.
+            var closedRuntime = new BistroBuilderActiveServiceSaveData
+            {
+                wasActiveService = false,
+                nextGroupId = 1,
+                nextLegacyOrderId = 1,
+                currentMealService =
+                    (int)BistroBuilderMealServiceAvailability.Lunch
+            };
+            result.Check(
+                closedRuntime.TryValidate(out string closedBeforeError),
+                "service.runtime Closed es válido antes de serializar: " +
+                closedBeforeError);
+
+            var serializer = new BistroBuilderJsonSaveSerializer();
+            byte[] closedBytes = serializer.Serialize(closedRuntime, false);
+            var closedRoundTrip =
+                serializer.Deserialize(
+                    closedBytes,
+                    typeof(BistroBuilderActiveServiceSaveData)
+                ) as BistroBuilderActiveServiceSaveData;
+
+            string closedAfterError = string.Empty;
+            bool closedRoundTripIsValid =
+                closedRoundTrip != null &&
+                closedRoundTrip.TryValidate(out closedAfterError);
+
+            result.Check(
+                closedRoundTripIsValid,
+                "service.runtime Closed sobrevive al round-trip unity-json-v1: " +
+                (closedRoundTrip == null
+                    ? "deserialización nula"
+                    : closedAfterError));
+
             string report = result.BuildReport();
             if (result.Failed.Count > 0)
             {

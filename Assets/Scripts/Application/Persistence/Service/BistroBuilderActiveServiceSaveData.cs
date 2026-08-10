@@ -82,20 +82,40 @@ public sealed class BistroBuilderActiveServiceSaveData
 
         if (!wasActiveService)
         {
-            if (groups.Count != 0 || tables.Count != 0 || waiters.Count != 0 ||
+            /*
+             * JsonUtility puede reconstruir referencias de clases serializables
+             * que eran null como cascarones vacíos con sus valores por defecto.
+             * Esto no representa runtime real de servicio, pero antes hacía que
+             * un guardado válido con el restaurante Closed pasase Save y fallase
+             * inmediatamente al hacer Load.
+             *
+             * Seguimos rechazando cualquier dato operativo real: grupos, mesas,
+             * comandas, cocina, revisiones o secuencias no iniciales. Solo se
+             * toleran y normalizan los cascarones vacíos creados por el ciclo JSON.
+             */
+            bool hasConcreteRuntime =
+                groups.Count != 0 || tables.Count != 0 || waiters.Count != 0 ||
                 legacyOrders.Count != 0 || barSessions.Count != 0 ||
                 pendingBarTableReservations.Count != 0 ||
                 transferredBarCharges.Count != 0 || kitchens.Count != 0 ||
-                canonicalOrders != null || coursesAndSharing != null ||
-                customerDining != null ||
                 customerSpawner.scheduleInitialized ||
                 customerSpawner.scheduleCompleted ||
-                customerSpawner.pendingArrivals.Count != 0)
+                customerSpawner.pendingArrivals.Count != 0 ||
+                !IsClosedCanonicalOrdersShell(canonicalOrders) ||
+                !IsClosedCoursesAndSharingShell(coursesAndSharing) ||
+                !IsClosedCustomerDiningShell(customerDining);
+
+            if (hasConcreteRuntime)
             {
                 error = "Un snapshot de restaurante cerrado contiene runtime " +
                         "de servicio incompatible.";
                 return false;
             }
+
+            // Conserva una representación canónica y determinista en memoria.
+            canonicalOrders = null;
+            coursesAndSharing = null;
+            customerDining = null;
 
             return true;
         }
@@ -383,6 +403,76 @@ public sealed class BistroBuilderActiveServiceSaveData
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Detecta el cascarón vacío que JsonUtility puede materializar para una
+    /// referencia null de comandas al reconstruir un snapshot cerrado.
+    /// </summary>
+    private static bool IsClosedCanonicalOrdersShell(
+        BistroBuilderCanonicalOrderRuntimeSnapshot snapshot
+    )
+    {
+        if (snapshot == null)
+        {
+            return true;
+        }
+
+        IReadOnlyList<BistroBuilderCanonicalOrder> orders = snapshot.Orders;
+        bool emptyOrders = orders == null || orders.Count == 0;
+        bool defaultSchema =
+            snapshot.SchemaVersion == 0 ||
+            snapshot.SchemaVersion ==
+                BistroBuilderCanonicalOrderRuntimeSnapshot.CurrentSchemaVersion;
+        bool defaultSequence =
+            snapshot.NextSequenceNumber == 0 ||
+            snapshot.NextSequenceNumber == 1;
+
+        return emptyOrders && defaultSchema && defaultSequence;
+    }
+
+    /// <summary>
+    /// Equivalente para el runtime de pases y platos compartidos. Una revisión
+    /// distinta de cero ya es estado real y por tanto no es válida en Closed.
+    /// </summary>
+    private static bool IsClosedCoursesAndSharingShell(
+        BistroBuilderCourseAndSharingRuntimeSnapshot snapshot
+    )
+    {
+        if (snapshot == null)
+        {
+            return true;
+        }
+
+        bool emptyOrders = snapshot.orders == null || snapshot.orders.Count == 0;
+        bool defaultSchema =
+            snapshot.schemaVersion == 0 || snapshot.schemaVersion == 1;
+
+        return emptyOrders && defaultSchema && snapshot.revision == 0;
+    }
+
+    /// <summary>
+    /// Equivalente para consumo individual. Solo se admite el objeto vacío
+    /// materializado por serialización; cualquier orden conservada es runtime.
+    /// </summary>
+    private static bool IsClosedCustomerDiningShell(
+        BistroBuilderCustomerDiningRuntimeSnapshot snapshot
+    )
+    {
+        if (snapshot == null)
+        {
+            return true;
+        }
+
+        IReadOnlyList<BistroBuilderCustomerDiningOrderRuntime> orders =
+            snapshot.Orders;
+        bool emptyOrders = orders == null || orders.Count == 0;
+        bool defaultSchema =
+            snapshot.SchemaVersion == 0 ||
+            snapshot.SchemaVersion ==
+                BistroBuilderCustomerDiningRuntimeSnapshot.CurrentSchemaVersion;
+
+        return emptyOrders && defaultSchema;
     }
 
     private static bool IsConcreteMealService(

@@ -42,6 +42,24 @@ public sealed class BistroBuilderInventoryWarehouse22DFunctionalTestWindow :
     private long manualReceiptExpectedAdded;
     private const string ManualReceiptIngredientId = "ingredient_merluza";
 
+    // Slot técnico reservado dinámicamente para comprobar la persistencia
+    // REAL de 2.2D mediante BistroBuilderSaveGameService. Se busca un slot
+    // libre entre 900 y 999 y se recuerda en EditorPrefs para poder salir de
+    // Play Mode, volver a entrar y cargar exactamente el mismo guardado.
+    private const string PersistenceSlotPrefsKey =
+        "BistroBuilder.2.2D.PersistenceTestSlot";
+    private const string PersistenceSlotConfirmedPrefsKey =
+        "BistroBuilder.2.2D.PersistenceTestSlotConfirmed";
+    private const int PersistenceSlotMinimum = 900;
+    private const int PersistenceSlotMaximum = 999;
+    private const string PersistenceSlotDisplayName =
+        "Prueba temporal 2.2D Inventario";
+    private int persistenceTestSlot = -1;
+    private string persistenceStatus =
+        "Sin operación de persistencia manual.";
+    private bool persistenceSlotConfirmed;
+    private BistroBuilderSaveGameService persistenceSubscribedSaveGame;
+
     // Buffers reutilizados por el monitor de servicio realista. Evitan que la
     // herramienta de diagnóstico tenga que crear colecciones nuevas en cada
     // repintado del EditorWindow.
@@ -59,11 +77,20 @@ public sealed class BistroBuilderInventoryWarehouse22DFunctionalTestWindow :
     private void OnEnable()
     {
         EditorApplication.update += HandleEditorUpdate;
+        persistenceTestSlot = EditorPrefs.GetInt(
+            PersistenceSlotPrefsKey,
+            -1
+        );
+        persistenceSlotConfirmed = EditorPrefs.GetBool(
+            PersistenceSlotConfirmedPrefsKey,
+            false
+        );
     }
 
     private void OnDisable()
     {
         EditorApplication.update -= HandleEditorUpdate;
+        UnsubscribePersistenceSaveService();
     }
 
     private void HandleEditorUpdate()
@@ -74,10 +101,13 @@ public sealed class BistroBuilderInventoryWarehouse22DFunctionalTestWindow :
             Repaint();
         }
 
-        if (!EditorApplication.isPlaying &&
-            manualReceiptOriginalInventory != null)
+        if (!EditorApplication.isPlaying)
         {
-            ClearManualReceiptState();
+            scenarioActive = false;
+            if (manualReceiptOriginalInventory != null)
+            {
+                ClearManualReceiptState();
+            }
         }
     }
 
@@ -147,6 +177,9 @@ public sealed class BistroBuilderInventoryWarehouse22DFunctionalTestWindow :
         EditorGUI.EndDisabledGroup();
 
         DrawManualReceiptStatus();
+
+        GUILayout.Space(14f);
+        DrawPersistenceTestControls();
 
         GUILayout.Space(8f);
         EditorGUILayout.HelpBox(status, failed.Count > 0 ? MessageType.Error : MessageType.None);
@@ -807,6 +840,506 @@ public sealed class BistroBuilderInventoryWarehouse22DFunctionalTestWindow :
         manualReceiptId = string.Empty;
         manualReceiptBeforeOnHand = 0L;
         manualReceiptExpectedAdded = 0L;
+    }
+
+    /// <summary>
+    /// Controles de persistencia real para 2.2D. No serializan inventario por
+    /// su cuenta: delegan exclusivamente en BistroBuilderSaveGameService y,
+    /// por tanto, recorren la misma ruta de guardado/carga que una partida.
+    /// </summary>
+    private void DrawPersistenceTestControls()
+    {
+        EditorGUILayout.LabelField(
+            "Persistencia manual real 2.2D",
+            EditorStyles.boldLabel
+        );
+        EditorGUILayout.HelpBox(
+            "Usa estos controles para comprobar el guardado/carga REAL del " +
+            "inventario y de inventory.policy. La herramienta elige un slot " +
+            "temporal libre entre 900 y 999 y lo recuerda aunque salgas de " +
+            "Play Mode. No crea una autoridad paralela: llama al " +
+            "BistroBuilderSaveGameService existente.",
+            MessageType.Info
+        );
+
+        if (!EditorApplication.isPlaying)
+        {
+            string remembered = IsPersistenceSlotValid(persistenceTestSlot)
+                ? " Slot temporal recordado: " + persistenceTestSlot + "."
+                : string.Empty;
+            EditorGUILayout.LabelField(
+                "Estado: entra en Play Mode para guardar o cargar." + remembered,
+                EditorStyles.wordWrappedMiniLabel
+            );
+            return;
+        }
+
+        BistroBuilderSaveGameService saveGame =
+            Object.FindFirstObjectByType<BistroBuilderSaveGameService>(
+                FindObjectsInactive.Include
+            );
+
+        if (saveGame == null)
+        {
+            EditorGUILayout.HelpBox(
+                "No se encuentra BistroBuilderSaveGameService en la escena.",
+                MessageType.Error
+            );
+            return;
+        }
+
+        SubscribePersistenceSaveService(saveGame);
+
+        bool validSlot = IsPersistenceSlotValid(persistenceTestSlot);
+        bool slotExists = validSlot && saveGame.SlotExists(persistenceTestSlot);
+
+        EditorGUILayout.LabelField(
+            "Slot temporal",
+            validSlot ? persistenceTestSlot.ToString() : "Sin asignar"
+        );
+        EditorGUILayout.LabelField(
+            "Existe en disco",
+            slotExists ? "Sí" : "No"
+        );
+        EditorGUILayout.LabelField(
+            "Guardado 2.2D confirmado",
+            persistenceSlotConfirmed && slotExists ? "Sí" : "No"
+        );
+        if (slotExists && !persistenceSlotConfirmed)
+        {
+            EditorGUILayout.HelpBox(
+                "El slot recordado existe, pero no fue confirmado por D11 como " +
+                "un guardado correcto. No se permitirá cargarlo. Al pulsar " +
+                "Guardar se elegirá automáticamente un slot libre nuevo.",
+                MessageType.Warning
+            );
+        }
+        EditorGUILayout.LabelField(
+            "Servicio de guardado",
+            saveGame.IsBusy
+                ? "Ocupado — " + saveGame.CurrentPhase
+                : "Disponible"
+        );
+
+        if (saveGame.IsBusy)
+        {
+            EditorGUI.ProgressBar(
+                EditorGUILayout.GetControlRect(false, 18f),
+                saveGame.CurrentProgress,
+                saveGame.CurrentStatusMessage
+            );
+        }
+
+        DrawPersistenceMerluzaSnapshot();
+
+        EditorGUILayout.Space(6f);
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            using (new EditorGUI.DisabledScope(saveGame.IsBusy))
+            {
+                if (GUILayout.Button(
+                        "Guardar estado 2.2D",
+                        GUILayout.Height(30f)
+                    ))
+                {
+                    SavePersistenceTestSlot(saveGame);
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(
+                       saveGame.IsBusy || !slotExists ||
+                       !persistenceSlotConfirmed
+                   ))
+            {
+                if (GUILayout.Button(
+                        "Cargar estado 2.2D",
+                        GUILayout.Height(30f)
+                    ))
+                {
+                    LoadPersistenceTestSlot(saveGame);
+                }
+            }
+        }
+
+        using (new EditorGUI.DisabledScope(
+                   saveGame.IsBusy || !slotExists
+               ))
+        {
+            if (GUILayout.Button(
+                    "Eliminar slot temporal 2.2D",
+                    GUILayout.Height(24f)
+                ))
+            {
+                DeletePersistenceTestSlot(saveGame);
+            }
+        }
+
+        EditorGUILayout.LabelField(
+            "Estado: " + persistenceStatus,
+            EditorStyles.wordWrappedLabel
+        );
+
+        BistroBuilderSaveOperationResult result = saveGame.LastResult;
+        if (result != null)
+        {
+            EditorGUILayout.HelpBox(
+                result.Message +
+                "\nDuración: " +
+                result.DurationMilliseconds.ToString("F1") +
+                " ms · Payload: " + result.PayloadBytes + " bytes" +
+                (result.RecoveredFromFallback
+                    ? "\nRecuperada desde respaldo."
+                    : string.Empty),
+                result.Succeeded
+                    ? MessageType.Info
+                    : MessageType.Error
+            );
+        }
+    }
+
+    private void SavePersistenceTestSlot(
+        BistroBuilderSaveGameService saveGame
+    )
+    {
+        if (saveGame == null || saveGame.IsBusy)
+        {
+            persistenceStatus =
+                "El servicio de guardado no está disponible ahora mismo.";
+            return;
+        }
+
+        RestaurantServiceStateService serviceState =
+            Object.FindFirstObjectByType<RestaurantServiceStateService>(
+                FindObjectsInactive.Include
+            );
+        if (serviceState == null || !serviceState.IsClosed)
+        {
+            persistenceStatus =
+                "La prueba de persistencia 2.2D debe guardarse con el servicio " +
+                "cerrado para aislar inventario/política del runtime de clientes.";
+            return;
+        }
+
+        // D10 podía recordar un slot existente sin saber si la última escritura
+        // había terminado correctamente. D11 nunca carga un slot no confirmado.
+        // Si el recordado no está confirmado, reserva uno libre completamente
+        // nuevo antes de iniciar el guardado.
+        if (!persistenceSlotConfirmed ||
+            !IsPersistenceSlotValid(persistenceTestSlot) ||
+            !saveGame.SlotExists(persistenceTestSlot))
+        {
+            if (!AllocateFreshPersistenceTestSlot(
+                    saveGame,
+                    out string slotError
+                ))
+            {
+                persistenceStatus = slotError;
+                return;
+            }
+        }
+
+        persistenceSlotConfirmed = false;
+        EditorPrefs.SetBool(
+            PersistenceSlotConfirmedPrefsKey,
+            false
+        );
+
+        SubscribePersistenceSaveService(saveGame);
+
+        if (!saveGame.TrySaveSlot(
+                persistenceTestSlot,
+                PersistenceSlotDisplayName,
+                out string rejection
+            ))
+        {
+            persistenceStatus =
+                "Guardado rechazado: " + rejection;
+            return;
+        }
+
+        persistenceStatus =
+            "Guardando en el slot temporal " + persistenceTestSlot +
+            ". No modifiques el inventario hasta que aparezca " +
+            "'Guardado 2.2D confirmado: Sí'.";
+    }
+
+    private void LoadPersistenceTestSlot(
+        BistroBuilderSaveGameService saveGame
+    )
+    {
+        if (saveGame == null || saveGame.IsBusy)
+        {
+            persistenceStatus =
+                "El servicio de guardado no está disponible ahora mismo.";
+            return;
+        }
+
+        if (!IsPersistenceSlotValid(persistenceTestSlot) ||
+            !saveGame.SlotExists(persistenceTestSlot))
+        {
+            persistenceStatus =
+                "No existe todavía el slot temporal de 2.2D.";
+            return;
+        }
+
+        if (!persistenceSlotConfirmed)
+        {
+            persistenceStatus =
+                "El slot existe, pero D11 no tiene un guardado correcto " +
+                "confirmado para él. Guarda primero un estado nuevo.";
+            return;
+        }
+
+        if (!saveGame.TryLoadSlot(
+                persistenceTestSlot,
+                out string rejection
+            ))
+        {
+            persistenceStatus =
+                "Carga rechazada: " + rejection;
+            return;
+        }
+
+        persistenceStatus =
+            "Cargando el slot temporal " + persistenceTestSlot +
+            ". Cuando el servicio vuelva a Disponible, abre INVENTARIO y " +
+            "comprueba stock, mínimo y MOVIMIENTOS.";
+    }
+
+    private void DeletePersistenceTestSlot(
+        BistroBuilderSaveGameService saveGame
+    )
+    {
+        if (saveGame == null || saveGame.IsBusy ||
+            !IsPersistenceSlotValid(persistenceTestSlot) ||
+            !saveGame.SlotExists(persistenceTestSlot))
+        {
+            persistenceStatus =
+                "No hay un slot temporal eliminable en este momento.";
+            return;
+        }
+
+        if (!saveGame.TryDeleteSlot(
+                persistenceTestSlot,
+                out string rejection
+            ))
+        {
+            persistenceStatus =
+                "Eliminación rechazada: " + rejection;
+            return;
+        }
+
+        persistenceStatus =
+            "Eliminando el slot temporal " + persistenceTestSlot + ".";
+    }
+
+    private bool AllocateFreshPersistenceTestSlot(
+        BistroBuilderSaveGameService saveGame,
+        out string error
+    )
+    {
+        error = string.Empty;
+
+        for (int candidate = PersistenceSlotMaximum;
+             candidate >= PersistenceSlotMinimum;
+             candidate--)
+        {
+            if (saveGame.SlotExists(candidate))
+            {
+                continue;
+            }
+
+            persistenceTestSlot = candidate;
+            persistenceSlotConfirmed = false;
+            EditorPrefs.SetInt(
+                PersistenceSlotPrefsKey,
+                persistenceTestSlot
+            );
+            EditorPrefs.SetBool(
+                PersistenceSlotConfirmedPrefsKey,
+                false
+            );
+            return true;
+        }
+
+        error =
+            "No queda ningún slot temporal libre entre " +
+            PersistenceSlotMinimum + " y " + PersistenceSlotMaximum + ".";
+        return false;
+    }
+
+    private static bool IsPersistenceSlotValid(int slot)
+    {
+        return slot >= PersistenceSlotMinimum &&
+               slot <= PersistenceSlotMaximum;
+    }
+
+    private void SubscribePersistenceSaveService(
+        BistroBuilderSaveGameService saveGame
+    )
+    {
+        if (ReferenceEquals(persistenceSubscribedSaveGame, saveGame))
+        {
+            return;
+        }
+
+        UnsubscribePersistenceSaveService();
+        persistenceSubscribedSaveGame = saveGame;
+        if (persistenceSubscribedSaveGame != null)
+        {
+            persistenceSubscribedSaveGame.OperationCompleted +=
+                HandlePersistenceOperationCompleted;
+        }
+    }
+
+    private void UnsubscribePersistenceSaveService()
+    {
+        if (persistenceSubscribedSaveGame != null)
+        {
+            persistenceSubscribedSaveGame.OperationCompleted -=
+                HandlePersistenceOperationCompleted;
+            persistenceSubscribedSaveGame = null;
+        }
+    }
+
+    private void HandlePersistenceOperationCompleted(
+        BistroBuilderSaveOperationResult result
+    )
+    {
+        if (result == null ||
+            result.SlotIndex != persistenceTestSlot)
+        {
+            return;
+        }
+
+        if (result.OperationKind == BistroBuilderSaveOperationKind.Save)
+        {
+            persistenceSlotConfirmed = result.Succeeded;
+            EditorPrefs.SetBool(
+                PersistenceSlotConfirmedPrefsKey,
+                persistenceSlotConfirmed
+            );
+            persistenceStatus = result.Succeeded
+                ? "Guardado 2.2D confirmado en slot " +
+                  persistenceTestSlot + ". Ya puedes modificar el estado " +
+                  "y después cargarlo."
+                : "El guardado 2.2D FALLÓ: " + result.Message;
+            Repaint();
+            return;
+        }
+
+        if (result.OperationKind == BistroBuilderSaveOperationKind.Load)
+        {
+            persistenceStatus = result.Succeeded
+                ? "Carga 2.2D completada correctamente desde slot " +
+                  persistenceTestSlot + ". Abre INVENTARIO y verifica los valores."
+                : "La carga 2.2D FALLÓ: " + result.Message;
+            Repaint();
+            return;
+        }
+
+        if (result.OperationKind == BistroBuilderSaveOperationKind.Delete &&
+            result.Succeeded)
+        {
+            persistenceSlotConfirmed = false;
+            persistenceTestSlot = -1;
+            EditorPrefs.DeleteKey(PersistenceSlotPrefsKey);
+            EditorPrefs.DeleteKey(PersistenceSlotConfirmedPrefsKey);
+            persistenceStatus = "Slot temporal 2.2D eliminado.";
+            Repaint();
+        }
+    }
+
+    private void DrawPersistenceMerluzaSnapshot()
+    {
+        if (!TryGetPersistenceMerluzaSnapshot(
+                out BistroBuilderInventoryWarehouseIngredientSnapshot merluza,
+                out string error
+            ))
+        {
+            EditorGUILayout.LabelField(
+                "Merluza: " + error,
+                EditorStyles.wordWrappedMiniLabel
+            );
+            return;
+        }
+
+        double stockKg = BistroBuilderMeasurementUtility
+            .ConvertCanonicalMilliUnitsToDisplayAmount(
+                merluza.OnHandCanonicalMilliUnits,
+                BistroBuilderMeasurementUnit.Kilogram
+            );
+        double availableKg = BistroBuilderMeasurementUtility
+            .ConvertCanonicalMilliUnitsToDisplayAmount(
+                merluza.AvailableCanonicalMilliUnits,
+                BistroBuilderMeasurementUnit.Kilogram
+            );
+        double reservedKg = BistroBuilderMeasurementUtility
+            .ConvertCanonicalMilliUnitsToDisplayAmount(
+                merluza.ReservedCanonicalMilliUnits,
+                BistroBuilderMeasurementUnit.Kilogram
+            );
+        double minimumKg = BistroBuilderMeasurementUtility
+            .ConvertCanonicalMilliUnitsToDisplayAmount(
+                merluza.MinimumStockCanonicalMilliUnits,
+                BistroBuilderMeasurementUnit.Kilogram
+            );
+
+        EditorGUILayout.LabelField(
+            "Merluza actual: stock " + stockKg.ToString("0.###") +
+            " kg · disponible " + availableKg.ToString("0.###") +
+            " kg · reservado " + reservedKg.ToString("0.###") +
+            " kg · mínimo " + minimumKg.ToString("0.###") + " kg",
+            EditorStyles.wordWrappedMiniLabel
+        );
+    }
+
+    private bool TryGetPersistenceMerluzaSnapshot(
+        out BistroBuilderInventoryWarehouseIngredientSnapshot merluza,
+        out string error
+    )
+    {
+        merluza = default(BistroBuilderInventoryWarehouseIngredientSnapshot);
+        error = string.Empty;
+
+        BistroBuilderInventoryWarehouseService warehouse =
+            Object.FindFirstObjectByType<BistroBuilderInventoryWarehouseService>();
+        if (warehouse == null)
+        {
+            error = "no se encuentra la fachada 2.2D";
+            return false;
+        }
+
+        var rows =
+            new List<BistroBuilderInventoryWarehouseIngredientSnapshot>(32);
+        if (!warehouse.CopyIngredientsTo(
+                rows,
+                BistroBuilderInventoryWarehouseFilter.All,
+                BistroBuilderInventoryWarehouseSort.Name,
+                string.Empty,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        for (int index = 0; index < rows.Count; index++)
+        {
+            if (!string.Equals(
+                    rows[index].IngredientId,
+                    ManualReceiptIngredientId,
+                    StringComparison.Ordinal
+                ))
+            {
+                continue;
+            }
+
+            merluza = rows[index];
+            return true;
+        }
+
+        error = "no aparece en la lectura agregada";
+        return false;
     }
 
     private void PrepareRealisticServiceScenario()
