@@ -100,6 +100,17 @@ public enum BistroBuilderCommercialPackageLogisticSize
     Grande = 2
 }
 
+/// <summary>
+/// Disponibilidad comercial base de una oferta. En 2.3B solo define
+/// el estado inicial; la evolución dinámica se activa en 2.3C.
+/// </summary>
+public enum BistroBuilderSupplierOfferAvailability
+{
+    Disponible = 0,
+    StockLimitado = 1,
+    TemporalmenteAgotado = 2
+}
+
 public enum BistroBuilderSupplierUnlockRuleKind
 {
     Ninguna = 0,
@@ -387,6 +398,10 @@ public sealed class BistroBuilderSupplierAuthoringRecord
     public BistroBuilderSupplierUnlockProfileAuthoring unlockProfile =
         new BistroBuilderSupplierUnlockProfileAuthoring();
 
+    [Tooltip("Ofertas base proveedor→formato activadas en 2.3B. No son promociones ni pedidos.")]
+    public List<BistroBuilderSupplierBaseOfferAuthoringRecord> baseOffers =
+        new List<BistroBuilderSupplierBaseOfferAuthoringRecord>();
+
     public bool isActive = true;
 
     public string SupplierId => supplierId;
@@ -452,6 +467,17 @@ public sealed class BistroBuilderSupplierAuthoringRecord
                 if (deliveryWindows[index] != null)
                 {
                     clone.deliveryWindows.Add(deliveryWindows[index].DeepClone());
+                }
+            }
+        }
+
+        if (baseOffers != null)
+        {
+            for (int index = 0; index < baseOffers.Count; index++)
+            {
+                if (baseOffers[index] != null)
+                {
+                    clone.baseOffers.Add(baseOffers[index].DeepClone(keepIdentity));
                 }
             }
         }
@@ -525,6 +551,98 @@ public sealed class BistroBuilderCommercialPackageAuthoringRecord
             netQuantityMicrounits = netQuantityMicrounits,
             packageImage = packageImage,
             logisticSize = logisticSize,
+            isActive = isActive
+        };
+    }
+}
+
+
+/// <summary>
+/// Oferta base de un proveedor para un formato comercial canónico.
+///
+/// No representa una promoción ni un pedido. Define la referencia estable
+/// proveedor→ingrediente→formato y las condiciones de catálogo sobre las que
+/// 2.3C/2.3D construirán precio de mercado, disponibilidad y promociones.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderSupplierBaseOfferAuthoringRecord
+{
+    [SerializeField]
+    private string supplierOfferId;
+
+    [Tooltip("IngredientId canónico al que pertenece el formato.")]
+    public string ingredientId;
+
+    [Tooltip("PackageFormatId definido en Editor de Ingredientes.")]
+    public string packageFormatId;
+
+    [Min(1)]
+    public long basePriceCents = 100;
+
+    [Min(1)]
+    public int minimumPackageCount = 1;
+
+    [Min(1)]
+    public int orderIncrement = 1;
+
+    public BistroBuilderSupplierOfferAvailability initialAvailability =
+        BistroBuilderSupplierOfferAvailability.Disponible;
+
+    public bool promotionEligible = true;
+
+    [Tooltip("Si está desactivado, se usa el plazo general del proveedor.")]
+    public bool overrideLeadTime;
+
+    [Min(0.1f)]
+    public float leadTimeOverrideGameHours = 24f;
+
+    [Range(-50f, 0f)]
+    public float minimumMarketVariationPercent = -10f;
+
+    [Range(0f, 100f)]
+    public float maximumMarketVariationPercent = 15f;
+
+    public int sortOrder;
+    public bool isActive = true;
+
+    public string SupplierOfferId => supplierOfferId;
+
+    public void AssignStableIdOnce(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(supplierOfferId))
+        {
+            return;
+        }
+
+        supplierOfferId =
+            BistroBuilderSupplierAuthoringRecord.NormalizeId(value, "offer");
+    }
+
+#if UNITY_EDITOR
+    public void EditorForceAssignIdForMigration(string value)
+    {
+        supplierOfferId =
+            BistroBuilderSupplierAuthoringRecord.NormalizeId(value, "offer");
+    }
+#endif
+
+    public BistroBuilderSupplierBaseOfferAuthoringRecord DeepClone(bool keepIdentity)
+    {
+        return new BistroBuilderSupplierBaseOfferAuthoringRecord
+        {
+            supplierOfferId = keepIdentity ? supplierOfferId : null,
+            ingredientId = ingredientId,
+            packageFormatId = packageFormatId,
+            basePriceCents = basePriceCents,
+            minimumPackageCount = minimumPackageCount,
+            orderIncrement = orderIncrement,
+            initialAvailability = initialAvailability,
+            promotionEligible = promotionEligible,
+            overrideLeadTime = overrideLeadTime,
+            leadTimeOverrideGameHours = leadTimeOverrideGameHours,
+            minimumMarketVariationPercent = minimumMarketVariationPercent,
+            maximumMarketVariationPercent = maximumMarketVariationPercent,
+            sortOrder = sortOrder,
             isActive = isActive
         };
     }

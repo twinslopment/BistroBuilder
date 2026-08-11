@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: BistroBuilderSupplierAuthoringDatabase
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierAuthoringDatabase
   schemaId: supplier.authoring
-  schemaVersion: 1
-  contentRevision: 6
+  schemaVersion: 2
+  contentRevision: 10
   suppliers:
   - supplierId: supplier_mercado_central
     displayName: Mercado Central
@@ -72,6 +72,315 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 1
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_aceite_oliva_bottle_1l
+      ingredientId: ingredient_aceite_oliva
+      packageFormatId: package_ingredient_aceite_oliva_bottle_1l
+      basePriceCents: 725
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 0
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_aceitunas_alinadas_tray_1kg
+      ingredientId: ingredient_aceitunas_alinadas
+      packageFormatId: package_ingredient_aceitunas_alinadas_tray_1kg
+      basePriceCents: 515
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 1
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_agua_cocina_jug_5l
+      ingredientId: ingredient_agua_cocina
+      packageFormatId: package_ingredient_agua_cocina_jug_5l
+      basePriceCents: 150
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 2
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_ajo_mesh_1kg
+      ingredientId: ingredient_ajo
+      packageFormatId: package_ingredient_ajo_mesh_1kg
+      basePriceCents: 465
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 3
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_azucar_379f7dc0
+      ingredientId: ingredient_azucar
+      packageFormatId: package_ingredient_azucar_379f7dc0
+      basePriceCents: 5
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 4
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_botella_agua_mineral_pack_6u
+      ingredientId: ingredient_botella_agua_mineral
+      packageFormatId: package_ingredient_botella_agua_mineral_pack_6u
+      basePriceCents: 375
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 5
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_cebolla_mesh_5kg
+      ingredientId: ingredient_cebolla
+      packageFormatId: package_ingredient_cebolla_mesh_5kg
+      basePriceCents: 700
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 6
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_chorizo_tray_2kg
+      ingredientId: ingredient_chorizo
+      packageFormatId: package_ingredient_chorizo_tray_2kg
+      basePriceCents: 1855
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 7
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_fabes_pack_1kg
+      ingredientId: ingredient_fabes
+      packageFormatId: package_ingredient_fabes_pack_1kg
+      basePriceCents: 620
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 8
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_galleta_box_1kg
+      ingredientId: ingredient_galleta
+      packageFormatId: package_ingredient_galleta_box_1kg
+      basePriceCents: 725
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 9
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_huevo_box_12u
+      ingredientId: ingredient_huevo
+      packageFormatId: package_ingredient_huevo_box_12u
+      basePriceCents: 310
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 10
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_limon_mesh_2kg
+      ingredientId: ingredient_limon
+      packageFormatId: package_ingredient_limon_mesh_2kg
+      basePriceCents: 580
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 11
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_mantequilla_block_1kg
+      ingredientId: ingredient_mantequilla
+      packageFormatId: package_ingredient_mantequilla_block_1kg
+      basePriceCents: 930
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 12
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_merluza_box_3kg
+      ingredientId: ingredient_merluza
+      packageFormatId: package_ingredient_merluza_box_3kg
+      basePriceCents: 3450
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 13
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_morcilla_tray_2kg
+      ingredientId: ingredient_morcilla
+      packageFormatId: package_ingredient_morcilla_tray_2kg
+      basePriceCents: 1960
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 14
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_nata_bottle_1l
+      ingredientId: ingredient_nata
+      packageFormatId: package_ingredient_nata_bottle_1l
+      basePriceCents: 620
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 15
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_panceta_tray_2kg
+      ingredientId: ingredient_panceta
+      packageFormatId: package_ingredient_panceta_tray_2kg
+      basePriceCents: 1960
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 16
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_patata_box_3kg
+      ingredientId: ingredient_patata
+      packageFormatId: package_ingredient_patata_box_3kg
+      basePriceCents: 750
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 17
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_queso_crema_pack_1kg
+      ingredientId: ingredient_queso_crema
+      packageFormatId: package_ingredient_queso_crema_pack_1kg
+      basePriceCents: 620
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 18
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_refresco_lata_pack_6u
+      ingredientId: ingredient_refresco_lata
+      packageFormatId: package_ingredient_refresco_lata_pack_6u
+      basePriceCents: 280
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 19
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_sal_jar_500g
+      ingredientId: ingredient_sal
+      packageFormatId: package_ingredient_sal_jar_500g
+      basePriceCents: 415
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 20
+      isActive: 1
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_vino_casa_bottle_1l
+      ingredientId: ingredient_vino_casa
+      packageFormatId: package_ingredient_vino_casa_bottle_1l
+      basePriceCents: 125
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 21
+      isActive: 1
     isActive: 1
   - supplierId: supplier_distribuciones_norte
     displayName: Distribuciones Norte
@@ -129,6 +438,189 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 0
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_aceite_oliva_jug_5l
+      ingredientId: ingredient_aceite_oliva
+      packageFormatId: package_ingredient_aceite_oliva_jug_5l
+      basePriceCents: 3080
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 0
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_agua_cocina_jug_10l
+      ingredientId: ingredient_agua_cocina
+      packageFormatId: package_ingredient_agua_cocina_jug_10l
+      basePriceCents: 255
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 1
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_azucar_sack_5kg
+      ingredientId: ingredient_azucar
+      packageFormatId: package_ingredient_azucar_sack_5kg
+      basePriceCents: 530
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 2
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_botella_agua_mineral_box_24u
+      ingredientId: ingredient_botella_agua_mineral
+      packageFormatId: package_ingredient_botella_agua_mineral_box_24u
+      basePriceCents: 1270
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 3
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_fabes_sack_5kg
+      ingredientId: ingredient_fabes
+      packageFormatId: package_ingredient_fabes_sack_5kg
+      basePriceCents: 2640
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 4
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_galleta_box_3kg
+      ingredientId: ingredient_galleta
+      packageFormatId: package_ingredient_galleta_box_3kg
+      basePriceCents: 1850
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 5
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_huevo_box_30u
+      ingredientId: ingredient_huevo
+      packageFormatId: package_ingredient_huevo_box_30u
+      basePriceCents: 660
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 6
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_mantequilla_case_5kg
+      ingredientId: ingredient_mantequilla
+      packageFormatId: package_ingredient_mantequilla_case_5kg
+      basePriceCents: 3960
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 7
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_nata_jug_5l
+      ingredientId: ingredient_nata
+      packageFormatId: package_ingredient_nata_jug_5l
+      basePriceCents: 2640
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 8
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_queso_crema_case_5kg
+      ingredientId: ingredient_queso_crema
+      packageFormatId: package_ingredient_queso_crema_case_5kg
+      basePriceCents: 2640
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 9
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_refresco_lata_box_24u
+      ingredientId: ingredient_refresco_lata
+      packageFormatId: package_ingredient_refresco_lata_box_24u
+      basePriceCents: 955
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 10
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_sal_case_2kg
+      ingredientId: ingredient_sal
+      packageFormatId: package_ingredient_sal_case_2kg
+      basePriceCents: 1410
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 11
+      isActive: 1
+    - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_vino_casa_jug_5l
+      ingredientId: ingredient_vino_casa
+      packageFormatId: package_ingredient_vino_casa_jug_5l
+      basePriceCents: 530
+      minimumPackageCount: 2
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 48
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 12
+      isActive: 1
     isActive: 1
   - supplierId: supplier_hosteleria_express
     displayName: "Hosteler\xEDa Express"
@@ -186,6 +678,315 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 1
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_aceite_oliva_bottle_1l
+      ingredientId: ingredient_aceite_oliva
+      packageFormatId: package_ingredient_aceite_oliva_bottle_1l
+      basePriceCents: 925
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 0
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_aceitunas_alinadas_tray_1kg
+      ingredientId: ingredient_aceitunas_alinadas
+      packageFormatId: package_ingredient_aceitunas_alinadas_tray_1kg
+      basePriceCents: 660
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 1
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_agua_cocina_jug_5l
+      ingredientId: ingredient_agua_cocina
+      packageFormatId: package_ingredient_agua_cocina_jug_5l
+      basePriceCents: 195
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 2
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_ajo_mesh_1kg
+      ingredientId: ingredient_ajo
+      packageFormatId: package_ingredient_ajo_mesh_1kg
+      basePriceCents: 595
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 3
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_azucar_379f7dc0
+      ingredientId: ingredient_azucar
+      packageFormatId: package_ingredient_azucar_379f7dc0
+      basePriceCents: 5
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 4
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_botella_agua_mineral_pack_6u
+      ingredientId: ingredient_botella_agua_mineral
+      packageFormatId: package_ingredient_botella_agua_mineral_pack_6u
+      basePriceCents: 475
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 5
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_cebolla_mesh_5kg
+      ingredientId: ingredient_cebolla
+      packageFormatId: package_ingredient_cebolla_mesh_5kg
+      basePriceCents: 900
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 6
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_chorizo_tray_2kg
+      ingredientId: ingredient_chorizo
+      packageFormatId: package_ingredient_chorizo_tray_2kg
+      basePriceCents: 2375
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 7
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_fabes_pack_1kg
+      ingredientId: ingredient_fabes
+      packageFormatId: package_ingredient_fabes_pack_1kg
+      basePriceCents: 795
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 8
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_galleta_box_1kg
+      ingredientId: ingredient_galleta
+      packageFormatId: package_ingredient_galleta_box_1kg
+      basePriceCents: 925
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 9
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_huevo_box_12u
+      ingredientId: ingredient_huevo
+      packageFormatId: package_ingredient_huevo_box_12u
+      basePriceCents: 400
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 10
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_limon_mesh_2kg
+      ingredientId: ingredient_limon
+      packageFormatId: package_ingredient_limon_mesh_2kg
+      basePriceCents: 740
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 11
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_mantequilla_block_1kg
+      ingredientId: ingredient_mantequilla
+      packageFormatId: package_ingredient_mantequilla_block_1kg
+      basePriceCents: 1190
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 12
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_merluza_box_3kg
+      ingredientId: ingredient_merluza
+      packageFormatId: package_ingredient_merluza_box_3kg
+      basePriceCents: 4420
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 13
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_morcilla_tray_2kg
+      ingredientId: ingredient_morcilla
+      packageFormatId: package_ingredient_morcilla_tray_2kg
+      basePriceCents: 2505
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 14
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_nata_bottle_1l
+      ingredientId: ingredient_nata
+      packageFormatId: package_ingredient_nata_bottle_1l
+      basePriceCents: 795
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 15
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_panceta_tray_2kg
+      ingredientId: ingredient_panceta
+      packageFormatId: package_ingredient_panceta_tray_2kg
+      basePriceCents: 2505
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 16
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_patata_box_3kg
+      ingredientId: ingredient_patata
+      packageFormatId: package_ingredient_patata_box_3kg
+      basePriceCents: 960
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 17
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_queso_crema_pack_1kg
+      ingredientId: ingredient_queso_crema
+      packageFormatId: package_ingredient_queso_crema_pack_1kg
+      basePriceCents: 795
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 18
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_refresco_lata_pack_6u
+      ingredientId: ingredient_refresco_lata
+      packageFormatId: package_ingredient_refresco_lata_pack_6u
+      basePriceCents: 360
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 19
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_sal_jar_500g
+      ingredientId: ingredient_sal
+      packageFormatId: package_ingredient_sal_jar_500g
+      basePriceCents: 530
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 20
+      isActive: 1
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_vino_casa_bottle_1l
+      ingredientId: ingredient_vino_casa
+      packageFormatId: package_ingredient_vino_casa_bottle_1l
+      basePriceCents: 160
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 6
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 21
+      isActive: 1
     isActive: 1
   - supplierId: supplier_huerta_clara
     displayName: Huerta Clara
@@ -242,6 +1043,63 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 0
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_huerta_clara_package_ingredient_ajo_mesh_1kg
+      ingredientId: ingredient_ajo
+      packageFormatId: package_ingredient_ajo_mesh_1kg
+      basePriceCents: 440
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 0
+      isActive: 1
+    - supplierOfferId: offer_supplier_huerta_clara_package_ingredient_cebolla_mesh_5kg
+      ingredientId: ingredient_cebolla
+      packageFormatId: package_ingredient_cebolla_mesh_5kg
+      basePriceCents: 660
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 1
+      isActive: 1
+    - supplierOfferId: offer_supplier_huerta_clara_package_ingredient_limon_mesh_2kg
+      ingredientId: ingredient_limon
+      packageFormatId: package_ingredient_limon_mesh_2kg
+      basePriceCents: 545
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 2
+      isActive: 1
+    - supplierOfferId: offer_supplier_huerta_clara_package_ingredient_patata_box_3kg
+      ingredientId: ingredient_patata
+      packageFormatId: package_ingredient_patata_box_3kg
+      basePriceCents: 705
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 3
+      isActive: 1
     isActive: 1
   - supplierId: supplier_carnes_selectas
     displayName: Carnes Selectas
@@ -299,6 +1157,63 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 0
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_carnes_selectas_package_ingredient_aceitunas_alinadas_tray_1kg
+      ingredientId: ingredient_aceitunas_alinadas
+      packageFormatId: package_ingredient_aceitunas_alinadas_tray_1kg
+      basePriceCents: 560
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 0
+      isActive: 1
+    - supplierOfferId: offer_supplier_carnes_selectas_package_ingredient_chorizo_tray_2kg
+      ingredientId: ingredient_chorizo
+      packageFormatId: package_ingredient_chorizo_tray_2kg
+      basePriceCents: 2005
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 1
+      isActive: 1
+    - supplierOfferId: offer_supplier_carnes_selectas_package_ingredient_morcilla_tray_2kg
+      ingredientId: ingredient_morcilla
+      packageFormatId: package_ingredient_morcilla_tray_2kg
+      basePriceCents: 2115
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 2
+      isActive: 1
+    - supplierOfferId: offer_supplier_carnes_selectas_package_ingredient_panceta_tray_2kg
+      ingredientId: ingredient_panceta
+      packageFormatId: package_ingredient_panceta_tray_2kg
+      basePriceCents: 2115
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -8
+      maximumMarketVariationPercent: 12
+      sortOrder: 3
+      isActive: 1
     isActive: 1
   - supplierId: supplier_costa_fresca
     displayName: Costa Fresca
@@ -356,4 +1271,19 @@ MonoBehaviour:
     unlockProfile:
       availableFromStart: 0
       conditions: []
+    baseOffers:
+    - supplierOfferId: offer_supplier_costa_fresca_package_ingredient_merluza_box_3kg
+      ingredientId: ingredient_merluza
+      packageFormatId: package_ingredient_merluza_box_3kg
+      basePriceCents: 3625
+      minimumPackageCount: 1
+      orderIncrement: 1
+      initialAvailability: 0
+      promotionEligible: 1
+      overrideLeadTime: 0
+      leadTimeOverrideGameHours: 24
+      minimumMarketVariationPercent: -10
+      maximumMarketVariationPercent: 15
+      sortOrder: 0
+      isActive: 1
     isActive: 1

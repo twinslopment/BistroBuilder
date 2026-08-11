@@ -274,7 +274,7 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
                 DrawCommercialConditionsTab(supplierProperty);
                 break;
             case Tab.Catalogo:
-                DrawCatalogTab(selected);
+                DrawCatalogTab(supplierProperty, selected);
                 break;
             case Tab.Perfiles:
                 DrawProfilesTab(supplierProperty);
@@ -288,7 +288,6 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
         serializedDatabase.ApplyModifiedProperties();
 
         if (changed &&
-            activeTab != Tab.Catalogo &&
             activeTab != Tab.Validacion)
         {
             database.EditorTouchRevision();
@@ -356,11 +355,13 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
             MessageType.Info);
     }
 
-    private void DrawCatalogTab(BistroBuilderSupplierAuthoringRecord supplier)
+    private void DrawCatalogTab(
+        SerializedProperty supplierProperty,
+        BistroBuilderSupplierAuthoringRecord supplier)
     {
         DrawSectionHeader(
-            "Catálogo de ingredientes",
-            "2.3A muestra la biblioteca canónica/visual disponible. La selección de SKU, formato y precio por proveedor se activa en 2.3B.");
+            "Catálogo y ofertas base",
+            "El ingrediente define el formato; este proveedor decide cuáles vende y a qué precio base.");
 
         if (ingredientDatabase == null)
         {
@@ -376,31 +377,72 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
             return;
         }
 
-        EditorGUILayout.LabelField(
-            "Ingredientes sincronizados",
-            ingredientDatabase.Ingredients.Count.ToString());
+        SerializedProperty offers =
+            supplierProperty.FindPropertyRelative("baseOffers");
 
-        EditorGUILayout.LabelField(
-            "Clasificación declarada del proveedor",
-            BistroBuilderSupplierAuthoringPresentation23A3.Flags(supplier.catalogFlags),
-            GetWrappedMiniLabelStyle());
+        int activeOffers = 0;
+        for (int offerIndex = 0; offerIndex < offers.arraySize; offerIndex++)
+        {
+            SerializedProperty offer = offers.GetArrayElementAtIndex(offerIndex);
+            if (offer.FindPropertyRelative("isActive").boolValue)
+            {
+                activeOffers++;
+            }
+        }
 
-        EditorGUILayout.Space(6f);
+        EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+        EditorGUILayout.LabelField(
+            "Ofertas activas",
+            activeOffers.ToString(),
+            EditorStyles.boldLabel);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Completar semilla recomendada", GUILayout.Width(190f)))
+        {
+            BistroBuilderSuppliers23B12Installer.InstallOrUpdate();
+            GUIUtility.ExitGUI();
+        }
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.HelpBox(
+            "Precio base = referencia estable de diseño. 2.3C generará el precio de mercado y 2.3D las promociones. " +
+            "Modificar aquí un precio no compra mercancía ni toca Inventario.",
+            MessageType.Info);
 
         IReadOnlyList<BistroBuilderIngredientAuthoringRecord> ingredients =
             ingredientDatabase.Ingredients;
 
-        int shown = Mathf.Min(ingredients.Count, 24);
-        for (int index = 0; index < shown; index++)
+        for (int ingredientIndex = 0;
+             ingredientIndex < ingredients.Count;
+             ingredientIndex++)
         {
-            BistroBuilderIngredientAuthoringRecord ingredient = ingredients[index];
-            if (ingredient == null)
+            BistroBuilderIngredientAuthoringRecord ingredient =
+                ingredients[ingredientIndex];
+
+            if (ingredient == null || !ingredient.isActive ||
+                ingredient.commercialPackages == null ||
+                ingredient.commercialPackages.Count == 0)
             {
                 continue;
             }
 
-            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            Rect imageRect = GUILayoutUtility.GetRect(38f, 38f, GUILayout.Width(38f), GUILayout.Height(38f));
+            bool anyOffer = HasAnySerializedOfferForIngredient(
+                offers,
+                ingredient.IngredientId);
+
+            bool expectedBySeed =
+                BistroBuilderSuppliers23B12ContentSeed.ShouldSupplierSell(
+                    supplier.SupplierId,
+                    ingredient);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+
+            Rect imageRect = GUILayoutUtility.GetRect(
+                44f,
+                44f,
+                GUILayout.Width(44f),
+                GUILayout.Height(44f));
+
             DrawSpriteOrPlaceholder(
                 imageRect,
                 ingredient.displayImage,
@@ -413,31 +455,308 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
                     ? ingredient.IngredientId
                     : ingredient.displayNameSnapshot,
                 EditorStyles.boldLabel);
-            EditorGUILayout.LabelField(
-                BistroBuilderSupplierAuthoringPresentation23A3.Unit(ingredient.canonicalUnitSnapshot) + " · " +
-                ingredient.commercialPackages.Count + " formato(s)",
-                EditorStyles.miniLabel);
+
+            string line =
+                BistroBuilderSupplierAuthoringPresentation23A3.Unit(
+                    ingredient.canonicalUnitSnapshot) +
+                " · " +
+                ingredient.commercialPackages.Count +
+                " formato(s)";
+
+            if (expectedBySeed)
+            {
+                line += " · Perfil recomendado";
+            }
+            else if (anyOffer)
+            {
+                line += " · Catálogo personalizado";
+            }
+
+            EditorGUILayout.LabelField(line, EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndHorizontal();
+
+            for (int packageIndex = 0;
+                 packageIndex < ingredient.commercialPackages.Count;
+                 packageIndex++)
+            {
+                BistroBuilderCommercialPackageAuthoringRecord package =
+                    ingredient.commercialPackages[packageIndex];
+
+                if (package == null || !package.isActive)
+                {
+                    continue;
+                }
+
+                int offerIndex =
+                    FindSerializedOfferForPackage(
+                        offers,
+                        package.PackageFormatId);
+
+                bool isSold = offerIndex >= 0;
+                bool nextSold = EditorGUILayout.ToggleLeft(
+                    package.displayName +
+                    "  ·  " +
+                    package.NetQuantityInBaseUnits.ToString("0.###") +
+                    " " +
+                    BistroBuilderSupplierAuthoringPresentation23A3.Unit(
+                        ingredient.canonicalUnitSnapshot),
+                    isSold);
+
+                if (nextSold != isSold)
+                {
+                    if (nextSold)
+                    {
+                        AddSerializedOffer(
+                            offers,
+                            supplier,
+                            ingredient,
+                            package);
+                    }
+                    else
+                    {
+                        offers.DeleteArrayElementAtIndex(offerIndex);
+                    }
+
+                    GUI.changed = true;
+                    EditorGUILayout.EndVertical();
+                    return;
+                }
+
+                if (!isSold)
+                {
+                    continue;
+                }
+
+                SerializedProperty offer =
+                    offers.GetArrayElementAtIndex(offerIndex);
+
+                EditorGUI.indentLevel++;
+
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.PropertyField(
+                        offer.FindPropertyRelative("supplierOfferId"),
+                        new GUIContent("SupplierOfferId"));
+                }
+
+                DrawMoneyCents(
+                    offer.FindPropertyRelative("basePriceCents"),
+                    "Precio base del formato");
+
+                long priceCents =
+                    offer.FindPropertyRelative("basePriceCents").longValue;
+
+                EditorGUILayout.LabelField(
+                    "Precio mostrado",
+                    BistroBuilderSupplierAuthoringPresentation23A3.FormatMoney(priceCents),
+                    EditorStyles.miniLabel);
+
+                EditorGUILayout.LabelField(
+                    "Precio normalizado",
+                    FormatNormalizedPrice(
+                        priceCents,
+                        package,
+                        ingredient.canonicalUnitSnapshot),
+                    EditorStyles.miniLabel);
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("minimumPackageCount"),
+                    new GUIContent(
+                        "Mínimo de compra (formatos)",
+                        "Número mínimo de este formato que debe añadirse cuando se compra esta referencia."));
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("orderIncrement"),
+                    new GUIContent(
+                        "Incremento de compra (formatos)",
+                        "Salto permitido después del mínimo. Ejemplo: mínimo 2 e incremento 2 permite 2, 4, 6..."));
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("initialAvailability"),
+                    new GUIContent("Disponibilidad inicial"));
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("promotionEligible"),
+                    new GUIContent("Admite promociones"));
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("overrideLeadTime"),
+                    new GUIContent("Plazo específico"));
+
+                if (offer.FindPropertyRelative("overrideLeadTime").boolValue)
+                {
+                    EditorGUILayout.PropertyField(
+                        offer.FindPropertyRelative("leadTimeOverrideGameHours"),
+                        new GUIContent("Plazo (horas de juego)"));
+                }
+
+                SerializedProperty minimumVariation =
+                    offer.FindPropertyRelative("minimumMarketVariationPercent");
+                SerializedProperty maximumVariation =
+                    offer.FindPropertyRelative("maximumMarketVariationPercent");
+
+                EditorGUILayout.PropertyField(
+                    minimumVariation,
+                    new GUIContent("Variación mínima futura (%)"));
+                EditorGUILayout.LabelField(
+                    "Límite inferior",
+                    BistroBuilderSupplierAuthoringPresentation23A3.FormatPercent(
+                        minimumVariation.floatValue),
+                    EditorStyles.miniLabel);
+
+                EditorGUILayout.PropertyField(
+                    maximumVariation,
+                    new GUIContent("Variación máxima futura (%)"));
+                EditorGUILayout.LabelField(
+                    "Límite superior",
+                    BistroBuilderSupplierAuthoringPresentation23A3.FormatPercent(
+                        maximumVariation.floatValue),
+                    EditorStyles.miniLabel);
+
+                EditorGUILayout.PropertyField(
+                    offer.FindPropertyRelative("isActive"),
+                    new GUIContent("Oferta activa"));
+
+                EditorGUI.indentLevel--;
+                EditorGUILayout.Space(4f);
+            }
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(4f);
         }
 
-        if (ingredients.Count > shown)
-        {
-            EditorGUILayout.LabelField(
-                "… y " + (ingredients.Count - shown) + " ingrediente(s) más.",
-                EditorStyles.miniLabel);
-        }
-
-        EditorGUILayout.Space(8f);
-        EditorGUILayout.HelpBox(
-            "No se crean asignaciones proveedor→ingrediente en esta fase para no duplicar el supplier.catalog runtime que ya existe. " +
-            "2.3B añadirá el contrato de SKU/formato/precio sobre la autoridad existente.",
-            MessageType.Info);
-
-        if (GUILayout.Button("Abrir Editor de Ingredientes"))
+        if (GUILayout.Button("Abrir Editor de Ingredientes", GUILayout.Height(26f)))
         {
             BistroBuilderIngredientEditor23A2Window.OpenWindow();
         }
+    }
+
+    private static int FindSerializedOfferForPackage(
+        SerializedProperty offers,
+        string packageFormatId)
+    {
+        if (offers == null || string.IsNullOrWhiteSpace(packageFormatId))
+        {
+            return -1;
+        }
+
+        for (int index = 0; index < offers.arraySize; index++)
+        {
+            SerializedProperty offer = offers.GetArrayElementAtIndex(index);
+            if (string.Equals(
+                    offer.FindPropertyRelative("packageFormatId").stringValue,
+                    packageFormatId,
+                    StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool HasAnySerializedOfferForIngredient(
+        SerializedProperty offers,
+        string ingredientId)
+    {
+        if (offers == null || string.IsNullOrWhiteSpace(ingredientId))
+        {
+            return false;
+        }
+
+        for (int index = 0; index < offers.arraySize; index++)
+        {
+            SerializedProperty offer = offers.GetArrayElementAtIndex(index);
+            if (string.Equals(
+                    offer.FindPropertyRelative("ingredientId").stringValue,
+                    ingredientId,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void AddSerializedOffer(
+        SerializedProperty offers,
+        BistroBuilderSupplierAuthoringRecord supplier,
+        BistroBuilderIngredientAuthoringRecord ingredient,
+        BistroBuilderCommercialPackageAuthoringRecord package)
+    {
+        int index = offers.arraySize;
+        offers.InsertArrayElementAtIndex(index);
+        SerializedProperty offer = offers.GetArrayElementAtIndex(index);
+
+        string offerId = BistroBuilderSupplierAuthoringRecord.NormalizeId(
+            supplier.SupplierId + "_" + package.PackageFormatId,
+            "offer");
+
+        offer.FindPropertyRelative("supplierOfferId").stringValue = offerId;
+        offer.FindPropertyRelative("ingredientId").stringValue =
+            ingredient.IngredientId;
+        offer.FindPropertyRelative("packageFormatId").stringValue =
+            package.PackageFormatId;
+        offer.FindPropertyRelative("basePriceCents").longValue =
+            BistroBuilderSuppliers23B12ContentSeed.EstimateBasePriceCents(
+                supplier.SupplierId,
+                ingredient,
+                package);
+        offer.FindPropertyRelative("minimumPackageCount").intValue = 1;
+        offer.FindPropertyRelative("orderIncrement").intValue = 1;
+        offer.FindPropertyRelative("initialAvailability").enumValueIndex =
+            (int)BistroBuilderSupplierOfferAvailability.Disponible;
+        offer.FindPropertyRelative("promotionEligible").boolValue = true;
+        offer.FindPropertyRelative("overrideLeadTime").boolValue = false;
+        offer.FindPropertyRelative("leadTimeOverrideGameHours").floatValue =
+            Mathf.Max(0.1f, supplier.defaultLeadTimeGameHours);
+        offer.FindPropertyRelative("minimumMarketVariationPercent").floatValue =
+            supplier.priceEvolutionProfile != null
+                ? supplier.priceEvolutionProfile.minimumVariationPercent
+                : -10f;
+        offer.FindPropertyRelative("maximumMarketVariationPercent").floatValue =
+            supplier.priceEvolutionProfile != null
+                ? supplier.priceEvolutionProfile.maximumVariationPercent
+                : 15f;
+        offer.FindPropertyRelative("sortOrder").intValue = index;
+        offer.FindPropertyRelative("isActive").boolValue = true;
+    }
+
+    private static string FormatNormalizedPrice(
+        long priceCents,
+        BistroBuilderCommercialPackageAuthoringRecord package,
+        string canonicalUnit)
+    {
+        if (package == null || package.NetQuantityInBaseUnits <= 0d)
+        {
+            return "—";
+        }
+
+        string raw = (canonicalUnit ?? string.Empty).Trim().ToLowerInvariant();
+        double quantity = package.NetQuantityInBaseUnits;
+        string suffix = BistroBuilderSupplierAuthoringPresentation23A3.Unit(
+            canonicalUnit);
+
+        if (raw == "gram" || raw == "grams" || raw == "g")
+        {
+            quantity /= 1000d;
+            suffix = "kg";
+        }
+        else if (raw == "milliliter" || raw == "milliliters" || raw == "ml")
+        {
+            quantity /= 1000d;
+            suffix = "L";
+        }
+
+        if (quantity <= 0d)
+        {
+            return "—";
+        }
+
+        double euros = priceCents / 100d / quantity;
+        return euros.ToString("0.00") + " €/" + suffix;
     }
 
     private void DrawProfilesTab(SerializedProperty supplier)
@@ -454,7 +773,7 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
         EditorGUILayout.PropertyField(supplier.FindPropertyRelative("unlockProfile"), new GUIContent("Desbloqueo futuro"), true);
 
         EditorGUILayout.HelpBox(
-            "2.3A solo define y valida estos perfiles. No mueve precios, no crea promociones, no genera pedidos y no modifica Inventario.",
+            "2.3B conserva estos perfiles preparados, pero todavía no mueve precios, no crea promociones, no genera pedidos y no modifica Inventario.",
             MessageType.None);
     }
 
@@ -743,7 +1062,7 @@ public sealed class BistroBuilderSupplierEditor23A2Window : EditorWindow
 
     private static string FormatMoney(long cents)
     {
-        return (cents / 100.0).ToString("0.00") + " €";
+        return BistroBuilderSupplierAuthoringPresentation23A3.FormatMoney(cents);
     }
 
     internal static void DrawSpriteOrPlaceholder(Rect rect, Sprite sprite, Color background, string label)

@@ -97,6 +97,9 @@ internal static class BistroBuilderSupplierAuthoringPresentation23A3
             { "Pequeno", "Pequeño" },
             { "Medio", "Medio" },
             { "Grande", "Grande" },
+            { "Disponible", "Disponible" },
+            { "StockLimitado", "Stock limitado" },
+            { "TemporalmenteAgotado", "Temporalmente agotado" },
             { "Ninguna", "Ninguna" },
             { "DiasAbierto", "Días abierto" },
             { "VolumenComprasCentimos", "Volumen de compras" },
@@ -197,6 +200,51 @@ internal static class BistroBuilderSupplierAuthoringPresentation23A3
         return builder.ToString();
     }
 
+
+    public static string FormatQuantityFriendly(long microunits, string canonicalUnit)
+    {
+        double baseUnits = microunits / 1000000.0;
+        string raw = (canonicalUnit ?? string.Empty).Trim().ToLowerInvariant();
+
+        if (raw == "gram" || raw == "grams" || raw == "g")
+        {
+            if (baseUnits >= 1000d)
+            {
+                return FormatNumber(baseUnits / 1000d) + " kg";
+            }
+
+            return FormatNumber(baseUnits) + " g";
+        }
+
+        if (raw == "milliliter" || raw == "milliliters" || raw == "ml")
+        {
+            if (baseUnits >= 1000d)
+            {
+                return FormatNumber(baseUnits / 1000d) + " L";
+            }
+
+            return FormatNumber(baseUnits) + " ml";
+        }
+
+        return FormatNumber(baseUnits) + " " + Unit(canonicalUnit);
+    }
+
+    public static string FormatMoney(long cents)
+    {
+        decimal euros = cents / 100m;
+        return euros.ToString("0.00", new System.Globalization.CultureInfo("es-ES")) + " €";
+    }
+
+    public static string FormatPercent(float value)
+    {
+        return value.ToString("0.##", new System.Globalization.CultureInfo("es-ES")) + " %";
+    }
+
+    private static string FormatNumber(double value)
+    {
+        return value.ToString("0.###", new System.Globalization.CultureInfo("es-ES"));
+    }
+
     public static string IngredientSummary(BistroBuilderIngredientAuthoringRecord ingredient)
     {
         if (ingredient == null)
@@ -216,11 +264,23 @@ internal static class BistroBuilderSupplierAuthoringPresentation23A3
             return "Proveedor no disponible";
         }
 
-        // Los productos/ofertas por proveedor se activan en 2.3B. Aquí no se
-        // inventa un contador de SKU que todavía no forma parte de 2.3A.
-        return supplier.logo == null
-            ? "Logo pendiente · Catálogo en 2.3B"
-            : "Logo asignado · Catálogo en 2.3B";
+        int activeOffers = 0;
+        if (supplier.baseOffers != null)
+        {
+            for (int index = 0; index < supplier.baseOffers.Count; index++)
+            {
+                BistroBuilderSupplierBaseOfferAuthoringRecord offer =
+                    supplier.baseOffers[index];
+
+                if (offer != null && offer.isActive)
+                {
+                    activeOffers++;
+                }
+            }
+        }
+
+        return activeOffers + " oferta(s) · " +
+               (supplier.logo == null ? "Logo pendiente" : "Logo asignado");
     }
 }
 #endif

@@ -13,15 +13,29 @@ MonoBehaviour:
   m_Name: BistroBuilderIngredientAuthoringDatabase
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderIngredientAuthoringDatabase
   schemaId: ingredient.authoring
-  schemaVersion: 1
-  contentRevision: 4
+  schemaVersion: 2
+  contentRevision: 9
   ingredients:
   - ingredientId: ingredient_aceite_oliva
     displayNameSnapshot: Aceite de oliva
     canonicalUnitSnapshot: Milliliter
     categorySnapshot: Condiment
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_aceite_oliva_bottle_1l
+      displayName: Botella 1 L
+      packageType: Botella
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_aceite_oliva_jug_5l
+      displayName: Garrafa 5 L
+      packageType: Garrafa
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -33,7 +47,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: PreparedProduct
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_aceitunas_alinadas_tray_1kg
+      displayName: Bandeja 1 kg
+      packageType: Bandeja
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_aceitunas_alinadas_box_3kg
+      displayName: Caja 3 kg
+      packageType: Caja
+      netQuantityMicrounits: 3000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -45,7 +73,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Milliliter
     categorySnapshot: Other
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_agua_cocina_jug_5l
+      displayName: Garrafa 5 L
+      packageType: Garrafa
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
+    - packageFormatId: package_ingredient_agua_cocina_jug_10l
+      displayName: Garrafa 10 L
+      packageType: Garrafa
+      netQuantityMicrounits: 10000000000
+      packageImage: {fileID: 0}
+      logisticSize: 2
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -57,7 +99,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Produce
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_ajo_mesh_1kg
+      displayName: Malla 1 kg
+      packageType: Malla
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_ajo_box_3kg
+      displayName: Caja 3 kg
+      packageType: Caja
+      netQuantityMicrounits: 3000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -77,6 +133,20 @@ MonoBehaviour:
       packageImage: {fileID: 0}
       logisticSize: 1
       isActive: 1
+    - packageFormatId: package_ingredient_azucar_pack_1kg
+      displayName: Paquete 1 kg
+      packageType: Paquete
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_azucar_sack_5kg
+      displayName: Saco 5 kg
+      packageType: Saco
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -88,7 +158,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Unit
     categorySnapshot: Beverage
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_botella_agua_mineral_pack_6u
+      displayName: Pack 6 uds.
+      packageType: Paquete
+      netQuantityMicrounits: 6000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_botella_agua_mineral_box_24u
+      displayName: Caja 24 uds.
+      packageType: Caja
+      netQuantityMicrounits: 24000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -100,7 +184,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Produce
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_cebolla_mesh_5kg
+      displayName: Malla 5 kg
+      packageType: Malla
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
+    - packageFormatId: package_ingredient_cebolla_sack_10kg
+      displayName: Saco 10 kg
+      packageType: Saco
+      netQuantityMicrounits: 10000000000
+      packageImage: {fileID: 0}
+      logisticSize: 2
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -112,7 +210,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Meat
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_chorizo_tray_2kg
+      displayName: Bandeja 2 kg
+      packageType: Bandeja
+      netQuantityMicrounits: 2000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_chorizo_box_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -124,7 +236,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: DryGoods
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_fabes_pack_1kg
+      displayName: Paquete 1 kg
+      packageType: Paquete
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_fabes_sack_5kg
+      displayName: Saco 5 kg
+      packageType: Saco
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -136,7 +262,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: DryGoods
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_galleta_box_1kg
+      displayName: Caja 1 kg
+      packageType: Caja
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_galleta_box_3kg
+      displayName: Caja 3 kg
+      packageType: Caja
+      netQuantityMicrounits: 3000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -148,7 +288,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Unit
     categorySnapshot: DairyAndEggs
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_huevo_box_12u
+      displayName: Caja 12 uds.
+      packageType: Caja
+      netQuantityMicrounits: 12000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_huevo_box_30u
+      displayName: Caja 30 uds.
+      packageType: Caja
+      netQuantityMicrounits: 30000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -160,7 +314,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Produce
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_limon_mesh_2kg
+      displayName: Malla 2 kg
+      packageType: Malla
+      netQuantityMicrounits: 2000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_limon_box_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -172,7 +340,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: DairyAndEggs
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_mantequilla_block_1kg
+      displayName: Bloque 1 kg
+      packageType: Bloque
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_mantequilla_case_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -184,7 +366,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: FishAndSeafood
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_merluza_box_3kg
+      displayName: Caja 3 kg
+      packageType: Caja
+      netQuantityMicrounits: 3000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
+    - packageFormatId: package_ingredient_merluza_box_6kg
+      displayName: Caja 6 kg
+      packageType: Caja
+      netQuantityMicrounits: 6000000000
+      packageImage: {fileID: 0}
+      logisticSize: 2
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -196,7 +392,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Meat
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_morcilla_tray_2kg
+      displayName: Bandeja 2 kg
+      packageType: Bandeja
+      netQuantityMicrounits: 2000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_morcilla_box_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -208,7 +418,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Milliliter
     categorySnapshot: DairyAndEggs
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_nata_bottle_1l
+      displayName: Botella 1 L
+      packageType: Botella
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_nata_jug_5l
+      displayName: Garrafa 5 L
+      packageType: Garrafa
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -220,7 +444,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Meat
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_panceta_tray_2kg
+      displayName: Bandeja 2 kg
+      packageType: Bandeja
+      netQuantityMicrounits: 2000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_panceta_box_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -232,7 +470,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Produce
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_patata_box_3kg
+      displayName: Caja 3 kg
+      packageType: Caja
+      netQuantityMicrounits: 3000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
+    - packageFormatId: package_ingredient_patata_box_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -244,7 +496,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: DairyAndEggs
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_queso_crema_pack_1kg
+      displayName: Paquete 1 kg
+      packageType: Paquete
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_queso_crema_case_5kg
+      displayName: Caja 5 kg
+      packageType: Caja
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -256,7 +522,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Unit
     categorySnapshot: Beverage
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_refresco_lata_pack_6u
+      displayName: Pack 6 uds.
+      packageType: Paquete
+      netQuantityMicrounits: 6000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_refresco_lata_box_24u
+      displayName: Caja 24 uds.
+      packageType: Caja
+      netQuantityMicrounits: 24000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -268,7 +548,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Gram
     categorySnapshot: Condiment
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_sal_jar_500g
+      displayName: Bote 500 g
+      packageType: Bote
+      netQuantityMicrounits: 500000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_sal_case_2kg
+      displayName: Caja 2 kg
+      packageType: Caja
+      netQuantityMicrounits: 2000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 
@@ -280,7 +574,21 @@ MonoBehaviour:
     canonicalUnitSnapshot: Milliliter
     categorySnapshot: Beverage
     displayImage: {fileID: 0}
-    commercialPackages: []
+    commercialPackages:
+    - packageFormatId: package_ingredient_vino_casa_bottle_1l
+      displayName: Botella 1 L
+      packageType: Botella
+      netQuantityMicrounits: 1000000000
+      packageImage: {fileID: 0}
+      logisticSize: 0
+      isActive: 1
+    - packageFormatId: package_ingredient_vino_casa_jug_5l
+      displayName: Garrafa 5 L
+      packageType: Garrafa
+      netQuantityMicrounits: 5000000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
     futureSourcing:
       qualityTierId: 
       originId: 

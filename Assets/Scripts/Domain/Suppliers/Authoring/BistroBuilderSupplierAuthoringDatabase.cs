@@ -16,7 +16,7 @@ using UnityEngine;
 public sealed class BistroBuilderSupplierAuthoringDatabase : ScriptableObject
 {
     public const string CurrentSchemaId = "supplier.authoring";
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     [SerializeField]
     private string schemaId = CurrentSchemaId;

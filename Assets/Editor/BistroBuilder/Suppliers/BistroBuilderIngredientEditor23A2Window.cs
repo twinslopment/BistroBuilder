@@ -427,7 +427,29 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
     {
         DrawSectionHeader(
             "Formatos comerciales",
-            "Inventario conserva su unidad interna; los proveedores venderán uno o varios de estos formatos.");
+            "Inventario conserva su unidad interna; los proveedores venden estos formatos reales.");
+
+        EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+        EditorGUILayout.LabelField(
+            selected.commercialPackages.Count + " formato(s) definido(s)",
+            EditorStyles.boldLabel);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Completar formatos recomendados", GUILayout.Width(210f)))
+        {
+            Undo.RecordObject(database, "Completar formatos 2.3B1");
+            int added =
+                BistroBuilderSuppliers23B12ContentSeed.EnsureFormatsForIngredient(
+                    selected);
+            if (added > 0)
+            {
+                database.EditorTouchRevision();
+                EditorUtility.SetDirty(database);
+                AssetDatabase.SaveAssets();
+            }
+
+            GUIUtility.ExitGUI();
+        }
+        EditorGUILayout.EndHorizontal();
 
         SerializedProperty packages =
             ingredient.FindPropertyRelative("commercialPackages");
@@ -435,6 +457,13 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
         for (int index = 0; index < packages.arraySize; index++)
         {
             SerializedProperty package = packages.GetArrayElementAtIndex(index);
+            string packageId =
+                package.FindPropertyRelative("packageFormatId").stringValue;
+
+            int referenceCount =
+                BistroBuilderSuppliers23B12ContentSeed.CountReferencesToPackage(
+                    supplierDatabase,
+                    packageId);
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
@@ -452,12 +481,15 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
                 return;
             }
 
-            if (GUILayout.Button("Eliminar", GUILayout.Width(64f)))
+            using (new EditorGUI.DisabledScope(referenceCount > 0))
             {
-                packages.DeleteArrayElementAtIndex(index);
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.EndVertical();
-                return;
+                if (GUILayout.Button("Eliminar", GUILayout.Width(64f)))
+                {
+                    packages.DeleteArrayElementAtIndex(index);
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.EndVertical();
+                    return;
+                }
             }
 
             EditorGUILayout.EndHorizontal();
@@ -477,21 +509,36 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
                 package.FindPropertyRelative("packageType"),
                 new GUIContent("Tipo de envase"));
 
-            DrawQuantity(
-                package.FindPropertyRelative("netQuantityMicrounits"),
-                selected.canonicalUnitSnapshot);
+            using (new EditorGUI.DisabledScope(referenceCount > 0))
+            {
+                DrawQuantity(
+                    package.FindPropertyRelative("netQuantityMicrounits"),
+                    selected.canonicalUnitSnapshot);
+            }
 
-            EditorGUILayout.PropertyField(
+            DrawHumanizedEnumPopup(
                 package.FindPropertyRelative("logisticSize"),
-                new GUIContent("Clase logística"));
+                "Clase logística");
 
             EditorGUILayout.PropertyField(
                 package.FindPropertyRelative("packageImage"),
                 new GUIContent("Imagen del formato (opcional)"));
 
-            EditorGUILayout.PropertyField(
-                package.FindPropertyRelative("isActive"),
-                new GUIContent("Activo"));
+            using (new EditorGUI.DisabledScope(referenceCount > 0))
+            {
+                EditorGUILayout.PropertyField(
+                    package.FindPropertyRelative("isActive"),
+                    new GUIContent("Activo"));
+            }
+
+            if (referenceCount > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Este formato está referenciado por " + referenceCount +
+                    " oferta(s) base. Su cantidad y eliminación están protegidas; " +
+                    "cambiar esa estructura requeriría migrar las ofertas.",
+                    MessageType.Info);
+            }
 
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(4f);
@@ -507,8 +554,8 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
 
         EditorGUILayout.Space(8f);
         EditorGUILayout.HelpBox(
-            "En 2.3B cada proveedor seleccionará cuáles de estos formatos vende y les asignará su precio. " +
-            "El formato pertenece al ingrediente; el precio y disponibilidad pertenecen al proveedor.",
+            "El formato pertenece al ingrediente y se reutiliza entre proveedores. " +
+            "El precio, mínimo, disponibilidad y plazo específico pertenecen a la oferta del proveedor.",
             MessageType.Info);
     }
 
@@ -520,11 +567,16 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
 
         EditorGUILayout.LabelField("IngredientId", ingredient.IngredientId);
         EditorGUILayout.LabelField("Formatos comerciales", ingredient.commercialPackages.Count.ToString());
+        EditorGUILayout.LabelField(
+            "Proveedores con oferta activa",
+            BistroBuilderSuppliers23B12ContentSeed.CountActiveOffersForIngredient(
+                supplierDatabase,
+                ingredient.IngredientId).ToString());
 
         EditorGUILayout.Space(8f);
         EditorGUILayout.HelpBox(
-            "Las relaciones tipadas con recetas, SupplierOffer y pedidos se activarán conforme 2.3B-2.3E estén implementados. " +
-            "2.3A no inventa referencias que todavía no existen.",
+            "2.3B ya enlaza este ingrediente con formatos y ofertas base. " +
+            "Pedidos, promociones y estado dinámico se activan en hitos posteriores.",
             MessageType.Info);
 
         if (supplierDatabase != null && GUILayout.Button("Abrir Editor de Proveedores"))
@@ -802,7 +854,7 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
         double baseUnits = microunits.longValue / 1000000.0;
         EditorGUI.BeginChangeCheck();
         baseUnits = EditorGUILayout.DoubleField(
-            "Cantidad neta (" + (string.IsNullOrWhiteSpace(unit) ? "unidad base" : unit) + ")",
+            "Cantidad neta (" + (string.IsNullOrWhiteSpace(unit) ? "unidad base" : BistroBuilderSupplierAuthoringPresentation23A3.Unit(unit)) + ")",
             baseUnits);
 
         if (EditorGUI.EndChangeCheck())
@@ -814,6 +866,35 @@ public sealed class BistroBuilderIngredientEditor23A2Window : EditorWindow
                     baseUnits * 1000000.0,
                     MidpointRounding.AwayFromZero));
         }
+
+        EditorGUILayout.LabelField(
+            "Lectura",
+            BistroBuilderSupplierAuthoringPresentation23A3.FormatQuantityFriendly(
+                microunits.longValue,
+                unit),
+            EditorStyles.miniLabel);
+    }
+
+    private static void DrawHumanizedEnumPopup(SerializedProperty property, string label)
+    {
+        if (property == null || property.propertyType != SerializedPropertyType.Enum)
+        {
+            EditorGUILayout.PropertyField(property, new GUIContent(label));
+            return;
+        }
+
+        string[] display = new string[property.enumNames.Length];
+        for (int index = 0; index < property.enumNames.Length; index++)
+        {
+            display[index] =
+                BistroBuilderSupplierAuthoringPresentation23A3.HumanizeToken(
+                    property.enumNames[index]);
+        }
+
+        property.enumValueIndex = EditorGUILayout.Popup(
+            label,
+            Mathf.Clamp(property.enumValueIndex, 0, Math.Max(0, display.Length - 1)),
+            display);
     }
 
     private static void ResetPackageSerialized(
