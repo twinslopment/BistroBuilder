@@ -1,0 +1,359 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c2308a35a2846f4afae6ec2bdbbbfae, type: 3}
+  m_Name: BistroBuilderSupplierAuthoringDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierAuthoringDatabase
+  schemaId: supplier.authoring
+  schemaVersion: 1
+  contentRevision: 6
+  suppliers:
+  - supplierId: supplier_mercado_central
+    displayName: Mercado Central
+    shortName: Mercado Central
+    description: Proveedor generalista equilibrado para el abastecimiento habitual
+      del restaurante.
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.17, g: 0.31, b: 0.23, a: 1}
+    secondaryBrandColor: {r: 0.82, g: 0.7, b: 0.44, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 415
+    commercialModelFlags: 33
+    scopeFlags: 2
+    positioningFlags: 2
+    customTags: []
+    reliabilityTier: 2
+    reliabilityValue: 0.97
+    minimumOrderValueCents: 3000
+    shippingCostCents: 800
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 15000
+    defaultLeadTimeGameHours: 24
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 2
+      minimumDiscountPercent: 5
+      maximumDiscountPercent: 15
+      minimumDurationDays: 2
+      maximumDurationDays: 7
+      eligibleCatalogs: 1
+    priceEvolutionProfile:
+      profile: 1
+      minimumVariationPercent: -8
+      maximumVariationPercent: 12
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 1
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 30
+      maximumDelayMinutes: 180
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 1
+      conditions: []
+    isActive: 1
+  - supplierId: supplier_distribuciones_norte
+    displayName: Distribuciones Norte
+    shortName: Distribuciones Norte
+    description: "Mayorista de cat\xE1logo amplio, formatos grandes y coste unitario
+      competitivo."
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.09, g: 0.2, b: 0.35, a: 1}
+    secondaryBrandColor: {r: 0.35, g: 0.62, b: 0.79, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 449
+    commercialModelFlags: 34
+    scopeFlags: 4
+    positioningFlags: 1
+    customTags: []
+    reliabilityTier: 2
+    reliabilityValue: 0.96
+    minimumOrderValueCents: 12000
+    shippingCostCents: 1000
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 25000
+    defaultLeadTimeGameHours: 48
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 2
+      minimumDiscountPercent: 4
+      maximumDiscountPercent: 14
+      minimumDurationDays: 5
+      maximumDurationDays: 15
+      eligibleCatalogs: 1
+    priceEvolutionProfile:
+      profile: 0
+      minimumVariationPercent: -8
+      maximumVariationPercent: 12
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 0
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 30
+      maximumDelayMinutes: 180
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 0
+      conditions: []
+    isActive: 1
+  - supplierId: supplier_hosteleria_express
+    displayName: "Hosteler\xEDa Express"
+    shortName: SSSS
+    description: "Proveedor de respuesta r\xE1pida para necesidades urgentes y reposiciones
+      de \xFAltima hora."
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.7, g: 0.2, b: 0.08, a: 1}
+    secondaryBrandColor: {r: 0.95, g: 0.57, b: 0.16, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 1
+    commercialModelFlags: 40
+    scopeFlags: 2
+    positioningFlags: 2
+    customTags: []
+    reliabilityTier: 3
+    reliabilityValue: 0.99
+    minimumOrderValueCents: 2000
+    shippingCostCents: 1200
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 18000
+    defaultLeadTimeGameHours: 6
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 1
+      minimumDiscountPercent: 2
+      maximumDiscountPercent: 8
+      minimumDurationDays: 2
+      maximumDurationDays: 5
+      eligibleCatalogs: 1
+    priceEvolutionProfile:
+      profile: 1
+      minimumVariationPercent: -8
+      maximumVariationPercent: 12
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 0
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 15
+      maximumDelayMinutes: 60
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 1
+      conditions: []
+    isActive: 1
+  - supplierId: supplier_huerta_clara
+    displayName: Huerta Clara
+    shortName: Huerta Clara
+    description: "Especialista regional en frutas y verduras frescas para hosteler\xEDa."
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.25, g: 0.47, b: 0.18, a: 1}
+    secondaryBrandColor: {r: 0.84, g: 0.76, b: 0.43, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 2
+    commercialModelFlags: 20
+    scopeFlags: 2
+    positioningFlags: 2
+    customTags: []
+    reliabilityTier: 2
+    reliabilityValue: 0.98
+    minimumOrderValueCents: 4000
+    shippingCostCents: 700
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 14000
+    defaultLeadTimeGameHours: 24
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 3
+      minimumDiscountPercent: 5
+      maximumDiscountPercent: 15
+      minimumDurationDays: 2
+      maximumDurationDays: 7
+      eligibleCatalogs: 2
+    priceEvolutionProfile:
+      profile: 1
+      minimumVariationPercent: -8
+      maximumVariationPercent: 12
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 1
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 30
+      maximumDelayMinutes: 180
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 0
+      conditions: []
+    isActive: 1
+  - supplierId: supplier_carnes_selectas
+    displayName: Carnes Selectas
+    shortName: Carnes Selectas
+    description: Proveedor profesional especializado en carnes y preparado para futuras
+      gamas de calidad y origen.
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.43, g: 0.1, b: 0.1, a: 1}
+    secondaryBrandColor: {r: 0.76, g: 0.48, b: 0.35, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 4
+    commercialModelFlags: 68
+    scopeFlags: 2
+    positioningFlags: 4
+    customTags: []
+    reliabilityTier: 3
+    reliabilityValue: 0.99
+    minimumOrderValueCents: 7000
+    shippingCostCents: 900
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 18000
+    defaultLeadTimeGameHours: 24
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 1
+      minimumDiscountPercent: 5
+      maximumDiscountPercent: 15
+      minimumDurationDays: 2
+      maximumDurationDays: 7
+      eligibleCatalogs: 4
+    priceEvolutionProfile:
+      profile: 1
+      minimumVariationPercent: -8
+      maximumVariationPercent: 12
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 1
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 30
+      maximumDelayMinutes: 180
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 0
+      conditions: []
+    isActive: 1
+  - supplierId: supplier_costa_fresca
+    displayName: Costa Fresca
+    shortName: Costa Fresca
+    description: "Especialista en pescado y marisco con disponibilidad y tarifas
+      algo m\xE1s din\xE1micas."
+    logo: {fileID: 0}
+    primaryBrandColor: {r: 0.06, g: 0.31, b: 0.43, a: 1}
+    secondaryBrandColor: {r: 0.31, g: 0.68, b: 0.72, a: 1}
+    textContrastColor: {r: 1, g: 1, b: 1, a: 1}
+    catalogFlags: 8
+    commercialModelFlags: 68
+    scopeFlags: 2
+    positioningFlags: 4
+    customTags: []
+    reliabilityTier: 2
+    reliabilityValue: 0.95
+    minimumOrderValueCents: 6500
+    shippingCostCents: 900
+    freeShippingEnabled: 1
+    freeShippingThresholdCents: 18000
+    defaultLeadTimeGameHours: 24
+    deliveryWindows:
+    - startMinuteOfDay: 480
+      endMinuteOfDay: 720
+      monday: 1
+      tuesday: 1
+      wednesday: 1
+      thursday: 1
+      friday: 1
+      saturday: 1
+      sunday: 0
+    promotionProfile:
+      frequency: 2
+      minimumDiscountPercent: 5
+      maximumDiscountPercent: 15
+      minimumDurationDays: 2
+      maximumDurationDays: 7
+      eligibleCatalogs: 8
+    priceEvolutionProfile:
+      profile: 2
+      minimumVariationPercent: -10
+      maximumVariationPercent: 15
+      reviewEveryGameDays: 5
+    availabilityProfile:
+      profile: 2
+      limitedStockWeight: 0.08
+      temporaryOutOfStockWeight: 0.02
+    logisticsProfile:
+      preferredVehicle: 0
+      minimumDelayMinutes: 30
+      maximumDelayMinutes: 180
+      vehiclePresentationProfileId: vehicle_supplier_default
+      driverPresentationProfileId: driver_supplier_default
+    unlockProfile:
+      availableFromStart: 0
+      conditions: []
+    isActive: 1

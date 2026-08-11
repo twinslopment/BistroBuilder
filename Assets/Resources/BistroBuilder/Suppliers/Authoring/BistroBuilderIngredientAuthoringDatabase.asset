@@ -1,0 +1,289 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 530e05247f424bff84fb1564a0e44ee6, type: 3}
+  m_Name: BistroBuilderIngredientAuthoringDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderIngredientAuthoringDatabase
+  schemaId: ingredient.authoring
+  schemaVersion: 1
+  contentRevision: 4
+  ingredients:
+  - ingredientId: ingredient_aceite_oliva
+    displayNameSnapshot: Aceite de oliva
+    canonicalUnitSnapshot: Milliliter
+    categorySnapshot: Condiment
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_aceitunas_alinadas
+    displayNameSnapshot: "Aceitunas ali\xF1adas"
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: PreparedProduct
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_agua_cocina
+    displayNameSnapshot: Agua de cocina
+    canonicalUnitSnapshot: Milliliter
+    categorySnapshot: Other
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_ajo
+    displayNameSnapshot: Ajo
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Produce
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_azucar
+    displayNameSnapshot: "Az\xFAcar"
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: DryGoods
+    displayImage: {fileID: 0}
+    commercialPackages:
+    - packageFormatId: package_ingredient_azucar_379f7dc0
+      displayName: Nuevo formato
+      packageType: Caja
+      netQuantityMicrounits: 1000000
+      packageImage: {fileID: 0}
+      logisticSize: 1
+      isActive: 1
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_botella_agua_mineral
+    displayNameSnapshot: Botella de agua mineral
+    canonicalUnitSnapshot: Unit
+    categorySnapshot: Beverage
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_cebolla
+    displayNameSnapshot: Cebolla
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Produce
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_chorizo
+    displayNameSnapshot: Chorizo
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Meat
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_fabes
+    displayNameSnapshot: Fabes
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: DryGoods
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_galleta
+    displayNameSnapshot: Galleta
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: DryGoods
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_huevo
+    displayNameSnapshot: Huevo
+    canonicalUnitSnapshot: Unit
+    categorySnapshot: DairyAndEggs
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_limon
+    displayNameSnapshot: "Lim\xF3n"
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Produce
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_mantequilla
+    displayNameSnapshot: Mantequilla
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: DairyAndEggs
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_merluza
+    displayNameSnapshot: Merluza
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: FishAndSeafood
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_morcilla
+    displayNameSnapshot: Morcilla
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Meat
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_nata
+    displayNameSnapshot: Nata
+    canonicalUnitSnapshot: Milliliter
+    categorySnapshot: DairyAndEggs
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_panceta
+    displayNameSnapshot: Panceta
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Meat
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_patata
+    displayNameSnapshot: Patata
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Produce
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_queso_crema
+    displayNameSnapshot: Queso crema
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: DairyAndEggs
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_refresco_lata
+    displayNameSnapshot: Refresco en lata
+    canonicalUnitSnapshot: Unit
+    categorySnapshot: Beverage
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_sal
+    displayNameSnapshot: Sal
+    canonicalUnitSnapshot: Gram
+    categorySnapshot: Condiment
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
+  - ingredientId: ingredient_vino_casa
+    displayNameSnapshot: Vino de la casa
+    canonicalUnitSnapshot: Milliliter
+    categorySnapshot: Beverage
+    displayImage: {fileID: 0}
+    commercialPackages: []
+    futureSourcing:
+      qualityTierId: 
+      originId: 
+      producerId: 
+      certificationIds: []
+    isActive: 1
