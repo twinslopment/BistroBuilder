@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierAuthoringDatabase
   schemaId: supplier.authoring
   schemaVersion: 2
-  contentRevision: 10
+  contentRevision: 11
   suppliers:
   - supplierId: supplier_mercado_central
     displayName: Mercado Central
@@ -129,10 +129,10 @@ MonoBehaviour:
       maximumMarketVariationPercent: 12
       sortOrder: 3
       isActive: 1
-    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_azucar_379f7dc0
+    - supplierOfferId: offer_supplier_mercado_central_package_ingredient_azucar_pack_1kg
       ingredientId: ingredient_azucar
-      packageFormatId: package_ingredient_azucar_379f7dc0
-      basePriceCents: 5
+      packageFormatId: package_ingredient_azucar_pack_1kg
+      basePriceCents: 125
       minimumPackageCount: 1
       orderIncrement: 1
       initialAvailability: 0
@@ -735,10 +735,10 @@ MonoBehaviour:
       maximumMarketVariationPercent: 12
       sortOrder: 3
       isActive: 1
-    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_azucar_379f7dc0
+    - supplierOfferId: offer_supplier_hosteleria_express_package_ingredient_azucar_pack_1kg
       ingredientId: ingredient_azucar
-      packageFormatId: package_ingredient_azucar_379f7dc0
-      basePriceCents: 5
+      packageFormatId: package_ingredient_azucar_pack_1kg
+      basePriceCents: 160
       minimumPackageCount: 1
       orderIncrement: 1
       initialAvailability: 0

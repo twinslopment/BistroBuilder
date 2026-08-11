@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderIngredientAuthoringDatabase
   schemaId: ingredient.authoring
   schemaVersion: 2
-  contentRevision: 9
+  contentRevision: 10
   ingredients:
   - ingredientId: ingredient_aceite_oliva
     displayNameSnapshot: Aceite de oliva
@@ -126,13 +126,6 @@ MonoBehaviour:
     categorySnapshot: DryGoods
     displayImage: {fileID: 0}
     commercialPackages:
-    - packageFormatId: package_ingredient_azucar_379f7dc0
-      displayName: Nuevo formato
-      packageType: Caja
-      netQuantityMicrounits: 1000000
-      packageImage: {fileID: 0}
-      logisticSize: 1
-      isActive: 1
     - packageFormatId: package_ingredient_azucar_pack_1kg
       displayName: Paquete 1 kg
       packageType: Paquete

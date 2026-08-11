@@ -344,14 +344,14 @@ MonoBehaviour:
     leadTimeDays: 1
     available: 1
     currencyCode: EUR
-  - productId: offer_supplier_hosteleria_express_package_ingredient_azucar_379f7dc0
+  - productId: offer_supplier_hosteleria_express_package_ingredient_azucar_pack_1kg
     supplierId: supplier_hosteleria_express
     ingredientId: ingredient_azucar
-    displayName: Nuevo formato
+    displayName: Paquete 1 kg
     packageLabel: Envase 1 kg
     baseUnit: 0
     packageCanonicalMilliUnits: 1000000
-    packPriceCents: 5
+    packPriceCents: 160
     minimumPacks: 1
     leadTimeDays: 1
     available: 1
@@ -656,14 +656,14 @@ MonoBehaviour:
     leadTimeDays: 1
     available: 1
     currencyCode: EUR
-  - productId: offer_supplier_mercado_central_package_ingredient_azucar_379f7dc0
+  - productId: offer_supplier_mercado_central_package_ingredient_azucar_pack_1kg
     supplierId: supplier_mercado_central
     ingredientId: ingredient_azucar
-    displayName: Nuevo formato
+    displayName: Paquete 1 kg
     packageLabel: Envase 1 kg
     baseUnit: 0
     packageCanonicalMilliUnits: 1000000
-    packPriceCents: 5
+    packPriceCents: 125
     minimumPacks: 1
     leadTimeDays: 1
     available: 1
