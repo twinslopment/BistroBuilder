@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 2.2D7A — Validación runtime completa de Inventario/Almacén.
+/// 2.2D7A3 — Validación runtime completa de Inventario/Almacén.
 ///
 /// OBJETIVO
 /// -------
@@ -39,7 +39,7 @@ using UnityEngine;
 public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow : EditorWindow
 {
     private const string MenuPath =
-        "Tools/Bistro Builder/Inventory/2.2D7A - Validación runtime completa";
+        "Tools/Bistro Builder/Inventory/2.2D7A3 - Validación runtime completa";
 
     private const double TimeoutSeconds = 180.0;
     private const double SnapshotIntervalSeconds = 0.12;
@@ -54,7 +54,10 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private readonly List<CheckResult> checks = new List<CheckResult>();
-    private readonly List<string> runtimeErrors = new List<string>();
+    private readonly List<RuntimeIssue> runtimeIssues = new List<RuntimeIssue>();
+    private readonly List<string> invalidTransformDiagnostics = new List<string>();
+    private int runtimeIssueOccurrences;
+    private bool capturingRuntimeDiagnostics;
     private readonly HashSet<string> observedOrderIds =
         new HashSet<string>(StringComparer.Ordinal);
     private readonly HashSet<string> trackedReservationIds =
@@ -116,7 +119,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
     {
         EditorGUILayout.Space(8f);
         EditorGUILayout.LabelField(
-            "2.2D7A — Validación runtime completa",
+            "2.2D7A3 — Validación runtime completa",
             EditorStyles.boldLabel
         );
 
@@ -136,7 +139,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         using (new EditorGUI.DisabledScope(running || !EditorApplication.isPlaying))
         {
-            if (GUILayout.Button("Ejecutar 2.2D7A completa", GUILayout.Height(34f)))
+            if (GUILayout.Button("Ejecutar 2.2D7A3 completa", GUILayout.Height(34f)))
             {
                 BeginValidation();
             }
@@ -239,7 +242,10 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
     {
         StopSubscriptions();
         checks.Clear();
-        runtimeErrors.Clear();
+        runtimeIssues.Clear();
+        invalidTransformDiagnostics.Clear();
+        runtimeIssueOccurrences = 0;
+        capturingRuntimeDiagnostics = false;
         observedOrderIds.Clear();
         trackedReservationIds.Clear();
 
@@ -421,7 +427,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             change == PlayModeStateChange.EnteredEditMode)
         {
             FailAndFinish(
-                "Play Mode terminó antes de completar la validación 2.2D7A."
+                "Play Mode terminó antes de completar la validación 2.2D7A3."
             );
         }
     }
@@ -435,9 +441,22 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
         {
-            // El mensaje final propio de 2.2D7 se emite tras desuscribirse, así que aquí
-            // solo entran errores producidos durante la prueba real.
-            runtimeErrors.Add(condition);
+            // 2.2D7A3 NO aborta en el primer error. Registra y deduplica los problemas,
+            // pero deja continuar el servicio para separar dos resultados distintos:
+            // 1) si la cadena funcional Inventario/2.2D es coherente de extremo a extremo;
+            // 2) si el runtime completo permanece limpio.
+            // El aprobado global sigue exigiendo CERO Error/Exception/Assert.
+            CaptureRuntimeIssue(condition, stackTrace, type);
+
+            if (condition.IndexOf("ValidTRS()", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                invalidTransformDiagnostics.Count == 0)
+            {
+                CaptureInvalidTransformDiagnostics();
+            }
+
+            phaseText =
+                "Incidencias runtime registradas (" + runtimeIssueOccurrences +
+                "); la prueba continúa para completar el diagnóstico funcional...";
         }
 
         Match orderMatch = OrderIdRegex.Match(condition);
@@ -503,14 +522,6 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             return;
         }
 
-        if (runtimeErrors.Count > 0)
-        {
-            FailAndFinish(
-                "Se detectó al menos un Error/Exception/Assert durante el servicio real."
-            );
-            return;
-        }
-
         if (now - startedAt > TimeoutSeconds)
         {
             FailAndFinish(BuildTimeoutReason());
@@ -541,7 +552,14 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         if (CanCompleteSuccessfully())
         {
-            CompleteSuccess();
+            if (runtimeIssueOccurrences > 0)
+            {
+                CompleteFunctionalEvidenceWithRuntimeIssues();
+            }
+            else
+            {
+                CompleteSuccess();
+            }
         }
 
         Repaint();
@@ -827,7 +845,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
     private bool CanCompleteSuccessfully()
     {
-        if (!harnessStarted || harnessFailure || runtimeErrors.Count > 0)
+        if (!harnessStarted || harnessFailure)
         {
             return false;
         }
@@ -862,7 +880,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
         }
 
         AddPass("Se observó al menos una OrderId canónica real durante el servicio.");
-        AddPass("La ejecución terminó sin Error, Exception ni Assert capturados por 2.2D7.");
+        AddPass("La ejecución terminó sin Error, Exception ni Assert capturados por 2.2D7A3.");
 
         emittedFinal = true;
         running = false;
@@ -871,6 +889,35 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         finalReport = BuildReport(true, string.Empty);
         Debug.Log(finalReport);
+        Repaint();
+    }
+
+    private void CompleteFunctionalEvidenceWithRuntimeIssues()
+    {
+        if (emittedFinal)
+        {
+            return;
+        }
+
+        AddPass("Se observó al menos una OrderId canónica real durante el servicio.");
+        AddPass(
+            "La cadena funcional 2.2D llegó a completarse pese a las incidencias runtime: " +
+            "reserva Active, consumo y Load quedaron observados."
+        );
+
+        string reason =
+            "La validación funcional de 2.2D se completó, pero el runtime no está limpio: " +
+            runtimeIssueOccurrences + " Error/Exception/Assert en " +
+            runtimeIssues.Count + " firma(s) única(s).";
+
+        emittedFinal = true;
+        running = false;
+        phaseText = "FUNCIONAL OK / RUNTIME FALLIDO.";
+        StopSubscriptions();
+
+        AddFail(reason);
+        finalReport = BuildReport(false, reason);
+        Debug.LogError(finalReport);
         Repaint();
     }
 
@@ -914,12 +961,13 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         StringBuilder sb = new StringBuilder(4096);
         sb.AppendLine(success
-            ? "PRUEBA RUNTIME COMPLETA 2.2D7A SUPERADA"
-            : "PRUEBA RUNTIME COMPLETA 2.2D7A FALLIDA");
+            ? "PRUEBA RUNTIME COMPLETA 2.2D7A3 SUPERADA"
+            : "PRUEBA RUNTIME COMPLETA 2.2D7A3 FALLIDA");
         sb.AppendLine();
         sb.AppendLine("Correctos: " + passed);
         sb.AppendLine("Fallos: " + failed);
-        sb.AppendLine("Errores/Excepciones capturados: " + runtimeErrors.Count);
+        sb.AppendLine("Errores/Excepciones/Asserts capturados: " + runtimeIssueOccurrences);
+        sb.AppendLine("Firmas runtime únicas: " + runtimeIssues.Count);
         sb.AppendLine("OrderId reales observadas: " + observedOrderIds.Count);
         sb.AppendLine("Reservas Active capturadas: " +
             (activeSnapshot != null ? activeSnapshot.ActiveReservations.Count : 0));
@@ -932,14 +980,39 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             sb.AppendLine((check.Passed ? "[OK] " : "[FALLO] ") + check.Message);
         }
 
-        if (runtimeErrors.Count > 0)
+        if (runtimeIssues.Count > 0)
         {
             sb.AppendLine();
-            sb.AppendLine("ERRORES RUNTIME:");
-            int count = Math.Min(runtimeErrors.Count, 12);
+            sb.AppendLine("INCIDENCIAS RUNTIME (DEDUPLICADAS):");
+            int count = Math.Min(runtimeIssues.Count, 8);
             for (int i = 0; i < count; i++)
             {
-                sb.AppendLine("- " + runtimeErrors[i]);
+                RuntimeIssue issue = runtimeIssues[i];
+                sb.AppendLine(
+                    "- [" + issue.Type + "] x" + issue.Count +
+                    " | t+" + issue.FirstSeenSeconds.ToString("0.000", CultureInfo.InvariantCulture) +
+                    "s | " + issue.Condition
+                );
+
+                string compactStack = CompactStack(issue.StackTrace, 6);
+                if (!string.IsNullOrWhiteSpace(compactStack))
+                {
+                    sb.AppendLine(compactStack);
+                }
+                else
+                {
+                    sb.AppendLine("    (Unity no entregó stack trace para esta incidencia)");
+                }
+            }
+
+            if (invalidTransformDiagnostics.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("DIAGNÓSTICO ValidTRS / TRANSFORMS NO FINITOS:");
+                for (int i = 0; i < invalidTransformDiagnostics.Count; i++)
+                {
+                    sb.AppendLine("- " + invalidTransformDiagnostics[i]);
+                }
             }
         }
 
@@ -952,12 +1025,198 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
 
         sb.AppendLine();
         sb.AppendLine(
-            "Nota: la prueba 2.2D7A complementa, no sustituye, la prueba funcional " +
+            "Nota: la prueba 2.2D7A3 complementa, no sustituye, la prueba funcional " +
             "2.2D de 39/0. Al terminar, salir de Play Mode permite al harness 368EF " +
             "restaurar los cambios temporales de escena."
         );
 
         return sb.ToString();
+    }
+
+    private void CaptureRuntimeIssue(
+        string condition,
+        string stackTrace,
+        LogType type
+    )
+    {
+        runtimeIssueOccurrences++;
+
+        string normalizedCondition = condition ?? string.Empty;
+        string normalizedStack = stackTrace ?? string.Empty;
+        string signature =
+            type + "|" + normalizedCondition + "|" + FirstMeaningfulStackLine(normalizedStack);
+
+        for (int i = 0; i < runtimeIssues.Count; i++)
+        {
+            if (runtimeIssues[i].Signature == signature)
+            {
+                runtimeIssues[i].Count++;
+                return;
+            }
+        }
+
+        runtimeIssues.Add(
+            new RuntimeIssue(
+                signature,
+                type,
+                normalizedCondition,
+                normalizedStack,
+                Math.Max(0.0, EditorApplication.timeSinceStartup - startedAt)
+            )
+        );
+    }
+
+    private void CaptureInvalidTransformDiagnostics()
+    {
+        if (capturingRuntimeDiagnostics)
+        {
+            return;
+        }
+
+        capturingRuntimeDiagnostics = true;
+        try
+        {
+            Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
+            int invalidCount = 0;
+
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform transform = transforms[i];
+                if (transform == null)
+                {
+                    continue;
+                }
+
+                Vector3 position = transform.localPosition;
+                Quaternion rotation = transform.localRotation;
+                Vector3 scale = transform.localScale;
+
+                if (IsFinite(position) && IsFinite(rotation) && IsFinite(scale))
+                {
+                    continue;
+                }
+
+                invalidCount++;
+                if (invalidTransformDiagnostics.Count < 24)
+                {
+                    invalidTransformDiagnostics.Add(
+                        BuildTransformPath(transform) +
+                        " | localPosition=" + position +
+                        " | localRotation=" + rotation +
+                        " | localScale=" + scale
+                    );
+                }
+            }
+
+            if (invalidCount == 0)
+            {
+                invalidTransformDiagnostics.Add(
+                    "No se encontró ningún Transform cargado con componentes locales NaN/Infinity. " +
+                    "El origen deberá localizarse con el stack trace capturado por Unity."
+                );
+            }
+            else if (invalidCount > invalidTransformDiagnostics.Count)
+            {
+                invalidTransformDiagnostics.Add(
+                    "... y " + (invalidCount - invalidTransformDiagnostics.Count) +
+                    " Transform(s) no finitos adicionales."
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            invalidTransformDiagnostics.Add(
+                "El escaneo diagnóstico de Transform falló: " + ex.Message
+            );
+        }
+        finally
+        {
+            capturingRuntimeDiagnostics = false;
+        }
+    }
+
+    private static bool IsFinite(Vector3 value)
+    {
+        return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+    }
+
+    private static bool IsFinite(Quaternion value)
+    {
+        return IsFinite(value.x) && IsFinite(value.y) &&
+               IsFinite(value.z) && IsFinite(value.w);
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
+    }
+
+    private static string BuildTransformPath(Transform transform)
+    {
+        if (transform == null)
+        {
+            return "<null>";
+        }
+
+        List<string> names = new List<string>();
+        Transform current = transform;
+        int guard = 0;
+
+        while (current != null && guard++ < 64)
+        {
+            names.Add(current.name);
+            current = current.parent;
+        }
+
+        names.Reverse();
+        return string.Join("/", names.ToArray());
+    }
+
+    private static string FirstMeaningfulStackLine(string stackTrace)
+    {
+        if (string.IsNullOrWhiteSpace(stackTrace))
+        {
+            return string.Empty;
+        }
+
+        string[] lines = stackTrace.Replace("\r", string.Empty).Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].Trim();
+            if (!string.IsNullOrEmpty(line))
+            {
+                return line;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string CompactStack(string stackTrace, int maxLines)
+    {
+        if (string.IsNullOrWhiteSpace(stackTrace) || maxLines <= 0)
+        {
+            return string.Empty;
+        }
+
+        string[] lines = stackTrace.Replace("\r", string.Empty).Split('\n');
+        StringBuilder sb = new StringBuilder();
+        int written = 0;
+
+        for (int i = 0; i < lines.Length && written < maxLines; i++)
+        {
+            string line = lines[i].Trim();
+            if (string.IsNullOrEmpty(line))
+            {
+                continue;
+            }
+
+            sb.Append("    ");
+            sb.AppendLine(line);
+            written++;
+        }
+
+        return sb.ToString().TrimEnd();
     }
 
     private void AddPass(string message)
@@ -986,6 +1245,32 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
     private static string F(double value)
     {
         return value.ToString("0.####", CultureInfo.InvariantCulture);
+    }
+
+    private sealed class RuntimeIssue
+    {
+        public readonly string Signature;
+        public readonly LogType Type;
+        public readonly string Condition;
+        public readonly string StackTrace;
+        public readonly double FirstSeenSeconds;
+        public int Count;
+
+        public RuntimeIssue(
+            string signature,
+            LogType type,
+            string condition,
+            string stackTrace,
+            double firstSeenSeconds
+        )
+        {
+            Signature = signature ?? string.Empty;
+            Type = type;
+            Condition = condition ?? string.Empty;
+            StackTrace = stackTrace ?? string.Empty;
+            FirstSeenSeconds = firstSeenSeconds;
+            Count = 1;
+        }
     }
 
     private sealed class CheckResult
@@ -1125,19 +1410,23 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
         private static readonly string[] TotalAliases =
         {
             "totalquantity", "stockquantity", "physicalquantity", "onhandquantity",
-            "totalstock", "stocktotal", "currentstock", "stock"
+            "totalstock", "stocktotal", "currentstock", "stock",
+            "totalstockquantity", "stocktotalquantity", "quantitytotal",
+            "quantityonhand", "onhand", "physicalstock", "totalonhandquantity"
         };
 
         private static readonly string[] AvailableAliases =
         {
             "availablequantity", "available", "availablestock", "stockavailable",
-            "usablequantity", "freequantity"
+            "usablequantity", "freequantity", "quantityavailable",
+            "unreservedquantity", "availabletouse", "availableamount"
         };
 
         private static readonly string[] ReservedAliases =
         {
             "reservedquantity", "reserved", "reservedstock", "stockreserved",
-            "committedquantity"
+            "committedquantity", "quantityreserved", "reservedamount",
+            "committed", "committedamount"
         };
 
         private static readonly string[] ReservationIdAliases =
@@ -1249,10 +1538,95 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 return false;
             }
 
-            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
+            /*
+             * 2.2D7A3 deja de adivinar el nombre de la fachada.
+             * La prueba funcional 2.2D de 39/0 ya compila contra el contrato real,
+             * por lo que usamos la metadata de RunAutomaticTest como fuente de verdad:
+             * sus variables locales contienen los tipos concretos que la propia prueba
+             * utiliza (fachada, UI, planning, recepciones, etc.).
+             */
+            string contractDetail;
+            List<Type> contractTypes =
+                Get22DContractTypesFromFunctionalTest(out contractDetail);
+
             UnityEngine.Object best = null;
             string bestName = string.Empty;
             int bestScore = int.MinValue;
+            int exactContractObjects = 0;
+            int readableContractObjects = 0;
+
+            for (int i = 0; i < contractTypes.Count; i++)
+            {
+                Type type = contractTypes[i];
+                if (!IsAllowed22DApplicationSourceType(type, false))
+                {
+                    continue;
+                }
+
+                List<UnityEngine.Object> candidates = FindSceneObjects(type);
+                for (int c = 0; c < candidates.Count; c++)
+                {
+                    UnityEngine.Object candidate = candidates[c];
+                    if (candidate == null || ReferenceEquals(candidate, canonicalInventory))
+                    {
+                        continue;
+                    }
+
+                    exactContractObjects++;
+
+                    Dictionary<string, IngredientRecord> rows =
+                        ExtractIngredientRows(candidate, true);
+                    if (rows.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    readableContractObjects++;
+
+                    int overlap;
+                    int exact;
+                    if (!RowsRepresentCanonicalState(
+                            canonicalRows,
+                            rows,
+                            out overlap,
+                            out exact))
+                    {
+                        continue;
+                    }
+
+                    int score = Score22DSourceType(type, overlap, exact, true);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        best = candidate;
+                        bestName =
+                            (type.FullName ?? type.Name) +
+                            " [contrato=RunAutomaticTest, filas=" +
+                            rows.Count.ToString(CultureInfo.InvariantCulture) +
+                            ", solapadas=" +
+                            overlap.ToString(CultureInfo.InvariantCulture) +
+                            ", exactas=" +
+                            exact.ToString(CultureInfo.InvariantCulture) +
+                            "]";
+                    }
+                }
+            }
+
+            if (best != null)
+            {
+                source = best;
+                description = bestName;
+                return true;
+            }
+
+            /*
+             * Fallback defensivo: si Unity no conserva locales suficientes en la
+             * metadata del método, recorremos los componentes runtime. A diferencia
+             * de 2.2D7A, aquí las consultas de lectura con parámetros/out/buffer sí
+             * se ejecutan de forma segura, por lo que una fachada que exponga, por
+             * ejemplo, Copy/Query(filter, sort, buffer) también es legible.
+             */
+            MonoBehaviour[] behaviours = Resources.FindObjectsOfTypeAll<MonoBehaviour>();
             int inspectedInventoryComponents = 0;
             int readableCandidates = 0;
 
@@ -1279,15 +1653,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 }
                 inspectedInventoryComponents++;
 
-                // 2.2D7 debe contrastar Application contra la autoridad canónica.
-                // Nunca aceptamos Presentation/Editor ni servicios de persistencia/lifecycle
-                // como sustitutos de la fuente de lectura usada por la UI.
-                if (lower.Contains("presentation") || lower.Contains("editor") ||
-                    lower.Contains("save") || lower.Contains("persistence") ||
-                    lower.Contains("lifecycle") || lower.Contains("reservation") ||
-                    lower.Contains("receipt") || lower.Contains("delivery") ||
-                    lower.Contains("movement") || lower.Contains("policy") ||
-                    lower.Contains("forecast") || lower.Contains("alert"))
+                if (!IsAllowed22DApplicationSourceType(type, true))
                 {
                     continue;
                 }
@@ -1300,75 +1666,45 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 }
                 readableCandidates++;
 
-                int overlap = 0;
-                int exact = 0;
-                foreach (KeyValuePair<string, IngredientRecord> pair in rows)
-                {
-                    IngredientRecord canonical;
-                    if (!canonicalRows.TryGetValue(pair.Key, out canonical))
-                    {
-                        continue;
-                    }
-
-                    overlap++;
-                    IngredientRecord candidate = pair.Value;
-                    if (Math.Abs(canonical.Total - candidate.Total) <= 0.0001 &&
-                        Math.Abs(canonical.Available - candidate.Available) <= 0.0001 &&
-                        Math.Abs(canonical.Reserved - candidate.Reserved) <= 0.0001)
-                    {
-                        exact++;
-                    }
-                }
-
-                int minimumOverlap = Math.Min(3, Math.Min(canonicalRows.Count, rows.Count));
-                if (minimumOverlap <= 0 || overlap < minimumOverlap)
+                int overlap;
+                int exact;
+                if (!RowsRepresentCanonicalState(
+                        canonicalRows,
+                        rows,
+                        out overlap,
+                        out exact))
                 {
                     continue;
                 }
 
-                // La fuente de lectura debe representar realmente el mismo estado.
-                // Exigimos al menos un 80 % de coincidencia exacta en las filas solapadas.
-                if (exact * 5 < overlap * 4)
-                {
-                    continue;
-                }
-
-                int score = overlap * 100 + exact * 200;
-                if (lower.Contains("warehouse")) score += 30;
-                if (lower.Contains("application")) score += 30;
-                if (lower.Contains("read")) score += 25;
-                if (lower.Contains("query")) score += 25;
-                if (lower.Contains("summary")) score += 20;
-                if (lower.Contains("overview")) score += 20;
-                if (lower.Contains("model")) score += 15;
-                if (lower.Contains("facade")) score += 15;
-
-                // Rechazamos explícitamente el servicio canónico aunque su nombre cambie
-                // y aparezca como otro componente de inventario.
-                if (type.Name.IndexOf("InventoryService", StringComparison.OrdinalIgnoreCase) >= 0 &&
-                    !lower.Contains("warehouse") && !lower.Contains("read") &&
-                    !lower.Contains("query") && !lower.Contains("overview"))
-                {
-                    score -= 5000;
-                }
-
+                int score = Score22DSourceType(type, overlap, exact, false);
                 if (score > bestScore)
                 {
                     bestScore = score;
                     best = behaviour;
-                    bestName = fullName +
-                        " [filas=" + rows.Count.ToString(CultureInfo.InvariantCulture) +
-                        ", solapadas=" + overlap.ToString(CultureInfo.InvariantCulture) +
-                        ", exactas=" + exact.ToString(CultureInfo.InvariantCulture) + "]";
+                    bestName =
+                        fullName +
+                        " [fallback, filas=" +
+                        rows.Count.ToString(CultureInfo.InvariantCulture) +
+                        ", solapadas=" +
+                        overlap.ToString(CultureInfo.InvariantCulture) +
+                        ", exactas=" +
+                        exact.ToString(CultureInfo.InvariantCulture) +
+                        "]";
                 }
             }
 
             if (best == null)
             {
                 description =
-                    "Componentes runtime con 'Inventory' inspeccionados=" +
+                    "Contrato 39/0: " + contractDetail +
+                    "; objetos runtime de tipos del contrato=" +
+                    exactContractObjects.ToString(CultureInfo.InvariantCulture) +
+                    ", objetos del contrato con lectura agregada=" +
+                    readableContractObjects.ToString(CultureInfo.InvariantCulture) +
+                    "; componentes runtime con 'Inventory' inspeccionados=" +
                     inspectedInventoryComponents.ToString(CultureInfo.InvariantCulture) +
-                    ", candidatos con filas legibles=" +
+                    ", candidatos fallback con filas legibles=" +
                     readableCandidates.ToString(CultureInfo.InvariantCulture) +
                     ".";
                 return false;
@@ -1379,34 +1715,258 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             return true;
         }
 
-        public static UnityEngine.Object FindSceneObject(Type type)
+        private static List<Type> Get22DContractTypesFromFunctionalTest(
+            out string detail)
+        {
+            List<Type> result = new List<Type>();
+            HashSet<Type> seen = new HashSet<Type>();
+
+            Type testType =
+                FindType("BistroBuilderInventoryWarehouse22DFunctionalTestWindow");
+            if (testType == null)
+            {
+                detail = "no se encontró BistroBuilderInventoryWarehouse22DFunctionalTestWindow";
+                return result;
+            }
+
+            MethodInfo run = testType.GetMethod(
+                "RunAutomaticTest",
+                BindingFlags.Instance | BindingFlags.Static |
+                BindingFlags.Public | BindingFlags.NonPublic
+            );
+
+            if (run != null)
+            {
+                try
+                {
+                    MethodBody body = run.GetMethodBody();
+                    if (body != null)
+                    {
+                        IList<LocalVariableInfo> locals = body.LocalVariables;
+                        for (int i = 0; i < locals.Count; i++)
+                        {
+                            AddContractTypeTree(
+                                locals[i].LocalType,
+                                result,
+                                seen,
+                                0
+                            );
+                        }
+                    }
+                }
+                catch
+                {
+                    // Seguimos con campos y firmas; la falta de metadata local
+                    // no convierte el preflight en un falso positivo.
+                }
+            }
+
+            FieldInfo[] fields = testType.GetFields(
+                BindingFlags.Instance | BindingFlags.Static |
+                BindingFlags.Public | BindingFlags.NonPublic
+            );
+            for (int i = 0; i < fields.Length; i++)
+            {
+                AddContractTypeTree(fields[i].FieldType, result, seen, 0);
+            }
+
+            List<string> candidateNames = new List<string>();
+            for (int i = 0; i < result.Count && candidateNames.Count < 12; i++)
+            {
+                Type candidateType = result[i];
+                if (!IsAllowed22DApplicationSourceType(candidateType, false))
+                {
+                    continue;
+                }
+
+                candidateNames.Add(candidateType.FullName ?? candidateType.Name);
+            }
+
+            detail =
+                "tipos extraídos de la prueba funcional=" +
+                result.Count.ToString(CultureInfo.InvariantCulture) +
+                ", candidatos Application=" +
+                candidateNames.Count.ToString(CultureInfo.InvariantCulture) +
+                (candidateNames.Count > 0
+                    ? " [" + string.Join(", ", candidateNames.ToArray()) + "]"
+                    : string.Empty);
+            return result;
+        }
+
+        private static void AddContractTypeTree(
+            Type type,
+            List<Type> result,
+            HashSet<Type> seen,
+            int depth)
+        {
+            if (type == null || depth > 3 || !seen.Add(type))
+            {
+                return;
+            }
+
+            result.Add(type);
+
+            if (type.IsByRef || type.IsArray || type.IsPointer)
+            {
+                AddContractTypeTree(
+                    type.GetElementType(),
+                    result,
+                    seen,
+                    depth + 1
+                );
+            }
+
+            if (type.IsGenericType)
+            {
+                Type[] args = type.GetGenericArguments();
+                for (int i = 0; i < args.Length; i++)
+                {
+                    AddContractTypeTree(args[i], result, seen, depth + 1);
+                }
+            }
+        }
+
+        private static bool IsAllowed22DApplicationSourceType(
+            Type type,
+            bool requireInventorySemanticName)
         {
             if (type == null || !typeof(UnityEngine.Object).IsAssignableFrom(type))
             {
-                return null;
+                return false;
+            }
+
+            string lower = (type.FullName ?? type.Name).ToLowerInvariant();
+            if (lower.Contains("presentation") || lower.Contains("editor") ||
+                lower.Contains("save") || lower.Contains("persistence") ||
+                lower.Contains("lifecycle") || lower.Contains("reservation") ||
+                lower.Contains("receipt") || lower.Contains("delivery") ||
+                lower.Contains("movement") || lower.Contains("policy") ||
+                lower.Contains("forecast") || lower.Contains("alert") ||
+                lower.Contains("panel") || lower.Contains("screen") ||
+                lower.Contains("hud") || lower.EndsWith("view"))
+            {
+                return false;
+            }
+
+            return !requireInventorySemanticName ||
+                   lower.Contains("inventory") ||
+                   lower.Contains("warehouse") ||
+                   lower.Contains("stock");
+        }
+
+        private static bool RowsRepresentCanonicalState(
+            Dictionary<string, IngredientRecord> canonicalRows,
+            Dictionary<string, IngredientRecord> rows,
+            out int overlap,
+            out int exact)
+        {
+            overlap = 0;
+            exact = 0;
+
+            foreach (KeyValuePair<string, IngredientRecord> pair in rows)
+            {
+                IngredientRecord canonical;
+                if (!canonicalRows.TryGetValue(pair.Key, out canonical))
+                {
+                    continue;
+                }
+
+                overlap++;
+                IngredientRecord candidate = pair.Value;
+                if (Math.Abs(canonical.Total - candidate.Total) <= 0.0001 &&
+                    Math.Abs(canonical.Available - candidate.Available) <= 0.0001 &&
+                    Math.Abs(canonical.Reserved - candidate.Reserved) <= 0.0001)
+                {
+                    exact++;
+                }
+            }
+
+            int minimumOverlap =
+                Math.Min(3, Math.Min(canonicalRows.Count, rows.Count));
+            if (minimumOverlap <= 0 || overlap < minimumOverlap)
+            {
+                return false;
+            }
+
+            return exact * 5 >= overlap * 4;
+        }
+
+        private static int Score22DSourceType(
+            Type type,
+            int overlap,
+            int exact,
+            bool comesFromFunctionalTestContract)
+        {
+            string lower = (type.FullName ?? type.Name).ToLowerInvariant();
+            int score = overlap * 100 + exact * 200;
+
+            if (comesFromFunctionalTestContract) score += 10000;
+            if (lower.Contains("warehouse")) score += 80;
+            if (lower.Contains("application")) score += 60;
+            if (lower.Contains("administration")) score += 50;
+            if (lower.Contains("read")) score += 40;
+            if (lower.Contains("query")) score += 40;
+            if (lower.Contains("summary")) score += 30;
+            if (lower.Contains("overview")) score += 30;
+            if (lower.Contains("facade")) score += 30;
+
+            // El servicio canónico nunca debe ganar como "fachada".
+            if (type.Name.IndexOf(
+                    "InventoryService",
+                    StringComparison.OrdinalIgnoreCase) >= 0 &&
+                !lower.Contains("warehouse") &&
+                !lower.Contains("administration") &&
+                !lower.Contains("read") &&
+                !lower.Contains("query") &&
+                !lower.Contains("overview"))
+            {
+                score -= 5000;
+            }
+
+            return score;
+        }
+
+        public static UnityEngine.Object FindSceneObject(Type type)
+        {
+            List<UnityEngine.Object> candidates = FindSceneObjects(type);
+            return candidates.Count > 0 ? candidates[0] : null;
+        }
+
+        private static List<UnityEngine.Object> FindSceneObjects(Type type)
+        {
+            List<UnityEngine.Object> result = new List<UnityEngine.Object>();
+            if (type == null || !typeof(UnityEngine.Object).IsAssignableFrom(type))
+            {
+                return result;
             }
 
             UnityEngine.Object[] candidates = Resources.FindObjectsOfTypeAll(type);
             for (int i = 0; i < candidates.Length; i++)
             {
                 UnityEngine.Object candidate = candidates[i];
+                if (candidate == null || candidate is EditorWindow)
+                {
+                    continue;
+                }
+
                 Component component = candidate as Component;
                 if (component != null)
                 {
-                    if (component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded)
+                    if (component.gameObject.scene.IsValid() &&
+                        component.gameObject.scene.isLoaded)
                     {
-                        return candidate;
+                        result.Add(candidate);
                     }
                     continue;
                 }
 
-                // Para un ScriptableObject runtime se acepta la instancia viva.
-                if (candidate != null && !(candidate is EditorWindow))
-                {
-                    return candidate;
-                }
+                // Una fachada Application también puede ser ScriptableObject.
+                // Solo se admite porque el tipo procede del contrato 39/0 y
+                // después debe demostrar igualdad numérica con el canónico.
+                result.Add(candidate);
             }
-            return null;
+
+            return result;
         }
 
         public static MethodInfo FindZeroArgumentMethod(Type type, params string[] preferredNames)
@@ -1496,54 +2056,438 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 return;
             }
 
-            MethodInfo[] methods = root.GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo[] methods = root.GetType().GetMethods(
+                BindingFlags.Instance | BindingFlags.Public
+            );
             int invoked = 0;
-            for (int i = 0; i < methods.Length && invoked < 12; i++)
+
+            for (int i = 0; i < methods.Length && invoked < 24; i++)
             {
                 MethodInfo method = methods[i];
-                if (method.IsGenericMethodDefinition || method.GetParameters().Length != 0)
+                if (!IsSafeReadMethod(method))
                 {
                     continue;
                 }
 
-                string name = method.Name;
-                if (!(name.StartsWith("Get", StringComparison.Ordinal) ||
-                      name.StartsWith("Read", StringComparison.Ordinal) ||
-                      name.StartsWith("Query", StringComparison.Ordinal)))
-                {
-                    continue;
-                }
-
-                if (method.ReturnType == typeof(void) || method.ReturnType == typeof(string))
-                {
-                    continue;
-                }
-
-                bool enumerable = typeof(IEnumerable).IsAssignableFrom(method.ReturnType);
-                bool likelyReadModel =
-                    method.ReturnType.Name.IndexOf("Inventory", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    method.ReturnType.Name.IndexOf("Read", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    method.ReturnType.Name.IndexOf("Snapshot", StringComparison.OrdinalIgnoreCase) >= 0;
-                if (!enumerable && !likelyReadModel)
+                object[] args;
+                if (!TryBuildSafeReadArguments(method, out args))
                 {
                     continue;
                 }
 
                 try
                 {
-                    object result = method.Invoke(root, null);
+                    object returned = method.Invoke(root, args);
                     invoked++;
-                    HashSet<object> visited =
-                        new HashSet<object>(ReferenceEqualityComparer.Instance);
-                    int budget = 2500;
-                    TraverseForIngredientRows(result, 0, 5, visited, ref budget, best);
+
+                    TraverseQueryResult(returned, best);
+
+                    ParameterInfo[] parameters = method.GetParameters();
+                    for (int p = 0; p < parameters.Length; p++)
+                    {
+                        // Los out/ref y buffers mutables son parte del resultado
+                        // de muchos contratos Application de lectura.
+                        if (parameters[p].IsOut ||
+                            parameters[p].ParameterType.IsByRef ||
+                            IsMutableReadBuffer(parameters[p].ParameterType))
+                        {
+                            TraverseQueryResult(args[p], best);
+                        }
+                    }
                 }
                 catch
                 {
-                    // Un método de lectura opcional que no pueda ejecutarse no invalida
-                    // la prueba; la falta final de filas sí lo hará.
+                    // Una sobrecarga opcional no legible no invalida la prueba.
+                    // Si ninguna consulta produce filas, el preflight fallará.
                 }
             }
+        }
+
+        private static bool IsSafeReadMethod(MethodInfo method)
+        {
+            if (method == null || method.IsGenericMethodDefinition || method.IsStatic)
+            {
+                return false;
+            }
+
+            Type declaringType = method.DeclaringType;
+            if (declaringType == typeof(object) ||
+                declaringType == typeof(UnityEngine.Object) ||
+                declaringType == typeof(Component) ||
+                declaringType == typeof(Behaviour) ||
+                declaringType == typeof(MonoBehaviour))
+            {
+                return false;
+            }
+
+            string declaringNamespace =
+                declaringType != null ? declaringType.Namespace : string.Empty;
+            if (!string.IsNullOrEmpty(declaringNamespace) &&
+                declaringNamespace.StartsWith(
+                    "UnityEngine",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string name = method.Name;
+            string lower = name.ToLowerInvariant();
+
+            bool readVerb =
+                lower.StartsWith("get") ||
+                lower.StartsWith("read") ||
+                lower.StartsWith("query") ||
+                lower.StartsWith("copy") ||
+                lower.StartsWith("tryget") ||
+                lower.StartsWith("tryread") ||
+                lower.StartsWith("tryquery") ||
+                lower.StartsWith("trycopy") ||
+                lower.StartsWith("buildread") ||
+                lower.StartsWith("buildoverview") ||
+                lower.StartsWith("buildinventory") ||
+                lower.StartsWith("createoverview");
+
+            if (!readVerb)
+            {
+                return false;
+            }
+
+            // Blindaje frente a comandos aunque empiecen con Get/TryGet por azar.
+            string[] forbidden =
+            {
+                "set", "adjust", "receive", "apply", "modify", "change",
+                "consume", "reserve", "release", "expire", "delete", "save",
+                "load", "restore", "rebuild", "refresh", "initialize"
+            };
+            for (int i = 0; i < forbidden.Length; i++)
+            {
+                if (lower.Contains(forbidden[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool TryBuildSafeReadArguments(
+            MethodInfo method,
+            out object[] args)
+        {
+            ParameterInfo[] parameters = method.GetParameters();
+            args = new object[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                ParameterInfo parameter = parameters[i];
+                Type declaredType = parameter.ParameterType;
+                Type type = declaredType.IsByRef
+                    ? declaredType.GetElementType()
+                    : declaredType;
+
+                if (parameter.IsOptional)
+                {
+                    object defaultValue = parameter.DefaultValue;
+                    if (defaultValue != DBNull.Value && defaultValue != Missing.Value)
+                    {
+                        args[i] = defaultValue;
+                        continue;
+                    }
+                }
+
+                if (parameter.IsOut)
+                {
+                    args[i] = CreateSafeDefaultValue(type, parameter.Name);
+                    continue;
+                }
+
+                object value;
+                if (!TryCreateSafeInputValue(type, parameter.Name, out value))
+                {
+                    return false;
+                }
+                args[i] = value;
+            }
+
+            return true;
+        }
+
+        private static bool TryCreateSafeInputValue(
+            Type type,
+            string parameterName,
+            out object value)
+        {
+            value = null;
+            if (type == null)
+            {
+                return false;
+            }
+
+            if (type == typeof(string))
+            {
+                value = string.Empty;
+                return true;
+            }
+            if (type == typeof(bool))
+            {
+                value = false;
+                return true;
+            }
+            if (type.IsEnum)
+            {
+                value = SelectSafeEnumValue(type, parameterName);
+                return true;
+            }
+            if (type.IsPrimitive || type == typeof(decimal))
+            {
+                value = Activator.CreateInstance(type);
+                return true;
+            }
+            if (type == typeof(DateTime))
+            {
+                value = DateTime.Now;
+                return true;
+            }
+
+            object buffer = CreateMutableCollectionFor(type);
+            if (buffer != null)
+            {
+                value = buffer;
+                return true;
+            }
+
+            if (type.IsValueType)
+            {
+                value = Activator.CreateInstance(type);
+                return true;
+            }
+
+            string lowerTypeName = (type.FullName ?? type.Name).ToLowerInvariant();
+            bool looksLikeReadOptions =
+                lowerTypeName.Contains("query") ||
+                lowerTypeName.Contains("filter") ||
+                lowerTypeName.Contains("criteria") ||
+                lowerTypeName.Contains("options") ||
+                lowerTypeName.Contains("readrequest") ||
+                lowerTypeName.Contains("readmodelrequest");
+
+            if (looksLikeReadOptions && !typeof(UnityEngine.Object).IsAssignableFrom(type))
+            {
+                try
+                {
+                    object options = Activator.CreateInstance(type);
+                    InitializeSafeReadOptions(options);
+                    value = options;
+                    return true;
+                }
+                catch
+                {
+                    // Si el objeto de consulta requiere dependencias no inventamos valores.
+                }
+            }
+
+            // No inventamos UnityEngine.Object ni servicios de dominio como entrada.
+            return false;
+        }
+
+        private static void InitializeSafeReadOptions(object options)
+        {
+            if (options == null)
+            {
+                return;
+            }
+
+            Type type = options.GetType();
+            FieldInfo[] fields = type.GetFields(
+                BindingFlags.Instance | BindingFlags.Public
+            );
+            for (int i = 0; i < fields.Length; i++)
+            {
+                FieldInfo field = fields[i];
+                if (field.IsInitOnly || !field.FieldType.IsEnum)
+                {
+                    continue;
+                }
+                try
+                {
+                    field.SetValue(
+                        options,
+                        SelectSafeEnumValue(field.FieldType, field.Name)
+                    );
+                }
+                catch { }
+            }
+
+            PropertyInfo[] properties = type.GetProperties(
+                BindingFlags.Instance | BindingFlags.Public
+            );
+            for (int i = 0; i < properties.Length; i++)
+            {
+                PropertyInfo property = properties[i];
+                if (!property.CanWrite || property.GetIndexParameters().Length != 0 ||
+                    !property.PropertyType.IsEnum)
+                {
+                    continue;
+                }
+                try
+                {
+                    property.SetValue(
+                        options,
+                        SelectSafeEnumValue(property.PropertyType, property.Name),
+                        null
+                    );
+                }
+                catch { }
+            }
+        }
+
+        private static object CreateSafeDefaultValue(Type type, string parameterName)
+        {
+            if (type == null)
+            {
+                return null;
+            }
+
+            object collection = CreateMutableCollectionFor(type);
+            if (collection != null)
+            {
+                return collection;
+            }
+
+            if (type.IsEnum)
+            {
+                return SelectSafeEnumValue(type, parameterName);
+            }
+            if (type.IsValueType)
+            {
+                return Activator.CreateInstance(type);
+            }
+            return null;
+        }
+
+        private static object SelectSafeEnumValue(Type enumType, string parameterName)
+        {
+            string[] names = Enum.GetNames(enumType);
+            string normalizedParameter = Normalize(parameterName ?? string.Empty);
+            string[] preferred;
+
+            if (normalizedParameter.Contains("filter"))
+            {
+                preferred = new[] { "All", "Todos", "None", "Default" };
+            }
+            else if (normalizedParameter.Contains("sort") ||
+                     normalizedParameter.Contains("order"))
+            {
+                preferred = new[]
+                {
+                    "NameAscending", "IngredientAscending", "Name", "Ingredient",
+                    "Ascending", "Default", "None"
+                };
+            }
+            else
+            {
+                preferred = new[] { "All", "Default", "None" };
+            }
+
+            for (int p = 0; p < preferred.Length; p++)
+            {
+                for (int i = 0; i < names.Length; i++)
+                {
+                    if (string.Equals(
+                            names[i],
+                            preferred[p],
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return Enum.Parse(enumType, names[i]);
+                    }
+                }
+            }
+
+            Array values = Enum.GetValues(enumType);
+            return values.Length > 0
+                ? values.GetValue(0)
+                : Activator.CreateInstance(enumType);
+        }
+
+        private static object CreateMutableCollectionFor(Type type)
+        {
+            if (type == null || type == typeof(string))
+            {
+                return null;
+            }
+
+            if (!type.IsInterface && !type.IsAbstract &&
+                typeof(IList).IsAssignableFrom(type))
+            {
+                try
+                {
+                    return Activator.CreateInstance(type);
+                }
+                catch { }
+            }
+
+            if (type.IsGenericType)
+            {
+                Type generic = type.GetGenericTypeDefinition();
+                if (generic == typeof(List<>) || generic == typeof(IList<>) ||
+                    generic == typeof(ICollection<>) ||
+                    generic == typeof(IEnumerable<>) ||
+                    generic.FullName == "System.Collections.Generic.IReadOnlyList`1" ||
+                    generic.FullName == "System.Collections.Generic.IReadOnlyCollection`1")
+                {
+                    Type element = type.GetGenericArguments()[0];
+                    Type listType = typeof(List<>).MakeGenericType(element);
+                    try
+                    {
+                        return Activator.CreateInstance(listType);
+                    }
+                    catch { }
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsMutableReadBuffer(Type type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+            if (type.IsByRef)
+            {
+                type = type.GetElementType();
+            }
+            if (type == null || type == typeof(string))
+            {
+                return false;
+            }
+            if (typeof(IList).IsAssignableFrom(type))
+            {
+                return true;
+            }
+            if (!type.IsGenericType)
+            {
+                return false;
+            }
+            Type generic = type.GetGenericTypeDefinition();
+            return generic == typeof(List<>) ||
+                   generic == typeof(IList<>) ||
+                   generic == typeof(ICollection<>);
+        }
+
+        private static void TraverseQueryResult(
+            object value,
+            Dictionary<string, IngredientRecord> best)
+        {
+            if (value == null)
+            {
+                return;
+            }
+            HashSet<object> visited =
+                new HashSet<object>(ReferenceEqualityComparer.Instance);
+            int budget = 3500;
+            TraverseForIngredientRows(value, 0, 6, visited, ref budget, best);
         }
 
         private static void TraverseForIngredientRows(
@@ -1599,8 +2543,13 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             }
 
             // No atravesamos referencias a otros UnityEngine.Object desde un componente:
-            // evita recorrer toda la escena. Los datos internos/DTO sí se inspeccionan.
-            if (depth > 0 && value is UnityEngine.Object)
+            // evita recorrer toda la escena. En el objeto raíz Application sí inspeccionamos
+            // sus CAMPOS administrados para alcanzar DTO/colecciones internas, pero nunca
+            // evaluamos propiedades públicas heredadas de Unity (transform, matrices, etc.).
+            // A2 demostró que PropertyInfo.GetValue sobre esas propiedades podía disparar
+            // miles de asserts ValidTRS() generados por la propia herramienta de diagnóstico.
+            bool isUnityObject = value is UnityEngine.Object;
+            if (depth > 0 && isUnityObject)
             {
                 return;
             }
@@ -1619,6 +2568,14 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                     TraverseForIngredientRows(child, depth + 1, maxDepth, visited, ref budget, best);
                 }
                 catch { }
+            }
+
+            // SEGURIDAD A3: nunca invoques getters arbitrarios de UnityEngine.Object.
+            // Los getters nativos pueden tener efectos internos y, en concreto, provocar
+            // ValidTRS() aunque el Transform de la escena sea perfectamente válido.
+            if (isUnityObject)
+            {
+                return;
             }
 
             PropertyInfo[] props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -1658,7 +2615,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             }
 
             string ingredientId;
-            if (!TryReadString(value, IngredientIdAliases, out ingredientId) ||
+            if (!TryReadIngredientId(value, out ingredientId) ||
                 string.IsNullOrWhiteSpace(ingredientId))
             {
                 return false;
@@ -1794,7 +2751,8 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 return;
             }
 
-            if (depth > 0 && value is UnityEngine.Object)
+            bool isUnityObject = value is UnityEngine.Object;
+            if (depth > 0 && isUnityObject)
             {
                 return;
             }
@@ -1813,6 +2771,13 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                     );
                 }
                 catch { }
+            }
+
+            // SEGURIDAD A3: los servicios/Component raíz se recorren por campos propios,
+            // no mediante getters públicos de UnityEngine.Object.
+            if (isUnityObject)
+            {
+                return;
             }
 
             PropertyInfo[] props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -1870,7 +2835,7 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
             {
                 string ingredientId;
                 double quantity;
-                if (TryReadString(value, IngredientIdAliases, out ingredientId) &&
+                if (TryReadIngredientId(value, out ingredientId) &&
                     TryReadDouble(value, LineQuantityAliases, out quantity) &&
                     !string.IsNullOrWhiteSpace(ingredientId) && quantity > Tolerance)
                 {
@@ -1892,7 +2857,8 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 return;
             }
 
-            if (depth > 0 && value is UnityEngine.Object)
+            bool isUnityObject = value is UnityEngine.Object;
+            if (depth > 0 && isUnityObject)
             {
                 return;
             }
@@ -1911,6 +2877,12 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 catch { }
             }
 
+            // SEGURIDAD A3: no evalúa getters públicos heredados de UnityEngine.Object.
+            if (isUnityObject)
+            {
+                return;
+            }
+
             PropertyInfo[] props = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
             for (int i = 0; i < props.Length; i++)
             {
@@ -1924,6 +2896,56 @@ public sealed class BistroBuilderInventoryWarehouse22D7RuntimeValidationWindow :
                 }
                 catch { }
             }
+        }
+
+        private static bool TryReadIngredientId(object target, out string ingredientId)
+        {
+            ingredientId = string.Empty;
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (TryReadString(target, IngredientIdAliases, out ingredientId) &&
+                !string.IsNullOrWhiteSpace(ingredientId))
+            {
+                return true;
+            }
+
+            // 2.2D puede exponer el ingrediente como Definition/Ingredient en el DTO
+            // en lugar de duplicar IngredientId. Resolvemos únicamente referencias
+            // semánticas explícitas para no confundir MovementId/ReservationId con
+            // la identidad del ingrediente.
+            string[] nestedAliases =
+            {
+                "ingredient", "ingredientdefinition", "definition",
+                "ingredientdata", "item", "ingredientitem"
+            };
+
+            object nested;
+            if (TryReadMember(target, nestedAliases, out nested) && nested != null)
+            {
+                if (nested is string)
+                {
+                    ingredientId = ((string)nested).Trim();
+                    return !string.IsNullOrWhiteSpace(ingredientId);
+                }
+
+                if (TryReadString(nested, IngredientIdAliases, out ingredientId) &&
+                    !string.IsNullOrWhiteSpace(ingredientId))
+                {
+                    return true;
+                }
+
+                string[] genericId = { "id" };
+                if (TryReadString(nested, genericId, out ingredientId) &&
+                    !string.IsNullOrWhiteSpace(ingredientId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryReadString(object target, string[] aliases, out string value)
