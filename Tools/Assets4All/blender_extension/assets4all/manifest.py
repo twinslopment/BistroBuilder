@@ -19,7 +19,7 @@ def _regions(session):
 def build_manifest(session) -> dict:
     return {
         "schemaVersion": "0.1",
-        "generator": {"name": "Assets4All", "version": "0.1.0"},
+        "generator": {"name": "Assets4All", "version": "0.1.2"},
         "identity": {
             "assetId": session.asset_id,
             "displayName": session.display_name,
@@ -33,9 +33,20 @@ def build_manifest(session) -> dict:
             "workObjects": [obj.name for obj in get_work_objects(session)],
         },
         "dimensions": {
-            "detectedM": [session.dimension_x, session.dimension_y, session.dimension_z],
+            "detectedM": [
+                session.dimension_x,
+                session.dimension_y,
+                session.dimension_z,
+            ],
             "minZ": session.min_z,
             "maxZ": session.max_z,
+        },
+        "normalization": {
+            "uniformScaleSuggestion": session.scale_suggestion,
+            "scaleConfidence": session.scale_confidence,
+            "scaleRecommended": session.scale_recommended,
+            "scaleGate": session.scale_gate,
+            "reason": session.scale_reason,
         },
         "geometry": {
             "meshCount": session.mesh_count,
@@ -50,6 +61,7 @@ def build_manifest(session) -> dict:
             "degenerateFaces": session.degenerate_faces,
             "connectedComponents": session.connected_components,
             "tinyComponents": session.tiny_components,
+            "fragmentationScore": session.fragmentation_score,
             "symmetryScore": session.symmetry_score,
         },
         "grounding": {
@@ -74,6 +86,7 @@ def build_manifest(session) -> dict:
         "qualityGates": {
             "geometry": session.geometry_gate,
             "topology": session.topology_gate,
+            "scale": session.scale_gate,
             "ground": session.ground_gate,
             "repair": session.repair_gate,
             "regions": session.regions_gate,
@@ -102,6 +115,12 @@ def write_manifest_text(session) -> bpy.types.Text:
     name = f"Assets4All_{session.asset_id}.asset4all.json"
     text = bpy.data.texts.get(name) or bpy.data.texts.new(name)
     text.clear()
-    text.write(json.dumps(build_manifest(session), indent=2, ensure_ascii=False))
+    text.write(
+        json.dumps(
+            build_manifest(session),
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
     session.manifest_text_name = text.name
     return text
