@@ -31,7 +31,7 @@ class A4A_PT_Main(bpy.types.Panel):
         preview.operator("assets4all.toggle_source", text="Ocultar SOURCE" if session.show_source else "Comparar SOURCE", icon="HIDE_OFF" if session.show_source else "HIDE_ON")
         layout.separator(); layout.label(text="DECISIÓN DOBLE", icon="VIEWZOOM")
         scores = layout.row(); _score_box(scores.column(), "PVS", session.pvs); _score_box(scores.column(), "CSE", session.cse)
-        result = layout.box(); row = result.row(align=True); row.label(text="Decisión"); row.label(text=session.final_decision or "-"); row = result.row(align=True); row.label(text="Desacuerdo"); row.label(text=f"{session.score_disagreement:.1f}")
+        result = layout.box(); row = result.row(align=True); row.label(text="Estrategia"); row.label(text=session.final_decision or "-"); row = result.row(align=True); row.label(text="Desacuerdo"); row.label(text=f"{session.score_disagreement:.1f}")
         layout.separator(); layout.label(text="ACCIONES", icon="TOOL_SETTINGS")
         action = layout.row(); action.scale_y = 1.7; action.operator("assets4all.analyse", text="ANALIZAR", icon="VIEWZOOM")
         prepare = layout.row(); prepare.scale_y = 1.9; prepare.operator("assets4all.auto_prepare", text="PREPARAR + AUTORREPARAR", icon="MODIFIER")
@@ -51,12 +51,14 @@ class A4A_PT_Quality(bpy.types.Panel):
         _gate_row(gates, "Geometría", session.geometry_gate); _gate_row(gates, "Topología", session.topology_gate); _gate_row(gates, "Suelo", session.ground_gate); _gate_row(gates, "Autorreparación", session.repair_gate); _gate_row(gates, "Regiones", session.regions_gate); _gate_row(gates, "Materiales", session.materials_gate); _gate_row(gates, "Export", session.export_gate)
         ground = layout.box(); ground.label(text="Ground Integrity", icon="GRID"); ground.label(text=f"Estado: {session.ground_state}"); ground.label(text=f"Support Z: {session.robust_support_z:.5f} m"); ground.label(text=f"Apoyo: {session.support_fraction * 100.0:.2f}%")
         if session.ground_message: ground.label(text=session.ground_message)
+        regions = layout.box(); regions.label(text="Region Consensus Engine", icon="MOD_EDGESPLIT"); regions.label(text=f"Regiones: {session.region_count}"); regions.label(text=f"Estables: {session.stable_region_count}"); regions.label(text=f"Ambiguas: {session.ambiguous_region_count}"); regions.label(text=f"Estabilidad media: {session.region_stability * 100.0:.1f}%")
 
 class A4A_PT_Diagnostics(bpy.types.Panel):
     bl_label = "Diagnóstico técnico"; bl_idname = "A4A_PT_diagnostics"; bl_parent_id = "A4A_PT_main"; bl_space_type = "VIEW_3D"; bl_region_type = "UI"; bl_category = "Assets4All"; bl_options = {"DEFAULT_CLOSED"}
     def draw(self, context):
         layout = self.layout; session = context.scene.assets4all; box = layout.box()
         box.label(text=f"Mallas: {session.mesh_count}"); box.label(text=f"Vértices: {session.vertex_count:,}"); box.label(text=f"Triángulos: {session.triangle_count:,}"); box.label(text=f"Componentes: {session.connected_components}"); box.label(text=f"Simetría: {session.symmetry_score:.1f}/100"); box.label(text=f"Non-manifold: {session.nonmanifold_edges}"); box.label(text=f"Sueltos: {session.loose_vertices}"); box.label(text=f"Degeneradas: {session.degenerate_faces}"); box.label(text=f"UV ausente: {session.missing_uv_meshes}")
+        rce = layout.box(); rce.label(text="RCE / Region DNA"); rce.label(text=f"Regiones: {session.region_count}"); rce.label(text=f"Estables: {session.stable_region_count}"); rce.label(text=f"Ambiguas: {session.ambiguous_region_count}"); rce.label(text=f"Persistencia media: {session.region_stability:.3f}")
         if session.last_repair_summary:
             repair = layout.box(); repair.label(text="Última autorreparación"); repair.label(text=session.last_repair_summary)
 
@@ -68,7 +70,7 @@ class A4A_PT_Issues(bpy.types.Panel):
             layout.label(text="Sin incidencias registradas.", icon="CHECKMARK"); return
         for issue in session.issues:
             box = layout.box(); icon = "ERROR" if issue.severity == "FAIL" else "QUESTION" if issue.severity == "REVIEW" else "INFO"; box.label(text=issue.code, icon=icon); box.label(text=issue.message)
-            if issue.auto_repairable: box.label(text="Assets4All intentará repararlo automáticamente.", icon="MODIFIER")
+            if issue.auto_repairable: box.label(text="Assets4All intentará resolverlo automáticamente.", icon="MODIFIER")
 
 class A4A_PT_Session(bpy.types.Panel):
     bl_label = "Sesión"; bl_idname = "A4A_PT_session"; bl_parent_id = "A4A_PT_main"; bl_space_type = "VIEW_3D"; bl_region_type = "UI"; bl_category = "Assets4All"; bl_options = {"DEFAULT_CLOSED"}
