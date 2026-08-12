@@ -1,6 +1,6 @@
 schema_version = "1.0.0"
 id = "assets4all"
-version = "0.1.0"
+version = "0.1.2"
 name = "Assets4All"
 tagline = "AI 3D asset to game-ready asset with minimal human work"
 maintainer = "Assets4All"
