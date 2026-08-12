@@ -93,7 +93,7 @@ class GroundingInputs:
     float_tolerance_m: float = 0.0015
     support_band_m: float = 0.003
     robust_percentile: float = 0.01
-    min_support_weight: float = 4.0
+    min_support_fraction: float = 0.002
 
 
 @dataclass(frozen=True)
@@ -103,6 +103,7 @@ class GroundingResult:
     absolute_min_z: float
     robust_support_z: float
     support_weight: float
+    support_fraction: float
     below_ground_weight: float
     message: str
 
