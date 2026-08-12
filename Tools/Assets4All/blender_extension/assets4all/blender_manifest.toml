@@ -1,0 +1,11 @@
+schema_version = "1.0.0"
+id = "assets4all"
+version = "0.1.0"
+name = "Assets4All"
+tagline = "AI 3D asset to game-ready asset with minimal human work"
+maintainer = "Assets4All"
+type = "add-on"
+website = ""
+tags = ["3D View", "Import-Export", "Modeling"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
