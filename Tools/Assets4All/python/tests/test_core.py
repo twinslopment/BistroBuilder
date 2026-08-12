@@ -16,11 +16,7 @@ from assets4all_core.scoring import (
 
 
 def metric(name, value, confidence=1.0):
-    return Metric(
-        name=name,
-        value=value,
-        confidence=confidence,
-    )
+    return Metric(name=name, value=value, confidence=confidence)
 
 
 def run_smoke_test():
@@ -58,8 +54,8 @@ def run_smoke_test():
     assert 0.0 <= cse.score <= 100.0
     assert dual.final_decision.value in {
         "AUTO",
-        "REVIEW",
-        "REGENERATE",
+        "STANDARD_REPAIR",
+        "DEEP_REPAIR",
     }
 
     ground = analyse_grounding(
@@ -76,6 +72,7 @@ def run_smoke_test():
     )
 
     assert ground.state.value in {"PASS", "REVIEW"}
+    assert 0.0 <= ground.support_fraction <= 1.0
 
     boundary = classify_boundary(
         BoundaryEvidence(
