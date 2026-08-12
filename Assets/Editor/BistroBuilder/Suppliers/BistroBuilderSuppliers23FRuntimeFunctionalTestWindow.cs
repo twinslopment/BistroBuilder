@@ -8,7 +8,7 @@ public sealed class BistroBuilderSuppliers23FRuntimeFunctionalTestWindow : Edito
     private int passed,failed; private string log=""; private Vector2 scroll;
     [MenuItem(BistroBuilderSuppliers23FPaths.MenuRoot + "2.3F - Prueba funcional runtime")]
     public static void Open(){ GetWindow<BistroBuilderSuppliers23FRuntimeFunctionalTestWindow>(false,"Prueba runtime 2.3F").Show(); }
-    private void OnGUI(){ GUILayout.Label("PRUEBA FUNCIONAL RUNTIME 2.3F",EditorStyles.boldLabel); EditorGUILayout.HelpBox("Debe ejecutarse en Play Mode. Analiza las autoridades REALES en solo lectura; no crea pedidos ni toca Inventario.",MessageType.Info); if(GUILayout.Button("Ejecutar prueba completa")) Run(); GUILayout.Label("Correctos: "+passed+"  Fallos: "+failed,EditorStyles.boldLabel); scroll=EditorGUILayout.BeginScrollView(scroll); EditorGUILayout.TextArea(log,GUILayout.ExpandHeight(true)); EditorGUILayout.EndScrollView(); }
+    private void OnGUI(){ GUILayout.Label("PRUEBA FUNCIONAL RUNTIME 2.3F",EditorStyles.boldLabel); EditorGUILayout.HelpBox("Debe ejecutarse en Play Mode. Analiza autoridades REALES en solo lectura y, si 2.3I está activo, solo proveedores desbloqueados; no crea pedidos ni toca Inventario.",MessageType.Info); if(GUILayout.Button("Ejecutar prueba completa")) Run(); GUILayout.Label("Correctos: "+passed+"  Fallos: "+failed,EditorStyles.boldLabel); scroll=EditorGUILayout.BeginScrollView(scroll); EditorGUILayout.TextArea(log,GUILayout.ExpandHeight(true)); EditorGUILayout.EndScrollView(); }
     private void Check(bool c,string t,List<string> l){if(c){passed++;l.Add("[OK] "+t);}else{failed++;l.Add("[FALLO] "+t);}}
     private void Run()
     {
@@ -18,6 +18,7 @@ public sealed class BistroBuilderSuppliers23FRuntimeFunctionalTestWindow : Edito
         var commercial=BistroBuilderSupplierCommercialIntelligenceService.Instance??Object.FindFirstObjectByType<BistroBuilderSupplierCommercialIntelligenceService>();
         var orders=BistroBuilderSupplierPurchaseOrderService.Instance??Object.FindFirstObjectByType<BistroBuilderSupplierPurchaseOrderService>();
         var smart=BistroBuilderSupplierSmartPurchaseService.Instance??Object.FindFirstObjectByType<BistroBuilderSupplierSmartPurchaseService>();
+        var progression=BistroBuilderSupplierProgressionService.Instance??Object.FindFirstObjectByType<BistroBuilderSupplierProgressionService>();
         Check(market!=null&&market.IsInitialized,"2.3C runtime disponible.",l); Check(commercial!=null&&commercial.IsInitialized,"2.3D runtime disponible.",l); Check(orders!=null&&orders.IsInitialized,"2.3E runtime disponible.",l); Check(smart!=null,"Existe autoridad runtime 2.3F.",l);
         if(smart==null){log=string.Join("\n",l);return;}
         Check(smart.IsInitialized||smart.TryInitialize(),"2.3F se inicializa.",l); Check(string.IsNullOrEmpty(smart.LastInitializationError),"2.3F no conserva error residual.",l);
@@ -30,7 +31,10 @@ public sealed class BistroBuilderSuppliers23FRuntimeFunctionalTestWindow : Edito
             Check(report.plans.Count==3,"Runtime genera Ahorrar / Equilibrado / Urgente.",l);
             Check(report.canonicalIngredientCount>=22,"Runtime reconoce los ingredientes canónicos.",l);
             Check(report.ingredientFactsResolved>0,"Runtime lee stock desde la autoridad canónica sin escribir.",l);
-            Check(report.offersEvaluated>=66,"Runtime evalúa el catálogo comercial 2.3B/2.3D.",l);
+            int expectedOffers=CountExpectedPlayableOffers(progression);
+            Check(expectedOffers>0,"Existe al menos una oferta jugable según progresión 2.3I.",l);
+            Check(report.offersEvaluated==expectedOffers,"Runtime evalúa exactamente las ofertas de proveedores desbloqueados por 2.3I ("+expectedOffers+").",l);
+            Check(report.plans.TrueForAll(p=>p.ingredients.TrueForAll(i=>i.selected==null||progression==null||!progression.IsInitialized||progression.IsSupplierUnlocked(i.selected.supplierId))),"2.3F no recomienda proveedores bloqueados por 2.3I.",l);
             Check(!string.IsNullOrWhiteSpace(report.recommendedReason),"La estrategia recomendada publica una razón explicable.",l);
             Check(report.plans.TrueForAll(p=>p.summaryReasons.Count>0),"Las tres estrategias publican razones.",l);
             Check(report.plans.TrueForAll(p=>p.ingredients.TrueForAll(i=>i.selected==null||i.selected.reasons.Count>0)),"Toda compra propuesta explica el porqué.",l);
@@ -61,5 +65,21 @@ public sealed class BistroBuilderSuppliers23FRuntimeFunctionalTestWindow : Edito
         l.Add("[INFO] Diagnóstico de lectura: "+(report!=null?string.Join(" | ",report.diagnostics.ToArray()):error));
         log=string.Join("\n",l.ToArray());
     }
+    private static int CountExpectedPlayableOffers(BistroBuilderSupplierProgressionService progression)
+    {
+        BistroBuilderSupplierAuthoringDatabase db=Resources.Load<BistroBuilderSupplierAuthoringDatabase>(BistroBuilderSupplierSmartPurchaseService.SupplierAuthoringResourcePath);
+        if(db==null) return 0;
+        int count=0;
+        var suppliers=db.Suppliers;
+        for(int s=0;s<suppliers.Count;s++)
+        {
+            var supplier=suppliers[s];
+            if(supplier==null||!supplier.isActive||supplier.baseOffers==null) continue;
+            if(progression!=null&&progression.IsInitialized&&!progression.IsSupplierUnlocked(supplier.SupplierId)) continue;
+            for(int o=0;o<supplier.baseOffers.Count;o++) if(supplier.baseOffers[o]!=null&&supplier.baseOffers[o].isActive) count++;
+        }
+        return count;
+    }
+
 }
 #endif

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierAuthoringDatabase
   schemaId: supplier.authoring
   schemaVersion: 2
-  contentRevision: 11
+  contentRevision: 12
   suppliers:
   - supplierId: supplier_mercado_central
     displayName: Mercado Central
@@ -437,7 +437,10 @@ MonoBehaviour:
       driverPresentationProfileId: driver_supplier_default
     unlockProfile:
       availableFromStart: 0
-      conditions: []
+      conditions:
+      - kind: 2
+        numericThreshold: 30000
+        stringThreshold: 
     baseOffers:
     - supplierOfferId: offer_supplier_distribuciones_norte_package_ingredient_aceite_oliva_jug_5l
       ingredientId: ingredient_aceite_oliva
@@ -1042,7 +1045,10 @@ MonoBehaviour:
       driverPresentationProfileId: driver_supplier_default
     unlockProfile:
       availableFromStart: 0
-      conditions: []
+      conditions:
+      - kind: 1
+        numericThreshold: 3
+        stringThreshold: 
     baseOffers:
     - supplierOfferId: offer_supplier_huerta_clara_package_ingredient_ajo_mesh_1kg
       ingredientId: ingredient_ajo
@@ -1156,7 +1162,13 @@ MonoBehaviour:
       driverPresentationProfileId: driver_supplier_default
     unlockProfile:
       availableFromStart: 0
-      conditions: []
+      conditions:
+      - kind: 1
+        numericThreshold: 7
+        stringThreshold: 
+      - kind: 2
+        numericThreshold: 50000
+        stringThreshold: 
     baseOffers:
     - supplierOfferId: offer_supplier_carnes_selectas_package_ingredient_aceitunas_alinadas_tray_1kg
       ingredientId: ingredient_aceitunas_alinadas
@@ -1270,7 +1282,13 @@ MonoBehaviour:
       driverPresentationProfileId: driver_supplier_default
     unlockProfile:
       availableFromStart: 0
-      conditions: []
+      conditions:
+      - kind: 1
+        numericThreshold: 10
+        stringThreshold: 
+      - kind: 2
+        numericThreshold: 75000
+        stringThreshold: 
     baseOffers:
     - supplierOfferId: offer_supplier_costa_fresca_package_ingredient_merluza_box_3kg
       ingredientId: ingredient_merluza

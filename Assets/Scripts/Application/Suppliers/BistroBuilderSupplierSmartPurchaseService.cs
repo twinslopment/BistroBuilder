@@ -16,6 +16,7 @@ public sealed class BistroBuilderSupplierSmartPurchaseService : MonoBehaviour
     private BistroBuilderSupplierSmartPurchaseSettings settings;
     private BistroBuilderSupplierCommercialIntelligenceService commercialService;
     private BistroBuilderSupplierPurchaseOrderService orderService;
+    private BistroBuilderSupplierProgressionService progressionService;
     private long generationSequence;
     private string lastInitializationError;
 
@@ -47,6 +48,7 @@ public sealed class BistroBuilderSupplierSmartPurchaseService : MonoBehaviour
         settings=Resources.Load<BistroBuilderSupplierSmartPurchaseSettings>(SettingsResourcePath);
         commercialService=BistroBuilderSupplierCommercialIntelligenceService.Instance ?? UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierCommercialIntelligenceService>();
         orderService=BistroBuilderSupplierPurchaseOrderService.Instance ?? UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierPurchaseOrderService>();
+        progressionService=BistroBuilderSupplierProgressionService.Instance ?? UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierProgressionService>();
         if(supplierDatabase==null) lastInitializationError="Falta supplier.authoring.";
         else if(ingredientDatabase==null) lastInitializationError="Falta ingredient.authoring.";
         else if(settings==null) lastInitializationError="Falta supplier.smart_purchase.settings. Ejecuta el instalador 2.3F.";
@@ -91,6 +93,11 @@ public sealed class BistroBuilderSupplierSmartPurchaseService : MonoBehaviour
 
         foreach(KeyValuePair<string,List<BistroBuilderSmartPurchaseCandidate>> pair in bySupplier)
         {
+            if(!IsSupplierUnlockedForPlayer(pair.Key))
+            {
+                error="2.3I bloquea el proveedor " + pair.Key + ". El plan debe regenerarse con proveedores desbloqueados.";
+                return false;
+            }
             BistroBuilderPurchaseOrderRecord draft;
             if(!orderService.TryCreateDraft(pair.Key,out draft,out error)) return false;
             for(int i=0;i<pair.Value.Count;i++)
@@ -111,6 +118,7 @@ public sealed class BistroBuilderSupplierSmartPurchaseService : MonoBehaviour
         {
             BistroBuilderSupplierAuthoringRecord supplier=suppliers[s];
             if(supplier==null || !supplier.isActive || supplier.baseOffers==null) continue;
+            if(!IsSupplierUnlockedForPlayer(supplier.SupplierId)) continue;
             for(int o=0;o<supplier.baseOffers.Count;o++)
             {
                 BistroBuilderSupplierBaseOfferAuthoringRecord offer=supplier.baseOffers[o];
@@ -158,4 +166,19 @@ public sealed class BistroBuilderSupplierSmartPurchaseService : MonoBehaviour
         }
         return result;
     }
+    private bool IsSupplierUnlockedForPlayer(string supplierId)
+    {
+        if(progressionService==null)
+        {
+            progressionService=BistroBuilderSupplierProgressionService.Instance ??
+                UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierProgressionService>();
+        }
+
+        // Compatibilidad defensiva: 2.3F conserva su comportamiento anterior si 2.3I
+        // no está instalado/inicializado. Una vez 2.3I está activo, sus desbloqueos
+        // gobiernan recomendaciones y creación de Draft desde planes inteligentes.
+        return progressionService==null || !progressionService.IsInitialized ||
+               progressionService.IsSupplierUnlocked(supplierId);
+    }
+
 }
