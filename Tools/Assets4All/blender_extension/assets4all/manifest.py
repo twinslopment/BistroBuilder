@@ -8,11 +8,23 @@ import bpy
 from .session import get_source_objects, get_work_objects
 
 
+def _regions(session):
+    try:
+        value = json.loads(session.regions_json or "[]")
+        return value if isinstance(value, list) else []
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+
+
 def build_manifest(session) -> dict:
     return {
         "schemaVersion": "0.1",
         "generator": {"name": "Assets4All", "version": "0.1.0"},
-        "identity": {"assetId": session.asset_id, "displayName": session.display_name, "profile": session.profile_id},
+        "identity": {
+            "assetId": session.asset_id,
+            "displayName": session.display_name,
+            "profile": session.profile_id,
+        },
         "session": {
             "sessionId": session.session_id,
             "state": session.state,
@@ -20,7 +32,11 @@ def build_manifest(session) -> dict:
             "sourceObjects": [obj.name for obj in get_source_objects(session)],
             "workObjects": [obj.name for obj in get_work_objects(session)],
         },
-        "dimensions": {"detectedM": [session.dimension_x, session.dimension_y, session.dimension_z], "minZ": session.min_z, "maxZ": session.max_z},
+        "dimensions": {
+            "detectedM": [session.dimension_x, session.dimension_y, session.dimension_z],
+            "minZ": session.min_z,
+            "maxZ": session.max_z,
+        },
         "geometry": {
             "meshCount": session.mesh_count,
             "vertices": session.vertex_count,
@@ -42,6 +58,13 @@ def build_manifest(session) -> dict:
             "supportFraction": session.support_fraction,
             "message": session.ground_message,
         },
+        "regions": {
+            "count": session.region_count,
+            "stableCount": session.stable_region_count,
+            "ambiguousCount": session.ambiguous_region_count,
+            "meanStability": session.region_stability,
+            "items": _regions(session),
+        },
         "decision": {
             "processingViabilityScore": session.pvs,
             "conversionSuccessEstimate": session.cse,
@@ -57,8 +80,20 @@ def build_manifest(session) -> dict:
             "materials": session.materials_gate,
             "export": session.export_gate,
         },
-        "repair": {"passes": session.repair_passes, "changes": session.repair_changes, "summary": session.last_repair_summary},
-        "issues": [{"severity": issue.severity, "code": issue.code, "message": issue.message, "autoRepairable": issue.auto_repairable} for issue in session.issues],
+        "repair": {
+            "passes": session.repair_passes,
+            "changes": session.repair_changes,
+            "summary": session.last_repair_summary,
+        },
+        "issues": [
+            {
+                "severity": issue.severity,
+                "code": issue.code,
+                "message": issue.message,
+                "autoRepairable": issue.auto_repairable,
+            }
+            for issue in session.issues
+        ],
         "generatedAtUtc": datetime.now(timezone.utc).isoformat(),
     }
 
