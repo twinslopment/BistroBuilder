@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 855d1edee757479c8f683b534c12bb49, type: 3}
+  m_Name: BistroBuilderSupplierDeliveryPresentationSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierDeliveryPresentationSettings
+  schemaId: supplier.delivery.presentation.settings
+  schemaVersion: 1
+  autoStartReadyDeliveries: 1
+  maximumQueuedPresentations: 8
+  vanPrefab: {fileID: 0}
+  lightTruckPrefab: {fileID: 0}
+  driverPrefab: {fileID: 0}
+  trolleyPrefab: {fileID: 0}
+  boxPrefab: {fileID: 0}
+  vehicleSpeedMetersPerSecond: 5
+  driverSpeedMetersPerSecond: 1.7
+  vehicleTurnDegreesPerSecond: 180
+  driverTurnDegreesPerSecond: 360
+  parkPauseSeconds: 0.6
+  driverExitSeconds: 0.5
+  rearDoorSeconds: 0.7
+  trolleyPrepareSeconds: 0.45
+  unloadSecondsPerTrip: 0.8
+  trolleyStowSeconds: 0.45
+  driverEnterSeconds: 0.45
+  cleanupDelaySeconds: 0.5
+  requireBrandingOnBothSides: 1
+  showSupplierNameWhenLogoExists: 1
+  brandingPanelHeight: 0.62
+  brandingPanelLength: 2.1
+  brandingPanelThickness: 0.035
+  maximumVisibleBoxesPerTrip: 6
+  trolleyLoadLocalOffset: {x: 0, y: 0.72, z: 0}
+  driverTrolleyFollowOffset: {x: 0, y: 0, z: -0.85}
+  preferNavMeshWhenAvailable: 1

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c37c820fe7e741d198e21cf5b712f32a, type: 3}
+  m_Name: BistroBuilderSupplierSmartPurchaseSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierSmartPurchaseSettings
+  schemaId: supplier.smart_purchase.settings
+  schemaVersion: 1
+  savingTargetCoverageDays: 5
+  balancedTargetCoverageDays: 4
+  urgentTargetCoverageDays: 2.5
+  expiryRiskWindowDays: 3
+  criticalStockoutHours: 24
+  highStockoutHours: 48
+  savingCostWeight: 5
+  savingSpeedWeight: 1
+  savingReliabilityWeight: 1.5
+  savingWasteWeight: 3
+  savingStockoutWeight: 4
+  balancedCostWeight: 3
+  balancedSpeedWeight: 3
+  balancedReliabilityWeight: 3.5
+  balancedWasteWeight: 3
+  balancedStockoutWeight: 5
+  urgentCostWeight: 1
+  urgentSpeedWeight: 6
+  urgentReliabilityWeight: 5
+  urgentWasteWeight: 1.5
+  urgentStockoutWeight: 8
+  limitedAvailabilityPenalty: 1.5
+  supplierMinimumGapPenalty: 6
+  overstockPenaltyScale: 4
