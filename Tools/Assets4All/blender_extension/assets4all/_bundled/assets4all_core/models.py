@@ -92,3 +92,41 @@ class GroundingResult:
     support_fraction: float
     below_ground_weight: float
     message: str
+
+@dataclass(frozen=True)
+class RegionDescriptor:
+    region_id: int
+    centroid: Tuple[float, float, float]
+    area: float
+    volume_estimate: float
+    aspect_ratios: Tuple[float, float, float]
+    mean_curvature: float
+    thickness_mean: float
+    ground_distance: float
+    symmetry_group: Optional[int]
+    repetition_group: Optional[int]
+    neighbors: Tuple[int, ...]
+    source_object_ids: Tuple[str, ...] = ()
+    material_slots: Tuple[str, ...] = ()
+    uv_islands: Tuple[int, ...] = ()
+
+@dataclass(frozen=True)
+class BoundaryEvidence:
+    edge_id: int
+    topology: float
+    dihedral: float
+    curvature: float
+    thickness: float
+    normals: float
+    geodesic: float
+    level: float
+    symmetry: float
+    material_uv: float
+
+@dataclass(frozen=True)
+class BoundaryConsensus:
+    edge_id: int
+    consensus: float
+    persistence: float
+    confidence: float
+    is_boundary: bool
