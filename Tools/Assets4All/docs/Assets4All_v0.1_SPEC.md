@@ -8,6 +8,8 @@ Assets4All prepares an existing 3D asset for a game engine as quickly as possibl
 
 The normal user must correct concepts (asset type, region role, material class), not vertices or polygons.
 
+**Repair-first policy:** normal Meshy/AI-generation defects are problems for Assets4All to solve automatically. A poor initial score selects a deeper automatic repair strategy; it does not immediately tell the user to regenerate. `REGENERATE` is reserved for the exceptional case where the automatic repair tournament cannot produce a validated candidate or the source does not contain enough usable geometric information to reconstruct the intended asset.
+
 ## 2. Main experience
 
 The primary UI is a **large dedicated Assets4All workspace**, not a narrow Blender sidebar.
@@ -66,7 +68,7 @@ Minimum session identity:
 
 ## 4. Two independent conversion estimators
 
-Assets4All must not make its process/regenerate decision from one score only.
+Assets4All must not make its process/repair-depth decision from one score only.
 
 ### 4.1 ProcessingViabilityScore (PVS)
 
@@ -108,21 +110,21 @@ Inputs can include:
 
 CSE answers:
 
-> “What is the estimated chance that AUTO/REVIEW finishes this asset successfully within our time budget?”
+> “What is the estimated chance that automatic conversion succeeds, and how deep a repair strategy should Assets4All use?”
 
-### 4.3 Decision matrix
+### 4.3 Repair-depth decision matrix
 
 PVS and CSE are shown side-by-side and their disagreement is meaningful.
 
 Examples:
 
-- High PVS + High CSE -> AUTO.
-- High PVS + Medium/Low CSE -> technically good asset but ambiguous; REVIEW.
-- Medium PVS + High CSE -> technically imperfect but easy/low-risk fixes; AUTO or REVIEW with warnings.
-- Low PVS + Low CSE -> REGENERATE SOURCE.
-- Large disagreement -> mandatory REVIEW; never hide disagreement inside a single combined score.
+- High PVS + High CSE -> `AUTO`.
+- High PVS + Medium/Low CSE -> `STANDARD_REPAIR`; technically good but interpretation is uncertain.
+- Medium PVS + High CSE -> `STANDARD_REPAIR`; imperfect but likely easy to fix automatically.
+- Low PVS or Low CSE -> `DEEP_REPAIR`; invoke the more expensive repair/region/symmetry strategies.
+- Large disagreement -> do not average it away; select at least `STANDARD_REPAIR` and retain the disagreement as diagnostic evidence.
 
-A future calibrated meta-decision may consume both scores, but neither replaces the other.
+Neither PVS nor CSE emits `REGENERATE` as the normal initial decision. Regeneration can only become the final recommendation **after** automatic repair hypotheses have been tried and validation proves that none is acceptable.
 
 ## 5. Region Consensus Engine (RCE)
 
@@ -198,7 +200,7 @@ The profile contributes priors; geometry remains evidence. The engine emits conf
 
 ### 5.6 Ambiguity-only review
 
-The user reviews only regions below a confidence threshold. A correction applies to a whole region and may propagate to symmetry/repetition peers.
+The user reviews only regions that remain unresolved **after automatic repair and semantic inference**. A correction applies to a whole region and may propagate to symmetry/repetition peers.
 
 Manual face selection is Expert-only fallback.
 
@@ -237,19 +239,21 @@ Grounding analysis therefore distinguishes:
 - total contact area / contact-point count
 - below-ground outliers vs structural penetration
 
-### 6.2 Auto-ground operation
+### 6.2 Automatic ground repair
 
 For a valid floor-standing source, Assets4All translates WORK vertically so the intended support level sits at Z=0.
 
-It then re-runs Ground Integrity. It must not silently solve a malformed model by moving the whole asset upward if that would make valid feet float because one protrusion extends below the floor.
+If one or more localized Meshy artifacts extend below the robust support plane, Assets4All first treats them as repair candidates. It must repair/trim/reconstruct the anomalous local geometry and re-run Ground Integrity rather than simply lifting the whole asset and leaving valid feet floating.
 
-Possible outputs:
+If the anomaly is more complex, the deeper repair layer may test multiple candidates (local clamp/trim, region-local reconstruction, symmetry-derived support reconstruction, etc.) and keep only a candidate that passes post-repair validation.
+
+Possible intermediate outputs:
 
 - `PASS_GROUNDED`
 - `AUTO_GROUNDED`
-- `REVIEW_UNEVEN_SUPPORT`
-- `FAIL_PENETRATION`
-- `FAIL_FLOATING`
+- `AUTO_REPAIRED_SUPPORT`
+- `DEEP_REPAIR_REQUIRED`
+- `REVIEW_UNRESOLVED`
 
 ### 6.3 Preview requirement
 
@@ -275,11 +279,15 @@ Initial static profiles:
 
 Profiles supply ranges, semantic expectations, placement strategy, budgets and adapter hints. They do not own the common pipeline.
 
-## 8. Repair risk classes
+## 8. Repair risk classes and Repair Tournament
 
 - SAFE: automatic deterministic cleanup/normalization.
-- CONDITIONAL: run only above confidence threshold and record the decision.
-- DESTRUCTIVE: never silent; requires explicit user approval and SOURCE remains intact.
+- CONDITIONAL: automatic when confidence and post-validation are sufficient.
+- DESTRUCTIVE HYPOTHESIS: may run automatically only on disposable transactional WORK candidates; it is never committed directly.
+
+For uncertain defects, Assets4All may create several temporary repair candidates. Each candidate is independently re-analysed. A destructive candidate can become the new WORK only when it wins the Repair Tournament and passes hard invariants such as dimensional envelope, Ground Integrity, topology, profile plausibility and geometry-loss limits.
+
+SOURCE remains immutable. If no candidate clearly wins, Assets4All escalates to Review. Only after the repair system has exhausted viable hypotheses may it recommend source regeneration.
 
 ## 9. Quality gates
 
@@ -291,6 +299,7 @@ At minimum:
 - Dimensions
 - Orientation
 - GroundIntegrity (for floor profiles)
+- Repair
 - Regions
 - Materials
 - Optimization
@@ -304,7 +313,7 @@ States:
 - FAIL
 - N/A
 
-FAIL blocks export. REVIEW requires acceptance unless the active product policy explicitly allows it.
+FAIL blocks export, but a pre-repair FAIL is a trigger for automatic repair rather than an immediate user failure. REVIEW is surfaced only after automatic attempts cannot resolve the ambiguity safely.
 
 ## 10. Canonical manifest
 
@@ -345,11 +354,12 @@ Minimum sections:
 2. Large preview-oriented UI foundation.
 3. PVS implementation.
 4. Independent CSE implementation.
-5. Robust Ground Integrity Gate and automatic grounding.
-6. Region Consensus Engine prototype.
-7. No face selection required for the reference fused Meshy chair.
-8. Canonical manifest foundation.
-9. Unity adapter remains separate from Bistro Builder adapter.
+5. Robust Ground Integrity Gate and automatic grounding/repair.
+6. Transactional Self-Healing Repair Cycle with automatic rollback.
+7. Region Consensus Engine prototype.
+8. No face selection required for the reference fused Meshy chair.
+9. Canonical manifest foundation.
+10. Unity adapter remains separate from Bistro Builder adapter.
 
 ## 12. Reference regression fixture
 
@@ -357,4 +367,4 @@ Minimum sections:
 
 It is a regression fixture, not an architectural special case.
 
-Success means the pipeline can analyse, ground, segment/review, prepare and export it without requiring the normal user to manually select thousands of faces.
+Success means the pipeline can analyse, repair, ground, segment, prepare and export it without requiring the normal user to manually select thousands of faces.
