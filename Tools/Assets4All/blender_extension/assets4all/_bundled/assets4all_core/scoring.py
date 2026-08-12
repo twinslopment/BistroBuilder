@@ -22,8 +22,8 @@ def _decision_from_score(score: float) -> Decision:
     if score >= 85.0:
         return Decision.AUTO
     if score >= 60.0:
-        return Decision.REVIEW
-    return Decision.REGENERATE
+        return Decision.STANDARD_REPAIR
+    return Decision.DEEP_REPAIR
 
 def processing_viability_score(inputs: ViabilityInputs) -> ScoreResult:
     values = {name: getattr(inputs, name).clamped() for name in _PVS_WEIGHTS}
@@ -82,14 +82,17 @@ def conversion_success_estimate(inputs: ConversionRiskInputs) -> ScoreResult:
 def resolve_dual_decision(pvs: ScoreResult, cse: ScoreResult) -> DualDecision:
     disagreement = abs(pvs.score - cse.score)
     reasons: List[str] = []
-    if disagreement >= 22.0:
-        final = Decision.REVIEW
-        reasons.append(f"large_score_disagreement={disagreement:.1f}")
-    elif pvs.decision == Decision.REGENERATE and cse.decision == Decision.REGENERATE:
-        final = Decision.REGENERATE
-    elif pvs.decision == Decision.AUTO and cse.decision == Decision.AUTO:
+    decisions = {pvs.decision, cse.decision}
+    if pvs.decision == Decision.AUTO and cse.decision == Decision.AUTO:
         final = Decision.AUTO
+    elif Decision.DEEP_REPAIR in decisions:
+        final = Decision.DEEP_REPAIR
+        reasons.append("one_estimator_requires_deep_repair")
+    elif disagreement >= 22.0:
+        final = Decision.STANDARD_REPAIR
+        reasons.append(f"large_score_disagreement={disagreement:.1f}")
     else:
-        final = Decision.REVIEW
-        reasons.append(f"mixed_decision={pvs.decision.value}/{cse.decision.value}")
+        final = Decision.STANDARD_REPAIR
+        if pvs.decision != cse.decision:
+            reasons.append(f"mixed_decision={pvs.decision.value}/{cse.decision.value}")
     return DualDecision(pvs, cse, final, round(disagreement, 2), tuple(reasons))
