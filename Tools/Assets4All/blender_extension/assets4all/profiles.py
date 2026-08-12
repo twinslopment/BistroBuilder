@@ -123,14 +123,34 @@ def infer_uniform_scale(
     scaled = profile_plausibility(profile_id, scaled_dims)
 
     mean_log = sum(log_ratios) / len(log_ratios)
-    variance = sum((value - mean_log) ** 2 for value in log_ratios) / len(log_ratios)
-    agreement = math.exp(-7.0 * math.sqrt(max(0.0, variance)))
+    variance = (
+        sum((value - mean_log) ** 2 for value in log_ratios)
+        / len(log_ratios)
+    )
+    std_log = math.sqrt(max(0.0, variance))
+
+    agreement = math.exp(-3.0 * std_log)
     fit = max(0.0, min(1.0, scaled / 100.0))
-    confidence = max(0.0, min(1.0, 0.62 * agreement + 0.38 * fit))
+
+    height_factor = typical[2] / max(dims[2], 1.0e-9)
+    height_agreement = math.exp(
+        -2.2 * abs(
+            math.log(max(factor, 1.0e-9) / max(height_factor, 1.0e-9))
+        )
+    )
+    confidence = max(
+        0.0,
+        min(
+            1.0,
+            0.44 * agreement
+            + 0.36 * fit
+            + 0.20 * height_agreement,
+        ),
+    )
 
     correction_magnitude = abs(math.log(max(factor, 1.0e-9)))
     recommended = (
-        confidence >= 0.84
+        confidence >= 0.86
         and scaled >= 94.0
         and current <= 80.0
         and correction_magnitude >= math.log(1.12)
@@ -138,7 +158,8 @@ def infer_uniform_scale(
     )
 
     reason = (
-        f"Escala uniforme sugerida x{factor:.4f}; confianza {confidence * 100.0:.1f}%; "
+        f"Escala uniforme sugerida x{factor:.4f}; "
+        f"confianza {confidence * 100.0:.1f}%; "
         f"plausibilidad {current:.1f} -> {scaled:.1f}."
     )
 
