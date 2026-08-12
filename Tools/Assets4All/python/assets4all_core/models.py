@@ -4,12 +4,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Sequence, Tuple
 
-
 class Decision(str, Enum):
     AUTO = "AUTO"
+    STANDARD_REPAIR = "STANDARD_REPAIR"
+    DEEP_REPAIR = "DEEP_REPAIR"
     REVIEW = "REVIEW"
     REGENERATE = "REGENERATE"
-
 
 class GateState(str, Enum):
     PASS = "PASS"
@@ -17,22 +17,14 @@ class GateState(str, Enum):
     FAIL = "FAIL"
     NA = "N/A"
 
-
 @dataclass(frozen=True)
 class Metric:
     name: str
     value: float
     confidence: float = 1.0
     note: str = ""
-
     def clamped(self) -> "Metric":
-        return Metric(
-            self.name,
-            max(0.0, min(100.0, float(self.value))),
-            max(0.0, min(1.0, float(self.confidence))),
-            self.note,
-        )
-
+        return Metric(self.name, max(0.0, min(100.0, float(self.value))), max(0.0, min(1.0, float(self.confidence))), self.note)
 
 @dataclass
 class ViabilityInputs:
@@ -47,7 +39,6 @@ class ViabilityInputs:
     optimization_headroom: Metric
     profile_plausibility: Metric
 
-
 @dataclass
 class ConversionRiskInputs:
     repair_success_probability: float
@@ -61,14 +52,12 @@ class ConversionRiskInputs:
     review_budget_seconds: float = 30.0
     severe_failure_flags: Sequence[str] = field(default_factory=tuple)
 
-
 @dataclass(frozen=True)
 class ScoreResult:
     score: float
     decision: Decision
     confidence: float
     reasons: Tuple[str, ...] = ()
-
 
 @dataclass(frozen=True)
 class DualDecision:
@@ -78,13 +67,11 @@ class DualDecision:
     disagreement: float
     reasons: Tuple[str, ...] = ()
 
-
 @dataclass(frozen=True)
 class GroundingSample:
     z: float
     cluster_id: Optional[int] = None
     area_weight: float = 1.0
-
 
 @dataclass
 class GroundingInputs:
@@ -94,7 +81,6 @@ class GroundingInputs:
     support_band_m: float = 0.003
     robust_percentile: float = 0.01
     min_support_fraction: float = 0.002
-
 
 @dataclass(frozen=True)
 class GroundingResult:
@@ -106,7 +92,6 @@ class GroundingResult:
     support_fraction: float
     below_ground_weight: float
     message: str
-
 
 @dataclass(frozen=True)
 class RegionDescriptor:
@@ -125,7 +110,6 @@ class RegionDescriptor:
     material_slots: Tuple[str, ...] = ()
     uv_islands: Tuple[int, ...] = ()
 
-
 @dataclass(frozen=True)
 class BoundaryEvidence:
     edge_id: int
@@ -138,7 +122,6 @@ class BoundaryEvidence:
     level: float
     symmetry: float
     material_uv: float
-
 
 @dataclass(frozen=True)
 class BoundaryConsensus:
