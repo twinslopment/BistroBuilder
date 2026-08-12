@@ -7,6 +7,7 @@ from .analysis import analyse_session, apply_snapshot_to_session
 from .ground_view import ensure_ground_plane
 from .manifest import write_manifest_text
 from .properties import is_floor_profile
+from .regions import analyse_regions, apply_region_result
 from .repair import run_self_healing_repair
 from .session import capture_session, get_work_objects, reset_session, set_source_visible
 
@@ -42,10 +43,16 @@ class A4A_OT_Analyse(bpy.types.Operator):
         try:
             snapshot = analyse_session(context, session)
             apply_snapshot_to_session(session, snapshot)
+            region_result = analyse_regions(context, session)
+            apply_region_result(session, region_result)
             session.state = "ANALYSED"
             ensure_ground_plane(context, session, max(session.dimension_x, session.dimension_y, 1.0) * 2.6)
             write_manifest_text(session)
-            self.report({"INFO"}, f"PVS {session.pvs:.1f} · CSE {session.cse:.1f} · {session.final_decision}")
+            self.report(
+                {"INFO"},
+                f"PVS {session.pvs:.1f} · CSE {session.cse:.1f} · "
+                f"RCE {session.region_count} regiones · {session.final_decision}",
+            )
             return {"FINISHED"}
         except Exception as exc:
             self.report({"ERROR"}, f"No se pudo analizar: {exc}"); return {"CANCELLED"}
@@ -60,6 +67,10 @@ class A4A_OT_AutoPrepare(bpy.types.Operator):
             self.report({"ERROR"}, "No existe una sesión Assets4All."); return {"CANCELLED"}
         try:
             result = run_self_healing_repair(context, session)
+            region_result = analyse_regions(context, session)
+            apply_region_result(session, region_result)
+            if session.regions_gate == "REVIEW" and session.state == "PREPARED":
+                session.state = "REVIEW"
             ensure_ground_plane(context, session, max(session.dimension_x, session.dimension_y, 1.0) * 2.6)
             write_manifest_text(session)
             self.report({"INFO" if result.accepted else "WARNING"}, result.summary)
@@ -107,6 +118,8 @@ class A4A_OT_Approve(bpy.types.Operator):
             self.report({"ERROR"}, f"Hay {len(blocking)} fallo(s) bloqueante(s)."); return {"CANCELLED"}
         if is_floor_profile(session.profile_id) and session.ground_gate != "PASS":
             self.report({"ERROR"}, "Ground Integrity debe estar en PASS antes de aprobar."); return {"CANCELLED"}
+        if session.regions_gate == "FAIL":
+            self.report({"ERROR"}, "RCE no ha podido construir regiones válidas."); return {"CANCELLED"}
         session.state = "APPROVED"
         write_manifest_text(session)
         self.report({"INFO"}, "WORK aprobado. El exportador canónico se conectará en A4A-007/008.")
@@ -122,7 +135,15 @@ class A4A_OT_Reset(bpy.types.Operator):
         self.report({"INFO"}, "Sesión cerrada; SOURCE restaurado.")
         return {"FINISHED"}
 
-_CLASSES = (A4A_OT_StartSession, A4A_OT_Analyse, A4A_OT_AutoPrepare, A4A_OT_ToggleSource, A4A_OT_FocusPreview, A4A_OT_Approve, A4A_OT_Reset)
+_CLASSES = (
+    A4A_OT_StartSession,
+    A4A_OT_Analyse,
+    A4A_OT_AutoPrepare,
+    A4A_OT_ToggleSource,
+    A4A_OT_FocusPreview,
+    A4A_OT_Approve,
+    A4A_OT_Reset,
+)
 
 def register():
     for cls in _CLASSES: bpy.utils.register_class(cls)
