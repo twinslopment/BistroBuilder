@@ -6,6 +6,8 @@ from typing import Optional, Sequence, Tuple
 
 class Decision(str, Enum):
     AUTO = "AUTO"
+    STANDARD_REPAIR = "STANDARD_REPAIR"
+    DEEP_REPAIR = "DEEP_REPAIR"
     REVIEW = "REVIEW"
     REGENERATE = "REGENERATE"
 
