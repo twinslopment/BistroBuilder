@@ -38,12 +38,13 @@ public readonly struct BistroBuilderGoodsReceiptLineSnapshot
 /// Resultado inmutable de una recepción de mercancía.
 ///
 /// La autoridad de existencias sigue siendo BistroBuilderInventoryService.
-/// Este objeto sirve para trazabilidad de aplicación y para disparar una
-/// representación visual no autoritativa del reparto.
+/// CreatedLots solo identifica los lotes físicos creados por ESTA recepción;
+/// no añade valor económico ni convierte Recepciones en una autoridad de coste.
 /// </summary>
 public sealed class BistroBuilderGoodsReceiptSnapshot
 {
     private readonly List<BistroBuilderGoodsReceiptLineSnapshot> lines;
+    private readonly List<BistroBuilderInventoryLotSnapshot> createdLots;
 
     public string ReceiptId { get; }
     public string SourceId { get; }
@@ -52,6 +53,8 @@ public sealed class BistroBuilderGoodsReceiptSnapshot
     public long InventoryRevision { get; }
     public bool WasReplayed { get; }
     public IReadOnlyList<BistroBuilderGoodsReceiptLineSnapshot> Lines => lines;
+    public IReadOnlyList<BistroBuilderInventoryLotSnapshot> CreatedLots =>
+        createdLots;
 
     public BistroBuilderGoodsReceiptSnapshot(
         string receiptId,
@@ -60,6 +63,26 @@ public sealed class BistroBuilderGoodsReceiptSnapshot
         long inventoryRevision,
         bool wasReplayed,
         List<BistroBuilderGoodsReceiptLineSnapshot> lines
+    ) : this(
+        receiptId,
+        sourceId,
+        receivedDayIndex,
+        inventoryRevision,
+        wasReplayed,
+        lines,
+        null
+    )
+    {
+    }
+
+    public BistroBuilderGoodsReceiptSnapshot(
+        string receiptId,
+        string sourceId,
+        int receivedDayIndex,
+        long inventoryRevision,
+        bool wasReplayed,
+        List<BistroBuilderGoodsReceiptLineSnapshot> lines,
+        List<BistroBuilderInventoryLotSnapshot> createdLots
     )
     {
         ReceiptId = receiptId ?? string.Empty;
@@ -71,6 +94,9 @@ public sealed class BistroBuilderGoodsReceiptSnapshot
         this.lines = lines != null
             ? new List<BistroBuilderGoodsReceiptLineSnapshot>(lines)
             : new List<BistroBuilderGoodsReceiptLineSnapshot>();
+        this.createdLots = createdLots != null
+            ? new List<BistroBuilderInventoryLotSnapshot>(createdLots)
+            : new List<BistroBuilderInventoryLotSnapshot>();
     }
 }
 

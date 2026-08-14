@@ -102,7 +102,11 @@ public sealed class BistroBuilderGoodsReceivingService : MonoBehaviour
             return false;
         }
 
-        if (!TryNormalizeLines(lines, out List<BistroBuilderGoodsReceiptLineSnapshot> normalizedLines, out error))
+        if (!TryNormalizeLines(
+                lines,
+                out List<BistroBuilderGoodsReceiptLineSnapshot> normalizedLines,
+                out error
+            ))
         {
             return false;
         }
@@ -121,6 +125,14 @@ public sealed class BistroBuilderGoodsReceivingService : MonoBehaviour
             );
         }
 
+        var lotsBefore = new List<BistroBuilderInventoryLotSnapshot>();
+        inventoryService.CopyLotSnapshotsTo(lotsBefore);
+        var lotIdsBefore = new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < lotsBefore.Count; index++)
+        {
+            lotIdsBefore.Add(lotsBefore[index].LotId);
+        }
+
         if (!inventoryService.TryReceivePurchaseBatch(
                 normalizedReceipt,
                 normalizedSource,
@@ -135,13 +147,28 @@ public sealed class BistroBuilderGoodsReceivingService : MonoBehaviour
             return false;
         }
 
+        var createdLots = new List<BistroBuilderInventoryLotSnapshot>();
+        if (!wasReplayed)
+        {
+            var lotsAfter = new List<BistroBuilderInventoryLotSnapshot>();
+            inventoryService.CopyLotSnapshotsTo(lotsAfter);
+            for (int index = 0; index < lotsAfter.Count; index++)
+            {
+                if (!lotIdsBefore.Contains(lotsAfter[index].LotId))
+                {
+                    createdLots.Add(lotsAfter[index]);
+                }
+            }
+        }
+
         receipt = new BistroBuilderGoodsReceiptSnapshot(
             normalizedReceipt,
             normalizedSource,
             Math.Max(1, generalGameStateService.DayIndex),
             inventoryService.RuntimeRevision,
             wasReplayed,
-            normalizedLines
+            normalizedLines,
+            createdLots
         );
         if (wasReplayed)
         {
