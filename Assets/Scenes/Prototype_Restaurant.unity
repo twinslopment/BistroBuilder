@@ -1168,6 +1168,7 @@ GameObject:
   - component: {fileID: 263644996}
   - component: {fileID: 263644999}
   - component: {fileID: 263644998}
+  - component: {fileID: 263645000}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3064,6 +3065,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceService
   openingBalanceCents: 5000000
   currencyCode: EUR
+--- !u!114 &263645000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acc40b4194bf400db42e9007c53bdd3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSalesRevenueBridge
+  financeService: {fileID: 263644999}
+  orderSystem: {fileID: 263644903}
+  barServiceSystem: {fileID: 263644967}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
