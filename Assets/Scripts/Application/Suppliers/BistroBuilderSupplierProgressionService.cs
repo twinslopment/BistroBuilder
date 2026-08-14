@@ -84,9 +84,23 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
         TryInitializeFresh();
     }
 
+    private void Start()
+    {
+        // Las autoridades creadas mediante RuntimeInitializeOnLoadMethod pueden nacer
+        // en distinto orden. En Start todas han tenido oportunidad de crearse, así que
+        // completamos las semillas de sesión si Awake tuvo que arrancar con 0.
+        SynchronizeSourceSessionIfMissing(false);
+    }
+
     private void Update()
     {
-        if (!IsInitialized || settings == null || !settings.AutomaticEvaluationOnGameDayChange)
+        if (!IsInitialized || settings == null)
+        {
+            return;
+        }
+
+        SynchronizeSourceSessionIfMissing(true);
+        if (!settings.AutomaticEvaluationOnGameDayChange)
         {
             return;
         }
@@ -125,8 +139,9 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
             return false;
         }
 
-        ulong marketSeed = orderService != null && orderService.IsInitialized ? orderService.SourceMarketSeed : 0UL;
-        ulong commercialSeed = orderService != null && orderService.IsInitialized ? orderService.SourceCommercialSeed : 0UL;
+        ulong marketSeed;
+        ulong commercialSeed;
+        ResolveRuntimeSessionSeeds(out marketSeed, out commercialSeed);
         state = BistroBuilderSupplierProgressionEngine.CreateInitialSnapshot(
             supplierDatabase.Suppliers,
             ResolveCurrentGameDay(),
@@ -148,6 +163,7 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
 
         ResolveOrderService();
         BindOrderEvents();
+        SynchronizeSourceSessionIfMissing(false);
 
 #if UNITY_EDITOR
         if (!useControlledFactsForEditorTests)
@@ -331,6 +347,9 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
 
     public BistroBuilderSupplierProgressionSnapshot CreateSnapshot()
     {
+        // CreateSnapshot debe reflejar la sesión real aunque el servicio haya nacido
+        // unas milésimas antes que 2.3C/2.3D/2.3E durante AfterSceneLoad.
+        SynchronizeSourceSessionIfMissing(false);
         return state != null ? state.DeepClone() : null;
     }
 
@@ -349,25 +368,25 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
             return false;
         }
 
-        ResolveOrderService();
-        if (orderService != null && orderService.IsInitialized)
+        ulong runtimeMarketSeed;
+        ulong runtimeCommercialSeed;
+        ResolveRuntimeSessionSeeds(out runtimeMarketSeed, out runtimeCommercialSeed);
+        if (snapshot.sourceMarketSeed != 0UL && runtimeMarketSeed != 0UL &&
+            snapshot.sourceMarketSeed != runtimeMarketSeed)
         {
-            if (snapshot.sourceMarketSeed != 0UL && orderService.SourceMarketSeed != 0UL &&
-                snapshot.sourceMarketSeed != orderService.SourceMarketSeed)
-            {
-                error = "Snapshot 2.3I pertenece a otra sesión de mercado 2.3C.";
-                return false;
-            }
-            if (snapshot.sourceCommercialSeed != 0UL && orderService.SourceCommercialSeed != 0UL &&
-                snapshot.sourceCommercialSeed != orderService.SourceCommercialSeed)
-            {
-                error = "Snapshot 2.3I pertenece a otra sesión comercial 2.3D.";
-                return false;
-            }
+            error = "Snapshot 2.3I pertenece a otra sesión de mercado 2.3C.";
+            return false;
+        }
+        if (snapshot.sourceCommercialSeed != 0UL && runtimeCommercialSeed != 0UL &&
+            snapshot.sourceCommercialSeed != runtimeCommercialSeed)
+        {
+            error = "Snapshot 2.3I pertenece a otra sesión comercial 2.3D.";
+            return false;
         }
 
         state = snapshot.DeepClone();
         RebuildIndexes();
+        SynchronizeSourceSessionIfMissing(false);
         BindOrderEvents();
         CaptureQualifiedPurchaseOrders();
         return RefreshNow();
@@ -381,9 +400,9 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
             if (!TryInitializeFresh()) return false;
         }
         if (facts == null) return false;
-        ResolveOrderService();
-        ulong marketSeed = orderService != null && orderService.IsInitialized ? orderService.SourceMarketSeed : 0UL;
-        ulong commercialSeed = orderService != null && orderService.IsInitialized ? orderService.SourceCommercialSeed : 0UL;
+        ulong marketSeed;
+        ulong commercialSeed;
+        ResolveRuntimeSessionSeeds(out marketSeed, out commercialSeed);
         state = BistroBuilderSupplierProgressionEngine.CreateInitialSnapshot(
             supplierDatabase.Suppliers,
             Math.Max(1, facts.currentGameDay),
@@ -477,6 +496,90 @@ public sealed class BistroBuilderSupplierProgressionService : MonoBehaviour
         }
 
         return builder.Build();
+    }
+
+    /// <summary>
+    /// Resuelve la identidad de sesión desde las autoridades que realmente la poseen.
+    /// Se priorizan 2.3C/2.3D y se usa 2.3E como fallback de compatibilidad.
+    /// </summary>
+    private void ResolveRuntimeSessionSeeds(out ulong marketSeed, out ulong commercialSeed)
+    {
+        marketSeed = 0UL;
+        commercialSeed = 0UL;
+
+        BistroBuilderSupplierMarketService market = BistroBuilderSupplierMarketService.Instance ??
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierMarketService>();
+        if (market != null && market.IsInitialized)
+        {
+            marketSeed = market.MarketSeed;
+        }
+
+        BistroBuilderSupplierCommercialIntelligenceService commercial =
+            BistroBuilderSupplierCommercialIntelligenceService.Instance ??
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderSupplierCommercialIntelligenceService>();
+        if (commercial != null && commercial.IsInitialized)
+        {
+            commercialSeed = commercial.CommercialSeed;
+            if (marketSeed == 0UL)
+            {
+                marketSeed = commercial.SourceMarketSeed;
+            }
+        }
+
+        ResolveOrderService();
+        if (orderService != null && orderService.IsInitialized)
+        {
+            if (marketSeed == 0UL)
+            {
+                marketSeed = orderService.SourceMarketSeed;
+            }
+            if (commercialSeed == 0UL)
+            {
+                commercialSeed = orderService.SourceCommercialSeed;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Corrige únicamente metadata de sesión ausente (seed 0). Nunca sustituye una
+    /// seed no nula ya persistida, por lo que no puede mezclar dos partidas distintas.
+    /// </summary>
+    private bool SynchronizeSourceSessionIfMissing(bool publishChange)
+    {
+        if (state == null)
+        {
+            return false;
+        }
+        if (state.sourceMarketSeed != 0UL && state.sourceCommercialSeed != 0UL)
+        {
+            return false;
+        }
+
+        ulong marketSeed;
+        ulong commercialSeed;
+        ResolveRuntimeSessionSeeds(out marketSeed, out commercialSeed);
+
+        bool changed = false;
+        if (state.sourceMarketSeed == 0UL && marketSeed != 0UL)
+        {
+            state.sourceMarketSeed = marketSeed;
+            changed = true;
+        }
+        if (state.sourceCommercialSeed == 0UL && commercialSeed != 0UL)
+        {
+            state.sourceCommercialSeed = commercialSeed;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            state.progressionRevision = Math.Max(1L, state.progressionRevision + 1L);
+            if (publishChange)
+            {
+                ProgressionChanged?.Invoke();
+            }
+        }
+        return changed;
     }
 
     private int ResolveCurrentGameDay()

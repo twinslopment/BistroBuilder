@@ -56,16 +56,20 @@ public sealed class BistroBuilderSuppliers23IRuntimeFunctionalTestWindow : Edito
             Check(market != null && market.IsInitialized, "2.3C runtime disponible e inicializado.");
             Check(commercial != null && commercial.IsInitialized, "2.3D runtime disponible e inicializado.");
             Check(orders != null && orders.IsInitialized, "2.3E runtime disponible e inicializado.");
-            Check(smart != null && smart.IsInitialized, "2.3F runtime disponible e inicializado.");
+            bool smartReady = smart != null && (smart.IsInitialized || smart.TryInitialize());
+            Check(smartReady, "2.3F runtime disponible e inicializado.");
             Check(progression != null && progression.IsInitialized, "Existe exactamente la autoridad funcional 2.3I e inicializa.");
             if (orders == null || progression == null || !orders.IsInitialized || !progression.IsInitialized) return;
 
+            // RefreshNow completa metadata de sesión si 2.3I nació antes que el resto
+            // de autoridades AfterSceneLoad. No altera desbloqueos ya persistidos.
+            progression.RefreshNow();
             originalProgression = progression.CreateSnapshot();
             originalOrders = orders.CreateSnapshot();
             Check(originalProgression != null, "Snapshot original 2.3I capturado.");
             Check(originalOrders != null, "Snapshot original 2.3E capturado.");
-            Check(originalProgression != null && originalProgression.sourceMarketSeed == orders.SourceMarketSeed, "Snapshot 2.3I vinculado a semilla real 2.3C.");
-            Check(originalProgression != null && originalProgression.sourceCommercialSeed == orders.SourceCommercialSeed, "Snapshot 2.3I vinculado a semilla real 2.3D.");
+            Check(originalProgression != null && market != null && originalProgression.sourceMarketSeed == market.MarketSeed, "Snapshot 2.3I vinculado a semilla real 2.3C.");
+            Check(originalProgression != null && commercial != null && originalProgression.sourceCommercialSeed == commercial.CommercialSeed, "Snapshot 2.3I vinculado a semilla real 2.3D.");
 
             BistroBuilderSupplierProgressionFacts startFacts = new BistroBuilderSupplierProgressionFacts
             {

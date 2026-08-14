@@ -1164,6 +1164,8 @@ GameObject:
   - component: {fileID: 263644993}
   - component: {fileID: 263644994}
   - component: {fileID: 263644995}
+  - component: {fileID: 263644997}
+  - component: {fileID: 263644996}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3008,6 +3010,32 @@ MonoBehaviour:
   planningService: {fileID: 263644993}
   recipeCatalogService: {fileID: 263644969}
   goodsReceivingService: {fileID: 263644992}
+--- !u!114 &263644996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 803157688c46493f9ec7cf961454f059, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierReceivingBridge23L
+  goodsReceivingService: {fileID: 263644992}
+--- !u!114 &263644997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41baf6f472a4f5a9439ead9dd7e42bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierIntegratedSaveSectionProvider
+  saveGameService: {fileID: 263644953}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -5553,6 +5581,7 @@ GameObject:
   - component: {fileID: 890497796}
   - component: {fileID: 890497795}
   - component: {fileID: 890497794}
+  - component: {fileID: 890497797}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -5576,6 +5605,7 @@ RectTransform:
   - {fileID: 1691563766}
   - {fileID: 1202883992}
   - {fileID: 235254518}
+  - {fileID: 1041256377}
   m_Father: {fileID: 1208060064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -5646,6 +5676,21 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &890497797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 890497792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8fec5b8e4224e5b9426130c545c9e2b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderUnifiedUiInteractionService
+  rescanIntervalSeconds: 0.35
+  tooltipDelaySeconds: 0.32
+  selectorWidth: 440
 --- !u!1 &935590811
 GameObject:
   m_ObjectHideFlags: 0
@@ -6725,6 +6770,57 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1036098609}
   m_CullTransparentMesh: 1
+--- !u!1 &1041256376
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1041256377}
+  - component: {fileID: 1041256378}
+  m_Layer: 5
+  m_Name: BB_2_3_SuppliersPlayerUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1041256377
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1041256376}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 890497793}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1041256378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1041256376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: daaeb35854034c6dac3777bf531f8037, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierPlayerRuntimeView
+  cameraController: {fileID: 330585548}
+  editInteractionController: {fileID: 263644933}
+  showOpenButton: 1
 --- !u!1 &1045856033
 GameObject:
   m_ObjectHideFlags: 0

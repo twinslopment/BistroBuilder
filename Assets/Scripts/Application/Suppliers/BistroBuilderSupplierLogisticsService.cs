@@ -34,6 +34,8 @@ public sealed class BistroBuilderSupplierLogisticsService : MonoBehaviour
     public int CurrentGameDay => state != null ? state.currentGameDay : 0;
     public long LogisticsRevision => state != null ? state.logisticsRevision : 0L;
     public ulong LogisticsSeed => state != null ? state.logisticsSeed : 0UL;
+    public ulong SourceMarketSeed => state != null ? state.sourceMarketSeed : 0UL;
+    public ulong SourceCommercialSeed => state != null ? state.sourceCommercialSeed : 0UL;
     public int PlanCount => state != null && state.plans != null ? state.plans.Count : 0;
 
     public event Action<BistroBuilderSupplierLogisticsPlanRecord> PlanCreated;
@@ -71,11 +73,25 @@ public sealed class BistroBuilderSupplierLogisticsService : MonoBehaviour
     {
         BindDependencies();
         if (orderService == null || !orderService.IsInitialized) return;
-        if (!IsInitialized || state.sourceMarketSeed != orderService.SourceMarketSeed || state.sourceCommercialSeed != orderService.SourceCommercialSeed)
+        if (!IsInitialized)
         {
             TryInitializeFresh();
             return;
         }
+
+        // 2.3G1 / JKL-C: una snapshot puede haberse creado cuando 2.3E todavía
+        // no tenía las seeds de mercado/comercial enlazadas (valor 0 = unbound).
+        // Eso es un estado válido en los contratos de persistencia. No debe
+        // interpretarse como cambio de sesión y, sobre todo, no debe provocar
+        // TryInitializeFresh(), porque borraría LogisticsPlans restaurados.
+        // Solo una contradicción entre DOS seeds no nulas obliga a reiniciar.
+        string bindingError;
+        if (!TrySynchronizeSessionBinding(out bindingError))
+        {
+            TryInitializeFresh();
+            return;
+        }
+
         int day = Math.Max(1, orderService.CurrentGameDay);
         if (day > state.currentGameDay)
         {
@@ -118,11 +134,72 @@ public sealed class BistroBuilderSupplierLogisticsService : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Alinea una sesión logística todavía no vinculada (source seed = 0) con
+    /// la sesión real de PurchaseOrder 2.3E sin destruir planes existentes.
+    /// Una contradicción entre seeds no nulas sigue considerándose cambio real
+    /// de sesión y devuelve false.
+    /// </summary>
+    public bool TrySynchronizeSessionBinding(out string error)
+    {
+        error = null;
+        BindDependencies();
+
+        if (state == null)
+        {
+            error = "2.3G no tiene snapshot runtime que enlazar.";
+            return false;
+        }
+        if (orderService == null || !orderService.IsInitialized)
+        {
+            error = "2.3E no está disponible para enlazar la sesión logística.";
+            return false;
+        }
+
+        ulong orderMarketSeed = orderService.SourceMarketSeed;
+        ulong orderCommercialSeed = orderService.SourceCommercialSeed;
+
+        if (state.sourceMarketSeed != 0UL && orderMarketSeed != 0UL &&
+            state.sourceMarketSeed != orderMarketSeed)
+        {
+            error = "supplier.logistics.runtime pertenece a otra sesión de mercado.";
+            return false;
+        }
+        if (state.sourceCommercialSeed != 0UL && orderCommercialSeed != 0UL &&
+            state.sourceCommercialSeed != orderCommercialSeed)
+        {
+            error = "supplier.logistics.runtime pertenece a otra sesión comercial.";
+            return false;
+        }
+
+        bool changed = false;
+        if (state.sourceMarketSeed == 0UL && orderMarketSeed != 0UL)
+        {
+            state.sourceMarketSeed = orderMarketSeed;
+            changed = true;
+        }
+        if (state.sourceCommercialSeed == 0UL && orderCommercialSeed != 0UL)
+        {
+            state.sourceCommercialSeed = orderCommercialSeed;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            state.logisticsRevision = state.logisticsRevision == long.MaxValue
+                ? long.MaxValue
+                : state.logisticsRevision + 1L;
+        }
+
+        return true;
+    }
+
     public bool TryPlanConfirmedOrders(out int createdCount, out string error)
     {
         createdCount = 0;
         error = null;
         if (!EnsureInitialized(out error)) return false;
+        if (!TrySynchronizeSessionBinding(out error)) return false;
         List<BistroBuilderPurchaseOrderRecord> orders = new List<BistroBuilderPurchaseOrderRecord>();
         orderService.CopyOrders(orders);
         for (int index = 0; index < orders.Count; index++)
@@ -141,6 +218,7 @@ public sealed class BistroBuilderSupplierLogisticsService : MonoBehaviour
         created = null;
         error = null;
         if (!EnsureInitialized(out error)) return false;
+        if (!TrySynchronizeSessionBinding(out error)) return false;
         if (string.IsNullOrWhiteSpace(purchaseOrderId))
         {
             error = "PurchaseOrderId vacío.";
@@ -385,16 +463,28 @@ public sealed class BistroBuilderSupplierLogisticsService : MonoBehaviour
         }
         BistroBuilderSupplierLogisticsSnapshot owned = candidate.DeepClone();
         if (!BistroBuilderSupplierLogisticsPlanningEngine.ValidateSnapshot(owned, out error)) return false;
-        if (owned.sourceMarketSeed != 0UL && owned.sourceMarketSeed != orderService.SourceMarketSeed)
+        ulong orderMarketSeed = orderService.SourceMarketSeed;
+        ulong orderCommercialSeed = orderService.SourceCommercialSeed;
+        if (owned.sourceMarketSeed != 0UL && orderMarketSeed != 0UL &&
+            owned.sourceMarketSeed != orderMarketSeed)
         {
             error = "supplier.logistics.runtime pertenece a otra sesión de mercado.";
             return false;
         }
-        if (owned.sourceCommercialSeed != 0UL && owned.sourceCommercialSeed != orderService.SourceCommercialSeed)
+        if (owned.sourceCommercialSeed != 0UL && orderCommercialSeed != 0UL &&
+            owned.sourceCommercialSeed != orderCommercialSeed)
         {
             error = "supplier.logistics.runtime pertenece a otra sesión comercial.";
             return false;
         }
+
+        // Normaliza snapshots históricos/unbound al restaurar, sin reconstruir
+        // ni perder sus LogisticsPlans.
+        if (owned.sourceMarketSeed == 0UL && orderMarketSeed != 0UL)
+            owned.sourceMarketSeed = orderMarketSeed;
+        if (owned.sourceCommercialSeed == 0UL && orderCommercialSeed != 0UL)
+            owned.sourceCommercialSeed = orderCommercialSeed;
+
         if (owned.currentGameDay != orderService.CurrentGameDay)
         {
             error = "supplier.logistics.runtime debe restaurarse después de 2.3C/2.3D/2.3E del mismo día.";
