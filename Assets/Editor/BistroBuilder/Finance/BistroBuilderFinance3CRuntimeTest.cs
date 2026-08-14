@@ -108,6 +108,8 @@ public static class BistroBuilderFinance3CRuntimeTest
             BistroBuilderSupplierMarketService.Instance;
         BistroBuilderSupplierCommercialIntelligenceService commercial =
             BistroBuilderSupplierCommercialIntelligenceService.Instance;
+        BistroBuilderSupplierLogisticsService logistics =
+            BistroBuilderSupplierLogisticsService.Instance;
         BistroBuilderGeneralGameStateService general =
             UnityEngine.Object.FindFirstObjectByType<BistroBuilderGeneralGameStateService>();
         GameClock clock = UnityEngine.Object.FindFirstObjectByType<GameClock>();
@@ -118,6 +120,7 @@ public static class BistroBuilderFinance3CRuntimeTest
             orders != null && orders.IsInitialized &&
             market != null && market.IsInitialized &&
             commercial != null && commercial.IsInitialized &&
+            logistics != null && logistics.IsInitialized &&
             general != null && clock != null;
 
         if (!ready)
@@ -130,7 +133,7 @@ public static class BistroBuilderFinance3CRuntimeTest
         }
 
         EditorApplication.update -= TryRunWhenReady;
-        Execute(finance, bridge, orders, commercial, general, clock);
+        Execute(finance, bridge, orders, commercial, logistics, general, clock);
     }
 
     private static void Execute(
@@ -138,6 +141,7 @@ public static class BistroBuilderFinance3CRuntimeTest
         BistroBuilderSupplierPurchaseFinanceBridge bridge,
         BistroBuilderSupplierPurchaseOrderService orderService,
         BistroBuilderSupplierCommercialIntelligenceService commercialService,
+        BistroBuilderSupplierLogisticsService logisticsService,
         BistroBuilderGeneralGameStateService generalState,
         GameClock clock)
     {
@@ -155,7 +159,11 @@ public static class BistroBuilderFinance3CRuntimeTest
             BistroBuilderFinanceSnapshot originalFinance = finance.CreateSnapshot();
             BistroBuilderSupplierPurchaseOrdersSnapshot originalOrders =
                 orderService.CreateSnapshot();
-            Require(originalFinance != null && originalOrders != null,
+            BistroBuilderSupplierLogisticsSnapshot originalLogistics =
+                logisticsService.CreateSnapshot();
+            Require(originalFinance != null &&
+                    originalOrders != null &&
+                    originalLogistics != null,
                 "No se pudieron capturar los snapshots de seguridad.");
 
             Require(bridge.TryGetFinancialPosition(
@@ -266,16 +274,27 @@ public static class BistroBuilderFinance3CRuntimeTest
                     out error),
                 "No se pudo confirmar el pedido de expedición. " + error);
 
-            int currentDay = orderService.CurrentGameDay;
-            Require(orderService.TryMarkPendingDelivery(
+            // 2.3G escucha OrderConfirmed y normalmente crea el LogisticsPlan de
+            // forma síncrona. La prueba 3C no debe intentar adjuntar un segundo
+            // plan artificial al mismo PurchaseOrder. TryCreatePlanForOrder es
+            // idempotente: devuelve el plan existente o lo crea si aún no existe.
+            Require(logisticsService.TryCreatePlanForOrder(
                     dispatchDraft.purchaseOrderId,
-                    "logistics_plan_3c_runtime",
-                    currentDay,
-                    600,
-                    660,
-                    out _,
+                    out BistroBuilderSupplierLogisticsPlanRecord logisticsPlan,
                     out error),
-                "No se pudo pasar el pedido a PendingDelivery. " + error);
+                "2.3G no pudo resolver el LogisticsPlan real del pedido. " + error);
+            Require(logisticsPlan != null &&
+                    orderService.TryGetOrder(
+                        dispatchDraft.purchaseOrderId,
+                        out BistroBuilderPurchaseOrderRecord pendingOrder) &&
+                    pendingOrder.status == BistroBuilderPurchaseOrderStatus.PendingDelivery &&
+                    string.Equals(
+                        pendingOrder.logisticsPlanId,
+                        logisticsPlan.logisticsPlanId,
+                        StringComparison.Ordinal),
+                "El PurchaseOrder y su LogisticsPlan 2.3G no convergen en PendingDelivery.");
+
+            int currentDay = orderService.CurrentGameDay;
             Require(bridge.TryGetFinancialPosition(
                     out long committedPending,
                     out _,
@@ -347,6 +366,7 @@ public static class BistroBuilderFinance3CRuntimeTest
                 "\nTotal: " + FormatMoney(dispatchPreview.totalCents) +
                 " (portes: " + FormatMoney(dispatchPreview.shippingCostCents) + ")" +
                 "\nBloqueo sin fondos: OK" +
+                "\nPlan logístico 2.3G: " + logisticsPlan.logisticsPlanId +
                 "\nCompromiso: " + FormatMoney(baselineCommitted) + " -> " +
                 FormatMoney(baselineCommitted + dispatchPreview.totalCents) + " -> " +
                 FormatMoney(baselineCommitted) +
@@ -356,11 +376,12 @@ public static class BistroBuilderFinance3CRuntimeTest
                 finance.TransactionCount +
                 "\nError/Exception/Assert: 0";
 
-            // El test es enteramente transitorio, pero restauramos las dos
-            // autoridades antes de salir para demostrar que el diagnóstico
-            // tampoco deja residuos durante la propia sesión.
+            // El test es enteramente transitorio: restauramos también 2.3G,
+            // porque confirmar pedidos crea LogisticsPlans reales automáticamente.
             Require(orderService.TryRestoreSnapshot(originalOrders, out error),
                 "No se pudo restaurar el snapshot original de pedidos. " + error);
+            Require(logisticsService.TryRestoreSnapshot(originalLogistics, out error),
+                "No se pudo restaurar el snapshot original de logística. " + error);
             Require(finance.TryRestoreSnapshot(originalFinance, out error),
                 "No se pudo restaurar el snapshot financiero original. " + error);
 
