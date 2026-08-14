@@ -101,6 +101,28 @@ public sealed class BistroBuilderFinanceService : MonoBehaviour
         return true;
     }
 
+    public bool TryGetTransactionByOperationId(
+        string operationId,
+        out BistroBuilderFinanceTransactionRecord transaction)
+    {
+        transaction = null;
+        if (state == null || string.IsNullOrWhiteSpace(operationId))
+        {
+            return false;
+        }
+
+        string normalized = BistroBuilderFinanceEngine.NormalizeOperationId(operationId);
+        if (!byOperationId.TryGetValue(
+                normalized,
+                out BistroBuilderFinanceTransactionRecord stored))
+        {
+            return false;
+        }
+
+        transaction = stored.DeepClone();
+        return true;
+    }
+
     public BistroBuilderFinanceSnapshot CreateSnapshot()
     {
         return state != null ? state.DeepClone() : null;

@@ -38,6 +38,7 @@ public sealed class BistroBuilderSupplierPurchaseOrderService : MonoBehaviour
     private BistroBuilderSupplierCommercialIntelligenceService commercialService;
     private BistroBuilderSupplierPurchaseOrdersSnapshot state;
     private string lastInitializationError;
+    private IBistroBuilderPurchaseOrderConfirmationGate confirmationGate;
 
     public static BistroBuilderSupplierPurchaseOrderService Instance => instance;
     public bool IsInitialized => state != null && string.IsNullOrEmpty(lastInitializationError);
@@ -53,6 +54,35 @@ public sealed class BistroBuilderSupplierPurchaseOrderService : MonoBehaviour
     public event Action<BistroBuilderPurchaseOrderConfirmationReceipt> OrderConfirmed;
     public event Action<BistroBuilderPurchaseOrderRecord> OrderStateChanged;
     public event Action<BistroBuilderPurchaseOrderRecord> OrderCancelled;
+
+    public bool TryBindConfirmationGate(
+        IBistroBuilderPurchaseOrderConfirmationGate gate,
+        out string error)
+    {
+        if (gate == null)
+        {
+            error = "La puerta de confirmación de PurchaseOrder es nula.";
+            return false;
+        }
+
+        if (confirmationGate != null && !ReferenceEquals(confirmationGate, gate))
+        {
+            error = "PurchaseOrder ya tiene otra puerta de confirmación activa.";
+            return false;
+        }
+
+        confirmationGate = gate;
+        error = string.Empty;
+        return true;
+    }
+
+    public void UnbindConfirmationGate(IBistroBuilderPurchaseOrderConfirmationGate gate)
+    {
+        if (ReferenceEquals(confirmationGate, gate))
+        {
+            confirmationGate = null;
+        }
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureRuntimeAuthority()
@@ -314,6 +344,11 @@ public sealed class BistroBuilderSupplierPurchaseOrderService : MonoBehaviour
             error = preview.blockers != null && preview.blockers.Count > 0
                 ? string.Join(" | ", preview.blockers.ToArray())
                 : "La cotización actual bloquea la confirmación.";
+            return false;
+        }
+        if (confirmationGate != null &&
+            !confirmationGate.TryAuthorizeConfirmation(preview, out error))
+        {
             return false;
         }
 
