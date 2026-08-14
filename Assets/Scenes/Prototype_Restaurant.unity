@@ -1170,6 +1170,8 @@ GameObject:
   - component: {fileID: 263644998}
   - component: {fileID: 263645000}
   - component: {fileID: 263645001}
+  - component: {fileID: 263645003}
+  - component: {fileID: 263645002}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3096,6 +3098,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierPurchaseFinanceBridge
   financeService: {fileID: 263644999}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  saveGameService: {fileID: 263644953}
+--- !u!114 &263645002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e9cf9e74ae242dd854f1b59468af461, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderProductCostSaveSectionProvider
+  productCostService: {fileID: 263645003}
+--- !u!114 &263645003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73dc8f1522574e0ea6d33c4324782915, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderProductCostService
+  inventoryService: {fileID: 263644970}
+  recipeCatalogService: {fileID: 263644969}
+  orderSystem: {fileID: 263644903}
+  canonicalOrderService: {fileID: 263644961}
+  supplierReceivingBridge: {fileID: 263644996}
   generalGameStateService: {fileID: 263644957}
   gameClock: {fileID: 263644898}
   saveGameService: {fileID: 263644953}
