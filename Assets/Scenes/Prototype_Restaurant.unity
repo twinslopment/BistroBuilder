@@ -1169,6 +1169,7 @@ GameObject:
   - component: {fileID: 263644999}
   - component: {fileID: 263644998}
   - component: {fileID: 263645000}
+  - component: {fileID: 263645001}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3082,6 +3083,22 @@ MonoBehaviour:
   barServiceSystem: {fileID: 263644967}
   generalGameStateService: {fileID: 263644957}
   gameClock: {fileID: 263644898}
+--- !u!114 &263645001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b87bc3c97f44574ad76f4eb0f07d321, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierPurchaseFinanceBridge
+  financeService: {fileID: 263644999}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  saveGameService: {fileID: 263644953}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
