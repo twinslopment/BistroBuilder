@@ -1166,6 +1166,8 @@ GameObject:
   - component: {fileID: 263644995}
   - component: {fileID: 263644997}
   - component: {fileID: 263644996}
+  - component: {fileID: 263644999}
+  - component: {fileID: 263644998}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3036,6 +3038,32 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierIntegratedSaveSectionProvider
   saveGameService: {fileID: 263644953}
+--- !u!114 &263644998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e8fd109bb43418193ef0289a480bd7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceSaveSectionProvider
+--- !u!114 &263644999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0421e0caf4f544a986718725ec0b4ca1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceService
+  openingBalanceCents: 5000000
+  currencyCode: EUR
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
