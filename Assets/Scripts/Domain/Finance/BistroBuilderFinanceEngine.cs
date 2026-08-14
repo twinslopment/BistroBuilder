@@ -23,7 +23,7 @@ public static class BistroBuilderFinanceEngine
         };
     }
 
-    public static bool TryAppendNewTransaction(
+    internal static bool TryAppendNewTransaction(
         BistroBuilderFinanceSnapshot snapshot,
         BistroBuilderFinanceTransactionRequest request,
         out BistroBuilderFinanceTransactionRecord posted,
@@ -31,8 +31,7 @@ public static class BistroBuilderFinanceEngine
     {
         posted = null;
 
-        if (!TryValidateWritableState(snapshot, out error) ||
-            !TryValidateRequest(request, out error))
+        if (!TryValidateWritableState(snapshot, out error))
         {
             return false;
         }
@@ -80,7 +79,7 @@ public static class BistroBuilderFinanceEngine
         return true;
     }
 
-    public static bool TryValidateRequest(
+    internal static bool TryValidateRequest(
         BistroBuilderFinanceTransactionRequest request,
         out string error)
     {
@@ -128,7 +127,7 @@ public static class BistroBuilderFinanceEngine
         return true;
     }
 
-    public static bool IsEquivalent(
+    internal static bool IsEquivalent(
         BistroBuilderFinanceTransactionRecord record,
         BistroBuilderFinanceTransactionRequest request)
     {
@@ -144,7 +143,7 @@ public static class BistroBuilderFinanceEngine
                string.Equals(record.description, NormalizeDescription(request.description), StringComparison.Ordinal);
     }
 
-    public static string NormalizeOperationId(string value)
+    internal static string NormalizeOperationId(string value)
     {
         return NormalizeStableId(value);
     }

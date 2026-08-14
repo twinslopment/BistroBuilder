@@ -26,15 +26,44 @@ public static class BistroBuilderFinance3ASelfTest
     {
         passed = 0;
         failed = 0;
+        int capturedErrors = 0;
         StringBuilder builder = new StringBuilder();
 
-        RunServiceTests(ref passed, ref failed, builder);
-        RunOverflowTest(ref passed, ref failed, builder);
-        RunProviderRoundTrip(ref passed, ref failed, builder);
+        Application.LogCallback logHandler = (condition, stackTrace, type) =>
+        {
+            if (type == LogType.Error ||
+                type == LogType.Exception ||
+                type == LogType.Assert)
+            {
+                capturedErrors++;
+            }
+        };
+
+        Application.logMessageReceived += logHandler;
+        try
+        {
+            RunServiceTests(ref passed, ref failed, builder);
+            RunOverflowTest(ref passed, ref failed, builder);
+            RunProviderRoundTrip(ref passed, ref failed, builder);
+        }
+        catch (Exception exception)
+        {
+            failed++;
+            builder.AppendLine("[ERROR] Excepción inesperada: " + exception.Message);
+        }
+        finally
+        {
+            Application.logMessageReceived -= logHandler;
+        }
+
+        Check(capturedErrors == 0,
+            "Console sin Error/Exception/Assert durante el autotest.",
+            ref passed, ref failed, builder);
 
         builder.Insert(0,
             "3A — AUTOTEST NÚCLEO FINANCIERO\n" +
-            "Correctos: " + passed + "  Fallos: " + failed + "\n\n");
+            "Correctos: " + passed + "  Fallos: " + failed +
+            "  Error/Exception/Assert: " + capturedErrors + "\n\n");
         report = builder.ToString();
         return failed == 0;
     }
@@ -117,19 +146,34 @@ public static class BistroBuilderFinance3ASelfTest
         ref int failed,
         StringBuilder builder)
     {
-        BistroBuilderFinanceSnapshot overflow =
-            BistroBuilderFinanceEngine.CreateInitialSnapshot(long.MaxValue, "EUR");
-        BistroBuilderFinanceTransactionRequest request = Request(
-            "test_overflow", "test", "overflow_test", "test",
-            BistroBuilderFinanceTransactionKind.Credit, 1L, 1, 900, string.Empty);
+        GameObject testObject = new GameObject("BB_3A_FinanceOverflowSelfTest");
+        try
+        {
+            BistroBuilderFinanceService finance =
+                testObject.AddComponent<BistroBuilderFinanceService>();
+            BistroBuilderFinanceSnapshot overflow =
+                BistroBuilderFinanceEngine.CreateInitialSnapshot(long.MaxValue, "EUR");
 
-        Check(!BistroBuilderFinanceEngine.TryAppendNewTransaction(overflow, request, out _, out _),
-            "Overflow monetario se rechaza.", ref passed, ref failed, builder);
-        Check(overflow.currentBalanceCents == long.MaxValue &&
-              overflow.transactions.Count == 0 &&
-              overflow.nextTransactionSequence == 1L &&
-              overflow.revision == 1L,
-            "El fallo por overflow es atómico.", ref passed, ref failed, builder);
+            Check(finance.TryRestoreSnapshot(overflow, out _),
+                "Servicio acepta un saldo extremo todavía válido.", ref passed, ref failed, builder);
+
+            BistroBuilderFinanceTransactionRequest request = Request(
+                "test_overflow", "test", "overflow_test", "test",
+                BistroBuilderFinanceTransactionKind.Credit, 1L, 1, 900, string.Empty);
+            Check(!finance.TryPostTransaction(request, out _, out _),
+                "Overflow monetario se rechaza.", ref passed, ref failed, builder);
+
+            BistroBuilderFinanceSnapshot after = finance.CreateSnapshot();
+            Check(after.currentBalanceCents == long.MaxValue &&
+                  after.transactions.Count == 0 &&
+                  after.nextTransactionSequence == 1L &&
+                  after.revision == 1L,
+                "El fallo por overflow es atómico.", ref passed, ref failed, builder);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(testObject);
+        }
     }
 
     private static void RunProviderRoundTrip(

@@ -33,17 +33,15 @@ public sealed class BistroBuilderFinanceService : MonoBehaviour
 
     private void Awake()
     {
-        TryInitializeFresh(out _);
+        if (!TryInitializeFresh(out string error))
+        {
+            Debug.LogError(error, this);
+        }
     }
 
     public bool ValidateConfiguration(out string error)
     {
-        if (!ValidateSerializedConfiguration(out error))
-        {
-            return false;
-        }
-
-        return state == null || BistroBuilderFinanceEngine.TryValidateSnapshot(state, out error);
+        return ValidateSerializedConfiguration(out error);
     }
 
     public bool TryInitializeFresh(out string error)
@@ -53,18 +51,11 @@ public sealed class BistroBuilderFinanceService : MonoBehaviour
             return false;
         }
 
-        BistroBuilderFinanceSnapshot candidate =
-            BistroBuilderFinanceEngine.CreateInitialSnapshot(
-                openingBalanceCents,
-                currencyCode);
-
-        if (!BistroBuilderFinanceEngine.TryValidateSnapshot(candidate, out error))
-        {
-            return false;
-        }
-
-        state = candidate;
+        state = BistroBuilderFinanceEngine.CreateInitialSnapshot(
+            openingBalanceCents,
+            currencyCode);
         byOperationId.Clear();
+        error = string.Empty;
         return true;
     }
 
@@ -127,6 +118,13 @@ public sealed class BistroBuilderFinanceService : MonoBehaviour
 
         if (!BistroBuilderFinanceEngine.TryValidateSnapshot(candidate, out error))
         {
+            return false;
+        }
+
+        string configuredCurrency = NormalizeCurrency(currencyCode);
+        if (!string.Equals(candidate.currencyCode, configuredCurrency, StringComparison.Ordinal))
+        {
+            error = "La moneda del snapshot financiero no coincide con la configuración de la partida.";
             return false;
         }
 

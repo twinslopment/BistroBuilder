@@ -39,8 +39,7 @@ public static class BistroBuilderFinance3AInstaller
             return;
         }
 
-        BistroBuilderSaveGameService save = gameSystems.GetComponent<BistroBuilderSaveGameService>();
-        if (save == null)
+        if (gameSystems.GetComponent<BistroBuilderSaveGameService>() == null)
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
@@ -80,22 +79,20 @@ public static class BistroBuilderFinance3AInstaller
             Debug.Log(validationReport);
             Debug.Log(testReport);
 
-            bool ok = validationOk && testOk;
+            if (!validationOk || !testOk)
+            {
+                throw new InvalidOperationException(
+                    "La validación automática de 3A no fue limpia. " +
+                    "Validación: " + validationPassed + " OK / " + validationFailed + " errores. " +
+                    "Autotest: " + testPassed + " OK / " + testFailed + " fallos.");
+            }
+
             EditorUtility.DisplayDialog(
                 "Bistro Builder — 3A",
-                (ok
-                    ? "3A instalado y probado correctamente."
-                    : "3A necesita revisión.") +
-                "\n\nValidación: " + validationPassed + " OK / " + validationFailed + " errores" +
-                "\nAutotest: " + testPassed + " OK / " + testFailed + " fallos",
+                "3A instalado y probado correctamente." +
+                "\n\nValidación: " + validationPassed + " OK / 0 errores" +
+                "\nAutotest: " + testPassed + " OK / 0 fallos",
                 "Aceptar");
-
-            if (!ok)
-            {
-                Debug.LogError(
-                    "3A — Instalación automática terminada con fallos. " +
-                    "Revisa los informes de validación y autotest.");
-            }
         }
         catch (Exception exception)
         {
