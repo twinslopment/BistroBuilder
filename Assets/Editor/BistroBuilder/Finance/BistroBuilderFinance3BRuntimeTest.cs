@@ -96,18 +96,33 @@ public static class BistroBuilderFinance3BRuntimeTest
             return;
         }
 
-        BistroBuilderFinanceService[] services =
+        BistroBuilderFinanceService[] financeServices =
             UnityEngine.Object.FindObjectsByType<BistroBuilderFinanceService>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
+        RestaurantServiceStateService[] serviceStates =
+            UnityEngine.Object.FindObjectsByType<RestaurantServiceStateService>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+        CustomerGroupSpawner[] spawners =
+            UnityEngine.Object.FindObjectsByType<CustomerGroupSpawner>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
 
-        if (services.Length != 1)
+        if (financeServices.Length != 1)
         {
             Fail("La prueba necesita una única autoridad financiera runtime.");
             return;
         }
 
-        finance = services[0];
+        if (serviceStates.Length != 1 || spawners.Length != 1)
+        {
+            Fail(
+                "La prueba necesita un único estado de servicio y un único generador de clientes.");
+            return;
+        }
+
+        finance = financeServices[0];
         if (!finance.ValidateConfiguration(out string error))
         {
             Fail("La autoridad financiera no es válida. " + error);
@@ -125,8 +140,36 @@ public static class BistroBuilderFinance3BRuntimeTest
         Application.logMessageReceived -= HandleLog;
         Application.logMessageReceived += HandleLog;
 
+        CustomerGroupSpawner spawner = spawners[0];
+        RestaurantServiceStateService serviceState = serviceStates[0];
+
+        if (!spawner.TryConfigureDiagnosticGroupSizes(
+                new[] { 1 },
+                out error) ||
+            !spawner.TryConfigureDiagnosticServiceModes(
+                new[] { BistroBuilderServiceMode.TableService },
+                out error))
+        {
+            Fail("No se pudo preparar una llegada determinista. " + error);
+            return;
+        }
+
+        if (serviceState.CurrentState == RestaurantServiceState.Closing)
+        {
+            Fail("El servicio está cerrándose y no puede iniciar la prueba.");
+            return;
+        }
+
+        if (serviceState.CurrentState != RestaurantServiceState.Open &&
+            !serviceState.TryOpenService())
+        {
+            Fail("No se pudo abrir automáticamente el servicio para la prueba.");
+            return;
+        }
+
         Debug.Log(
-            "3B — Prueba runtime armada. Esperando el próximo cobro real de mesa o barra.");
+            "3B — Prueba runtime armada. Servicio abierto automáticamente; " +
+            "esperando el próximo cobro real de mesa.");
     }
 
     private static void HandleStateRestored()
