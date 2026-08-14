@@ -4,19 +4,13 @@ using UnityEngine;
 
 /// <summary>
 /// Historial central de operaciones confirmadas del modo edición.
-///
-/// Conserva comandos genéricos para movimiento, creación, eliminación y
-/// movimientos atómicos de grupos enlazados. No utiliza Update.
+/// Admite un participante externo para mantener efectos transversales,
+/// como Finanzas, atómicos con Undo/Redo.
 /// </summary>
 [DisallowMultipleComponent]
-[AddComponentMenu(
-    "Bistro Builder/Restaurant/Placement History Service"
-)]
-public sealed class RestaurantPlacementHistoryService :
-    MonoBehaviour
+[AddComponentMenu("Bistro Builder/Restaurant/Placement History Service")]
+public sealed class RestaurantPlacementHistoryService : MonoBehaviour
 {
-    [Header("Dependencias")]
-
     [SerializeField]
     private RestaurantPlacementTransactionService transactionService;
 
@@ -26,74 +20,46 @@ public sealed class RestaurantPlacementHistoryService :
     [SerializeField]
     private RestaurantPlacementLinkedGroupService linkedGroupService;
 
-    [Header("Historial")]
-
-    [SerializeField]
-    [Min(1)]
+    [SerializeField, Min(1)]
     private int maximumHistoryEntries = 50;
 
     [SerializeField]
     private bool validateDestinationBeforeApplying = true;
 
-    [Header("Depuración")]
-
     [SerializeField]
     private bool logHistoryOperations = true;
 
-    private readonly List<IRestaurantEditHistoryCommand>
-        undoStack =
-            new List<IRestaurantEditHistoryCommand>(50);
+    private readonly List<IRestaurantEditHistoryCommand> undoStack =
+        new List<IRestaurantEditHistoryCommand>(50);
 
-    private readonly List<IRestaurantEditHistoryCommand>
-        redoStack =
-            new List<IRestaurantEditHistoryCommand>(50);
+    private readonly List<IRestaurantEditHistoryCommand> redoStack =
+        new List<IRestaurantEditHistoryCommand>(50);
+
+    private IRestaurantEditHistoryOperationParticipant operationParticipant;
 
     public event Action HistoryChanged;
-
-    public event Action<RestaurantAreaMember>
-        UndoPerformed;
-
-    public event Action<RestaurantAreaMember>
-        RedoPerformed;
-
+    public event Action<RestaurantAreaMember> UndoPerformed;
+    public event Action<RestaurantAreaMember> RedoPerformed;
     public event Action<
         RestaurantPlacementHistoryFailureReason,
-        RestaurantPlacementValidationResult
-    > HistoryOperationRejected;
-
-    public event Action<IRestaurantEditHistoryCommand>
-        CommandRecorded;
-
+        RestaurantPlacementValidationResult> HistoryOperationRejected;
+    public event Action<IRestaurantEditHistoryCommand> CommandRecorded;
     public event Action<
         IRestaurantEditHistoryCommand,
-        RestaurantEditHistoryCommandResult
-    > CommandUndone;
-
+        RestaurantEditHistoryCommandResult> CommandUndone;
     public event Action<
         IRestaurantEditHistoryCommand,
-        RestaurantEditHistoryCommandResult
-    > CommandRedone;
-
+        RestaurantEditHistoryCommandResult> CommandRedone;
     public event Action<
         IRestaurantEditHistoryCommand,
-        RestaurantEditHistoryCommandResult
-    > CommandRejected;
+        RestaurantEditHistoryCommandResult> CommandRejected;
 
-    public bool CanUndo =>
-        undoStack.Count > 0;
-
-    public bool CanRedo =>
-        redoStack.Count > 0;
-
-    public int UndoCount =>
-        undoStack.Count;
-
-    public int RedoCount =>
-        redoStack.Count;
-
-    public RestaurantPlacementLinkedGroupService
-        LinkedGroupService =>
-            linkedGroupService;
+    public bool CanUndo => undoStack.Count > 0;
+    public bool CanRedo => redoStack.Count > 0;
+    public int UndoCount => undoStack.Count;
+    public int RedoCount => redoStack.Count;
+    public RestaurantPlacementLinkedGroupService LinkedGroupService =>
+        linkedGroupService;
 
     private void Awake()
     {
@@ -118,63 +84,65 @@ public sealed class RestaurantPlacementHistoryService :
         ClearHistory();
     }
 
-    /// <summary>
-    /// Registra una operación que ya se ha ejecutado y confirmado.
-    /// </summary>
-    public bool TryRecordExecutedCommand(
-        IRestaurantEditHistoryCommand command
-    )
+    public bool TryBindOperationParticipant(
+        IRestaurantEditHistoryOperationParticipant participant,
+        out string error)
     {
-        if (command == null ||
-            !command.IsValid)
+        if (participant == null)
+        {
+            error = "El participante de historial indicado es nulo.";
+            return false;
+        }
+
+        if (operationParticipant != null &&
+            !ReferenceEquals(operationParticipant, participant))
+        {
+            error = "El historial ya tiene un participante externo enlazado.";
+            return false;
+        }
+
+        operationParticipant = participant;
+        error = string.Empty;
+        return true;
+    }
+
+    public void UnbindOperationParticipant(
+        IRestaurantEditHistoryOperationParticipant participant)
+    {
+        if (ReferenceEquals(operationParticipant, participant))
+        {
+            operationParticipant = null;
+        }
+    }
+
+    public bool TryRecordExecutedCommand(IRestaurantEditHistoryCommand command)
+    {
+        if (command == null || !command.IsValid)
         {
             RestaurantEditHistoryCommandResult rejection =
                 RestaurantEditHistoryCommandResult.Failure(
-                    RestaurantEditHistoryCommandFailureReason
-                        .CommandInvalid,
-                    command != null
-                        ? command.PrimaryTarget
-                        : null,
+                    RestaurantEditHistoryCommandFailureReason.CommandInvalid,
+                    command != null ? command.PrimaryTarget : null,
                     ResolveAreaMember(command),
                     default,
-                    "El comando no contiene un cambio válido."
-                );
-
-            CommandRejected?.Invoke(
-                command,
-                rejection
-            );
-
+                    "El comando no contiene un cambio válido.");
+            CommandRejected?.Invoke(command, rejection);
             return false;
         }
 
         undoStack.Add(command);
         TrimStackIfNeeded(undoStack);
-
-        /*
-         * Una operación nueva descarta la rama de rehacer. Antes de
-         * vaciarla se liberan las instancias retenidas solo por ella.
-         */
         ReleaseStackResources(redoStack);
         redoStack.Clear();
-
         HistoryChanged?.Invoke();
         CommandRecorded?.Invoke(command);
 
         if (logHistoryOperations)
         {
             Debug.Log(
-                "Registrado comando '" +
-                command.Description +
-                "'. Tipo: " +
-                command.CommandType +
-                ". Deshacer: " +
-                undoStack.Count +
-                ", rehacer: " +
-                redoStack.Count +
-                ".",
-                this
-            );
+                "Registrado comando '" + command.Description +
+                "'. Tipo: " + command.CommandType + ".",
+                this);
         }
 
         return true;
@@ -183,192 +151,36 @@ public sealed class RestaurantPlacementHistoryService :
     public bool TryUndo(
         out RestaurantAreaMember affectedMember,
         out RestaurantPlacementHistoryFailureReason failureReason,
-        out RestaurantPlacementValidationResult validationResult
-    )
+        out RestaurantPlacementValidationResult validationResult)
     {
-        affectedMember = null;
-        validationResult = default;
-        failureReason =
-            RestaurantPlacementHistoryFailureReason.None;
-
-        if (!CanOperate(out failureReason))
-        {
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        if (undoStack.Count == 0)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .NothingToUndo;
-
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        int lastIndex =
-            undoStack.Count - 1;
-
-        IRestaurantEditHistoryCommand command =
-            undoStack[lastIndex];
-
-        if (command == null)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .CommandInvalid;
-
-            undoStack.RemoveAt(lastIndex);
-            HistoryChanged?.Invoke();
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        bool undone =
-            command.TryUndo(
-                out RestaurantEditHistoryCommandResult result
-            );
-
-        affectedMember =
-            result.AffectedMember ??
-            ResolveAreaMember(command);
-
-        validationResult =
-            result.ValidationResult;
-
-        if (!undone)
-        {
-            failureReason =
-                MapFailureReason(result.FailureReason);
-
-            CommandRejected?.Invoke(command, result);
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        undoStack.RemoveAt(lastIndex);
-        redoStack.Add(command);
-        TrimStackIfNeeded(redoStack);
-
-        HistoryChanged?.Invoke();
-        UndoPerformed?.Invoke(affectedMember);
-        CommandUndone?.Invoke(command, result);
-
-        if (logHistoryOperations)
-        {
-            Debug.Log(
-                "Deshecho comando '" +
-                command.Description +
-                "'.",
-                this
-            );
-        }
-
-        return true;
+        return TryExecute(
+            RestaurantEditHistoryDirection.Undo,
+            undoStack,
+            redoStack,
+            out affectedMember,
+            out failureReason,
+            out validationResult);
     }
 
     public bool TryRedo(
         out RestaurantAreaMember affectedMember,
         out RestaurantPlacementHistoryFailureReason failureReason,
-        out RestaurantPlacementValidationResult validationResult
-    )
+        out RestaurantPlacementValidationResult validationResult)
     {
-        affectedMember = null;
-        validationResult = default;
-        failureReason =
-            RestaurantPlacementHistoryFailureReason.None;
-
-        if (!CanOperate(out failureReason))
-        {
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        if (redoStack.Count == 0)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .NothingToRedo;
-
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        int lastIndex =
-            redoStack.Count - 1;
-
-        IRestaurantEditHistoryCommand command =
-            redoStack[lastIndex];
-
-        if (command == null)
-        {
-            failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .CommandInvalid;
-
-            redoStack.RemoveAt(lastIndex);
-            HistoryChanged?.Invoke();
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        bool redone =
-            command.TryRedo(
-                out RestaurantEditHistoryCommandResult result
-            );
-
-        affectedMember =
-            result.AffectedMember ??
-            ResolveAreaMember(command);
-
-        validationResult =
-            result.ValidationResult;
-
-        if (!redone)
-        {
-            failureReason =
-                MapFailureReason(result.FailureReason);
-
-            CommandRejected?.Invoke(command, result);
-            RejectLegacy(failureReason, validationResult);
-            return false;
-        }
-
-        redoStack.RemoveAt(lastIndex);
-        undoStack.Add(command);
-        TrimStackIfNeeded(undoStack);
-
-        HistoryChanged?.Invoke();
-        RedoPerformed?.Invoke(affectedMember);
-        CommandRedone?.Invoke(command, result);
-
-        if (logHistoryOperations)
-        {
-            Debug.Log(
-                "Rehecho comando '" +
-                command.Description +
-                "'.",
-                this
-            );
-        }
-
-        return true;
+        return TryExecute(
+            RestaurantEditHistoryDirection.Redo,
+            redoStack,
+            undoStack,
+            out affectedMember,
+            out failureReason,
+            out validationResult);
     }
 
-    /// <summary>
-    /// Vacía ambas ramas y libera recursos que pertenecían solo al
-    /// historial.
-    /// </summary>
     public void ClearHistory()
     {
-        bool hadEntries =
-            undoStack.Count > 0 ||
-            redoStack.Count > 0;
-
+        bool hadEntries = undoStack.Count > 0 || redoStack.Count > 0;
         ReleaseStackResources(undoStack);
         ReleaseStackResources(redoStack);
-
         undoStack.Clear();
         redoStack.Clear();
 
@@ -378,9 +190,152 @@ public sealed class RestaurantPlacementHistoryService :
         }
     }
 
-    private void HandlePlacementCommitted(
-        RestaurantPlacementCommittedChange change
-    )
+    private bool TryExecute(
+        RestaurantEditHistoryDirection direction,
+        List<IRestaurantEditHistoryCommand> source,
+        List<IRestaurantEditHistoryCommand> destination,
+        out RestaurantAreaMember affectedMember,
+        out RestaurantPlacementHistoryFailureReason failureReason,
+        out RestaurantPlacementValidationResult validationResult)
+    {
+        affectedMember = null;
+        validationResult = default;
+        failureReason = RestaurantPlacementHistoryFailureReason.None;
+
+        if (!CanOperate(out failureReason))
+        {
+            RejectLegacy(failureReason, validationResult);
+            return false;
+        }
+
+        if (source.Count == 0)
+        {
+            failureReason = direction == RestaurantEditHistoryDirection.Undo
+                ? RestaurantPlacementHistoryFailureReason.NothingToUndo
+                : RestaurantPlacementHistoryFailureReason.NothingToRedo;
+            RejectLegacy(failureReason, validationResult);
+            return false;
+        }
+
+        int lastIndex = source.Count - 1;
+        IRestaurantEditHistoryCommand command = source[lastIndex];
+        if (command == null)
+        {
+            source.RemoveAt(lastIndex);
+            HistoryChanged?.Invoke();
+            failureReason = RestaurantPlacementHistoryFailureReason.CommandInvalid;
+            RejectLegacy(failureReason, validationResult);
+            return false;
+        }
+
+        if (operationParticipant != null &&
+            !operationParticipant.TryAuthorizeHistoryOperation(
+                command,
+                direction,
+                out string authorizationError))
+        {
+            failureReason =
+                RestaurantPlacementHistoryFailureReason.ExternalParticipantRejected;
+            RejectCommand(
+                command,
+                authorizationError,
+                failureReason,
+                validationResult);
+            return false;
+        }
+
+        RestaurantEditHistoryCommandResult result;
+        bool applied = direction == RestaurantEditHistoryDirection.Undo
+            ? command.TryUndo(out result)
+            : command.TryRedo(out result);
+
+        affectedMember = result.AffectedMember ?? ResolveAreaMember(command);
+        validationResult = result.ValidationResult;
+
+        if (!applied)
+        {
+            failureReason = MapFailureReason(result.FailureReason);
+            CommandRejected?.Invoke(command, result);
+            RejectLegacy(failureReason, validationResult);
+            return false;
+        }
+
+        if (operationParticipant != null &&
+            !operationParticipant.TryCommitHistoryOperation(
+                command,
+                direction,
+                out string commitError))
+        {
+            bool worldRolledBack = direction == RestaurantEditHistoryDirection.Undo
+                ? command.TryRedo(out _)
+                : command.TryUndo(out _);
+
+            failureReason =
+                RestaurantPlacementHistoryFailureReason.ExternalParticipantRejected;
+
+            string message = commitError;
+            if (!worldRolledBack)
+            {
+                message +=
+                    " Además no se pudo restaurar el mundo tras el rechazo externo.";
+                Debug.LogError(message, this);
+            }
+
+            RejectCommand(
+                command,
+                message,
+                failureReason,
+                validationResult);
+            return false;
+        }
+
+        source.RemoveAt(lastIndex);
+        destination.Add(command);
+        TrimStackIfNeeded(destination);
+        HistoryChanged?.Invoke();
+
+        if (direction == RestaurantEditHistoryDirection.Undo)
+        {
+            UndoPerformed?.Invoke(affectedMember);
+            CommandUndone?.Invoke(command, result);
+        }
+        else
+        {
+            RedoPerformed?.Invoke(affectedMember);
+            CommandRedone?.Invoke(command, result);
+        }
+
+        if (logHistoryOperations)
+        {
+            Debug.Log(
+                (direction == RestaurantEditHistoryDirection.Undo
+                    ? "Deshecho comando '"
+                    : "Rehecho comando '") +
+                command.Description + "'.",
+                this);
+        }
+
+        return true;
+    }
+
+    private void RejectCommand(
+        IRestaurantEditHistoryCommand command,
+        string message,
+        RestaurantPlacementHistoryFailureReason failureReason,
+        RestaurantPlacementValidationResult validationResult)
+    {
+        RestaurantEditHistoryCommandResult rejection =
+            RestaurantEditHistoryCommandResult.Failure(
+                RestaurantEditHistoryCommandFailureReason.CommandUnavailable,
+                command.PrimaryTarget,
+                ResolveAreaMember(command),
+                validationResult,
+                message);
+        CommandRejected?.Invoke(command, rejection);
+        RejectLegacy(failureReason, validationResult);
+    }
+
+    private void HandlePlacementCommitted(RestaurantPlacementCommittedChange change)
     {
         if (change.Member == null ||
             !change.HasMeaningfulChange ||
@@ -390,80 +345,56 @@ public sealed class RestaurantPlacementHistoryService :
             return;
         }
 
-        /*
-         * Un grupo enlazado debe entrar en el historial como un solo
-         * comando. Así una pulsación de Undo/Redo afecta a la mesa y a
-         * todas sus sillas, sin estados intermedios incoherentes.
-         */
         if (linkedGroupService != null &&
             linkedGroupService.TryBuildHistoryCommand(
                 change,
                 validateDestinationBeforeApplying,
-                out IRestaurantEditHistoryCommand groupCommand
-            ))
+                out IRestaurantEditHistoryCommand groupCommand))
         {
             TryRecordExecutedCommand(groupCommand);
             return;
         }
 
-        RestaurantMovePlaceableHistoryCommand command =
+        TryRecordExecutedCommand(
             new RestaurantMovePlaceableHistoryCommand(
                 change.Member,
                 change.Before,
                 change.After,
                 validationService,
-                validateDestinationBeforeApplying
-            );
-
-        TryRecordExecutedCommand(command);
+                validateDestinationBeforeApplying));
     }
 
     private bool CanOperate(
-        out RestaurantPlacementHistoryFailureReason failureReason
-    )
+        out RestaurantPlacementHistoryFailureReason failureReason)
     {
-        failureReason =
-            RestaurantPlacementHistoryFailureReason.None;
+        failureReason = RestaurantPlacementHistoryFailureReason.None;
 
         if (transactionService == null)
         {
             failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .TransactionSystemUnavailable;
-
+                RestaurantPlacementHistoryFailureReason.TransactionSystemUnavailable;
             return false;
         }
 
         if (transactionService.HasActiveTransaction)
         {
             failureReason =
-                RestaurantPlacementHistoryFailureReason
-                    .PlacementOperationActive;
-
+                RestaurantPlacementHistoryFailureReason.PlacementOperationActive;
             return false;
         }
 
         return true;
     }
 
-    private void TrimStackIfNeeded(
-        List<IRestaurantEditHistoryCommand> stack
-    )
+    private void TrimStackIfNeeded(List<IRestaurantEditHistoryCommand> stack)
     {
-        int safeMaximum =
-            Mathf.Max(1, maximumHistoryEntries);
-
-        int overflow =
-            stack.Count - safeMaximum;
-
+        int overflow = stack.Count - Mathf.Max(1, maximumHistoryEntries);
         if (overflow <= 0)
         {
             return;
         }
 
-        for (int index = 0;
-             index < overflow;
-             index++)
+        for (int index = 0; index < overflow; index++)
         {
             stack[index]?.ReleaseResources();
         }
@@ -472,17 +403,14 @@ public sealed class RestaurantPlacementHistoryService :
     }
 
     private static void ReleaseStackResources(
-        List<IRestaurantEditHistoryCommand> stack
-    )
+        List<IRestaurantEditHistoryCommand> stack)
     {
         if (stack == null)
         {
             return;
         }
 
-        for (int index = 0;
-             index < stack.Count;
-             index++)
+        for (int index = 0; index < stack.Count; index++)
         {
             stack[index]?.ReleaseResources();
         }
@@ -490,21 +418,15 @@ public sealed class RestaurantPlacementHistoryService :
 
     private void RejectLegacy(
         RestaurantPlacementHistoryFailureReason failureReason,
-        RestaurantPlacementValidationResult validationResult
-    )
+        RestaurantPlacementValidationResult validationResult)
     {
-        HistoryOperationRejected?.Invoke(
-            failureReason,
-            validationResult
-        );
+        HistoryOperationRejected?.Invoke(failureReason, validationResult);
     }
 
     private static RestaurantAreaMember ResolveAreaMember(
-        IRestaurantEditHistoryCommand command
-    )
+        IRestaurantEditHistoryCommand command)
     {
-        if (command == null ||
-            command.PrimaryTarget == null)
+        if (command == null || command.PrimaryTarget == null)
         {
             return null;
         }
@@ -516,91 +438,45 @@ public sealed class RestaurantPlacementHistoryService :
 
         if (command.PrimaryTarget is Component component)
         {
-            component.TryGetComponent(
-                out RestaurantAreaMember componentMember
-            );
-
+            component.TryGetComponent(out RestaurantAreaMember componentMember);
             return componentMember;
         }
 
         if (command.PrimaryTarget is GameObject gameObject)
         {
-            gameObject.TryGetComponent(
-                out RestaurantAreaMember gameObjectMember
-            );
-
+            gameObject.TryGetComponent(out RestaurantAreaMember gameObjectMember);
             return gameObjectMember;
         }
 
         return null;
     }
 
-    private static RestaurantPlacementHistoryFailureReason
-        MapFailureReason(
-            RestaurantEditHistoryCommandFailureReason reason
-        )
+    private static RestaurantPlacementHistoryFailureReason MapFailureReason(
+        RestaurantEditHistoryCommandFailureReason reason)
     {
         switch (reason)
         {
             case RestaurantEditHistoryCommandFailureReason.None:
-                return
-                    RestaurantPlacementHistoryFailureReason.None;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .ValidationSystemUnavailable:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .ValidationSystemUnavailable;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .DestinationInvalid:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .DestinationInvalid;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .TargetUnavailable:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .MemberUnavailable;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .StateInvalid:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .SnapshotInvalid;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .CommandInvalid:
-
-            case RestaurantEditHistoryCommandFailureReason
-                .CommandUnavailable:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .CommandInvalid;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .LifecycleSystemUnavailable:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .LifecycleSystemUnavailable;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .IdentityConflict:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .IdentityConflict;
-
-            case RestaurantEditHistoryCommandFailureReason
-                .RegistrationFailed:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .RegistrationFailed;
-
+                return RestaurantPlacementHistoryFailureReason.None;
+            case RestaurantEditHistoryCommandFailureReason.ValidationSystemUnavailable:
+                return RestaurantPlacementHistoryFailureReason.ValidationSystemUnavailable;
+            case RestaurantEditHistoryCommandFailureReason.DestinationInvalid:
+                return RestaurantPlacementHistoryFailureReason.DestinationInvalid;
+            case RestaurantEditHistoryCommandFailureReason.TargetUnavailable:
+                return RestaurantPlacementHistoryFailureReason.MemberUnavailable;
+            case RestaurantEditHistoryCommandFailureReason.StateInvalid:
+                return RestaurantPlacementHistoryFailureReason.SnapshotInvalid;
+            case RestaurantEditHistoryCommandFailureReason.CommandInvalid:
+            case RestaurantEditHistoryCommandFailureReason.CommandUnavailable:
+                return RestaurantPlacementHistoryFailureReason.CommandInvalid;
+            case RestaurantEditHistoryCommandFailureReason.LifecycleSystemUnavailable:
+                return RestaurantPlacementHistoryFailureReason.LifecycleSystemUnavailable;
+            case RestaurantEditHistoryCommandFailureReason.IdentityConflict:
+                return RestaurantPlacementHistoryFailureReason.IdentityConflict;
+            case RestaurantEditHistoryCommandFailureReason.RegistrationFailed:
+                return RestaurantPlacementHistoryFailureReason.RegistrationFailed;
             default:
-                return
-                    RestaurantPlacementHistoryFailureReason
-                        .RestoreFailed;
+                return RestaurantPlacementHistoryFailureReason.RestoreFailed;
         }
     }
 
@@ -611,11 +487,8 @@ public sealed class RestaurantPlacementHistoryService :
             return;
         }
 
-        transactionService.PlacementCommittedWithHistory -=
-            HandlePlacementCommitted;
-
-        transactionService.PlacementCommittedWithHistory +=
-            HandlePlacementCommitted;
+        transactionService.PlacementCommittedWithHistory -= HandlePlacementCommitted;
+        transactionService.PlacementCommittedWithHistory += HandlePlacementCommitted;
     }
 
     private void UnsubscribeFromTransactionService()
@@ -652,22 +525,18 @@ public sealed class RestaurantPlacementHistoryService :
             Debug.LogError(
                 nameof(RestaurantPlacementHistoryService) +
                 " necesita un " +
-                nameof(RestaurantPlacementTransactionService) +
-                ".",
-                this
-            );
+                nameof(RestaurantPlacementTransactionService) + ".",
+                this);
         }
 
-        if (validateDestinationBeforeApplying &&
-            validationService == null)
+        if (validateDestinationBeforeApplying && validationService == null)
         {
             Debug.LogError(
                 nameof(RestaurantPlacementHistoryService) +
                 " necesita un " +
                 nameof(RestaurantPlacementValidationService) +
                 " para revalidar movimientos históricos.",
-                this
-            );
+                this);
         }
     }
 
@@ -680,8 +549,7 @@ public sealed class RestaurantPlacementHistoryService :
     private void OnValidate()
     {
         CacheDependenciesIfNeeded();
-        maximumHistoryEntries =
-            Mathf.Max(1, maximumHistoryEntries);
+        maximumHistoryEntries = Mathf.Max(1, maximumHistoryEntries);
     }
 #endif
 }
@@ -701,5 +569,6 @@ public enum RestaurantPlacementHistoryFailureReason
     CommandInvalid = 10,
     LifecycleSystemUnavailable = 11,
     IdentityConflict = 12,
-    RegistrationFailed = 13
+    RegistrationFailed = 13,
+    ExternalParticipantRejected = 14
 }

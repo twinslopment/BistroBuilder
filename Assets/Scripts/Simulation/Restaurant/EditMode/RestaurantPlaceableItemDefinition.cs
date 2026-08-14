@@ -2,17 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Define un artículo disponible para el catálogo del modo edición.
-///
-/// La definición es genérica y puede representar:
-/// - Mesas y sillas.
-/// - Iluminación.
-/// - Plantas y decoración.
-/// - Equipamiento de cocina.
-/// - Barras y equipamiento de servicio.
-/// - Elementos estructurales permitidos.
-///
-/// La función concreta del artículo no se codifica aquí.
-/// La determina la composición de componentes de su prefab.
+/// La función concreta del artículo la determina su prefab; esta definición
+/// conserva identidad, presentación y condiciones económicas de autoría.
 /// </summary>
 [CreateAssetMenu(
     fileName = "PlaceableItemDefinition_",
@@ -20,179 +11,90 @@ using UnityEngine;
         "Bistro Builder/Restaurant/Edit Mode/" +
         "Placeable Item Definition"
 )]
-public sealed class RestaurantPlaceableItemDefinition :
-    ScriptableObject
+public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
 {
     [Header("Identidad")]
-
-    [Tooltip(
-        "Identificador técnico estable del artículo. Se utilizará " +
-        "en catálogo, guardado, desbloqueos y economía."
-    )]
     [SerializeField]
-    private string itemId =
-        "placeable_item";
+    private string itemId = "placeable_item";
 
-    [Tooltip(
-        "Nombre que se mostrará al jugador."
-    )]
     [SerializeField]
-    private string displayName =
-        "Artículo";
+    private string displayName = "Artículo";
 
-    [Tooltip(
-        "Categoría principal utilizada para organizar el catálogo."
-    )]
     [SerializeField]
     private RestaurantPlaceableItemCategory category =
         RestaurantPlaceableItemCategory.Furniture;
 
-    [Tooltip(
-        "Descripción del artículo."
-    )]
-    [SerializeField]
-    [TextArea(2, 6)]
+    [SerializeField, TextArea(2, 6)]
     private string description;
 
-    [Tooltip(
-        "Icono futuro del catálogo. Puede permanecer vacío durante " +
-        "el prototipo técnico."
-    )]
     [SerializeField]
     private Sprite catalogIcon;
 
     [Header("Creación")]
-
-    [Tooltip(
-        "Prefab que se instanciará al añadir este artículo."
-    )]
     [SerializeField]
     private RestaurantPlaceableObject prefab;
 
-    [Tooltip(
-        "Reglas compartidas de movimiento, rotación y cuadrícula."
-    )]
     [SerializeField]
     private RestaurantEditableObjectDefinition editableDefinition;
 
-    [Header("Economía provisional")]
-
-    [Tooltip(
-        "Precio base de compra. La integración financiera se añadirá " +
-        "posteriormente."
-    )]
-    [SerializeField]
-    [Min(0)]
+    [Header("Economía")]
+    [Tooltip("Precio de compra mostrado en euros. Finanzas lo convierte a céntimos en el límite de 3F.")]
+    [SerializeField, Min(0)]
     private int purchasePrice;
 
-    public string ItemId
-    {
-        get
-        {
-            return NormalizeIdentifier(
-                itemId
-            );
-        }
-    }
+    [Tooltip("Comportamiento económico al retirar una instancia ya colocada.")]
+    [SerializeField]
+    private RestaurantPlaceableDisposalMode disposalMode =
+        RestaurantPlaceableDisposalMode.Automatic;
 
-    public string DisplayName
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(displayName))
-            {
-                return name;
-            }
+    [Tooltip("Porcentaje de reventa en puntos básicos. 5000 = 50 %.")]
+    [SerializeField, Range(0, 10000)]
+    private int resaleBasisPoints = 5000;
 
-            return displayName.Trim();
-        }
-    }
+    [Tooltip("Coste fijo de retirada en euros. En demolición automática, 0 usa el coste porcentual por defecto.")]
+    [SerializeField, Min(0)]
+    private int removalCost;
 
-    public RestaurantPlaceableItemCategory Category
-    {
-        get
-        {
-            return category;
-        }
-    }
+    [Tooltip("Coste porcentual de demolición en puntos básicos cuando no existe coste fijo. 1500 = 15 %.")]
+    [SerializeField, Range(0, 10000)]
+    private int demolitionBasisPoints = 1500;
 
-    public string Description
-    {
-        get
-        {
-            return description;
-        }
-    }
+    public string ItemId => NormalizeIdentifier(itemId);
 
-    public Sprite CatalogIcon
-    {
-        get
-        {
-            return catalogIcon;
-        }
-    }
+    public string DisplayName =>
+        string.IsNullOrWhiteSpace(displayName)
+            ? name
+            : displayName.Trim();
 
-    public RestaurantPlaceableObject Prefab
-    {
-        get
-        {
-            return prefab;
-        }
-    }
-
-    public RestaurantEditableObjectDefinition EditableDefinition
-    {
-        get
-        {
-            return editableDefinition;
-        }
-    }
-
-    public int PurchasePrice
-    {
-        get
-        {
-            return Mathf.Max(
-                0,
-                purchasePrice
-            );
-        }
-    }
-
-    public bool HasValidPrefab
-    {
-        get
-        {
-            return prefab != null;
-        }
-    }
+    public RestaurantPlaceableItemCategory Category => category;
+    public string Description => description;
+    public Sprite CatalogIcon => catalogIcon;
+    public RestaurantPlaceableObject Prefab => prefab;
+    public RestaurantEditableObjectDefinition EditableDefinition => editableDefinition;
+    public int PurchasePrice => Mathf.Max(0, purchasePrice);
+    public long PurchasePriceCents => (long)PurchasePrice * 100L;
+    public RestaurantPlaceableDisposalMode DisposalMode => disposalMode;
+    public int ResaleBasisPoints => Mathf.Clamp(resaleBasisPoints, 0, 10000);
+    public int RemovalCost => Mathf.Max(0, removalCost);
+    public long RemovalCostCents => (long)RemovalCost * 100L;
+    public int DemolitionBasisPoints => Mathf.Clamp(demolitionBasisPoints, 0, 10000);
+    public bool HasValidPrefab => prefab != null;
 
     private void OnValidate()
     {
-        itemId =
-            NormalizeIdentifier(
-                itemId
-            );
-
+        itemId = NormalizeIdentifier(itemId);
         if (string.IsNullOrWhiteSpace(itemId))
         {
-            itemId =
-                "placeable_item";
+            itemId = "placeable_item";
         }
 
-        purchasePrice =
-            Mathf.Max(
-                0,
-                purchasePrice
-            );
+        purchasePrice = Mathf.Max(0, purchasePrice);
+        resaleBasisPoints = Mathf.Clamp(resaleBasisPoints, 0, 10000);
+        removalCost = Mathf.Max(0, removalCost);
+        demolitionBasisPoints = Mathf.Clamp(demolitionBasisPoints, 0, 10000);
     }
 
-    /// <summary>
-    /// Mantiene los identificadores en un formato estable.
-    /// </summary>
-    private static string NormalizeIdentifier(
-        string rawIdentifier
-    )
+    private static string NormalizeIdentifier(string rawIdentifier)
     {
         if (string.IsNullOrWhiteSpace(rawIdentifier))
         {
@@ -207,9 +109,6 @@ public sealed class RestaurantPlaceableItemDefinition :
     }
 }
 
-/// <summary>
-/// Categoría visual y funcional utilizada por el catálogo.
-/// </summary>
 public enum RestaurantPlaceableItemCategory
 {
     Furniture = 0,
@@ -220,4 +119,17 @@ public enum RestaurantPlaceableItemCategory
     ServiceEquipment = 5,
     Structural = 6,
     Other = 7
+}
+
+/// <summary>
+/// Política económica de retirada. Automatic aplica reventa a artículos
+/// móviles y demolición a elementos estructurales.
+/// </summary>
+public enum RestaurantPlaceableDisposalMode
+{
+    Automatic = 0,
+    None = 1,
+    Resale = 2,
+    Demolition = 3,
+    ResaleWithRemovalCost = 4
 }
