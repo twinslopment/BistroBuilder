@@ -11,6 +11,10 @@ public static class BistroBuilderFinance3DRuntimeTest
     private const string ResultKey = "BB.Finance.3D.Runtime.Result";
     private const double StartupTimeoutSeconds = 20d;
     private const double ConsumptionTimeoutSeconds = 90d;
+    private const long MinimumDiagnosticStockMilliUnits = 1000000L;
+    private const string DiagnosticSourceId = "finance_3d_runtime";
+    private const string DiagnosticReceiptId = "receipt_3d_runtime";
+    private const string DiagnosticPurchaseOrderId = "purchase_order_3d_runtime";
 
     private static double startupDeadline;
     private static double consumptionDeadline;
@@ -20,7 +24,7 @@ public static class BistroBuilderFinance3DRuntimeTest
     private static long baselineBalance;
     private static int baselineFinanceTransactions;
     private static int baselineLineCosts;
-    private static string diagnosticLotId;
+    private static int diagnosticActualLotCount;
     private static long diagnosticSubtotalCents;
 
     static BistroBuilderFinance3DRuntimeTest()
@@ -40,6 +44,7 @@ public static class BistroBuilderFinance3DRuntimeTest
                 "Aceptar");
             return;
         }
+
         if (EditorApplication.isPlaying)
         {
             EditorUtility.DisplayDialog(
@@ -48,6 +53,7 @@ public static class BistroBuilderFinance3DRuntimeTest
                 "Aceptar");
             return;
         }
+
         if (!EditorSceneManager.SaveOpenScenes())
         {
             EditorUtility.DisplayDialog(
@@ -67,7 +73,8 @@ public static class BistroBuilderFinance3DRuntimeTest
         if (state == PlayModeStateChange.EnteredPlayMode &&
             SessionState.GetBool(ArmedKey, false))
         {
-            startupDeadline = EditorApplication.timeSinceStartup + StartupTimeoutSeconds;
+            startupDeadline =
+                EditorApplication.timeSinceStartup + StartupTimeoutSeconds;
             EditorApplication.update -= TryArmWhenReady;
             EditorApplication.update += TryArmWhenReady;
             return;
@@ -107,32 +114,47 @@ public static class BistroBuilderFinance3DRuntimeTest
             return;
         }
 
-        productCost = UnityEngine.Object.FindFirstObjectByType<BistroBuilderProductCostService>();
-        finance = UnityEngine.Object.FindFirstObjectByType<BistroBuilderFinanceService>();
+        productCost =
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderProductCostService>();
+        finance =
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderFinanceService>();
         BistroBuilderGoodsReceivingService receiving =
             UnityEngine.Object.FindFirstObjectByType<BistroBuilderGoodsReceivingService>();
         BistroBuilderInventoryService inventory =
             UnityEngine.Object.FindFirstObjectByType<BistroBuilderInventoryService>();
+        BistroBuilderRecipeCatalogService recipes =
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderRecipeCatalogService>();
         RestaurantServiceStateService serviceState =
             UnityEngine.Object.FindFirstObjectByType<RestaurantServiceStateService>();
         CustomerGroupSpawner spawner =
             UnityEngine.Object.FindFirstObjectByType<CustomerGroupSpawner>();
 
-        bool ready = productCost != null && productCost.IsInitialized &&
-                     finance != null && finance.IsInitialized &&
-                     receiving != null && inventory != null && inventory.IsInitialized &&
-                     serviceState != null && spawner != null;
+        bool ready =
+            productCost != null && productCost.IsInitialized &&
+            finance != null && finance.IsInitialized &&
+            receiving != null &&
+            inventory != null && inventory.IsInitialized &&
+            recipes != null &&
+            serviceState != null &&
+            spawner != null;
+
         if (!ready)
         {
             if (EditorApplication.timeSinceStartup >= startupDeadline)
             {
-                Fail("Las autoridades runtime de 3D no estuvieron listas a tiempo.");
+                Fail(
+                    "Las autoridades runtime de 3D no estuvieron listas a tiempo.");
             }
             return;
         }
 
         EditorApplication.update -= TryArmWhenReady;
-        if (!PrepareDiagnosticSupplierLot(receiving, inventory, out string error))
+
+        if (!PrepareActualSupplierStock(
+                receiving,
+                inventory,
+                recipes,
+                out string error))
         {
             Fail(error);
             return;
@@ -159,9 +181,11 @@ public static class BistroBuilderFinance3DRuntimeTest
 
         if (serviceState.CurrentState == RestaurantServiceState.Closing)
         {
-            Fail("El servicio está cerrándose y no puede iniciar la prueba 3D.");
+            Fail(
+                "El servicio está cerrándose y no puede iniciar la prueba 3D.");
             return;
         }
+
         if (serviceState.CurrentState != RestaurantServiceState.Open &&
             !serviceState.TryOpenService())
         {
@@ -173,99 +197,241 @@ public static class BistroBuilderFinance3DRuntimeTest
             EditorApplication.timeSinceStartup + ConsumptionTimeoutSeconds;
         EditorApplication.update -= CheckConsumptionTimeout;
         EditorApplication.update += CheckConsumptionTimeout;
+
         Debug.Log(
-            "3D — Prueba runtime armada. Lote de proveedor valorado; " +
-            "esperando la primera preparación real de un plato.");
+            "3D — Prueba runtime armada. Todo el stock disponible usa " +
+            "lotes de proveedor con coste real; esperando la primera " +
+            "preparación real de un plato.");
     }
 
-    private static bool PrepareDiagnosticSupplierLot(
+    private static bool PrepareActualSupplierStock(
         BistroBuilderGoodsReceivingService receiving,
         BistroBuilderInventoryService inventory,
-        out string error
-    )
+        BistroBuilderRecipeCatalogService recipes,
+        out string error)
     {
         error = string.Empty;
-        var lots = new List<BistroBuilderInventoryLotSnapshot>();
-        inventory.CopyLotSnapshotsTo(lots);
-        if (lots.Count == 0)
+
+        var stock = new List<BistroBuilderInventoryStockSnapshot>();
+        inventory.CopyStockSnapshotsTo(stock);
+        if (stock.Count == 0)
         {
-            error = "El inventario no contiene ningún ingrediente para la prueba 3D.";
+            error =
+                "El inventario no contiene ingredientes para la prueba 3D.";
             return false;
         }
 
-        string ingredientId = lots[0].IngredientId;
-        const long receivedMilliUnits = 1000L;
-        if (!receiving.TryReceiveGoods(
-                "receipt_3d_runtime",
-                "supplier_3d_runtime",
-                new List<BistroBuilderInventoryQuantityLine>
+        var receiptLines =
+            new List<BistroBuilderInventoryQuantityLine>(stock.Count);
+        var confirmedLines =
+            new List<BistroBuilderPurchaseOrderConfirmedLineSnapshot>(
+                stock.Count);
+
+        diagnosticSubtotalCents = 0L;
+
+        for (int index = 0; index < stock.Count; index++)
+        {
+            BistroBuilderInventoryStockSnapshot entry = stock[index];
+            if (entry.ReservedCanonicalMilliUnits != 0L)
+            {
+                error =
+                    "La prueba 3D necesita iniciar sin reservas activas; " +
+                    entry.IngredientId + " tiene stock reservado.";
+                return false;
+            }
+
+            long originalOnHand = entry.OnHandCanonicalMilliUnits;
+            if (originalOnHand > 0L &&
+                !inventory.TryRegisterWaste(
+                    "diagnostic_3d_clear_" + entry.IngredientId,
+                    DiagnosticSourceId,
+                    entry.IngredientId,
+                    originalOnHand,
+                    "Sustitución transitoria por lote de proveedor para 3D.",
+                    out error))
+            {
+                error =
+                    "No se pudo retirar el stock de referencia de " +
+                    entry.IngredientId + ". " + error;
+                return false;
+            }
+
+            long replacementQuantity =
+                Math.Max(originalOnHand, MinimumDiagnosticStockMilliUnits);
+
+            if (!recipes.TryGetIngredient(
+                    entry.IngredientId,
+                    out BistroBuilderIngredientDefinition ingredient) ||
+                ingredient == null ||
+                !ingredient.TryCalculateCostMicroCents(
+                    replacementQuantity,
+                    out long referenceMicroCents,
+                    out error))
+            {
+                error =
+                    "No se pudo valorar el stock diagnóstico de " +
+                    entry.IngredientId + ". " + error;
+                return false;
+            }
+
+            long referenceCents =
+                BistroBuilderProductCostEngine.RoundMicroCentsToCents(
+                    referenceMicroCents);
+            long supplierSubtotal;
+            long quantityMicrounits;
+
+            try
+            {
+                long uplift = Math.Max(1L, referenceCents / 4L);
+                supplierSubtotal = checked(referenceCents + uplift);
+                quantityMicrounits = checked(replacementQuantity * 1000L);
+                diagnosticSubtotalCents =
+                    checked(diagnosticSubtotalCents + supplierSubtotal);
+            }
+            catch (OverflowException)
+            {
+                error =
+                    "La valoración diagnóstica de " + entry.IngredientId +
+                    " queda fuera de rango.";
+                return false;
+            }
+
+            receiptLines.Add(
+                new BistroBuilderInventoryQuantityLine(
+                    entry.IngredientId,
+                    replacementQuantity));
+
+            confirmedLines.Add(
+                new BistroBuilderPurchaseOrderConfirmedLineSnapshot
                 {
-                    new BistroBuilderInventoryQuantityLine(
-                        ingredientId,
-                        receivedMilliUnits)
-                },
+                    ingredientId = entry.IngredientId,
+                    totalNetQuantityMicrounits = quantityMicrounits,
+                    lineSubtotalCents = supplierSubtotal
+                });
+        }
+
+        if (!receiving.TryReceiveGoods(
+                DiagnosticReceiptId,
+                DiagnosticSourceId,
+                receiptLines,
                 "Recepción diagnóstica transitoria 3D.",
                 out BistroBuilderGoodsReceiptSnapshot receipt,
                 out error))
         {
-            error = "2.2B rechazó la recepción diagnóstica 3D. " + error;
+            error =
+                "2.2B rechazó la recepción diagnóstica 3D. " + error;
             return false;
         }
 
-        if (receipt == null || receipt.WasReplayed || receipt.CreatedLots.Count != 1)
+        if (receipt == null ||
+            receipt.WasReplayed ||
+            receipt.CreatedLots.Count != receiptLines.Count)
         {
-            error = "2.2B no identificó exactamente el lote creado por la recepción 3D.";
+            error =
+                "2.2B no devolvió exactamente los lotes creados para 3D.";
             return false;
         }
 
-        diagnosticSubtotalCents = 1234L;
         const long diagnosticShippingCents = 800L;
+        long diagnosticTotalCents;
+        try
+        {
+            diagnosticTotalCents =
+                checked(diagnosticSubtotalCents + diagnosticShippingCents);
+        }
+        catch (OverflowException)
+        {
+            error =
+                "El total diagnóstico del PurchaseOrder queda fuera de rango.";
+            return false;
+        }
+
         var deliveredOrder = new BistroBuilderPurchaseOrderRecord
         {
-            purchaseOrderId = "purchase_order_3d_runtime",
+            purchaseOrderId = DiagnosticPurchaseOrderId,
             deliveryReceiptId = receipt.ReceiptId,
             status = BistroBuilderPurchaseOrderStatus.Delivered,
             subtotalCents = diagnosticSubtotalCents,
             shippingCostCents = diagnosticShippingCents,
-            totalCents = diagnosticSubtotalCents + diagnosticShippingCents,
-            confirmedLines = new List<BistroBuilderPurchaseOrderConfirmedLineSnapshot>
-            {
-                new BistroBuilderPurchaseOrderConfirmedLineSnapshot
-                {
-                    ingredientId = ingredientId,
-                    totalNetQuantityMicrounits = receivedMilliUnits * 1000L,
-                    lineSubtotalCents = diagnosticSubtotalCents
-                }
-            }
+            totalCents = diagnosticTotalCents,
+            confirmedLines = confirmedLines
         };
 
-        if (!productCost.TryApplySupplierReceipt(receipt, deliveredOrder, out error))
+        if (!productCost.TryApplySupplierReceipt(
+                receipt,
+                deliveredOrder,
+                out error))
         {
-            error = "3D no aceptó la valoración real del lote diagnóstico. " + error;
+            error =
+                "3D no aceptó la valoración real de los lotes diagnósticos. " +
+                error;
             return false;
         }
 
-        diagnosticLotId = receipt.CreatedLots[0].LotId;
-        if (!productCost.TryGetLotCostBasis(
-                diagnosticLotId,
-                out BistroBuilderLotCostBasisRecord basis) ||
-            basis == null ||
-            basis.basisKind != BistroBuilderLotCostBasisKind.SupplierActual ||
-            basis.basisQuantityCanonicalMilliUnits != receivedMilliUnits ||
-            basis.totalCostMicroCents !=
-                diagnosticSubtotalCents *
-                BistroBuilderIngredientDefinition.MicroCentsPerCent)
+        long actualBasisTotalMicroCents = 0L;
+        for (int index = 0; index < receipt.CreatedLots.Count; index++)
         {
-            error = "El lote recibido no conserva el coste real de producto esperado.";
+            BistroBuilderInventoryLotSnapshot lot = receipt.CreatedLots[index];
+            if (!productCost.TryGetLotCostBasis(
+                    lot.LotId,
+                    out BistroBuilderLotCostBasisRecord basis) ||
+                basis == null ||
+                basis.basisKind != BistroBuilderLotCostBasisKind.SupplierActual ||
+                !string.Equals(
+                    basis.sourceReferenceId,
+                    DiagnosticPurchaseOrderId,
+                    StringComparison.Ordinal))
+            {
+                error =
+                    "El lote " + lot.LotId +
+                    " no conserva una base real de proveedor.";
+                return false;
+            }
+
+            try
+            {
+                actualBasisTotalMicroCents =
+                    checked(
+                        actualBasisTotalMicroCents +
+                        basis.totalCostMicroCents);
+            }
+            catch (OverflowException)
+            {
+                error =
+                    "La suma de bases reales de proveedor queda fuera de rango.";
+                return false;
+            }
+        }
+
+        long expectedBasisTotalMicroCents;
+        try
+        {
+            expectedBasisTotalMicroCents =
+                checked(
+                    diagnosticSubtotalCents *
+                    BistroBuilderIngredientDefinition.MicroCentsPerCent);
+        }
+        catch (OverflowException)
+        {
+            error =
+                "La valoración total de proveedor queda fuera de rango.";
             return false;
         }
 
+        if (actualBasisTotalMicroCents != expectedBasisTotalMicroCents)
+        {
+            error =
+                "La suma de costes reales de los lotes no coincide con el " +
+                "subtotal congelado del PurchaseOrder diagnóstico.";
+            return false;
+        }
+
+        diagnosticActualLotCount = receipt.CreatedLots.Count;
         return true;
     }
 
     private static void HandleLineCostRecorded(
-        BistroBuilderConsumedLineCostRecord record
-    )
+        BistroBuilderConsumedLineCostRecord record)
     {
         if (record == null)
         {
@@ -273,10 +439,13 @@ public static class BistroBuilderFinance3DRuntimeTest
             return;
         }
 
-        bool identityOk = productCost.TryGetLineCost(
-            record.lineId,
-            out BistroBuilderConsumedLineCostRecord stored) &&
-            stored != null && stored.costRecordId == record.costRecordId;
+        bool identityOk =
+            productCost.TryGetLineCost(
+                record.lineId,
+                out BistroBuilderConsumedLineCostRecord stored) &&
+            stored != null &&
+            stored.costRecordId == record.costRecordId;
+
         bool mathOk =
             record.theoreticalCostCents ==
                 BistroBuilderProductCostEngine.RoundMicroCentsToCents(
@@ -288,21 +457,23 @@ public static class BistroBuilderFinance3DRuntimeTest
                 record.salePriceCents - record.theoreticalCostCents &&
             record.actualMarginCents ==
                 record.salePriceCents - record.actualCostCents;
-        bool countOk = productCost.ConsumedLineCostCount == baselineLineCosts + 1;
+
+        bool countOk =
+            productCost.ConsumedLineCostCount == baselineLineCosts + 1;
         bool cashUntouched =
             finance.CurrentBalanceCents == baselineBalance &&
             finance.TransactionCount == baselineFinanceTransactions;
-        bool supplierBasisStillActual =
-            productCost.TryGetLotCostBasis(
-                diagnosticLotId,
-                out BistroBuilderLotCostBasisRecord supplierBasis) &&
-            supplierBasis.basisKind == BistroBuilderLotCostBasisKind.SupplierActual &&
-            supplierBasis.totalCostMicroCents ==
-                diagnosticSubtotalCents *
-                BistroBuilderIngredientDefinition.MicroCentsPerCent;
+        bool actualCostProven =
+            record.costQuality == BistroBuilderProductCostQuality.Actual &&
+            record.actualCostMicroCents > 0L &&
+            record.actualCostMicroCents != record.theoreticalCostMicroCents;
 
-        if (!identityOk || !mathOk || !countOk || !cashUntouched ||
-            !supplierBasisStillActual || capturedErrors != 0)
+        if (!identityOk ||
+            !mathOk ||
+            !countOk ||
+            !cashUntouched ||
+            !actualCostProven ||
+            capturedErrors != 0)
         {
             Fail(
                 "Se registró consumo real, pero la auditoría 3D no fue limpia." +
@@ -310,7 +481,8 @@ public static class BistroBuilderFinance3DRuntimeTest
                 "\nCálculos: " + mathOk +
                 "\nRegistro único: " + countOk +
                 "\nCaja intacta: " + cashUntouched +
-                "\nCoste proveedor: " + supplierBasisStillActual +
+                "\nCoste proveedor realmente consumido: " + actualCostProven +
+                "\nCalidad: " + record.costQuality +
                 "\nError/Exception/Assert: " + capturedErrors);
             return;
         }
@@ -320,12 +492,16 @@ public static class BistroBuilderFinance3DRuntimeTest
             "\n\nPlato real: " + record.dishId +
             "\nPrecio de venta: " + FormatMoney(record.salePriceCents) +
             "\nCoste teórico: " + FormatMoney(record.theoreticalCostCents) +
-            "\nCoste consumido: " + FormatMoney(record.actualCostCents) +
-            "\nCalidad coste: " + record.costQuality +
+            "\nCoste real consumido: " + FormatMoney(record.actualCostCents) +
+            "\nCalidad coste: Actual" +
+            "\nMargen teórico: " +
+            FormatMoney(record.theoreticalMarginCents) +
             "\nMargen real: " + FormatMoney(record.actualMarginCents) +
-            " (" + (record.actualMarginBasisPoints / 100m).ToString("N2") + "%)" +
-            "\nLote proveedor real: " + diagnosticLotId +
-            " = " + FormatMoney(diagnosticSubtotalCents) +
+            " (" +
+            (record.actualMarginBasisPoints / 100m).ToString("N2") + "%)" +
+            "\nLotes reales de proveedor: " +
+            diagnosticActualLotCount +
+            " / subtotal " + FormatMoney(diagnosticSubtotalCents) +
             " (portes excluidos: OK)" +
             "\nCaja/ledger financiero: sin cambios por COGS" +
             "\nError/Exception/Assert: 0");
@@ -335,13 +511,20 @@ public static class BistroBuilderFinance3DRuntimeTest
     {
         if (EditorApplication.timeSinceStartup >= consumptionDeadline)
         {
-            Fail("No comenzó la preparación de ningún plato real dentro del tiempo de prueba.");
+            Fail(
+                "No comenzó la preparación de ningún plato real dentro del " +
+                "tiempo de prueba.");
         }
     }
 
-    private static void HandleLog(string condition, string stackTrace, LogType type)
+    private static void HandleLog(
+        string condition,
+        string stackTrace,
+        LogType type)
     {
-        if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+        if (type == LogType.Error ||
+            type == LogType.Exception ||
+            type == LogType.Assert)
         {
             capturedErrors++;
         }
@@ -359,7 +542,8 @@ public static class BistroBuilderFinance3DRuntimeTest
         SessionState.SetString(ResultKey, result);
         if (EditorApplication.isPlaying)
         {
-            EditorApplication.delayCall += () => EditorApplication.isPlaying = false;
+            EditorApplication.delayCall += () =>
+                EditorApplication.isPlaying = false;
         }
     }
 
@@ -368,13 +552,16 @@ public static class BistroBuilderFinance3DRuntimeTest
         EditorApplication.update -= TryArmWhenReady;
         EditorApplication.update -= CheckConsumptionTimeout;
         Application.logMessageReceived -= HandleLog;
+
         if (productCost != null)
         {
             productCost.LineCostRecorded -= HandleLineCostRecorded;
         }
+
         productCost = null;
         finance = null;
-        diagnosticLotId = string.Empty;
+        diagnosticActualLotCount = 0;
+        diagnosticSubtotalCents = 0L;
     }
 
     private static string FormatMoney(long cents)
