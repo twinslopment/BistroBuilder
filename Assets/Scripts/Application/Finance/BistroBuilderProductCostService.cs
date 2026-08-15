@@ -4,8 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Autoridad analítica de 3D para coste de producto y margen por línea servida.
-/// No mueve caja y no posee existencias: valora los lotes de Inventario y el
-/// consumo FEFO que ya ejecutan 2.2/368CD.
+/// No mueve caja y no posee existencias: valora los lotes de Inventario, el
+/// consumo FEFO y las salidas no comerciales que ya ejecutan 2.2/368CD.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(200)]
@@ -25,6 +25,9 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         new Dictionary<string, BistroBuilderLotCostBasisRecord>(StringComparer.Ordinal);
     private readonly Dictionary<string, BistroBuilderConsumedLineCostRecord> lineCostByLineId =
         new Dictionary<string, BistroBuilderConsumedLineCostRecord>(StringComparer.Ordinal);
+    private readonly Dictionary<string, BistroBuilderInventoryLossCostRecord>
+        lossCostByOperationId =
+            new Dictionary<string, BistroBuilderInventoryLossCostRecord>(StringComparer.Ordinal);
     private readonly Dictionary<string, BistroBuilderInventoryReservationSnapshot> activeReservationById =
         new Dictionary<string, BistroBuilderInventoryReservationSnapshot>(StringComparer.Ordinal);
     private readonly List<BistroBuilderInventoryLotSnapshot> lotBuffer =
@@ -33,11 +36,13 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
     private BistroBuilderProductCostSnapshot state;
 
     public event Action<BistroBuilderConsumedLineCostRecord> LineCostRecorded;
+    public event Action<BistroBuilderInventoryLossCostRecord> InventoryLossCostRecorded;
 
     public bool IsInitialized => state != null;
     public long Revision => state != null ? state.revision : 0L;
     public int LotCostBasisCount => basisByLotId.Count;
     public int ConsumedLineCostCount => lineCostByLineId.Count;
+    public int InventoryLossCostCount => lossCostByOperationId.Count;
 
     private void Awake()
     {
@@ -89,8 +94,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         if (orderSystem.CanonicalIntegrationService == null ||
             !ReferenceEquals(
                 orderSystem.CanonicalIntegrationService.CanonicalOrderService,
-                canonicalOrderService
-            ))
+                canonicalOrderService))
         {
             error = "3D no comparte la autoridad canónica de comandas de OrderSystem.";
             return false;
@@ -117,6 +121,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             state = null;
             basisByLotId.Clear();
             lineCostByLineId.Clear();
+            lossCostByOperationId.Clear();
             activeReservationById.Clear();
             return false;
         }
@@ -131,9 +136,9 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
     public bool TryRestoreSnapshot(
         BistroBuilderProductCostSnapshot candidate,
-        out string error
-    )
+        out string error)
     {
+        NormalizeCompatibleSnapshot(candidate);
         if (!ValidateConfiguration(out error) ||
             !BistroBuilderProductCostEngine.TryValidateSnapshot(candidate, out error))
         {
@@ -144,6 +149,30 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         RebuildIndexes();
         activeReservationById.Clear();
         return true;
+    }
+
+    /// <summary>
+    /// Normalización aditiva de finance.product_cost.runtime v1. Permite cargar
+    /// partidas v1 capturadas antes de existir las bajas económicas sin crear
+    /// una migración de versión para un campo opcional recién añadido.
+    /// </summary>
+    public static void NormalizeCompatibleSnapshot(
+        BistroBuilderProductCostSnapshot snapshot)
+    {
+        if (snapshot == null)
+        {
+            return;
+        }
+        if (snapshot.inventoryLossCosts == null)
+        {
+            snapshot.inventoryLossCosts =
+                new List<BistroBuilderInventoryLossCostRecord>();
+        }
+        if (snapshot.nextInventoryLossCostSequence < 1L &&
+            snapshot.inventoryLossCosts.Count == 0)
+        {
+            snapshot.nextInventoryLossCostSequence = 1L;
+        }
     }
 
     public bool TrySynchronizeWithInventory(out string error)
@@ -192,8 +221,8 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             if (legacyOrder == null || string.IsNullOrWhiteSpace(legacyOrder.CanonicalOrderId) ||
                 !canonicalOrderService.TryGetOrderSnapshot(
                     legacyOrder.CanonicalOrderId,
-                    out BistroBuilderCanonicalOrder canonicalOrder
-                ) || canonicalOrder == null)
+                    out BistroBuilderCanonicalOrder canonicalOrder) ||
+                canonicalOrder == null)
             {
                 continue;
             }
@@ -209,12 +238,10 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
                 string reservationId =
                     BistroBuilderOrderInventoryLifecycleService.BuildReservationId(
                         canonicalOrder.OrderId,
-                        line.LineId
-                    );
+                        line.LineId);
                 if (inventoryService.TryGetReservationSnapshot(
                         reservationId,
-                        out BistroBuilderInventoryReservationSnapshot reservation
-                    ) &&
+                        out BistroBuilderInventoryReservationSnapshot reservation) &&
                     reservation != null &&
                     reservation.Status == BistroBuilderInventoryReservationStatus.Active)
                 {
@@ -228,12 +255,13 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
     public bool TryGetLotCostBasis(
         string lotId,
-        out BistroBuilderLotCostBasisRecord basis
-    )
+        out BistroBuilderLotCostBasisRecord basis)
     {
         basis = null;
         if (string.IsNullOrWhiteSpace(lotId) ||
-            !basisByLotId.TryGetValue(lotId.Trim(), out BistroBuilderLotCostBasisRecord stored))
+            !basisByLotId.TryGetValue(
+                lotId.Trim(),
+                out BistroBuilderLotCostBasisRecord stored))
         {
             return false;
         }
@@ -244,19 +272,33 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
     public bool TryGetLineCost(
         string lineId,
-        out BistroBuilderConsumedLineCostRecord cost
-    )
+        out BistroBuilderConsumedLineCostRecord cost)
     {
         cost = null;
         if (string.IsNullOrWhiteSpace(lineId) ||
             !lineCostByLineId.TryGetValue(
                 BistroBuilderOrderIdUtility.Normalize(lineId),
-                out BistroBuilderConsumedLineCostRecord stored
-            ))
+                out BistroBuilderConsumedLineCostRecord stored))
         {
             return false;
         }
 
+        cost = stored.DeepClone();
+        return true;
+    }
+
+    public bool TryGetInventoryLossCost(
+        string inventoryOperationId,
+        out BistroBuilderInventoryLossCostRecord cost)
+    {
+        cost = null;
+        if (string.IsNullOrWhiteSpace(inventoryOperationId) ||
+            !lossCostByOperationId.TryGetValue(
+                inventoryOperationId.Trim().ToLowerInvariant(),
+                out BistroBuilderInventoryLossCostRecord stored))
+        {
+            return false;
+        }
         cost = stored.DeepClone();
         return true;
     }
@@ -281,11 +323,146 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         return destination.Count;
     }
 
+    public int CopyInventoryLossCosts(
+        List<BistroBuilderInventoryLossCostRecord> destination)
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+
+        destination.Clear();
+        if (state == null || state.inventoryLossCosts == null)
+        {
+            return 0;
+        }
+
+        for (int index = 0; index < state.inventoryLossCosts.Count; index++)
+        {
+            destination.Add(state.inventoryLossCosts[index].DeepClone());
+        }
+        return destination.Count;
+    }
+
+    /// <summary>
+    /// Registra el coste no monetario de inventario que sale sin venta.
+    /// La valoración V1 usa el precio de referencia del ingrediente porque el
+    /// movimiento agregado de 2.2 no conserva qué lotes exactos fueron dados
+    /// de baja. El coste queda congelado y marcado Estimated en 3D.
+    /// </summary>
+    public bool TryRecordInventoryLoss(
+        BistroBuilderInventoryTransactionSnapshot transaction,
+        out string error)
+    {
+        error = string.Empty;
+        if (state == null && !TryInitializeFresh(out error))
+        {
+            return false;
+        }
+
+        if (transaction.TransactionType !=
+                BistroBuilderInventoryTransactionType.Expiration &&
+            transaction.TransactionType !=
+                BistroBuilderInventoryTransactionType.Waste)
+        {
+            error = "El movimiento no representa caducidad ni merma.";
+            return false;
+        }
+        if (transaction.QuantityCanonicalMilliUnits <= 0L ||
+            string.IsNullOrWhiteSpace(transaction.OperationId) ||
+            string.IsNullOrWhiteSpace(transaction.TransactionId) ||
+            string.IsNullOrWhiteSpace(transaction.IngredientId))
+        {
+            error = "La baja de inventario no contiene identidad o cantidad válida.";
+            return false;
+        }
+
+        string operationId = transaction.OperationId.Trim().ToLowerInvariant();
+        if (lossCostByOperationId.TryGetValue(
+                operationId,
+                out BistroBuilderInventoryLossCostRecord existing))
+        {
+            bool equivalent =
+                string.Equals(
+                    existing.inventoryTransactionId,
+                    transaction.TransactionId,
+                    StringComparison.Ordinal) &&
+                string.Equals(
+                    existing.ingredientId,
+                    transaction.IngredientId,
+                    StringComparison.Ordinal) &&
+                existing.transactionType == transaction.TransactionType &&
+                existing.quantityCanonicalMilliUnits ==
+                    transaction.QuantityCanonicalMilliUnits;
+            if (!equivalent)
+            {
+                error = "El OperationId de la baja ya existe con otro contenido económico.";
+                return false;
+            }
+            return true;
+        }
+
+        if (!recipeCatalogService.TryGetIngredient(
+                transaction.IngredientId,
+                out BistroBuilderIngredientDefinition ingredient) ||
+            ingredient == null ||
+            !ingredient.TryCalculateCostMicroCents(
+                transaction.QuantityCanonicalMilliUnits,
+                out long costMicroCents,
+                out error))
+        {
+            return false;
+        }
+
+        long sequence = state.nextInventoryLossCostSequence;
+        long nextSequence;
+        long nextRevision;
+        try
+        {
+            nextSequence = checked(sequence + 1L);
+            nextRevision = checked(state.revision + 1L);
+        }
+        catch (OverflowException)
+        {
+            error = "La secuencia de bajas económicas de inventario quedó fuera de rango.";
+            return false;
+        }
+
+        var record = new BistroBuilderInventoryLossCostRecord
+        {
+            sequence = sequence,
+            lossCostRecordId =
+                BistroBuilderProductCostEngine.BuildInventoryLossCostRecordId(sequence),
+            inventoryTransactionId = transaction.TransactionId,
+            inventoryOperationId = operationId,
+            ingredientId = transaction.IngredientId,
+            transactionType = transaction.TransactionType,
+            dayIndex = Math.Max(1, generalGameStateService.DayIndex),
+            minuteOfDay = Mathf.Clamp(
+                gameClock.Hour * 60 + gameClock.Minute,
+                0,
+                1439),
+            quantityCanonicalMilliUnits =
+                transaction.QuantityCanonicalMilliUnits,
+            costMicroCents = costMicroCents,
+            costCents =
+                BistroBuilderProductCostEngine.RoundMicroCentsToCents(
+                    costMicroCents),
+            costQuality = BistroBuilderProductCostQuality.Estimated
+        };
+
+        state.inventoryLossCosts.Add(record);
+        lossCostByOperationId.Add(record.inventoryOperationId, record);
+        state.nextInventoryLossCostSequence = nextSequence;
+        state.revision = nextRevision;
+        InventoryLossCostRecorded?.Invoke(record.DeepClone());
+        return true;
+    }
+
     public bool TryApplySupplierReceipt(
         BistroBuilderGoodsReceiptSnapshot receipt,
         BistroBuilderPurchaseOrderRecord deliveredOrder,
-        out string error
-    )
+        out string error)
     {
         error = string.Empty;
         if (receipt == null || deliveredOrder == null || receipt.WasReplayed)
@@ -302,8 +479,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             !string.Equals(
                 deliveredOrder.deliveryReceiptId,
                 receipt.ReceiptId,
-                StringComparison.Ordinal
-            ))
+                StringComparison.Ordinal))
         {
             error = "La recepción de proveedor no contiene lotes/PO trazables para valorar.";
             return false;
@@ -326,8 +502,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             long milli = line.totalNetQuantityMicrounits / 1000L;
             try
             {
-                quantityByIngredient.TryGetValue(line.ingredientId, out long quantity);
-                subtotalByIngredient.TryGetValue(line.ingredientId, out long subtotal);
+                quantityByIngredient.TryGetValue(
+                    line.ingredientId,
+                    out long quantity);
+                subtotalByIngredient.TryGetValue(
+                    line.ingredientId,
+                    out long subtotal);
                 quantityByIngredient[line.ingredientId] = checked(quantity + milli);
                 subtotalByIngredient[line.ingredientId] =
                     checked(subtotal + line.lineSubtotalCents);
@@ -342,9 +522,14 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         for (int index = 0; index < receipt.CreatedLots.Count; index++)
         {
             BistroBuilderInventoryLotSnapshot lot = receipt.CreatedLots[index];
-            if (!quantityByIngredient.TryGetValue(lot.IngredientId, out long quantity) ||
-                !subtotalByIngredient.TryGetValue(lot.IngredientId, out long subtotal) ||
-                quantity <= 0L || quantity != lot.OnHandCanonicalMilliUnits)
+            if (!quantityByIngredient.TryGetValue(
+                    lot.IngredientId,
+                    out long quantity) ||
+                !subtotalByIngredient.TryGetValue(
+                    lot.IngredientId,
+                    out long subtotal) ||
+                quantity <= 0L ||
+                quantity != lot.OnHandCanonicalMilliUnits)
             {
                 error = "El lote " + lot.LotId +
                         " no converge con la cantidad confirmada del PurchaseOrder.";
@@ -355,12 +540,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             try
             {
                 totalCostMicroCents = checked(
-                    subtotal * BistroBuilderIngredientDefinition.MicroCentsPerCent
-                );
+                    subtotal * BistroBuilderIngredientDefinition.MicroCentsPerCent);
             }
             catch (OverflowException)
             {
-                error = "El coste real del lote " + lot.LotId + " queda fuera de rango.";
+                error = "El coste real del lote " + lot.LotId +
+                        " queda fuera de rango.";
                 return false;
             }
 
@@ -369,8 +554,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
                     deliveredOrder.purchaseOrderId,
                     quantity,
                     totalCostMicroCents,
-                    out error
-                ))
+                    out error))
             {
                 return false;
             }
@@ -381,8 +565,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
     private bool TryAddReferenceBasis(
         BistroBuilderInventoryLotSnapshot lot,
-        out string error
-    )
+        out string error)
     {
         error = string.Empty;
         if (lot.OnHandCanonicalMilliUnits <= 0L)
@@ -391,13 +574,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         }
         if (!recipeCatalogService.TryGetIngredient(
                 lot.IngredientId,
-                out BistroBuilderIngredientDefinition ingredient
-            ) || ingredient == null ||
+                out BistroBuilderIngredientDefinition ingredient) ||
+            ingredient == null ||
             !ingredient.TryCalculateCostMicroCents(
                 lot.OnHandCanonicalMilliUnits,
                 out long costMicroCents,
-                out error
-            ))
+                out error))
         {
             return false;
         }
@@ -426,14 +608,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         string purchaseOrderId,
         long quantity,
         long totalCostMicroCents,
-        out string error
-    )
+        out string error)
     {
         error = string.Empty;
         if (basisByLotId.TryGetValue(
                 lot.LotId,
-                out BistroBuilderLotCostBasisRecord existing
-            ) &&
+                out BistroBuilderLotCostBasisRecord existing) &&
             existing.basisKind == BistroBuilderLotCostBasisKind.SupplierActual)
         {
             bool same =
@@ -443,7 +623,8 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
                 existing.totalCostMicroCents == totalCostMicroCents;
             error = same
                 ? string.Empty
-                : "El lote " + lot.LotId + " ya tiene otra base real de proveedor.";
+                : "El lote " + lot.LotId +
+                  " ya tiene otra base real de proveedor.";
             return same;
         }
 
@@ -467,15 +648,13 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
     private bool TryRecordConsumedReservation(
         BistroBuilderInventoryReservationSnapshot reservation,
-        out string error
-    )
+        out string error)
     {
         error = string.Empty;
         if (!TryResolveReservationOwner(
                 reservation.ReservationId,
                 out BistroBuilderCanonicalOrder order,
-                out BistroBuilderCanonicalOrderLine line
-            ))
+                out BistroBuilderCanonicalOrderLine line))
         {
             error = "No se pudo resolver la línea canónica de " +
                     reservation.ReservationId + ".";
@@ -495,13 +674,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             if (reservationLine == null ||
                 !recipeCatalogService.TryGetIngredient(
                     reservationLine.IngredientId,
-                    out BistroBuilderIngredientDefinition ingredient
-                ) || ingredient == null ||
+                    out BistroBuilderIngredientDefinition ingredient) ||
+                ingredient == null ||
                 !ingredient.TryCalculateCostMicroCents(
                     reservationLine.CanonicalMilliUnits,
                     out long lineCost,
-                    out error
-                ))
+                    out error))
             {
                 return false;
             }
@@ -522,32 +700,27 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
                 basisByLotId,
                 out long actualMicroCents,
                 out BistroBuilderProductCostQuality quality,
-                out error
-            ))
+                out error))
         {
             return false;
         }
 
         long theoreticalCents =
             BistroBuilderProductCostEngine.RoundMicroCentsToCents(
-                theoreticalMicroCents
-            );
+                theoreticalMicroCents);
         long actualCents =
             BistroBuilderProductCostEngine.RoundMicroCentsToCents(
-                actualMicroCents
-            );
+                actualMicroCents);
         long theoreticalMargin = line.PriceCentsAtOrder - theoreticalCents;
         long actualMargin = line.PriceCentsAtOrder - actualCents;
         int theoreticalBasisPoints =
             BistroBuilderProductCostEngine.CalculateMarginBasisPoints(
                 line.PriceCentsAtOrder,
-                theoreticalCents
-            );
+                theoreticalCents);
         int actualBasisPoints =
             BistroBuilderProductCostEngine.CalculateMarginBasisPoints(
                 line.PriceCentsAtOrder,
-                actualCents
-            );
+                actualCents);
 
         long sequence = state.nextLineCostSequence++;
         var record = new BistroBuilderConsumedLineCostRecord
@@ -560,7 +733,10 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             mealService = order.MealService,
             serviceMode = order.ServiceMode,
             dayIndex = Math.Max(1, generalGameStateService.DayIndex),
-            minuteOfDay = Mathf.Clamp(gameClock.Hour * 60 + gameClock.Minute, 0, 1439),
+            minuteOfDay = Mathf.Clamp(
+                gameClock.Hour * 60 + gameClock.Minute,
+                0,
+                1439),
             salePriceCents = line.PriceCentsAtOrder,
             theoreticalCostMicroCents = theoreticalMicroCents,
             theoreticalCostCents = theoreticalCents,
@@ -571,14 +747,12 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             theoreticalMarginBand =
                 BistroBuilderProductCostEngine.ResolveMarginBand(
                     theoreticalMargin,
-                    theoreticalBasisPoints
-                ),
+                    theoreticalBasisPoints),
             actualMarginCents = actualMargin,
             actualMarginBasisPoints = actualBasisPoints,
             actualMarginBand = BistroBuilderProductCostEngine.ResolveMarginBand(
                 actualMargin,
-                actualBasisPoints
-            ),
+                actualBasisPoints),
             costQuality = quality
         };
 
@@ -592,8 +766,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
     private bool TryResolveReservationOwner(
         string reservationId,
         out BistroBuilderCanonicalOrder resolvedOrder,
-        out BistroBuilderCanonicalOrderLine resolvedLine
-    )
+        out BistroBuilderCanonicalOrderLine resolvedLine)
     {
         resolvedOrder = null;
         resolvedLine = null;
@@ -605,8 +778,8 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             if (legacyOrder == null ||
                 !canonicalOrderService.TryGetOrderSnapshot(
                     legacyOrder.CanonicalOrderId,
-                    out BistroBuilderCanonicalOrder order
-                ) || order == null)
+                    out BistroBuilderCanonicalOrder order) ||
+                order == null)
             {
                 continue;
             }
@@ -618,11 +791,9 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
                     string.Equals(
                         BistroBuilderOrderInventoryLifecycleService.BuildReservationId(
                             order.OrderId,
-                            line.LineId
-                        ),
+                            line.LineId),
                         reservationId,
-                        StringComparison.Ordinal
-                    ))
+                        StringComparison.Ordinal))
                 {
                     resolvedOrder = order;
                     resolvedLine = line;
@@ -635,8 +806,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
     }
 
     private void HandleReservationChanged(
-        BistroBuilderInventoryReservationSnapshot reservation
-    )
+        BistroBuilderInventoryReservationSnapshot reservation)
     {
         if (reservation == null ||
             (saveGameService != null && saveGameService.IsBusy))
@@ -653,16 +823,37 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         if (reservation.Status == BistroBuilderInventoryReservationStatus.Consumed &&
             activeReservationById.TryGetValue(
                 reservation.ReservationId,
-                out BistroBuilderInventoryReservationSnapshot active
-            ))
+                out BistroBuilderInventoryReservationSnapshot active))
         {
             if (!TryRecordConsumedReservation(active, out string error))
             {
-                Debug.LogError("3D no pudo valorar una línea consumida. " + error, this);
+                Debug.LogError(
+                    "3D no pudo valorar una línea consumida. " + error,
+                    this);
             }
         }
 
         activeReservationById.Remove(reservation.ReservationId);
+    }
+
+    private void HandleInventoryTransaction(
+        BistroBuilderInventoryTransactionSnapshot transaction)
+    {
+        if ((saveGameService != null && saveGameService.IsBusy) ||
+            (transaction.TransactionType !=
+                 BistroBuilderInventoryTransactionType.Expiration &&
+             transaction.TransactionType !=
+                 BistroBuilderInventoryTransactionType.Waste))
+        {
+            return;
+        }
+
+        if (!TryRecordInventoryLoss(transaction, out string error))
+        {
+            Debug.LogError(
+                "3D no pudo valorar una baja de inventario. " + error,
+                this);
+        }
     }
 
     private void HandleLotChanged(BistroBuilderInventoryLotSnapshot lot)
@@ -676,14 +867,15 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
         if (!TryAddReferenceBasis(lot, out string error))
         {
-            Debug.LogError("3D no pudo estimar el lote " + lot.LotId + ". " + error, this);
+            Debug.LogError(
+                "3D no pudo estimar el lote " + lot.LotId + ". " + error,
+                this);
         }
     }
 
     private void HandleSupplierReceiptIntegrated(
         BistroBuilderGoodsReceiptSnapshot receipt,
-        BistroBuilderPurchaseOrderRecord deliveredOrder
-    )
+        BistroBuilderPurchaseOrderRecord deliveredOrder)
     {
         if (saveGameService != null && saveGameService.IsBusy)
         {
@@ -692,7 +884,9 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
 
         if (!TryApplySupplierReceipt(receipt, deliveredOrder, out string error))
         {
-            Debug.LogError("3D no pudo aplicar el coste real del proveedor. " + error, this);
+            Debug.LogError(
+                "3D no pudo aplicar el coste real del proveedor. " + error,
+                this);
         }
     }
 
@@ -704,6 +898,8 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             inventoryService.ReservationChanged += HandleReservationChanged;
             inventoryService.LotChanged -= HandleLotChanged;
             inventoryService.LotChanged += HandleLotChanged;
+            inventoryService.TransactionRecorded -= HandleInventoryTransaction;
+            inventoryService.TransactionRecorded += HandleInventoryTransaction;
         }
 
         if (supplierReceivingBridge != null)
@@ -721,6 +917,7 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
         {
             inventoryService.ReservationChanged -= HandleReservationChanged;
             inventoryService.LotChanged -= HandleLotChanged;
+            inventoryService.TransactionRecorded -= HandleInventoryTransaction;
         }
         if (supplierReceivingBridge != null)
         {
@@ -733,11 +930,13 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
     {
         basisByLotId.Clear();
         lineCostByLineId.Clear();
+        lossCostByOperationId.Clear();
         if (state == null)
         {
             return;
         }
 
+        NormalizeCompatibleSnapshot(state);
         for (int index = 0; index < state.lotCostBases.Count; index++)
         {
             BistroBuilderLotCostBasisRecord basis = state.lotCostBases[index];
@@ -753,6 +952,15 @@ public sealed class BistroBuilderProductCostService : MonoBehaviour
             if (record != null)
             {
                 lineCostByLineId.Add(record.lineId, record);
+            }
+        }
+        for (int index = 0; index < state.inventoryLossCosts.Count; index++)
+        {
+            BistroBuilderInventoryLossCostRecord record =
+                state.inventoryLossCosts[index];
+            if (record != null)
+            {
+                lossCostByOperationId.Add(record.inventoryOperationId, record);
             }
         }
     }
