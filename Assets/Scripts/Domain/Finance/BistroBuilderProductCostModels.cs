@@ -94,6 +94,37 @@ public sealed class BistroBuilderConsumedLineCostRecord
     }
 }
 
+/// <summary>
+/// Coste analítico de inventario que abandona el almacén sin generar una venta.
+/// No representa un movimiento de caja: la compra ya fue pagada anteriormente.
+///
+/// 2.2 agrega caducidad/merma por ingrediente y no conserva en ese movimiento
+/// la asignación exacta de lotes consumidos; por ello V1 congela una estimación
+/// de referencia y la marca explícitamente como Estimated.
+/// </summary>
+[Serializable]
+public sealed class BistroBuilderInventoryLossCostRecord
+{
+    public long sequence;
+    public string lossCostRecordId = string.Empty;
+    public string inventoryTransactionId = string.Empty;
+    public string inventoryOperationId = string.Empty;
+    public string ingredientId = string.Empty;
+    public BistroBuilderInventoryTransactionType transactionType;
+    public int dayIndex = 1;
+    public int minuteOfDay;
+    public long quantityCanonicalMilliUnits;
+    public long costMicroCents;
+    public long costCents;
+    public BistroBuilderProductCostQuality costQuality =
+        BistroBuilderProductCostQuality.Estimated;
+
+    public BistroBuilderInventoryLossCostRecord DeepClone()
+    {
+        return (BistroBuilderInventoryLossCostRecord)MemberwiseClone();
+    }
+}
+
 [Serializable]
 public sealed class BistroBuilderProductCostSnapshot
 {
@@ -104,10 +135,13 @@ public sealed class BistroBuilderProductCostSnapshot
     public int schemaVersion = CurrentSchemaVersion;
     public long revision = 1L;
     public long nextLineCostSequence = 1L;
+    public long nextInventoryLossCostSequence = 1L;
     public List<BistroBuilderLotCostBasisRecord> lotCostBases =
         new List<BistroBuilderLotCostBasisRecord>();
     public List<BistroBuilderConsumedLineCostRecord> consumedLineCosts =
         new List<BistroBuilderConsumedLineCostRecord>();
+    public List<BistroBuilderInventoryLossCostRecord> inventoryLossCosts =
+        new List<BistroBuilderInventoryLossCostRecord>();
 
     public BistroBuilderProductCostSnapshot DeepClone()
     {
@@ -116,7 +150,8 @@ public sealed class BistroBuilderProductCostSnapshot
             schemaId = schemaId,
             schemaVersion = schemaVersion,
             revision = revision,
-            nextLineCostSequence = nextLineCostSequence
+            nextLineCostSequence = nextLineCostSequence,
+            nextInventoryLossCostSequence = nextInventoryLossCostSequence
         };
 
         if (lotCostBases != null)
@@ -137,8 +172,19 @@ public sealed class BistroBuilderProductCostSnapshot
                 if (consumedLineCosts[index] != null)
                 {
                     clone.consumedLineCosts.Add(
-                        consumedLineCosts[index].DeepClone()
-                    );
+                        consumedLineCosts[index].DeepClone());
+                }
+            }
+        }
+
+        if (inventoryLossCosts != null)
+        {
+            for (int index = 0; index < inventoryLossCosts.Count; index++)
+            {
+                if (inventoryLossCosts[index] != null)
+                {
+                    clone.inventoryLossCosts.Add(
+                        inventoryLossCosts[index].DeepClone());
                 }
             }
         }
