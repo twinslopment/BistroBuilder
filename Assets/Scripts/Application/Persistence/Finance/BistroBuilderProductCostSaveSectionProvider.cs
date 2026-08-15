@@ -4,7 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// Persistencia independiente de 3D. Inventario conserva cantidades/lotes;
-/// esta sección conserva únicamente su valoración y los costes ya consumidos.
+/// esta sección conserva únicamente su valoración, costes consumidos y bajas
+/// económicas no monetarias.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Persistence/Product Cost Save Provider")]
@@ -60,6 +61,7 @@ public sealed class BistroBuilderProductCostSaveSectionProvider :
 
         BistroBuilderProductCostSnapshot snapshot =
             productCostService.CreateSnapshot();
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(snapshot);
         if (!BistroBuilderProductCostEngine.TryValidateSnapshot(snapshot, out error))
         {
             context.Fail(error);
@@ -71,10 +73,12 @@ public sealed class BistroBuilderProductCostSaveSectionProvider :
 
     public bool ValidateState(object state, out string error)
     {
+        BistroBuilderProductCostSnapshot snapshot =
+            state as BistroBuilderProductCostSnapshot;
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(snapshot);
         return BistroBuilderProductCostEngine.TryValidateSnapshot(
-            state as BistroBuilderProductCostSnapshot,
-            out error
-        );
+            snapshot,
+            out error);
     }
 
     public IEnumerator PrepareForLoad(BistroBuilderSaveLoadContext context)
@@ -89,11 +93,11 @@ public sealed class BistroBuilderProductCostSaveSectionProvider :
 
     public IEnumerator ApplyState(object state, BistroBuilderSaveLoadContext context)
     {
-        if (!ValidateState(state, out string error) ||
-            !productCostService.TryRestoreSnapshot(
-                (BistroBuilderProductCostSnapshot)state,
-                out error
-            ))
+        BistroBuilderProductCostSnapshot snapshot =
+            state as BistroBuilderProductCostSnapshot;
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(snapshot);
+        if (!ValidateState(snapshot, out string error) ||
+            !productCostService.TryRestoreSnapshot(snapshot, out error))
         {
             context.Fail(error);
             yield break;
@@ -117,8 +121,7 @@ public sealed class BistroBuilderProductCostSaveSectionProvider :
             {
                 context.Fail(
                     "No se pudo inicializar 3D para una partida anterior. " +
-                    error
-                );
+                    error);
                 return;
             }
         }
@@ -130,7 +133,8 @@ public sealed class BistroBuilderProductCostSaveSectionProvider :
 
         if (!productCostService.TryRebuildActiveReservationCache(out error))
         {
-            context.Fail("3D no pudo reconstruir reservas activas tras Load. " + error);
+            context.Fail(
+                "3D no pudo reconstruir reservas activas tras Load. " + error);
         }
     }
 
