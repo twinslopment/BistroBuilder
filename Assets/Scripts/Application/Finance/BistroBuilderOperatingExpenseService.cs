@@ -153,6 +153,8 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
     /// <summary>
     /// Calcula obligaciones recurrentes conocidas dentro de un intervalo.
     /// Es una proyección pura: no publica movimientos ni cambia calendario.
+    /// Una obligación ya registrada en finance.runtime se excluye para que el
+    /// día actual pueda formar parte del horizonte sin doble contabilización.
     /// Nóminas quedan fuera porque 3E recibe su importe desde Personal y no
     /// dispone todavía de un calendario salarial autoritativo futuro.
     /// </summary>
@@ -194,7 +196,18 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
 
                 while (dueDay <= endDayIndex)
                 {
-                    totalCents = checked(totalCents + expense.AmountCents);
+                    string operationId =
+                        BistroBuilderOperatingExpensePolicy.BuildOperatingOperationId(
+                            expense.ExpenseId,
+                            dueDay);
+                    if (!financeService.TryGetTransactionByOperationId(
+                            operationId,
+                            out _))
+                    {
+                        totalCents = checked(
+                            totalCents + expense.AmountCents);
+                    }
+
                     long next = (long)dueDay + expense.IntervalDays;
                     if (next > endDayIndex || next > int.MaxValue)
                     {
