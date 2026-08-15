@@ -63,7 +63,7 @@ public static class BistroBuilderFinanceHardeningSelfTest
         RunFinanceBatchTests(ref passed, ref failed, builder);
         RunProjectionTests(ref passed, ref failed, builder);
         RunDebtStateTests(ref passed, ref failed, builder);
-        RunInventoryLossPolicyTests(ref passed, ref failed, builder);
+        RunInventoryLossCostTests(ref passed, ref failed, builder);
         RunOperatingProjectionTest(ref passed, ref failed, builder);
 
         builder.AppendLine();
@@ -198,9 +198,6 @@ public static class BistroBuilderFinanceHardeningSelfTest
                 Request("hard_principal_day10", BistroBuilderFinancingEngine.SourceSystemId,
                     "loan_hard_001", BistroBuilderFinancingEngine.PrincipalRepaymentCategoryId,
                     BistroBuilderFinanceTransactionKind.Debit, 1000L, 10),
-                Request("hard_writeoff_day10", BistroBuilderInventoryLossFinancePolicy.SourceSystemId,
-                    "inv_tx_hard_001", BistroBuilderInventoryLossFinancePolicy.ExpirationCategoryId,
-                    BistroBuilderFinanceTransactionKind.Debit, 700L, 10),
                 Request("hard_invest_day10", "placeable_economy", "placeable_hard_001",
                     "investment.equipment", BistroBuilderFinanceTransactionKind.Debit,
                     2000L, 10),
@@ -211,7 +208,35 @@ public static class BistroBuilderFinanceHardeningSelfTest
             finance.TryPostTransactions(requests, out _, out _);
 
             BistroBuilderFinanceSnapshot financeSnapshot = finance.CreateSnapshot();
-            var costSnapshot = new BistroBuilderProductCostSnapshot();
+            var costSnapshot = new BistroBuilderProductCostSnapshot
+            {
+                nextInventoryLossCostSequence = 2L
+            };
+            costSnapshot.inventoryLossCosts.Add(
+                new BistroBuilderInventoryLossCostRecord
+                {
+                    sequence = 1L,
+                    lossCostRecordId =
+                        BistroBuilderProductCostEngine.BuildInventoryLossCostRecordId(1L),
+                    inventoryTransactionId = "inv_tx_hard_001",
+                    inventoryOperationId = "expire_hard_001",
+                    ingredientId = "ingredient_hard",
+                    transactionType =
+                        BistroBuilderInventoryTransactionType.Expiration,
+                    dayIndex = 10,
+                    minuteOfDay = 600,
+                    quantityCanonicalMilliUnits = 1000L,
+                    costMicroCents =
+                        700L * BistroBuilderIngredientDefinition.MicroCentsPerCent,
+                    costCents = 700L,
+                    costQuality = BistroBuilderProductCostQuality.Estimated
+                });
+
+            Check(BistroBuilderProductCostEngine.TryValidateSnapshot(
+                    costSnapshot, out _),
+                "3D valida bajas económicas persistentes",
+                ref passed, ref failed, builder);
+
             var range = new List<BistroBuilderDayFinancialResult>();
             bool rangeOk = BistroBuilderFinancialResultsEngine.TryBuildDayResultsRange(
                 financeSnapshot,
@@ -240,6 +265,11 @@ public static class BistroBuilderFinanceHardeningSelfTest
                   day10.totalPeriodExpensesCents == 1200L &&
                   day10.operatingResultCents == 8800L,
                 "Principal/inversión no contaminan resultado operativo",
+                ref passed, ref failed, builder);
+            Check(day10 != null &&
+                  day10.totalCashOutCents == 3500L &&
+                  day10.netCashChangeCents == 56500L,
+                "Write-off de inventario reduce resultado pero no vuelve a sacar caja",
                 ref passed, ref failed, builder);
             Check(day11 != null &&
                   !day11.HasServiceActivity &&
@@ -343,46 +373,53 @@ public static class BistroBuilderFinanceHardeningSelfTest
             ref passed, ref failed, builder);
     }
 
-    private static void RunInventoryLossPolicyTests(
+    private static void RunInventoryLossCostTests(
         ref int passed,
         ref int failed,
         StringBuilder builder)
     {
-        var expiration = new BistroBuilderInventoryTransactionSnapshot(
-            1L,
-            "inv_tx_hard_001",
-            "expire_hard_001",
-            "ingredient_hard",
-            BistroBuilderInventoryTransactionType.Expiration,
-            1000L,
-            -1000L,
-            0L,
-            1000L,
-            0L,
-            0L,
-            0L,
-            "shelf_life",
-            "Caducidad",
-            1L);
+        var snapshot = new BistroBuilderProductCostSnapshot
+        {
+            nextInventoryLossCostSequence = 2L
+        };
+        snapshot.inventoryLossCosts.Add(
+            new BistroBuilderInventoryLossCostRecord
+            {
+                sequence = 1L,
+                lossCostRecordId =
+                    BistroBuilderProductCostEngine.BuildInventoryLossCostRecordId(1L),
+                inventoryTransactionId = "inv_tx_loss_hard_001",
+                inventoryOperationId = "expire_loss_hard_001",
+                ingredientId = "ingredient_loss_hard",
+                transactionType = BistroBuilderInventoryTransactionType.Expiration,
+                dayIndex = 9,
+                minuteOfDay = 500,
+                quantityCanonicalMilliUnits = 1000L,
+                costMicroCents =
+                    123L * BistroBuilderIngredientDefinition.MicroCentsPerCent,
+                costCents = 123L,
+                costQuality = BistroBuilderProductCostQuality.Estimated
+            });
 
-        bool ok = BistroBuilderInventoryLossFinancePolicy.TryBuildRequest(
-            expiration,
-            123L,
-            10,
-            600,
-            out BistroBuilderFinanceTransactionRequest request,
-            out _);
-        Check(ok && request != null &&
-              request.categoryId ==
-                  BistroBuilderInventoryLossFinancePolicy.ExpirationCategoryId &&
-              request.kind == BistroBuilderFinanceTransactionKind.Debit &&
-              request.amountCents == 123L,
-            "Caducidad genera write-off canónico",
+        Check(BistroBuilderProductCostEngine.TryValidateSnapshot(snapshot, out _),
+            "Baja no monetaria forma parte íntegra de Product Cost",
+            ref passed, ref failed, builder);
+        Check(snapshot.inventoryLossCosts[0].costCents == 123L &&
+              snapshot.inventoryLossCosts[0].costQuality ==
+                  BistroBuilderProductCostQuality.Estimated,
+            "Write-off conserva coste congelado y calidad Estimated",
             ref passed, ref failed, builder);
 
-        Check(BistroBuilderInventoryLossFinancePolicy.BuildOperationId(
-                  "expire_hard_001") == "inventory_loss_expire_hard_001",
-            "Write-off conserva identidad idempotente",
+        var oldV1 = new BistroBuilderProductCostSnapshot
+        {
+            inventoryLossCosts = null,
+            nextInventoryLossCostSequence = 0L
+        };
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(oldV1);
+        Check(oldV1.inventoryLossCosts != null &&
+              oldV1.nextInventoryLossCostSequence == 1L &&
+              BistroBuilderProductCostEngine.TryValidateSnapshot(oldV1, out _),
+            "finance.product_cost.runtime v1 anterior normaliza campos aditivos",
             ref passed, ref failed, builder);
     }
 
