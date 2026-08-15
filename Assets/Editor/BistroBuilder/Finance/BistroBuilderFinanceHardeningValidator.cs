@@ -103,22 +103,36 @@ public static class BistroBuilderFinanceHardeningValidator
         Check(loss != null && loss.ValidateConfiguration(out _),
             "Baja económica de inventario válida", ref passed, ref failed, builder);
 
-        Check(finance != null &&
-              BistroBuilderFinanceEngine.TryValidateSnapshot(
-                  finance.CreateSnapshot(), out _),
-            "finance.runtime íntegro", ref passed, ref failed, builder);
-        Check(productCost != null &&
-              BistroBuilderProductCostEngine.TryValidateSnapshot(
-                  productCost.CreateSnapshot(), out _),
-            "finance.product_cost.runtime íntegro",
+        bool runtimeStateExpected = Application.isPlaying;
+        Check(!runtimeStateExpected ||
+              (finance != null && finance.IsInitialized &&
+               BistroBuilderFinanceEngine.TryValidateSnapshot(
+                   finance.CreateSnapshot(), out _)),
+            runtimeStateExpected
+                ? "finance.runtime íntegro"
+                : "finance.runtime se validará al entrar en Play",
             ref passed, ref failed, builder);
-        Check(financing != null &&
-              BistroBuilderFinancingEngine.TryValidateSnapshot(
-                  financing.CreateSnapshot(), out _),
-            "finance.financing.runtime íntegro",
+        Check(!runtimeStateExpected ||
+              (productCost != null && productCost.IsInitialized &&
+               BistroBuilderProductCostEngine.TryValidateSnapshot(
+                   productCost.CreateSnapshot(), out _)),
+            runtimeStateExpected
+                ? "finance.product_cost.runtime íntegro"
+                : "finance.product_cost.runtime se validará al entrar en Play",
             ref passed, ref failed, builder);
-        Check(financing != null && financing.TryValidateLedgerConsistency(out _),
-            "Deuda y ledger son bidireccionalmente coherentes",
+        Check(!runtimeStateExpected ||
+              (financing != null && financing.IsInitialized &&
+               BistroBuilderFinancingEngine.TryValidateSnapshot(
+                   financing.CreateSnapshot(), out _)),
+            runtimeStateExpected
+                ? "finance.financing.runtime íntegro"
+                : "finance.financing.runtime se validará al entrar en Play",
+            ref passed, ref failed, builder);
+        Check(!runtimeStateExpected ||
+              (financing != null && financing.TryValidateLedgerConsistency(out _)),
+            runtimeStateExpected
+                ? "Deuda y ledger son bidireccionalmente coherentes"
+                : "Consistencia deuda/ledger se validará en Queen Test runtime",
             ref passed, ref failed, builder);
 
         Check(results != null && finance != null &&
