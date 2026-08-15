@@ -72,10 +72,6 @@ public static class BistroBuilderFinance3IInstaller
             GameClock gameClock = FindSingleSceneComponent<GameClock>(scene);
             BistroBuilderSaveGameService saveGame =
                 FindSingleSceneComponent<BistroBuilderSaveGameService>(scene);
-            BistroBuilderInventoryService inventory =
-                FindSingleSceneComponent<BistroBuilderInventoryService>(scene);
-            BistroBuilderRecipeCatalogService recipes =
-                FindSingleSceneComponent<BistroBuilderRecipeCatalogService>(scene);
 
             BistroBuilderFinancingService financing =
                 GetOrAdd<BistroBuilderFinancingService>(gameSystems);
@@ -91,18 +87,8 @@ public static class BistroBuilderFinance3IInstaller
                 GetOrAdd<BistroBuilderFinancingSaveSectionProvider>(gameSystems);
             SetReference(provider, "financingService", financing);
 
-            BistroBuilderInventoryLossFinanceBridge lossBridge =
-                GetOrAdd<BistroBuilderInventoryLossFinanceBridge>(gameSystems);
-            SetReference(lossBridge, "financeService", finance);
-            SetReference(lossBridge, "inventoryService", inventory);
-            SetReference(lossBridge, "recipeCatalogService", recipes);
-            SetReference(lossBridge, "generalGameStateService", generalState);
-            SetReference(lossBridge, "gameClock", gameClock);
-            SetReference(lossBridge, "saveGameService", saveGame);
-
             EditorUtility.SetDirty(financing);
             EditorUtility.SetDirty(provider);
-            EditorUtility.SetDirty(lossBridge);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene))
