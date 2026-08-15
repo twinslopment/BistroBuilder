@@ -22,7 +22,8 @@ public enum BistroBuilderLiquidityStatus
     Watch = 1,
     Tight = 2,
     Critical = 3,
-    Insolvent = 4
+    Insolvent = 4,
+    Unknown = 5
 }
 
 public enum BistroBuilderFinancialRiskLevel
@@ -102,6 +103,12 @@ public sealed class BistroBuilderLoanRecord
     public long totalInterestCents;
     public long totalPayableCents;
     public int paidOffDayIndex;
+
+    // Campos aditivos compatibles con finance.financing.runtime v1.
+    // Conservan memoria de default aunque la deuda termine regularizándose.
+    public bool hasEverDefaulted;
+    public int firstDefaultDayIndex;
+
     public List<BistroBuilderLoanInstallmentRecord> installments =
         new List<BistroBuilderLoanInstallmentRecord>();
 
@@ -176,16 +183,25 @@ public sealed class BistroBuilderLiquidityPosition
     public int dayIndex;
     public int horizonDays;
     public long cashBalanceCents;
+
     public bool supplierCommitmentsResolved;
     public long supplierCommittedCents;
     public long availableCashAfterSupplierCommitmentsCents;
+
+    public bool recurringOperatingObligationsResolved;
+    public long recurringOperatingObligationsWithinHorizonCents;
+
     public long debtDueTodayCents;
     public long debtDueWithinHorizonCents;
     public long overdueDebtCents;
     public long outstandingPrincipalCents;
     public long outstandingInterestCents;
+
+    public long totalKnownHorizonObligationsCents;
     public long projectedLiquidityAfterHorizonObligationsCents;
     public int debtCoverageBasisPoints;
+    public int knownObligationCoverageBasisPoints;
+    public bool projectionComplete;
     public BistroBuilderLiquidityStatus status;
 }
 
