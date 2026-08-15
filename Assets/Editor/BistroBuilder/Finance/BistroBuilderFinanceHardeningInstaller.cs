@@ -6,9 +6,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Instala exclusivamente las piezas añadidas por el endurecimiento 3A-3I,
+/// Instala exclusivamente los enlaces añadidos por el endurecimiento 3A-3I,
 /// conserva todos los sistemas existentes y revierte la escena byte a byte
 /// si validación o autotest no quedan completamente limpios.
+/// Las bajas económicas viven dentro de Product Cost 3D y no requieren un
+/// segundo componente ni un movimiento adicional de caja.
 /// </summary>
 public static class BistroBuilderFinanceHardeningInstaller
 {
@@ -46,8 +48,7 @@ public static class BistroBuilderFinanceHardeningInstaller
             return;
         }
 
-        GameObject gameSystems = FindGameSystems(scene);
-        if (gameSystems == null)
+        if (FindGameSystems(scene) == null)
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
@@ -77,12 +78,10 @@ public static class BistroBuilderFinanceHardeningInstaller
             GameClock clock = FindSingle<GameClock>(scene);
             BistroBuilderSaveGameService save =
                 FindSingle<BistroBuilderSaveGameService>(scene);
-            BistroBuilderInventoryService inventory =
-                FindSingle<BistroBuilderInventoryService>(scene);
-            BistroBuilderRecipeCatalogService recipes =
-                FindSingle<BistroBuilderRecipeCatalogService>(scene);
             BistroBuilderFinancingService financing =
                 FindSingle<BistroBuilderFinancingService>(scene);
+            BistroBuilderProductCostService productCost =
+                FindSingle<BistroBuilderProductCostService>(scene);
 
             SetReference(financing, "financeService", finance);
             SetReference(financing, "supplierFinanceBridge", supplier);
@@ -92,17 +91,11 @@ public static class BistroBuilderFinanceHardeningInstaller
             SetReference(financing, "gameClock", clock);
             SetReference(financing, "saveGameService", save);
 
-            BistroBuilderInventoryLossFinanceBridge lossBridge =
-                GetOrAdd<BistroBuilderInventoryLossFinanceBridge>(gameSystems);
-            SetReference(lossBridge, "financeService", finance);
-            SetReference(lossBridge, "inventoryService", inventory);
-            SetReference(lossBridge, "recipeCatalogService", recipes);
-            SetReference(lossBridge, "generalGameStateService", general);
-            SetReference(lossBridge, "gameClock", clock);
-            SetReference(lossBridge, "saveGameService", save);
-
+            // Product Cost ya posee las dependencias instaladas por 3D. Se
+            // marca Dirty únicamente para que Unity serialice cualquier campo
+            // aditivo nuevo sin crear componentes paralelos.
             EditorUtility.SetDirty(financing);
-            EditorUtility.SetDirty(lossBridge);
+            EditorUtility.SetDirty(productCost);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene))
@@ -204,12 +197,6 @@ public static class BistroBuilderFinanceHardeningInstaller
                 "No se encontró " + typeof(T).Name + " en la escena.");
         }
         return found;
-    }
-
-    private static T GetOrAdd<T>(GameObject target) where T : Component
-    {
-        T existing = target.GetComponent<T>();
-        return existing != null ? existing : Undo.AddComponent<T>(target);
     }
 
     private static void SetReference(
