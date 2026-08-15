@@ -1173,6 +1173,9 @@ GameObject:
   - component: {fileID: 263645003}
   - component: {fileID: 263645002}
   - component: {fileID: 263645004}
+  - component: {fileID: 263645006}
+  - component: {fileID: 263645007}
+  - component: {fileID: 263645005}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -3152,6 +3155,60 @@ MonoBehaviour:
   gameClock: {fileID: 263644898}
   saveGameService: {fileID: 263644953}
   expenseProfile: {fileID: 11400000, guid: 4279fc5db70922b41808ace112c9a454, type: 2}
+--- !u!114 &263645005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a94199ef295e4abab24dcae768086e23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderPlaceableFinanceBridge
+  financeService: {fileID: 263644999}
+  discretionaryFinanceService: {fileID: 263645007}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  creationService: {fileID: 263644932}
+  deletionService: {fileID: 263644937}
+  historyService: {fileID: 263644934}
+  moneyPopupService: {fileID: 263645006}
+--- !u!114 &263645006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1190726b6694abc9c93e1ad04a39e77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMoneyPopupService
+  targetCamera: {fileID: 0}
+  durationSeconds: 1.05
+  riseDistance: 0.72
+  characterSize: 0.045
+  positiveColor: {r: 0.34, g: 0.72, b: 0.48, a: 1}
+  negativeColor: {r: 0.92, g: 0.38, b: 0.32, a: 1}
+--- !u!114 &263645007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 487673154c2048fc8e18f5e5bab7cfe9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDiscretionaryFinanceService
+  financeService: {fileID: 263644999}
+  supplierFinanceBridge: {fileID: 263645001}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
 --- !u!1 &295579756
 GameObject:
   m_ObjectHideFlags: 0
@@ -11238,6 +11295,7 @@ MonoBehaviour:
   editModeService: {fileID: 263644918}
   interactionController: {fileID: 263644933}
   deletionService: {fileID: 263644937}
+  placeableFinanceBridge: {fileID: 263645005}
   contentRoot: {fileID: 1335646757}
   nameText: {fileID: 1512008399}
   categoryText: {fileID: 1490988253}
