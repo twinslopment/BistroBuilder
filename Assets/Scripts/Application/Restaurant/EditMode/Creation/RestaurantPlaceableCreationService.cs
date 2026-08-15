@@ -225,8 +225,9 @@ public sealed class RestaurantPlaceableCreationService : MonoBehaviour
             return false;
         }
 
+        string economyError = string.Empty;
         bool economyCommitted = economyGate == null ||
-            economyGate.TryCommitCreation(placeable, out string economyError);
+            economyGate.TryCommitCreation(placeable, out economyError);
         if (!economyCommitted)
         {
             lifecycleService.TryDeactivateInstance(placeable, out _, out _);
