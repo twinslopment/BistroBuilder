@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -73,9 +72,6 @@ public static class BistroBuilderFinanceHardeningValidator
         BistroBuilderFinancingService financing =
             Single<BistroBuilderFinancingService>(
                 scene, "3I FinancingService", ref passed, ref failed, builder);
-        BistroBuilderInventoryLossFinanceBridge loss =
-            Single<BistroBuilderInventoryLossFinanceBridge>(
-                scene, "InventoryLossFinanceBridge", ref passed, ref failed, builder);
         BistroBuilderSaveGameService save =
             Single<BistroBuilderSaveGameService>(
                 scene, "SaveGameService canónico", ref passed, ref failed, builder);
@@ -100,8 +96,6 @@ public static class BistroBuilderFinanceHardeningValidator
             "3H configuración válida", ref passed, ref failed, builder);
         Check(financing != null && financing.ValidateConfiguration(out _),
             "3I configuración endurecida válida", ref passed, ref failed, builder);
-        Check(loss != null && loss.ValidateConfiguration(out _),
-            "Baja económica de inventario válida", ref passed, ref failed, builder);
 
         bool runtimeStateExpected = Application.isPlaying;
         Check(!runtimeStateExpected ||
@@ -134,6 +128,14 @@ public static class BistroBuilderFinanceHardeningValidator
                 ? "Deuda y ledger son bidireccionalmente coherentes"
                 : "Consistencia deuda/ledger se validará en Queen Test runtime",
             ref passed, ref failed, builder);
+        Check(!runtimeStateExpected ||
+              (productCost != null &&
+               productCost.CreateSnapshot() != null &&
+               productCost.CreateSnapshot().inventoryLossCosts != null),
+            runtimeStateExpected
+                ? "Bajas de inventario viven en Product Cost y no en caja"
+                : "Bajas no monetarias se validarán en Product Cost durante Play",
+            ref passed, ref failed, builder);
 
         Check(results != null && finance != null &&
               ReferenceEquals(results.FinanceService, finance) &&
@@ -152,10 +154,6 @@ public static class BistroBuilderFinanceHardeningValidator
         Check(financing != null && save != null &&
               ReferenceEquals(financing.SaveGameService, save),
             "3I comparte cerrojo Save/Load canónico",
-            ref passed, ref failed, builder);
-        Check(loss != null && finance != null &&
-              ReferenceEquals(loss.FinanceService, finance),
-            "Caducidad/merma publica solo en finance.runtime",
             ref passed, ref failed, builder);
 
         if (save != null)
