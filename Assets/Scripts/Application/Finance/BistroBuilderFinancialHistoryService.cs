@@ -6,8 +6,8 @@ using UnityEngine;
 /// Fachada de lectura de 3H para históricos, indicadores y comparativas.
 ///
 /// No persiste resúmenes: reconstruye cada informe desde 3G, que a su vez lee
-/// las autoridades canónicas 3A/3D. Así una carga o corrección del ledger nunca
-/// deja históricos congelados o divergentes.
+/// las autoridades canónicas 3A/3D. Las consultas por rango usan una única
+/// captura de snapshots para evitar trabajo multiplicado por cada día.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Finance/Financial History Service")]
@@ -15,11 +15,8 @@ public sealed class BistroBuilderFinancialHistoryService : MonoBehaviour
 {
     private const int MaximumDaysPerReport = 100000;
 
-    [SerializeField]
-    private BistroBuilderFinancialResultsService financialResultsService;
-
-    [SerializeField]
-    private BistroBuilderGeneralGameStateService generalGameStateService;
+    [SerializeField] private BistroBuilderFinancialResultsService financialResultsService;
+    [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
 
     private readonly List<BistroBuilderDayFinancialResult> dayBuffer =
         new List<BistroBuilderDayFinancialResult>(64);
@@ -91,25 +88,14 @@ public sealed class BistroBuilderFinancialHistoryService : MonoBehaviour
         }
 
         dayBuffer.Clear();
-        for (int dayIndex = startDayIndex;
-             dayIndex <= endDayIndex;
-             dayIndex++)
+        if (!financialResultsService.TryGetDayResults(
+                startDayIndex,
+                endDayIndex,
+                dayBuffer,
+                out error))
         {
-            if (!financialResultsService.TryGetDayResult(
-                    dayIndex,
-                    out BistroBuilderDayFinancialResult day,
-                    out error))
-            {
-                dayBuffer.Clear();
-                return false;
-            }
-
-            dayBuffer.Add(day);
-
-            if (dayIndex == int.MaxValue)
-            {
-                break;
-            }
+            dayBuffer.Clear();
+            return false;
         }
 
         bool built = BistroBuilderFinancialHistoryEngine.TryBuildPeriodReport(
@@ -144,6 +130,35 @@ public sealed class BistroBuilderFinancialHistoryService : MonoBehaviour
             endDay,
             out report,
             out error);
+    }
+
+    /// <summary>
+    /// Ventana de días ya completados. Excluye el día actual para que una
+    /// jornada recién iniciada con resultado 0 no borre artificialmente una
+    /// racha de pérdidas usada por 3I.
+    /// </summary>
+    public bool TryGetCompletedRollingReport(
+        int requestedDayCount,
+        out BistroBuilderFinancialPeriodReport report,
+        out string error)
+    {
+        report = null;
+        if (generalGameStateService == null || requestedDayCount < 1)
+        {
+            error = "La ventana completada debe contener al menos un día.";
+            return false;
+        }
+
+        int endDay = generalGameStateService.DayIndex - 1;
+        if (endDay < 1)
+        {
+            error = "Todavía no existe ningún día completado.";
+            return false;
+        }
+
+        long startLong = (long)endDay - requestedDayCount + 1L;
+        int startDay = startLong < 1L ? 1 : (int)startLong;
+        return TryGetPeriodReport(startDay, endDay, out report, out error);
     }
 
     public bool TryComparePeriods(
