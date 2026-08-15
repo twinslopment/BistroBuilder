@@ -13,7 +13,7 @@ public static class BistroBuilderFinance3IValidator
         3081)]
     private static void ValidateMenu()
     {
-        bool ok = ValidateCurrentScene(
+        ValidateCurrentScene(
             out int passed,
             out int failed,
             out string report);
@@ -42,6 +42,8 @@ public static class BistroBuilderFinance3IValidator
             FindScene<BistroBuilderFinanceService>(scene);
         BistroBuilderSupplierPurchaseFinanceBridge[] supplier =
             FindScene<BistroBuilderSupplierPurchaseFinanceBridge>(scene);
+        BistroBuilderProductCostService[] productCost =
+            FindScene<BistroBuilderProductCostService>(scene);
         BistroBuilderFinancialHistoryService[] history =
             FindScene<BistroBuilderFinancialHistoryService>(scene);
         BistroBuilderOperatingExpenseService[] operating =
@@ -55,13 +57,13 @@ public static class BistroBuilderFinance3IValidator
             FindScene<BistroBuilderFinancingService>(scene);
         BistroBuilderFinancingSaveSectionProvider[] providers =
             FindScene<BistroBuilderFinancingSaveSectionProvider>(scene);
-        BistroBuilderInventoryLossFinanceBridge[] lossBridges =
-            FindScene<BistroBuilderInventoryLossFinanceBridge>(scene);
 
         Check(finance.Length == 1,
             "Una autoridad de caja 3A", ref passed, ref failed, builder);
         Check(supplier.Length == 1,
             "Un puente de compromisos 3C", ref passed, ref failed, builder);
+        Check(productCost.Length == 1,
+            "Una autoridad de costes 3D", ref passed, ref failed, builder);
         Check(history.Length == 1,
             "Un histórico financiero 3H", ref passed, ref failed, builder);
         Check(operating.Length == 1,
@@ -76,8 +78,6 @@ public static class BistroBuilderFinance3IValidator
             "Una autoridad de financiación 3I", ref passed, ref failed, builder);
         Check(providers.Length == 1,
             "Un proveedor Save de financiación", ref passed, ref failed, builder);
-        Check(lossBridges.Length == 1,
-            "Un puente de bajas económicas de inventario", ref passed, ref failed, builder);
 
         if (financing.Length == 1)
         {
@@ -123,14 +123,19 @@ public static class BistroBuilderFinance3IValidator
                 ref passed, ref failed, builder);
         }
 
-        if (lossBridges.Length == 1)
+        if (productCost.Length == 1 && Application.isPlaying)
         {
-            Check(lossBridges[0].ValidateConfiguration(out _),
-                "Bajas económicas de inventario configuradas",
+            BistroBuilderProductCostSnapshot snapshot =
+                productCost[0].CreateSnapshot();
+            Check(snapshot != null && snapshot.inventoryLossCosts != null &&
+                  snapshot.nextInventoryLossCostSequence >= 1L,
+                "3D conserva bajas económicas no monetarias",
                 ref passed, ref failed, builder);
-            Check(finance.Length == 1 &&
-                  ReferenceEquals(lossBridges[0].FinanceService, finance[0]),
-                "Bajas usan finance.runtime canónico",
+        }
+        else
+        {
+            Check(productCost.Length == 1,
+                "Bajas económicas se validarán en 3D durante Play",
                 ref passed, ref failed, builder);
         }
 
