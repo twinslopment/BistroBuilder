@@ -14,10 +14,10 @@ public static class BistroBuilderProductCostEngine
         }
 
         return (long)decimal.Round(
-            microCents / (decimal)BistroBuilderIngredientDefinition.MicroCentsPerCent,
+            microCents /
+            (decimal)BistroBuilderIngredientDefinition.MicroCentsPerCent,
             0,
-            MidpointRounding.AwayFromZero
-        );
+            MidpointRounding.AwayFromZero);
     }
 
     public static bool TryCalculateActualCost(
@@ -25,8 +25,7 @@ public static class BistroBuilderProductCostEngine
         IReadOnlyDictionary<string, BistroBuilderLotCostBasisRecord> basisByLotId,
         out long actualCostMicroCents,
         out BistroBuilderProductCostQuality quality,
-        out string error
-    )
+        out string error)
     {
         actualCostMicroCents = 0L;
         quality = BistroBuilderProductCostQuality.Estimated;
@@ -66,16 +65,14 @@ public static class BistroBuilderProductCostEngine
                 if (allocation.CanonicalMilliUnits <= 0L ||
                     !basisByLotId.TryGetValue(
                         allocation.LotId,
-                        out BistroBuilderLotCostBasisRecord basis
-                    ) ||
+                        out BistroBuilderLotCostBasisRecord basis) ||
                     basis == null ||
                     basis.basisQuantityCanonicalMilliUnits <= 0L ||
                     basis.totalCostMicroCents < 0L ||
                     !string.Equals(
                         basis.ingredientId,
                         line.IngredientId,
-                        StringComparison.Ordinal
-                    ))
+                        StringComparison.Ordinal))
                 {
                     error = "Falta una base de coste válida para el lote " +
                             allocation.LotId + ".";
@@ -83,8 +80,7 @@ public static class BistroBuilderProductCostEngine
                 }
 
                 allocatedLine = checked(
-                    allocatedLine + allocation.CanonicalMilliUnits
-                );
+                    allocatedLine + allocation.CanonicalMilliUnits);
                 rawMicroCents +=
                     (decimal)allocation.CanonicalMilliUnits *
                     basis.totalCostMicroCents /
@@ -112,8 +108,7 @@ public static class BistroBuilderProductCostEngine
         decimal rounded = decimal.Round(
             rawMicroCents,
             0,
-            MidpointRounding.AwayFromZero
-        );
+            MidpointRounding.AwayFromZero);
         if (rounded < 0m || rounded > long.MaxValue)
         {
             error = "El coste real calculado queda fuera de rango.";
@@ -131,8 +126,7 @@ public static class BistroBuilderProductCostEngine
 
     public static int CalculateMarginBasisPoints(
         long salePriceCents,
-        long costCents
-    )
+        long costCents)
     {
         if (salePriceCents <= 0L)
         {
@@ -143,8 +137,7 @@ public static class BistroBuilderProductCostEngine
         decimal rounded = decimal.Round(
             margin * 10000m / salePriceCents,
             0,
-            MidpointRounding.AwayFromZero
-        );
+            MidpointRounding.AwayFromZero);
 
         if (rounded > int.MaxValue)
         {
@@ -159,8 +152,7 @@ public static class BistroBuilderProductCostEngine
 
     public static BistroBuilderRecipeMarginBand ResolveMarginBand(
         long marginCents,
-        int marginBasisPoints
-    )
+        int marginBasisPoints)
     {
         if (marginCents < 0L)
         {
@@ -183,22 +175,22 @@ public static class BistroBuilderProductCostEngine
 
     public static bool TryValidateSnapshot(
         BistroBuilderProductCostSnapshot snapshot,
-        out string error
-    )
+        out string error)
     {
         error = string.Empty;
         if (snapshot == null ||
             !string.Equals(
                 snapshot.schemaId,
                 BistroBuilderProductCostSnapshot.CurrentSchemaId,
-                StringComparison.Ordinal
-            ) ||
+                StringComparison.Ordinal) ||
             snapshot.schemaVersion !=
                 BistroBuilderProductCostSnapshot.CurrentSchemaVersion ||
             snapshot.revision < 1L ||
             snapshot.nextLineCostSequence < 1L ||
+            snapshot.nextInventoryLossCostSequence < 1L ||
             snapshot.lotCostBases == null ||
-            snapshot.consumedLineCosts == null)
+            snapshot.consumedLineCosts == null ||
+            snapshot.inventoryLossCosts == null)
         {
             error = "El snapshot de costes de producto no es válido.";
             return false;
@@ -234,8 +226,7 @@ public static class BistroBuilderProductCostEngine
                 !string.Equals(
                     record.costRecordId,
                     BuildCostRecordId(expectedSequence),
-                    StringComparison.Ordinal
-                ) ||
+                    StringComparison.Ordinal) ||
                 !BistroBuilderOrderIdUtility.IsValid(record.orderId) ||
                 !BistroBuilderOrderIdUtility.IsValid(record.lineId) ||
                 !BistroBuilderOrderIdUtility.IsValid(record.dishId) ||
@@ -256,27 +247,22 @@ public static class BistroBuilderProductCostEngine
                 record.theoreticalMarginBasisPoints !=
                     CalculateMarginBasisPoints(
                         record.salePriceCents,
-                        record.theoreticalCostCents
-                    ) ||
+                        record.theoreticalCostCents) ||
                 record.actualMarginBasisPoints !=
                     CalculateMarginBasisPoints(
                         record.salePriceCents,
-                        record.actualCostCents
-                    ) ||
+                        record.actualCostCents) ||
                 record.theoreticalMarginBand !=
                     ResolveMarginBand(
                         record.theoreticalMarginCents,
-                        record.theoreticalMarginBasisPoints
-                    ) ||
+                        record.theoreticalMarginBasisPoints) ||
                 record.actualMarginBand !=
                     ResolveMarginBand(
                         record.actualMarginCents,
-                        record.actualMarginBasisPoints
-                    ) ||
+                        record.actualMarginBasisPoints) ||
                 !Enum.IsDefined(
                     typeof(BistroBuilderProductCostQuality),
-                    record.costQuality
-                ))
+                    record.costQuality))
             {
                 error = "El snapshot contiene un coste de línea inválido.";
                 return false;
@@ -291,11 +277,63 @@ public static class BistroBuilderProductCostEngine
             return false;
         }
 
+        var lossOperations = new HashSet<string>(StringComparer.Ordinal);
+        var lossTransactions = new HashSet<string>(StringComparer.Ordinal);
+        long expectedLossSequence = 1L;
+        for (int index = 0; index < snapshot.inventoryLossCosts.Count; index++)
+        {
+            BistroBuilderInventoryLossCostRecord loss =
+                snapshot.inventoryLossCosts[index];
+            bool validType = loss != null &&
+                (loss.transactionType ==
+                     BistroBuilderInventoryTransactionType.Expiration ||
+                 loss.transactionType ==
+                     BistroBuilderInventoryTransactionType.Waste);
+
+            if (loss == null ||
+                loss.sequence != expectedLossSequence ||
+                !string.Equals(
+                    loss.lossCostRecordId,
+                    BuildInventoryLossCostRecordId(expectedLossSequence),
+                    StringComparison.Ordinal) ||
+                !BistroBuilderMenuIdUtility.IsValidStableId(
+                    loss.inventoryTransactionId) ||
+                !BistroBuilderMenuIdUtility.IsValidStableId(
+                    loss.inventoryOperationId) ||
+                !BistroBuilderMenuIdUtility.IsValidStableId(loss.ingredientId) ||
+                !lossTransactions.Add(loss.inventoryTransactionId) ||
+                !lossOperations.Add(loss.inventoryOperationId) ||
+                !validType ||
+                loss.dayIndex < 1 ||
+                loss.minuteOfDay < 0 || loss.minuteOfDay > 1439 ||
+                loss.quantityCanonicalMilliUnits <= 0L ||
+                loss.costMicroCents < 0L ||
+                loss.costCents != RoundMicroCentsToCents(loss.costMicroCents) ||
+                loss.costQuality != BistroBuilderProductCostQuality.Estimated)
+            {
+                error = "El snapshot contiene una baja de inventario no valorable.";
+                return false;
+            }
+
+            expectedLossSequence++;
+        }
+
+        if (snapshot.nextInventoryLossCostSequence != expectedLossSequence)
+        {
+            error = "La secuencia de bajas económicas de inventario no es continua.";
+            return false;
+        }
+
         return true;
     }
 
     public static string BuildCostRecordId(long sequence)
     {
         return "product_cost_" + sequence.ToString("D10");
+    }
+
+    public static string BuildInventoryLossCostRecordId(long sequence)
+    {
+        return "inventory_loss_cost_" + sequence.ToString("D10");
     }
 }
