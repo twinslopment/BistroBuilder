@@ -127,6 +127,8 @@ public static class BistroBuilderFinancialResultsEngine
             return false;
         }
 
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(
+            productCostSnapshot);
         if (!BistroBuilderFinanceEngine.TryValidateSnapshot(
                 financeSnapshot,
                 out error) ||
@@ -264,6 +266,28 @@ public static class BistroBuilderFinancialResultsEngine
                 }
             }
 
+            // Caducidad/merma son pérdidas de resultado NO monetarias. La
+            // compra ya afectó caja; aquí solo se reconoce el valor consumido
+            // sin venta y nunca se incrementa totalCashOutCents.
+            for (int index = 0;
+                 index < productCostSnapshot.inventoryLossCosts.Count;
+                 index++)
+            {
+                BistroBuilderInventoryLossCostRecord loss =
+                    productCostSnapshot.inventoryLossCosts[index];
+                if (loss == null ||
+                    loss.dayIndex < startDayIndex ||
+                    loss.dayIndex > endDayIndex)
+                {
+                    continue;
+                }
+
+                int dayOffset = loss.dayIndex - startDayIndex;
+                BistroBuilderDayFinancialResult day = destination[dayOffset];
+                day.inventoryWriteOffExpensesCents = checked(
+                    day.inventoryWriteOffExpensesCents + loss.costCents);
+            }
+
             for (int dayOffset = 0; dayOffset < count; dayOffset++)
             {
                 BistroBuilderDayFinancialResult day = destination[dayOffset];
@@ -387,6 +411,8 @@ public static class BistroBuilderFinancialResultsEngine
             return false;
         }
 
+        BistroBuilderProductCostService.NormalizeCompatibleSnapshot(
+            productCostSnapshot);
         if (!BistroBuilderFinanceEngine.TryValidateSnapshot(
                 financeSnapshot,
                 out error))
@@ -649,15 +675,9 @@ public static class BistroBuilderFinancialResultsEngine
             day.financingInterestExpensesCents = checked(
                 day.financingInterestExpensesCents + transaction.amountCents);
         }
-        else if (debitCategory ==
-                     BistroBuilderInventoryLossFinancePolicy.ExpirationCategoryId ||
-                 debitCategory ==
-                     BistroBuilderInventoryLossFinancePolicy.WasteCategoryId)
-        {
-            day.inventoryWriteOffExpensesCents = checked(
-                day.inventoryWriteOffExpensesCents + transaction.amountCents);
-        }
-        else if (debitCategory.StartsWith(InvestmentPrefix, StringComparison.Ordinal))
+        else if (debitCategory.StartsWith(
+                     InvestmentPrefix,
+                     StringComparison.Ordinal))
         {
             day.investmentCashOutCents = checked(
                 day.investmentCashOutCents + transaction.amountCents);
