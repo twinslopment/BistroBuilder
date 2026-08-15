@@ -27,9 +27,12 @@ public static class BistroBuilderFinance3FSelfTest
         failed = 0;
         int capturedErrors = 0;
         var builder = new StringBuilder();
+
         Application.LogCallback handler = (condition, stackTrace, type) =>
         {
-            if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+            if (type == LogType.Error ||
+                type == LogType.Exception ||
+                type == LogType.Assert)
             {
                 capturedErrors++;
             }
@@ -45,21 +48,27 @@ public static class BistroBuilderFinance3FSelfTest
         catch (Exception exception)
         {
             failed++;
-            builder.AppendLine("[ERROR] Excepción inesperada: " + exception.Message);
+            builder.AppendLine(
+                "[ERROR] Excepción inesperada: " + exception.Message);
         }
         finally
         {
             Application.logMessageReceived -= handler;
         }
 
-        Check(capturedErrors == 0,
+        Check(
+            capturedErrors == 0,
             "Console sin Error/Exception/Assert durante autotest.",
-            ref passed, ref failed, builder);
+            ref passed,
+            ref failed,
+            builder);
 
-        builder.Insert(0,
-            "3F — AUTOTEST MARKETING, OBRAS Y MEJORAS\nCorrectos: " + passed +
-            "  Fallos: " + failed +
+        builder.Insert(
+            0,
+            "3F — AUTOTEST MARKETING, OBRAS Y MEJORAS\nCorrectos: " +
+            passed + "  Fallos: " + failed +
             "  Error/Exception/Assert: " + capturedErrors + "\n\n");
+
         report = builder.ToString();
         return failed == 0;
     }
@@ -71,6 +80,7 @@ public static class BistroBuilderFinance3FSelfTest
     {
         RestaurantPlaceableItemDefinition definition =
             ScriptableObject.CreateInstance<RestaurantPlaceableItemDefinition>();
+
         try
         {
             ConfigureDefinition(
@@ -82,24 +92,31 @@ public static class BistroBuilderFinance3FSelfTest
                 0,
                 1500);
 
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCents(definition) == 50000L,
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCents(definition) == 50000L,
                 "Compra de 500 € se normaliza a 50.000 céntimos.",
                 ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolveEffectiveDisposalMode(definition) ==
-                  RestaurantPlaceableDisposalMode.Resale,
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolveEffectiveDisposalMode(definition) ==
+                RestaurantPlaceableDisposalMode.Resale,
                 "Mobiliario automático se revende.",
                 ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
+            Check(
+                BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
                     definition, 50000L, out var furniture, out _),
-                "Vista previa de reventa válida.", ref passed, ref failed, builder);
-            Check(furniture.ResaleCents == 25000L &&
-                  furniture.RemovalCostCents == 0L &&
-                  furniture.NetCashCents == 25000L,
+                "Vista previa de reventa válida.",
+                ref passed, ref failed, builder);
+            Check(
+                furniture.ResaleCents == 25000L &&
+                furniture.RemovalCostCents == 0L &&
+                furniture.NetCashCents == 25000L,
                 "Reventa base recupera exactamente el 50 %.",
                 ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
-                  "investment.furniture",
-                "Mobiliario usa investment.furniture.", ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
+                "investment.furniture",
+                "Mobiliario usa investment.furniture.",
+                ref passed, ref failed, builder);
 
             ConfigureDefinition(
                 definition,
@@ -109,20 +126,28 @@ public static class BistroBuilderFinance3FSelfTest
                 5000,
                 0,
                 1500);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolveEffectiveDisposalMode(definition) ==
-                  RestaurantPlaceableDisposalMode.Demolition,
-                "Estructura automática se demuele.", ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
+
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolveEffectiveDisposalMode(definition) ==
+                RestaurantPlaceableDisposalMode.Demolition,
+                "Estructura automática se demuele.",
+                ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
                     definition, 50000L, out var structural, out _),
-                "Vista previa de demolición válida.", ref passed, ref failed, builder);
-            Check(structural.RemovalCostCents == 7500L &&
-                  structural.ResaleCents == 0L &&
-                  structural.NetCashCents == -7500L,
+                "Vista previa de demolición válida.",
+                ref passed, ref failed, builder);
+            Check(
+                structural.RemovalCostCents == 7500L &&
+                structural.ResaleCents == 0L &&
+                structural.NetCashCents == -7500L,
                 "Demolición base cuesta exactamente el 15 %.",
                 ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
-                  "investment.renovation",
-                "Estructura usa investment.renovation.", ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
+                "investment.renovation",
+                "Estructura usa investment.renovation.",
+                ref passed, ref failed, builder);
 
             ConfigureDefinition(
                 definition,
@@ -134,7 +159,8 @@ public static class BistroBuilderFinance3FSelfTest
                 1500);
             BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
                 definition, 50000L, out var fixedDemolition, out _);
-            Check(fixedDemolition.RemovalCostCents == 12000L,
+            Check(
+                fixedDemolition.RemovalCostCents == 12000L,
                 "Coste fijo de demolición prevalece sobre porcentaje.",
                 ref passed, ref failed, builder);
 
@@ -148,14 +174,17 @@ public static class BistroBuilderFinance3FSelfTest
                 1500);
             BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
                 definition, 50000L, out var equipment, out _);
-            Check(equipment.ResaleCents == 25000L &&
-                  equipment.RemovalCostCents == 4000L &&
-                  equipment.NetCashCents == 21000L,
+            Check(
+                equipment.ResaleCents == 25000L &&
+                equipment.RemovalCostCents == 4000L &&
+                equipment.NetCashCents == 21000L,
                 "Reventa con retirada conserva ambas patas y neto.",
                 ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
-                  "investment.equipment",
-                "Equipamiento usa investment.equipment.", ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
+                "investment.equipment",
+                "Equipamiento usa investment.equipment.",
+                ref passed, ref failed, builder);
 
             ConfigureDefinition(
                 definition,
@@ -165,14 +194,21 @@ public static class BistroBuilderFinance3FSelfTest
                 0,
                 0,
                 0);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCents(definition) == 0L,
-                "Artículo gratuito no inventa coste.", ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
-                    definition, 0L, out var none, out _) && !none.HasFinancialEffect,
-                "Retirada None no inventa ingreso ni gasto.", ref passed, ref failed, builder);
-            Check(BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
-                  "investment.improvement",
-                "Otros colocables usan investment.improvement.", ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCents(definition) == 0L,
+                "Artículo gratuito no inventa coste.",
+                ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.TryBuildDisposalPreview(
+                    definition, 0L, out var none, out _) &&
+                !none.HasFinancialEffect,
+                "Retirada None no inventa ingreso ni gasto.",
+                ref passed, ref failed, builder);
+            Check(
+                BistroBuilderPlaceableFinancePolicy.ResolvePurchaseCategory(definition) ==
+                "investment.improvement",
+                "Otros colocables usan investment.improvement.",
+                ref passed, ref failed, builder);
         }
         finally
         {
@@ -186,32 +222,53 @@ public static class BistroBuilderFinance3FSelfTest
         StringBuilder builder)
     {
         GameObject go = new GameObject("BB_3F_AtomicFinanceSelfTest");
+
         try
         {
-            BistroBuilderFinanceService finance = go.AddComponent<BistroBuilderFinanceService>();
-            Check(finance.TryInitializeFresh(out _),
-                "Finance temporal inicializa.", ref passed, ref failed, builder);
+            BistroBuilderFinanceService finance =
+                go.AddComponent<BistroBuilderFinanceService>();
+
+            Check(
+                finance.TryInitializeFresh(out _),
+                "Finance temporal inicializa.",
+                ref passed, ref failed, builder);
 
             var batch = new List<BistroBuilderFinanceTransactionRequest>
             {
-                Request("batch_credit", "test_3f", "asset_test", "income.asset_resale",
-                    BistroBuilderFinanceTransactionKind.Credit, 1000L),
-                Request("batch_debit", "test_3f", "asset_test", "expense.asset_removal",
-                    BistroBuilderFinanceTransactionKind.Debit, 400L)
+                Request(
+                    "batch_credit",
+                    "test_3f",
+                    "asset_test",
+                    "income.asset_resale",
+                    BistroBuilderFinanceTransactionKind.Credit,
+                    1000L),
+                Request(
+                    "batch_debit",
+                    "test_3f",
+                    "asset_test",
+                    "expense.asset_removal",
+                    BistroBuilderFinanceTransactionKind.Debit,
+                    400L)
             };
-            Check(finance.TryPostTransactions(batch, out var posted, out _),
+
+            Check(
+                finance.TryPostTransactions(batch, out var posted, out _),
                 "Lote financiero de dos patas se publica atómicamente.",
                 ref passed, ref failed, builder);
-            Check(posted.Count == 2 && finance.TransactionCount == 2,
-                "Lote crea exactamente dos movimientos.", ref passed, ref failed, builder);
-            Check(finance.CurrentBalanceCents == 5000600L,
+            Check(
+                posted.Count == 2 && finance.TransactionCount == 2,
+                "Lote crea exactamente dos movimientos.",
+                ref passed, ref failed, builder);
+            Check(
+                finance.CurrentBalanceCents == 5000600L,
                 "Crédito 10 € y retirada 4 € producen neto +6 €.",
                 ref passed, ref failed, builder);
 
             long replayRevision = finance.Revision;
-            Check(finance.TryPostTransactions(batch, out _, out _) &&
-                  finance.TransactionCount == 2 &&
-                  finance.Revision == replayRevision,
+            Check(
+                finance.TryPostTransactions(batch, out _, out _) &&
+                finance.TransactionCount == 2 &&
+                finance.Revision == replayRevision,
                 "Reintento íntegro del lote es idempotente.",
                 ref passed, ref failed, builder);
 
@@ -219,27 +276,52 @@ public static class BistroBuilderFinance3FSelfTest
             int countBeforeInvalid = finance.TransactionCount;
             var invalid = new List<BistroBuilderFinanceTransactionRequest>
             {
-                Request("atomic_new", "test_3f", "atomic_source", "investment.furniture",
-                    BistroBuilderFinanceTransactionKind.Debit, 100L),
-                Request("atomic_bad", "test_3f", "atomic_source", "investment.furniture",
-                    BistroBuilderFinanceTransactionKind.Debit, 0L)
+                Request(
+                    "atomic_new",
+                    "test_3f",
+                    "atomic_source",
+                    "investment.furniture",
+                    BistroBuilderFinanceTransactionKind.Debit,
+                    100L),
+                Request(
+                    "atomic_bad",
+                    "test_3f",
+                    "atomic_source",
+                    "investment.furniture",
+                    BistroBuilderFinanceTransactionKind.Debit,
+                    0L)
             };
-            Check(!finance.TryPostTransactions(invalid, out _, out _),
+
+            Check(
+                !finance.TryPostTransactions(invalid, out _, out _),
                 "Una pata inválida rechaza el lote completo.",
                 ref passed, ref failed, builder);
-            Check(finance.CurrentBalanceCents == balanceBeforeInvalid &&
-                  finance.TransactionCount == countBeforeInvalid,
+            Check(
+                finance.CurrentBalanceCents == balanceBeforeInvalid &&
+                finance.TransactionCount == countBeforeInvalid,
                 "Lote rechazado no deja estado financiero parcial.",
                 ref passed, ref failed, builder);
 
             var duplicateIds = new List<BistroBuilderFinanceTransactionRequest>
             {
-                Request("duplicate_leg", "test_3f", "dup_source", "test.category",
-                    BistroBuilderFinanceTransactionKind.Credit, 100L),
-                Request("duplicate_leg", "test_3f", "dup_source", "test.category",
-                    BistroBuilderFinanceTransactionKind.Debit, 100L)
+                Request(
+                    "duplicate_leg",
+                    "test_3f",
+                    "dup_source",
+                    "test.category",
+                    BistroBuilderFinanceTransactionKind.Credit,
+                    100L),
+                Request(
+                    "duplicate_leg",
+                    "test_3f",
+                    "dup_source",
+                    "test.category",
+                    BistroBuilderFinanceTransactionKind.Debit,
+                    100L)
             };
-            Check(!finance.TryPostTransactions(duplicateIds, out _, out _),
+
+            Check(
+                !finance.TryPostTransactions(duplicateIds, out _, out _),
                 "Un lote no admite OperationId duplicados.",
                 ref passed, ref failed, builder);
         }
@@ -255,14 +337,24 @@ public static class BistroBuilderFinance3FSelfTest
         StringBuilder builder)
     {
         GameObject go = new GameObject("BB_3F_DiscretionarySelfTest");
+
         try
         {
             GameClock clock = go.AddComponent<GameClock>();
-            BistroBuilderFinanceService finance = go.AddComponent<BistroBuilderFinanceService>();
+            BistroBuilderFinanceService finance =
+                go.AddComponent<BistroBuilderFinanceService>();
             BistroBuilderGeneralGameStateService general =
                 go.AddComponent<BistroBuilderGeneralGameStateService>();
             BistroBuilderDiscretionaryFinanceService discretionary =
                 go.AddComponent<BistroBuilderDiscretionaryFinanceService>();
+
+            if (!finance.TryInitializeFresh(out string initializationError))
+            {
+                throw new InvalidOperationException(
+                    "Finance temporal de 3F no pudo inicializarse: " +
+                    initializationError);
+            }
+
             SetReference(discretionary, "financeService", finance);
             SetReference(discretionary, "generalGameStateService", general);
             SetReference(discretionary, "gameClock", clock);
@@ -277,21 +369,29 @@ public static class BistroBuilderFinance3FSelfTest
                 description = "Campaña local de prueba."
             };
 
-            Check(BistroBuilderDiscretionaryFinancePolicy.TryValidateExpense(marketing, out _),
-                "Contrato acepta gasto de Marketing.", ref passed, ref failed, builder);
-            Check(discretionary.TryPostExpense(marketing, out var posted, out _),
-                "Marketing publica un débito canónico.", ref passed, ref failed, builder);
-            Check(posted != null &&
-                  posted.kind == BistroBuilderFinanceTransactionKind.Debit &&
-                  posted.categoryId == "expense.marketing.local" &&
-                  posted.amountCents == 12345L,
+            Check(
+                BistroBuilderDiscretionaryFinancePolicy.TryValidateExpense(
+                    marketing, out _),
+                "Contrato acepta gasto de Marketing.",
+                ref passed, ref failed, builder);
+            Check(
+                discretionary.TryPostExpense(marketing, out var posted, out _),
+                "Marketing publica un débito canónico.",
+                ref passed, ref failed, builder);
+            Check(
+                posted != null &&
+                posted.kind == BistroBuilderFinanceTransactionKind.Debit &&
+                posted.categoryId == "expense.marketing.local" &&
+                posted.amountCents == 12345L,
                 "Movimiento de Marketing conserva categoría e importe.",
                 ref passed, ref failed, builder);
 
             int countAfterMarketing = finance.TransactionCount;
-            Check(discretionary.TryPostExpense(marketing, out _, out _) &&
-                  finance.TransactionCount == countAfterMarketing,
-                "Reintento de campaña es idempotente.", ref passed, ref failed, builder);
+            Check(
+                discretionary.TryPostExpense(marketing, out _, out _) &&
+                finance.TransactionCount == countAfterMarketing,
+                "Reintento de campaña es idempotente.",
+                ref passed, ref failed, builder);
 
             var invalidCategory = new BistroBuilderDiscretionaryExpenseRequest
             {
@@ -301,8 +401,11 @@ public static class BistroBuilderFinance3FSelfTest
                 categoryId = "sales.invalid",
                 amountCents = 100L
             };
-            Check(!discretionary.TryPostExpense(invalidCategory, out _, out _),
-                "Contrato rechaza categorías ajenas a 3F.", ref passed, ref failed, builder);
+
+            Check(
+                !discretionary.TryPostExpense(invalidCategory, out _, out _),
+                "Contrato rechaza categorías ajenas a 3F.",
+                ref passed, ref failed, builder);
 
             long balanceBeforeInsufficient = finance.CurrentBalanceCents;
             var tooExpensive = new BistroBuilderDiscretionaryExpenseRequest
@@ -313,11 +416,14 @@ public static class BistroBuilderFinance3FSelfTest
                 categoryId = "expense.marketing",
                 amountCents = balanceBeforeInsufficient + 1L
             };
-            Check(!discretionary.TryPostExpense(tooExpensive, out _, out _),
+
+            Check(
+                !discretionary.TryPostExpense(tooExpensive, out _, out _),
                 "Gasto discrecional sin fondos se bloquea antes del ledger.",
                 ref passed, ref failed, builder);
-            Check(finance.CurrentBalanceCents == balanceBeforeInsufficient &&
-                  finance.TransactionCount == countAfterMarketing,
+            Check(
+                finance.CurrentBalanceCents == balanceBeforeInsufficient &&
+                finance.TransactionCount == countAfterMarketing,
                 "Rechazo por fondos insuficientes no modifica caja ni ledger.",
                 ref passed, ref failed, builder);
         }
