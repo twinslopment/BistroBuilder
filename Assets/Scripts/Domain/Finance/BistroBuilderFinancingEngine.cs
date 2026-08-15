@@ -186,7 +186,9 @@ public static class BistroBuilderFinancingEngine
             totalInterestBasisPoints = offer.totalInterestBasisPoints,
             principalCents = offer.principalCents,
             totalInterestCents = totalInterest,
-            totalPayableCents = totalPayable
+            totalPayableCents = totalPayable,
+            hasEverDefaulted = false,
+            firstDefaultDayIndex = 0
         };
 
         long principalBase = offer.principalCents / offer.installmentCount;
@@ -244,6 +246,21 @@ public static class BistroBuilderFinancingEngine
         List<BistroBuilderFinanceTransactionRequest> buffer)
     {
         buffer.Clear();
+        AppendInstallmentRequests(
+            loan,
+            installment,
+            paymentDayIndex,
+            minuteOfDay,
+            buffer);
+    }
+
+    public static void AppendInstallmentRequests(
+        BistroBuilderLoanRecord loan,
+        BistroBuilderLoanInstallmentRecord installment,
+        int paymentDayIndex,
+        int minuteOfDay,
+        List<BistroBuilderFinanceTransactionRequest> buffer)
+    {
         if (installment.principalCents > 0L)
         {
             buffer.Add(new BistroBuilderFinanceTransactionRequest
@@ -286,7 +303,7 @@ public static class BistroBuilderFinancingEngine
             BistroBuilderLoanRecord loan = snapshot.loans[loanIndex];
             bool allPaid = true;
             bool hasOverdue = false;
-            bool defaulted = false;
+            bool defaultedNow = false;
 
             for (int installmentIndex = 0; installmentIndex < loan.installments.Count; installmentIndex++)
             {
@@ -303,7 +320,7 @@ public static class BistroBuilderFinancingEngine
                     hasOverdue = true;
                     if (dayIndex - installment.dueDayIndex > delinquencyGraceDays)
                     {
-                        defaulted = true;
+                        defaultedNow = true;
                     }
                 }
             }
@@ -315,9 +332,23 @@ public static class BistroBuilderFinancingEngine
                 {
                     loan.paidOffDayIndex = dayIndex;
                 }
+                continue;
             }
-            else if (defaulted)
+
+            loan.paidOffDayIndex = 0;
+            if (defaultedNow)
             {
+                if (!loan.hasEverDefaulted)
+                {
+                    loan.hasEverDefaulted = true;
+                    loan.firstDefaultDayIndex = dayIndex;
+                }
+                loan.status = BistroBuilderLoanStatus.Defaulted;
+            }
+            else if (loan.hasEverDefaulted)
+            {
+                // El default es un hecho histórico y permanece visible hasta
+                // liquidar por completo la deuda.
                 loan.status = BistroBuilderLoanStatus.Defaulted;
             }
             else if (hasOverdue)
@@ -382,7 +413,7 @@ public static class BistroBuilderFinancingEngine
     public static BistroBuilderLiquidityStatus ResolveLiquidityStatus(
         long cashBalanceCents,
         long availableAfterCommitmentsCents,
-        long dueWithinHorizonCents,
+        long knownObligationsWithinHorizonCents,
         long overdueDebtCents,
         out int coverageBasisPoints)
     {
@@ -395,13 +426,14 @@ public static class BistroBuilderFinancingEngine
         {
             return BistroBuilderLiquidityStatus.Critical;
         }
-        if (dueWithinHorizonCents <= 0L)
+        if (knownObligationsWithinHorizonCents <= 0L)
         {
             coverageBasisPoints = int.MaxValue;
             return BistroBuilderLiquidityStatus.Healthy;
         }
 
-        decimal raw = availableAfterCommitmentsCents * 10000m / dueWithinHorizonCents;
+        decimal raw = availableAfterCommitmentsCents * 10000m /
+                      knownObligationsWithinHorizonCents;
         if (raw > int.MaxValue)
         {
             coverageBasisPoints = int.MaxValue;
@@ -412,7 +444,10 @@ public static class BistroBuilderFinancingEngine
         }
         else
         {
-            coverageBasisPoints = (int)decimal.Round(raw, 0, MidpointRounding.AwayFromZero);
+            coverageBasisPoints = (int)decimal.Round(
+                raw,
+                0,
+                MidpointRounding.AwayFromZero);
         }
 
         if (coverageBasisPoints >= 20000)
@@ -443,7 +478,8 @@ public static class BistroBuilderFinancingEngine
         {
             return BistroBuilderFinancialRiskLevel.Severe;
         }
-        if (liquidityStatus == BistroBuilderLiquidityStatus.Critical ||
+        if (liquidityStatus == BistroBuilderLiquidityStatus.Unknown ||
+            liquidityStatus == BistroBuilderLiquidityStatus.Critical ||
             consecutiveLossDays >= 3 ||
             (rollingOperatingResultCents < 0L && outstandingDebtCents > 0L))
         {
@@ -476,12 +512,14 @@ public static class BistroBuilderFinancingEngine
 
     public static string BuildPrincipalOperationId(string loanId, int installmentNumber)
     {
-        return "financing_repayment_" + loanId + "_i" + installmentNumber.ToString("D3") + "_principal";
+        return "financing_repayment_" + loanId + "_i" +
+               installmentNumber.ToString("D3") + "_principal";
     }
 
     public static string BuildInterestOperationId(string loanId, int installmentNumber)
     {
-        return "financing_repayment_" + loanId + "_i" + installmentNumber.ToString("D3") + "_interest";
+        return "financing_repayment_" + loanId + "_i" +
+               installmentNumber.ToString("D3") + "_interest";
     }
 
     private static bool TryValidateLoan(BistroBuilderLoanRecord loan, out string error)
@@ -498,7 +536,12 @@ public static class BistroBuilderFinancingEngine
             loan.totalInterestCents < 0L ||
             loan.totalPayableCents != checked(loan.principalCents + loan.totalInterestCents) ||
             loan.installments == null ||
-            loan.installments.Count == 0)
+            loan.installments.Count == 0 ||
+            loan.firstDefaultDayIndex < 0 ||
+            (loan.hasEverDefaulted && loan.firstDefaultDayIndex < loan.openedDayIndex) ||
+            (!loan.hasEverDefaulted && loan.firstDefaultDayIndex != 0) ||
+            (loan.status == BistroBuilderLoanStatus.PaidOff && loan.paidOffDayIndex < 1) ||
+            (loan.status != BistroBuilderLoanStatus.PaidOff && loan.paidOffDayIndex != 0))
         {
             error = "El préstamo contiene datos base no válidos.";
             return false;
@@ -545,14 +588,17 @@ public static class BistroBuilderFinancingEngine
             return false;
         }
         string normalized = value.Trim().ToLowerInvariant();
-        if (!string.Equals(value, normalized, StringComparison.Ordinal) || normalized.Length > 128)
+        if (!string.Equals(value, normalized, StringComparison.Ordinal) ||
+            normalized.Length > 128)
         {
             return false;
         }
         for (int index = 0; index < normalized.Length; index++)
         {
             char c = normalized[index];
-            bool ok = c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '.';
+            bool ok = c >= 'a' && c <= 'z' ||
+                      c >= '0' && c <= '9' ||
+                      c == '_' || c == '-' || c == '.';
             if (!ok)
             {
                 return false;
