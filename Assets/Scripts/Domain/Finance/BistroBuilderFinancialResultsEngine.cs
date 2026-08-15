@@ -73,10 +73,7 @@ public static class BistroBuilderFinancialResultsEngine
     }
 
     /// <summary>
-    /// Construye el resultado diario. PurchaseOrders es una fuente opcional de
-    /// desglose para separar portes del pago total a proveedor. Si un pago no
-    /// puede enlazarse, se conserva íntegro en caja y se marca el desglose como
-    /// incompleto; nunca se inventa un porte.
+    /// Construye un resultado diario a partir de los snapshots canónicos.
     /// </summary>
     public static bool TryBuildDayResult(
         BistroBuilderFinanceSnapshot financeSnapshot,
@@ -87,89 +84,210 @@ public static class BistroBuilderFinancialResultsEngine
         out string error)
     {
         result = null;
-
-        if (!TryValidateInputs(
+        var buffer = new List<BistroBuilderDayFinancialResult>(1);
+        if (!TryBuildDayResultsRange(
                 financeSnapshot,
                 productCostSnapshot,
+                purchaseOrders,
                 dayIndex,
+                dayIndex,
+                buffer,
                 out error))
         {
             return false;
         }
 
+        result = buffer[0];
+        return true;
+    }
+
+    /// <summary>
+    /// Construye un intervalo completo en una única pasada por ledger y costes.
+    /// Evita el patrón histórico O(días * movimientos) de 3H y permite que 3J
+    /// consulte ventanas largas sin clonar/recorrer todo el estado por día.
+    /// </summary>
+    public static bool TryBuildDayResultsRange(
+        BistroBuilderFinanceSnapshot financeSnapshot,
+        BistroBuilderProductCostSnapshot productCostSnapshot,
+        IReadOnlyList<BistroBuilderPurchaseOrderRecord> purchaseOrders,
+        int startDayIndex,
+        int endDayIndex,
+        List<BistroBuilderDayFinancialResult> destination,
+        out string error)
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+        destination.Clear();
+
+        if (startDayIndex < 1 || endDayIndex < startDayIndex)
+        {
+            error = "El intervalo de resultados diarios no es válido.";
+            return false;
+        }
+
+        if (!BistroBuilderFinanceEngine.TryValidateSnapshot(
+                financeSnapshot,
+                out error) ||
+            !BistroBuilderProductCostEngine.TryValidateSnapshot(
+                productCostSnapshot,
+                out error))
+        {
+            return false;
+        }
+
+        long countLong = (long)endDayIndex - startDayIndex + 1L;
+        if (countLong > int.MaxValue)
+        {
+            error = "El intervalo de resultados es demasiado grande.";
+            return false;
+        }
+
         try
         {
-            var day = new BistroBuilderDayFinancialResult
+            int count = (int)countLong;
+            var paidOrderIds = new HashSet<string>[count * 3];
+
+            for (int dayOffset = 0; dayOffset < count; dayOffset++)
             {
-                dayIndex = dayIndex
-            };
-
-            BistroBuilderServiceFinancialResult breakfast =
-                BuildServiceResultCore(
-                    financeSnapshot,
-                    productCostSnapshot,
+                int dayIndex = checked(startDayIndex + dayOffset);
+                var day = new BistroBuilderDayFinancialResult
+                {
+                    dayIndex = dayIndex
+                };
+                day.serviceResults.Add(NewServiceResult(
                     dayIndex,
-                    BistroBuilderMealServiceAvailability.Breakfast);
-            BistroBuilderServiceFinancialResult lunch =
-                BuildServiceResultCore(
-                    financeSnapshot,
-                    productCostSnapshot,
+                    BistroBuilderMealServiceAvailability.Breakfast));
+                day.serviceResults.Add(NewServiceResult(
                     dayIndex,
-                    BistroBuilderMealServiceAvailability.Lunch);
-            BistroBuilderServiceFinancialResult dinner =
-                BuildServiceResultCore(
-                    financeSnapshot,
-                    productCostSnapshot,
+                    BistroBuilderMealServiceAvailability.Lunch));
+                day.serviceResults.Add(NewServiceResult(
                     dayIndex,
-                    BistroBuilderMealServiceAvailability.Dinner);
+                    BistroBuilderMealServiceAvailability.Dinner));
+                destination.Add(day);
+            }
 
-            day.serviceResults.Add(breakfast);
-            day.serviceResults.Add(lunch);
-            day.serviceResults.Add(dinner);
+            for (int index = 0; index < financeSnapshot.transactions.Count; index++)
+            {
+                BistroBuilderFinanceTransactionRecord transaction =
+                    financeSnapshot.transactions[index];
+                if (transaction == null ||
+                    transaction.dayIndex < startDayIndex ||
+                    transaction.dayIndex > endDayIndex)
+                {
+                    continue;
+                }
 
-            AddServiceToDay(day, breakfast);
-            AddServiceToDay(day, lunch);
-            AddServiceToDay(day, dinner);
+                int dayOffset = transaction.dayIndex - startDayIndex;
+                BistroBuilderDayFinancialResult day = destination[dayOffset];
 
-            day.costQuality = ResolveCostQuality(
-                day.consumedLineCount,
-                day.estimatedLineCount,
-                day.mixedLineCount,
-                day.actualLineCount);
-            day.costCoverageGapCents = checked(
-                day.revenueCents - day.costedSalesCents);
-            day.grossProfitCents = checked(
-                day.revenueCents - day.productCostCents);
-            day.grossMarginBasisPoints = CalculateMarginBasisPoints(
-                day.grossProfitCents,
-                day.revenueCents);
+                if (TryClassifySalesTransaction(
+                        transaction,
+                        out BistroBuilderMealServiceAvailability mealService,
+                        out BistroBuilderServiceMode serviceMode))
+                {
+                    int serviceIndex = ResolveServiceIndex(mealService);
+                    BistroBuilderServiceFinancialResult service =
+                        day.serviceResults[serviceIndex];
+                    service.revenueCents = checked(
+                        service.revenueCents + transaction.amountCents);
+                    if (serviceMode == BistroBuilderServiceMode.TableService)
+                    {
+                        service.tableRevenueCents = checked(
+                            service.tableRevenueCents + transaction.amountCents);
+                    }
+                    else
+                    {
+                        service.barRevenueCents = checked(
+                            service.barRevenueCents + transaction.amountCents);
+                    }
 
-            ClassifyDayCashAndExpenses(
-                financeSnapshot,
-                purchaseOrders,
-                dayIndex,
-                day);
+                    if (!string.IsNullOrWhiteSpace(transaction.sourceReferenceId))
+                    {
+                        int orderSetIndex = dayOffset * 3 + serviceIndex;
+                        if (paidOrderIds[orderSetIndex] == null)
+                        {
+                            paidOrderIds[orderSetIndex] =
+                                new HashSet<string>(StringComparer.Ordinal);
+                        }
+                        paidOrderIds[orderSetIndex].Add(
+                            transaction.sourceReferenceId);
+                    }
+                }
 
-            day.totalPeriodExpensesCents = checked(
-                day.procurementShippingExpensesCents +
-                day.recurringOperatingExpensesCents +
-                day.payrollExpensesCents +
-                day.marketingExpensesCents +
-                day.assetDisposalExpensesCents +
-                day.otherPeriodExpensesCents);
-            day.operatingResultCents = checked(
-                day.grossProfitCents - day.totalPeriodExpensesCents);
-            day.netCashChangeCents = checked(
-                day.totalCashInCents - day.totalCashOutCents);
+                ClassifyTransactionCashAndExpenses(
+                    transaction,
+                    purchaseOrders,
+                    day);
+            }
 
-            result = day;
+            for (int index = 0;
+                 index < productCostSnapshot.consumedLineCosts.Count;
+                 index++)
+            {
+                BistroBuilderConsumedLineCostRecord line =
+                    productCostSnapshot.consumedLineCosts[index];
+                if (line == null ||
+                    line.dayIndex < startDayIndex ||
+                    line.dayIndex > endDayIndex ||
+                    !IsConcreteMealService(line.mealService))
+                {
+                    continue;
+                }
+
+                int dayOffset = line.dayIndex - startDayIndex;
+                int serviceIndex = ResolveServiceIndex(line.mealService);
+                BistroBuilderServiceFinancialResult service =
+                    destination[dayOffset].serviceResults[serviceIndex];
+
+                service.costedSalesCents = checked(
+                    service.costedSalesCents + line.salePriceCents);
+                service.productCostCents = checked(
+                    service.productCostCents + line.actualCostCents);
+                service.theoreticalProductCostCents = checked(
+                    service.theoreticalProductCostCents +
+                    line.theoreticalCostCents);
+                service.consumedLineCount++;
+
+                switch (line.costQuality)
+                {
+                    case BistroBuilderProductCostQuality.Actual:
+                        service.actualLineCount++;
+                        break;
+                    case BistroBuilderProductCostQuality.Mixed:
+                        service.mixedLineCount++;
+                        break;
+                    default:
+                        service.estimatedLineCount++;
+                        break;
+                }
+            }
+
+            for (int dayOffset = 0; dayOffset < count; dayOffset++)
+            {
+                BistroBuilderDayFinancialResult day = destination[dayOffset];
+                for (int serviceIndex = 0; serviceIndex < 3; serviceIndex++)
+                {
+                    BistroBuilderServiceFinancialResult service =
+                        day.serviceResults[serviceIndex];
+                    HashSet<string> orders =
+                        paidOrderIds[dayOffset * 3 + serviceIndex];
+                    service.paidOrderCount = orders != null ? orders.Count : 0;
+                    FinalizeService(service);
+                    AddServiceToDay(day, service);
+                }
+
+                FinalizeDay(day);
+            }
+
             error = string.Empty;
             return true;
         }
         catch (OverflowException)
         {
-            result = null;
-            error = "El resultado diario desborda el rango monetario soportado.";
+            destination.Clear();
+            error = "El intervalo de resultados financieros desborda el rango monetario soportado.";
             return false;
         }
     }
@@ -193,8 +311,7 @@ public static class BistroBuilderFinancialResultsEngine
             return false;
         }
 
-        string category = Normalize(record.categoryId);
-        switch (category)
+        switch (Normalize(record.categoryId))
         {
             case "sales.breakfast.table":
                 mealService = BistroBuilderMealServiceAvailability.Breakfast;
@@ -288,12 +405,7 @@ public static class BistroBuilderFinancialResultsEngine
         int dayIndex,
         BistroBuilderMealServiceAvailability mealService)
     {
-        var result = new BistroBuilderServiceFinancialResult
-        {
-            dayIndex = dayIndex,
-            mealService = mealService
-        };
-
+        var result = NewServiceResult(dayIndex, mealService);
         var paidOrderIds = new HashSet<string>(StringComparer.Ordinal);
 
         for (int index = 0; index < financeSnapshot.transactions.Count; index++)
@@ -367,6 +479,40 @@ public static class BistroBuilderFinancialResultsEngine
             }
         }
 
+        FinalizeService(result);
+        return result;
+    }
+
+    private static BistroBuilderServiceFinancialResult NewServiceResult(
+        int dayIndex,
+        BistroBuilderMealServiceAvailability mealService)
+    {
+        return new BistroBuilderServiceFinancialResult
+        {
+            dayIndex = dayIndex,
+            mealService = mealService
+        };
+    }
+
+    private static int ResolveServiceIndex(
+        BistroBuilderMealServiceAvailability mealService)
+    {
+        switch (mealService)
+        {
+            case BistroBuilderMealServiceAvailability.Breakfast:
+                return 0;
+            case BistroBuilderMealServiceAvailability.Lunch:
+                return 1;
+            case BistroBuilderMealServiceAvailability.Dinner:
+                return 2;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(mealService));
+        }
+    }
+
+    private static void FinalizeService(
+        BistroBuilderServiceFinancialResult result)
+    {
         result.costQuality = ResolveCostQuality(
             result.consumedLineCount,
             result.estimatedLineCount,
@@ -379,8 +525,6 @@ public static class BistroBuilderFinancialResultsEngine
         result.grossMarginBasisPoints = CalculateMarginBasisPoints(
             result.grossProfitCents,
             result.revenueCents);
-
-        return result;
     }
 
     private static void AddServiceToDay(
@@ -407,108 +551,152 @@ public static class BistroBuilderFinancialResultsEngine
             day.actualLineCount + service.actualLineCount);
     }
 
-    private static void ClassifyDayCashAndExpenses(
-        BistroBuilderFinanceSnapshot financeSnapshot,
+    private static void FinalizeDay(BistroBuilderDayFinancialResult day)
+    {
+        day.costQuality = ResolveCostQuality(
+            day.consumedLineCount,
+            day.estimatedLineCount,
+            day.mixedLineCount,
+            day.actualLineCount);
+        day.costCoverageGapCents = checked(
+            day.revenueCents - day.costedSalesCents);
+        day.grossProfitCents = checked(
+            day.revenueCents - day.productCostCents);
+        day.grossMarginBasisPoints = CalculateMarginBasisPoints(
+            day.grossProfitCents,
+            day.revenueCents);
+        day.totalPeriodExpensesCents = checked(
+            day.procurementShippingExpensesCents +
+            day.recurringOperatingExpensesCents +
+            day.payrollExpensesCents +
+            day.marketingExpensesCents +
+            day.assetDisposalExpensesCents +
+            day.inventoryWriteOffExpensesCents +
+            day.financingInterestExpensesCents +
+            day.otherPeriodExpensesCents);
+        day.operatingResultCents = checked(
+            day.grossProfitCents - day.totalPeriodExpensesCents);
+        day.netCashChangeCents = checked(
+            day.totalCashInCents - day.totalCashOutCents);
+    }
+
+    private static void ClassifyTransactionCashAndExpenses(
+        BistroBuilderFinanceTransactionRecord transaction,
         IReadOnlyList<BistroBuilderPurchaseOrderRecord> purchaseOrders,
-        int dayIndex,
         BistroBuilderDayFinancialResult day)
     {
-        for (int index = 0; index < financeSnapshot.transactions.Count; index++)
+        if (transaction.kind == BistroBuilderFinanceTransactionKind.Credit)
         {
-            BistroBuilderFinanceTransactionRecord transaction =
-                financeSnapshot.transactions[index];
-            if (transaction == null || transaction.dayIndex != dayIndex)
+            day.totalCashInCents = checked(
+                day.totalCashInCents + transaction.amountCents);
+
+            if (TryClassifySalesTransaction(transaction, out _, out _))
             {
-                continue;
+                return;
             }
-
-            if (transaction.kind == BistroBuilderFinanceTransactionKind.Credit)
-            {
-                day.totalCashInCents = checked(
-                    day.totalCashInCents + transaction.amountCents);
-
-                if (TryClassifySalesTransaction(transaction, out _, out _))
-                {
-                    continue;
-                }
-
-                if (IsCategory(transaction, "income.asset_resale"))
-                {
-                    day.assetResaleCashInCents = checked(
-                        day.assetResaleCashInCents + transaction.amountCents);
-                }
-                else
-                {
-                    day.otherCashInCents = checked(
-                        day.otherCashInCents + transaction.amountCents);
-                }
-                continue;
-            }
-
-            day.totalCashOutCents = checked(
-                day.totalCashOutCents + transaction.amountCents);
 
             string category = Normalize(transaction.categoryId);
-            if (category == BistroBuilderSupplierPurchaseFinancePolicy.CategoryId)
+            if (category == BistroBuilderFinancingEngine.LoanProceedsCategoryId)
             {
-                day.supplierPurchaseCashOutCents = checked(
-                    day.supplierPurchaseCashOutCents + transaction.amountCents);
-
-                if (TryResolveSupplierShipping(
-                        transaction,
-                        purchaseOrders,
-                        out long shippingCents))
-                {
-                    day.procurementShippingExpensesCents = checked(
-                        day.procurementShippingExpensesCents + shippingCents);
-                }
-                else
-                {
-                    day.supplierPaymentBreakdownMissingCount = checked(
-                        day.supplierPaymentBreakdownMissingCount + 1);
-                }
+                day.loanProceedsCashInCents = checked(
+                    day.loanProceedsCashInCents + transaction.amountCents);
             }
-            else if (category.StartsWith(InvestmentPrefix, StringComparison.Ordinal))
+            else if (category == "income.asset_resale")
             {
-                day.investmentCashOutCents = checked(
-                    day.investmentCashOutCents + transaction.amountCents);
-            }
-            else if (category.StartsWith(
-                         OperatingExpensePrefix,
-                         StringComparison.Ordinal))
-            {
-                day.recurringOperatingExpensesCents = checked(
-                    day.recurringOperatingExpensesCents + transaction.amountCents);
-            }
-            else if (category == BistroBuilderOperatingExpensePolicy.PayrollCategoryId)
-            {
-                day.payrollExpensesCents = checked(
-                    day.payrollExpensesCents + transaction.amountCents);
-            }
-            else if (category == MarketingExpensePrefix ||
-                     category.StartsWith(
-                         MarketingExpensePrefix + ".",
-                         StringComparison.Ordinal))
-            {
-                day.marketingExpensesCents = checked(
-                    day.marketingExpensesCents + transaction.amountCents);
-            }
-            else if (category == "expense.demolition" ||
-                     category == "expense.asset_removal")
-            {
-                day.assetDisposalExpensesCents = checked(
-                    day.assetDisposalExpensesCents + transaction.amountCents);
-            }
-            else if (category.StartsWith(ExpensePrefix, StringComparison.Ordinal))
-            {
-                day.otherPeriodExpensesCents = checked(
-                    day.otherPeriodExpensesCents + transaction.amountCents);
+                day.assetResaleCashInCents = checked(
+                    day.assetResaleCashInCents + transaction.amountCents);
             }
             else
             {
-                day.otherCashOutCents = checked(
-                    day.otherCashOutCents + transaction.amountCents);
+                day.otherCashInCents = checked(
+                    day.otherCashInCents + transaction.amountCents);
             }
+            return;
+        }
+
+        day.totalCashOutCents = checked(
+            day.totalCashOutCents + transaction.amountCents);
+
+        string debitCategory = Normalize(transaction.categoryId);
+        if (debitCategory == BistroBuilderSupplierPurchaseFinancePolicy.CategoryId)
+        {
+            day.supplierPurchaseCashOutCents = checked(
+                day.supplierPurchaseCashOutCents + transaction.amountCents);
+
+            if (TryResolveSupplierShipping(
+                    transaction,
+                    purchaseOrders,
+                    out long shippingCents))
+            {
+                day.procurementShippingExpensesCents = checked(
+                    day.procurementShippingExpensesCents + shippingCents);
+            }
+            else
+            {
+                day.supplierPaymentBreakdownMissingCount = checked(
+                    day.supplierPaymentBreakdownMissingCount + 1);
+            }
+        }
+        else if (debitCategory ==
+                 BistroBuilderFinancingEngine.PrincipalRepaymentCategoryId)
+        {
+            day.debtPrincipalCashOutCents = checked(
+                day.debtPrincipalCashOutCents + transaction.amountCents);
+        }
+        else if (debitCategory ==
+                 BistroBuilderFinancingEngine.InterestExpenseCategoryId)
+        {
+            day.financingInterestExpensesCents = checked(
+                day.financingInterestExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory ==
+                     BistroBuilderInventoryLossFinancePolicy.ExpirationCategoryId ||
+                 debitCategory ==
+                     BistroBuilderInventoryLossFinancePolicy.WasteCategoryId)
+        {
+            day.inventoryWriteOffExpensesCents = checked(
+                day.inventoryWriteOffExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory.StartsWith(InvestmentPrefix, StringComparison.Ordinal))
+        {
+            day.investmentCashOutCents = checked(
+                day.investmentCashOutCents + transaction.amountCents);
+        }
+        else if (debitCategory.StartsWith(
+                     OperatingExpensePrefix,
+                     StringComparison.Ordinal))
+        {
+            day.recurringOperatingExpensesCents = checked(
+                day.recurringOperatingExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory == BistroBuilderOperatingExpensePolicy.PayrollCategoryId)
+        {
+            day.payrollExpensesCents = checked(
+                day.payrollExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory == MarketingExpensePrefix ||
+                 debitCategory.StartsWith(
+                     MarketingExpensePrefix + ".",
+                     StringComparison.Ordinal))
+        {
+            day.marketingExpensesCents = checked(
+                day.marketingExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory == "expense.demolition" ||
+                 debitCategory == "expense.asset_removal")
+        {
+            day.assetDisposalExpensesCents = checked(
+                day.assetDisposalExpensesCents + transaction.amountCents);
+        }
+        else if (debitCategory.StartsWith(ExpensePrefix, StringComparison.Ordinal))
+        {
+            day.otherPeriodExpensesCents = checked(
+                day.otherPeriodExpensesCents + transaction.amountCents);
+        }
+        else
+        {
+            day.otherCashOutCents = checked(
+                day.otherCashOutCents + transaction.amountCents);
         }
     }
 
@@ -591,17 +779,6 @@ public static class BistroBuilderFinancialResultsEngine
         }
 
         return BistroBuilderFinancialResultCostQuality.Mixed;
-    }
-
-    private static bool IsCategory(
-        BistroBuilderFinanceTransactionRecord transaction,
-        string categoryId)
-    {
-        return transaction != null &&
-               string.Equals(
-                   Normalize(transaction.categoryId),
-                   categoryId,
-                   StringComparison.Ordinal);
     }
 
     private static string Normalize(string value)
