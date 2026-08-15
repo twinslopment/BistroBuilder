@@ -12,29 +12,18 @@ using UnityEngine;
 [AddComponentMenu("Bistro Builder/Finance/Operating Expenses Service")]
 public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
 {
-    [SerializeField]
-    private BistroBuilderFinanceService financeService;
-
-    [SerializeField]
-    private BistroBuilderGeneralGameStateService generalGameStateService;
-
-    [SerializeField]
-    private GameClock gameClock;
-
-    [SerializeField]
-    private BistroBuilderSaveGameService saveGameService;
-
-    [SerializeField]
-    private BistroBuilderOperatingExpenseProfile expenseProfile;
+    [SerializeField] private BistroBuilderFinanceService financeService;
+    [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
+    [SerializeField] private GameClock gameClock;
+    [SerializeField] private BistroBuilderSaveGameService saveGameService;
+    [SerializeField] private BistroBuilderOperatingExpenseProfile expenseProfile;
 
     public event Action<BistroBuilderFinanceTransactionRecord>
         OperatingExpensePosted;
-
     public event Action<BistroBuilderFinanceTransactionRecord>
         PayrollPosted;
 
-    public BistroBuilderOperatingExpenseProfile ExpenseProfile =>
-        expenseProfile;
+    public BistroBuilderOperatingExpenseProfile ExpenseProfile => expenseProfile;
 
     private bool subscribed;
 
@@ -158,6 +147,71 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
             OperatingExpensePosted?.Invoke(posted);
         }
 
+        return true;
+    }
+
+    /// <summary>
+    /// Calcula obligaciones recurrentes conocidas dentro de un intervalo.
+    /// Es una proyección pura: no publica movimientos ni cambia calendario.
+    /// Nóminas quedan fuera porque 3E recibe su importe desde Personal y no
+    /// dispone todavía de un calendario salarial autoritativo futuro.
+    /// </summary>
+    public bool TryCalculateRecurringObligationsCents(
+        int startDayIndex,
+        int endDayIndex,
+        out long totalCents,
+        out string error)
+    {
+        totalCents = 0L;
+        if (!ValidateConfiguration(out error))
+        {
+            return false;
+        }
+        if (startDayIndex < 1 || endDayIndex < startDayIndex)
+        {
+            error = "El intervalo de obligaciones operativas no es válido.";
+            return false;
+        }
+
+        try
+        {
+            var expenses = expenseProfile.Expenses;
+            for (int expenseIndex = 0; expenseIndex < expenses.Count; expenseIndex++)
+            {
+                BistroBuilderRecurringExpenseDefinition expense = expenses[expenseIndex];
+                if (expense == null || !expense.Active)
+                {
+                    continue;
+                }
+
+                if (!BistroBuilderOperatingExpensePolicy.TryGetNextDueDay(
+                        expense,
+                        startDayIndex,
+                        out int dueDay))
+                {
+                    continue;
+                }
+
+                while (dueDay <= endDayIndex)
+                {
+                    totalCents = checked(totalCents + expense.AmountCents);
+                    long next = (long)dueDay + expense.IntervalDays;
+                    if (next > endDayIndex || next > int.MaxValue)
+                    {
+                        break;
+                    }
+                    dueDay = (int)next;
+                }
+            }
+        }
+        catch (OverflowException)
+        {
+            totalCents = 0L;
+            error = "Las obligaciones operativas proyectadas desbordan el rango monetario.";
+            return false;
+        }
+
+        error = string.Empty;
         return true;
     }
 
