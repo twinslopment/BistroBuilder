@@ -12,20 +12,11 @@ using UnityEngine;
 [AddComponentMenu("Bistro Builder/Finance/Financial Results Service")]
 public sealed class BistroBuilderFinancialResultsService : MonoBehaviour
 {
-    [SerializeField]
-    private BistroBuilderFinanceService financeService;
-
-    [SerializeField]
-    private BistroBuilderProductCostService productCostService;
-
-    [SerializeField]
-    private BistroBuilderGeneralGameStateService generalGameStateService;
-
-    [SerializeField]
-    private BistroBuilderMenuOfferService menuOfferService;
-
-    [SerializeField]
-    private RestaurantServiceStateService serviceStateService;
+    [SerializeField] private BistroBuilderFinanceService financeService;
+    [SerializeField] private BistroBuilderProductCostService productCostService;
+    [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
+    [SerializeField] private BistroBuilderMenuOfferService menuOfferService;
+    [SerializeField] private RestaurantServiceStateService serviceStateService;
 
     private readonly List<BistroBuilderPurchaseOrderRecord> purchaseOrderBuffer =
         new List<BistroBuilderPurchaseOrderRecord>(64);
@@ -136,13 +127,47 @@ public sealed class BistroBuilderFinancialResultsService : MonoBehaviour
         }
 
         CopyPurchaseOrdersIfAvailable();
-
         return BistroBuilderFinancialResultsEngine.TryBuildDayResult(
             finance,
             productCost,
             purchaseOrderBuffer,
             dayIndex,
             out result,
+            out error);
+    }
+
+    /// <summary>
+    /// Proyecta un intervalo completo capturando Finanzas/Costes una sola vez.
+    /// 3H y la futura 3J deben usar esta API para históricos y gráficos.
+    /// </summary>
+    public bool TryGetDayResults(
+        int startDayIndex,
+        int endDayIndex,
+        List<BistroBuilderDayFinancialResult> destination,
+        out string error)
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+        destination.Clear();
+
+        if (!TryGetCanonicalSnapshots(
+                out BistroBuilderFinanceSnapshot finance,
+                out BistroBuilderProductCostSnapshot productCost,
+                out error))
+        {
+            return false;
+        }
+
+        CopyPurchaseOrdersIfAvailable();
+        return BistroBuilderFinancialResultsEngine.TryBuildDayResultsRange(
+            finance,
+            productCost,
+            purchaseOrderBuffer,
+            startDayIndex,
+            endDayIndex,
+            destination,
             out error);
     }
 
