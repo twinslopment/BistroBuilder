@@ -107,10 +107,23 @@ public sealed class BistroBuilderFinancingSaveSectionProvider :
         string error;
         if (!sectionAppliedThisLoad)
         {
+            // Compatibilidad con partidas anteriores a 3I: una sección ausente
+            // es legítima únicamente si finance.runtime tampoco demuestra que
+            // existía deuda. Si hay movimientos source=financing, aceptar un
+            // estado vacío ocultaría/cancelaría obligaciones reales.
             if (!financingService.TryInitializeFresh(out error))
             {
                 context.Fail(
                     "No se pudo inicializar 3I para una partida anterior. " + error);
+                return;
+            }
+
+            if (!financingService.TryValidateLedgerConsistency(out error))
+            {
+                context.Fail(
+                    "Falta finance.financing.runtime pero el ledger conserva " +
+                    "movimientos de financiación. La partida no puede cargarse " +
+                    "de forma segura. " + error);
             }
             return;
         }
