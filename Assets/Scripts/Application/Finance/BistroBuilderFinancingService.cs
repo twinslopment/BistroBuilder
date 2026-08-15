@@ -37,10 +37,14 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
 
     public bool IsInitialized => state != null;
     public BistroBuilderFinanceService FinanceService => financeService;
-    public BistroBuilderSupplierPurchaseFinanceBridge SupplierFinanceBridge => supplierFinanceBridge;
-    public BistroBuilderFinancialHistoryService FinancialHistoryService => financialHistoryService;
-    public BistroBuilderOperatingExpenseService OperatingExpenseService => operatingExpenseService;
-    public BistroBuilderGeneralGameStateService GeneralGameStateService => generalGameStateService;
+    public BistroBuilderSupplierPurchaseFinanceBridge SupplierFinanceBridge =>
+        supplierFinanceBridge;
+    public BistroBuilderFinancialHistoryService FinancialHistoryService =>
+        financialHistoryService;
+    public BistroBuilderOperatingExpenseService OperatingExpenseService =>
+        operatingExpenseService;
+    public BistroBuilderGeneralGameStateService GeneralGameStateService =>
+        generalGameStateService;
     public BistroBuilderSaveGameService SaveGameService => saveGameService;
     public int LiquidityHorizonDays => liquidityHorizonDays;
     public int LossAnalysisWindowDays => lossAnalysisWindowDays;
@@ -204,11 +208,10 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
             out bool hasDefaultedLoan);
         bool hasOverdue = liquidity.overdueDebtCents > 0L;
 
-        int consecutiveLossDays = 0;
         if (!TryGetCompletedLossMetrics(
                 out _,
                 out _,
-                out consecutiveLossDays,
+                out int consecutiveLossDays,
                 out error))
         {
             return false;
@@ -267,7 +270,9 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
                     reason = "La deuda proyectada supera el límite financiable.";
                 }
                 else if (liquidity.cashBalanceCents < 0L &&
-                         offer.principalCents <= -liquidity.cashBalanceCents)
+                         !WouldCreditRestorePositiveCash(
+                             liquidity.cashBalanceCents,
+                             offer.principalCents))
                 {
                     eligible = false;
                     reason = "La financiación no corrige el déficit actual de caja.";
@@ -548,9 +553,8 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
             out _,
             out _);
 
-        int horizonEnd;
         long horizonEndLong = (long)dayIndex + liquidityHorizonDays;
-        horizonEnd = horizonEndLong > int.MaxValue
+        int horizonEnd = horizonEndLong > int.MaxValue
             ? int.MaxValue
             : (int)horizonEndLong;
         bool recurringResolved =
@@ -563,13 +567,23 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
         long available = commitmentsResolved
             ? checked(financeService.CurrentBalanceCents - committed)
             : financeService.CurrentBalanceCents;
-        long knownObligations = checked(dueHorizon + recurringOperating);
+        long knownObligations = checked(
+            dueHorizon + (recurringResolved ? recurringOperating : 0L));
         long projected = checked(available - knownObligations);
         bool complete = commitmentsResolved && recurringResolved;
 
         int knownCoverage = 0;
         BistroBuilderLiquidityStatus status;
-        if (!complete)
+        if (financeService.CurrentBalanceCents < 0L)
+        {
+            status = BistroBuilderLiquidityStatus.Insolvent;
+        }
+        else if (overdue > 0L ||
+                 (commitmentsResolved && available < 0L))
+        {
+            status = BistroBuilderLiquidityStatus.Critical;
+        }
+        else if (!complete)
         {
             status = BistroBuilderLiquidityStatus.Unknown;
         }
@@ -737,10 +751,11 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
                 bool hasPrincipal = financeService.TryGetTransactionByOperationId(
                     principalOperation,
                     out BistroBuilderFinanceTransactionRecord principalTx);
+                BistroBuilderFinanceTransactionRecord interestTx = null;
                 bool hasInterest = installment.interestCents > 0L &&
                     financeService.TryGetTransactionByOperationId(
                         interestOperation,
-                        out BistroBuilderFinanceTransactionRecord interestTx);
+                        out interestTx);
 
                 if (installment.status == BistroBuilderLoanInstallmentStatus.Paid)
                 {
@@ -819,12 +834,13 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
                 installment.installmentNumber),
             out BistroBuilderFinanceTransactionRecord principalTx);
         bool interestRequired = installment.interestCents > 0L;
+        BistroBuilderFinanceTransactionRecord interestTx = null;
         bool hasInterest = interestRequired &&
             financeService.TryGetTransactionByOperationId(
                 BistroBuilderFinancingEngine.BuildInterestOperationId(
                     loan.loanId,
                     installment.installmentNumber),
-                out BistroBuilderFinanceTransactionRecord interestTx);
+                out interestTx);
 
         if (!hasPrincipal && !hasInterest)
         {
@@ -1097,9 +1113,7 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
         int count = 0;
         for (int index = 0; index < snapshot.loans.Count; index++)
         {
-            BistroBuilderLoanRecord loan = snapshot.loans[index];
-            if (loan.status == BistroBuilderLoanStatus.Defaulted &&
-                loan.status != BistroBuilderLoanStatus.PaidOff)
+            if (snapshot.loans[index].status == BistroBuilderLoanStatus.Defaulted)
             {
                 count++;
             }
@@ -1165,6 +1179,24 @@ public sealed class BistroBuilderFinancingService : MonoBehaviour
             raw,
             0,
             MidpointRounding.AwayFromZero);
+    }
+
+    private static bool WouldCreditRestorePositiveCash(
+        long currentCashCents,
+        long creditCents)
+    {
+        if (currentCashCents >= 0L)
+        {
+            return true;
+        }
+        try
+        {
+            return checked(currentCashCents + creditCents) > 0L;
+        }
+        catch (OverflowException)
+        {
+            return creditCents > 0L;
+        }
     }
 
     private int CurrentMinuteOfDay =>
