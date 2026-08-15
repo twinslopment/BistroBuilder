@@ -50,8 +50,11 @@ public sealed class BistroBuilderMealServicePerformance
 /// <summary>
 /// Informe histórico de un intervalo inclusivo de días.
 ///
-/// Es una proyección derivada de 3G: no posee ledger, no congela resultados y
-/// no necesita una sección de guardado propia.
+/// activeDayCount cuenta exclusivamente jornadas con actividad de servicio.
+/// resultDayCount cuenta días que aportan ventas/costes/gastos al resultado.
+/// financialActivityDayCount incluye además financiación e inversiones.
+/// Esta separación evita que pedir un préstamo convierta un día cerrado en
+/// "jornada activa" o rompa indicadores operativos.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderFinancialPeriodReport
@@ -60,6 +63,8 @@ public sealed class BistroBuilderFinancialPeriodReport
     public int endDayIndex = 1;
     public int dayCount = 1;
     public int activeDayCount;
+    public int resultDayCount;
+    public int financialActivityDayCount;
     public int profitableDayCount;
     public int lossDayCount;
     public int breakEvenDayCount;
@@ -72,6 +77,9 @@ public sealed class BistroBuilderFinancialPeriodReport
     public long totalPeriodExpensesCents;
     public long operatingResultCents;
     public int operatingMarginBasisPoints;
+
+    public long inventoryWriteOffExpensesCents;
+    public long financingInterestExpensesCents;
 
     public int paidOrderCount;
     public int consumedLineCount;
@@ -88,6 +96,8 @@ public sealed class BistroBuilderFinancialPeriodReport
     public long netCashChangeCents;
     public long supplierPurchaseCashOutCents;
     public long investmentCashOutCents;
+    public long debtPrincipalCashOutCents;
+    public long loanProceedsCashInCents;
     public long assetResaleCashInCents;
 
     public long averageDailyRevenueCents;
