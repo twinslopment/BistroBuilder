@@ -23,7 +23,8 @@ public static class BistroBuilderFinance3IInstaller
         }
 
         Scene scene = SceneManager.GetActiveScene();
-        if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrWhiteSpace(scene.path))
+        if (!scene.IsValid() || !scene.isLoaded ||
+            string.IsNullOrWhiteSpace(scene.path))
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
@@ -64,24 +65,44 @@ public static class BistroBuilderFinance3IInstaller
                 FindSingleSceneComponent<BistroBuilderSupplierPurchaseFinanceBridge>(scene);
             BistroBuilderFinancialHistoryService history =
                 FindSingleSceneComponent<BistroBuilderFinancialHistoryService>(scene);
+            BistroBuilderOperatingExpenseService operatingExpenses =
+                FindSingleSceneComponent<BistroBuilderOperatingExpenseService>(scene);
             BistroBuilderGeneralGameStateService generalState =
                 FindSingleSceneComponent<BistroBuilderGeneralGameStateService>(scene);
             GameClock gameClock = FindSingleSceneComponent<GameClock>(scene);
+            BistroBuilderSaveGameService saveGame =
+                FindSingleSceneComponent<BistroBuilderSaveGameService>(scene);
+            BistroBuilderInventoryService inventory =
+                FindSingleSceneComponent<BistroBuilderInventoryService>(scene);
+            BistroBuilderRecipeCatalogService recipes =
+                FindSingleSceneComponent<BistroBuilderRecipeCatalogService>(scene);
 
             BistroBuilderFinancingService financing =
                 GetOrAdd<BistroBuilderFinancingService>(gameSystems);
             SetReference(financing, "financeService", finance);
             SetReference(financing, "supplierFinanceBridge", supplierFinance);
             SetReference(financing, "financialHistoryService", history);
+            SetReference(financing, "operatingExpenseService", operatingExpenses);
             SetReference(financing, "generalGameStateService", generalState);
             SetReference(financing, "gameClock", gameClock);
+            SetReference(financing, "saveGameService", saveGame);
 
             BistroBuilderFinancingSaveSectionProvider provider =
                 GetOrAdd<BistroBuilderFinancingSaveSectionProvider>(gameSystems);
             SetReference(provider, "financingService", financing);
 
+            BistroBuilderInventoryLossFinanceBridge lossBridge =
+                GetOrAdd<BistroBuilderInventoryLossFinanceBridge>(gameSystems);
+            SetReference(lossBridge, "financeService", finance);
+            SetReference(lossBridge, "inventoryService", inventory);
+            SetReference(lossBridge, "recipeCatalogService", recipes);
+            SetReference(lossBridge, "generalGameStateService", generalState);
+            SetReference(lossBridge, "gameClock", gameClock);
+            SetReference(lossBridge, "saveGameService", saveGame);
+
             EditorUtility.SetDirty(financing);
             EditorUtility.SetDirty(provider);
+            EditorUtility.SetDirty(lossBridge);
             EditorSceneManager.MarkSceneDirty(scene);
 
             if (!EditorSceneManager.SaveScene(scene))
@@ -90,6 +111,7 @@ public static class BistroBuilderFinance3IInstaller
                     "Unity no pudo guardar la escena tras instalar 3I.");
             }
 
+            saveGame.RefreshExtensions();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
@@ -109,8 +131,9 @@ public static class BistroBuilderFinance3IInstaller
             {
                 throw new InvalidOperationException(
                     "La validación automática de 3I no fue limpia. " +
-                    "Validación: " + validationPassed + " OK / " + validationFailed +
-                    " errores. Autotest: " + testPassed + " OK / " + testFailed + " fallos.");
+                    "Validación: " + validationPassed + " OK / " +
+                    validationFailed + " errores. Autotest: " +
+                    testPassed + " OK / " + testFailed + " fallos.");
             }
 
             EditorUtility.DisplayDialog(
@@ -126,7 +149,8 @@ public static class BistroBuilderFinance3IInstaller
             RestoreScene(scenePath, absoluteScenePath, backup);
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "La instalación 3I falló y la escena fue restaurada.\n\n" + exception.Message,
+                "La instalación 3I falló y la escena fue restaurada.\n\n" +
+                exception.Message,
                 "Aceptar");
         }
         finally
@@ -141,7 +165,10 @@ public static class BistroBuilderFinance3IInstaller
         for (int index = 0; index < roots.Length; index++)
         {
             if (roots[index] != null &&
-                string.Equals(roots[index].name, "GameSystems", StringComparison.Ordinal))
+                string.Equals(
+                    roots[index].name,
+                    "GameSystems",
+                    StringComparison.Ordinal))
             {
                 return roots[index];
             }
@@ -193,7 +220,8 @@ public static class BistroBuilderFinance3IInstaller
         if (property == null)
         {
             throw new InvalidOperationException(
-                "No existe el campo " + fieldName + " en " + target.GetType().Name + ".");
+                "No existe el campo " + fieldName + " en " +
+                target.GetType().Name + ".");
         }
         property.objectReferenceValue = value;
         serialized.ApplyModifiedPropertiesWithoutUndo();
