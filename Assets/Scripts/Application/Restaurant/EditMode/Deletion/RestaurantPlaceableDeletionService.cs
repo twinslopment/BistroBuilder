@@ -136,8 +136,9 @@ public sealed class RestaurantPlaceableDeletionService : MonoBehaviour
                 out result);
         }
 
+        string economyError = string.Empty;
         bool economyCommitted = economyGate == null ||
-            economyGate.TryCommitDeletion(placeable, out string economyError);
+            economyGate.TryCommitDeletion(placeable, out economyError);
         if (!economyCommitted)
         {
             lifecycleService.TryActivateInstance(placeable, deletedState, out _);
