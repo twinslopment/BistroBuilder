@@ -86,7 +86,10 @@ public sealed class BistroBuilderServiceFinancialResult
 ///
 /// Separa deliberadamente resultado y caja:
 /// - Compras de inventario son caja; el producto se reconoce como COGS al consumir.
+/// - Caducidad/merma se reconoce como pérdida cuando el inventario sale sin venta.
 /// - Portes de proveedor son gasto de aprovisionamiento del día del pago.
+/// - Principal de deuda y desembolsos de préstamos son solo caja.
+/// - Intereses de financiación sí son gasto del periodo.
 /// - Inversiones son caja, no gasto operativo del día.
 /// - Reventa de activos es recuperación de caja independiente.
 /// </summary>
@@ -119,12 +122,16 @@ public sealed class BistroBuilderDayFinancialResult
     public long payrollExpensesCents;
     public long marketingExpensesCents;
     public long assetDisposalExpensesCents;
+    public long inventoryWriteOffExpensesCents;
+    public long financingInterestExpensesCents;
     public long otherPeriodExpensesCents;
     public long totalPeriodExpensesCents;
     public long operatingResultCents;
 
     public long supplierPurchaseCashOutCents;
     public long investmentCashOutCents;
+    public long debtPrincipalCashOutCents;
+    public long loanProceedsCashInCents;
     public long assetResaleCashInCents;
     public long otherCashInCents;
     public long otherCashOutCents;
@@ -135,6 +142,28 @@ public sealed class BistroBuilderDayFinancialResult
     public bool IsCostCoverageComplete => costCoverageGapCents == 0L;
     public bool HasCompleteSupplierPaymentBreakdown =>
         supplierPaymentBreakdownMissingCount == 0;
+
+    /// <summary>
+    /// Actividad operativa real del restaurante. No se activa por préstamos,
+    /// inversiones ni simples movimientos de tesorería.
+    /// </summary>
+    public bool HasServiceActivity =>
+        revenueCents != 0L ||
+        productCostCents != 0L ||
+        consumedLineCount != 0 ||
+        paidOrderCount != 0;
+
+    /// <summary>
+    /// Día relevante para evaluar beneficio/pérdida. Incluye jornadas sin
+    /// ventas que soportan gastos reales, pero excluye financiación pura.
+    /// </summary>
+    public bool HasOperatingResultActivity =>
+        HasServiceActivity || totalPeriodExpensesCents != 0L;
+
+    public bool HasFinancialActivity =>
+        HasOperatingResultActivity ||
+        totalCashInCents != 0L ||
+        totalCashOutCents != 0L;
 
     public BistroBuilderDayFinancialResult DeepClone()
     {
@@ -160,11 +189,15 @@ public sealed class BistroBuilderDayFinancialResult
             payrollExpensesCents = payrollExpensesCents,
             marketingExpensesCents = marketingExpensesCents,
             assetDisposalExpensesCents = assetDisposalExpensesCents,
+            inventoryWriteOffExpensesCents = inventoryWriteOffExpensesCents,
+            financingInterestExpensesCents = financingInterestExpensesCents,
             otherPeriodExpensesCents = otherPeriodExpensesCents,
             totalPeriodExpensesCents = totalPeriodExpensesCents,
             operatingResultCents = operatingResultCents,
             supplierPurchaseCashOutCents = supplierPurchaseCashOutCents,
             investmentCashOutCents = investmentCashOutCents,
+            debtPrincipalCashOutCents = debtPrincipalCashOutCents,
+            loanProceedsCashInCents = loanProceedsCashInCents,
             assetResaleCashInCents = assetResaleCashInCents,
             otherCashInCents = otherCashInCents,
             otherCashOutCents = otherCashOutCents,
