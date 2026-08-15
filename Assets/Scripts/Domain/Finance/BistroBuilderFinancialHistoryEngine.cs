@@ -48,7 +48,8 @@ public static class BistroBuilderFinancialHistoryEngine
             BistroBuilderMealServicePerformance dinner =
                 NewServicePerformance(BistroBuilderMealServiceAvailability.Dinner);
 
-            bool hasActiveDay = false;
+            bool hasServiceDay = false;
+            bool hasResultDay = false;
 
             for (int index = 0; index < dailyResults.Count; index++)
             {
@@ -65,11 +66,25 @@ public static class BistroBuilderFinancialHistoryEngine
                 candidate.dailyResults.Add(day.DeepClone());
                 AddDay(candidate, day);
 
-                bool active = IsActiveDay(day);
-                if (active)
+                if (day.HasFinancialActivity)
+                {
+                    candidate.financialActivityDayCount++;
+                }
+
+                if (day.HasServiceActivity)
                 {
                     candidate.activeDayCount++;
+                    if (!hasServiceDay || day.revenueCents > candidate.bestRevenueCents)
+                    {
+                        candidate.bestRevenueDayIndex = day.dayIndex;
+                        candidate.bestRevenueCents = day.revenueCents;
+                    }
+                    hasServiceDay = true;
+                }
 
+                if (day.HasOperatingResultActivity)
+                {
+                    candidate.resultDayCount++;
                     if (day.operatingResultCents > 0L)
                     {
                         candidate.profitableDayCount++;
@@ -83,32 +98,20 @@ public static class BistroBuilderFinancialHistoryEngine
                         candidate.breakEvenDayCount++;
                     }
 
-                    if (!hasActiveDay ||
-                        day.revenueCents > candidate.bestRevenueCents)
-                    {
-                        candidate.bestRevenueDayIndex = day.dayIndex;
-                        candidate.bestRevenueCents = day.revenueCents;
-                    }
-
-                    if (!hasActiveDay ||
-                        day.operatingResultCents >
-                            candidate.bestOperatingResultCents)
+                    if (!hasResultDay ||
+                        day.operatingResultCents > candidate.bestOperatingResultCents)
                     {
                         candidate.bestOperatingResultDayIndex = day.dayIndex;
-                        candidate.bestOperatingResultCents =
-                            day.operatingResultCents;
+                        candidate.bestOperatingResultCents = day.operatingResultCents;
                     }
 
-                    if (!hasActiveDay ||
-                        day.operatingResultCents <
-                            candidate.worstOperatingResultCents)
+                    if (!hasResultDay ||
+                        day.operatingResultCents < candidate.worstOperatingResultCents)
                     {
                         candidate.worstOperatingResultDayIndex = day.dayIndex;
-                        candidate.worstOperatingResultCents =
-                            day.operatingResultCents;
+                        candidate.worstOperatingResultCents = day.operatingResultCents;
                     }
-
-                    hasActiveDay = true;
+                    hasResultDay = true;
                 }
 
                 for (int serviceIndex = 0;
@@ -155,17 +158,13 @@ public static class BistroBuilderFinancialHistoryEngine
                 candidate.dayCount);
             candidate.averageRevenuePerActiveDayCents =
                 candidate.activeDayCount > 0
-                    ? RoundDivide(
-                        candidate.revenueCents,
-                        candidate.activeDayCount)
+                    ? RoundDivide(candidate.revenueCents, candidate.activeDayCount)
                     : 0L;
             candidate.averageDailyOperatingResultCents = RoundDivide(
                 candidate.operatingResultCents,
                 candidate.dayCount);
             candidate.averageTicketCents = candidate.paidOrderCount > 0
-                ? RoundDivide(
-                    candidate.revenueCents,
-                    candidate.paidOrderCount)
+                ? RoundDivide(candidate.revenueCents, candidate.paidOrderCount)
                 : 0L;
 
             FinalizeServicePerformance(breakfast, candidate.dayCount);
@@ -249,11 +248,9 @@ public static class BistroBuilderFinancialHistoryEngine
                 netCashChangeDeltaCents = cashDelta,
                 netCashTrend = ResolveTrend(cashDelta),
                 activeDayDelta = checked(
-                    currentPeriod.activeDayCount -
-                    previousPeriod.activeDayCount),
+                    currentPeriod.activeDayCount - previousPeriod.activeDayCount),
                 paidOrderDelta = checked(
-                    currentPeriod.paidOrderCount -
-                    previousPeriod.paidOrderCount)
+                    currentPeriod.paidOrderCount - previousPeriod.paidOrderCount)
             };
 
             candidate.grossMarginTrend = ResolveTrend(
@@ -346,6 +343,12 @@ public static class BistroBuilderFinancialHistoryEngine
             report.totalPeriodExpensesCents + day.totalPeriodExpensesCents);
         report.operatingResultCents = checked(
             report.operatingResultCents + day.operatingResultCents);
+        report.inventoryWriteOffExpensesCents = checked(
+            report.inventoryWriteOffExpensesCents +
+            day.inventoryWriteOffExpensesCents);
+        report.financingInterestExpensesCents = checked(
+            report.financingInterestExpensesCents +
+            day.financingInterestExpensesCents);
         report.paidOrderCount = checked(
             report.paidOrderCount + day.paidOrderCount);
         report.consumedLineCount = checked(
@@ -374,6 +377,10 @@ public static class BistroBuilderFinancialHistoryEngine
             day.supplierPurchaseCashOutCents);
         report.investmentCashOutCents = checked(
             report.investmentCashOutCents + day.investmentCashOutCents);
+        report.debtPrincipalCashOutCents = checked(
+            report.debtPrincipalCashOutCents + day.debtPrincipalCashOutCents);
+        report.loanProceedsCashInCents = checked(
+            report.loanProceedsCashInCents + day.loanProceedsCashInCents);
         report.assetResaleCashInCents = checked(
             report.assetResaleCashInCents + day.assetResaleCashInCents);
     }
@@ -529,16 +536,6 @@ public static class BistroBuilderFinancialHistoryEngine
         return best != null
             ? best.mealService
             : BistroBuilderMealServiceAvailability.None;
-    }
-
-    private static bool IsActiveDay(BistroBuilderDayFinancialResult day)
-    {
-        return day.revenueCents != 0L ||
-               day.productCostCents != 0L ||
-               day.totalPeriodExpensesCents != 0L ||
-               day.totalCashInCents != 0L ||
-               day.totalCashOutCents != 0L ||
-               day.consumedLineCount != 0;
     }
 
     private static BistroBuilderFinancialResultCostQuality ResolveCostQuality(
