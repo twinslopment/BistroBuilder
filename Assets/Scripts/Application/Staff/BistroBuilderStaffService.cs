@@ -13,8 +13,7 @@ using UnityEngine;
 [AddComponentMenu("Bistro Builder/Staff/Staff Service")]
 public sealed class BistroBuilderStaffService : MonoBehaviour
 {
-    [SerializeField]
-    private BistroBuilderStaffRoleCatalog roleCatalog;
+    [SerializeField] private BistroBuilderStaffRoleCatalog roleCatalog;
 
     private BistroBuilderStaffSnapshot state;
 
@@ -58,29 +57,11 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     {
         get
         {
-            if (state == null || state.employees == null)
-            {
-                return 0L;
-            }
-
-            long total = 0L;
-            try
-            {
-                for (int index = 0; index < state.employees.Count; index++)
-                {
-                    BistroBuilderEmployeeRecord employee = state.employees[index];
-                    if (employee != null &&
-                        employee.employmentStatus == BistroBuilderEmploymentStatus.Active)
-                    {
-                        total = checked(total + employee.salaryCentsPerService);
-                    }
-                }
-            }
-            catch (OverflowException)
-            {
-                return long.MaxValue;
-            }
-            return total;
+            return TryCalculateTotalActiveSalaryCentsPerService(
+                out long total,
+                out _)
+                ? total
+                : long.MaxValue;
         }
     }
 
@@ -105,11 +86,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
             return false;
         }
 
-        if (state != null &&
-            !BistroBuilderStaffEngine.TryValidateSnapshot(
-                state,
-                roleCatalog,
-                out error))
+        if (state != null && !TryValidateExtendedSnapshot(state, out error))
         {
             return false;
         }
@@ -136,26 +113,20 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
 
     public bool TryInitializeFresh(out string error)
     {
-        if (roleCatalog == null || !roleCatalog.TryValidate(out error))
+        if (roleCatalog == null)
         {
-            if (roleCatalog == null)
-            {
-                error = "Personal no puede inicializarse sin catálogo de roles.";
-            }
+            error = "Personal no puede inicializarse sin catálogo de roles.";
+            return false;
+        }
+        if (!roleCatalog.TryValidate(out error))
+        {
             return false;
         }
 
         state = BistroBuilderStaffEngine.CreateEmptySnapshot();
-        return BistroBuilderStaffEngine.TryValidateSnapshot(
-            state,
-            roleCatalog,
-            out error);
+        return TryValidateExtendedSnapshot(state, out error);
     }
 
-    /// <summary>
-    /// Crea una identidad nueva en la autoridad de Personal. 4B es quien
-    /// determina si una petición procede de contratación de candidato.
-    /// </summary>
     public bool TryCreateEmployee(
         BistroBuilderEmployeeCreateRequest request,
         out BistroBuilderEmployeeRecord employee,
@@ -170,10 +141,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         for (int attempt = 0; attempt < 8; attempt++)
         {
             string employeeId = BistroBuilderEmployeeIdUtility.CreateNew();
-            if (BistroBuilderStaffEngine.TryFindEmployee(
-                    state,
-                    employeeId,
-                    out _))
+            if (BistroBuilderStaffEngine.TryFindEmployee(state, employeeId, out _))
             {
                 continue;
             }
@@ -189,7 +157,8 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
                     built,
                     roleCatalog,
                     out BistroBuilderStaffSnapshot candidate,
-                    out error))
+                    out error) ||
+                !TryValidateExtendedSnapshot(candidate, out error))
             {
                 return false;
             }
@@ -206,11 +175,6 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Despido canónico. No elimina el registro histórico: cambia el estado a
-    /// Dismissed y fuerza Unavailable. La comprobación de binding activo se
-    /// realiza en la capa 4B/4D antes de llamar a esta mutación.
-    /// </summary>
     public bool TryDismissEmployee(
         string employeeId,
         out BistroBuilderEmployeeRecord employee,
@@ -229,7 +193,8 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
                 out BistroBuilderStaffSnapshot candidate,
                 out BistroBuilderEmployeeRecord dismissed,
                 out bool availabilityChanged,
-                out error))
+                out error) ||
+            !TryValidateExtendedSnapshot(candidate, out error))
         {
             return false;
         }
@@ -350,11 +315,50 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
             return true;
         }
 
+        if (!TryValidateExtendedSnapshot(candidate, out error))
+        {
+            return false;
+        }
+
         state = candidate;
         employee = updated.DeepClone();
         EmployeeUpdated?.Invoke(employee.DeepClone());
         AvailabilityChanged?.Invoke(employee.DeepClone());
         StaffChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryCalculateTotalActiveSalaryCentsPerService(
+        out long totalCents,
+        out string error)
+    {
+        totalCents = 0L;
+        if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        try
+        {
+            for (int index = 0; index < state.employees.Count; index++)
+            {
+                BistroBuilderEmployeeRecord employee = state.employees[index];
+                if (employee != null &&
+                    employee.employmentStatus == BistroBuilderEmploymentStatus.Active)
+                {
+                    totalCents = checked(
+                        totalCents + employee.salaryCentsPerService);
+                }
+            }
+        }
+        catch (OverflowException)
+        {
+            totalCents = 0L;
+            error = "El coste salarial de la plantilla desborda el rango monetario.";
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -373,18 +377,64 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     }
 
     /// <summary>
-    /// Punto de restauración que utilizará 4E. La validación ocurre antes de
-    /// sustituir el estado, de modo que un snapshot corrupto no altera roster.
+    /// Commit interno para mutaciones de dominio posteriores (4C+). Rechaza
+    /// snapshots obsoletos y conserva StaffService como única autoridad del
+    /// roster, sin disfrazar una mutación normal como restauración Save/Load.
     /// </summary>
+    internal bool TryCommitDomainMutation(
+        BistroBuilderStaffSnapshot candidate,
+        BistroBuilderEmployeeRecord updatedEmployee,
+        out string error)
+    {
+        if (!EnsureReady(out error) || candidate == null || updatedEmployee == null)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "La mutación de Personal no contiene estado/empleado válido.";
+            }
+            return false;
+        }
+
+        long expectedRevision;
+        try
+        {
+            expectedRevision = checked(state.revision + 1L);
+        }
+        catch (OverflowException)
+        {
+            error = "La revisión actual de Personal no puede incrementarse.";
+            return false;
+        }
+
+        if (candidate.revision != expectedRevision ||
+            !TryValidateExtendedSnapshot(candidate, out error) ||
+            !BistroBuilderStaffEngine.TryFindEmployee(
+                candidate,
+                updatedEmployee.employeeId,
+                out BistroBuilderEmployeeRecord committedEmployee) ||
+            committedEmployee == null ||
+            committedEmployee.revision != updatedEmployee.revision)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+            {
+                error = "La mutación de Personal es obsoleta o incoherente.";
+            }
+            return false;
+        }
+
+        state = candidate.DeepClone();
+        EmployeeUpdated?.Invoke(committedEmployee.DeepClone());
+        StaffChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
+
     public bool TryRestoreSnapshot(
         BistroBuilderStaffSnapshot candidate,
         out string error)
     {
         if (!ValidateConfiguration(out error) ||
-            !BistroBuilderStaffEngine.TryValidateSnapshot(
-                candidate,
-                roleCatalog,
-                out error))
+            !TryValidateExtendedSnapshot(candidate, out error))
         {
             return false;
         }
@@ -392,6 +442,38 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         state = candidate.DeepClone();
         StateRestored?.Invoke();
         StaffChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryValidateExtendedSnapshot(
+        BistroBuilderStaffSnapshot snapshot,
+        out string error)
+    {
+        if (!BistroBuilderStaffEngine.TryValidateSnapshot(
+                snapshot,
+                roleCatalog,
+                out error))
+        {
+            return false;
+        }
+
+        for (int index = 0; index < snapshot.employees.Count; index++)
+        {
+            BistroBuilderEmployeeRecord employee = snapshot.employees[index];
+            if (employee == null ||
+                !BistroBuilderStaffDevelopmentEngine.TryValidateDevelopmentData(
+                    employee.development,
+                    out error))
+            {
+                if (string.IsNullOrWhiteSpace(error))
+                {
+                    error = "El empleado contiene desarrollo 4C inválido.";
+                }
+                return false;
+            }
+        }
+
         error = string.Empty;
         return true;
     }
