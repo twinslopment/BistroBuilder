@@ -13,20 +13,14 @@ using UnityEngine;
 [AddComponentMenu("Bistro Builder/Staff/Staff Recruitment Service")]
 public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
 {
-    [SerializeField]
-    private BistroBuilderStaffService staffService;
-
-    [SerializeField]
-    private BistroBuilderGeneralGameStateService generalGameStateService;
-
-    [SerializeField]
-    private BistroBuilderStaffRecruitmentProfile recruitmentProfile;
+    [SerializeField] private BistroBuilderStaffService staffService;
+    [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
+    [SerializeField] private BistroBuilderStaffRecruitmentProfile recruitmentProfile;
 
     [Tooltip(
         "Opcional hasta 4D. Debe implementar " +
         "IBistroBuilderStaffSessionAssignmentQuery.")]
-    [SerializeField]
-    private MonoBehaviour sessionAssignmentQuerySource;
+    [SerializeField] private MonoBehaviour sessionAssignmentQuerySource;
 
     private BistroBuilderStaffRecruitmentSnapshot marketState;
 
@@ -76,8 +70,15 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
             return false;
         }
 
+        // 4B solo consume DayIndex del calendario. No revalida ni se acopla a
+        // las dependencias internas de game.general (por ejemplo GameClock).
+        if (generalGameStateService.DayIndex < 1)
+        {
+            error = "El calendario global no expone un DayIndex válido.";
+            return false;
+        }
+
         if (!staffService.ValidateConfiguration(out error) ||
-            !generalGameStateService.ValidateConfiguration(out error) ||
             !recruitmentProfile.TryValidate(staffService.RoleCatalog, out error))
         {
             return false;
@@ -135,10 +136,6 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Refresco manual V1: como máximo una vez por día. No tiene coste
-    /// financiero en 4B y nunca altera la plantilla.
-    /// </summary>
     public bool TryRefreshCandidates(out string error)
     {
         if (!EnsureMarketReady(out error))
@@ -201,12 +198,6 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Contratación transaccional a nivel de dominio. Primero prepara la
-    /// versión del mercado sin el candidato; solo si StaffService crea el
-    /// Employee se publica ese nuevo mercado. No existe CandidateId ->
-    /// EmployeeId por reutilización de identidad.
-    /// </summary>
     public bool TryHireCandidate(
         string candidateId,
         out BistroBuilderEmployeeRecord employee,
@@ -227,6 +218,8 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
             return false;
         }
 
+        // Preparamos primero el estado futuro del mercado. Si StaffService no
+        // puede crear el Employee, el mercado actual permanece intacto.
         if (!BistroBuilderStaffRecruitmentEngine.TryRemoveCandidate(
                 marketState,
                 candidateId,
@@ -251,8 +244,7 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
                 ? selected.skills.DeepClone()
                 : null,
             availability = BistroBuilderEmployeeAvailability.Available,
-            responsibilities =
-                new BistroBuilderEmployeeResponsibilitySettings()
+            responsibilities = new BistroBuilderEmployeeResponsibilitySettings()
         };
 
         if (!staffService.TryCreateEmployee(
@@ -271,11 +263,6 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Política V1: un empleado actualmente ligado a un agente de servicio no
-    /// puede despedirse. Debe terminar/liberarse primero. Sin 4D instalado no
-    /// existe binding de sesión y la consulta es deliberadamente opcional.
-    /// </summary>
     public bool TryDismissEmployee(
         string employeeId,
         out BistroBuilderEmployeeRecord dismissed,
@@ -334,9 +321,6 @@ public sealed class BistroBuilderStaffRecruitmentService : MonoBehaviour
         return marketState != null ? marketState.DeepClone() : null;
     }
 
-    /// <summary>
-    /// Contrato preparado para 4E. Valida antes de sustituir el mercado.
-    /// </summary>
     public bool TryRestoreMarketSnapshot(
         BistroBuilderStaffRecruitmentSnapshot candidate,
         out string error)
