@@ -144,11 +144,16 @@ public static class BistroBuilderStaff4AValidator
         if (Application.isPlaying)
         {
             BistroBuilderStaffSnapshot snapshot = staff.CreateSnapshot();
-            if (staff.IsInitialized && snapshot != null &&
+            string snapshotError = string.Empty;
+            bool validSnapshot =
+                staff.IsInitialized &&
+                snapshot != null &&
                 BistroBuilderStaffEngine.TryValidateSnapshot(
                     snapshot,
                     staff.RoleCatalog,
-                    out string snapshotError))
+                    out snapshotError);
+
+            if (validSnapshot)
             {
                 result.Correct("staff.state runtime íntegro y sin IDs duplicados.");
             }
