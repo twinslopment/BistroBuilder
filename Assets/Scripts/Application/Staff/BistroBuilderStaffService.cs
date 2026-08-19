@@ -6,8 +6,8 @@ using UnityEngine;
 /// Autoridad canónica de Personal persistente.
 ///
 /// No contiene agentes operativos, GameObjects de camarero, dinero ni lógica
-/// de tareas. 4D enlazará EmployeeId con agentes de servicio y 4E persistirá
-/// este estado mediante el SaveGame universal.
+/// de tareas. 4D enlaza EmployeeId con agentes de servicio mediante otra capa
+/// y 4E persistirá este estado mediante el SaveGame universal.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Staff/Staff Service")]
@@ -27,6 +27,8 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     public BistroBuilderStaffRoleCatalog RoleCatalog => roleCatalog;
     public bool IsInitialized => state != null;
     public long Revision => state != null ? state.revision : 0L;
+    public bool OperationalBootstrapCompleted =>
+        state != null && state.operationalBootstrapCompleted;
     public int EmployeeCount =>
         state != null && state.employees != null ? state.employees.Count : 0;
 
@@ -374,6 +376,47 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     public BistroBuilderStaffSnapshot CreateSnapshot()
     {
         return state != null ? state.DeepClone() : null;
+    }
+
+    /// <summary>
+    /// Completa la migración única del prototipo operativo. La marca pertenece
+    /// a staff.state para que despedir a toda la plantilla más adelante no
+    /// regenere empleados automáticamente.
+    /// </summary>
+    internal bool TryMarkOperationalBootstrapCompleted(out string error)
+    {
+        if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        if (state.operationalBootstrapCompleted)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        BistroBuilderStaffSnapshot candidate = state.DeepClone();
+        try
+        {
+            candidate.operationalBootstrapCompleted = true;
+            candidate.revision = checked(candidate.revision + 1L);
+        }
+        catch (OverflowException)
+        {
+            error = "La revisión de Personal no puede registrar el bootstrap.";
+            return false;
+        }
+
+        if (!TryValidateExtendedSnapshot(candidate, out error))
+        {
+            return false;
+        }
+
+        state = candidate;
+        StaffChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
     }
 
     /// <summary>
