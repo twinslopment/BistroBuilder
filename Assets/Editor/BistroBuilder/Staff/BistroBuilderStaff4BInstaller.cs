@@ -72,8 +72,8 @@ public static class BistroBuilderStaff4BInstaller
             BistroBuilderStaffRoleCatalog roleCatalog =
                 AssetDatabase.LoadAssetAtPath<BistroBuilderStaffRoleCatalog>(
                     RoleCatalogPath);
-            if (roleCatalog == null ||
-                !roleCatalog.TryValidate(out string roleError))
+            string roleError = string.Empty;
+            if (roleCatalog == null || !roleCatalog.TryValidate(out roleError))
             {
                 throw new InvalidOperationException(
                     "El catálogo canónico de roles 4A falta o es inválido. " +
@@ -84,8 +84,9 @@ public static class BistroBuilderStaff4BInstaller
                 AssetDatabase.LoadAssetAtPath<
                     BistroBuilderStaffRecruitmentProfile>(
                     RecruitmentProfilePath);
+            string profileError = string.Empty;
             if (recruitmentProfile == null ||
-                !recruitmentProfile.TryValidate(roleCatalog, out string profileError))
+                !recruitmentProfile.TryValidate(roleCatalog, out profileError))
             {
                 throw new InvalidOperationException(
                     "El perfil canónico de contratación 4B falta o es inválido. " +
