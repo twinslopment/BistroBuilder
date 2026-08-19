@@ -272,11 +272,12 @@ public static class BistroBuilderStaff4EValidator
                 staffSnapshot,
                 staffServices[0].RoleCatalog,
                 out string runtimeStaffError);
+            string runtimeSessionError = string.Empty;
             bool sessionOk = staffOk &&
                 BistroBuilderStaffSessionEngine.TryValidateSnapshot(
                     sessionSnapshot,
                     staffSnapshot,
-                    out string runtimeSessionError);
+                    out runtimeSessionError);
 
             if (staffOk && sessionOk)
             {
@@ -284,9 +285,11 @@ public static class BistroBuilderStaff4EValidator
             }
             else
             {
+                string runtimeError = !staffOk
+                    ? runtimeStaffError
+                    : runtimeSessionError;
                 result.Error(
-                    "Snapshot runtime no persistible: " + runtimeStaffError +
-                    (sessionOk ? string.Empty : " " + runtimeSessionError));
+                    "Snapshot runtime no persistible: " + runtimeError);
             }
         }
         else
