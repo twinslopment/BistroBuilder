@@ -51,8 +51,8 @@ public sealed class BistroBuilderEmployeeResponsibilitySettings
 }
 
 /// <summary>
-/// Contadores históricos que solo podrán incrementarse desde hechos reales
-/// del servicio. 4A define el contrato; 4C/4D aportarán las fuentes de eventos.
+/// Contadores históricos alimentados exclusivamente desde hechos reales del
+/// servicio. No contienen puntuaciones inventadas ni estado visual.
 /// </summary>
 [Serializable]
 public sealed class BistroBuilderEmployeePerformanceData
@@ -95,6 +95,8 @@ public sealed class BistroBuilderEmployeeRecord
         new BistroBuilderEmployeeResponsibilitySettings();
     public BistroBuilderEmployeePerformanceData performance =
         new BistroBuilderEmployeePerformanceData();
+    public BistroBuilderEmployeeDevelopmentData development =
+        new BistroBuilderEmployeeDevelopmentData();
 
     public long revision = 1L;
 
@@ -121,13 +123,16 @@ public sealed class BistroBuilderEmployeeRecord
         clone.performance = performance != null
             ? performance.DeepClone()
             : null;
+        clone.development = development != null
+            ? development.DeepClone()
+            : null;
         return clone;
     }
 }
 
 /// <summary>
-/// Petición de creación canónica. 4B la consumirá desde contratación; 4A la
-/// usa también para bootstrap/migración sin exponer EmployeeId arbitrarios.
+/// Petición de creación canónica. Contratación 4B la consume sin exponer
+/// EmployeeId arbitrarios.
 /// </summary>
 public sealed class BistroBuilderEmployeeCreateRequest
 {
