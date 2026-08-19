@@ -159,6 +159,14 @@ public sealed class BistroBuilderStaffSnapshot
     public string schemaId = CurrentSchemaId;
     public int schemaVersion = CurrentSchemaVersion;
     public long revision = 1L;
+
+    /// <summary>
+    /// Marca persistente de compatibilidad. 4D puede convertir una única vez
+    /// los agentes Waiter legacy de una partida antigua en empleados generados.
+    /// Una vez completado, despedir a toda la plantilla nunca vuelve a crearla.
+    /// </summary>
+    public bool operationalBootstrapCompleted;
+
     public List<BistroBuilderEmployeeRecord> employees =
         new List<BistroBuilderEmployeeRecord>();
 
@@ -169,6 +177,7 @@ public sealed class BistroBuilderStaffSnapshot
             schemaId = schemaId,
             schemaVersion = schemaVersion,
             revision = revision,
+            operationalBootstrapCompleted = operationalBootstrapCompleted,
             employees = new List<BistroBuilderEmployeeRecord>()
         };
 
