@@ -20,6 +20,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
 
     public event Action<BistroBuilderEmployeeRecord> EmployeeCreated;
     public event Action<BistroBuilderEmployeeRecord> EmployeeUpdated;
+    public event Action<BistroBuilderEmployeeRecord> EmployeeDismissed;
     public event Action<BistroBuilderEmployeeRecord> AvailabilityChanged;
     public event Action StateRestored;
     public event Action<long> StaffChanged;
@@ -29,6 +30,59 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     public long Revision => state != null ? state.revision : 0L;
     public int EmployeeCount =>
         state != null && state.employees != null ? state.employees.Count : 0;
+
+    public int ActiveEmployeeCount
+    {
+        get
+        {
+            if (state == null || state.employees == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int index = 0; index < state.employees.Count; index++)
+            {
+                BistroBuilderEmployeeRecord employee = state.employees[index];
+                if (employee != null &&
+                    employee.employmentStatus == BistroBuilderEmploymentStatus.Active)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
+
+    public long TotalActiveSalaryCentsPerService
+    {
+        get
+        {
+            if (state == null || state.employees == null)
+            {
+                return 0L;
+            }
+
+            long total = 0L;
+            try
+            {
+                for (int index = 0; index < state.employees.Count; index++)
+                {
+                    BistroBuilderEmployeeRecord employee = state.employees[index];
+                    if (employee != null &&
+                        employee.employmentStatus == BistroBuilderEmploymentStatus.Active)
+                    {
+                        total = checked(total + employee.salaryCentsPerService);
+                    }
+                }
+            }
+            catch (OverflowException)
+            {
+                return long.MaxValue;
+            }
+            return total;
+        }
+    }
 
     private void Awake()
     {
@@ -42,7 +96,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     {
         if (roleCatalog == null)
         {
-            error = "4A necesita un catálogo canónico de roles.";
+            error = "Personal necesita un catálogo canónico de roles.";
             return false;
         }
 
@@ -86,7 +140,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         {
             if (roleCatalog == null)
             {
-                error = "4A no puede inicializarse sin catálogo de roles.";
+                error = "Personal no puede inicializarse sin catálogo de roles.";
             }
             return false;
         }
@@ -99,8 +153,8 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     }
 
     /// <summary>
-    /// Crea una identidad nueva en la autoridad de Personal. 4B será quien
-    /// determine si una petición procede de contratación de candidato.
+    /// Crea una identidad nueva en la autoridad de Personal. 4B es quien
+    /// determina si una petición procede de contratación de candidato.
     /// </summary>
     public bool TryCreateEmployee(
         BistroBuilderEmployeeCreateRequest request,
@@ -152,6 +206,47 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Despido canónico. No elimina el registro histórico: cambia el estado a
+    /// Dismissed y fuerza Unavailable. La comprobación de binding activo se
+    /// realiza en la capa 4B/4D antes de llamar a esta mutación.
+    /// </summary>
+    public bool TryDismissEmployee(
+        string employeeId,
+        out BistroBuilderEmployeeRecord employee,
+        out string error)
+    {
+        employee = null;
+        if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        if (!BistroBuilderStaffEmploymentEngine.TryDismissEmployee(
+                state,
+                employeeId,
+                roleCatalog,
+                out BistroBuilderStaffSnapshot candidate,
+                out BistroBuilderEmployeeRecord dismissed,
+                out bool availabilityChanged,
+                out error))
+        {
+            return false;
+        }
+
+        state = candidate;
+        employee = dismissed.DeepClone();
+        EmployeeUpdated?.Invoke(employee.DeepClone());
+        if (availabilityChanged)
+        {
+            AvailabilityChanged?.Invoke(employee.DeepClone());
+        }
+        EmployeeDismissed?.Invoke(employee.DeepClone());
+        StaffChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
+
     public bool TryGetEmployee(
         string employeeId,
         out BistroBuilderEmployeeRecord employee)
@@ -183,6 +278,39 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
             BistroBuilderEmployeeRecord employee = state.employees[index];
             if (employee == null ||
                 (!includeInactive &&
+                 employee.employmentStatus != BistroBuilderEmploymentStatus.Active))
+            {
+                continue;
+            }
+            destination.Add(employee.DeepClone());
+        }
+    }
+
+    public void CopyEmployeesByRole(
+        string roleId,
+        List<BistroBuilderEmployeeRecord> destination,
+        bool onlyActive = true)
+    {
+        if (destination == null)
+        {
+            throw new ArgumentNullException(nameof(destination));
+        }
+        destination.Clear();
+        if (state == null || state.employees == null)
+        {
+            return;
+        }
+
+        string normalizedRole = BistroBuilderStaffStableIdUtility.Normalize(roleId);
+        for (int index = 0; index < state.employees.Count; index++)
+        {
+            BistroBuilderEmployeeRecord employee = state.employees[index];
+            if (employee == null ||
+                !string.Equals(
+                    BistroBuilderStaffStableIdUtility.Normalize(employee.roleId),
+                    normalizedRole,
+                    StringComparison.Ordinal) ||
+                (onlyActive &&
                  employee.employmentStatus != BistroBuilderEmploymentStatus.Active))
             {
                 continue;
