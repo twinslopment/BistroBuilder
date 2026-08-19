@@ -8,6 +8,9 @@ using UnityEngine.UI;
 /// sin modificar sus autoridades. 2.3JKL-B2 nació antes de 3J y no expone una
 /// API pública de registro de nuevos modales; este coordinador añade únicamente
 /// el acceso FinanceModal/OpenFinance y preserva el estado visible original.
+///
+/// Las referencias estables se cachean: LateUpdate no recorre la jerarquía HUD
+/// ni genera arrays por frame.
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(10000)]
@@ -37,8 +40,14 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
 
     private readonly Dictionary<GameObject, bool> suppressedExistingStates =
         new Dictionary<GameObject, bool>();
+    private readonly List<RectTransform> existingModalRoots =
+        new List<RectTransform>(8);
+    private readonly List<Button> existingGlobalButtons =
+        new List<Button>(8);
 
+    private Canvas canvas;
     private Button financeOpenButton;
+    private bool referencesCached;
     private bool financeOpenButtonOriginalState;
     private bool financeOpenButtonSuppressed;
 
@@ -49,11 +58,13 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
     private void Awake()
     {
         ResolveDependencies();
+        CacheStableReferences();
     }
 
     private void OnEnable()
     {
         ResolveDependencies();
+        CacheStableReferences();
     }
 
     private void LateUpdate()
@@ -64,6 +75,10 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
         }
 
         ResolveDependencies();
+        if (!referencesCached)
+        {
+            CacheStableReferences();
+        }
         if (financeView == null)
         {
             return;
@@ -100,14 +115,25 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
     public bool ValidateConfiguration(out string error)
     {
         ResolveDependencies();
+        CacheStableReferences();
         if (financeView == null)
         {
             error = "El coordinador 3J necesita BistroBuilderFinanceRuntimeView.";
             return false;
         }
+        if (canvas == null)
+        {
+            error = "El coordinador 3J debe vivir bajo el Canvas HUD canónico.";
+            return false;
+        }
         if (financeOpenButton == null)
         {
             error = "No se encontró el acceso global OpenFinance.";
+            return false;
+        }
+        if (existingGlobalButtons.Count == 0)
+        {
+            error = "No se localizaron accesos globales previos que coordinar.";
             return false;
         }
         error = string.Empty;
@@ -133,18 +159,10 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
 
     private void SuppressExistingGlobalAccess()
     {
-        Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas == null)
+        for (int index = 0; index < existingGlobalButtons.Count; index++)
         {
-            return;
-        }
-
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
-        for (int index = 0; index < buttons.Length; index++)
-        {
-            Button button = buttons[index];
-            if (button == null ||
-                !ExistingGlobalButtonNames.Contains(button.name))
+            Button button = existingGlobalButtons[index];
+            if (button == null)
             {
                 continue;
             }
@@ -175,7 +193,6 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
 
     private void SuppressFinanceAccess()
     {
-        ResolveFinanceButton();
         if (financeOpenButton == null)
         {
             return;
@@ -197,7 +214,6 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
         {
             return;
         }
-        ResolveFinanceButton();
         if (financeOpenButton != null)
         {
             financeOpenButton.gameObject.SetActive(financeOpenButtonOriginalState);
@@ -207,19 +223,10 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
 
     private bool IsAnotherKnownModalOpen()
     {
-        Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas == null)
+        for (int index = 0; index < existingModalRoots.Count; index++)
         {
-            return false;
-        }
-
-        RectTransform[] rects = canvas.GetComponentsInChildren<RectTransform>(true);
-        for (int index = 0; index < rects.Length; index++)
-        {
-            RectTransform rect = rects[index];
-            if (rect != null &&
-                ExistingModalNames.Contains(rect.name) &&
-                rect.gameObject.activeInHierarchy)
+            RectTransform modal = existingModalRoots[index];
+            if (modal != null && modal.gameObject.activeInHierarchy)
             {
                 return true;
             }
@@ -233,28 +240,57 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
         {
             financeView = GetComponent<BistroBuilderFinanceRuntimeView>();
         }
-        ResolveFinanceButton();
+        if (canvas == null)
+        {
+            canvas = GetComponentInParent<Canvas>();
+        }
     }
 
-    private void ResolveFinanceButton()
+    private void CacheStableReferences()
     {
-        if (financeOpenButton != null)
+        ResolveDependencies();
+        referencesCached = false;
+        financeOpenButton = null;
+        existingModalRoots.Clear();
+        existingGlobalButtons.Clear();
+
+        if (canvas == null)
         {
             return;
         }
-        Button[] buttons = GetComponentsInChildren<Button>(true);
-        for (int index = 0; index < buttons.Length; index++)
+
+        RectTransform[] rects = canvas.GetComponentsInChildren<RectTransform>(true);
+        for (int index = 0; index < rects.Length; index++)
         {
-            if (buttons[index] != null &&
-                string.Equals(
-                    buttons[index].name,
-                    "OpenFinance",
-                    StringComparison.Ordinal))
+            RectTransform rect = rects[index];
+            if (rect != null && ExistingModalNames.Contains(rect.name))
             {
-                financeOpenButton = buttons[index];
-                return;
+                existingModalRoots.Add(rect);
             }
         }
+
+        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
+        for (int index = 0; index < buttons.Length; index++)
+        {
+            Button button = buttons[index];
+            if (button == null)
+            {
+                continue;
+            }
+            if (ExistingGlobalButtonNames.Contains(button.name))
+            {
+                existingGlobalButtons.Add(button);
+            }
+            else if (string.Equals(
+                         button.name,
+                         "OpenFinance",
+                         StringComparison.Ordinal))
+            {
+                financeOpenButton = button;
+            }
+        }
+
+        referencesCached = financeOpenButton != null;
     }
 
 #if UNITY_EDITOR
