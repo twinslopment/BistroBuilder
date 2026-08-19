@@ -83,7 +83,13 @@ public sealed class BistroBuilderStaffRecruitmentProfile : ScriptableObject
             return false;
         }
 
-        if (roleCatalog == null || !roleCatalog.TryValidate(out error))
+        if (roleCatalog == null)
+        {
+            error = "El perfil de contratación necesita un catálogo de roles.";
+            return false;
+        }
+
+        if (!roleCatalog.TryValidate(out error))
         {
             return false;
         }
