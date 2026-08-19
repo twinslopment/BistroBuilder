@@ -60,7 +60,10 @@ public sealed class BistroBuilderFinanceHistoryChartGraphic : MaskableGraphic
                 endExclusive = start + 1;
             }
 
-            long total = 0L;
+            // La UI nunca debe lanzar una excepción por sumar un histórico
+            // extremo. Se acumula en decimal y se satura únicamente para el
+            // gráfico; los valores contables canónicos no se modifican.
+            decimal total = 0m;
             for (int index = start;
                  index < endExclusive && index < days.Count;
                  index++)
@@ -70,9 +73,9 @@ public sealed class BistroBuilderFinanceHistoryChartGraphic : MaskableGraphic
                 {
                     continue;
                 }
-                total = checked(total + ResolveValue(day, selectedMetric));
+                total += ResolveValue(day, selectedMetric);
             }
-            values.Add(total);
+            values.Add(ClampDecimalToLong(total));
         }
 
         SetVerticesDirty();
@@ -191,6 +194,19 @@ public sealed class BistroBuilderFinanceHistoryChartGraphic : MaskableGraphic
             default:
                 return day.revenueCents;
         }
+    }
+
+    private static long ClampDecimalToLong(decimal value)
+    {
+        if (value >= long.MaxValue)
+        {
+            return long.MaxValue;
+        }
+        if (value <= long.MinValue)
+        {
+            return long.MinValue;
+        }
+        return (long)value;
     }
 
     private static void AddQuad(
