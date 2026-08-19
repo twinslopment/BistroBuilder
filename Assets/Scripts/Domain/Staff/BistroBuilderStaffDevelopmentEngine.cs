@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Reglas puras 4C de experiencia, rendimiento y formación. No conoce Waiter,
@@ -25,8 +26,7 @@ public static class BistroBuilderStaffDevelopmentEngine
             return false;
         }
 
-        var operationIds = new System.Collections.Generic.HashSet<string>(
-            StringComparer.Ordinal);
+        var operationIds = new HashSet<string>(StringComparer.Ordinal);
         for (int index = 0; index < development.trainingHistory.Count; index++)
         {
             BistroBuilderEmployeeTrainingRecord record =
@@ -35,7 +35,9 @@ public static class BistroBuilderStaffDevelopmentEngine
                 !BistroBuilderStaffDevelopmentOperationIdUtility.IsValid(
                     record.operationId) ||
                 !BistroBuilderStaffStableIdUtility.IsValid(record.trainingId) ||
-                !Enum.IsDefined(typeof(BistroBuilderEmployeeSkillKind), record.skillKind) ||
+                !Enum.IsDefined(
+                    typeof(BistroBuilderEmployeeSkillKind),
+                    record.skillKind) ||
                 record.skillGain < 1 || record.skillGain > 10 ||
                 record.completedDayIndex < 1 ||
                 record.financialCostCents < 0L ||
@@ -132,17 +134,17 @@ public static class BistroBuilderStaffDevelopmentEngine
         if (!BistroBuilderStaffEngine.TryValidateSnapshot(
                 snapshot,
                 roleCatalog,
-                out error) ||
-            profile == null || !profile.TryValidate(out error))
+                out error))
         {
-            if (profile == null)
-            {
-                error = "Falta el perfil de desarrollo 4C.";
-            }
             return false;
         }
-
-        if (!TryValidateServiceReport(report, out error))
+        if (profile == null)
+        {
+            error = "Falta el perfil de desarrollo 4C.";
+            return false;
+        }
+        if (!profile.TryValidate(out error) ||
+            !TryValidateServiceReport(report, out error))
         {
             return false;
         }
@@ -160,6 +162,10 @@ public static class BistroBuilderStaffDevelopmentEngine
         if (current.employmentStatus != BistroBuilderEmploymentStatus.Active)
         {
             error = "No puede aplicarse rendimiento a un empleado no activo.";
+            return false;
+        }
+        if (!TryValidateDevelopmentData(current.development, out error))
+        {
             return false;
         }
 
@@ -212,6 +218,13 @@ public static class BistroBuilderStaffDevelopmentEngine
             }
 
             BistroBuilderEmployeeRecord updated = result.employees[employeeIndex];
+            if (updated.performance == null || updated.development == null)
+            {
+                error = "La copia del empleado perdió rendimiento o desarrollo.";
+                result = null;
+                return false;
+            }
+
             updated.performance.completedServices = checked(
                 updated.performance.completedServices + 1);
             updated.performance.completedTasks = checked(
@@ -228,7 +241,6 @@ public static class BistroBuilderStaffDevelopmentEngine
             updated.development.lastServiceResultOperationId = operationId;
             updated.revision = checked(updated.revision + 1L);
             result.revision = checked(result.revision + 1L);
-
             updatedEmployee = updated.DeepClone();
         }
         catch (OverflowException)
@@ -242,6 +254,9 @@ public static class BistroBuilderStaffDevelopmentEngine
         if (!BistroBuilderStaffEngine.TryValidateSnapshot(
                 result,
                 roleCatalog,
+                out error) ||
+            !TryValidateDevelopmentData(
+                updatedEmployee.development,
                 out error))
         {
             result = null;
@@ -286,12 +301,13 @@ public static class BistroBuilderStaffDevelopmentEngine
         {
             return false;
         }
-        if (profile == null || !profile.TryValidate(out error))
+        if (profile == null)
         {
-            if (profile == null)
-            {
-                error = "Falta el perfil de desarrollo 4C.";
-            }
+            error = "Falta el perfil de desarrollo 4C.";
+            return false;
+        }
+        if (!profile.TryValidate(out error))
+        {
             return false;
         }
         if (request == null ||
@@ -320,6 +336,10 @@ public static class BistroBuilderStaffDevelopmentEngine
             current.employmentStatus != BistroBuilderEmploymentStatus.Active)
         {
             error = "La formación necesita un empleado activo existente.";
+            return false;
+        }
+        if (!TryValidateDevelopmentData(current.development, out error))
+        {
             return false;
         }
 
@@ -393,7 +413,22 @@ public static class BistroBuilderStaffDevelopmentEngine
         {
             result = snapshot.DeepClone();
             int employeeIndex = FindEmployeeIndex(result, current.employeeId);
+            if (employeeIndex < 0)
+            {
+                error = "La copia de staff.state perdió el empleado objetivo.";
+                result = null;
+                return false;
+            }
+
             BistroBuilderEmployeeRecord updated = result.employees[employeeIndex];
+            if (updated.skills == null || updated.development == null ||
+                updated.development.trainingHistory == null)
+            {
+                error = "La copia del empleado perdió habilidades o desarrollo.";
+                result = null;
+                return false;
+            }
+
             int skillAfter = Math.Min(100, skillBefore + training.skillGain);
             SetSkill(updated.skills, training.skillKind, skillAfter);
             updated.development.trainingHistory.Add(
@@ -434,6 +469,9 @@ public static class BistroBuilderStaffDevelopmentEngine
         if (!BistroBuilderStaffEngine.TryValidateSnapshot(
                 result,
                 roleCatalog,
+                out error) ||
+            !TryValidateDevelopmentData(
+                updatedEmployee.development,
                 out error))
         {
             result = null;
@@ -511,6 +549,11 @@ public static class BistroBuilderStaffDevelopmentEngine
         BistroBuilderStaffSnapshot snapshot,
         string employeeId)
     {
+        if (snapshot == null || snapshot.employees == null)
+        {
+            return -1;
+        }
+
         string normalized = BistroBuilderEmployeeIdUtility.Normalize(employeeId);
         for (int index = 0; index < snapshot.employees.Count; index++)
         {
@@ -531,6 +574,12 @@ public static class BistroBuilderStaffDevelopmentEngine
         BistroBuilderEmployeeRecord employee,
         string trainingId)
     {
+        if (employee == null || employee.development == null ||
+            employee.development.trainingHistory == null)
+        {
+            return 0;
+        }
+
         int count = 0;
         string normalized = BistroBuilderStaffStableIdUtility.Normalize(trainingId);
         for (int index = 0; index < employee.development.trainingHistory.Count; index++)
