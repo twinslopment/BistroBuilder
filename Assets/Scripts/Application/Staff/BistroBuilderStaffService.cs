@@ -16,6 +16,7 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     [SerializeField] private BistroBuilderStaffRoleCatalog roleCatalog;
 
     private BistroBuilderStaffSnapshot state;
+    private IBistroBuilderStaffRuntimeMutationGuard runtimeMutationGuard;
 
     public event Action<BistroBuilderEmployeeRecord> EmployeeCreated;
     public event Action<BistroBuilderEmployeeRecord> EmployeeUpdated;
@@ -129,6 +130,42 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
         return TryValidateExtendedSnapshot(state, out error);
     }
 
+    /// <summary>
+    /// 4D registra una única guardia runtime mediante inversión de control.
+    /// StaffService no conoce Waiter ni escenas, pero puede impedir que una
+    /// mutación persistente invalide un binding activo.
+    /// </summary>
+    public bool TryRegisterRuntimeMutationGuard(
+        IBistroBuilderStaffRuntimeMutationGuard guard,
+        out string error)
+    {
+        if (guard == null)
+        {
+            error = "La guardia runtime de Personal es nula.";
+            return false;
+        }
+
+        if (runtimeMutationGuard != null &&
+            !ReferenceEquals(runtimeMutationGuard, guard))
+        {
+            error = "Personal ya tiene otra guardia runtime registrada.";
+            return false;
+        }
+
+        runtimeMutationGuard = guard;
+        error = string.Empty;
+        return true;
+    }
+
+    public void UnregisterRuntimeMutationGuard(
+        IBistroBuilderStaffRuntimeMutationGuard guard)
+    {
+        if (guard != null && ReferenceEquals(runtimeMutationGuard, guard))
+        {
+            runtimeMutationGuard = null;
+        }
+    }
+
     public bool TryCreateEmployee(
         BistroBuilderEmployeeCreateRequest request,
         out BistroBuilderEmployeeRecord employee,
@@ -184,6 +221,12 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     {
         employee = null;
         if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        if (runtimeMutationGuard != null &&
+            !runtimeMutationGuard.CanDismissEmployee(employeeId, out error))
         {
             return false;
         }
@@ -294,6 +337,15 @@ public sealed class BistroBuilderStaffService : MonoBehaviour
     {
         employee = null;
         if (!EnsureReady(out error))
+        {
+            return false;
+        }
+
+        if (runtimeMutationGuard != null &&
+            !runtimeMutationGuard.CanChangeAvailability(
+                employeeId,
+                availability,
+                out error))
         {
             return false;
         }
