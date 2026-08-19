@@ -5,8 +5,9 @@ using UnityEngine;
 /// Estado operativo y asignación actual de un camarero.
 ///
 /// Desde 367H una asignación alimentaria puede tener como destino una mesa
-/// o una plaza real de barra. Las propiedades legacy continúan disponibles
-/// para no romper los flujos de mesa ya validados.
+/// o una plaza real de barra. 4D añade únicamente una elegibilidad de sesión:
+/// Waiter sigue siendo el agente operativo y Employee continúa fuera de este
+/// componente.
 /// </summary>
 public sealed class Waiter : MonoBehaviour
 {
@@ -35,6 +36,12 @@ public sealed class Waiter : MonoBehaviour
     private string assignedOrderLineId = string.Empty;
     private BistroBuilderDeliveryRun assignedDeliveryRun;
 
+    // 4D: filtro puramente runtime. No se serializa en escena ni Save; el
+    // binding de Personal lo reconstruye para cada sesión. Su valor por
+    // defecto true conserva exactamente el comportamiento de instalaciones
+    // anteriores que todavía no tengan Personal.
+    private bool staffServiceEligible = true;
+
     public event Action<Waiter, WaiterState> StateChanged;
 
     public int WaiterId => waiterId;
@@ -45,6 +52,7 @@ public sealed class Waiter : MonoBehaviour
     public RestaurantOrder AssignedOrder => assignedOrder;
     public string AssignedOrderLineId => assignedOrderLineId ?? string.Empty;
     public BistroBuilderDeliveryRun AssignedDeliveryRun => assignedDeliveryRun;
+    public bool IsStaffServiceEligible => staffServiceEligible;
 
     public BistroBuilderServiceDestinationKind AssignedDestinationKind =>
         assignedTable != null
@@ -56,14 +64,12 @@ public sealed class Waiter : MonoBehaviour
     public string AssignedDestinationReferenceId =>
         BistroBuilderServiceModeUtility.BuildDestinationReference(
             assignedTable,
-            assignedBarSpot
-        );
+            assignedBarSpot);
 
     public Transform AssignedWaiterServicePoint =>
         BistroBuilderServiceModeUtility.GetWaiterServicePoint(
             assignedTable,
-            assignedBarSpot
-        );
+            assignedBarSpot);
 
     public bool HasAssignedDeliveryRun =>
         assignedDeliveryRun != null && !assignedDeliveryRun.IsTerminal;
@@ -72,13 +78,34 @@ public sealed class Waiter : MonoBehaviour
         assignedOrder != null &&
         BistroBuilderOrderIdUtility.IsValid(AssignedOrderLineId);
 
+    /// <summary>
+    /// Disponibilidad operativa existente más la elegibilidad de sesión 4D.
+    /// Todos los asignadores legacy y modernos ya consultan esta propiedad o
+    /// los métodos Assign*, por lo que un agente sin EmployeeId no puede
+    /// ejecutar trabajo sin crear un segundo sistema de camareros.
+    /// </summary>
     public bool IsAvailable =>
-        currentState == WaiterState.Idle &&
-        assignedTable == null &&
-        assignedBarSpot == null &&
-        assignedOrder == null &&
-        string.IsNullOrEmpty(AssignedOrderLineId) &&
-        assignedDeliveryRun == null;
+        staffServiceEligible && HasNoOperationalAssignment;
+
+    /// <summary>
+    /// 4D activa un agente solo cuando existe un binding EmployeeId ↔ WaiterId.
+    /// Desactivar un agente ocupado se rechaza para no romper una tarea real.
+    /// </summary>
+    public bool TrySetStaffServiceEligibility(bool eligible)
+    {
+        if (staffServiceEligible == eligible)
+        {
+            return true;
+        }
+
+        if (!eligible && !HasNoOperationalAssignment)
+        {
+            return false;
+        }
+
+        staffServiceEligible = eligible;
+        return true;
+    }
 
     public bool AssignTable(RestaurantTable table)
     {
@@ -89,25 +116,17 @@ public sealed class Waiter : MonoBehaviour
         }
 
         assignedTable = table;
-
         Debug.Log(
             $"Camarero {waiterId} asignado a mesa {table.TableId}.",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToTable);
         return true;
     }
 
-    /// <summary>
-    /// Asigna una plaza de barra para tomar una comanda o atender una cuenta.
-    /// El estado de desplazamiento lo decide el llamador.
-    /// </summary>
     public bool AssignBarSpot(
         BistroBuilderBarServiceSpot barSpot,
         RestaurantOrder order,
-        WaiterState walkingState
-    )
+        WaiterState walkingState)
     {
         if (!IsAvailable || barSpot == null ||
             (walkingState != WaiterState.WalkingToBar &&
@@ -135,24 +154,17 @@ public sealed class Waiter : MonoBehaviour
         SetFoodDestination(order);
         assignedOrder = order;
         assignedOrderLineId = string.Empty;
-
         Debug.Log(
             "Camarero " + waiterId + " asignado para recoger " +
             "la comanda " + order.OrderId + ".",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToKitchen);
         return true;
     }
 
-    /// <summary>
-    /// Compatibilidad con herramientas anteriores a las rondas inteligentes.
-    /// </summary>
     public bool AssignOrderLineForPickup(
         RestaurantOrder order,
-        string orderLineId
-    )
+        string orderLineId)
     {
         if (!IsAvailable || order == null || !order.HasValidDestination)
         {
@@ -161,7 +173,6 @@ public sealed class Waiter : MonoBehaviour
 
         string normalizedLineId =
             BistroBuilderOrderIdUtility.Normalize(orderLineId);
-
         if (!order.HasCanonicalOrder ||
             !BistroBuilderOrderIdUtility.IsValid(normalizedLineId))
         {
@@ -171,13 +182,10 @@ public sealed class Waiter : MonoBehaviour
         SetFoodDestination(order);
         assignedOrder = order;
         assignedOrderLineId = normalizedLineId;
-
         Debug.Log(
             "Camarero " + waiterId + " asignado para recoger la línea " +
             normalizedLineId + " de la comanda " + order.OrderId + ".",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToKitchen);
         return true;
     }
@@ -193,19 +201,15 @@ public sealed class Waiter : MonoBehaviour
         }
 
         assignedDeliveryRun = deliveryRun;
-
         BistroBuilderDeliveryRunItem firstItem = deliveryRun.Items[0];
         SetDestination(firstItem.Table, firstItem.BarSpot);
         assignedOrder = firstItem.Order;
         assignedOrderLineId = firstItem.OrderLineId;
-
         Debug.Log(
             "Camarero " + waiterId + " acepta la ronda " +
             deliveryRun.RunId + " con " + deliveryRun.Items.Count +
             " plato(s) y " + deliveryRun.Stops.Count + " parada(s).",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToKitchen);
         return true;
     }
@@ -223,7 +227,6 @@ public sealed class Waiter : MonoBehaviour
         {
             return false;
         }
-
         return SynchronizeCurrentDeliveryStop();
     }
 
@@ -234,22 +237,19 @@ public sealed class Waiter : MonoBehaviour
         {
             return false;
         }
-
         return SynchronizeCurrentDeliveryStop();
     }
 
     public bool TrySelectDeliveryLine(
         RestaurantOrder order,
-        string orderLineId
-    )
+        string orderLineId)
     {
         if (assignedDeliveryRun == null ||
             assignedDeliveryRun.CurrentStop == null ||
             !assignedDeliveryRun.TryGetItem(
                 order,
                 orderLineId,
-                out BistroBuilderDeliveryRunItem item
-            ) ||
+                out BistroBuilderDeliveryRunItem item) ||
             !assignedDeliveryRun.CurrentStop.ContainsDestinationOf(item))
         {
             return false;
@@ -271,13 +271,10 @@ public sealed class Waiter : MonoBehaviour
         }
 
         assignedTable = table;
-
         Debug.Log(
             $"Camarero {waiterId} asignado para llevar la cuenta " +
             $"a la mesa {table.TableId}.",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToBill);
         return true;
     }
@@ -292,13 +289,10 @@ public sealed class Waiter : MonoBehaviour
         }
 
         assignedTable = table;
-
         Debug.Log(
             $"Camarero {waiterId} asignado para limpiar " +
             $"la mesa {table.TableId}.",
-            this
-        );
-
+            this);
         SetState(WaiterState.WalkingToCleanTable);
         return true;
     }
@@ -311,12 +305,9 @@ public sealed class Waiter : MonoBehaviour
         }
 
         currentState = newState;
-
         Debug.Log(
             $"Camarero {waiterId}: estado cambiado a {currentState}.",
-            this
-        );
-
+            this);
         StateChanged?.Invoke(this, currentState);
     }
 
@@ -330,17 +321,23 @@ public sealed class Waiter : MonoBehaviour
         SetState(WaiterState.Idle);
     }
 
+    private bool HasNoOperationalAssignment =>
+        currentState == WaiterState.Idle &&
+        assignedTable == null &&
+        assignedBarSpot == null &&
+        assignedOrder == null &&
+        string.IsNullOrEmpty(AssignedOrderLineId) &&
+        assignedDeliveryRun == null;
+
     private bool SynchronizeCurrentDeliveryStop()
     {
         BistroBuilderDeliveryStop stop = assignedDeliveryRun?.CurrentStop;
-
         if (stop == null || stop.Items.Count == 0)
         {
             return false;
         }
 
         BistroBuilderDeliveryRunItem selectedItem = null;
-
         for (int index = 0; index < stop.Items.Count; index++)
         {
             if (!stop.Items[index].IsFinished)
@@ -349,7 +346,6 @@ public sealed class Waiter : MonoBehaviour
                 break;
             }
         }
-
         if (selectedItem == null)
         {
             selectedItem = stop.Items[0];
@@ -368,8 +364,7 @@ public sealed class Waiter : MonoBehaviour
 
     private void SetDestination(
         RestaurantTable table,
-        BistroBuilderBarServiceSpot barSpot
-    )
+        BistroBuilderBarServiceSpot barSpot)
     {
         assignedTable = table;
         assignedBarSpot = barSpot;
