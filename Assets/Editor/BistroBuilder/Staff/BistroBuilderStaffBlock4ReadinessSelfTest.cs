@@ -98,6 +98,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4G seguridad rollback",
+            () => BistroBuilderStaff4GRollbackSafetySelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4G mutación observable",
             () => BistroBuilderStaff4GNaturalMutationSelfTest.Run(out _),
             lines, ref passed, ref failed);
