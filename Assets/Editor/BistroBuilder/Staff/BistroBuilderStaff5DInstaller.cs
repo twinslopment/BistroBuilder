@@ -35,6 +35,7 @@ public static class BistroBuilderStaff5DInstaller
             RunGate("5B", () => BistroBuilderStaff5BPlanningSelfTest.Run(out _, out _, out _));
             RunGate("5C", () => BistroBuilderStaff5CBindingSelfTest.Run(out _, out _, out _));
             RunGate("5D JSON", () => BistroBuilderStaff5DJsonRoundTripSelfTest.Run(out _, out _, out _));
+            RunGate("5D Save cruzado", () => BistroBuilderStaff5DCrossSaveSelfTest.Run(out _, out _, out _));
 
             BistroBuilderSaveGameService save = RequireUnique<BistroBuilderSaveGameService>(scene);
             BistroBuilderStaffService staff = RequireUnique<BistroBuilderStaffService>(scene);
