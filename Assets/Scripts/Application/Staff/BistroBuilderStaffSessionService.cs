@@ -615,7 +615,10 @@ public sealed class BistroBuilderStaffSessionService :
 
     public bool TryResumeAfterRuntimeLoad(out string error)
     {
-        suspendedForRuntimeLoad = false;
+        // Mantiene la suspensión como estado conservador durante todo el
+        // preflight de reanudación. Solo se libera tras validar coherencia y
+        // rehidratar correctamente los bindings/elegibilidad runtime.
+        suspendedForRuntimeLoad = true;
         if (!ValidateConfiguration(out error))
         {
             return false;
@@ -629,7 +632,14 @@ public sealed class BistroBuilderStaffSessionService :
             return false;
         }
 
-        return TryRehydrateRuntimeFromCurrentState(out error);
+        if (!TryRehydrateRuntimeFromCurrentState(out error))
+        {
+            return false;
+        }
+
+        suspendedForRuntimeLoad = false;
+        error = string.Empty;
+        return true;
     }
 
     public bool TryFinalizeClosedSession(out string error)
