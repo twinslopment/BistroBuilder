@@ -160,6 +160,26 @@ public static class BistroBuilderStaff4EInstallerV2
                     "service.runtime -> binding.");
             }
 
+            // SaveGameService ordena Prepare de mayor a menor. El limpiador
+            // operativo service.runtime debe ejecutarse antes que Personal.
+            if (!(activeService.PrepareOrder > sessionProvider.PrepareOrder &&
+                  sessionProvider.PrepareOrder > recruitmentProvider.PrepareOrder &&
+                  recruitmentProvider.PrepareOrder > stateProvider.PrepareOrder))
+            {
+                throw new InvalidOperationException(
+                    "El orden Prepare 4E no conserva service.runtime -> " +
+                    "binding -> mercado -> Staff con sort descendente.");
+            }
+
+            if (!(stateProvider.FinalizeOrder < recruitmentProvider.FinalizeOrder &&
+                  recruitmentProvider.FinalizeOrder < activeService.FinalizeOrder &&
+                  activeService.FinalizeOrder < sessionProvider.FinalizeOrder))
+            {
+                throw new InvalidOperationException(
+                    "El orden Finalize 4E no conserva Staff -> mercado -> " +
+                    "service.runtime -> binding.");
+            }
+
             EditorUtility.SetDirty(stateProvider);
             EditorUtility.SetDirty(recruitmentProvider);
             EditorUtility.SetDirty(sessionProvider);
