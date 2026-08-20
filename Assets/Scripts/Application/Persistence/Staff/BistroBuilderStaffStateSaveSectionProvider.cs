@@ -37,9 +37,11 @@ public sealed class BistroBuilderStaffStateSaveSectionProvider :
     public Type StateType => typeof(BistroBuilderStaffSnapshot);
     public string SerializerId => BistroBuilderJsonSaveSerializer.StableSerializerId;
 
-    // service.runtime limpia primero tareas/agentes en 9000. Después Personal
-    // puede vaciar la autoridad persistente sin dejar bindings operativos vivos.
-    public int PrepareOrder => 9050;
+    // Prepare se ordena de MAYOR a MENOR en SaveGameService. service.runtime
+    // (9000) limpia primero tareas/agentes; después 4D desmonta bindings (8950),
+    // contratación limpia mercado (8900) y staff.state vacía la plantilla al
+    // final (8850), cuando ya no quedan referencias runtime a EmployeeId.
+    public int PrepareOrder => 8850;
 
     // Employee debe existir antes de restaurar EmployeeId ↔ WaiterId y antes
     // de que service.runtime reconstruya el mundo operativo.
