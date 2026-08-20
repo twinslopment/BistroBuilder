@@ -18,12 +18,16 @@ public static class BistroBuilderStaffScheduleEngine
         };
     }
 
-    public static bool TryValidateSnapshot(
+    /// <summary>
+    /// Valida únicamente la autosuficiencia estructural de staff.schedule.
+    /// Se usa durante la prevalidación universal de Load, cuando staff.state
+    /// objetivo todavía no ha sido aplicado al mundo.
+    /// </summary>
+    public static bool TryValidateStructure(
         BistroBuilderStaffScheduleSnapshot snapshot,
-        BistroBuilderStaffSnapshot staff,
         out string error)
     {
-        if (snapshot == null || staff == null ||
+        if (snapshot == null ||
             !string.Equals(
                 snapshot.schemaId,
                 BistroBuilderStaffScheduleSnapshot.CurrentSchemaId,
@@ -51,6 +55,36 @@ public static class BistroBuilderStaffScheduleEngine
                 return false;
             }
 
+            string key = BuildUniquenessKey(
+                shift.employeeId,
+                shift.dayIndex,
+                shift.mealService);
+            if (!unique.Add(key))
+            {
+                error = "Un empleado no puede tener dos turnos para el mismo servicio.";
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    public static bool TryValidateSnapshot(
+        BistroBuilderStaffScheduleSnapshot snapshot,
+        BistroBuilderStaffSnapshot staff,
+        out string error)
+    {
+        if (staff == null || !TryValidateStructure(snapshot, out error))
+        {
+            if (staff == null && string.IsNullOrWhiteSpace(error))
+                error = "staff.schedule no puede cruzarse sin staff.state.";
+            return false;
+        }
+
+        for (int index = 0; index < snapshot.shifts.Count; index++)
+        {
+            BistroBuilderStaffShiftRecord shift = snapshot.shifts[index];
             if (!BistroBuilderStaffEngine.TryFindEmployee(
                     staff,
                     shift.employeeId,
@@ -59,16 +93,6 @@ public static class BistroBuilderStaffScheduleEngine
                 employee.employmentStatus != BistroBuilderEmploymentStatus.Active)
             {
                 error = "Un turno referencia un EmployeeId inexistente o inactivo.";
-                return false;
-            }
-
-            string key = BuildUniquenessKey(
-                shift.employeeId,
-                shift.dayIndex,
-                shift.mealService);
-            if (!unique.Add(key))
-            {
-                error = "Un empleado no puede tener dos turnos para el mismo servicio.";
                 return false;
             }
         }
