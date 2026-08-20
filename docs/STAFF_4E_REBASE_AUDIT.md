@@ -4,9 +4,9 @@ Estado: implementado estáticamente / pendiente de compilación y validación Un
 
 ## Base autoritativa
 
-La rama `feature/4e-staff-persistence-v2` nació de `2c40d717c4d665c14c4fd6a0b398e076f43e57ae`, HEAD endurecido disponible de 4D en ese momento. La rama anterior `feature/4e-staff-persistence` quedó divergida y no debe usarse como base de nuevas modificaciones.
+`feature/4e-staff-persistence-v2` es actualmente una extensión lineal de `feature/4d-staff-service-binding` y su merge-base es el HEAD canónico 4D `42d397846855324693e676f84bc6bed9d976d768`. La rama anterior `feature/4e-staff-persistence` quedó divergida y no debe usarse como base de nuevas modificaciones.
 
-Durante el endurecimiento posterior, los gates 4D se integraron también en la rama canónica `feature/4d-staff-service-binding`; por tanto, 4D ya contiene por sí solo el lote transaccional de elegibilidad, el preflight de cierre y su autotest. 4E v2 conserva el mismo código funcional acumulado, pero su genealogía de rama todavía parte del HEAD 4D anterior. Esto no invalida el árbol actual, aunque debe reconciliarse antes de una integración final para mantener una historia lineal y auditable.
+Los gates 4D de elegibilidad transaccional y preflight de cierre ya viven en la rama canónica 4D; 4E v2 los hereda sin duplicar su autoridad.
 
 ## Secciones de Save incluidas
 
@@ -51,12 +51,24 @@ Las tres secciones son opcionales. `staff.state` se vacía durante Prepare para 
 
 ## Endurecimiento 4D exigido por 4E
 
-Los dos helpers de seguridad están ya integrados en `BistroBuilderStaffSessionService` y también existen en la rama canónica 4D:
+Los dos helpers de seguridad están integrados en `BistroBuilderStaffSessionService` y existen en la rama canónica 4D:
 
 - `BistroBuilderStaffEligibilityBatch`: `TrySetAllWaitersEligible(...)` delega en este lote transaccional y restaura los valores previos si cualquier Waiter rechaza la operación.
 - `BistroBuilderStaffSessionClosePreflight`: `TryFinalizeClosedSession(...)` lo ejecuta antes de `FinalizeObservedWorkCycle(...)` y antes de cualquier `TryApplyServiceResult(...)`, exigiendo que todos los WaiterId ligados existan, sigan elegibles y estén realmente libres.
 
 `BistroBuilderStaff4DHardeningSelfTest` prueba ambos contratos y además inspecciona el wiring real de `BistroBuilderStaffSessionService`. El instalador 4E v2 ejecuta este gate **antes de modificar la escena**.
+
+## Gate de serialización real
+
+Se añade `BistroBuilderStaff4EJsonRoundTripSelfTest`, ejecutado también por el instalador antes de modificar la escena. Usa directamente `BistroBuilderJsonSaveSerializer` (`unity-json-v1`) para serializar y deserializar:
+
+- `staff.state`, comprobando EmployeeId, contrato, skills y responsabilidades;
+- `staff.recruitment`, comprobando secuencia, día de refresh, CandidateId y salario esperado;
+- `staff.session.runtime`, comprobando SessionId, EmployeeId ↔ WaiterId, métricas y mesas atendidas;
+- snapshot de sesión inactivo, verificando que no sobrevivan residuos;
+- operationId de rendimiento, verificando que sigue siendo estable tras el round-trip.
+
+Después de cada deserialización se vuelven a ejecutar los validadores canónicos de dominio. Este gate no sustituye una prueba real de Save/Load: únicamente detecta incompatibilidades de modelo/JsonUtility de forma temprana y determinista.
 
 ## Gates aún pendientes antes de cerrar 4D/4E
 
@@ -64,8 +76,7 @@ No queda un gate estático conocido de wiring 4D bloqueando 4E. Continúan pendi
 
 1. Compilación limpia en Unity.
 2. Instalación acumulativa sobre la escena canónica.
-3. Validador y autotest 4D/4E en Unity.
+3. Validador y autotests 4D/4E en Unity, incluido JSON round-trip.
 4. Round-trip Save/Load real durante servicio activo, verificando el mismo `EmployeeId ↔ WaiterId`, ausencia de duplicados, tareas coherentes y métricas sin doble aplicación.
-5. Reconciliar la genealogía de `feature/4e-staff-persistence-v2` con el HEAD canónico actualizado de 4D antes de integración final.
 
 Hasta superar esos gates, 4D y 4E no deben marcarse como cerrados ni validados.
