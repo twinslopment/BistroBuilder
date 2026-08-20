@@ -130,15 +130,9 @@ public static class BistroBuilderStaff5DCrossSaveValidationSelfTest
         {
             employeeId = employeeId,
             roleId = "waiter",
-            firstName = "Test",
-            lastName = "Schedule",
             employmentStatus = BistroBuilderEmploymentStatus.Active,
             availability = BistroBuilderEmployeeAvailability.Available,
-            salaryCentsPerService = 8000L,
-            skills = new BistroBuilderEmployeeSkillSet(),
-            responsibilities = new BistroBuilderEmployeeResponsibilitySettings(),
-            development = new BistroBuilderEmployeeDevelopmentData(),
-            performance = new BistroBuilderEmployeePerformanceRecord()
+            salaryCentsPerService = 8000L
         });
         return staff;
     }
