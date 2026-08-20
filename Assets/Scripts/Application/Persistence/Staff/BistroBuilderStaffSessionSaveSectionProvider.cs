@@ -6,7 +6,8 @@ using UnityEngine;
 /// 4E — Persistencia del binding runtime EmployeeId ↔ WaiterId.
 ///
 /// Se coordina explícitamente con service.runtime mediante órdenes de fase:
-/// - Prepare 9100: después de que service.runtime (9000) limpie tareas/agentes.
+/// - Prepare 8950: después de service.runtime (9000), porque Prepare se ordena
+///   de MAYOR a MENOR y el servicio debe limpiar tareas/agentes primero.
 /// - Apply 550: después de staff.state y de service.runtime (500).
 /// - Finalize 11100: después de que service.runtime (11000) reanude el mundo.
 ///
@@ -45,7 +46,7 @@ public sealed class BistroBuilderStaffSessionSaveSectionProvider :
     public Type StateType => typeof(BistroBuilderStaffSessionSnapshot);
     public string SerializerId => BistroBuilderJsonSaveSerializer.StableSerializerId;
 
-    public int PrepareOrder => 9100;
+    public int PrepareOrder => 8950;
     public int ApplyOrder => 550;
     public int FinalizeOrder => 11100;
 
