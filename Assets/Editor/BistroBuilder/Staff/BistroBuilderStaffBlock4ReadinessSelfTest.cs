@@ -64,6 +64,16 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             ref failed);
 
         RunGate(
+            "4D restore elegibilidad transaccional",
+            () => BistroBuilderStaff4DRestoreEligibilitySelfTest.Run(
+                out _,
+                out _,
+                out _),
+            lines,
+            ref passed,
+            ref failed);
+
+        RunGate(
             "4E JSON round-trip",
             () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(
                 out _,
