@@ -59,6 +59,21 @@ public static class BistroBuilderStaff4EInstallerV2
 
         try
         {
+            // 4E no puede instalarse sobre un 4D con gates pendientes. Este
+            // autotest incluye comprobación de wiring real en StaffSessionService.
+            bool hardeningOk = BistroBuilderStaff4DHardeningSelfTest.Run(
+                out int hardeningPassed,
+                out int hardeningFailed,
+                out string hardeningReport);
+            Debug.Log(hardeningReport);
+            if (!hardeningOk)
+            {
+                throw new InvalidOperationException(
+                    "4D todavía no supera su gate de endurecimiento: " +
+                    hardeningFailed + " fallos / " + hardeningPassed +
+                    " correctos. 4E no modificará la escena.");
+            }
+
             GameObject gameSystems = FindUniqueGameSystems(scene);
             if (gameSystems == null)
             {
@@ -181,6 +196,7 @@ public static class BistroBuilderStaff4EInstallerV2
             EditorUtility.DisplayDialog(
                 "Bistro Builder — 4E v2 Personal",
                 "Persistencia de Personal instalada.\n\n" +
+                "4D hardening: " + hardeningPassed + " OK / 0 fallos\n" +
                 "Validación: " + validation.correct + " OK / " +
                 validation.warnings + " avisos / 0 errores\n" +
                 "Autotest: " + passed + " OK / 0 fallos\n\n" +
