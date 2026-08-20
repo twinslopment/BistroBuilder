@@ -69,7 +69,7 @@ public static class BistroBuilderStaff4GStaticSelfTest
                 StringComparison.Ordinal) &&
             string.Equals(
                 BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId,
-                "staff.recruitment",
+                "staff.recruitment.state",
                 StringComparison.Ordinal) &&
             string.Equals(
                 BistroBuilderStaffSessionSnapshot.CurrentSchemaId,
@@ -77,7 +77,7 @@ public static class BistroBuilderStaff4GStaticSelfTest
                 StringComparison.Ordinal);
         Check(
             schemas,
-            "4G sigue apuntando a las tres identidades persistentes canónicas.",
+            "4G sigue apuntando a los tres schemas de runtime canónicos.",
             lines,
             ref passed,
             ref failed);
