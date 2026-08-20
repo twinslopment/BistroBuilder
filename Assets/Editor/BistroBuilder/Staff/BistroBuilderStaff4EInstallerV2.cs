@@ -59,8 +59,6 @@ public static class BistroBuilderStaff4EInstallerV2
 
         try
         {
-            // 4E no puede instalarse sobre un 4D con gates pendientes. Este
-            // autotest incluye comprobación de wiring real en StaffSessionService.
             bool hardeningOk = BistroBuilderStaff4DHardeningSelfTest.Run(
                 out int hardeningPassed,
                 out int hardeningFailed,
@@ -87,9 +85,21 @@ public static class BistroBuilderStaff4EInstallerV2
                     " correctos. 4E no modificará la escena.");
             }
 
-            // Este gate usa exactamente unity-json-v1, el serializador del
-            // Save universal. Se ejecuta antes de tocar la escena para que un
-            // cambio de modelo incompatible no produzca una instalación parcial.
+            bool finalizeIsolationOk =
+                BistroBuilderStaff4EFinalizeIsolationSelfTest.Run(
+                    out int finalizeIsolationPassed,
+                    out int finalizeIsolationFailed,
+                    out string finalizeIsolationReport);
+            Debug.Log(finalizeIsolationReport);
+            if (!finalizeIsolationOk)
+            {
+                throw new InvalidOperationException(
+                    "El aislamiento Finalize 4E falló: " +
+                    finalizeIsolationFailed + " fallos / " +
+                    finalizeIsolationPassed +
+                    " correctos. 4E no modificará la escena.");
+            }
+
             bool jsonRoundTripOk =
                 BistroBuilderStaff4EJsonRoundTripSelfTest.Run(
                     out int jsonPassed,
@@ -135,28 +145,19 @@ public static class BistroBuilderStaff4EInstallerV2
 
             BistroBuilderStaffStateSaveSectionProvider stateProvider =
                 EnsureUniqueComponent<BistroBuilderStaffStateSaveSectionProvider>(
-                    scene,
-                    gameSystems);
+                    scene, gameSystems);
             BistroBuilderStaffRecruitmentSaveSectionProvider recruitmentProvider =
-                EnsureUniqueComponent<
-                    BistroBuilderStaffRecruitmentSaveSectionProvider>(
-                    scene,
-                    gameSystems);
+                EnsureUniqueComponent<BistroBuilderStaffRecruitmentSaveSectionProvider>(
+                    scene, gameSystems);
             BistroBuilderStaffSessionSaveSectionProvider sessionProvider =
                 EnsureUniqueComponent<BistroBuilderStaffSessionSaveSectionProvider>(
-                    scene,
-                    gameSystems);
+                    scene, gameSystems);
 
             AssignObject(stateProvider, "saveGameService", save);
             AssignObject(stateProvider, "staffService", staff);
-
             AssignObject(recruitmentProvider, "saveGameService", save);
             AssignObject(recruitmentProvider, "staffService", staff);
-            AssignObject(
-                recruitmentProvider,
-                "recruitmentService",
-                recruitment);
-
+            AssignObject(recruitmentProvider, "recruitmentService", recruitment);
             AssignObject(sessionProvider, "saveGameService", save);
             AssignObject(sessionProvider, "staffService", staff);
             AssignObject(sessionProvider, "staffSessionService", session);
@@ -167,8 +168,7 @@ public static class BistroBuilderStaff4EInstallerV2
                 throw new InvalidOperationException(
                     "staff.state inválido tras instalación: " + stateError);
             }
-            if (!recruitmentProvider.ValidateConfiguration(
-                    out string recruitmentError))
+            if (!recruitmentProvider.ValidateConfiguration(out string recruitmentError))
             {
                 throw new InvalidOperationException(
                     "staff.recruitment inválido tras instalación: " +
@@ -190,8 +190,6 @@ public static class BistroBuilderStaff4EInstallerV2
                     "service.runtime -> binding.");
             }
 
-            // SaveGameService ordena Prepare de mayor a menor. El limpiador
-            // operativo service.runtime debe ejecutarse antes que Personal.
             if (!(activeService.PrepareOrder > sessionProvider.PrepareOrder &&
                   sessionProvider.PrepareOrder > recruitmentProvider.PrepareOrder &&
                   recruitmentProvider.PrepareOrder > stateProvider.PrepareOrder))
@@ -201,9 +199,6 @@ public static class BistroBuilderStaff4EInstallerV2
                     "binding -> mercado -> Staff con sort descendente.");
             }
 
-            // Finalize se ordena de menor a mayor. Personal debe estar listo
-            // antes de que service.runtime quite el scope de restauración y
-            // reactive WaiterTaskCoordinator, camareros y llegadas.
             if (!(stateProvider.FinalizeOrder < recruitmentProvider.FinalizeOrder &&
                   recruitmentProvider.FinalizeOrder < sessionProvider.FinalizeOrder &&
                   sessionProvider.FinalizeOrder < activeService.FinalizeOrder &&
@@ -252,21 +247,20 @@ public static class BistroBuilderStaff4EInstallerV2
                 "Persistencia de Personal instalada.\n\n" +
                 "4D hardening: " + hardeningPassed + " OK / 0 fallos\n" +
                 "4D PrepareForLoad: " + prepareLoadPassed + " OK / 0 fallos\n" +
+                "4E Finalize isolation: " + finalizeIsolationPassed +
+                " OK / 0 fallos\n" +
                 "JSON round-trip: " + jsonPassed + " OK / 0 fallos\n" +
                 "Validación: " + validation.correct + " OK / " +
                 validation.warnings + " avisos / 0 errores\n" +
                 "Autotest: " + passed + " OK / 0 fallos\n\n" +
-                "Pendiente todavía: compilación/gates reales 4D–4E en Unity " +
-                "y prueba Save/Load en servicio activo.",
+                "Pendiente: compilación y Save/Load real en Unity.",
                 "Aceptar");
         }
         catch (Exception exception)
         {
             Debug.LogException(exception);
             File.WriteAllBytes(absoluteScenePath, sceneBackup);
-            AssetDatabase.ImportAsset(
-                scenePath,
-                ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(scenePath, ImportAssetOptions.ForceUpdate);
             EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
             EditorUtility.DisplayDialog(
@@ -293,9 +287,8 @@ public static class BistroBuilderStaff4EInstallerV2
         return matches[0];
     }
 
-    private static T EnsureUniqueComponent<T>(
-        Scene scene,
-        GameObject host) where T : Component
+    private static T EnsureUniqueComponent<T>(Scene scene, GameObject host)
+        where T : Component
     {
         T[] matches = FindSceneComponents<T>(scene);
         if (matches.Length > 1)
@@ -329,7 +322,6 @@ public static class BistroBuilderStaff4EInstallerV2
                 "No existe la propiedad serializada " + propertyName +
                 " en " + target.GetType().Name + ".");
         }
-
         property.objectReferenceValue = value;
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
@@ -341,16 +333,12 @@ public static class BistroBuilderStaff4EInstallerV2
         GameObject[] roots = scene.GetRootGameObjects();
         for (int root = 0; root < roots.Length; root++)
         {
-            Transform[] transforms =
-                roots[root].GetComponentsInChildren<Transform>(true);
+            Transform[] transforms = roots[root].GetComponentsInChildren<Transform>(true);
             for (int index = 0; index < transforms.Length; index++)
             {
                 Transform transform = transforms[index];
                 if (transform != null &&
-                    string.Equals(
-                        transform.name,
-                        "GameSystems",
-                        StringComparison.Ordinal))
+                    string.Equals(transform.name, "GameSystems", StringComparison.Ordinal))
                 {
                     found = transform.gameObject;
                     count++;
