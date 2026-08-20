@@ -4,9 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Autoridad de planificación de horarios y turnos.
-///
 /// No modifica StaffService, no crea agentes y no abre/cierra servicios.
-/// Conserva únicamente el plan de turnos y ofrece consultas de cobertura.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Staff/Staff Schedule Service")]
@@ -25,17 +23,15 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
     public event Action ScheduleRestored;
 
     public long Revision => state != null ? state.revision : 0L;
-    public int ShiftCount => state != null && state.shifts != null
-        ? state.shifts.Count
-        : 0;
+    public int ShiftCount => state != null && state.shifts != null ? state.shifts.Count : 0;
     public BistroBuilderStaffScheduleProfile ScheduleProfile => scheduleProfile;
+    public int CurrentDayIndex => generalGameStateService != null
+        ? Math.Max(1, generalGameStateService.DayIndex)
+        : 1;
 
     private void Awake()
     {
-        if (state == null)
-        {
-            state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
-        }
+        if (state == null) state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
     }
 
     public bool ValidateConfiguration(out string error)
@@ -49,24 +45,16 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         }
 
         if (!staffService.ValidateConfiguration(out error) ||
-            !scheduleProfile.TryValidate(out error) ||
-            generalGameStateService.DayIndex < 1)
+            !scheduleProfile.TryValidate(out error) || generalGameStateService.DayIndex < 1)
         {
             if (generalGameStateService.DayIndex < 1 && string.IsNullOrWhiteSpace(error))
-            {
                 error = "El calendario no expone un DayIndex válido.";
-            }
             return false;
         }
 
-        if (state != null &&
-            !BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
-                state,
-                staffService.CreateSnapshot(),
-                out error))
-        {
+        if (state != null && !BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
+                state, staffService.CreateSnapshot(), out error))
             return false;
-        }
 
         error = string.Empty;
         return true;
@@ -74,14 +62,8 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
 
     public bool EnsureReady(out string error)
     {
-        if (!ValidateConfiguration(out error))
-        {
-            return false;
-        }
-        if (state == null)
-        {
-            state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
-        }
+        if (!ValidateConfiguration(out error)) return false;
+        if (state == null) state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
         error = string.Empty;
         return true;
     }
@@ -93,23 +75,8 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         bool scheduled,
         out string error)
     {
-        if (!EnsureReady(out error))
-        {
+        if (!EnsureReady(out error) || !CanEditTarget(dayIndex, mealService, out error))
             return false;
-        }
-
-        if (!serviceStateService.IsClosed)
-        {
-            error = "Los turnos solo pueden editarse con el restaurante Closed.";
-            return false;
-        }
-
-        int today = Math.Max(1, generalGameStateService.DayIndex);
-        if (dayIndex < today || dayIndex >= today + scheduleProfile.PlanningHorizonDays)
-        {
-            error = "El día solicitado queda fuera del horizonte de planificación.";
-            return false;
-        }
 
         if (!BistroBuilderStaffScheduleEngine.TrySetShift(
                 state,
@@ -121,20 +88,80 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
                 scheduled,
                 out BistroBuilderStaffScheduleSnapshot candidate,
                 out error))
-        {
             return false;
-        }
 
-        if (candidate.revision == state.revision)
-        {
-            error = string.Empty;
-            return true;
-        }
+        return CommitIfChanged(candidate, out error);
+    }
 
-        state = candidate;
-        ScheduleChanged?.Invoke(state.revision);
-        error = string.Empty;
-        return true;
+    public bool TryReplaceServiceAssignments(
+        int dayIndex,
+        BistroBuilderMealServiceAvailability mealService,
+        IReadOnlyList<string> employeeIds,
+        out string error)
+    {
+        if (!EnsureReady(out error) || !CanEditTarget(dayIndex, mealService, out error))
+            return false;
+
+        if (!BistroBuilderStaffSchedulePlanner.TryReplaceServiceAssignments(
+                state,
+                staffService.CreateSnapshot(),
+                scheduleProfile,
+                dayIndex,
+                mealService,
+                employeeIds,
+                out BistroBuilderStaffScheduleSnapshot candidate,
+                out error))
+            return false;
+
+        return CommitIfChanged(candidate, out error);
+    }
+
+    public bool TryCopyServicePlan(
+        int sourceDay,
+        BistroBuilderMealServiceAvailability sourceService,
+        int targetDay,
+        BistroBuilderMealServiceAvailability targetService,
+        out string error)
+    {
+        if (!EnsureReady(out error) ||
+            !CanEditTarget(targetDay, targetService, out error))
+            return false;
+
+        if (!BistroBuilderStaffSchedulePlanner.TryCopyServicePlan(
+                state,
+                staffService.CreateSnapshot(),
+                scheduleProfile,
+                sourceDay,
+                sourceService,
+                targetDay,
+                targetService,
+                out BistroBuilderStaffScheduleSnapshot candidate,
+                out error))
+            return false;
+
+        return CommitIfChanged(candidate, out error);
+    }
+
+    public bool TryAutoFillMinimumWaiters(
+        int dayIndex,
+        BistroBuilderMealServiceAvailability mealService,
+        out string error)
+    {
+        if (!EnsureReady(out error) || !CanEditTarget(dayIndex, mealService, out error))
+            return false;
+
+        if (!BistroBuilderStaffSchedulePlanner.TryBuildMinimumWaiterPlan(
+                state,
+                staffService.CreateSnapshot(),
+                staffService.RoleCatalog,
+                scheduleProfile,
+                dayIndex,
+                mealService,
+                out BistroBuilderStaffScheduleSnapshot candidate,
+                out error))
+            return false;
+
+        return CommitIfChanged(candidate, out error);
     }
 
     public bool IsScheduled(
@@ -143,10 +170,7 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         BistroBuilderMealServiceAvailability mealService)
     {
         return BistroBuilderStaffScheduleEngine.IsScheduled(
-            state,
-            employeeId,
-            dayIndex,
-            mealService);
+            state, employeeId, dayIndex, mealService);
     }
 
     public void CopyScheduledEmployeeIds(
@@ -155,10 +179,7 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         List<string> destination)
     {
         BistroBuilderStaffScheduleEngine.CopyScheduledEmployeeIds(
-            state,
-            dayIndex,
-            mealService,
-            destination);
+            state, dayIndex, mealService, destination);
     }
 
     public bool TryBuildCoverage(
@@ -168,10 +189,7 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         out string error)
     {
         coverage = null;
-        if (!EnsureReady(out error))
-        {
-            return false;
-        }
+        if (!EnsureReady(out error)) return false;
 
         int waiters = 0;
         long salary = 0L;
@@ -182,19 +200,15 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
             for (int index = 0; index < employeeBuffer.Count; index++)
             {
                 BistroBuilderEmployeeRecord employee = employeeBuffer[index];
-                if (employee == null ||
-                    !IsScheduled(employee.employeeId, dayIndex, mealService) ||
+                if (employee == null || !IsScheduled(employee.employeeId, dayIndex, mealService) ||
                     !staffService.TryGetRoleDefinition(
-                        employee.roleId,
-                        out BistroBuilderStaffRoleDefinition role) ||
+                        employee.roleId, out BistroBuilderStaffRoleDefinition role) ||
                     role == null ||
                     !string.Equals(
                         role.operationalAdapterId,
                         BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
                         StringComparison.Ordinal))
-                {
                     continue;
-                }
 
                 waiters++;
                 salary = checked(salary + employee.salaryCentsPerService);
@@ -224,18 +238,12 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
         return state != null ? state.DeepClone() : null;
     }
 
-    public bool TryRestoreSnapshot(
-        BistroBuilderStaffScheduleSnapshot snapshot,
-        out string error)
+    public bool TryRestoreSnapshot(BistroBuilderStaffScheduleSnapshot snapshot, out string error)
     {
         if (!ValidateConfiguration(out error) ||
             !BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
-                snapshot,
-                staffService.CreateSnapshot(),
-                out error))
-        {
+                snapshot, staffService.CreateSnapshot(), out error))
             return false;
-        }
 
         state = snapshot.DeepClone();
         ScheduleRestored?.Invoke();
@@ -246,12 +254,61 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
 
     public bool TryResetForLegacyLoad(out string error)
     {
-        if (!ValidateConfiguration(out error))
-        {
-            return false;
-        }
+        if (!ValidateConfiguration(out error)) return false;
         state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
         ScheduleRestored?.Invoke();
+        ScheduleChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
+
+    private bool CanEditTarget(
+        int dayIndex,
+        BistroBuilderMealServiceAvailability mealService,
+        out string error)
+    {
+        if (!serviceStateService.IsClosed)
+        {
+            error = "Los turnos solo pueden editarse con el restaurante Closed.";
+            return false;
+        }
+
+        int today = CurrentDayIndex;
+        if (dayIndex < today || dayIndex >= today + scheduleProfile.PlanningHorizonDays)
+        {
+            error = "El día solicitado queda fuera del horizonte de planificación.";
+            return false;
+        }
+
+        if (!scheduleProfile.TryGetDefaultWindow(mealService, out _, out _))
+        {
+            error = "El servicio no tiene ventana horaria V1 configurable.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool CommitIfChanged(
+        BistroBuilderStaffScheduleSnapshot candidate,
+        out string error)
+    {
+        if (candidate == null)
+        {
+            error = "La planificación no produjo un snapshot válido.";
+            return false;
+        }
+        if (state != null && candidate.revision == state.revision)
+        {
+            error = string.Empty;
+            return true;
+        }
+        if (!BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
+                candidate, staffService.CreateSnapshot(), out error))
+            return false;
+
+        state = candidate.DeepClone();
         ScheduleChanged?.Invoke(state.revision);
         error = string.Empty;
         return true;
