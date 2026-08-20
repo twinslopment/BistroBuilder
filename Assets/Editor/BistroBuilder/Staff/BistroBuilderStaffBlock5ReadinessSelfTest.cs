@@ -33,6 +33,8 @@ public static class BistroBuilderStaffBlock5ReadinessSelfTest
             lines, ref passed, ref failed);
         RunGate("5D JSON SaveGame", () => BistroBuilderStaff5DJsonRoundTripSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
+        RunGate("5D Save cruzado", () => BistroBuilderStaff5DCrossSaveValidationSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
         RunGate("5E frontera Presentation", () => BistroBuilderStaff5EStaticSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
         RunGate("5F arquitectura Queen", () => BistroBuilderStaff5FStaticSelfTest.Run(out _, out _, out _),
