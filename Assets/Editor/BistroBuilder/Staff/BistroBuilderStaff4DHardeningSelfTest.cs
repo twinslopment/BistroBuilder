@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -10,6 +11,9 @@ using UnityEngine;
 /// </summary>
 public static class BistroBuilderStaff4DHardeningSelfTest
 {
+    private const string SessionServicePath =
+        "Assets/Scripts/Application/Staff/BistroBuilderStaffSessionService.cs";
+
     [MenuItem(
         "Tools/Bistro Builder/Personal/4D - Autotest endurecimiento",
         false,
@@ -144,6 +148,25 @@ public static class BistroBuilderStaff4DHardeningSelfTest
                 waiter.IsStaffServiceEligible,
                 "El lote transaccional restaura elegibilidad. " +
                 batchEnableError,
+                ref passed, ref failed, log);
+
+            string absoluteSessionServicePath = Path.GetFullPath(SessionServicePath);
+            string source = File.Exists(absoluteSessionServicePath)
+                ? File.ReadAllText(absoluteSessionServicePath)
+                : string.Empty;
+
+            Check(
+                source.Contains(
+                    "BistroBuilderStaffEligibilityBatch.TryApply(",
+                    StringComparison.Ordinal),
+                "StaffSessionService usa el lote transaccional de elegibilidad.",
+                ref passed, ref failed, log);
+
+            Check(
+                source.Contains(
+                    "BistroBuilderStaffSessionClosePreflight.TryValidate(",
+                    StringComparison.Ordinal),
+                "StaffSessionService ejecuta preflight antes de consolidar rendimiento.",
                 ref passed, ref failed, log);
         }
         catch (Exception exception)
