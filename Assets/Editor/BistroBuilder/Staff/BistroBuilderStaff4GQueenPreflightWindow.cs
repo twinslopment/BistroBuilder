@@ -7,8 +7,8 @@ using UnityEngine.SceneManagement;
 /// 4G — Preflight del Queen Test real de Personal.
 ///
 /// No altera la partida ni sustituye el Queen flow final. Comprueba, en Play
-/// Mode, que todas las autoridades 4A–4F están presentes y coherentes antes de
-/// permitir una prueba destructiva-reversible con rollback Save/Load.
+/// Mode, que todas las autoridades 4A–4F y la Presentation jugable completa
+/// están presentes y coherentes antes de una prueba reversible Save/Load.
 /// </summary>
 public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
 {
@@ -78,6 +78,8 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             Unique<BistroBuilderStaffPlayerFacade>(scene, lines, ref passed, ref failed);
         BistroBuilderStaffPlayerScreen screen =
             Unique<BistroBuilderStaffPlayerScreen>(scene, lines, ref passed, ref failed);
+        BistroBuilderStaffPlayerTrainingPanel trainingPanel =
+            Unique<BistroBuilderStaffPlayerTrainingPanel>(scene, lines, ref passed, ref failed);
 
         if (save != null)
         {
@@ -85,22 +87,16 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             Check(
                 save.HasProvider(BistroBuilderStaffStateSaveSectionProvider.StableSectionId),
                 "Save registra staff.state.",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             Check(
                 save.HasProvider(
                     BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId),
                 "Save registra staff.recruitment.",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             Check(
                 save.HasProvider(BistroBuilderStaffSessionSaveSectionProvider.StableSectionId),
                 "Save registra staff.session.runtime.",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (staff != null)
@@ -108,15 +104,11 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 staff.ValidateConfiguration,
                 "StaffService",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             Check(
                 staff.CreateSnapshot() != null,
                 "staff.state expone snapshot canónico.",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (recruitment != null)
@@ -124,9 +116,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 recruitment.ValidateConfiguration,
                 "RecruitmentService",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             bool marketReady = recruitment.EnsureMarketReady(out string marketError);
             Check(
                 marketReady && recruitment.CandidateCount > 0,
@@ -134,9 +124,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
                     ? "Mercado de candidatos disponible con " +
                       recruitment.CandidateCount + " ofertas."
                     : "Mercado de candidatos no disponible: " + marketError,
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (development != null)
@@ -144,9 +132,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 development.ValidateConfiguration,
                 "DevelopmentService",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (session != null)
@@ -154,15 +140,11 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 session.ValidateConfiguration,
                 "StaffSessionService",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             Check(
                 session.CreateSessionSnapshot() != null,
                 "staff.session.runtime expone snapshot para Save/Load.",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (facade != null)
@@ -170,9 +152,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 facade.ValidateConfiguration,
                 "StaffPlayerFacade",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
             bool snapshotOk = facade.TryBuildSnapshot(
                 out BistroBuilderStaffPlayerUiSnapshot uiSnapshot,
                 out string uiError);
@@ -181,9 +161,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
                 snapshotOk
                     ? "Presentation reconstruye snapshot sin asumir autoridad."
                     : "Presentation no puede construir snapshot: " + uiError,
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
         }
 
         if (screen != null)
@@ -191,9 +169,19 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
             CheckConfiguration(
                 screen.ValidateConfiguration,
                 "StaffPlayerScreen",
-                lines,
-                ref passed,
-                ref failed);
+                lines, ref passed, ref failed);
+        }
+
+        if (trainingPanel != null)
+        {
+            CheckConfiguration(
+                trainingPanel.ValidateConfiguration,
+                "StaffPlayerTrainingPanel",
+                lines, ref passed, ref failed);
+            Check(
+                trainingPanel.TrainingOptionCount > 0,
+                "La UI de formación expone opciones derivadas del perfil canónico.",
+                lines, ref passed, ref failed);
         }
 
         Check(
@@ -201,9 +189,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None).Length > 0,
             "Existen agentes Waiter operativos reales para probar binding 4D.",
-            lines,
-            ref passed,
-            ref failed);
+            lines, ref passed, ref failed);
 
         Finish(lines, passed, failed, null);
     }
@@ -249,7 +235,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
         Check(
             ok,
             ok
-                ? "Existe una única autoridad " + typeof(T).Name + "."
+                ? "Existe una única autoridad/componente " + typeof(T).Name + "."
                 : typeof(T).Name + " debe existir una vez; hay " + sceneValues.Count + ".",
             lines,
             ref passed,
@@ -293,13 +279,7 @@ public sealed class BistroBuilderStaff4GQueenPreflightWindow : EditorWindow
         reportType = failed == 0 ? MessageType.Info : MessageType.Error;
         Repaint();
 
-        if (failed == 0)
-        {
-            Debug.Log(report);
-        }
-        else
-        {
-            Debug.LogError(report);
-        }
+        if (failed == 0) Debug.Log(report);
+        else Debug.LogError(report);
     }
 }
