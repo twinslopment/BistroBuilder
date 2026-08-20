@@ -30,8 +30,8 @@ public sealed class BistroBuilderStaffScheduleSaveSectionProvider :
     // Prepare es descendente. Se limpia después de recruitment (8900) y antes
     // de staff.state (8850), sin tocar bindings 4D ya desmontados en 8950.
     public int PrepareOrder => 8875;
-    // Staff debe existir primero (400). El horario se aplica antes del mundo
-    // operativo (500) y del binding final 4D (550).
+    // Staff objetivo existe primero (400). El horario se cruza y aplica en 450,
+    // antes del mundo operativo (500) y del binding final 4D (550).
     public int ApplyOrder => 450;
     // No reanuda runtime; queda listo antes de 4D/service.runtime.
     public int FinalizeOrder => 10700;
@@ -79,14 +79,13 @@ public sealed class BistroBuilderStaffScheduleSaveSectionProvider :
             error = "staff.schedule no tiene el tipo esperado.";
             return false;
         }
-        CacheDependencies();
-        if (staffService == null)
-        {
-            error = "staff.schedule no puede validarse sin StaffService.";
-            return false;
-        }
-        return BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
-            snapshot, staffService.CreateSnapshot(), out error);
+
+        // SaveGame ejecuta ValidateLoadedSections ANTES de Prepare/Apply. En
+        // ese momento staffService todavía representa la partida abierta, no
+        // staff.state del slot objetivo. Por tanto aquí solo se valida la
+        // estructura autosuficiente; el cruce EmployeeId se hace en Apply 450,
+        // después de que staff.state objetivo se haya aplicado en 400.
+        return BistroBuilderStaffScheduleEngine.TryValidateStructure(snapshot, out error);
     }
 
     public IEnumerator PrepareForLoad(BistroBuilderSaveLoadContext context)
@@ -101,9 +100,16 @@ public sealed class BistroBuilderStaffScheduleSaveSectionProvider :
 
     public IEnumerator ApplyState(object state, BistroBuilderSaveLoadContext context)
     {
-        if (!ValidateState(state, out string error) ||
-            !scheduleService.TryRestoreSnapshot(
-                (BistroBuilderStaffScheduleSnapshot)state, out error))
+        if (!ValidateState(state, out string error))
+        {
+            context.Fail(error);
+            yield break;
+        }
+
+        var snapshot = (BistroBuilderStaffScheduleSnapshot)state;
+        if (!BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
+                snapshot, staffService.CreateSnapshot(), out error) ||
+            !scheduleService.TryRestoreSnapshot(snapshot, out error))
         {
             context.Fail(error);
             yield break;
