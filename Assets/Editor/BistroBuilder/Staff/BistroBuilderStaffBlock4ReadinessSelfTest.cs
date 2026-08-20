@@ -68,6 +68,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4D lote de elegibilidad atómico",
+            () => BistroBuilderStaff4DEligibilityBatchSelfTest.Run(out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4E JSON round-trip",
             () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
