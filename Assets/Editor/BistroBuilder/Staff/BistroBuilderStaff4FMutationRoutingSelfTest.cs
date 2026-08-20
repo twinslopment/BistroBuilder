@@ -100,8 +100,7 @@ public static class BistroBuilderStaff4FMutationRoutingSelfTest
                 ".HireCandidate(",
                 ".DismissEmployee(",
                 ".SetAvailability(",
-                ".RefreshCandidates(") ||
-            screen.Contains("facade.TryHireCandidate("),
+                ".RefreshCandidates("),
             "No se introducen rutas de mutación paralelas sin contrato Try de fachada.",
             ref passed, ref failed, log);
 
