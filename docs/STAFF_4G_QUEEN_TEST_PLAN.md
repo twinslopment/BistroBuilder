@@ -1,6 +1,6 @@
 # 4G — Queen Test real de Personal
 
-Estado: **runner implementado / no validado en Unity**.
+Estado: **runner endurecido / no validado en Unity**.
 
 ## Objetivo
 
@@ -10,6 +10,8 @@ Cerrar el Bloque 4 únicamente después de demostrar, en una partida real y con 
 
 - `Tools > Bistro Builder > Personal > 4G - Queen Test preflight`: comprueba autoridades, wiring, Save y agentes antes de mutar la partida.
 - `Tools > Bistro Builder > Personal > 4G - Autotest estático`: exige que el runner use las autoridades canónicas y prohíbe fabricar `Waiter`, `WaiterTask`, otra cola o aplicar XP directamente.
+- `Tools > Bistro Builder > Personal > 4G - Autotest mutación observable`: exige que el Save/Load activo demuestre primero una divergencia real entre el checkpoint y el runtime posterior.
+- `Tools > Bistro Builder > Personal > Bloque 4 - Gate acumulativo 4D-4G`: ejecuta en una sola pasada los gates puros/estáticos de endurecimiento 4D, round-trip JSON 4E, frontera Presentation 4F y preparación 4G.
 - `Tools > Bistro Builder > Personal > 4G - QUEEN TEST reversible`: ejecuta el flujo final con rollback integral y dos slots temporales libres del rango 980–989.
 
 ## Precondición obligatoria
@@ -39,8 +41,8 @@ Ejecutar primero el preflight en Play Mode. Debe devolver 0 errores y comprobar:
 7. Deja temporalmente no disponibles los demás empleados con rol operativo de camarero. El rollback inicial cubre esta mutación y garantiza que el empleado recién contratado sea el único elegible para la sesión diagnóstica.
 8. Pasa `Closed → Preparing`, inicia 4D y exige binding real `EmployeeId ↔ WaiterId`; después abre `Open` mediante `RestaurantServiceStateService`.
 9. Espera hasta 180 s una tarea **real** completada observada por 4D. El runner no crea clientes, tareas, colas, XP ni métricas.
-10. Guarda checkpoint con servicio `Open`, deja evolucionar el runtime unos segundos de forma natural y carga el checkpoint.
-11. Tras Load exige igualdad exacta de `staff.state`, mercado y `staff.session.runtime`, mismo estado `Open`, mismo número de `Waiter`, mismo `WaiterId` ligado y mismas métricas guardadas.
+10. Guarda checkpoint con servicio `Open` y espera hasta 60 s una mutación **observable** posterior. El gate compara `staff.session.runtime` con el snapshot guardado y/o exige avance de tareas del empleado objetivo. Solo cuando demuestra `A != B` permite cargar el checkpoint; si no hay mutación, falla y ejecuta rollback.
+11. Tras Load exige restauración exacta de `staff.state`, mercado y `staff.session.runtime`, mismo estado `Open`, mismo número de `Waiter`, mismo `WaiterId` ligado y mismas métricas guardadas. De este modo se prueba `A → Save → B distinto → Load → A` y se evita un falso PASS por cargar sobre un estado que nunca cambió.
 12. Inicia `Closing` y espera hasta que `WaiterTaskCoordinator.ActiveTaskCount == 0` y todos los agentes ligados estén `Idle`; solo entonces completa `Closed`.
 13. Exige que 4D haya aplicado XP y rendimiento exactamente una vez al empleado objetivo y vuelve a invocar la finalización para comprobar idempotencia sin mutación adicional.
 14. Guarda/carga un segundo checkpoint `Closed` y exige persistencia exacta de plantilla, mercado, XP/skills/rendimiento y sesión inactiva.
@@ -61,4 +63,4 @@ El Bloque 4 no puede declararse cerrado hasta obtener simultáneamente:
 
 ## Principio de seguridad
 
-El Queen Test nunca fabrica una segunda fuente de verdad. Toda mutación pasa por las autoridades ya implementadas y el rollback utiliza el SaveGame universal. Si el servicio real no produce trabajo observable dentro del timeout, la prueba falla y restaura el rollback; nunca sustituye esa ausencia por métricas sintéticas.
+El Queen Test nunca fabrica una segunda fuente de verdad. Toda mutación pasa por las autoridades ya implementadas y el rollback utiliza el SaveGame universal. Si el servicio real no produce trabajo o una mutación persistible observable dentro de sus timeouts, la prueba falla y restaura el rollback; nunca sustituye esa ausencia por métricas sintéticas.
