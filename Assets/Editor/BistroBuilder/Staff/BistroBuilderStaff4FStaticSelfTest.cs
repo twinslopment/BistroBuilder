@@ -5,8 +5,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Gate estático 4F. Comprueba que la fachada jugable sigue siendo una capa de
-/// Presentation y no ha absorbido autoridades de Save, camareros o finanzas.
+/// Gate estático 4F. Comprueba que la fachada y la pantalla jugable siguen
+/// siendo Presentation y no han absorbido autoridades de Save, camareros o
+/// finanzas.
 /// </summary>
 public static class BistroBuilderStaff4FStaticSelfTest
 {
@@ -45,25 +46,37 @@ public static class BistroBuilderStaff4FStaticSelfTest
             ref passed,
             ref failed,
             lines);
-
-        FieldInfo[] fields = typeof(BistroBuilderStaffPlayerFacade).GetFields(
-            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-        bool forbiddenAuthority = false;
-        for (int index = 0; index < fields.Length; index++)
-        {
-            string typeName = fields[index].FieldType.FullName ??
-                              fields[index].FieldType.Name;
-            if (typeName.IndexOf("SaveGameService", StringComparison.Ordinal) >= 0 ||
-                typeName.IndexOf("WaiterTaskCoordinator", StringComparison.Ordinal) >= 0 ||
-                typeName.IndexOf("Finance", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                forbiddenAuthority = true;
-                break;
-            }
-        }
         Check(
-            !forbiddenAuthority,
+            typeof(BistroBuilderStaffPlayerScreen).IsSubclassOf(typeof(MonoBehaviour)),
+            "La pantalla jugable 4F es un componente de Presentation.",
+            ref passed,
+            ref failed,
+            lines);
+        Check(
+            typeof(BistroBuilderStaffPlayerEmployeeRowView).IsSubclassOf(
+                typeof(MonoBehaviour)) &&
+            typeof(BistroBuilderStaffPlayerCandidateRowView).IsSubclassOf(
+                typeof(MonoBehaviour)),
+            "Las filas 4F son vistas reutilizables y no modelos de dominio.",
+            ref passed,
+            ref failed,
+            lines);
+
+        Check(
+            !ContainsForbiddenAuthority(typeof(BistroBuilderStaffPlayerFacade)),
             "La fachada no referencia directamente Save, WaiterTaskCoordinator ni Finanzas.",
+            ref passed,
+            ref failed,
+            lines);
+        Check(
+            !ContainsForbiddenAuthority(typeof(BistroBuilderStaffPlayerScreen)),
+            "La pantalla solo consume Presentation y componentes visuales.",
+            ref passed,
+            ref failed,
+            lines);
+        Check(
+            HasFacadeOnlyAsStaffAuthority(),
+            "La pantalla no depende directamente de Staff/Recruitment/Development/Session.",
             ref passed,
             ref failed,
             lines);
@@ -98,6 +111,42 @@ public static class BistroBuilderStaff4FStaticSelfTest
             ref passed,
             ref failed,
             lines);
+        CheckMethod(
+            "Show",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
+        CheckMethod(
+            "Hide",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
+        CheckMethod(
+            "Refresh",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
+        CheckMethod(
+            "RequestHireSelectedCandidate",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
+        CheckMethod(
+            "RequestDismissSelectedEmployee",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
+        CheckMethod(
+            "ToggleSelectedAvailability",
+            typeof(BistroBuilderStaffPlayerScreen),
+            ref passed,
+            ref failed,
+            lines);
 
         Check(
             !typeof(BistroBuilderStaffPlayerUiSnapshot).IsSubclassOf(typeof(UnityEngine.Object)),
@@ -124,6 +173,42 @@ public static class BistroBuilderStaff4FStaticSelfTest
             "Fallos: " + failed + "\n\n" +
             string.Join("\n", lines);
         return failed == 0;
+    }
+
+    private static bool ContainsForbiddenAuthority(Type type)
+    {
+        FieldInfo[] fields = type.GetFields(
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        for (int index = 0; index < fields.Length; index++)
+        {
+            string typeName = fields[index].FieldType.FullName ??
+                              fields[index].FieldType.Name;
+            if (typeName.IndexOf("SaveGameService", StringComparison.Ordinal) >= 0 ||
+                typeName.IndexOf("WaiterTaskCoordinator", StringComparison.Ordinal) >= 0 ||
+                typeName.IndexOf("Finance", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool HasFacadeOnlyAsStaffAuthority()
+    {
+        FieldInfo[] fields = typeof(BistroBuilderStaffPlayerScreen).GetFields(
+            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        for (int index = 0; index < fields.Length; index++)
+        {
+            Type fieldType = fields[index].FieldType;
+            if (fieldType == typeof(BistroBuilderStaffService) ||
+                fieldType == typeof(BistroBuilderStaffRecruitmentService) ||
+                fieldType == typeof(BistroBuilderStaffDevelopmentService) ||
+                fieldType == typeof(BistroBuilderStaffSessionService))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void CheckMethod(
