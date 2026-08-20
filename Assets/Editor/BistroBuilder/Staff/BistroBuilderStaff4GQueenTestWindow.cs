@@ -36,7 +36,7 @@ public sealed class BistroBuilderStaff4GQueenTestWindow : EditorWindow
     }
 
     private const float RealWorkTimeoutSeconds = 180f;
-    private const float NaturalMutationSeconds = 3f;
+    private const float NaturalMutationTimeoutSeconds = 60f;
     private const float CloseTimeoutSeconds = 180f;
 
     private Vector2 scroll;
@@ -227,10 +227,11 @@ public sealed class BistroBuilderStaff4GQueenTestWindow : EditorWindow
                 FailAndRollback("Checkpoint activo falló: " + result.Message);
                 return;
             }
-            deadline = Time.realtimeSinceStartup + NaturalMutationSeconds;
+            deadline = Time.realtimeSinceStartup + NaturalMutationTimeoutSeconds;
             phase = Phase.WaitingNaturalMutation;
             SetReport(
-                "Checkpoint activo guardado; dejando evolucionar el runtime real antes del Load...",
+                "Checkpoint activo guardado; esperando una mutación observable " +
+                "del runtime real antes del Load...",
                 MessageType.Info);
             return;
         }
@@ -600,16 +601,38 @@ public sealed class BistroBuilderStaff4GQueenTestWindow : EditorWindow
 
         if (phase == Phase.WaitingNaturalMutation)
         {
-            if (Time.realtimeSinceStartup < deadline)
+            if (!Resolve(out string error))
             {
+                FailAndRollback(error);
                 return;
             }
 
-            phase = Phase.LoadingActiveCheckpoint;
-            SetReport("Cargando checkpoint Open...", MessageType.Info);
-            if (!save.TryLoadSlot(checkpointSlot, out string rejection))
+            session.TryGetAssignmentView(
+                targetEmployeeId,
+                out BistroBuilderEmployeeSessionAssignmentView mutationAssignment);
+
+            if (BistroBuilderStaff4GNaturalMutationProbe.HasObservableMutation(
+                    activeSessionJson,
+                    activeCheckpointCompletedTasks,
+                    session.CreateSessionSnapshot(),
+                    mutationAssignment,
+                    out string evidence))
             {
-                FailAndRollback("No pudo iniciar Load Open: " + rejection);
+                phase = Phase.LoadingActiveCheckpoint;
+                SetReport(
+                    "Mutación observable confirmada: " + evidence +
+                    " Cargando checkpoint Open...",
+                    MessageType.Info);
+                if (!save.TryLoadSlot(checkpointSlot, out string rejection))
+                {
+                    FailAndRollback("No pudo iniciar Load Open: " + rejection);
+                }
+                return;
+            }
+
+            if (Time.realtimeSinceStartup >= deadline)
+            {
+                FailAndRollback("Timeout esperando mutación observable antes del Load Open.");
             }
             return;
         }
@@ -1046,7 +1069,7 @@ public sealed class BistroBuilderStaff4GQueenTestWindow : EditorWindow
             "Formación V1: " + targetTrainingId + "\n" +
             "Binding real con WaiterId " + targetWaiterId + "\n" +
             "Trabajo real: " + activeCheckpointCompletedTasks + " tarea(s)\n" +
-            "Save/Load Open\n" +
+            "Save/Load Open con mutación observable previa\n" +
             "Closed + XP/rendimiento idempotente\n" +
             "Save/Load Closed\n" +
             "Rollback integral + limpieza de slots\n\n" +
