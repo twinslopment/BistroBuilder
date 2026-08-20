@@ -6,8 +6,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Gate estructural 4E v2. Comprueba que las tres secciones de Personal
-/// reutilizan el SaveGame universal y que su orden relativo conserva
-/// staff.state -> staff.recruitment -> service.runtime -> staff.session.runtime.
+/// reutilizan el SaveGame universal y que sus órdenes de fase respetan la
+/// semántica real del orquestador: Prepare descendente, Apply/Finalize ascendente.
 /// No ejecuta Play Mode ni modifica la escena.
 /// </summary>
 public static class BistroBuilderStaff4EValidatorV2
@@ -117,15 +117,39 @@ public static class BistroBuilderStaff4EValidatorV2
                 ", session=" + sessionProvider.ApplyOrder + ".");
         }
 
-        if (activeServiceProvider.PrepareOrder < stateProvider.PrepareOrder &&
-            stateProvider.PrepareOrder < recruitmentProvider.PrepareOrder &&
-            recruitmentProvider.PrepareOrder < sessionProvider.PrepareOrder)
+        // SaveGameService ordena Prepare de MAYOR a MENOR. Por tanto 9000
+        // debe ejecutarse antes de cualquier sección de Personal.
+        if (activeServiceProvider.PrepareOrder > sessionProvider.PrepareOrder &&
+            sessionProvider.PrepareOrder > recruitmentProvider.PrepareOrder &&
+            recruitmentProvider.PrepareOrder > stateProvider.PrepareOrder)
         {
-            result.Pass("Orden Prepare conserva service.runtime como limpiador primero.");
+            result.Pass(
+                "Orden Prepare real correcto: servicio -> binding -> mercado -> Staff.");
         }
         else
         {
-            result.Fail("Orden Prepare 4E no respeta la autoridad de service.runtime.");
+            result.Fail(
+                "Orden Prepare inseguro para el sort descendente: service=" +
+                activeServiceProvider.PrepareOrder + ", session=" +
+                sessionProvider.PrepareOrder + ", recruitment=" +
+                recruitmentProvider.PrepareOrder + ", state=" +
+                stateProvider.PrepareOrder + ".");
+        }
+
+        if (stateProvider.FinalizeOrder < recruitmentProvider.FinalizeOrder &&
+            recruitmentProvider.FinalizeOrder < activeServiceProvider.FinalizeOrder &&
+            activeServiceProvider.FinalizeOrder < sessionProvider.FinalizeOrder)
+        {
+            result.Pass(
+                "Orden Finalize correcto: Staff -> mercado -> servicio -> binding.");
+        }
+        else
+        {
+            result.Fail(
+                "Orden Finalize inseguro: state=" + stateProvider.FinalizeOrder +
+                ", recruitment=" + recruitmentProvider.FinalizeOrder +
+                ", service=" + activeServiceProvider.FinalizeOrder +
+                ", session=" + sessionProvider.FinalizeOrder + ".");
         }
 
         save.RefreshExtensions();
