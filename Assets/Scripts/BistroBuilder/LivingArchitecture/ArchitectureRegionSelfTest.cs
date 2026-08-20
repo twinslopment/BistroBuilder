@@ -33,6 +33,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
             Test(result, "identidad no depende del orden de listas", IdentityIsOrderIndependent);
             Test(result, "grafo abierto no inventa habitaciones", OpenGraphProducesNoRegions);
             Test(result, "dos recintos desconectados se detectan", DisconnectedRoomsAreDetected);
+            Test(result, "cruce sin vértice es rechazado", CrossingWithoutVertexIsRejected);
             return result;
         }
 
@@ -73,8 +74,6 @@ namespace BistroBuilder.LivingArchitecture.Domain
             var level = CreateRectangleLevel();
             level.Vertices.Add(Vertex("v_mid_bottom", 3d, 0d));
             level.Vertices.Add(Vertex("v_mid_top", 3d, 4d));
-
-            // Sustituye los tramos horizontal inferior/superior por segmentos conectados al divisor.
             level.Walls.RemoveAll(x => x.Id.Value == "w_bottom" || x.Id.Value == "w_top");
             level.Walls.Add(Wall("w_bottom_l", "v_a", "v_mid_bottom"));
             level.Walls.Add(Wall("w_bottom_r", "v_mid_bottom", "v_b"));
@@ -116,6 +115,29 @@ namespace BistroBuilder.LivingArchitecture.Domain
             AddRectangle(level, "b", 10d, 0d, 2d, 2d);
             var regions = ArchitectureRegionEngine.Build(level);
             Require(regions.Regions.Count == 2, "Se esperaban 2 recintos desconectados.");
+        }
+
+        private static void CrossingWithoutVertexIsRejected()
+        {
+            var level = new ArchitectureLevel { Id = new LevelId("lvl_cross") };
+            level.Vertices.Add(Vertex("ca", 0d, 0d));
+            level.Vertices.Add(Vertex("cb", 4d, 4d));
+            level.Vertices.Add(Vertex("cc", 0d, 4d));
+            level.Vertices.Add(Vertex("cd", 4d, 0d));
+            level.Walls.Add(Wall("cw1", "ca", "cb"));
+            level.Walls.Add(Wall("cw2", "cc", "cd"));
+
+            try
+            {
+                ArchitectureRegionEngine.Build(level);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Require(ex.Message.Contains("LA2_NON_PLANAR_CROSSING"), "Debe conservarse el código diagnóstico LA2.");
+                return;
+            }
+
+            throw new InvalidOperationException("El cruce sin VertexId compartido debía ser rechazado.");
         }
 
         private static ArchitectureLevel CreateRectangleLevel()
