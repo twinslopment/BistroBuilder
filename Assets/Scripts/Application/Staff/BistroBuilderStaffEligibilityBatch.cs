@@ -6,7 +6,7 @@ using System.Collections.Generic;
 ///
 /// No conoce tareas, sesiones ni empleados. Solo coordina el gate runtime de
 /// los Waiter existentes. Si un agente rechaza el cambio, restaura exactamente
-/// los valores anteriores de los agentes ya procesados.
+/// los valores anteriores de todos los agentes ya procesados.
 /// </summary>
 public static class BistroBuilderStaffEligibilityBatch
 {
@@ -22,6 +22,9 @@ public static class BistroBuilderStaffEligibilityBatch
         }
     }
 
+    /// <summary>
+    /// Aplica el mismo estado objetivo a todos los Waiter indicados.
+    /// </summary>
     public static bool TryApply(
         IEnumerable<Waiter> waiters,
         bool eligible,
@@ -33,27 +36,79 @@ public static class BistroBuilderStaffEligibilityBatch
             return false;
         }
 
-        var originals = new List<OriginalState>();
-        var seen = new HashSet<Waiter>();
-
+        var targets = new List<KeyValuePair<Waiter, bool>>();
         foreach (Waiter waiter in waiters)
         {
-            if (waiter == null || !seen.Add(waiter))
+            targets.Add(new KeyValuePair<Waiter, bool>(waiter, eligible));
+        }
+
+        return TryApply(targets, out error);
+    }
+
+    /// <summary>
+    /// Aplica un plan mixto de elegibilidad como una única transacción.
+    ///
+    /// Cada Waiter puede tener su propio estado objetivo. Antes de mutar se
+    /// valida que un mismo agente no aparezca con objetivos contradictorios.
+    /// Si cualquier agente rechaza el cambio, se restauran exactamente los
+    /// estados previos de todos los agentes procesados, incluido el que falló.
+    /// </summary>
+    public static bool TryApply(
+        IEnumerable<KeyValuePair<Waiter, bool>> targets,
+        out string error)
+    {
+        if (targets == null)
+        {
+            error = "El plan de elegibilidad es nulo.";
+            return false;
+        }
+
+        var normalized = new List<KeyValuePair<Waiter, bool>>();
+        var desiredByWaiter = new Dictionary<Waiter, bool>();
+
+        foreach (KeyValuePair<Waiter, bool> target in targets)
+        {
+            Waiter waiter = target.Key;
+            if (waiter == null)
             {
                 continue;
             }
+
+            if (desiredByWaiter.TryGetValue(waiter, out bool existing))
+            {
+                if (existing != target.Value)
+                {
+                    error =
+                        "WaiterId " + waiter.WaiterId +
+                        " aparece con objetivos de elegibilidad contradictorios.";
+                    return false;
+                }
+                continue;
+            }
+
+            desiredByWaiter.Add(waiter, target.Value);
+            normalized.Add(target);
+        }
+
+        var originals = new List<OriginalState>(normalized.Count);
+        for (int index = 0; index < normalized.Count; index++)
+        {
+            Waiter waiter = normalized[index].Key;
+            bool desired = normalized[index].Value;
 
             originals.Add(
                 new OriginalState(waiter, waiter.IsStaffServiceEligible));
 
-            if (waiter.TrySetStaffServiceEligibility(eligible))
+            if (waiter.TrySetStaffServiceEligibility(desired))
             {
                 continue;
             }
 
-            for (int index = originals.Count - 1; index >= 0; index--)
+            for (int rollbackIndex = originals.Count - 1;
+                 rollbackIndex >= 0;
+                 rollbackIndex--)
             {
-                OriginalState original = originals[index];
+                OriginalState original = originals[rollbackIndex];
                 if (original.waiter != null)
                 {
                     original.waiter.TrySetStaffServiceEligibility(
