@@ -78,6 +78,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4E identidad estable SaveGame",
+            () => BistroBuilderStaff4EStableSectionIdentitySelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4E aislamiento Finalize",
             () => BistroBuilderStaff4EFinalizeIsolationSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
