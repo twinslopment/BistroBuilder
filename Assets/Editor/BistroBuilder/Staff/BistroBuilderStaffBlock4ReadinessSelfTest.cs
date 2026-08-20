@@ -19,14 +19,8 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
     private static void RunFromMenu()
     {
         bool success = Run(out int passed, out int failed, out string report);
-        if (success)
-        {
-            Debug.Log(report);
-        }
-        else
-        {
-            Debug.LogError(report);
-        }
+        if (success) Debug.Log(report);
+        else Debug.LogError(report);
 
         EditorUtility.DisplayDialog(
             "Bistro Builder — Personal / Gate acumulativo",
@@ -45,100 +39,63 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
 
         RunGate(
             "4D endurecimiento",
-            () => BistroBuilderStaff4DHardeningSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DHardeningSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4D preflight restore",
-            () => BistroBuilderStaff4DRestorePreflightSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DRestorePreflightSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4D restore elegibilidad transaccional",
-            () => BistroBuilderStaff4DRestoreEligibilitySelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DRestoreEligibilitySelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4D PrepareForLoad commit-safe",
-            () => BistroBuilderStaff4DPrepareForLoadSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DPrepareForLoadSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4D ResumeAfterLoad commit-safe",
-            () => BistroBuilderStaff4DResumeAfterLoadSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DResumeAfterLoadSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4D identidad de cierre",
-            () => BistroBuilderStaff4DCloseIdentitySelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4DCloseIdentitySelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4E JSON round-trip",
-            () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4E aislamiento Finalize",
+            () => BistroBuilderStaff4EFinalizeIsolationSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4F frontera Presentation",
-            () => BistroBuilderStaff4FStaticSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4FStaticSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4F formación Presentation",
+            () => BistroBuilderStaff4FTrainingStaticSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4G arquitectura estática",
-            () => BistroBuilderStaff4GStaticSelfTest.Run(
-                out _,
-                out _,
-                out _),
-            lines,
-            ref passed,
-            ref failed);
+            () => BistroBuilderStaff4GStaticSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
 
         RunGate(
             "4G mutación observable",
             () => BistroBuilderStaff4GNaturalMutationSelfTest.Run(out _),
-            lines,
-            ref passed,
-            ref failed);
+            lines, ref passed, ref failed);
 
         var builder = new StringBuilder();
         builder.AppendLine("=== BISTRO BUILDER — BLOQUE 4 / GATE ACUMULATIVO ===");
@@ -182,7 +139,8 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
         else
         {
             failed++;
-            if (lines.Count == 0 || !lines[lines.Count - 1].StartsWith("[ERROR] " + name))
+            if (lines.Count == 0 ||
+                !lines[lines.Count - 1].StartsWith("[ERROR] " + name))
             {
                 lines.Add("[ERROR] " + name + ".");
             }
