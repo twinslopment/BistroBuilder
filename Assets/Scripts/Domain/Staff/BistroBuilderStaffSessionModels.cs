@@ -85,29 +85,9 @@ public sealed class BistroBuilderStaffSessionSnapshot
     }
 }
 
-public sealed class BistroBuilderEmployeeSessionAssignmentView
-{
-    public string employeeId = string.Empty;
-    public int waiterId;
-    public BistroBuilderEmployeeSessionStatus status;
-    public WaiterState waiterState;
-    public int completedTasks;
-    public int failedTasks;
-    public int tablesHandled;
-    public long totalTaskDurationMilliseconds;
-}
-
-public sealed class BistroBuilderStaffCoverageSnapshot
-{
-    public int operationalWaiterSlots;
-    public int activeWaiterEmployees;
-    public int availableWaiterEmployees;
-    public int boundWaiterEmployees;
-    public int unfilledWaiterSlots;
-    public int unassignedAvailableWaiterEmployees;
-    public bool hasFullCurrentCoverage;
-}
-
+/// <summary>
+/// Genera y valida la identidad estable de una sesión de Personal.
+/// </summary>
 public static class BistroBuilderStaffSessionIdUtility
 {
     private const string Prefix = "staffsession_";
