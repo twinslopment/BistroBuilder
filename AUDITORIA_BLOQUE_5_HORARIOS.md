@@ -30,6 +30,7 @@ El Bloque 5 añade planificación de horarios y turnos sobre el sistema de Perso
 - `staff.state` se aplica antes (400); `service.runtime` después (500); binding 4D después (550).
 - La prevalidación universal de Load comprueba estructura autosuficiente; la integridad cruzada `EmployeeId` se comprueba en Apply contra `staff.state` objetivo.
 - Gates: JSON round-trip y Save cruzado A/B.
+- El gate de carga cruzada canónico dispone de `.meta` estable y no existe una segunda implementación duplicada.
 
 ### 5E — UI
 - Fachada y pantalla Presentation no autoritativas.
@@ -46,6 +47,8 @@ El Bloque 5 añade planificación de horarios y turnos sobre el sistema de Perso
 - Cierre únicamente con tareas agotadas y camareros ligados Idle.
 - En Closed se prueba `staff.schedule A → B → Load → A`.
 - Rollback integral y borrado de slots tanto en PASS como en fallo recuperable.
+- El runner evita dependencias de definite-assignment por short-circuit en la ruta de rollback.
+- Gate estático específico para impedir fabricación de `Waiter`, `WaiterTask`, manipulación directa de elegibilidad o serialización paralela al SaveGame universal.
 
 ## Gates acumulativos
 
@@ -58,9 +61,17 @@ El Bloque 5 añade planificación de horarios y turnos sobre el sistema de Perso
 6. 5E frontera Presentation.
 7. 5F arquitectura Queen.
 
+## Genealogía
+
+La cadena canónica se ha reconciliado contra el HEAD actual de 4G y cada tramo queda con **0 commits por detrás** de su base inmediata:
+
+`feature/4g-staff-queen-test` → `feature/5a-staff-scheduling-foundation` → `feature/5b-staff-schedule-planning` → `feature/5c-staff-schedule-service-binding` → `feature/5d-staff-schedule-persistence` → `feature/5e-staff-schedule-ui` → `feature/5f-staff-schedule-queen-test`.
+
+La rama 5F contiene todos los cambios de 4G actual y los hitos 5A–5E, además de sus propios preflight, Queen Test, gate acumulativo y documentación.
+
 ## Condición de cierre
 
-Este documento no declara validación runtime. Para cerrar formalmente el Bloque 5 deben completarse en Unity:
+Todo el trabajo de código, endurecimiento estático, persistencia, Presentation, herramientas y genealogía previsto para 5A–5F queda implementado. Este documento **no declara validación runtime**. Para cerrar formalmente el Bloque 5 deben completarse en Unity:
 - compilación limpia;
 - instalación acumulativa sobre la escena principal;
 - validadores y autotests sin fallos;
