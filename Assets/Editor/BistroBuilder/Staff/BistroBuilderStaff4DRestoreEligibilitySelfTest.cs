@@ -7,9 +7,9 @@ using UnityEngine;
 /// <summary>
 /// 4D — Gate estático de elegibilidad durante restore/rehidratación.
 ///
-/// Impide que Save/Load vuelva a activar bindings Waiter uno a uno o que un
-/// fallo restaure globalmente agentes no ligados. La activación debe pasar por
-/// BistroBuilderStaffEligibilityBatch sobre el subconjunto ligado.
+/// Impide volver a una restauración por fases. El snapshot completo debe
+/// convertirse primero en un plan mixto Waiter→elegibilidad y aplicarse como
+/// una única transacción mediante BistroBuilderStaffEligibilityBatch.
 /// </summary>
 public static class BistroBuilderStaff4DRestoreEligibilitySelfTest
 {
@@ -64,44 +64,62 @@ public static class BistroBuilderStaff4DRestoreEligibilitySelfTest
         string rehydrate = ExtractMethod(
             source,
             "private bool TryRehydrateRuntimeFromCurrentState",
+            "private bool TryApplyEligibilityForSnapshot");
+        string eligibilityPlan = ExtractMethod(
+            source,
+            "private bool TryApplyEligibilityForSnapshot",
             "private void RebuildBindingDictionariesFromState");
 
         Check(
-            restore.Contains("var boundWaiters = new List<Waiter>") &&
-            restore.Contains("BistroBuilderStaffEligibilityBatch.TryApply(") &&
-            restore.Contains("boundWaiters,") &&
-            restore.Contains("true,"),
-            "TryRestoreSessionSnapshot activa solo el subconjunto ligado " +
-            "mediante el lote transaccional.",
+            restore.Contains(
+                "BistroBuilderStaffSessionRestorePreflight.TryValidate(") &&
+            restore.Contains(
+                "TryApplyEligibilityForSnapshot(candidate, out error)"),
+            "TryRestoreSessionSnapshot preflighta y delega en el plan " +
+            "transaccional completo.",
             ref passed,
             ref failed,
             log);
 
         Check(
-            !restore.Contains("waiter.TrySetStaffServiceEligibility(true)") &&
-            !restore.Contains("TrySetAllWaitersEligible(true"),
-            "TryRestoreSessionSnapshot no contiene activación individual ni " +
-            "fallback global de elegibilidad.",
+            !restore.Contains("waiter.TrySetStaffServiceEligibility") &&
+            !restore.Contains("TrySetAllWaitersEligible(") &&
+            !restore.Contains("boundWaiters"),
+            "TryRestoreSessionSnapshot no aplica elegibilidad por fases ni " +
+            "usa fallback global.",
             ref passed,
             ref failed,
             log);
 
         Check(
-            rehydrate.Contains("var boundWaiters = new List<Waiter>") &&
-            rehydrate.Contains("BistroBuilderStaffEligibilityBatch.TryApply(") &&
-            rehydrate.Contains("boundWaiters,") &&
-            rehydrate.Contains("true,"),
-            "TryRehydrateRuntimeFromCurrentState activa los bindings como " +
-            "un único lote transaccional.",
+            rehydrate.Contains(
+                "BistroBuilderStaffSessionRestorePreflight.TryValidate(") &&
+            rehydrate.Contains(
+                "TryApplyEligibilityForSnapshot(sessionState, out error)"),
+            "TryRehydrateRuntimeFromCurrentState valida primero y aplica " +
+            "después el mismo plan atómico.",
             ref passed,
             ref failed,
             log);
 
         Check(
-            !rehydrate.Contains("waiter.TrySetStaffServiceEligibility(true)") &&
-            !rehydrate.Contains("TrySetAllWaitersEligible(true"),
-            "La rehidratación no reactiva Waiter individualmente ni abre " +
-            "agentes no ligados ante un fallo.",
+            !rehydrate.Contains("waiter.TrySetStaffServiceEligibility") &&
+            !rehydrate.Contains("TrySetAllWaitersEligible(") &&
+            !rehydrate.Contains("boundWaiters"),
+            "La rehidratación no activa bindings individualmente.",
+            ref passed,
+            ref failed,
+            log);
+
+        Check(
+            eligibilityPlan.Contains("eligibilityPlanBuffer.Clear()") &&
+            eligibilityPlan.Contains("new KeyValuePair<Waiter, bool>(") &&
+            eligibilityPlan.Contains(
+                "snapshot.active && boundWaiterIds.Contains(pair.Key)") &&
+            eligibilityPlan.Contains(
+                "BistroBuilderStaffEligibilityBatch.TryApply("),
+            "TryApplyEligibilityForSnapshot construye un objetivo explícito " +
+            "para cada Waiter y aplica un único batch mixto.",
             ref passed,
             ref failed,
             log);
