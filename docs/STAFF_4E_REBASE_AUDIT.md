@@ -39,6 +39,20 @@ Finalize:
 
 Las tres secciones son opcionales. `staff.state` se vacía durante Prepare para impedir contaminación entre partidas. `staff.recruitment` restaura un snapshot vacío y, si la sección no existía, genera un mercado nuevo determinista para el `DayIndex` cargado. `staff.session.runtime` descarta bindings anteriores y, si el save legacy declara servicio activo, solicita a 4D reconstruir una sesión contra los Waiter ya restaurados por `service.runtime`.
 
+## Endurecimiento 4D exigido por 4E
+
+Existen dos helpers de seguridad separados de las autoridades operativas:
+
+- `BistroBuilderStaffEligibilityBatch`: aplica cambios globales de elegibilidad como lote transaccional y restaura los valores previos si cualquier Waiter rechaza la operación.
+- `BistroBuilderStaffSessionClosePreflight`: exige que todos los WaiterId ligados existan, sigan elegibles y estén realmente libres antes de consolidar XP/rendimiento o desactivar agentes.
+
+`BistroBuilderStaff4DHardeningSelfTest` prueba ambos contratos y además inspecciona el wiring real de `BistroBuilderStaffSessionService`. El instalador 4E v2 ejecuta este gate **antes de modificar la escena**. Mientras el servicio siga usando el bucle antiguo o no invoque el preflight de cierre, 4E fallará deliberadamente y hará cero cambios.
+
 ## Gate aún pendiente antes de cerrar 4D/4E
 
-El helper transaccional `BistroBuilderStaffEligibilityBatch` ya existe y tiene autotest propio, pero `BistroBuilderStaffSessionService.TrySetAllWaitersEligible` todavía debe integrarlo. También debe añadirse un preflight de cierre que verifique que todos los agentes ligados estén realmente libres antes de aplicar XP/rendimiento de la sesión. Hasta que esos dos puntos estén integrados y Unity compile/ejecute los gates, 4D y 4E no deben marcarse como cerrados.
+Los helpers y su enforcement ya existen, pero `BistroBuilderStaffSessionService` todavía debe cablear explícitamente:
+
+1. `BistroBuilderStaffEligibilityBatch.TryApply(...)` dentro de `TrySetAllWaitersEligible`.
+2. `BistroBuilderStaffSessionClosePreflight.TryValidate(...)` al comienzo de `TryFinalizeClosedSession`, antes de `FinalizeObservedWorkCycle` y antes de cualquier llamada a `TryApplyServiceResult`.
+
+Hasta que esos dos puntos estén integrados y Unity compile/ejecute los gates, 4D y 4E no deben marcarse como cerrados.
