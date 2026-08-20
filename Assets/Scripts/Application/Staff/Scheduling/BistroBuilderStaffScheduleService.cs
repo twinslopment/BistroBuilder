@@ -200,7 +200,9 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
             for (int index = 0; index < employeeBuffer.Count; index++)
             {
                 BistroBuilderEmployeeRecord employee = employeeBuffer[index];
-                if (employee == null || !IsScheduled(employee.employeeId, dayIndex, mealService) ||
+                if (employee == null ||
+                    employee.availability != BistroBuilderEmployeeAvailability.Available ||
+                    !IsScheduled(employee.employeeId, dayIndex, mealService) ||
                     !staffService.TryGetRoleDefinition(
                         employee.roleId, out BistroBuilderStaffRoleDefinition role) ||
                     role == null ||
