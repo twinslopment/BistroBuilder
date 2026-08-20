@@ -10,10 +10,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 4F — Instalador aditivo e idempotente de la formación jugable.
-///
-/// Solo modifica Presentation. Lee el perfil canónico 4C para construir las
-/// opciones visibles, pero no añade DevelopmentService, Finanzas, Save ni
-/// ninguna autoridad operativa alternativa.
+/// Solo modifica Presentation y deriva las opciones visibles del perfil 4C.
 /// </summary>
 public static class BistroBuilderStaff4FTrainingInstaller
 {
@@ -61,16 +58,20 @@ public static class BistroBuilderStaff4FTrainingInstaller
             BistroBuilderStaffPlayerFacade facade =
                 RequireUnique<BistroBuilderStaffPlayerFacade>(scene);
 
-            if (!screen.ValidateConfiguration(out string screenError) ||
-                !facade.ValidateConfiguration(out string facadeError))
+            if (!screen.ValidateConfiguration(out string screenError))
             {
-                throw new InvalidOperationException(screenError + facadeError);
+                throw new InvalidOperationException(screenError);
+            }
+            if (!facade.ValidateConfiguration(out string facadeError))
+            {
+                throw new InvalidOperationException(facadeError);
             }
 
             BistroBuilderStaffDevelopmentProfile profile =
                 AssetDatabase.LoadAssetAtPath<BistroBuilderStaffDevelopmentProfile>(
                     DevelopmentProfilePath);
-            if (profile == null || !profile.TryValidate(out string profileError))
+            string profileError = string.Empty;
+            if (profile == null || !profile.TryValidate(out profileError))
             {
                 throw new InvalidOperationException(
                     "Falta el perfil canónico 4C de desarrollo. " + profileError);
@@ -85,60 +86,36 @@ public static class BistroBuilderStaff4FTrainingInstaller
                     "La jerarquía 4F base no contiene EmployeeDetail/StaffPanelRoot.");
             }
 
-            Transform oldOpen = employeeDetail.Find(OpenButtonName);
-            if (oldOpen != null)
-            {
-                Undo.DestroyObjectImmediate(oldOpen.gameObject);
-            }
-            Transform oldModal = panelRoot.Find(ModalName);
-            if (oldModal != null)
-            {
-                Undo.DestroyObjectImmediate(oldModal.gameObject);
-            }
+            DestroyChildIfPresent(employeeDetail, OpenButtonName);
+            DestroyChildIfPresent(panelRoot, ModalName);
 
-            // Reparte la franja inferior entre disponibilidad, formación y despido.
             RectTransform availability = FindRect(employeeDetail, "Availability");
             RectTransform dismiss = FindRect(employeeDetail, "Dismiss");
             SetAnchors(availability, 0f, 0.02f, 0.31f, 0.11f);
             SetAnchors(dismiss, 0.69f, 0.02f, 1f, 0.11f);
 
             Button openButton = CreateButton(
-                employeeDetail,
-                OpenButtonName,
-                "Formación",
+                employeeDetail, OpenButtonName, "Formación",
                 0.345f, 0.02f, 0.655f, 0.11f);
 
             GameObject modal = CreatePanel(
-                panelRoot,
-                ModalName,
-                0.28f, 0.22f, 0.72f, 0.78f);
+                panelRoot, ModalName, 0.28f, 0.22f, 0.72f, 0.78f);
             CreateText(
-                modal.transform,
-                "Title",
-                "FORMACIÓN",
-                26f,
+                modal.transform, "Title", "FORMACIÓN", 26f,
                 0.06f, 0.88f, 0.72f, 0.97f);
             TMP_Text employeeText = CreateText(
-                modal.transform,
-                "Employee",
-                string.Empty,
-                15f,
+                modal.transform, "Employee", string.Empty, 15f,
                 0.06f, 0.80f, 0.94f, 0.87f);
             TMP_Text feedback = CreateText(
-                modal.transform,
-                "Feedback",
-                string.Empty,
-                14f,
+                modal.transform, "Feedback", string.Empty, 14f,
                 0.06f, 0.06f, 0.78f, 0.14f);
             Button close = CreateButton(
-                modal.transform,
-                "Close",
-                "Cerrar",
+                modal.transform, "Close", "Cerrar",
                 0.80f, 0.90f, 0.94f, 0.97f);
 
-            var buttons = new List<Button>();
-            var labels = new List<TMP_Text>();
             int count = profile.Trainings.Count;
+            var buttons = new List<Button>(count);
+            var labels = new List<TMP_Text>(count);
             float top = 0.76f;
             float bottom = 0.17f;
             float gap = 0.012f;
@@ -161,8 +138,14 @@ public static class BistroBuilderStaff4FTrainingInstaller
                     "Training_" + training.trainingId,
                     training.displayName,
                     0.06f, minY, 0.94f, maxY);
+                TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+                if (label == null)
+                {
+                    throw new InvalidOperationException(
+                        "No pudo crearse el texto de una formación 4F.");
+                }
                 buttons.Add(button);
-                labels.Add(button.GetComponentInChildren<TMP_Text>(true));
+                labels.Add(label);
             }
 
             BistroBuilderStaffPlayerTrainingPanel trainingPanel =
@@ -173,35 +156,18 @@ public static class BistroBuilderStaff4FTrainingInstaller
                     BistroBuilderStaffPlayerTrainingPanel>(screen.gameObject);
             }
 
-            var serialized = new SerializedObject(trainingPanel);
-            SetObject(serialized, "facade", facade);
-            SetObject(serialized, "screen", screen);
-            SetObject(serialized, "openButton", openButton);
-            SetObject(serialized, "modalRoot", modal);
-            SetObject(serialized, "closeButton", close);
-            SetObject(serialized, "employeeText", employeeText);
-            SetObject(serialized, "feedbackText", feedback);
-
-            SerializedProperty bindings = serialized.FindProperty("bindings");
-            if (bindings == null)
-            {
-                throw new InvalidOperationException(
-                    "No existe la colección serializada bindings de formación 4F.");
-            }
-            bindings.arraySize = count;
-            for (int index = 0; index < count; index++)
-            {
-                BistroBuilderStaffTrainingDefinition training = profile.Trainings[index];
-                SerializedProperty item = bindings.GetArrayElementAtIndex(index);
-                item.FindPropertyRelative("trainingId").stringValue = training.trainingId;
-                item.FindPropertyRelative("displayName").stringValue = training.displayName;
-                item.FindPropertyRelative("skillGain").intValue = training.skillGain;
-                item.FindPropertyRelative("financialCostCents").longValue =
-                    training.financialCostCents;
-                item.FindPropertyRelative("button").objectReferenceValue = buttons[index];
-                item.FindPropertyRelative("label").objectReferenceValue = labels[index];
-            }
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            ConfigurePanel(
+                trainingPanel,
+                facade,
+                screen,
+                openButton,
+                modal,
+                close,
+                employeeText,
+                feedback,
+                profile,
+                buttons,
+                labels);
 
             modal.SetActive(false);
             if (!trainingPanel.ValidateConfiguration(out string trainingError))
@@ -255,6 +221,51 @@ public static class BistroBuilderStaff4FTrainingInstaller
         }
     }
 
+    private static void ConfigurePanel(
+        BistroBuilderStaffPlayerTrainingPanel panel,
+        BistroBuilderStaffPlayerFacade facade,
+        BistroBuilderStaffPlayerScreen screen,
+        Button openButton,
+        GameObject modal,
+        Button close,
+        TMP_Text employeeText,
+        TMP_Text feedback,
+        BistroBuilderStaffDevelopmentProfile profile,
+        List<Button> buttons,
+        List<TMP_Text> labels)
+    {
+        var serialized = new SerializedObject(panel);
+        SetObject(serialized, "facade", facade);
+        SetObject(serialized, "screen", screen);
+        SetObject(serialized, "openButton", openButton);
+        SetObject(serialized, "modalRoot", modal);
+        SetObject(serialized, "closeButton", close);
+        SetObject(serialized, "employeeText", employeeText);
+        SetObject(serialized, "feedbackText", feedback);
+
+        SerializedProperty bindings = serialized.FindProperty("bindings");
+        if (bindings == null)
+        {
+            throw new InvalidOperationException(
+                "No existe la colección serializada bindings de formación 4F.");
+        }
+
+        bindings.arraySize = profile.Trainings.Count;
+        for (int index = 0; index < profile.Trainings.Count; index++)
+        {
+            BistroBuilderStaffTrainingDefinition training = profile.Trainings[index];
+            SerializedProperty item = bindings.GetArrayElementAtIndex(index);
+            item.FindPropertyRelative("trainingId").stringValue = training.trainingId;
+            item.FindPropertyRelative("displayName").stringValue = training.displayName;
+            item.FindPropertyRelative("skillGain").intValue = training.skillGain;
+            item.FindPropertyRelative("financialCostCents").longValue =
+                training.financialCostCents;
+            item.FindPropertyRelative("button").objectReferenceValue = buttons[index];
+            item.FindPropertyRelative("label").objectReferenceValue = labels[index];
+        }
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     private static T RequireUnique<T>(Scene scene) where T : Component
     {
         T[] all = UnityEngine.Object.FindObjectsByType<T>(
@@ -275,6 +286,15 @@ public static class BistroBuilderStaff4FTrainingInstaller
                 " y hay " + matches.Count + ".");
         }
         return matches[0];
+    }
+
+    private static void DestroyChildIfPresent(Transform parent, string name)
+    {
+        Transform child = parent.Find(name);
+        if (child != null)
+        {
+            Undo.DestroyObjectImmediate(child.gameObject);
+        }
     }
 
     private static RectTransform FindRect(Transform parent, string name)
@@ -346,10 +366,7 @@ public static class BistroBuilderStaff4FTrainingInstaller
     {
         GameObject go = new GameObject(name, typeof(RectTransform));
         Undo.RegisterCreatedObjectUndo(go, "Crear UI formación 4F");
-        if (parent != null)
-        {
-            go.transform.SetParent(parent, false);
-        }
+        if (parent != null) go.transform.SetParent(parent, false);
         return go;
     }
 
