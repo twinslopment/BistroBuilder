@@ -9,7 +9,10 @@ using UnityEngine;
 /// - Prepare 8950: después de service.runtime (9000), porque Prepare se ordena
 ///   de MAYOR a MENOR y el servicio debe limpiar tareas/agentes primero.
 /// - Apply 550: después de staff.state y de service.runtime (500).
-/// - Finalize 11100: después de que service.runtime (11000) reanude el mundo.
+/// - Finalize 10950: después de game.general (10000) pero ANTES de
+///   service.runtime (11000). Así 4D valida/rehidrata bindings mientras el
+///   scope global de restauración sigue activo; service.runtime solo reanuda
+///   tareas, camareros y llegadas cuando Personal ya está preparado.
 ///
 /// No serializa GameObjects ni transforma esta sección en autoridad de tareas.
 /// </summary>
@@ -48,7 +51,7 @@ public sealed class BistroBuilderStaffSessionSaveSectionProvider :
 
     public int PrepareOrder => 8950;
     public int ApplyOrder => 550;
-    public int FinalizeOrder => 11100;
+    public int FinalizeOrder => 10950;
 
     private void Awake()
     {
@@ -200,7 +203,8 @@ public sealed class BistroBuilderStaffSessionSaveSectionProvider :
             // Compatibilidad con partidas anteriores a 4E. Se descarta
             // cualquier sesión anterior. Si el save antiguo declara servicio
             // activo, 4D reconstruye un binding nuevo contra los Waiter ya
-            // restaurados por service.runtime.
+            // restaurados por service.runtime Apply, todavía dentro del scope
+            // global de restauración y antes de reanudar el mundo operativo.
             BistroBuilderStaffSessionSnapshot inactive =
                 BistroBuilderStaffSessionEngine.CreateInactiveSnapshot();
             if (!staffSessionService.TryRestoreSessionSnapshot(

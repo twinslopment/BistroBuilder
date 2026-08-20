@@ -136,20 +136,37 @@ public static class BistroBuilderStaff4EValidatorV2
                 stateProvider.PrepareOrder + ".");
         }
 
+        // Finalize se ejecuta de MENOR a MAYOR. Personal debe rehidratar su
+        // binding después de game.general (10000), pero antes de que
+        // service.runtime (11000) quite el scope de restauración y reanude
+        // tareas/camareros/llegadas.
         if (stateProvider.FinalizeOrder < recruitmentProvider.FinalizeOrder &&
-            recruitmentProvider.FinalizeOrder < activeServiceProvider.FinalizeOrder &&
-            activeServiceProvider.FinalizeOrder < sessionProvider.FinalizeOrder)
+            recruitmentProvider.FinalizeOrder < sessionProvider.FinalizeOrder &&
+            sessionProvider.FinalizeOrder < activeServiceProvider.FinalizeOrder)
         {
             result.Pass(
-                "Orden Finalize correcto: Staff -> mercado -> servicio -> binding.");
+                "Orden Finalize seguro: Staff -> mercado -> binding -> servicio operativo.");
         }
         else
         {
             result.Fail(
                 "Orden Finalize inseguro: state=" + stateProvider.FinalizeOrder +
                 ", recruitment=" + recruitmentProvider.FinalizeOrder +
-                ", service=" + activeServiceProvider.FinalizeOrder +
-                ", session=" + sessionProvider.FinalizeOrder + ".");
+                ", session=" + sessionProvider.FinalizeOrder +
+                ", service=" + activeServiceProvider.FinalizeOrder + ".");
+        }
+
+        if (sessionProvider.FinalizeOrder <= 10000 ||
+            sessionProvider.FinalizeOrder >= activeServiceProvider.FinalizeOrder)
+        {
+            result.Fail(
+                "staff.session.runtime debe finalizar entre game.general=10000 " +
+                "y service.runtime=" + activeServiceProvider.FinalizeOrder + ".");
+        }
+        else
+        {
+            result.Pass(
+                "staff.session.runtime finaliza dentro del scope de restauración activo.");
         }
 
         save.RefreshExtensions();
