@@ -158,6 +158,18 @@ public sealed class BistroBuilderStaffSessionSaveSectionProvider :
         }
 
         pendingData = ((BistroBuilderStaffSessionSnapshot)state).DeepClone();
+
+        // Antes de delegar el restore a 4D, verifica de forma read-only que
+        // todos los WaiterId persistidos siguen existiendo. Así una referencia
+        // huérfana nunca alcanza la ruta que aplica elegibilidad runtime.
+        if (!BistroBuilderStaffSessionRestorePreflight.TryValidate(
+                pendingData,
+                out error))
+        {
+            context.Fail(error);
+            yield break;
+        }
+
         if (!staffSessionService.TryRestoreSessionSnapshot(
                 pendingData,
                 out error))
