@@ -608,6 +608,7 @@ public sealed class BistroBuilderStaffSessionService :
 
         if (candidate.active)
         {
+            var boundWaiters = new List<Waiter>(candidate.bindings.Count);
             for (int index = 0; index < candidate.bindings.Count; index++)
             {
                 BistroBuilderStaffSessionBindingRecord record =
@@ -619,17 +620,17 @@ public sealed class BistroBuilderStaffSessionService :
                     error =
                         "staff.session.runtime referencia WaiterId inexistente " +
                         record.waiterId + ".";
-                    TrySetAllWaitersEligible(true, out _);
                     return false;
                 }
-                if (!waiter.TrySetStaffServiceEligibility(true))
-                {
-                    error =
-                        "El WaiterId " + record.waiterId +
-                        " no puede activarse durante restauración.";
-                    TrySetAllWaitersEligible(true, out _);
-                    return false;
-                }
+                boundWaiters.Add(waiter);
+            }
+
+            if (!BistroBuilderStaffEligibilityBatch.TryApply(
+                    boundWaiters,
+                    true,
+                    out error))
+            {
+                return false;
             }
         }
 
@@ -1052,6 +1053,7 @@ public sealed class BistroBuilderStaffSessionService :
             return false;
         }
 
+        var boundWaiters = new List<Waiter>(sessionState.bindings.Count);
         for (int index = 0; index < sessionState.bindings.Count; index++)
         {
             BistroBuilderStaffSessionBindingRecord record =
@@ -1063,14 +1065,22 @@ public sealed class BistroBuilderStaffSessionService :
                 error = "No existe WaiterId " + record.waiterId + " para 4D.";
                 return false;
             }
-            if (!waiter.TrySetStaffServiceEligibility(true))
-            {
-                error =
-                    "WaiterId " + record.waiterId +
-                    " está ocupado y no puede rehidratar el binding.";
-                return false;
-            }
+            boundWaiters.Add(waiter);
+        }
 
+        if (!BistroBuilderStaffEligibilityBatch.TryApply(
+                boundWaiters,
+                true,
+                out error))
+        {
+            return false;
+        }
+
+        for (int index = 0; index < sessionState.bindings.Count; index++)
+        {
+            BistroBuilderStaffSessionBindingRecord record =
+                sessionState.bindings[index];
+            Waiter waiter = waitersById[record.waiterId];
             var runtime = new RuntimeBinding
             {
                 record = record,
