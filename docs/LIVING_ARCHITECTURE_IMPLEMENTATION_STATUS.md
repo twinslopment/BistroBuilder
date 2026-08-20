@@ -26,12 +26,13 @@ Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
 Incluye:
 - regiones derivadas de la topología, sin `Room GameObject` ni entidad persistente duplicada;
 - recorrido determinista de medias aristas sobre grafos planares de paredes rectas;
+- gate explícito de planaridad: un cruce o contacto entre paredes sin `VertexId` compartido se rechaza con `LA2_NON_PLANAR_CROSSING`;
 - descarte de la cara exterior y de ciclos degenerados;
 - `RegionId` derivado de `LevelId + WallIds` mediante SHA-256, estable ante reordenación de colecciones;
 - contorno, paredes/vértices delimitadores, área y centroide de cada región;
 - consulta espacial `FindContaining` y pertenencia inclusiva sobre borde;
 - soporte de múltiples recintos y componentes desconectados;
-- self-test puro de 9 casos: región rectangular, área/centroide, interior/exterior/borde, división, identidad estable, grafo abierto y recintos desconectados.
+- self-test puro de 10 casos: región rectangular, área/centroide, interior/exterior/borde, división, identidad estable, grafo abierto, recintos desconectados y rechazo de cruce no topológico.
 
 Principio de autoridad: LA2 **no persiste habitaciones**. La región emerge siempre del kernel LA1; al cambiar topología, se reconstruye. Esto evita estados donde pared y habitación discrepen.
 
