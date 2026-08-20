@@ -5,9 +5,10 @@ using System.Collections.Generic;
 /// Gate 4D previo al cierre definitivo de una sesión de Personal.
 ///
 /// No aplica XP, no cambia estados y no toca WaiterTaskCoordinator. Su única
-/// responsabilidad es demostrar que todos los WaiterId ligados existen y están
-/// realmente libres antes de permitir que la capa de sesión publique resultados
-/// de rendimiento o desactive agentes.
+/// responsabilidad es demostrar que todos los bindings conservan identidades
+/// EmployeeId/WaiterId válidas y únicas, que los Waiter ligados existen y que
+/// están realmente libres antes de permitir que la capa de sesión publique
+/// resultados de rendimiento o desactive agentes.
 /// </summary>
 public static class BistroBuilderStaffSessionClosePreflight
 {
@@ -29,12 +30,29 @@ public static class BistroBuilderStaffSessionClosePreflight
             return false;
         }
 
+        var seenEmployeeIds = new HashSet<string>(StringComparer.Ordinal);
         var seenWaiterIds = new HashSet<int>();
         for (int index = 0; index < session.bindings.Count; index++)
         {
             BistroBuilderStaffSessionBindingRecord binding = session.bindings[index];
-            if (binding == null || binding.waiterId < 1 ||
-                !seenWaiterIds.Add(binding.waiterId))
+            if (binding == null)
+            {
+                error = "La sesión contiene un binding de Personal nulo.";
+                return false;
+            }
+
+            string employeeId =
+                BistroBuilderEmployeeIdUtility.Normalize(binding.employeeId);
+            if (!BistroBuilderEmployeeIdUtility.IsValid(employeeId) ||
+                !seenEmployeeIds.Add(employeeId))
+            {
+                error =
+                    "La sesión contiene un EmployeeId inválido o duplicado; " +
+                    "el rendimiento no puede consolidarse.";
+                return false;
+            }
+
+            if (binding.waiterId < 1 || !seenWaiterIds.Add(binding.waiterId))
             {
                 error = "La sesión contiene un binding de camarero inválido o duplicado.";
                 return false;
