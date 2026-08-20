@@ -38,7 +38,9 @@ public sealed class BistroBuilderStaffRecruitmentSaveSectionProvider :
     public Type StateType => typeof(BistroBuilderStaffRecruitmentSnapshot);
     public string SerializerId => BistroBuilderJsonSaveSerializer.StableSerializerId;
 
-    public int PrepareOrder => 9075;
+    // Prepare se ejecuta de mayor a menor. 8900 deja que service.runtime
+    // (9000) y staff.session.runtime (8950) desmonten primero el runtime.
+    public int PrepareOrder => 8900;
     public int ApplyOrder => 425;
     public int FinalizeOrder => 10600;
 
