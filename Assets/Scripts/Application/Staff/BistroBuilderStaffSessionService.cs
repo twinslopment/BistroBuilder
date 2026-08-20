@@ -673,6 +673,14 @@ public sealed class BistroBuilderStaffSessionService :
             return false;
         }
 
+        if (!BistroBuilderStaffSessionClosePreflight.TryValidate(
+                sessionState,
+                waitersById,
+                out error))
+        {
+            return false;
+        }
+
         // Cierra cualquier ciclo observable que ya haya terminado antes del
         // último cambio de estado del camarero.
         foreach (KeyValuePair<string, RuntimeBinding> pair in bindingsByEmployeeId)
@@ -1164,19 +1172,10 @@ public sealed class BistroBuilderStaffSessionService :
 
     private bool TrySetAllWaitersEligible(bool eligible, out string error)
     {
-        foreach (KeyValuePair<int, Waiter> pair in waitersById)
-        {
-            Waiter waiter = pair.Value;
-            if (waiter != null && !waiter.TrySetStaffServiceEligibility(eligible))
-            {
-                error =
-                    "WaiterId " + pair.Key +
-                    " está ocupado y no puede cambiar elegibilidad.";
-                return false;
-            }
-        }
-        error = string.Empty;
-        return true;
+        return BistroBuilderStaffEligibilityBatch.TryApply(
+            waitersById.Values,
+            eligible,
+            out error);
     }
 
     private Waiter[] BuildOrderedWaiterArray()
