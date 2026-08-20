@@ -15,18 +15,13 @@ public static class BistroBuilderStaff5AInstaller
     private const string ProfilePath =
         "Assets/Resources/BistroBuilder/Staff/StaffScheduleProfile.asset";
 
-    [MenuItem(
-        "Tools/Bistro Builder/Personal/5A - Instalar horarios + validar",
-        false,
-        3271)]
+    [MenuItem("Tools/Bistro Builder/Personal/5A - Instalar horarios + validar", false, 3271)]
     private static void Install()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
-            EditorUtility.DisplayDialog(
-                "Bistro Builder — 5A Horarios",
-                "Sal de Play Mode antes de instalar 5A.",
-                "Aceptar");
+            EditorUtility.DisplayDialog("Bistro Builder — 5A Horarios",
+                "Sal de Play Mode antes de instalar 5A.", "Aceptar");
             return;
         }
 
@@ -34,10 +29,8 @@ public static class BistroBuilderStaff5AInstaller
         if (!scene.IsValid() || !scene.isLoaded ||
             string.IsNullOrWhiteSpace(scene.path) || scene.isDirty)
         {
-            EditorUtility.DisplayDialog(
-                "Bistro Builder — 5A Horarios",
-                "Abre la escena principal, guárdala y vuelve a ejecutar.",
-                "Aceptar");
+            EditorUtility.DisplayDialog("Bistro Builder — 5A Horarios",
+                "Abre la escena principal, guárdala y vuelve a ejecutar.", "Aceptar");
             return;
         }
 
@@ -48,24 +41,16 @@ public static class BistroBuilderStaff5AInstaller
 
         try
         {
-            if (!BistroBuilderStaff5AFoundationSelfTest.Run(
-                    out int prePassed,
-                    out int preFailed,
-                    out string preReport))
-            {
-                Debug.LogError(preReport);
-                throw new InvalidOperationException(
-                    "Gate 5A previo falló: " + preFailed +
-                    " fallos / " + prePassed + " correctos.");
-            }
+            bool preOk = BistroBuilderStaff5AFoundationSelfTest.Run(
+                out int prePassed, out int preFailed, out string preReport);
             Debug.Log(preReport);
+            if (!preOk)
+                throw new InvalidOperationException(
+                    "Gate 5A previo: " + preFailed + " fallos / " + prePassed + " OK.");
 
             GameObject gameSystems = FindUniqueGameSystems(scene);
             if (gameSystems == null)
-            {
-                throw new InvalidOperationException(
-                    "No existe exactamente un GameSystems canónico.");
-            }
+                throw new InvalidOperationException("No existe exactamente un GameSystems canónico.");
 
             BistroBuilderStaffService staff = RequireUnique<BistroBuilderStaffService>(scene);
             BistroBuilderGeneralGameStateService calendar =
@@ -77,17 +62,13 @@ public static class BistroBuilderStaff5AInstaller
                 AssetDatabase.LoadAssetAtPath<BistroBuilderStaffScheduleProfile>(ProfilePath);
             if (profile == null)
             {
-                EnsureFolder("Assets/Resources");
-                EnsureFolder("Assets/Resources/BistroBuilder");
                 EnsureFolder("Assets/Resources/BistroBuilder/Staff");
                 profile = ScriptableObject.CreateInstance<BistroBuilderStaffScheduleProfile>();
                 AssetDatabase.CreateAsset(profile, ProfilePath);
                 profileCreated = true;
             }
             if (!profile.TryValidate(out string profileError))
-            {
                 throw new InvalidOperationException(profileError);
-            }
 
             BistroBuilderStaffScheduleService schedule =
                 EnsureUnique<BistroBuilderStaffScheduleService>(scene, gameSystems);
@@ -95,42 +76,31 @@ public static class BistroBuilderStaff5AInstaller
             Assign(schedule, "generalGameStateService", calendar);
             Assign(schedule, "serviceStateService", serviceState);
             Assign(schedule, "scheduleProfile", profile);
-
             if (!schedule.ValidateConfiguration(out string error))
-            {
                 throw new InvalidOperationException(error);
-            }
 
             EditorUtility.SetDirty(schedule);
             EditorUtility.SetDirty(profile);
             EditorSceneManager.MarkSceneDirty(scene);
             AssetDatabase.SaveAssets();
             if (!EditorSceneManager.SaveScene(scene))
-            {
                 throw new InvalidOperationException("Unity no pudo guardar la escena 5A.");
-            }
 
             BistroBuilderStaff5AValidationResult validation =
                 BistroBuilderStaff5AValidator.ValidateCurrentScene();
             bool selfOk = BistroBuilderStaff5AFoundationSelfTest.Run(
-                out int passed,
-                out int failed,
-                out string report);
+                out int passed, out int failed, out string report);
             Debug.Log(validation.BuildReport());
             Debug.Log(report);
             if (validation.errors > 0 || !selfOk)
-            {
                 throw new InvalidOperationException(
-                    "5A no superó sus gates: " + validation.errors +
-                    " errores estructurales / " + failed + " fallos.");
-            }
+                    "5A no superó gates: " + validation.errors +
+                    " errores / " + failed + " fallos.");
 
-            EditorUtility.DisplayDialog(
-                "Bistro Builder — 5A Horarios",
+            EditorUtility.DisplayDialog("Bistro Builder — 5A Horarios",
                 "5A instalado: " + validation.correct + " OK / " +
-                validation.warnings + " avisos / 0 errores; " +
-                passed + " autotests OK.\n\nPendiente Unity Play Mode real.",
-                "Aceptar");
+                validation.warnings + " avisos / 0 errores; " + passed +
+                " autotests OK.\n\nPendiente Play Mode real.", "Aceptar");
         }
         catch (Exception exception)
         {
@@ -143,11 +113,9 @@ public static class BistroBuilderStaff5AInstaller
                 AssetDatabase.DeleteAsset(ProfilePath);
                 AssetDatabase.SaveAssets();
             }
-            EditorUtility.DisplayDialog(
-                "Bistro Builder — 5A Horarios",
+            EditorUtility.DisplayDialog("Bistro Builder — 5A Horarios",
                 "La instalación falló y la escena fue restaurada.\n\n" +
-                exception.Message,
-                "Aceptar");
+                exception.Message, "Aceptar");
         }
     }
 
@@ -155,6 +123,7 @@ public static class BistroBuilderStaff5AInstaller
     {
         if (AssetDatabase.IsValidFolder(path)) return;
         int slash = path.LastIndexOf('/');
+        if (slash <= 0) return;
         string parent = path.Substring(0, slash);
         string name = path.Substring(slash + 1);
         EnsureFolder(parent);
@@ -166,14 +135,12 @@ public static class BistroBuilderStaff5AInstaller
         GameObject found = null;
         int count = 0;
         foreach (GameObject root in scene.GetRootGameObjects())
+        foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
         {
-            foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+            if (transform != null && transform.name == "GameSystems")
             {
-                if (transform != null && transform.name == "GameSystems")
-                {
-                    found = transform.gameObject;
-                    count++;
-                }
+                found = transform.gameObject;
+                count++;
             }
         }
         return count == 1 ? found : null;
@@ -183,11 +150,8 @@ public static class BistroBuilderStaff5AInstaller
     {
         T[] matches = FindScene<T>(scene);
         if (matches.Length != 1)
-        {
-            throw new InvalidOperationException(
-                "Se esperaba exactamente un " + typeof(T).Name +
-                " y hay " + matches.Length + ".");
-        }
+            throw new InvalidOperationException("Se esperaba exactamente un " +
+                typeof(T).Name + " y hay " + matches.Length + ".");
         return matches[0];
     }
 
@@ -195,30 +159,20 @@ public static class BistroBuilderStaff5AInstaller
     {
         T[] matches = FindScene<T>(scene);
         if (matches.Length > 1)
-        {
-            throw new InvalidOperationException(
-                "Hay varios " + typeof(T).Name + " en la escena.");
-        }
+            throw new InvalidOperationException("Hay varios " + typeof(T).Name + ".");
         T component = matches.Length == 1 ? matches[0] : Undo.AddComponent<T>(host);
         if (component.gameObject != host)
-        {
-            throw new InvalidOperationException(
-                typeof(T).Name + " no vive en GameSystems.");
-        }
+            throw new InvalidOperationException(typeof(T).Name + " no vive en GameSystems.");
         return component;
     }
 
     private static T[] FindScene<T>(Scene scene) where T : Component
     {
         T[] all = UnityEngine.Object.FindObjectsByType<T>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
         var list = new List<T>();
-        for (int index = 0; index < all.Length; index++)
-        {
-            if (all[index] != null && all[index].gameObject.scene == scene)
-                list.Add(all[index]);
-        }
+        foreach (T item in all)
+            if (item != null && item.gameObject.scene == scene) list.Add(item);
         return list.ToArray();
     }
 
@@ -268,42 +222,37 @@ public static class BistroBuilderStaff5AValidator
             return result;
         }
 
-        BistroBuilderStaffScheduleService[] schedules =
-            FindScene<BistroBuilderStaffScheduleService>(scene);
+        BistroBuilderStaffScheduleService[] schedules = FindScene<BistroBuilderStaffScheduleService>(scene);
         if (schedules.Length != 1)
         {
-            Fail(result, "Debe existir una única autoridad StaffScheduleService; hay " +
-                schedules.Length + ".");
+            Fail(result, "Debe existir una única StaffScheduleService; hay " + schedules.Length + ".");
             return result;
         }
         Pass(result, "Existe una única autoridad StaffScheduleService.");
-
         BistroBuilderStaffScheduleService schedule = schedules[0];
-        if (schedule.ValidateConfiguration(out string error))
-            Pass(result, "StaffScheduleService configurado.");
-        else
-            Fail(result, error);
 
+        if (schedule.ValidateConfiguration(out string error)) Pass(result, "Servicio configurado.");
+        else Fail(result, error);
+
+        string profileError = string.Empty;
         if (schedule.ScheduleProfile != null &&
-            schedule.ScheduleProfile.TryValidate(out string profileError))
+            schedule.ScheduleProfile.TryValidate(out profileError))
             Pass(result, "Perfil canónico de turnos válido.");
         else
             Fail(result, "Perfil de turnos inválido: " + profileError);
 
-        if (schedule.CreateSnapshot() != null &&
-            schedule.CreateSnapshot().schemaId == BistroBuilderStaffScheduleSnapshot.CurrentSchemaId)
+        BistroBuilderStaffScheduleSnapshot snapshot = schedule.CreateSnapshot();
+        if (snapshot != null && snapshot.schemaId == BistroBuilderStaffScheduleSnapshot.CurrentSchemaId)
             Pass(result, "Snapshot staff.schedule V1 disponible.");
         else
             Fail(result, "No se expone staff.schedule V1.");
-
         return result;
     }
 
     private static T[] FindScene<T>(Scene scene) where T : Component
     {
         T[] all = UnityEngine.Object.FindObjectsByType<T>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
         var list = new List<T>();
         foreach (T item in all)
             if (item != null && item.gameObject.scene == scene) list.Add(item);
@@ -311,14 +260,7 @@ public static class BistroBuilderStaff5AValidator
     }
 
     private static void Pass(BistroBuilderStaff5AValidationResult r, string text)
-    {
-        r.correct++;
-        r.lines.Add("[OK] " + text);
-    }
-
+    { r.correct++; r.lines.Add("[OK] " + text); }
     private static void Fail(BistroBuilderStaff5AValidationResult r, string text)
-    {
-        r.errors++;
-        r.lines.Add("[ERROR] " + text);
-    }
+    { r.errors++; r.lines.Add("[ERROR] " + text); }
 }
