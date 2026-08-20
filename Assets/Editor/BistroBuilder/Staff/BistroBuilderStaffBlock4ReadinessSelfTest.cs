@@ -103,6 +103,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4G ciclo de servicio",
+            () => BistroBuilderStaff4GServiceLifecycleSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4G mutación observable",
             () => BistroBuilderStaff4GNaturalMutationSelfTest.Run(out _),
             lines, ref passed, ref failed);
