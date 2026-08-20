@@ -555,15 +555,25 @@ public sealed class BistroBuilderStaffSessionService :
 
     public bool PrepareForRuntimeLoad(out string error)
     {
-        suspendedForRuntimeLoad = true;
-        ClearObservedTaskTracking();
-        bindingsByEmployeeId.Clear();
-        bindingsByWaiterId.Clear();
+        // El preflight de preparación no compromete el estado runtime hasta
+        // que el índice sea válido y el batch de elegibilidad haya terminado.
+        // Así un fallo conserva bindings, tracking y suspensión exactamente
+        // como estaban antes de iniciar la preparación.
         if (!RefreshWaiterIndex(out error))
         {
             return false;
         }
-        return TrySetAllWaitersEligible(false, out error);
+        if (!TrySetAllWaitersEligible(false, out error))
+        {
+            return false;
+        }
+
+        suspendedForRuntimeLoad = true;
+        ClearObservedTaskTracking();
+        bindingsByEmployeeId.Clear();
+        bindingsByWaiterId.Clear();
+        error = string.Empty;
+        return true;
     }
 
     public bool TryRestoreSessionSnapshot(
