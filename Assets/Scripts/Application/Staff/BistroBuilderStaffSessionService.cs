@@ -52,6 +52,8 @@ public sealed class BistroBuilderStaffSessionService :
         new List<BistroBuilderEmployeeRecord>();
     private readonly List<BistroBuilderStaffRoleDefinition> roleBuffer =
         new List<BistroBuilderStaffRoleDefinition>();
+    private readonly List<KeyValuePair<Waiter, bool>> eligibilityPlanBuffer =
+        new List<KeyValuePair<Waiter, bool>>();
 
     private bool serviceEventsSubscribed;
     private bool hasStarted;
@@ -248,10 +250,6 @@ public sealed class BistroBuilderStaffSessionService :
         return true;
     }
 
-    /// <summary>
-    /// Inicia la sesión si todavía no existe. Se usa desde Preparing o justo
-    /// antes de Open; nunca desde Update.
-    /// </summary>
     public bool TryEnsureSessionStarted(out string error)
     {
         if (suspendedForRuntimeLoad ||
@@ -344,10 +342,6 @@ public sealed class BistroBuilderStaffSessionService :
         return true;
     }
 
-    /// <summary>
-    /// Asignación explícita preparada para Horarios. No cambia tareas ni rutas.
-    /// Solo puede utilizar un empleado y agente libres/no ligados.
-    /// </summary>
     public bool TryAssignEmployeeToWaiter(
         string employeeId,
         int waiterId,
@@ -559,10 +553,6 @@ public sealed class BistroBuilderStaffSessionService :
         return sessionState != null ? sessionState.DeepClone() : null;
     }
 
-    /// <summary>
-    /// 4E lo llamará después de que service.runtime haya limpiado tareas y
-    /// asignaciones transitorias (PrepareOrder posterior a 9000).
-    /// </summary>
     public bool PrepareForRuntimeLoad(out string error)
     {
         suspendedForRuntimeLoad = true;
@@ -576,10 +566,6 @@ public sealed class BistroBuilderStaffSessionService :
         return TrySetAllWaitersEligible(false, out error);
     }
 
-    /// <summary>
-    /// Restaura exactamente EmployeeId ↔ WaiterId desde datos validados por
-    /// 4E. service.runtime continúa restaurando transform/comandas/tareas.
-    /// </summary>
     public bool TryRestoreSessionSnapshot(
         BistroBuilderStaffSessionSnapshot candidate,
         out string error)
@@ -596,42 +582,17 @@ public sealed class BistroBuilderStaffSessionService :
         if (!BistroBuilderStaffSessionEngine.TryValidateSnapshot(
                 candidate,
                 staffService.CreateSnapshot(),
+                out error) ||
+            !BistroBuilderStaffSessionRestorePreflight.TryValidate(
+                candidate,
                 out error))
         {
             return false;
         }
 
-        if (!TrySetAllWaitersEligible(false, out error))
+        if (!TryApplyEligibilityForSnapshot(candidate, out error))
         {
             return false;
-        }
-
-        if (candidate.active)
-        {
-            var boundWaiters = new List<Waiter>(candidate.bindings.Count);
-            for (int index = 0; index < candidate.bindings.Count; index++)
-            {
-                BistroBuilderStaffSessionBindingRecord record =
-                    candidate.bindings[index];
-                if (!waitersById.TryGetValue(
-                        record.waiterId,
-                        out Waiter waiter) || waiter == null)
-                {
-                    error =
-                        "staff.session.runtime referencia WaiterId inexistente " +
-                        record.waiterId + ".";
-                    return false;
-                }
-                boundWaiters.Add(waiter);
-            }
-
-            if (!BistroBuilderStaffEligibilityBatch.TryApply(
-                    boundWaiters,
-                    true,
-                    out error))
-            {
-                return false;
-            }
         }
 
         sessionState = candidate.DeepClone();
@@ -682,15 +643,11 @@ public sealed class BistroBuilderStaffSessionService :
             return false;
         }
 
-        // Cierra cualquier ciclo observable que ya haya terminado antes del
-        // último cambio de estado del camarero.
         foreach (KeyValuePair<string, RuntimeBinding> pair in bindingsByEmployeeId)
         {
             FinalizeObservedWorkCycle(pair.Value);
         }
 
-        // Aplicación reentrante segura: 4C deduplica cada empleado por un
-        // operationId derivado de sessionId + EmployeeId.
         for (int index = 0; index < sessionState.bindings.Count; index++)
         {
             BistroBuilderStaffSessionBindingRecord binding =
@@ -897,9 +854,6 @@ public sealed class BistroBuilderStaffSessionService :
         if (newState == WaiterState.Idle)
         {
             FinalizeObservedWorkCycle(binding);
-
-            // Otro listener puede haber reasignado el camarero de forma
-            // reentrante durante StateChanged(Idle).
             if (waiter.CurrentState != WaiterState.Idle)
             {
                 ObserveAssignedTasks(binding);
@@ -910,11 +864,6 @@ public sealed class BistroBuilderStaffSessionService :
         ObserveAssignedTasks(binding);
     }
 
-    /// <summary>
-    /// Consulta ActiveTasks solo como reacción a un evento de Waiter. No hay
-    /// polling. Conserva referencias a las tareas ya asignadas para poder leer
-    /// su estado terminal incluso después de que la cola las retire.
-    /// </summary>
     private void ObserveAssignedTasks(RuntimeBinding binding)
     {
         if (binding == null || binding.waiter == null || waiterTaskCoordinator == null)
@@ -1035,66 +984,135 @@ public sealed class BistroBuilderStaffSessionService :
         if (!BistroBuilderStaffSessionEngine.TryValidateSnapshot(
                 sessionState,
                 staffService.CreateSnapshot(),
+                out error) ||
+            !BistroBuilderStaffSessionRestorePreflight.TryValidate(
+                sessionState,
                 out error))
+        {
+            return false;
+        }
+
+        var nextByEmployee =
+            new Dictionary<string, RuntimeBinding>(StringComparer.Ordinal);
+        var nextByWaiter = new Dictionary<int, RuntimeBinding>();
+
+        if (sessionState.active)
+        {
+            for (int index = 0; index < sessionState.bindings.Count; index++)
+            {
+                BistroBuilderStaffSessionBindingRecord record =
+                    sessionState.bindings[index];
+                if (!waitersById.TryGetValue(
+                        record.waiterId,
+                        out Waiter waiter) || waiter == null)
+                {
+                    error = "No existe WaiterId " + record.waiterId + " para 4D.";
+                    return false;
+                }
+
+                string employeeId =
+                    BistroBuilderEmployeeIdUtility.Normalize(record.employeeId);
+                if (nextByEmployee.ContainsKey(employeeId) ||
+                    nextByWaiter.ContainsKey(record.waiterId))
+                {
+                    error =
+                        "La sesión contiene bindings duplicados y no puede rehidratarse.";
+                    return false;
+                }
+
+                var runtime = new RuntimeBinding
+                {
+                    record = record,
+                    waiter = waiter
+                };
+                nextByEmployee.Add(employeeId, runtime);
+                nextByWaiter.Add(record.waiterId, runtime);
+            }
+        }
+
+        if (!TryApplyEligibilityForSnapshot(sessionState, out error))
         {
             return false;
         }
 
         bindingsByEmployeeId.Clear();
         bindingsByWaiterId.Clear();
-
-        if (!sessionState.active)
+        foreach (KeyValuePair<string, RuntimeBinding> pair in nextByEmployee)
         {
-            return TrySetAllWaitersEligible(false, out error);
+            bindingsByEmployeeId.Add(pair.Key, pair.Value);
+        }
+        foreach (KeyValuePair<int, RuntimeBinding> pair in nextByWaiter)
+        {
+            bindingsByWaiterId.Add(pair.Key, pair.Value);
         }
 
-        if (!TrySetAllWaitersEligible(false, out error))
+        if (sessionState.active)
         {
-            return false;
-        }
-
-        var boundWaiters = new List<Waiter>(sessionState.bindings.Count);
-        for (int index = 0; index < sessionState.bindings.Count; index++)
-        {
-            BistroBuilderStaffSessionBindingRecord record =
-                sessionState.bindings[index];
-            if (!waitersById.TryGetValue(
-                    record.waiterId,
-                    out Waiter waiter) || waiter == null)
+            foreach (KeyValuePair<string, RuntimeBinding> pair in nextByEmployee)
             {
-                error = "No existe WaiterId " + record.waiterId + " para 4D.";
-                return false;
+                RuntimeBinding runtime = pair.Value;
+                EmployeeBoundToService?.Invoke(
+                    runtime.record.employeeId,
+                    runtime.record.waiterId);
             }
-            boundWaiters.Add(waiter);
-        }
-
-        if (!BistroBuilderStaffEligibilityBatch.TryApply(
-                boundWaiters,
-                true,
-                out error))
-        {
-            return false;
-        }
-
-        for (int index = 0; index < sessionState.bindings.Count; index++)
-        {
-            BistroBuilderStaffSessionBindingRecord record =
-                sessionState.bindings[index];
-            Waiter waiter = waitersById[record.waiterId];
-            var runtime = new RuntimeBinding
-            {
-                record = record,
-                waiter = waiter
-            };
-            bindingsByEmployeeId.Add(
-                BistroBuilderEmployeeIdUtility.Normalize(record.employeeId),
-                runtime);
-            bindingsByWaiterId.Add(record.waiterId, runtime);
-            EmployeeBoundToService?.Invoke(record.employeeId, record.waiterId);
         }
 
         error = string.Empty;
         return true;
+    }
+
+    private bool TryApplyEligibilityForSnapshot(
+        BistroBuilderStaffSessionSnapshot snapshot,
+        out string error)
+    {
+        if (snapshot == null)
+        {
+            error = "El snapshot de sesión de Personal es nulo.";
+            return false;
+        }
+
+        var boundWaiterIds = new HashSet<int>();
+        if (snapshot.active)
+        {
+            if (snapshot.bindings == null || snapshot.bindings.Count == 0)
+            {
+                error =
+                    "Una sesión activa de Personal no contiene bindings de elegibilidad.";
+                return false;
+            }
+
+            for (int index = 0; index < snapshot.bindings.Count; index++)
+            {
+                BistroBuilderStaffSessionBindingRecord binding =
+                    snapshot.bindings[index];
+                if (binding == null || binding.waiterId < 1 ||
+                    !waitersById.ContainsKey(binding.waiterId) ||
+                    !boundWaiterIds.Add(binding.waiterId))
+                {
+                    error =
+                        "La sesión contiene un WaiterId inexistente o duplicado " +
+                        (binding != null ? binding.waiterId : 0) + ".";
+                    return false;
+                }
+            }
+        }
+
+        eligibilityPlanBuffer.Clear();
+        foreach (KeyValuePair<int, Waiter> pair in waitersById)
+        {
+            if (pair.Value == null)
+            {
+                continue;
+            }
+            eligibilityPlanBuffer.Add(
+                new KeyValuePair<Waiter, bool>(
+                    pair.Value,
+                    snapshot.active && boundWaiterIds.Contains(pair.Key)));
+        }
+
+        return BistroBuilderStaffEligibilityBatch.TryApply(
+            eligibilityPlanBuffer,
+            out error);
     }
 
     private void RebuildBindingDictionariesFromState()

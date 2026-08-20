@@ -14,6 +14,9 @@ public static class BistroBuilderStaff4DHardeningSelfTest
     private const string SessionServicePath =
         "Assets/Scripts/Application/Staff/BistroBuilderStaffSessionService.cs";
 
+    private const string EligibilityBatchPath =
+        "Assets/Scripts/Application/Staff/BistroBuilderStaffEligibilityBatch.cs";
+
     private const string DomainSessionModelsPath =
         "Assets/Scripts/Domain/Staff/BistroBuilderStaffSessionModels.cs";
 
@@ -156,10 +159,8 @@ public static class BistroBuilderStaff4DHardeningSelfTest
                 batchEnableError,
                 ref passed, ref failed, log);
 
-            string absoluteSessionServicePath = Path.GetFullPath(SessionServicePath);
-            string source = File.Exists(absoluteSessionServicePath)
-                ? File.ReadAllText(absoluteSessionServicePath)
-                : string.Empty;
+            string source = ReadSource(SessionServicePath);
+            string batchSource = ReadSource(EligibilityBatchPath);
 
             int eligibilityMethodIndex = source.IndexOf(
                 "private bool TrySetAllWaitersEligible",
@@ -180,6 +181,61 @@ public static class BistroBuilderStaff4DHardeningSelfTest
                  eligibilityBatchIndex < nextEligibilityMethodIndex),
                 "TrySetAllWaitersEligible delega realmente en el lote " +
                 "transaccional de elegibilidad.",
+                ref passed, ref failed, log);
+
+            Check(
+                batchSource.Contains(
+                    "IEnumerable<KeyValuePair<Waiter, bool>> targets"),
+                "El batch 4D soporta un plan mixto atómico por Waiter.",
+                ref passed, ref failed, log);
+
+            int restoreMethodIndex = source.IndexOf(
+                "public bool TryRestoreSessionSnapshot",
+                StringComparison.Ordinal);
+            int resumeMethodIndex = source.IndexOf(
+                "public bool TryResumeAfterRuntimeLoad",
+                restoreMethodIndex >= 0 ? restoreMethodIndex : 0,
+                StringComparison.Ordinal);
+            string restoreBody = Slice(
+                source,
+                restoreMethodIndex,
+                resumeMethodIndex);
+
+            Check(
+                restoreMethodIndex >= 0 &&
+                restoreBody.Contains(
+                    "BistroBuilderStaffSessionRestorePreflight.TryValidate(") &&
+                restoreBody.Contains(
+                    "TryApplyEligibilityForSnapshot(candidate, out error)") &&
+                !restoreBody.Contains("TrySetAllWaitersEligible(false") &&
+                !restoreBody.Contains("boundWaiters") &&
+                !restoreBody.Contains("TrySetAllWaitersEligible(true"),
+                "TryRestoreSessionSnapshot preflighta y aplica un único plan " +
+                "mixto, sin activación por fases ni recuperación global.",
+                ref passed, ref failed, log);
+
+            int rehydrateMethodIndex = source.IndexOf(
+                "private bool TryRehydrateRuntimeFromCurrentState",
+                StringComparison.Ordinal);
+            int applyPlanMethodIndex = source.IndexOf(
+                "private bool TryApplyEligibilityForSnapshot",
+                rehydrateMethodIndex >= 0 ? rehydrateMethodIndex : 0,
+                StringComparison.Ordinal);
+            string rehydrateBody = Slice(
+                source,
+                rehydrateMethodIndex,
+                applyPlanMethodIndex);
+
+            Check(
+                rehydrateMethodIndex >= 0 &&
+                rehydrateBody.Contains(
+                    "BistroBuilderStaffSessionRestorePreflight.TryValidate(") &&
+                rehydrateBody.Contains(
+                    "TryApplyEligibilityForSnapshot(sessionState, out error)") &&
+                !rehydrateBody.Contains("TrySetAllWaitersEligible(false") &&
+                !rehydrateBody.Contains("boundWaiters"),
+                "TryRehydrateRuntimeFromCurrentState construye primero el " +
+                "runtime y usa después un único plan de elegibilidad atómico.",
                 ref passed, ref failed, log);
 
             int finalizeMethodIndex = source.IndexOf(
@@ -247,6 +303,18 @@ public static class BistroBuilderStaff4DHardeningSelfTest
         log.AppendLine("Resultado: " + passed + " OK / " + failed + " fallos");
         report = log.ToString();
         return failed == 0;
+    }
+
+    private static string Slice(string source, int start, int end)
+    {
+        if (string.IsNullOrEmpty(source) || start < 0)
+        {
+            return string.Empty;
+        }
+        int safeEnd = end > start && end <= source.Length
+            ? end
+            : source.Length;
+        return source.Substring(start, safeEnd - start);
     }
 
     private static string ReadSource(string assetPath)
