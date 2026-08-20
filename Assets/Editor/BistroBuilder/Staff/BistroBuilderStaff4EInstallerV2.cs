@@ -74,6 +74,19 @@ public static class BistroBuilderStaff4EInstallerV2
                     " correctos. 4E no modificará la escena.");
             }
 
+            bool prepareLoadOk = BistroBuilderStaff4DPrepareForLoadSelfTest.Run(
+                out int prepareLoadPassed,
+                out int prepareLoadFailed,
+                out string prepareLoadReport);
+            Debug.Log(prepareLoadReport);
+            if (!prepareLoadOk)
+            {
+                throw new InvalidOperationException(
+                    "4D todavía no supera el gate PrepareForLoad: " +
+                    prepareLoadFailed + " fallos / " + prepareLoadPassed +
+                    " correctos. 4E no modificará la escena.");
+            }
+
             // Este gate usa exactamente unity-json-v1, el serializador del
             // Save universal. Se ejecuta antes de tocar la escena para que un
             // cambio de modelo incompatible no produzca una instalación parcial.
@@ -188,13 +201,17 @@ public static class BistroBuilderStaff4EInstallerV2
                     "binding -> mercado -> Staff con sort descendente.");
             }
 
+            // Finalize se ordena de menor a mayor. Personal debe estar listo
+            // antes de que service.runtime quite el scope de restauración y
+            // reactive WaiterTaskCoordinator, camareros y llegadas.
             if (!(stateProvider.FinalizeOrder < recruitmentProvider.FinalizeOrder &&
-                  recruitmentProvider.FinalizeOrder < activeService.FinalizeOrder &&
-                  activeService.FinalizeOrder < sessionProvider.FinalizeOrder))
+                  recruitmentProvider.FinalizeOrder < sessionProvider.FinalizeOrder &&
+                  sessionProvider.FinalizeOrder < activeService.FinalizeOrder &&
+                  sessionProvider.FinalizeOrder > 10000))
             {
                 throw new InvalidOperationException(
                     "El orden Finalize 4E no conserva Staff -> mercado -> " +
-                    "service.runtime -> binding.");
+                    "binding -> service.runtime dentro del scope seguro.");
             }
 
             EditorUtility.SetDirty(stateProvider);
@@ -234,6 +251,7 @@ public static class BistroBuilderStaff4EInstallerV2
                 "Bistro Builder — 4E v2 Personal",
                 "Persistencia de Personal instalada.\n\n" +
                 "4D hardening: " + hardeningPassed + " OK / 0 fallos\n" +
+                "4D PrepareForLoad: " + prepareLoadPassed + " OK / 0 fallos\n" +
                 "JSON round-trip: " + jsonPassed + " OK / 0 fallos\n" +
                 "Validación: " + validation.correct + " OK / " +
                 validation.warnings + " avisos / 0 errores\n" +
