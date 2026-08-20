@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Gate complementario 4D: verifica que un cambio por lote nunca deje la
 /// elegibilidad de los Waiter parcialmente aplicada cuando uno está ocupado.
+/// Cubre tanto lotes uniformes como planes mixtos usados por restore/rehidratación.
 /// </summary>
 public static class BistroBuilderStaff4DEligibilityBatchSelfTest
 {
@@ -47,7 +48,7 @@ public static class BistroBuilderStaff4DEligibilityBatchSelfTest
             if (changed)
             {
                 report =
-                    "[FALLO] El lote debía rechazarse con un Waiter ocupado.";
+                    "[FALLO] El lote uniforme debía rechazarse con un Waiter ocupado.";
                 return false;
             }
 
@@ -55,26 +56,59 @@ public static class BistroBuilderStaff4DEligibilityBatchSelfTest
                 !second.IsStaffServiceEligible)
             {
                 report =
-                    "[FALLO] Un rechazo dejó elegibilidad parcialmente aplicada. " +
+                    "[FALLO] Un rechazo uniforme dejó elegibilidad parcial. " +
                     error;
                 return false;
             }
 
             second.SetState(WaiterState.Idle);
             if (!BistroBuilderStaffEligibilityBatch.TryApply(
-                    new List<Waiter> { first, second },
+                    new List<Waiter> { first },
                     false,
-                    out error))
+                    out error) || first.IsStaffServiceEligible)
             {
                 report =
-                    "[FALLO] El lote libre debía poder desactivarse. " + error;
+                    "[FALLO] No pudo prepararse el estado mixto inicial. " + error;
                 return false;
             }
 
-            if (first.IsStaffServiceEligible || second.IsStaffServiceEligible)
+            // Estado previo mixto: first=false, second=true. El primer target
+            // cambia a true y el segundo falla al intentar pasar a false ocupado.
+            second.SetState(WaiterState.TakingOrder);
+            var mixedFailure = new List<KeyValuePair<Waiter, bool>>
+            {
+                new KeyValuePair<Waiter, bool>(first, true),
+                new KeyValuePair<Waiter, bool>(second, false)
+            };
+
+            if (BistroBuilderStaffEligibilityBatch.TryApply(
+                    mixedFailure,
+                    out error))
             {
                 report =
-                    "[FALLO] El lote libre no aplicó la desactivación completa.";
+                    "[FALLO] El plan mixto debía rechazarse con el segundo Waiter ocupado.";
+                return false;
+            }
+
+            if (first.IsStaffServiceEligible ||
+                !second.IsStaffServiceEligible)
+            {
+                report =
+                    "[FALLO] El rollback mixto no restauró exactamente false/true. " +
+                    error;
+                return false;
+            }
+
+            second.SetState(WaiterState.Idle);
+            if (!BistroBuilderStaffEligibilityBatch.TryApply(
+                    mixedFailure,
+                    out error) ||
+                !first.IsStaffServiceEligible ||
+                second.IsStaffServiceEligible)
+            {
+                report =
+                    "[FALLO] El plan mixto libre no aplicó exactamente true/false. " +
+                    error;
                 return false;
             }
 
@@ -86,14 +120,14 @@ public static class BistroBuilderStaff4DEligibilityBatchSelfTest
                 !second.IsStaffServiceEligible)
             {
                 report =
-                    "[FALLO] La restauración de elegibilidad no fue completa. " +
+                    "[FALLO] La restauración uniforme final no fue completa. " +
                     error;
                 return false;
             }
 
             report =
-                "[OK] 4D elegibilidad transaccional: rechazo con rollback, " +
-                "aplicación completa y restauración completa.";
+                "[OK] 4D elegibilidad transaccional: lotes uniformes y mixtos, " +
+                "rechazo con rollback exacto y aplicación completa.";
             return true;
         }
         finally
