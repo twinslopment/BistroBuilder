@@ -74,6 +74,23 @@ public static class BistroBuilderStaff4EInstallerV2
                     " correctos. 4E no modificará la escena.");
             }
 
+            // Este gate usa exactamente unity-json-v1, el serializador del
+            // Save universal. Se ejecuta antes de tocar la escena para que un
+            // cambio de modelo incompatible no produzca una instalación parcial.
+            bool jsonRoundTripOk =
+                BistroBuilderStaff4EJsonRoundTripSelfTest.Run(
+                    out int jsonPassed,
+                    out int jsonFailed,
+                    out string jsonReport);
+            Debug.Log(jsonReport);
+            if (!jsonRoundTripOk)
+            {
+                throw new InvalidOperationException(
+                    "El round-trip JSON 4E falló: " + jsonFailed +
+                    " fallos / " + jsonPassed +
+                    " correctos. 4E no modificará la escena.");
+            }
+
             GameObject gameSystems = FindUniqueGameSystems(scene);
             if (gameSystems == null)
             {
@@ -217,6 +234,7 @@ public static class BistroBuilderStaff4EInstallerV2
                 "Bistro Builder — 4E v2 Personal",
                 "Persistencia de Personal instalada.\n\n" +
                 "4D hardening: " + hardeningPassed + " OK / 0 fallos\n" +
+                "JSON round-trip: " + jsonPassed + " OK / 0 fallos\n" +
                 "Validación: " + validation.correct + " OK / " +
                 validation.warnings + " avisos / 0 errores\n" +
                 "Autotest: " + passed + " OK / 0 fallos\n\n" +
