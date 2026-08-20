@@ -94,6 +94,16 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             ref failed);
 
         RunGate(
+            "4D identidad de cierre",
+            () => BistroBuilderStaff4DCloseIdentitySelfTest.Run(
+                out _,
+                out _,
+                out _),
+            lines,
+            ref passed,
+            ref failed);
+
+        RunGate(
             "4E JSON round-trip",
             () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(
                 out _,
