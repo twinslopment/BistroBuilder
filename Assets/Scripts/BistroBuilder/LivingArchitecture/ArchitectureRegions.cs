@@ -99,6 +99,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
         public static ArchitectureRegionSet Build(ArchitectureLevel level)
         {
             if (level == null) throw new ArgumentNullException(nameof(level));
+            ArchitecturePlanarity.EnsureValid(level);
 
             var result = new ArchitectureRegionSet { LevelId = level.Id };
             var vertices = (level.Vertices ?? new List<ArchitectureVertex>())
@@ -143,7 +144,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
 
                 var points = cycle.Select(x => vertices[x.From.Value].Position).ToList();
                 var signedArea = SignedArea(points);
-                if (signedArea <= ArchitectureGeometry.Epsilon) continue; // elimina cara exterior/degenerada
+                if (signedArea <= ArchitectureGeometry.Epsilon) continue;
 
                 var region = new ArchitectureRegion
                 {
@@ -191,7 +192,6 @@ namespace BistroBuilder.LivingArchitecture.Domain
                 var reverseIndex = candidates.FindIndex(x => x.To.Equals(current.From) && x.WallId.Equals(current.WallId));
                 if (reverseIndex < 0) return null;
 
-                // Candidato inmediatamente horario respecto a la arista inversa: mantiene la cara a la izquierda.
                 current = candidates[(reverseIndex - 1 + candidates.Count) % candidates.Count];
                 if (current.Key == start.Key) return cycle;
             }
@@ -231,7 +231,6 @@ namespace BistroBuilder.LivingArchitecture.Domain
 
         private static string ComputeStableRegionId(LevelId levelId, IEnumerable<WallId> wallIds)
         {
-            // La identidad emerge de las paredes delimitadoras, no de orden/dirección del recorrido.
             var canonical = levelId.Value + "|" + string.Join("|", wallIds.Select(x => x.Value).OrderBy(x => x, StringComparer.Ordinal));
             using (var sha = SHA256.Create())
             {
