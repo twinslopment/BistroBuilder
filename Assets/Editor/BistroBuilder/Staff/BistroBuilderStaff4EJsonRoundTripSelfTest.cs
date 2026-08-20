@@ -107,23 +107,34 @@ public static class BistroBuilderStaff4EJsonRoundTripSelfTest
                 }
             };
 
-            Check(
-                BistroBuilderStaffEngine.TryBuildEmployee(
-                    employeeId,
-                    request,
-                    roleCatalog,
-                    out BistroBuilderEmployeeRecord employee,
-                    out string buildError) &&
+            BistroBuilderEmployeeRecord employee = null;
+            BistroBuilderStaffSnapshot populatedStaff = null;
+            string buildError = string.Empty;
+            string appendError = string.Empty;
+            bool employeeBuilt = BistroBuilderStaffEngine.TryBuildEmployee(
+                employeeId,
+                request,
+                roleCatalog,
+                out employee,
+                out buildError);
+            bool employeeAppended = employeeBuilt &&
                 BistroBuilderStaffEngine.TryAppendEmployee(
                     staff,
                     employee,
                     roleCatalog,
-                    out BistroBuilderStaffSnapshot populatedStaff,
-                    out string appendError),
+                    out populatedStaff,
+                    out appendError);
+            Check(
+                employeeBuilt && employeeAppended && populatedStaff != null,
                 "staff.state construido. " + buildError + appendError,
                 ref passed,
                 ref failed,
                 log);
+            if (!employeeBuilt || !employeeAppended || populatedStaff == null)
+            {
+                throw new InvalidOperationException(
+                    "No puede continuar el round-trip sin staff.state válido.");
+            }
 
             byte[] staffBytes = serializer.Serialize(populatedStaff, false);
             var staffRestored = (BistroBuilderStaffSnapshot)serializer.Deserialize(
@@ -155,17 +166,26 @@ public static class BistroBuilderStaff4EJsonRoundTripSelfTest
                 ref failed,
                 log);
 
-            Check(
+            BistroBuilderStaffRecruitmentSnapshot market = null;
+            bool marketGenerated =
                 BistroBuilderStaffRecruitmentEngine.TryGenerateInitialMarket(
                     recruitmentProfile,
                     roleCatalog,
                     7,
-                    out BistroBuilderStaffRecruitmentSnapshot market,
-                    out string marketError),
+                    out market,
+                    out string marketError);
+            Check(
+                marketGenerated && market != null,
                 "staff.recruitment generado. " + marketError,
                 ref passed,
                 ref failed,
                 log);
+            if (!marketGenerated || market == null ||
+                market.candidates == null || market.candidates.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    "No puede continuar el round-trip sin mercado válido.");
+            }
 
             string candidateId = market.candidates[0].candidateId;
             long candidateSalary = market.candidates[0].expectedSalaryCentsPerService;
