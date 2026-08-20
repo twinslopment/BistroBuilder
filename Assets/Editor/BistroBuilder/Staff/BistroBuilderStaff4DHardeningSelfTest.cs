@@ -14,6 +14,12 @@ public static class BistroBuilderStaff4DHardeningSelfTest
     private const string SessionServicePath =
         "Assets/Scripts/Application/Staff/BistroBuilderStaffSessionService.cs";
 
+    private const string DomainSessionModelsPath =
+        "Assets/Scripts/Domain/Staff/BistroBuilderStaffSessionModels.cs";
+
+    private const string ApplicationSessionViewsPath =
+        "Assets/Scripts/Application/Staff/BistroBuilderStaffSessionViews.cs";
+
     [MenuItem(
         "Tools/Bistro Builder/Personal/4D - Autotest endurecimiento",
         false,
@@ -200,6 +206,30 @@ public static class BistroBuilderStaff4DHardeningSelfTest
                 "TryFinalizeClosedSession ejecuta el preflight antes de " +
                 "consolidar ciclos o publicar XP/rendimiento.",
                 ref passed, ref failed, log);
+
+            string domainSource = ReadSource(DomainSessionModelsPath);
+            string applicationViewsSource = ReadSource(ApplicationSessionViewsPath);
+
+            bool domainOwnsOnlyPersistedSessionModels =
+                !domainSource.Contains(
+                    "class BistroBuilderEmployeeSessionAssignmentView") &&
+                !domainSource.Contains(
+                    "class BistroBuilderStaffCoverageSnapshot") &&
+                !domainSource.Contains("WaiterState");
+            Check(
+                domainOwnsOnlyPersistedSessionModels,
+                "Domain no vuelve a declarar vistas Application ni depende de WaiterState.",
+                ref passed, ref failed, log);
+
+            bool applicationOwnsSessionViews =
+                applicationViewsSource.Contains(
+                    "class BistroBuilderEmployeeSessionAssignmentView") &&
+                applicationViewsSource.Contains(
+                    "class BistroBuilderStaffCoverageSnapshot");
+            Check(
+                applicationOwnsSessionViews,
+                "Application conserva la propiedad única de las vistas consultivas 4D.",
+                ref passed, ref failed, log);
         }
         catch (Exception exception)
         {
@@ -217,6 +247,14 @@ public static class BistroBuilderStaff4DHardeningSelfTest
         log.AppendLine("Resultado: " + passed + " OK / " + failed + " fallos");
         report = log.ToString();
         return failed == 0;
+    }
+
+    private static string ReadSource(string assetPath)
+    {
+        string absolutePath = Path.GetFullPath(assetPath);
+        return File.Exists(absolutePath)
+            ? File.ReadAllText(absolutePath)
+            : string.Empty;
     }
 
     private static void Check(
