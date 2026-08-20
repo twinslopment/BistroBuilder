@@ -155,18 +155,50 @@ public static class BistroBuilderStaff4DHardeningSelfTest
                 ? File.ReadAllText(absoluteSessionServicePath)
                 : string.Empty;
 
-            Check(
-                source.Contains(
-                    "BistroBuilderStaffEligibilityBatch.TryApply(",
-                    StringComparison.Ordinal),
-                "StaffSessionService usa el lote transaccional de elegibilidad.",
-                ref passed, ref failed, log);
+            int eligibilityMethodIndex = source.IndexOf(
+                "private bool TrySetAllWaitersEligible",
+                StringComparison.Ordinal);
+            int eligibilityBatchIndex = source.IndexOf(
+                "BistroBuilderStaffEligibilityBatch.TryApply(",
+                eligibilityMethodIndex >= 0 ? eligibilityMethodIndex : 0,
+                StringComparison.Ordinal);
+            int nextEligibilityMethodIndex = source.IndexOf(
+                "private Waiter[] BuildOrderedWaiterArray",
+                eligibilityMethodIndex >= 0 ? eligibilityMethodIndex : 0,
+                StringComparison.Ordinal);
 
             Check(
-                source.Contains(
-                    "BistroBuilderStaffSessionClosePreflight.TryValidate(",
-                    StringComparison.Ordinal),
-                "StaffSessionService ejecuta preflight antes de consolidar rendimiento.",
+                eligibilityMethodIndex >= 0 &&
+                eligibilityBatchIndex > eligibilityMethodIndex &&
+                (nextEligibilityMethodIndex < 0 ||
+                 eligibilityBatchIndex < nextEligibilityMethodIndex),
+                "TrySetAllWaitersEligible delega realmente en el lote " +
+                "transaccional de elegibilidad.",
+                ref passed, ref failed, log);
+
+            int finalizeMethodIndex = source.IndexOf(
+                "public bool TryFinalizeClosedSession",
+                StringComparison.Ordinal);
+            int closePreflightIndex = source.IndexOf(
+                "BistroBuilderStaffSessionClosePreflight.TryValidate(",
+                finalizeMethodIndex >= 0 ? finalizeMethodIndex : 0,
+                StringComparison.Ordinal);
+            int finalizeObservedIndex = source.IndexOf(
+                "FinalizeObservedWorkCycle(",
+                finalizeMethodIndex >= 0 ? finalizeMethodIndex : 0,
+                StringComparison.Ordinal);
+            int applyResultIndex = source.IndexOf(
+                "developmentService.TryApplyServiceResult(",
+                finalizeMethodIndex >= 0 ? finalizeMethodIndex : 0,
+                StringComparison.Ordinal);
+
+            Check(
+                finalizeMethodIndex >= 0 &&
+                closePreflightIndex > finalizeMethodIndex &&
+                finalizeObservedIndex > closePreflightIndex &&
+                applyResultIndex > closePreflightIndex,
+                "TryFinalizeClosedSession ejecuta el preflight antes de " +
+                "consolidar ciclos o publicar XP/rendimiento.",
                 ref passed, ref failed, log);
         }
         catch (Exception exception)
