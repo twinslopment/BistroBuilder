@@ -93,6 +93,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4F enrutado de mutaciones",
+            () => BistroBuilderStaff4FMutationRoutingSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4G arquitectura estática",
             () => BistroBuilderStaff4GStaticSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
