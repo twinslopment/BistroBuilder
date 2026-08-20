@@ -66,7 +66,7 @@ public static class BistroBuilderStaff5BPlanningSelfTest
                 ref passed, ref failed, log);
 
             BistroBuilderStaffScheduleSnapshot beforeFailure = planned.DeepClone();
-            var invalid = new List<string> { firstId, "employee:invalido" };
+            var invalid = new List<string> { firstId, string.Empty };
             Check(!BistroBuilderStaffSchedulePlanner.TryReplaceServiceAssignments(
                     planned, staff, profile, 5,
                     BistroBuilderMealServiceAvailability.Lunch,
@@ -74,7 +74,7 @@ public static class BistroBuilderStaff5BPlanningSelfTest
                     out _, out _) &&
                   planned.shifts.Count == beforeFailure.shifts.Count &&
                   planned.revision == beforeFailure.revision,
-                "Un fallo no muta el snapshot de entrada.",
+                "Un EmployeeId vacío falla sin mutar el snapshot de entrada.",
                 ref passed, ref failed, log);
         }
         catch (Exception exception)
