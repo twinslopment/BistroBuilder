@@ -48,6 +48,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4D contrato guardia mutación runtime",
+            () => BistroBuilderStaff4DMutationGuardContractSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4D preflight resultados de servicio",
             () => BistroBuilderStaff4DServiceResultPreflightSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
