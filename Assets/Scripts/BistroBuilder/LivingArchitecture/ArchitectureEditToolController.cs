@@ -5,8 +5,8 @@ using UnityEngine;
 namespace BistroBuilder.LivingArchitecture.Runtime
 {
     /// <summary>
-    /// Fachada runtime LA9 para conectar UI/input con la sesión pura de edición.
-    /// Solo sincroniza estado canónico tras confirmación/Undo/Redo; la preview nunca sustituye la autoridad.
+    /// Fachada runtime LA9/LA10 para conectar UI/input con la sesión pura de edición.
+    /// Solo sincroniza estado canónico tras confirmación/Undo/Redo; la preview y el feedback nunca sustituyen la autoridad.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ArchitectureEditToolController : MonoBehaviour
@@ -15,13 +15,16 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         [SerializeField] private ArchitectureRuntimePresenter runtimePresenter;
 
         private ArchitectureEditSession session;
+        private readonly ArchitectureEditFeedbackService feedbackService = new ArchitectureEditFeedbackService();
 
         public ArchitectureEditSession Session => session;
         public ArchitectureSnapshot VisibleSnapshot => session?.CaptureVisible();
         public bool HasPreview => session != null && session.HasPreview;
         public bool CanConfirm => session != null && session.CanConfirm;
+        public ArchitectureEditFeedbackFrame FeedbackFrame { get; private set; }
 
         public event Action Changed;
+        public event Action<ArchitectureEditFeedbackFrame> FeedbackChanged;
 
         public void EnsureInitialized()
         {
@@ -32,6 +35,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             stateService.EnsureInitialized();
             session = new ArchitectureEditSession(new ArchitectureSnapshot { Building = stateService.CaptureClone() });
             RebuildVisible();
+            RefreshFeedback();
         }
 
         public void ReloadFromCanonicalState()
@@ -41,6 +45,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             stateService.EnsureInitialized();
             session = new ArchitectureEditSession(new ArchitectureSnapshot { Building = stateService.CaptureClone() });
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
         }
 
@@ -48,6 +53,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         {
             EnsureInitialized();
             var result = session.SelectWall(wallId);
+            RefreshFeedback();
             Changed?.Invoke();
             return result;
         }
@@ -56,6 +62,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         {
             EnsureInitialized();
             var result = session.SelectVertex(vertexId);
+            RefreshFeedback();
             Changed?.Invoke();
             return result;
         }
@@ -65,6 +72,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             EnsureInitialized();
             var proposal = session.PreviewCreateWall(levelId, start, end, thickness, height, true);
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
             return proposal;
         }
@@ -74,6 +82,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             EnsureInitialized();
             var proposal = session.PreviewMoveWall(wallId, deltaX, deltaY);
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
             return proposal;
         }
@@ -83,6 +92,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             EnsureInitialized();
             var proposal = session.PreviewMoveVertex(vertexId, target, true);
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
             return proposal;
         }
@@ -93,6 +103,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             if (!ArchitectureId.IsValid(session.SelectedWallId.Value)) return null;
             var proposal = session.PreviewSetWallLength(session.SelectedWallId, targetLength, preserveStart);
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
             return proposal;
         }
@@ -102,6 +113,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             EnsureInitialized();
             var proposal = session.PreviewDeleteSelectedWall();
             RebuildVisible();
+            RefreshFeedback();
             Changed?.Invoke();
             return proposal;
         }
@@ -109,9 +121,11 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         public bool TryConfirm(out string diagnosticCode)
         {
             EnsureInitialized();
+            var operationId = session.Preview?.Operation?.Id.Value;
             if (!session.TryConfirm(out diagnosticCode))
             {
                 RebuildVisible();
+                RefreshFeedback();
                 Changed?.Invoke();
                 return false;
             }
@@ -121,6 +135,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
                 return false;
             }
             RebuildVisible();
+            PublishTransient(ArchitectureFeedbackCueKind.CommitPulse, operationId, "Reforma confirmada.");
             Changed?.Invoke();
             return true;
         }
@@ -128,8 +143,10 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         public void CancelPreview()
         {
             EnsureInitialized();
+            var operationId = session.Preview?.Operation?.Id.Value;
             session.CancelPreview();
             RebuildVisible();
+            PublishTransient(ArchitectureFeedbackCueKind.CancelFade, operationId, "Previsualización cancelada.");
             Changed?.Invoke();
         }
 
@@ -139,6 +156,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             if (!session.TryUndo(out diagnosticCode)) return false;
             if (!PushSessionToCanonical(out diagnosticCode)) { ReloadFromCanonicalState(); return false; }
             RebuildVisible();
+            PublishTransient(ArchitectureFeedbackCueKind.UndoPulse, null, "Reforma deshecha.");
             Changed?.Invoke();
             return true;
         }
@@ -149,6 +167,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             if (!session.TryRedo(out diagnosticCode)) return false;
             if (!PushSessionToCanonical(out diagnosticCode)) { ReloadFromCanonicalState(); return false; }
             RebuildVisible();
+            PublishTransient(ArchitectureFeedbackCueKind.RedoPulse, null, "Reforma rehecha.");
             Changed?.Invoke();
             return true;
         }
@@ -163,6 +182,18 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         {
             if (runtimePresenter == null || session == null) return;
             runtimePresenter.Rebuild(session.CaptureVisible().Building);
+        }
+
+        private void RefreshFeedback()
+        {
+            FeedbackFrame = feedbackService.Build(session?.Preview, session?.PreviewImpact, session?.LastSnapCandidates);
+            FeedbackChanged?.Invoke(FeedbackFrame);
+        }
+
+        private void PublishTransient(ArchitectureFeedbackCueKind kind, string operationId, string message)
+        {
+            FeedbackFrame = feedbackService.BuildTransient(kind, operationId, message);
+            FeedbackChanged?.Invoke(FeedbackFrame);
         }
 
         private void Awake()
