@@ -46,12 +46,12 @@ namespace BistroBuilder.LivingArchitecture.Domain
         private static void ExactAngleIsPreserved()
         {
             var state = CreateRectangle();
-            var intent = Intent(new ArchitectureConstraint { Kind = ArchitectureConstraintKind.WallAngle, EntityId = "w_bottom", TargetValue = 90d, Tolerance = 0.0001d });
+            var intent = Intent(new ArchitectureConstraint { Kind = ArchitectureConstraintKind.WallAngle, EntityId = "w_bottom", TargetValue = 0d, Tolerance = 0.0001d });
             var r = ArchitectureIntentEngine.Propose(state, ArchitectureOperationKind.MoveVertex, intent,
                 s => ArchitectureMutations.MoveVertex(s, new VertexId("v_b"), new ArchitecturePoint(6d, 2d)));
             Require(r.IsReady, r.Proposal?.DiagnosticCode);
             var p = r.Proposal.ProposedSnapshot.FindVertex(new VertexId("v_b")).Position;
-            Require(Math.Abs(p.X) <= 0.001d && p.Y > 0d, "Ángulo no preservado.");
+            Require(Math.Abs(p.Y) <= 0.001d && p.X > 0d, "Ángulo no preservado.");
         }
 
         private static void FixedVertexIsPreserved()
@@ -77,7 +77,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
 
         private static void OpeningOffsetIsPreserved()
         {
-            var state = CreateRectangleWithDoor(0.4d); // 2 m desde el inicio sobre 5 m.
+            var state = CreateRectangleWithDoor(0.4d);
             var intent = Intent(new ArchitectureConstraint { Kind = ArchitectureConstraintKind.OpeningOffsetFromStart, EntityId = "door", TargetValue = 2d });
             var r = ArchitectureIntentEngine.Propose(state, ArchitectureOperationKind.MoveVertex, intent,
                 s => ArchitectureMutations.MoveVertex(s, new VertexId("v_b"), new ArchitecturePoint(8d, 0d)));
@@ -136,10 +136,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
         private static ArchitectureSnapshot CreateRectangleWithDoor(double centerT)
         {
             var state = CreateRectangle();
-            state.FindWall(new WallId("w_bottom")).Openings.Add(new ArchitectureOpening
-            {
-                Id = new OpeningId("door"), WallId = new WallId("w_bottom"), CenterT = centerT, Width = 0.8d, Bottom = 0d, Height = 2d
-            });
+            state.FindWall(new WallId("w_bottom")).Openings.Add(new ArchitectureOpening { Id = new OpeningId("door"), WallId = new WallId("w_bottom"), CenterT = centerT, Width = 0.8d, Bottom = 0d, Height = 2d });
             return state;
         }
 
