@@ -29,7 +29,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
         public void Rebuild(ArchitectureBuilding building)
         {
             if (building == null) throw new ArgumentNullException(nameof(building));
-            var before = ArchitectureSnapshot.ComputeFingerprint(building);
+            var before = ComputeFingerprint(building);
             ClearProjection();
 
             var levels = new List<ArchitectureLevel>(building.Levels ?? new List<ArchitectureLevel>());
@@ -46,7 +46,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
                 }
             }
 
-            var after = ArchitectureSnapshot.ComputeFingerprint(building);
+            var after = ComputeFingerprint(building);
             if (!string.Equals(before, after, StringComparison.Ordinal))
             {
                 ClearProjection();
@@ -106,6 +106,11 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        private static string ComputeFingerprint(ArchitectureBuilding building)
+        {
+            return new ArchitectureSnapshot { Building = building }.ComputeFingerprint();
         }
 
         private void OnDestroy()
