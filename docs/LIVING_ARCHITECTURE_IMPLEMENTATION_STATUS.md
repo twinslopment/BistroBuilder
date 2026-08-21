@@ -92,3 +92,28 @@ Gates pendientes que requieren Unity real:
 - Console 0 errores.
 
 No se declara LA4 validado/cerrado hasta superar esos gates.
+
+## LA5 — Snap inteligente
+Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+
+Incluye:
+- `ArchitectureSnapService` puro y sin mutaciones, separado de operaciones, solver y Presentation;
+- candidatos geométricos a vértice y proyección sobre pared dentro de tolerancia configurable;
+- primeros snaps semánticos V1: paralelo, perpendicular, igualdad de longitud y continuidad desde extremos arquitectónicos;
+- cada candidato devuelve tipo, punto propuesto, entidad fuente, `ReasonCode`, distancia, score, nivel de confianza y, cuando aplica, ángulo/longitud objetivo;
+- niveles de confianza `Low/Medium/High` derivados de la cercanía respecto a la tolerancia, para que LA9/LA10 puedan distinguir coincidencias fuertes de aproximaciones débiles;
+- ranking determinista por score, tipo, entidad y posición; mismo nivel + mismo gesto = misma secuencia de candidatos;
+- exclusión explícita de una pared en edición para evitar auto-snap circular;
+- las relaciones angulares usan orientación axial, por lo que una pared de 0° y otra de 180° se consideran paralelas sin duplicar semántica;
+- ningún candidato se aplica automáticamente: LA5 **ofrece opciones** y la herramienta/usuario decide cuál aceptar;
+- self-test puro LA5 de 10 casos: vértice, proyección, paralelo, perpendicular, igual longitud, continuidad, exclusión, tolerancia, determinismo y ausencia de mutación.
+
+Principio de autoridad: LA5 **no construye ni modifica arquitectura**. Tampoco decide validez de gameplay. Es un generador read-only de candidatos reutilizable por LA9 y visualizable por LA10.
+
+Gates pendientes que requieren Unity real:
+- compilación C# del proyecto completo;
+- ejecución acumulativa LA1+LA2+LA3+LA4+LA5;
+- confirmar 10/0 en el self-test LA5;
+- Console 0 errores.
+
+No se declara LA5 validado/cerrado hasta superar esos gates.
