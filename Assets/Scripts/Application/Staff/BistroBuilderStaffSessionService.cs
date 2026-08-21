@@ -668,10 +668,12 @@ public sealed class BistroBuilderStaffSessionService :
             FinalizeObservedWorkCycle(pair.Value);
         }
 
+        var pendingResults =
+            new List<KeyValuePair<string, BistroBuilderEmployeeServicePerformanceReport>>(
+                sessionState.bindings.Count);
         for (int index = 0; index < sessionState.bindings.Count; index++)
         {
-            BistroBuilderStaffSessionBindingRecord binding =
-                sessionState.bindings[index];
+            BistroBuilderStaffSessionBindingRecord binding = sessionState.bindings[index];
             string operationId =
                 BistroBuilderStaffSessionEngine.BuildServiceResultOperationId(
                     sessionState.sessionId,
@@ -682,20 +684,53 @@ public sealed class BistroBuilderStaffSessionService :
                 return false;
             }
 
-            var report = new BistroBuilderEmployeeServicePerformanceReport
-            {
-                operationId = operationId,
-                serviceCompleted = true,
-                completedTasks = binding.completedTasks,
-                failedTasks = binding.failedTasks,
-                tablesHandled = binding.handledTableIds.Count,
-                totalTaskDurationMilliseconds =
-                    binding.totalTaskDurationMilliseconds
-            };
-
-            if (!developmentService.TryApplyServiceResult(
+            pendingResults.Add(
+                new KeyValuePair<string, BistroBuilderEmployeeServicePerformanceReport>(
                     binding.employeeId,
-                    report,
+                    new BistroBuilderEmployeeServicePerformanceReport
+                    {
+                        operationId = operationId,
+                        serviceCompleted = true,
+                        completedTasks = binding.completedTasks,
+                        failedTasks = binding.failedTasks,
+                        tablesHandled = binding.handledTableIds.Count,
+                        totalTaskDurationMilliseconds =
+                            binding.totalTaskDurationMilliseconds
+                    }));
+        }
+
+        // Preflight puro: simula toda la secuencia sobre una copia antes de
+        // comprometer el primer resultado real. Evita que un error determinista
+        // del empleado N deje aplicados N-1 resultados y conserva los operationId
+        // idempotentes como segunda barrera frente a reintentos.
+        BistroBuilderStaffSnapshot preflightState = staffService.CreateSnapshot();
+        for (int index = 0; index < pendingResults.Count; index++)
+        {
+            KeyValuePair<string, BistroBuilderEmployeeServicePerformanceReport> item =
+                pendingResults[index];
+            if (!BistroBuilderStaffDevelopmentEngine.TryApplyServicePerformance(
+                    preflightState,
+                    item.Key,
+                    item.Value,
+                    developmentService.DevelopmentProfile,
+                    staffService.RoleCatalog,
+                    out BistroBuilderStaffSnapshot nextPreflightState,
+                    out _,
+                    out _,
+                    out error))
+            {
+                return false;
+            }
+            preflightState = nextPreflightState;
+        }
+
+        for (int index = 0; index < pendingResults.Count; index++)
+        {
+            KeyValuePair<string, BistroBuilderEmployeeServicePerformanceReport> item =
+                pendingResults[index];
+            if (!developmentService.TryApplyServiceResult(
+                    item.Key,
+                    item.Value,
                     out _,
                     out _,
                     out error))
