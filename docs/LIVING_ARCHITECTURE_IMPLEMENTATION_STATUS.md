@@ -67,3 +67,28 @@ Gates pendientes que requieren Unity real:
 - Console 0 errores.
 
 No se declara LA3 validado/cerrado hasta superar esos gates.
+
+## LA4 — Restricciones e intención
+Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+
+Incluye:
+- `ArchitectureIntent` como declaración explícita de lo que una reforma intenta preservar, separada de la mutación LA3;
+- restricciones tipadas V1 para vértice/ancla, longitud de pared, ángulo, apertura centrada, distancia física de apertura desde el extremo inicial y área de región;
+- severidad `Hard` frente a `Advisory`: una restricción dura impide la propuesta si no puede preservarse; una advisory informa sin adquirir autoridad;
+- correcciones locales deterministas para ancla, longitud, ángulo y relaciones de apertura, sin solver global ni rediseño silencioso;
+- preservación de distancia física de una apertura al cambiar la longitud de su pared mediante recálculo de `CenterT`;
+- área de región como gate verificable: LA4 puede preservarla si la operación propuesta ya lo permite, pero no inventa una redistribución global para forzarla;
+- evaluaciones estructuradas por restricción con código, valor real, objetivo y diagnóstico, reutilizables por Presentation/Impact;
+- integración sobre el flujo puro LA3: A permanece intacto y solo B recibe las correcciones autorizadas;
+- rechazo explícito cuando una preservación dura no es resoluble, sin cambios ocultos sobre el snapshot real;
+- self-test puro LA4 de 9 casos: longitud, ángulo, ancla, apertura centrada, offset físico, área compatible, área incompatible + pureza de A, advisory y determinismo.
+
+Principio de autoridad: LA4 **expresa y verifica intención; no decide gameplay ni impacto externo**. No toca GameObjects, colocables, seating, circulación ni economía. El snap ofrecerá candidatos en LA5 y los impactos externos entran en LA6.
+
+Gates pendientes que requieren Unity real:
+- compilación C# del proyecto completo;
+- ejecución acumulativa LA1+LA2+LA3+LA4;
+- confirmar 9/0 en el self-test LA4;
+- Console 0 errores.
+
+No se declara LA4 validado/cerrado hasta superar esos gates.
