@@ -83,6 +83,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4D orden de commit de cierre",
+            () => BistroBuilderStaff4DCloseCommitOrderingSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4D lote de elegibilidad atómico",
             () => BistroBuilderStaff4DEligibilityBatchSelfTest.Run(out _),
             lines, ref passed, ref failed);
