@@ -9,7 +9,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
     /// </summary>
     public static class ArchitectureV1SelfTestSuite
     {
-        public const int ExpectedCaseCount = 107;
+        public const int ExpectedCaseCount = 109;
 
         public static IReadOnlyList<string> Run()
         {
@@ -24,6 +24,7 @@ namespace BistroBuilder.LivingArchitecture.Domain
             Append(failures, "LA9", ArchitectureEditSessionSelfTest.Run());
             Append(failures, "LA10", ArchitectureEditFeedbackSelfTest.Run());
             Append(failures, "LA11", ArchitectureV1QueenSelfTest.Run());
+            Append(failures, "LA11-H", ArchitectureV1QueenHardeningSelfTest.Run());
             return failures;
         }
 
