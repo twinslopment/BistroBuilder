@@ -154,10 +154,16 @@ namespace BistroBuilder.LivingArchitecture.Domain
                     }
                     restored.Levels.Add(level);
                 }
-                var validation = ArchitectureValidator.Validate(restored);
+                var validation = ArchitectureValidator.Validate(new ArchitectureSnapshot { Building = restored });
                 if (!validation.IsValid)
                 {
-                    error = "LA8_RESTORE_INVALID: " + string.Join(" | ", validation.Errors.ToArray());
+                    var messages = new List<string>();
+                    foreach (var issue in validation.Issues)
+                    {
+                        if (issue != null && issue.Severity == ArchitectureValidationSeverity.Error)
+                            messages.Add(issue.Code + ":" + issue.Message);
+                    }
+                    error = "LA8_RESTORE_INVALID: " + string.Join(" | ", messages.ToArray());
                     return false;
                 }
                 building = restored;
