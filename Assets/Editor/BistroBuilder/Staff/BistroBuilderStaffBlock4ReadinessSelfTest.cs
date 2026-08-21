@@ -53,6 +53,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4D valla revision staff.state",
+            () => BistroBuilderStaff4DRevisionFenceSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4D preflight restore",
             () => BistroBuilderStaff4DRestorePreflightSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
