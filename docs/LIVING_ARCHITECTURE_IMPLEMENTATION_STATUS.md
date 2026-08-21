@@ -1,119 +1,88 @@
-# BB Living Architecture — Estado de implementación
+# BB Living Architecture — Estado de implementación V1
 
-## LA1 — Kernel topológico
-Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+Estado global: **LA1–LA11 IMPLEMENTADOS / AUDITADOS ESTÁTICAMENTE / PENDIENTES DE UNITY REAL**.
 
-Incluye:
-- IDs estables de edificio, nivel, vértice, pared, apertura, región y operación.
-- Punto planar propio del dominio, sin dependencia de Transform/GameObject.
-- Modelo canónico Building → Levels → Vertices/Walls → Openings.
-- Aperturas parametrizadas por `CenterT` sobre su `WallId`.
-- `ArchitectureSnapshot` versionado con `DeepClone` profundo.
-- Fingerprint SHA-256 determinista e independiente del orden de listas.
-- Validador de invariantes LA1: IDs, referencias, longitud, espesor, altura y dominio de aperturas.
-- Self-test de Editor sin escena para DeepClone, fingerprint y rechazo de estados inválidos.
+> En Bistro Builder no editas un conjunto de paredes. Reformas un restaurante que entiende qué estás intentando conservar y qué consecuencias tendrá cada cambio.
 
-Gates pendientes que requieren Unity real:
-- compilación C# del proyecto completo;
-- ejecución del menú `Bistro Builder/Living Architecture/LA1/Run Self Test`;
-- Console 0 errores.
+Este archivo es el índice vivo de estado. La especificación vinculante está en `LIVING_ARCHITECTURE_V1_SPEC.md`; los hitos LA6–LA11 disponen además de documentación específica en `docs/`.
 
-No se declara LA1 validado/cerrado hasta superar esos gates.
+## Estado por hito
 
-## LA2 — Motor de regiones emergentes
-Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+### LA1 — Kernel topológico
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Incluye:
-- regiones derivadas de la topología, sin `Room GameObject` ni entidad persistente duplicada;
-- recorrido determinista de medias aristas sobre grafos planares de paredes rectas;
-- gate explícito de planaridad: un cruce o contacto entre paredes sin `VertexId` compartido se rechaza con `LA2_NON_PLANAR_CROSSING`;
-- descarte de la cara exterior y de ciclos degenerados;
-- `RegionId` derivado de `LevelId + WallIds` mediante SHA-256, estable ante reordenación de colecciones;
-- contorno, paredes/vértices delimitadores, área y centroide de cada región;
-- consulta espacial `FindContaining` y pertenencia inclusiva sobre borde;
-- soporte de múltiples recintos y componentes desconectados;
-- self-test puro de 10 casos: región rectangular, área/centroide, interior/exterior/borde, división, identidad estable, grafo abierto, recintos desconectados y rechazo de cruce no topológico.
+IDs estables, snapshot canónico, Building/Level/Vertex/Wall/Opening, DeepClone, fingerprint SHA-256 determinista y gate de invariantes. GameObject/Transform no son autoridad.
 
-Principio de autoridad: LA2 **no persiste habitaciones**. La región emerge siempre del kernel LA1; al cambiar topología, se reconstruye. Esto evita estados donde pared y habitación discrepen.
+### LA2 — Regiones emergentes
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Gates pendientes que requieren Unity real:
-- compilación C# del proyecto completo;
-- ejecución del self-test LA2 desde el runner acumulativo que se integrará en los siguientes hitos;
-- Console 0 errores.
+Grafo planar, detección determinista de caras cerradas, RegionId derivado, área/centroide, consultas espaciales y rechazo de cruces no topológicos. **10 casos puros**.
 
-No se declara LA2 validado/cerrado hasta superar esos gates.
+### LA3 — Operaciones transaccionales
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-## LA3 — Operaciones arquitectónicas transaccionales
-Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+Flujo A→propuesta B→commit atómico, stale fingerprint, rollback, Undo/Redo semántico y primitivas crear/mover/dividir/eliminar pared y mover vértice. **12 casos puros**.
 
-Incluye:
-- flujo puro `A → propuesta B → validación → commit`, siempre sobre `DeepClone`, sin mutar el snapshot base durante el cálculo;
-- `ArchitectureOperationId`, tipo y etiqueta de operación en cada transacción;
-- detección de propuestas obsoletas mediante fingerprint base (`LA3_STALE_PROPOSAL`);
-- commit atómico con registro completo A/B para Undo/Redo semántico;
-- rollback natural: cualquier excepción, invariante LA1 o gate topológico LA2 rechaza B y deja A intacto;
-- primitivas V1 para crear pared, mover pared, dividir pared, eliminar pared y mover vértice compartido;
-- `SplitWall` conserva el `WallId` del primer tramo, crea identidad estable para el segundo y remapea aperturas por coordenada paramétrica;
-- un split que atraviesa una apertura se rechaza explícitamente, sin reparar ni desplazar silenciosamente la puerta/ventana;
-- mover una pared opera sobre sus vértices canónicos, por lo que las conexiones compartidas siguen siendo conexiones topológicas reales y no aparecen grietas por duplicación de puntos;
-- self-test puro de 12 casos: pureza de propuesta, commit, rollback, stale conflict, Undo, Redo, identidad tras split, remapeo de apertura, rechazo de split sobre apertura, delete reversible, create + región y conectividad compartida al mover pared.
+### LA4 — Restricciones e intención
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Principio de autoridad: LA3 **no toca GameObjects, meshes, economía, seating ni circulación**. Solo transforma snapshots canónicos. Los impactos externos y la preservación avanzada de intención entran en LA4–LA6.
+Restricciones hard/advisory para anclas, longitud, ángulo, apertura y área; correcciones locales deterministas sin solver global que rediseñe por el jugador. **9 casos puros**.
 
-Gates pendientes que requieren Unity real:
-- compilación C# del proyecto completo;
-- ejecución acumulativa LA1+LA2+LA3;
-- confirmar 12/0 en el self-test LA3;
-- Console 0 errores.
+### LA5 — Snap inteligente
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-No se declara LA3 validado/cerrado hasta superar esos gates.
+Candidatos read-only de vértice/proyección y semánticos paralelo, perpendicular, igual longitud y continuidad, con ranking y confianza deterministas. **10 casos puros**.
 
-## LA4 — Restricciones e intención
-Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+### LA6 — Impacto Bistro Builder
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Incluye:
-- `ArchitectureIntent` como declaración explícita de lo que una reforma intenta preservar, separada de la mutación LA3;
-- restricciones tipadas V1 para vértice/ancla, longitud de pared, ángulo, apertura centrada, distancia física de apertura desde el extremo inicial y área de región;
-- severidad `Hard` frente a `Advisory`: una restricción dura impide la propuesta si no puede preservarse; una advisory informa sin adquirir autoridad;
-- correcciones locales deterministas para ancla, longitud, ángulo y relaciones de apertura, sin solver global ni rediseño silencioso;
-- preservación de distancia física de una apertura al cambiar la longitud de su pared mediante recálculo de `CenterT`;
-- área de región como gate verificable: LA4 puede preservarla si la operación propuesta ya lo permite, pero no inventa una redistribución global para forzarla;
-- evaluaciones estructuradas por restricción con código, valor real, objetivo y diagnóstico, reutilizables por Presentation/Impact;
-- integración sobre el flujo puro LA3: A permanece intacto y solo B recibe las correcciones autorizadas;
-- rechazo explícito cuando una preservación dura no es resoluble, sin cambios ocultos sobre el snapshot real;
-- self-test puro LA4 de 9 casos: longitud, ángulo, ancla, apertura centrada, offset físico, área compatible, área incompatible + pureza de A, advisory y determinismo.
+Reporte previo estructurado, adaptadores aislados a colocables/seating/circulación, consecuencias de regiones, corrección mínima opcional, deduplicación y fail-safe ante excepción o mutación externa. **12 casos puros**.
 
-Principio de autoridad: LA4 **expresa y verifica intención; no decide gameplay ni impacto externo**. No toca GameObjects, colocables, seating, circulación ni economía. El snap ofrecerá candidatos en LA5 y los impactos externos entran en LA6.
+### LA7 — Runtime/Mesher
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Gates pendientes que requieren Unity real:
-- compilación C# del proyecto completo;
-- ejecución acumulativa LA1+LA2+LA3+LA4;
-- confirmar 9/0 en el self-test LA4;
-- Console 0 errores.
+Materialización Snapshot→MeshData→Unity, paredes con espesor/altura/elevación y huecos de aperturas. La representación visual nunca reconstruye la verdad del Domain. **10 casos puros**.
 
-No se declara LA4 validado/cerrado hasta superar esos gates.
+### LA8 — Persistencia
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-## LA5 — Snap inteligente
-Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+DTO versionado dentro del SaveGame universal, Capture/Restore/Migrate, orden determinista, rechazo de esquema futuro y conservación de IDs/topología. **10 casos puros**.
 
-Incluye:
-- `ArchitectureSnapService` puro y sin mutaciones, separado de operaciones, solver y Presentation;
-- candidatos geométricos a vértice y proyección sobre pared dentro de tolerancia configurable;
-- primeros snaps semánticos V1: paralelo, perpendicular, igualdad de longitud y continuidad desde extremos arquitectónicos;
-- cada candidato devuelve tipo, punto propuesto, entidad fuente, `ReasonCode`, distancia, score, nivel de confianza y, cuando aplica, ángulo/longitud objetivo;
-- niveles de confianza `Low/Medium/High` derivados de la cercanía respecto a la tolerancia, para que LA9/LA10 puedan distinguir coincidencias fuertes de aproximaciones débiles;
-- ranking determinista por score, tipo, entidad y posición; mismo nivel + mismo gesto = misma secuencia de candidatos;
-- exclusión explícita de una pared en edición para evitar auto-snap circular;
-- las relaciones angulares usan orientación axial, por lo que una pared de 0° y otra de 180° se consideran paralelas sin duplicar semántica;
-- ningún candidato se aplica automáticamente: LA5 **ofrece opciones** y la herramienta/usuario decide cuál aceptar;
-- self-test puro LA5 de 10 casos: vértice, proyección, paralelo, perpendicular, igual longitud, continuidad, exclusión, tolerancia, determinismo y ausencia de mutación.
+### LA9 — Herramienta jugable V1
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-Principio de autoridad: LA5 **no construye ni modifica arquitectura**. Tampoco decide validez de gameplay. Es un generador read-only de candidatos reutilizable por LA9 y visualizable por LA10.
+Sesión de edición con selección, preview, crear/mover/eliminar, longitud numérica, snap, impacto, Confirmar/Cancelar y Undo/Redo; controlador runtime desacoplado de la autoridad canónica. **12 casos puros**.
 
-Gates pendientes que requieren Unity real:
-- compilación C# del proyecto completo;
-- ejecución acumulativa LA1+LA2+LA3+LA4+LA5;
-- confirmar 10/0 en el self-test LA5;
-- Console 0 errores.
+### LA10 — Sistema Universal de Feedback del Modo Edición
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
 
-No se declara LA5 validado/cerrado hasta superar esos gates.
+Estados Idle/Valid/Warning/Invalid, ghost, cues de snap/confianza, impactos, correcciones sugeridas y señales Confirm/Cancel/Undo/Redo. Feedback reacciona; arquitectura decide. Sin obreros/NPCs de construcción. **10 casos puros**.
+
+### LA11 — Queen Test y hardening final V1
+**IMPLEMENTADO / PENDIENTE UNITY REAL**.
+
+Queen Test reversible de 12 casos con flujo completo: construcción → región → apertura → intención → impacto → commit → Save/Load → Undo/Redo → rollback. Incluye stale proposal, aislamiento de adaptadores, determinismo y barrido property-style de 64 geometrías.
+
+Runner acumulativo LA2–LA11: **107 casos esperados**. LA1 conserva su runner Editor histórico independiente.
+
+## Gates finales obligatorios en Unity real
+
+La V1 **NO está validada ni cerrada** hasta superar todos estos gates:
+
+1. Compilación completa del proyecto: **0 errores**.
+2. `Bistro Builder/Living Architecture/LA1/Run Self Test`: PASS.
+3. `Bistro Builder/Living Architecture/LA11/Run Accumulated LA2-LA11`: **107/107**.
+4. `Bistro Builder/Living Architecture/LA11/Run Queen Test`: **12/12**.
+5. Composición efectiva del modo Edición con StateService, persistencia, RuntimePresenter, herramienta LA9 y feedback LA10.
+6. Play Mode: dibujar recinto → región → apertura → reforma → impacto → Confirmar/Cancelar → Undo/Redo.
+7. Save real → Load real con IDs/fingerprint/topología coherentes y reconstrucción runtime correcta.
+8. Operación inválida: rollback integral, sin geometría parcial ni GameObjects huérfanos.
+9. Revisión visual de openings, snaps, ghost, estados válido/warning/inválido y materialización.
+10. Medición de latencia de preview para operaciones V1 normales.
+11. Console final: **0 errores**.
+
+## Regla de cierre
+
+Completar código, documentación y auditoría estática permite declarar un hito **IMPLEMENTADO**. Solo Unity real puede elevarlo a **VALIDADO/CERRADO**.
+
+La rama de trabajo de esta V1 es `feature/living-architecture-v1`.
