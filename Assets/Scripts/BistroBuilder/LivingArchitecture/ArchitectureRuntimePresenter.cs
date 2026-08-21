@@ -18,6 +18,7 @@ namespace BistroBuilder.LivingArchitecture.Runtime
 
         private readonly Dictionary<string, GameObject> wallObjects = new Dictionary<string, GameObject>(StringComparer.Ordinal);
         private string projectedFingerprint = string.Empty;
+        private Material feedbackOverrideMaterial;
 
         public string ProjectedFingerprint => projectedFingerprint;
         public int ProjectedWallCount => wallObjects.Count;
@@ -56,6 +57,26 @@ namespace BistroBuilder.LivingArchitecture.Runtime
             projectedFingerprint = before;
         }
 
+        /// <summary>
+        /// LA10: aplica un material puramente presentacional a la proyección visible.
+        /// No altera datos arquitectónicos ni materiales canónicos.
+        /// </summary>
+        public void SetFeedbackMaterial(Material material)
+        {
+            feedbackOverrideMaterial = material;
+            foreach (var go in wallObjects.Values)
+            {
+                if (go == null) continue;
+                var renderer = go.GetComponent<MeshRenderer>();
+                if (renderer != null) renderer.sharedMaterial = feedbackOverrideMaterial != null ? feedbackOverrideMaterial : wallMaterial;
+            }
+        }
+
+        public void ClearFeedbackMaterial()
+        {
+            SetFeedbackMaterial(null);
+        }
+
         public void ClearProjection()
         {
             var values = new List<GameObject>(wallObjects.Values);
@@ -77,7 +98,8 @@ namespace BistroBuilder.LivingArchitecture.Runtime
 
             var filter = go.AddComponent<MeshFilter>();
             var renderer = go.AddComponent<MeshRenderer>();
-            if (wallMaterial != null) renderer.sharedMaterial = wallMaterial;
+            var material = feedbackOverrideMaterial != null ? feedbackOverrideMaterial : wallMaterial;
+            if (material != null) renderer.sharedMaterial = material;
 
             var mesh = BuildUnityMesh(data, wall.Id.Value);
             filter.sharedMesh = mesh;
