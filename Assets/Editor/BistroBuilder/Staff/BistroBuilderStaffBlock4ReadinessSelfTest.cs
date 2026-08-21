@@ -88,6 +88,11 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4E contrato fases SaveLoad",
+            () => BistroBuilderStaff4ELoadPhaseContractSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4F frontera Presentation",
             () => BistroBuilderStaff4FStaticSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
