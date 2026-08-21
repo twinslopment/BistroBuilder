@@ -42,3 +42,28 @@ Gates pendientes que requieren Unity real:
 - Console 0 errores.
 
 No se declara LA2 validado/cerrado hasta superar esos gates.
+
+## LA3 — Operaciones arquitectónicas transaccionales
+Estado: **IMPLEMENTADO / AUDITADO ESTÁTICAMENTE / PENDIENTE UNITY REAL**.
+
+Incluye:
+- flujo puro `A → propuesta B → validación → commit`, siempre sobre `DeepClone`, sin mutar el snapshot base durante el cálculo;
+- `ArchitectureOperationId`, tipo y etiqueta de operación en cada transacción;
+- detección de propuestas obsoletas mediante fingerprint base (`LA3_STALE_PROPOSAL`);
+- commit atómico con registro completo A/B para Undo/Redo semántico;
+- rollback natural: cualquier excepción, invariante LA1 o gate topológico LA2 rechaza B y deja A intacto;
+- primitivas V1 para crear pared, mover pared, dividir pared, eliminar pared y mover vértice compartido;
+- `SplitWall` conserva el `WallId` del primer tramo, crea identidad estable para el segundo y remapea aperturas por coordenada paramétrica;
+- un split que atraviesa una apertura se rechaza explícitamente, sin reparar ni desplazar silenciosamente la puerta/ventana;
+- mover una pared opera sobre sus vértices canónicos, por lo que las conexiones compartidas siguen siendo conexiones topológicas reales y no aparecen grietas por duplicación de puntos;
+- self-test puro de 12 casos: pureza de propuesta, commit, rollback, stale conflict, Undo, Redo, identidad tras split, remapeo de apertura, rechazo de split sobre apertura, delete reversible, create + región y conectividad compartida al mover pared.
+
+Principio de autoridad: LA3 **no toca GameObjects, meshes, economía, seating ni circulación**. Solo transforma snapshots canónicos. Los impactos externos y la preservación avanzada de intención entran en LA4–LA6.
+
+Gates pendientes que requieren Unity real:
+- compilación C# del proyecto completo;
+- ejecución acumulativa LA1+LA2+LA3;
+- confirmar 12/0 en el self-test LA3;
+- Console 0 errores.
+
+No se declara LA3 validado/cerrado hasta superar esos gates.
