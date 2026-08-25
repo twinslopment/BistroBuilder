@@ -82,7 +82,13 @@ public static class BistroBuilderStaffEngine
             return false;
         }
 
-        if (roleCatalog == null || !roleCatalog.TryValidate(out error))
+        if (roleCatalog == null)
+        {
+            error = "Falta el catálogo de roles de Personal.";
+            return false;
+        }
+
+        if (!roleCatalog.TryValidate(out error))
         {
             return false;
         }

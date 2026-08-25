@@ -580,12 +580,14 @@ public sealed class BistroBuilderStaffSessionService :
         BistroBuilderStaffSessionSnapshot candidate,
         out string error)
     {
-        if (candidate == null || !RefreshWaiterIndex(out error))
+        if (candidate == null)
         {
-            if (candidate == null)
-            {
-                error = "El snapshot de sesión de Personal es nulo.";
-            }
+            error = "El snapshot de sesión de Personal es nulo.";
+            return false;
+        }
+
+        if (!RefreshWaiterIndex(out error))
+        {
             return false;
         }
 

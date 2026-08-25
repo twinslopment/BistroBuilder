@@ -145,8 +145,9 @@ public static class BistroBuilderStaff4BValidator
 
         BistroBuilderStaffRecruitmentProfile profile =
             recruitment.RecruitmentProfile;
+        string profileError = string.Empty;
         if (profile != null &&
-            profile.TryValidate(staff.RoleCatalog, out string profileError))
+            profile.TryValidate(staff.RoleCatalog, out profileError))
         {
             result.Correct("Perfil de candidatos dirigido por datos válido.");
         }

@@ -228,17 +228,20 @@ public static class BistroBuilderStaff4DValidator
         if (Application.isPlaying)
         {
             BistroBuilderStaffSessionSnapshot snapshot = session.CreateSessionSnapshot();
+            string runtimeError = string.Empty;
             if (snapshot != null &&
                 BistroBuilderStaffSessionEngine.TryValidateSnapshot(
                     snapshot,
                     staff.CreateSnapshot(),
-                    out string runtimeError))
+                    out runtimeError))
             {
                 result.Correct("Snapshot runtime de binding es íntegro.");
             }
             else
             {
-                result.Error("Snapshot runtime de binding inválido: " + runtimeError);
+                result.Error(
+                    "Snapshot runtime de binding inválido: " +
+                    (snapshot == null ? "snapshot nulo." : runtimeError));
             }
 
             if (snapshot != null && snapshot.active)

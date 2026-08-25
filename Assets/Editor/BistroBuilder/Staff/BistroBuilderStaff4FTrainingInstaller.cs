@@ -358,7 +358,7 @@ public static class BistroBuilderStaff4FTrainingInstaller
         label.text = text;
         label.fontSize = fontSize;
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.enableWordWrapping = true;
+        label.textWrappingMode = TextWrappingModes.Normal;
         return label;
     }
 

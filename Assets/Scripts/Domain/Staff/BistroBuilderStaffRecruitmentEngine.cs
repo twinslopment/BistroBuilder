@@ -233,12 +233,14 @@ public static class BistroBuilderStaffRecruitmentEngine
             return false;
         }
 
-        if (profile == null || !profile.TryValidate(roleCatalog, out error))
+        if (profile == null)
         {
-            if (profile == null)
-            {
-                error = "Falta el perfil de contratación.";
-            }
+            error = "Falta el perfil de contratación.";
+            return false;
+        }
+
+        if (!profile.TryValidate(roleCatalog, out error))
+        {
             return false;
         }
 

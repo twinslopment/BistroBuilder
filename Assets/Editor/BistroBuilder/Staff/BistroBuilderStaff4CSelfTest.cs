@@ -85,18 +85,22 @@ public static class BistroBuilderStaff4CSelfTest
                 }
             };
 
+            BistroBuilderEmployeeRecord built = null;
+            string buildError = string.Empty;
+            BistroBuilderStaffSnapshot roster = null;
+            string appendError = string.Empty;
             Check(BistroBuilderStaffEngine.TryBuildEmployee(
                     employeeId,
                     request,
                     catalog,
-                    out BistroBuilderEmployeeRecord built,
-                    out string buildError) &&
+                    out built,
+                    out buildError) &&
                   BistroBuilderStaffEngine.TryAppendEmployee(
                     snapshot,
                     built,
                     catalog,
-                    out BistroBuilderStaffSnapshot roster,
-                    out string appendError),
+                    out roster,
+                    out appendError),
                 "Empleado base preparado. " + buildError + appendError,
                 ref passed, ref failed, log);
             Check(BistroBuilderStaffDevelopmentEngine.TryValidateDevelopmentData(
