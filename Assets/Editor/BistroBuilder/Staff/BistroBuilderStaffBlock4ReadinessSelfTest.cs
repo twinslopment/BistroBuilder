@@ -42,14 +42,14 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4DHardeningSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4D frontera autoridad operativa",
-            () => BistroBuilderStaff4DAuthorityBoundarySelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4DAuthorityBoundarySelfTest.Run,
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4D contrato guardia mutación runtime",
-            () => BistroBuilderStaff4DMutationGuardContractSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4DMutationGuardContractSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -62,9 +62,9 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4DRevisionFenceSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4D preflight restore",
-            () => BistroBuilderStaff4DRestorePreflightSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4DRestorePreflightSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -107,9 +107,9 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4EFinalizeIsolationSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4E identidad estable SaveGame",
-            () => BistroBuilderStaff4EStableSectionIdentitySelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4EStableSectionIdentitySelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -127,9 +127,9 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4FStaticSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4F formación Presentation",
-            () => BistroBuilderStaff4FTrainingStaticSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4FTrainingStaticSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -147,14 +147,14 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4GAuthorityBoundarySelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4G seguridad rollback",
-            () => BistroBuilderStaff4GRollbackSafetySelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4GRollbackSafetySelfTest.Run,
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4G ciclo de servicio",
-            () => BistroBuilderStaff4GServiceLifecycleSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4GServiceLifecycleSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -176,6 +176,54 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
 
         report = builder.ToString();
         return failed == 0;
+    }
+
+    private delegate bool DetailedGateRunner(
+        out int passed,
+        out int failed,
+        out string report);
+
+    private static void RunDetailedGate(
+        string name,
+        DetailedGateRunner gate,
+        List<string> lines,
+        ref int passed,
+        ref int failed)
+    {
+        try
+        {
+            bool ok = gate(out _, out _, out string detail);
+            if (ok)
+            {
+                passed++;
+                lines.Add("[OK] " + name + ".");
+                return;
+            }
+
+            failed++;
+            lines.Add("[ERROR] " + name + ".");
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                string normalized = detail
+                    .Replace("\r\n", "\n")
+                    .Replace('\r', '\n');
+                string[] detailLines = normalized.Split('\n');
+                for (int index = 0; index < detailLines.Length; index++)
+                {
+                    if (!string.IsNullOrWhiteSpace(detailLines[index]))
+                    {
+                        lines.Add("    " + detailLines[index]);
+                    }
+                }
+            }
+        }
+        catch (System.Exception exception)
+        {
+            failed++;
+            lines.Add(
+                "[ERROR] " + name + ": excepción " +
+                exception.GetType().Name + " — " + exception.Message);
+        }
     }
 
     private static void RunGate(

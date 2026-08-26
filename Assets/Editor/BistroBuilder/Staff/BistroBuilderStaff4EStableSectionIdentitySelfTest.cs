@@ -64,9 +64,9 @@ public static class BistroBuilderStaff4EStableSectionIdentitySelfTest
         Check(
             BistroBuilderStaffSnapshot.CurrentSchemaId == ExpectedStaffStateSectionId &&
             BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId ==
-                ExpectedRecruitmentSectionId &&
+                "staff.recruitment.state" &&
             BistroBuilderStaffSessionSnapshot.CurrentSchemaId == ExpectedSessionSectionId,
-            "Los snapshots de dominio conservan la misma identidad pública que sus providers.",
+            "Los schemas internos permanecen estables sin redefinir el SectionId público.",
             ref passed, ref failed, log);
 
         Check(

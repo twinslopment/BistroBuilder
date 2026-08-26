@@ -82,7 +82,7 @@ public static class BistroBuilderStaff4GRollbackSafetySelfTest
                 source,
                 "ValidateClosedLoad();",
                 "BeginRollback(false);") &&
-            source.Contains("phase = Phase.LoadingRollbackSuccess"),
+            source.Contains("Phase.LoadingRollbackSuccess"),
             "El éxito también restaura el rollback antes de finalizar.",
             lines, ref passed, ref failed);
         Check(

@@ -80,9 +80,12 @@ public static class BistroBuilderStaff4DAuthorityBoundarySelfTest
             "4D no invoca comandos sobre WaiterTaskCoordinator; solo lee ActiveTasks.",
             ref passed, ref failed, log);
 
+        string sourceWithoutCanonicalReadOnlyTaskView = source.Replace(
+            "IReadOnlyList<WaiterTask>",
+            string.Empty);
         bool ownsParallelTaskQueue =
-            source.Contains("Queue<WaiterTask>") ||
-            source.Contains("List<WaiterTask>") ||
+            sourceWithoutCanonicalReadOnlyTaskView.Contains("Queue<WaiterTask>") ||
+            sourceWithoutCanonicalReadOnlyTaskView.Contains("List<WaiterTask>") ||
             source.Contains("new WaiterTaskCoordinator") ||
             source.Contains("AddComponent<WaiterTaskCoordinator>");
         Check(

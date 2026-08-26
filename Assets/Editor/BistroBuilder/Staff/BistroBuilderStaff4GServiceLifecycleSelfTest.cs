@@ -112,10 +112,18 @@ public static class BistroBuilderStaff4GServiceLifecycleSelfTest
             lines, ref passed, ref failed);
 
         Check(
-            !source.Contains("CurrentState = RestaurantServiceState") &&
-            !source.Contains("ActiveTaskCount =") &&
-            !source.Contains("completedTasks++") &&
-            !source.Contains("experiencePoints +="),
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                source,
+                @"\bCurrentState\s*=(?!=)\s*RestaurantServiceState") &&
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                source,
+                @"\bActiveTaskCount\s*=(?!=)") &&
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                source,
+                @"\bcompletedTasks\s*\+\+") &&
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                source,
+                @"\bexperiencePoints\s*\+="),
             "El runner no fuerza estado de servicio, tareas, métricas ni XP.",
             lines, ref passed, ref failed);
 

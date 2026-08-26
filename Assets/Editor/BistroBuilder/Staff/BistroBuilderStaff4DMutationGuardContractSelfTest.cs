@@ -137,10 +137,11 @@ public static class BistroBuilderStaff4DMutationGuardContractSelfTest
             "La guardia bloquea cambios reales de disponibilidad durante binding.",
             ref passed, ref failed, log);
 
+        string staffCode = StripComments(staffSource);
         Check(
-            !staffSource.Contains("Waiter ") &&
-            !staffSource.Contains("WaiterTask") &&
-            !staffSource.Contains("WaiterTaskCoordinator"),
+            !staffCode.Contains("Waiter ") &&
+            !staffCode.Contains("WaiterTask") &&
+            !staffCode.Contains("WaiterTaskCoordinator"),
             "StaffService no adquiere dependencias operativas al aplicar la guardia.",
             ref passed, ref failed, log);
 
@@ -149,6 +150,25 @@ public static class BistroBuilderStaff4DMutationGuardContractSelfTest
             "Este gate no sustituye compilación, Play Mode ni Queen Test real.");
         report = log.ToString();
         return failed == 0;
+    }
+
+    private static string StripComments(string source)
+    {
+        if (string.IsNullOrEmpty(source))
+        {
+            return string.Empty;
+        }
+
+        string withoutBlocks = System.Text.RegularExpressions.Regex.Replace(
+            source,
+            @"/\*.*?\*/",
+            string.Empty,
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        return System.Text.RegularExpressions.Regex.Replace(
+            withoutBlocks,
+            @"//[^\r\n]*",
+            string.Empty);
     }
 
     private static string SliceMethod(string source, string startToken, string endToken)
@@ -168,9 +188,14 @@ public static class BistroBuilderStaff4DMutationGuardContractSelfTest
     private static string ReadSource(string assetPath)
     {
         string absolutePath = Path.GetFullPath(assetPath);
-        return File.Exists(absolutePath)
-            ? File.ReadAllText(absolutePath)
-            : string.Empty;
+        if (!File.Exists(absolutePath))
+        {
+            return string.Empty;
+        }
+
+        return File.ReadAllText(absolutePath)
+            .Replace("\r\n", "\n")
+            .Replace('\r', '\n');
     }
 
     private static void Check(

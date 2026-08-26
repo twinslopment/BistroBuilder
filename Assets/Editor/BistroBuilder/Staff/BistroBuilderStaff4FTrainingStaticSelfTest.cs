@@ -41,7 +41,7 @@ public static class BistroBuilderStaff4FTrainingStaticSelfTest
         var log = new StringBuilder();
         log.AppendLine("=== BISTRO BUILDER — 4F TRAINING UI / STATIC GATE ===");
 
-        string panel = Read(PanelPath);
+        string panel = StripComments(Read(PanelPath));
         string installer = Read(InstallerPath);
 
         Check(
@@ -91,6 +91,25 @@ public static class BistroBuilderStaff4FTrainingStaticSelfTest
         log.AppendLine("Resultado: " + passed + " OK / " + failed + " fallos");
         report = log.ToString();
         return failed == 0;
+    }
+
+    private static string StripComments(string source)
+    {
+        if (string.IsNullOrEmpty(source))
+        {
+            return string.Empty;
+        }
+
+        string withoutBlocks = System.Text.RegularExpressions.Regex.Replace(
+            source,
+            @"/\*.*?\*/",
+            string.Empty,
+            System.Text.RegularExpressions.RegexOptions.Singleline);
+
+        return System.Text.RegularExpressions.Regex.Replace(
+            withoutBlocks,
+            @"//[^\r\n]*",
+            string.Empty);
     }
 
     private static string Read(string assetPath)

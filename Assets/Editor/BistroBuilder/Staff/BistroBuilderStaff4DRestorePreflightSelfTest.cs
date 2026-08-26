@@ -42,8 +42,10 @@ public static class BistroBuilderStaff4DRestorePreflightSelfTest
         GameObject duplicateObject = null;
         try
         {
+            int testWaiterId = FindUnusedWaiterId();
             waiterObject = new GameObject("4D_RestorePreflight_Waiter");
             Waiter waiter = waiterObject.AddComponent<Waiter>();
+            SetWaiterId(waiter, testWaiterId);
 
             BistroBuilderStaffSessionSnapshot active = BuildSnapshot(waiter.WaiterId);
             Check(
@@ -78,7 +80,8 @@ public static class BistroBuilderStaff4DRestorePreflightSelfTest
                 log);
 
             duplicateObject = new GameObject("4D_RestorePreflight_Duplicate");
-            duplicateObject.AddComponent<Waiter>();
+            Waiter duplicateWaiter = duplicateObject.AddComponent<Waiter>();
+            SetWaiterId(duplicateWaiter, testWaiterId);
             Check(
                 !BistroBuilderStaffSessionRestorePreflight.TryValidate(
                     active,
@@ -109,6 +112,48 @@ public static class BistroBuilderStaff4DRestorePreflightSelfTest
         log.AppendLine("Resultado: " + passed + " OK / " + failed + " fallos");
         report = log.ToString();
         return failed == 0;
+    }
+
+    private static int FindUnusedWaiterId()
+    {
+        Waiter[] existing = UnityEngine.Object.FindObjectsByType<Waiter>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        var usedIds = new HashSet<int>();
+        for (int index = 0; index < existing.Length; index++)
+        {
+            Waiter waiter = existing[index];
+            if (waiter != null && waiter.WaiterId > 0)
+            {
+                usedIds.Add(waiter.WaiterId);
+            }
+        }
+
+        int candidate = 1;
+        while (usedIds.Contains(candidate))
+        {
+            candidate++;
+        }
+        return candidate;
+    }
+
+    private static void SetWaiterId(Waiter waiter, int waiterId)
+    {
+        if (waiter == null || waiterId < 1)
+        {
+            throw new ArgumentException("Waiter/WaiterId de prueba inválido.");
+        }
+
+        var serialized = new SerializedObject(waiter);
+        SerializedProperty property = serialized.FindProperty("waiterId");
+        if (property == null)
+        {
+            throw new InvalidOperationException(
+                "Waiter ya no expone el campo serializado waiterId esperado.");
+        }
+
+        property.intValue = waiterId;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static BistroBuilderStaffSessionSnapshot BuildSnapshot(int waiterId)
