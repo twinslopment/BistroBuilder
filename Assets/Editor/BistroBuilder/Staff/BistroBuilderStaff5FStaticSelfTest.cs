@@ -44,6 +44,18 @@ public static class BistroBuilderStaff5FStaticSelfTest
                 "Queen usa el bridge 5C.", ref passed, ref failed, log);
             Require(source, "BistroBuilderStaffSessionService",
                 "Queen delega el binding operativo en 4D.", ref passed, ref failed, log);
+            Require(source, "BistroBuilderStaffRecruitmentService",
+                "Queen reutiliza Recruitment 4B para bootstrap reversible.",
+                ref passed, ref failed, log);
+            Require(source, "BistroBuilderStaffPlayerFacade",
+                "La contratación de bootstrap usa la fachada canónica 4F.",
+                ref passed, ref failed, log);
+            Require(source, "TryHireCandidate",
+                "Queen puede contratar un camarero real solo después del rollback.",
+                ref passed, ref failed, log);
+            Require(source, "initialMarketJson",
+                "Rollback verifica también staff.recruitment.",
+                ref passed, ref failed, log);
             Require(source, "BistroBuilderStaff4GNaturalMutationProbe.HasObservableMutation",
                 "Save/Load Open exige mutación operativa observable real.",
                 ref passed, ref failed, log);

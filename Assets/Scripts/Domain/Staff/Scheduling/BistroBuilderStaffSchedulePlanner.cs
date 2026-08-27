@@ -18,6 +18,7 @@ public static class BistroBuilderStaffSchedulePlanner
         out string error)
     {
         result = null;
+        error = string.Empty;
         if (employeeIds == null ||
             !BistroBuilderStaffScheduleEngine.TryValidateSnapshot(current, staff, out error) ||
             profile == null || !profile.TryValidate(out error) ||
@@ -125,6 +126,7 @@ public static class BistroBuilderStaffSchedulePlanner
         out string error)
     {
         result = null;
+        error = string.Empty;
         if (staff == null || roles == null || profile == null ||
             !profile.TryValidate(out error))
         {

@@ -45,6 +45,8 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
 
     private BistroBuilderSaveGameService save;
     private BistroBuilderStaffService staff;
+    private BistroBuilderStaffRecruitmentService recruitment;
+    private BistroBuilderStaffPlayerFacade staffPlayerFacade;
     private BistroBuilderStaffScheduleService schedule;
     private BistroBuilderStaffScheduleSessionBridge bridge;
     private BistroBuilderStaffSessionService session;
@@ -55,6 +57,7 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
     private WaiterTaskCoordinator waiterCoordinator;
 
     private string initialStaffJson = string.Empty;
+    private string initialMarketJson = string.Empty;
     private string initialScheduleJson = string.Empty;
     private string initialSessionJson = string.Empty;
     private RestaurantServiceState initialServiceState;
@@ -71,6 +74,8 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
 
     private readonly List<BistroBuilderEmployeeRecord> employees =
         new List<BistroBuilderEmployeeRecord>();
+    private readonly List<BistroBuilderStaffCandidateRecord> candidates =
+        new List<BistroBuilderStaffCandidateRecord>();
     private readonly List<string> oneEmployee = new List<string>(1);
 
     [MenuItem(
@@ -139,6 +144,8 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
         save.RefreshExtensions();
         if (!save.ValidateConfiguration(out error) ||
             !staff.ValidateConfiguration(out error) ||
+            !recruitment.ValidateConfiguration(out error) ||
+            !staffPlayerFacade.ValidateConfiguration(out error) ||
             !schedule.ValidateConfiguration(out error) ||
             !bridge.ValidateConfiguration(out error) ||
             !session.ValidateConfiguration(out error) ||
@@ -147,9 +154,15 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
             !orderIntegration.ValidateConfiguration(out error))
             return false;
 
-        if (!save.HasProvider(BistroBuilderStaffScheduleSaveSectionProvider.StableSectionId))
+        if (!recruitment.EnsureMarketReady(out error))
+            return false;
+
+        if (!save.HasProvider(BistroBuilderStaffStateSaveSectionProvider.StableSectionId) ||
+            !save.HasProvider(BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId) ||
+            !save.HasProvider(BistroBuilderStaffSessionSaveSectionProvider.StableSectionId) ||
+            !save.HasProvider(BistroBuilderStaffScheduleSaveSectionProvider.StableSectionId))
         {
-            error = "SaveGame no registra staff.schedule.";
+            error = "SaveGame no registra Staff/Recruitment/Session/Schedule completos.";
             return false;
         }
         if (!serviceState.IsClosed || session.HasActiveSession)
@@ -162,7 +175,8 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
             error = "No existe un servicio gastronómico concreto para planificar.";
             return false;
         }
-        if (!TryChooseTargetEmployee(out _, out error))
+        if (!TryChooseTargetEmployee(out _, out error) &&
+            !TryChooseRecruitableCandidate(out _, out error))
             return false;
         if (CurrentWaiterCount() < 1)
         {
@@ -304,7 +318,7 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
     private void ExecutePlannedService()
     {
         if (!Resolve(out string error) ||
-            !TryChooseTargetEmployee(out targetEmployeeId, out error))
+            !TryChooseOrHireTargetEmployee(out targetEmployeeId, out error))
         {
             FailAndRollback(error);
             return;
@@ -577,6 +591,71 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
         BeginRollback(false);
     }
 
+    private bool TryChooseOrHireTargetEmployee(out string employeeId, out string error)
+    {
+        if (TryChooseTargetEmployee(out employeeId, out _))
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        if (!TryChooseRecruitableCandidate(out string candidateId, out error))
+            return false;
+
+        if (!staffPlayerFacade.TryHireCandidate(
+                candidateId,
+                out BistroBuilderEmployeeRecord hired,
+                out error) || hired == null)
+            return false;
+
+        employeeId = hired.employeeId;
+        if (hired.availability != BistroBuilderEmployeeAvailability.Available &&
+            !staffPlayerFacade.TrySetAvailability(
+                employeeId,
+                BistroBuilderEmployeeAvailability.Available,
+                out hired,
+                out error))
+            return false;
+
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryChooseRecruitableCandidate(out string candidateId, out string error)
+    {
+        candidateId = string.Empty;
+        if (!recruitment.EnsureMarketReady(out error))
+            return false;
+
+        candidates.Clear();
+        recruitment.CopyCandidates(candidates);
+        candidates.Sort((left, right) => string.Compare(
+            left?.candidateId,
+            right?.candidateId,
+            StringComparison.Ordinal));
+
+        foreach (BistroBuilderStaffCandidateRecord candidate in candidates)
+        {
+            if (candidate == null ||
+                !staff.TryGetRoleDefinition(
+                    candidate.roleId,
+                    out BistroBuilderStaffRoleDefinition role) ||
+                role == null ||
+                !string.Equals(
+                    role.operationalAdapterId,
+                    BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
+                    StringComparison.Ordinal))
+                continue;
+
+            candidateId = candidate.candidateId;
+            error = string.Empty;
+            return true;
+        }
+
+        error = "No existe Employee disponible ni candidato camarero reclutable.";
+        return false;
+    }
+
     private bool TryChooseTargetEmployee(out string employeeId, out string error)
     {
         employeeId = string.Empty;
@@ -614,6 +693,7 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
     private void CaptureInitialState()
     {
         initialStaffJson = JsonUtility.ToJson(staff.CreateSnapshot());
+        initialMarketJson = JsonUtility.ToJson(recruitment.CreateMarketSnapshot());
         initialScheduleJson = JsonUtility.ToJson(schedule.CreateSnapshot());
         initialSessionJson = JsonUtility.ToJson(session.CreateSessionSnapshot());
         initialServiceState = serviceState.CurrentState;
@@ -625,11 +705,12 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
         if (serviceState.CurrentState != initialServiceState ||
             CurrentWaiterCount() != initialWaiterCount ||
             !JsonEquals(initialStaffJson, staff.CreateSnapshot()) ||
+            !JsonEquals(initialMarketJson, recruitment.CreateMarketSnapshot()) ||
             !JsonEquals(initialScheduleJson, schedule.CreateSnapshot()) ||
             !JsonEquals(initialSessionJson, session.CreateSessionSnapshot()))
         {
             error =
-                "Rollback no restituyó Staff, Schedule, Session, servicio y Waiter count.";
+                "Rollback no restituyó Staff, Recruitment, Schedule, Session, servicio y Waiter count.";
             return false;
         }
 
@@ -672,6 +753,8 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
 
         save = Unique<BistroBuilderSaveGameService>(scene);
         staff = Unique<BistroBuilderStaffService>(scene);
+        recruitment = Unique<BistroBuilderStaffRecruitmentService>(scene);
+        staffPlayerFacade = Unique<BistroBuilderStaffPlayerFacade>(scene);
         schedule = Unique<BistroBuilderStaffScheduleService>(scene);
         bridge = Unique<BistroBuilderStaffScheduleSessionBridge>(scene);
         session = Unique<BistroBuilderStaffSessionService>(scene);
@@ -681,13 +764,14 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
         orderIntegration = Unique<BistroBuilderCanonicalOrderIntegrationService>(scene);
         waiterCoordinator = Unique<WaiterTaskCoordinator>(scene);
 
-        if (save == null || staff == null || schedule == null || bridge == null ||
+        if (save == null || staff == null || recruitment == null ||
+            staffPlayerFacade == null || schedule == null || bridge == null ||
             session == null || facade == null || screen == null ||
             serviceState == null || orderIntegration == null || waiterCoordinator == null)
         {
             error =
-                "5F necesita una única autoridad Save/Staff/Schedule/Bridge/Session/" +
-                "UI/Service/Orders/WaiterTaskCoordinator.";
+                "5F necesita una única autoridad Save/Staff/Recruitment/StaffPlayerFacade/" +
+                "Schedule/Bridge/Session/UI/Service/Orders/WaiterTaskCoordinator.";
             return false;
         }
 
@@ -868,6 +952,7 @@ public sealed class BistroBuilderStaff5FQueenTestWindow : EditorWindow
         phase = Phase.Completed;
         SetReport(
             "5F — QUEEN FLOW COMPLETADO\n" +
+            "Employee existente o contratación reversible preparados\n" +
             "Turno EmployeeId planificado\n" +
             "Cobertura/coste coherentes\n" +
             "Binding 5C → 4D → WaiterId " + targetWaiterId + "\n" +

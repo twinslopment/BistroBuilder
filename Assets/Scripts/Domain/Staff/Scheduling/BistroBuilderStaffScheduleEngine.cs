@@ -75,6 +75,7 @@ public static class BistroBuilderStaffScheduleEngine
         BistroBuilderStaffSnapshot staff,
         out string error)
     {
+        error = string.Empty;
         if (staff == null || !TryValidateStructure(snapshot, out error))
         {
             if (staff == null && string.IsNullOrWhiteSpace(error))
@@ -113,6 +114,7 @@ public static class BistroBuilderStaffScheduleEngine
         out string error)
     {
         result = null;
+        error = string.Empty;
         if (profile == null || !profile.TryValidate(out error) ||
             !TryValidateSnapshot(current, staff, out error))
         {

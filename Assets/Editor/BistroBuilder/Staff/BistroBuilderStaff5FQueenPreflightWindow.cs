@@ -44,6 +44,7 @@ public sealed class BistroBuilderStaff5FQueenPreflightWindow : EditorWindow
 
         BistroBuilderSaveGameService save = Unique<BistroBuilderSaveGameService>(scene, lines, ref passed, ref failed);
         BistroBuilderStaffService staff = Unique<BistroBuilderStaffService>(scene, lines, ref passed, ref failed);
+        BistroBuilderStaffRecruitmentService recruitment = Unique<BistroBuilderStaffRecruitmentService>(scene, lines, ref passed, ref failed);
         BistroBuilderStaffScheduleService schedule = Unique<BistroBuilderStaffScheduleService>(scene, lines, ref passed, ref failed);
         BistroBuilderStaffScheduleSessionBridge bridge = Unique<BistroBuilderStaffScheduleSessionBridge>(scene, lines, ref passed, ref failed);
         BistroBuilderStaffSessionService session = Unique<BistroBuilderStaffSessionService>(scene, lines, ref passed, ref failed);
@@ -64,12 +65,27 @@ public sealed class BistroBuilderStaff5FQueenPreflightWindow : EditorWindow
             save.RefreshExtensions();
             Check(save.ValidateConfiguration(out string saveError),
                 "SaveGame válido. " + saveError, lines, ref passed, ref failed);
-            Check(save.HasProvider(BistroBuilderStaffScheduleSaveSectionProvider.StableSectionId),
-                "SaveGame registra staff.schedule.", lines, ref passed, ref failed);
+            Check(
+                save.HasProvider(BistroBuilderStaffStateSaveSectionProvider.StableSectionId) &&
+                save.HasProvider(BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId) &&
+                save.HasProvider(BistroBuilderStaffSessionSaveSectionProvider.StableSectionId) &&
+                save.HasProvider(BistroBuilderStaffScheduleSaveSectionProvider.StableSectionId),
+                "SaveGame registra Staff/Recruitment/Session/Schedule.",
+                lines, ref passed, ref failed);
         }
         if (staff != null)
             Check(staff.ValidateConfiguration(out string error), "Staff válido. " + error,
                 lines, ref passed, ref failed);
+        if (recruitment != null)
+        {
+            bool recruitmentReady =
+                recruitment.ValidateConfiguration(out string error) &&
+                recruitment.EnsureMarketReady(out error);
+            Check(recruitmentReady,
+                recruitmentReady ? "Recruitment válido y mercado disponible." :
+                    "Recruitment no disponible: " + error,
+                lines, ref passed, ref failed);
+        }
         if (schedule != null)
         {
             Check(schedule.ValidateConfiguration(out string error), "Schedule válido. " + error,
@@ -125,7 +141,27 @@ public sealed class BistroBuilderStaff5FQueenPreflightWindow : EditorWindow
                     continue;
                 eligible++;
             }
-            Check(eligible > 0, "Hay camareros Employee disponibles para planificar: " + eligible + ".",
+            int recruitableWaiters = 0;
+            if (eligible == 0 && recruitment != null)
+            {
+                var candidates = new List<BistroBuilderStaffCandidateRecord>();
+                recruitment.CopyCandidates(candidates);
+                foreach (BistroBuilderStaffCandidateRecord candidate in candidates)
+                {
+                    if (candidate == null ||
+                        !staff.TryGetRoleDefinition(candidate.roleId, out BistroBuilderStaffRoleDefinition role) ||
+                        role == null ||
+                        role.operationalAdapterId != BistroBuilderStaffOperationalAdapterIds.WaiterAgent)
+                        continue;
+                    recruitableWaiters++;
+                }
+            }
+
+            Check(eligible > 0 || recruitableWaiters > 0,
+                eligible > 0
+                    ? "Hay camareros Employee disponibles para planificar: " + eligible + "."
+                    : "No hay Employee disponible; Queen puede contratar de forma reversible " +
+                      recruitableWaiters + " candidato(s) camarero.",
                 lines, ref passed, ref failed);
         }
 

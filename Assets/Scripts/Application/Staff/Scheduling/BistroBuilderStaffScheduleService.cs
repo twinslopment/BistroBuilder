@@ -31,7 +31,13 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
 
     private void Awake()
     {
-        if (state == null) state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
+        EnsureStateInitialized();
+    }
+
+    private void EnsureStateInitialized()
+    {
+        if (state == null)
+            state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
     }
 
     public bool ValidateConfiguration(out string error)
@@ -52,8 +58,11 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
             return false;
         }
 
-        if (state != null && !BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
-                state, staffService.CreateSnapshot(), out error))
+        // En Edit Mode StaffService todavía puede no haber ejecutado Awake y,
+        // por tanto, no exponer staff.state. La validación de configuración
+        // debe seguir siendo estructural y no inicializar otra autoridad.
+        if (state != null &&
+            !BistroBuilderStaffScheduleEngine.TryValidateStructure(state, out error))
             return false;
 
         error = string.Empty;
@@ -62,8 +71,16 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
 
     public bool EnsureReady(out string error)
     {
-        if (!ValidateConfiguration(out error)) return false;
-        if (state == null) state = BistroBuilderStaffScheduleEngine.CreateEmptySnapshot();
+        if (!ValidateConfiguration(out error) ||
+            !staffService.EnsureReady(out error))
+            return false;
+
+        EnsureStateInitialized();
+        BistroBuilderStaffSnapshot staffSnapshot = staffService.CreateSnapshot();
+        if (!BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
+                state, staffSnapshot, out error))
+            return false;
+
         error = string.Empty;
         return true;
     }
@@ -237,7 +254,8 @@ public sealed class BistroBuilderStaffScheduleService : MonoBehaviour
 
     public BistroBuilderStaffScheduleSnapshot CreateSnapshot()
     {
-        return state != null ? state.DeepClone() : null;
+        EnsureStateInitialized();
+        return state.DeepClone();
     }
 
     public bool TryRestoreSnapshot(BistroBuilderStaffScheduleSnapshot snapshot, out string error)
