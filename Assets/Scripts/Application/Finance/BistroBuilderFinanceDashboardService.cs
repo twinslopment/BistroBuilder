@@ -231,8 +231,14 @@ public sealed class BistroBuilderFinanceDashboardService : MonoBehaviour
         BistroBuilderFinanceSnapshot finance = financeService != null
             ? financeService.CreateSnapshot()
             : null;
-        if (finance == null ||
-            !BistroBuilderFinanceEngine.TryValidateSnapshot(finance, out error))
+
+        if (finance == null)
+        {
+            error = "No se pudo obtener el snapshot financiero.";
+            return false;
+        }
+
+        if (!BistroBuilderFinanceEngine.TryValidateSnapshot(finance, out error))
         {
             return false;
         }

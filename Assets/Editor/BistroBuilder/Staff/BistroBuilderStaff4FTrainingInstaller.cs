@@ -91,12 +91,12 @@ public static class BistroBuilderStaff4FTrainingInstaller
 
             RectTransform availability = FindRect(employeeDetail, "Availability");
             RectTransform dismiss = FindRect(employeeDetail, "Dismiss");
-            SetAnchors(availability, 0f, 0.02f, 0.31f, 0.11f);
-            SetAnchors(dismiss, 0.69f, 0.02f, 1f, 0.11f);
+            SetAnchors(availability, 0.03f, 0.025f, 0.30f, 0.105f);
+            SetAnchors(dismiss, 0.70f, 0.025f, 0.97f, 0.105f);
 
             Button openButton = CreateButton(
                 employeeDetail, OpenButtonName, "Formación",
-                0.345f, 0.02f, 0.655f, 0.11f);
+                0.365f, 0.025f, 0.635f, 0.105f);
 
             GameObject modal = CreatePanel(
                 panelRoot, ModalName, 0.28f, 0.22f, 0.72f, 0.78f);
@@ -358,7 +358,7 @@ public static class BistroBuilderStaff4FTrainingInstaller
         label.text = text;
         label.fontSize = fontSize;
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.enableWordWrapping = true;
+        label.textWrappingMode = TextWrappingModes.Normal;
         return label;
     }
 

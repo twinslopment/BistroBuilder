@@ -111,7 +111,8 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
 
     private void Update()
     {
-        if (Application.isPlaying)
+        if (Application.isPlaying &&
+            !BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
         {
             DrainPendingEvaluations();
         }
@@ -260,7 +261,33 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
     }
 
     /// <summary>
-    /// Somete todas las líneas y libera únicamente el primer pase.
+    /// Desmonta exclusivamente la proyeccion runtime 367F antes de cargar
+    /// service.runtime. La autoridad canonica y las comandas legacy se
+    /// reconstruyen por sus servicios propietarios durante Apply.
+    /// </summary>
+    public void ClearRuntimeForLoad()
+    {
+        if (activeOrders == null)
+        {
+            activeOrders = new List<BistroBuilderCourseOrderRuntime>();
+        }
+        else
+        {
+            activeOrders.Clear();
+        }
+
+        runtimeByOrderId.Clear();
+        legacyByOrderId.Clear();
+        pendingEvaluationOrderIds.Clear();
+        pendingBuffer.Clear();
+        releaseLineBuffer.Clear();
+        manualLineBuffer.Clear();
+        evaluationScopeActive = false;
+        initialized = true;
+    }
+
+    /// <summary>
+    /// Somete todas las lineas y libera unicamente el primer pase.
     /// La autoridad canónica aplica la operación sobre una copia profunda.
     /// </summary>
     public bool TrySubmitAndReleaseInitialCourse(
@@ -1149,6 +1176,11 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
 
     private void HandleOrderCreated(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         if (!TryRegisterOrder(order, out string error))
         {
             Debug.LogError("367F no pudo registrar la comanda. " + error, this);
@@ -1157,11 +1189,21 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
 
     private void HandleOrderCompleted(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         RemoveRuntime(order);
     }
 
     private void HandleOrderCancelled(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         RemoveRuntime(order);
     }
 
@@ -1169,6 +1211,11 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
         BistroBuilderCustomerDiningChangedEvent change
     )
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         if (change.ChangeType ==
                 BistroBuilderCustomerDiningChangeType.CustomerCompletedCourse ||
             change.ChangeType ==
@@ -1205,6 +1252,11 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
         BistroBuilderCanonicalOrderChangedEvent change
     )
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         if (BistroBuilderOrderIdUtility.IsValid(change.OrderId))
         {
             QueueEvaluation(change.OrderId);
@@ -1352,7 +1404,8 @@ public sealed class BistroBuilderCourseAndSharingService : MonoBehaviour
     /// </summary>
     private void DrainPendingEvaluations()
     {
-        if (evaluationScopeActive)
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring ||
+            evaluationScopeActive)
         {
             return;
         }

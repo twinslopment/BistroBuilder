@@ -42,9 +42,29 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4DHardeningSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
+        RunDetailedGate(
+            "4D frontera autoridad operativa",
+            BistroBuilderStaff4DAuthorityBoundarySelfTest.Run,
+            lines, ref passed, ref failed);
+
+        RunDetailedGate(
+            "4D contrato guardia mutación runtime",
+            BistroBuilderStaff4DMutationGuardContractSelfTest.Run,
+            lines, ref passed, ref failed);
+
         RunGate(
+            "4D preflight resultados de servicio",
+            () => BistroBuilderStaff4DServiceResultPreflightSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4D valla revision staff.state",
+            () => BistroBuilderStaff4DRevisionFenceSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunDetailedGate(
             "4D preflight restore",
-            () => BistroBuilderStaff4DRestorePreflightSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4DRestorePreflightSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -68,6 +88,16 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             lines, ref passed, ref failed);
 
         RunGate(
+            "4D orden de commit de cierre",
+            () => BistroBuilderStaff4DCloseCommitOrderingSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4D lote de elegibilidad atómico",
+            () => BistroBuilderStaff4DEligibilityBatchSelfTest.Run(out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
             "4E JSON round-trip",
             () => BistroBuilderStaff4EJsonRoundTripSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
@@ -77,14 +107,34 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
             () => BistroBuilderStaff4EFinalizeIsolationSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
+        RunDetailedGate(
+            "4E identidad estable SaveGame",
+            BistroBuilderStaff4EStableSectionIdentitySelfTest.Run,
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4E contrato fases SaveLoad",
+            () => BistroBuilderStaff4ELoadPhaseContractSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4E orquestación rollback SaveLoad",
+            () => BistroBuilderStaff4ERollbackOrchestrationSelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
         RunGate(
             "4F frontera Presentation",
             () => BistroBuilderStaff4FStaticSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
-        RunGate(
+        RunDetailedGate(
             "4F formación Presentation",
-            () => BistroBuilderStaff4FTrainingStaticSelfTest.Run(out _, out _, out _),
+            BistroBuilderStaff4FTrainingStaticSelfTest.Run,
+            lines, ref passed, ref failed);
+
+        RunGate(
+            "4F enrutado de mutaciones",
+            () => BistroBuilderStaff4FMutationRoutingSelfTest.Run(out _, out _, out _),
             lines, ref passed, ref failed);
 
         RunGate(
@@ -95,6 +145,16 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
         RunGate(
             "4G frontera de autoridad",
             () => BistroBuilderStaff4GAuthorityBoundarySelfTest.Run(out _, out _, out _),
+            lines, ref passed, ref failed);
+
+        RunDetailedGate(
+            "4G seguridad rollback",
+            BistroBuilderStaff4GRollbackSafetySelfTest.Run,
+            lines, ref passed, ref failed);
+
+        RunDetailedGate(
+            "4G ciclo de servicio",
+            BistroBuilderStaff4GServiceLifecycleSelfTest.Run,
             lines, ref passed, ref failed);
 
         RunGate(
@@ -116,6 +176,54 @@ public static class BistroBuilderStaffBlock4ReadinessSelfTest
 
         report = builder.ToString();
         return failed == 0;
+    }
+
+    private delegate bool DetailedGateRunner(
+        out int passed,
+        out int failed,
+        out string report);
+
+    private static void RunDetailedGate(
+        string name,
+        DetailedGateRunner gate,
+        List<string> lines,
+        ref int passed,
+        ref int failed)
+    {
+        try
+        {
+            bool ok = gate(out _, out _, out string detail);
+            if (ok)
+            {
+                passed++;
+                lines.Add("[OK] " + name + ".");
+                return;
+            }
+
+            failed++;
+            lines.Add("[ERROR] " + name + ".");
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                string normalized = detail
+                    .Replace("\r\n", "\n")
+                    .Replace('\r', '\n');
+                string[] detailLines = normalized.Split('\n');
+                for (int index = 0; index < detailLines.Length; index++)
+                {
+                    if (!string.IsNullOrWhiteSpace(detailLines[index]))
+                    {
+                        lines.Add("    " + detailLines[index]);
+                    }
+                }
+            }
+        }
+        catch (System.Exception exception)
+        {
+            failed++;
+            lines.Add(
+                "[ERROR] " + name + ": excepción " +
+                exception.GetType().Name + " — " + exception.Message);
+        }
     }
 
     private static void RunGate(

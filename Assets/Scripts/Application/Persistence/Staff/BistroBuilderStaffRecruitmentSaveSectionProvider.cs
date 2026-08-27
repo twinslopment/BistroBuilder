@@ -17,8 +17,9 @@ public sealed class BistroBuilderStaffRecruitmentSaveSectionProvider :
     IBistroBuilderSaveSectionProvider,
     IBistroBuilderSaveSectionPhaseOrdering
 {
-    public const string StableSectionId =
-        BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId;
+    // Identidad pública de SaveGame. No debe depender del nombre interno
+    // del schema del snapshot de mercado.
+    public const string StableSectionId = "staff.recruitment";
     public const int StableSectionVersion =
         BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaVersion;
 

@@ -91,15 +91,23 @@ public static class BistroBuilderStaff4EValidatorV2
         else
             result.Pass("staff.session.runtime configurado.");
 
-        if (stateProvider.SectionId == BistroBuilderStaffSnapshot.CurrentSchemaId &&
-            recruitmentProvider.SectionId == BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId &&
-            sessionProvider.SectionId == BistroBuilderStaffSessionSnapshot.CurrentSchemaId)
+        if (stateProvider.SectionId ==
+                BistroBuilderStaffStateSaveSectionProvider.StableSectionId &&
+            recruitmentProvider.SectionId ==
+                BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId &&
+            sessionProvider.SectionId ==
+                BistroBuilderStaffSessionSaveSectionProvider.StableSectionId &&
+            stateProvider.SectionId == "staff.state" &&
+            recruitmentProvider.SectionId == "staff.recruitment" &&
+            sessionProvider.SectionId == "staff.session.runtime")
         {
-            result.Pass("IDs de sección canónicos y separados.");
+            result.Pass(
+                "IDs públicos de SaveGame canónicos, estables y separados.");
         }
         else
         {
-            result.Fail("Algún provider no expone su SectionId canónico.");
+            result.Fail(
+                "Algún provider no expone su SectionId público estable.");
         }
 
         if (stateProvider.ApplyOrder < recruitmentProvider.ApplyOrder &&

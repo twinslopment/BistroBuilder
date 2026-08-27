@@ -62,12 +62,14 @@ public static class BistroBuilderStaff4ESelfTestV2
 
             Check(
                 BistroBuilderStaffStateSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffSnapshot.CurrentSchemaId &&
+                    "staff.state" &&
                 BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId &&
+                    "staff.recruitment" &&
                 BistroBuilderStaffSessionSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffSessionSnapshot.CurrentSchemaId,
-                "Las tres secciones usan IDs canónicos distintos.",
+                    "staff.session.runtime" &&
+                BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId ==
+                    "staff.recruitment.state",
+                "Los SectionId públicos son estables y el schema interno de mercado permanece separado.",
                 ref passed, ref failed, log);
 
             var uniqueIds = new HashSet<string>(StringComparer.Ordinal)
@@ -113,18 +115,22 @@ public static class BistroBuilderStaff4ESelfTestV2
                     new BistroBuilderEmployeeResponsibilitySettings()
             };
 
+            BistroBuilderEmployeeRecord employee = null;
+            string buildError = string.Empty;
+            BistroBuilderStaffSnapshot populatedStaff = null;
+            string appendError = string.Empty;
             Check(BistroBuilderStaffEngine.TryBuildEmployee(
                     employeeId,
                     createRequest,
                     roleCatalog,
-                    out BistroBuilderEmployeeRecord employee,
-                    out string buildError) &&
+                    out employee,
+                    out buildError) &&
                   BistroBuilderStaffEngine.TryAppendEmployee(
                     staff,
                     employee,
                     roleCatalog,
-                    out BistroBuilderStaffSnapshot populatedStaff,
-                    out string appendError),
+                    out populatedStaff,
+                    out appendError),
                 "staff.state de prueba construido. " + buildError + appendError,
                 ref passed, ref failed, log);
 
