@@ -517,7 +517,8 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
 
         candidateNameText.text = candidate.fullName;
         candidateRoleText.text = candidate.roleDisplayName;
-        candidateProfileText.text = "Perfil: " + candidate.profile;
+        candidateProfileText.text =
+            "Perfil: " + FormatCandidateProfile(candidate.profile);
         candidateSkillsText.text = BuildSkills(candidate.skills);
         candidateSalaryText.text =
             "Salario esperado: " +
@@ -669,6 +670,24 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         if (facade == null)
         {
             TryGetComponent(out facade);
+        }
+    }
+
+    private static string FormatCandidateProfile(
+        BistroBuilderStaffCandidateProfile profile)
+    {
+        switch (profile)
+        {
+            case BistroBuilderStaffCandidateProfile.Fast:
+                return "Rápido";
+            case BistroBuilderStaffCandidateProfile.Attentive:
+                return "Atento";
+            case BistroBuilderStaffCandidateProfile.Organized:
+                return "Organizado";
+            case BistroBuilderStaffCandidateProfile.Hospitable:
+                return "Hospitalario";
+            default:
+                return "Equilibrado";
         }
     }
 

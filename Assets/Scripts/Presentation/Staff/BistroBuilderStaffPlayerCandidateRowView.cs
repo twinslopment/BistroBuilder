@@ -4,20 +4,21 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Fila visual reutilizable de un empleado. No guarda estado de Personal:
-/// recibe una proyección 4F y devuelve únicamente el EmployeeId seleccionado.
+/// Fila visual reutilizable de una oferta del mercado de candidatos.
+/// CandidateId identifica la oferta y nunca se convierte en EmployeeId.
+/// Se mantiene en un MonoScript propio para que Unity serialice de forma
+/// estable la referencia del componente en escena y Play Mode.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class BistroBuilderStaffPlayerEmployeeRowView : MonoBehaviour
+public sealed class BistroBuilderStaffPlayerCandidateRowView : MonoBehaviour
 {
     [SerializeField] private Button selectButton;
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private TMP_Text roleText;
-    [SerializeField] private TMP_Text statusText;
-    [SerializeField] private TMP_Text levelText;
+    [SerializeField] private TMP_Text profileText;
     [SerializeField] private TMP_Text salaryText;
 
-    private string employeeId = string.Empty;
+    private string candidateId = string.Empty;
     private Action<string> selected;
 
     private void OnEnable()
@@ -40,9 +41,9 @@ public sealed class BistroBuilderStaffPlayerEmployeeRowView : MonoBehaviour
     public bool ValidateConfiguration(out string error)
     {
         if (selectButton == null || nameText == null || roleText == null ||
-            statusText == null || levelText == null || salaryText == null)
+            profileText == null || salaryText == null)
         {
-            error = "La fila de empleado 4F tiene referencias visuales incompletas.";
+            error = "La fila de candidato 4F tiene referencias visuales incompletas.";
             return false;
         }
 
@@ -51,18 +52,17 @@ public sealed class BistroBuilderStaffPlayerEmployeeRowView : MonoBehaviour
     }
 
     public void Bind(
-        BistroBuilderStaffPlayerEmployeeRow row,
+        BistroBuilderStaffPlayerCandidateRow row,
         Action<string> selectionHandler)
     {
         selected = selectionHandler;
-        employeeId = row != null ? row.employeeId : string.Empty;
+        candidateId = row != null ? row.candidateId : string.Empty;
 
         if (row == null)
         {
             nameText.text = "—";
             roleText.text = string.Empty;
-            statusText.text = string.Empty;
-            levelText.text = string.Empty;
+            profileText.text = string.Empty;
             salaryText.text = string.Empty;
             if (selectButton != null) selectButton.interactable = false;
             return;
@@ -70,37 +70,36 @@ public sealed class BistroBuilderStaffPlayerEmployeeRowView : MonoBehaviour
 
         nameText.text = row.fullName;
         roleText.text = row.roleDisplayName;
-        statusText.text = BuildStatus(row);
-        levelText.text = "Nivel " + Math.Max(1, row.level);
-        salaryText.text = FormatMoney(row.salaryCentsPerService) + " / servicio";
+        profileText.text = FormatProfile(row.profile);
+        salaryText.text = FormatMoney(row.expectedSalaryCentsPerService) +
+                          " / servicio";
         if (selectButton != null) selectButton.interactable = true;
     }
 
     private void HandleSelected()
     {
-        if (!string.IsNullOrWhiteSpace(employeeId))
+        if (!string.IsNullOrWhiteSpace(candidateId))
         {
-            selected?.Invoke(employeeId);
+            selected?.Invoke(candidateId);
         }
     }
 
-    private static string BuildStatus(BistroBuilderStaffPlayerEmployeeRow row)
+    private static string FormatProfile(
+        BistroBuilderStaffCandidateProfile profile)
     {
-        if (row.employmentStatus != BistroBuilderEmploymentStatus.Active)
+        switch (profile)
         {
-            return "Inactivo";
+            case BistroBuilderStaffCandidateProfile.Fast:
+                return "Rápido";
+            case BistroBuilderStaffCandidateProfile.Attentive:
+                return "Atento";
+            case BistroBuilderStaffCandidateProfile.Organized:
+                return "Organizado";
+            case BistroBuilderStaffCandidateProfile.Hospitable:
+                return "Hospitalario";
+            default:
+                return "Equilibrado";
         }
-
-        if (row.hasServiceAssignment)
-        {
-            return row.sessionStatus == BistroBuilderEmployeeSessionStatus.Working
-                ? "Trabajando"
-                : "Asignado";
-        }
-
-        return row.availability == BistroBuilderEmployeeAvailability.Available
-            ? "Disponible"
-            : "No disponible";
     }
 
     private static string FormatMoney(long cents)

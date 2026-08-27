@@ -62,12 +62,14 @@ public static class BistroBuilderStaff4ESelfTestV2
 
             Check(
                 BistroBuilderStaffStateSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffSnapshot.CurrentSchemaId &&
+                    "staff.state" &&
                 BistroBuilderStaffRecruitmentSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId &&
+                    "staff.recruitment" &&
                 BistroBuilderStaffSessionSaveSectionProvider.StableSectionId ==
-                    BistroBuilderStaffSessionSnapshot.CurrentSchemaId,
-                "Las tres secciones usan IDs canónicos distintos.",
+                    "staff.session.runtime" &&
+                BistroBuilderStaffRecruitmentSnapshot.CurrentSchemaId ==
+                    "staff.recruitment.state",
+                "Los SectionId públicos son estables y el schema interno de mercado permanece separado.",
                 ref passed, ref failed, log);
 
             var uniqueIds = new HashSet<string>(StringComparer.Ordinal)

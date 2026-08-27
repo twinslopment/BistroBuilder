@@ -104,6 +104,8 @@ public static class BistroBuilderStaff4FInstaller
             CanvasScaler scaler = Add<CanvasScaler>(ui);
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
             Add<GraphicRaycaster>(ui);
 
             BistroBuilderStaffPlayerScreen screen =
@@ -118,7 +120,7 @@ public static class BistroBuilderStaff4FInstaller
 
             GameObject root = NewUi("StaffPanelRoot", ui.transform);
             Stretch(root.GetComponent<RectTransform>());
-            Add<Image>(root).color = new Color(0.045f, 0.052f, 0.06f, 0.985f);
+            Add<Image>(root).color = new Color(0.035f, 0.04f, 0.045f, 1f);
             CanvasGroup canvasGroup = Add<CanvasGroup>(root);
 
             TMP_Text summary = CreateText(root.transform, "Summary", string.Empty, 18f,
@@ -136,11 +138,11 @@ public static class BistroBuilderStaff4FInstaller
                 0.18f, 0.87f, 0.325f, 0.915f);
 
             GameObject staffPanel = NewUi("StaffPanel", root.transform);
-            Anchor(staffPanel.GetComponent<RectTransform>(), 0.025f, 0.04f, 0.975f, 0.85f);
+            Anchor(staffPanel.GetComponent<RectTransform>(), 0.025f, 0.055f, 0.975f, 0.845f);
             RectTransform employeeContent = CreateScrollContent(
-                staffPanel.transform, "EmployeeList", 0f, 0f, 0.40f, 1f);
+                staffPanel.transform, "EmployeeList", 0f, 0f, 0.365f, 1f);
             GameObject employeeDetail = CreatePanel(
-                staffPanel.transform, "EmployeeDetail", 0.42f, 0f, 1f, 1f);
+                staffPanel.transform, "EmployeeDetail", 0.385f, 0f, 1f, 1f);
             TMP_Text employeeName = Detail(employeeDetail.transform, "Name", 0.88f, 1f, 28f);
             TMP_Text employeeRole = Detail(employeeDetail.transform, "Role", 0.80f, 0.88f, 19f);
             TMP_Text employeeContract = Detail(employeeDetail.transform, "Contract", 0.69f, 0.80f, 17f);
@@ -149,26 +151,26 @@ public static class BistroBuilderStaff4FInstaller
             TMP_Text employeePerformance = Detail(employeeDetail.transform, "Performance", 0.22f, 0.40f, 17f);
             TMP_Text employeeSession = Detail(employeeDetail.transform, "Session", 0.14f, 0.22f, 16f);
             Button availability = CreateButton(employeeDetail.transform, "Availability", "Disponibilidad",
-                0f, 0.02f, 0.47f, 0.11f);
+                0.48f, 0.025f, 0.72f, 0.105f);
             TMP_Text availabilityText = availability.GetComponentInChildren<TMP_Text>(true);
             Button dismiss = CreateButton(employeeDetail.transform, "Dismiss", "Despedir",
-                0.53f, 0.02f, 1f, 0.11f);
+                0.75f, 0.025f, 1f, 0.105f);
 
             GameObject candidatesPanel = NewUi("CandidatesPanel", root.transform);
-            Anchor(candidatesPanel.GetComponent<RectTransform>(), 0.025f, 0.04f, 0.975f, 0.85f);
+            Anchor(candidatesPanel.GetComponent<RectTransform>(), 0.025f, 0.055f, 0.975f, 0.845f);
             RectTransform candidateContent = CreateScrollContent(
-                candidatesPanel.transform, "CandidateList", 0f, 0f, 0.40f, 1f);
+                candidatesPanel.transform, "CandidateList", 0f, 0f, 0.365f, 1f);
             GameObject candidateDetail = CreatePanel(
-                candidatesPanel.transform, "CandidateDetail", 0.42f, 0f, 1f, 1f);
+                candidatesPanel.transform, "CandidateDetail", 0.385f, 0f, 1f, 1f);
             TMP_Text candidateName = Detail(candidateDetail.transform, "Name", 0.86f, 1f, 28f);
             TMP_Text candidateRole = Detail(candidateDetail.transform, "Role", 0.76f, 0.86f, 19f);
             TMP_Text candidateProfile = Detail(candidateDetail.transform, "Profile", 0.62f, 0.76f, 17f);
             TMP_Text candidateSkills = Detail(candidateDetail.transform, "Skills", 0.40f, 0.62f, 17f);
             TMP_Text candidateSalary = Detail(candidateDetail.transform, "Salary", 0.25f, 0.40f, 20f);
             Button hire = CreateButton(candidateDetail.transform, "Hire", "Contratar",
-                0f, 0.02f, 0.47f, 0.11f);
+                0.50f, 0.025f, 0.73f, 0.105f);
             Button refresh = CreateButton(candidateDetail.transform, "Refresh", "Refrescar mercado",
-                0.53f, 0.02f, 1f, 0.11f);
+                0.76f, 0.025f, 1f, 0.105f);
 
             GameObject confirmation = CreatePanel(
                 root.transform, "Confirmation", 0.30f, 0.35f, 0.70f, 0.65f);
@@ -219,6 +221,7 @@ public static class BistroBuilderStaff4FInstaller
             Button launcher = CreateButton(ui.transform, "OpenStaffButton", "Personal",
                 0.885f, 0.925f, 0.988f, 0.975f);
             UnityEventTools.AddPersistentListener(launcher.onClick, screen.Show);
+            launcher.transform.SetAsFirstSibling();
             root.SetActive(false);
 
             if (!facade.ValidateConfiguration(out string facadeError))
@@ -303,7 +306,10 @@ public static class BistroBuilderStaff4FInstaller
     private static GameObject BuildRowBase(string name, Transform parent)
     {
         GameObject row = NewUi(name, parent);
-        Add<LayoutElement>(row).preferredHeight = 76f;
+        LayoutElement element = Add<LayoutElement>(row);
+        element.minHeight = 82f;
+        element.preferredHeight = 82f;
+        element.flexibleWidth = 1f;
         Image image = Add<Image>(row);
         image.color = new Color(0.09f, 0.105f, 0.12f, 0.98f);
         Button button = Add<Button>(row);
@@ -329,10 +335,18 @@ public static class BistroBuilderStaff4FInstaller
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
         VerticalLayoutGroup layout = Add<VerticalLayoutGroup>(content);
-        layout.spacing = 6f;
-        layout.padding = new RectOffset(4, 4, 4, 4);
+        layout.spacing = 8f;
+        layout.padding = new RectOffset(8, 8, 8, 8);
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childScaleWidth = false;
+        layout.childScaleHeight = false;
+        layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        Add<ContentSizeFitter>(content).verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        ContentSizeFitter fitter = Add<ContentSizeFitter>(content);
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         scrollRect.viewport = viewport.GetComponent<RectTransform>();
         scrollRect.content = rect;
         return rect;
@@ -354,7 +368,11 @@ public static class BistroBuilderStaff4FInstaller
 
     private static TMP_Text RowText(Transform parent, string name, float minX, float maxX)
     {
-        return CreateText(parent, name, string.Empty, 15f, minX, 0f, maxX, 1f);
+        TMP_Text text = CreateText(
+            parent, name, string.Empty, 15f, minX, 0f, maxX, 1f);
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        return text;
     }
 
     private static Button CreateButton(
