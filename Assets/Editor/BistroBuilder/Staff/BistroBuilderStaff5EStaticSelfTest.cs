@@ -51,6 +51,14 @@ public static class BistroBuilderStaff5EStaticSelfTest
             "La UI muestra suficiencia y coste salarial proyectado.",
             ref passed, ref failed, log);
 
+        Check(screen.Contains("emptyStateText") &&
+              screen.Contains("snapshot.employees.Count > 0"),
+            "La UI contempla explicitamente una plantilla todavia vacia.",
+            ref passed, ref failed, log);
+        Check(screen.Contains("UpdateMealButtonState") &&
+              screen.Contains("coverageText.color"),
+            "La UI diferencia servicio activo y suficiencia de cobertura.",
+            ref passed, ref failed, log);
         log.AppendLine("Resultado: " + passed + " OK / " + failed + " fallos");
         report = log.ToString();
         return failed == 0;

@@ -73,6 +73,8 @@ public static class BistroBuilderStaff5EInstaller
             CanvasScaler scaler = Undo.AddComponent<CanvasScaler>(ui);
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
             Undo.AddComponent<GraphicRaycaster>(ui);
 
             BistroBuilderStaffSchedulePlayerFacade facade =
@@ -90,34 +92,43 @@ public static class BistroBuilderStaff5EInstaller
             templates.SetActive(false);
 
             GameObject panel = CreatePanel(ui.transform, "SchedulePanel",
-                0.09f, 0.08f, 0.91f, 0.92f,
-                new Color(0.045f, 0.052f, 0.06f, 0.99f));
+                0f, 0f, 1f, 1f,
+                new Color(0.035f, 0.04f, 0.045f, 1f));
             TMP_Text title = CreateText(panel.transform, "Title", "HORARIOS Y TURNOS",
-                30f, 0.025f, 0.925f, 0.42f, 0.985f);
+                30f, 0.025f, 0.93f, 0.25f, 0.985f);
             TMP_Text header = CreateText(panel.transform, "Header", string.Empty,
-                19f, 0.025f, 0.855f, 0.56f, 0.915f);
+                19f, 0.25f, 0.93f, 0.70f, 0.985f);
             TMP_Text coverage = CreateText(panel.transform, "Coverage", string.Empty,
-                17f, 0.025f, 0.795f, 0.975f, 0.85f);
+                17f, 0.025f, 0.855f, 0.72f, 0.915f);
             TMP_Text feedback = CreateText(panel.transform, "Feedback", string.Empty,
-                15f, 0.025f, 0.025f, 0.975f, 0.075f);
+                15f, 0.73f, 0.855f, 0.975f, 0.915f);
 
+            TMP_Text emptyState = CreateText(panel.transform, "EmptyState",
+                "No hay camareros en plantilla. Contrata Personal para empezar a planificar turnos.",
+                22f, 0.18f, 0.34f, 0.82f, 0.56f);
+            emptyState.alignment = TextAlignmentOptions.Center;
+            emptyState.color = new Color(0.72f, 0.74f, 0.72f, 1f);
             Button close = CreateButton(panel.transform, "Close", "Cerrar",
                 0.86f, 0.935f, 0.975f, 0.98f);
-            Button previousDay = CreateButton(panel.transform, "PreviousDay", "◀ Día",
-                0.025f, 0.72f, 0.14f, 0.77f);
-            Button nextDay = CreateButton(panel.transform, "NextDay", "Día ▶",
-                0.15f, 0.72f, 0.265f, 0.77f);
+            Button previousDay = CreateButton(panel.transform, "PreviousDay", "Día anterior",
+                0.025f, 0.775f, 0.13f, 0.825f);
+            Button nextDay = CreateButton(panel.transform, "NextDay", "Día siguiente",
+                0.14f, 0.775f, 0.245f, 0.825f);
             Button lunch = CreateButton(panel.transform, "Lunch", "Comida",
-                0.30f, 0.72f, 0.415f, 0.77f);
+                0.28f, 0.775f, 0.39f, 0.825f);
             Button dinner = CreateButton(panel.transform, "Dinner", "Cena",
-                0.425f, 0.72f, 0.54f, 0.77f);
+                0.40f, 0.775f, 0.51f, 0.825f);
             Button autoFill = CreateButton(panel.transform, "AutoFill", "Cobertura mínima",
-                0.59f, 0.72f, 0.76f, 0.77f);
+                0.59f, 0.775f, 0.76f, 0.825f);
             Button copyPrevious = CreateButton(panel.transform, "CopyPrevious", "Copiar día anterior",
-                0.77f, 0.72f, 0.975f, 0.77f);
+                0.77f, 0.775f, 0.975f, 0.825f);
 
+            CreateColumnHeader(panel.transform, "EmployeeHeader", "EMPLEADO", 0.045f, 0.31f);
+            CreateColumnHeader(panel.transform, "AvailabilityHeader", "DISPONIBILIDAD", 0.36f, 0.51f);
+            CreateColumnHeader(panel.transform, "SalaryHeader", "SALARIO / SERVICIO", 0.535f, 0.75f);
+            CreateColumnHeader(panel.transform, "ShiftHeader", "ESTADO DEL TURNO", 0.77f, 0.955f);
             RectTransform content = CreateScroll(panel.transform,
-                "EmployeeScroll", 0.025f, 0.095f, 0.975f, 0.69f);
+                "EmployeeScroll", 0.025f, 0.06f, 0.975f, 0.745f);
 
             Assign(screen, "panelRoot", panel);
             Assign(screen, "employeeContent", content);
@@ -133,9 +144,11 @@ public static class BistroBuilderStaff5EInstaller
             Assign(screen, "coverageText", coverage);
             Assign(screen, "feedbackText", feedback);
 
+            Assign(screen, "emptyStateText", emptyState);
             Button launcher = CreateButton(ui.transform, "OpenScheduleButton", "Horarios",
                 0.77f, 0.925f, 0.875f, 0.975f);
             UnityEventTools.AddPersistentListener(launcher.onClick, screen.Show);
+            launcher.transform.SetAsFirstSibling();
             panel.SetActive(false);
 
             if (!facade.ValidateConfiguration(out string facadeError))
@@ -190,7 +203,9 @@ public static class BistroBuilderStaff5EInstaller
     {
         GameObject row = NewUi("ScheduleEmployeeRowTemplate", parent);
         LayoutElement layout = Undo.AddComponent<LayoutElement>(row);
-        layout.preferredHeight = 70f;
+        layout.minHeight = 82f;
+        layout.preferredHeight = 82f;
+        layout.flexibleWidth = 1f;
         Image image = Undo.AddComponent<Image>(row);
         image.color = new Color(0.09f, 0.105f, 0.12f, 0.98f);
         Button button = Undo.AddComponent<Button>(row);
@@ -202,6 +217,9 @@ public static class BistroBuilderStaff5EInstaller
         TMP_Text availability = RowText(row.transform, "Availability", 0.35f, 0.52f);
         TMP_Text salary = RowText(row.transform, "Salary", 0.53f, 0.76f);
         TMP_Text scheduled = RowText(row.transform, "Scheduled", 0.77f, 0.98f);
+        availability.alignment = TextAlignmentOptions.Midline;
+        salary.alignment = TextAlignmentOptions.MidlineRight;
+        scheduled.alignment = TextAlignmentOptions.Midline;
         Assign(view, "toggleButton", button);
         Assign(view, "nameText", name);
         Assign(view, "availabilityText", availability);
@@ -231,10 +249,16 @@ public static class BistroBuilderStaff5EInstaller
         rect.offsetMax = Vector2.zero;
         VerticalLayoutGroup layout = Undo.AddComponent<VerticalLayoutGroup>(content);
         layout.padding = new RectOffset(8, 8, 8, 8);
-        layout.spacing = 6f;
+        layout.spacing = 8f;
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlWidth = true;
         layout.childControlHeight = true;
+        layout.childScaleWidth = false;
+        layout.childScaleHeight = false;
+        layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
         ContentSizeFitter fitter = Undo.AddComponent<ContentSizeFitter>(content);
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
         fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         scrollRect.viewport = viewport.GetComponent<RectTransform>();
@@ -242,9 +266,23 @@ public static class BistroBuilderStaff5EInstaller
         return rect;
     }
 
+    private static TMP_Text CreateColumnHeader(
+        Transform parent, string name, string label, float minX, float maxX)
+    {
+        TMP_Text text = CreateText(parent, name, label, 13f, minX, 0.745f, maxX, 0.775f);
+        text.fontStyle = FontStyles.Bold;
+        text.color = new Color(0.78f, 0.72f, 0.56f, 1f);
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        return text;
+    }
+
     private static TMP_Text RowText(Transform parent, string name, float minX, float maxX)
     {
-        return CreateText(parent, name, string.Empty, 16f, minX, 0f, maxX, 1f);
+        TMP_Text text = CreateText(parent, name, string.Empty, 16f, minX, 0f, maxX, 1f);
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        return text;
     }
 
     private static GameObject CreatePanel(
@@ -265,11 +303,13 @@ public static class BistroBuilderStaff5EInstaller
         GameObject go = NewUi(name, parent);
         Anchor(go.GetComponent<RectTransform>(), minX, minY, maxX, maxY);
         Image image = Undo.AddComponent<Image>(go);
-        image.color = new Color(0.12f, 0.14f, 0.16f, 1f);
+        image.color = new Color(0.16f, 0.19f, 0.21f, 1f);
         Button button = Undo.AddComponent<Button>(go);
         button.targetGraphic = image;
         TMP_Text text = CreateText(go.transform, "Label", label, 16f, 0f, 0f, 1f, 1f);
         text.alignment = TextAlignmentOptions.Center;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
         return button;
     }
 
@@ -282,8 +322,10 @@ public static class BistroBuilderStaff5EInstaller
         TextMeshProUGUI label = Undo.AddComponent<TextMeshProUGUI>(go);
         label.text = text;
         label.fontSize = size;
+        label.color = new Color(0.92f, 0.92f, 0.90f, 1f);
         label.alignment = TextAlignmentOptions.MidlineLeft;
-        label.enableWordWrapping = true;
+        label.textWrappingMode = TextWrappingModes.Normal;
+        label.raycastTarget = false;
         return label;
     }
 

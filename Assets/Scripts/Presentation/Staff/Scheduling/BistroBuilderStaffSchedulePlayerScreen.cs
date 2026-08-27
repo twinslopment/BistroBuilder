@@ -23,6 +23,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
     [SerializeField] private TMP_Text headerText;
     [SerializeField] private TMP_Text coverageText;
     [SerializeField] private TMP_Text feedbackText;
+    [SerializeField] private TMP_Text emptyStateText;
 
     private int dayIndex = 1;
     private BistroBuilderMealServiceAvailability mealService =
@@ -60,7 +61,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
             employeeRowPrefab == null || closeButton == null || previousDayButton == null ||
             nextDayButton == null || lunchButton == null || dinnerButton == null ||
             autoFillButton == null || copyPreviousButton == null || headerText == null ||
-            coverageText == null || feedbackText == null)
+            coverageText == null || feedbackText == null || emptyStateText == null)
         {
             error = "La pantalla 5E tiene referencias incompletas.";
             return false;
@@ -99,6 +100,11 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
         }
 
         ClearRows();
+        bool hasEmployees = snapshot.employees.Count > 0;
+        emptyStateText.gameObject.SetActive(!hasEmployees);
+        emptyStateText.text = hasEmployees
+            ? string.Empty
+            : "No hay camareros en plantilla. Contrata Personal para empezar a planificar turnos.";
         for (int index = 0; index < snapshot.employees.Count; index++)
         {
             BistroBuilderStaffScheduleEmployeeRowView row = Instantiate(
@@ -117,6 +123,12 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
               (coverage.isSufficient ? "SUFICIENTE" : "INSUFICIENTE")
             : string.Empty;
 
+        coverageText.color = coverage == null
+            ? new Color(0.78f, 0.78f, 0.75f, 1f)
+            : coverage.isSufficient
+                ? new Color(0.62f, 0.82f, 0.66f, 1f)
+                : new Color(0.95f, 0.72f, 0.38f, 1f);
+        UpdateMealButtonState();
         previousDayButton.interactable = dayIndex > facade.CurrentDayIndex;
         nextDayButton.interactable =
             dayIndex < facade.CurrentDayIndex + facade.PlanningHorizonDays - 1;
@@ -177,6 +189,26 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
             return;
         }
         Refresh();
+    }
+
+    private void UpdateMealButtonState()
+    {
+        SetButtonState(lunchButton, mealService == BistroBuilderMealServiceAvailability.Lunch);
+        SetButtonState(dinnerButton, mealService == BistroBuilderMealServiceAvailability.Dinner);
+    }
+
+    private static void SetButtonState(Button button, bool active)
+    {
+        if (button == null || button.targetGraphic == null) return;
+        button.targetGraphic.color = active
+            ? new Color(0.22f, 0.34f, 0.27f, 1f)
+            : new Color(0.16f, 0.19f, 0.21f, 1f);
+        TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label == null) return;
+        label.fontStyle = active ? FontStyles.Bold : FontStyles.Normal;
+        label.color = active
+            ? new Color(0.88f, 0.93f, 0.80f, 1f)
+            : new Color(0.92f, 0.92f, 0.90f, 1f);
     }
 
     private void Bind()
