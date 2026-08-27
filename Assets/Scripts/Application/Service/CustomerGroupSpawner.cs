@@ -122,6 +122,52 @@ public sealed class CustomerGroupSpawner :
     public bool HasInitializedSpawnSchedule => spawnScheduleInitialized;
     public bool HasCompletedSpawnSchedule => spawnScheduleCompleted;
 
+    /// <summary>
+    /// Crea un único grupo de mesa solicitado por una integración externa.
+    /// Reutiliza exactamente el pipeline normal de prefab, registros y flujo
+    /// de llegada; no altera el calendario aleatorio de clientes del servicio.
+    /// </summary>
+    public bool TrySpawnExternalTableServiceGroup(
+        int groupSize,
+        out CustomerGroup group,
+        out string error)
+    {
+        group = null;
+        error = string.Empty;
+        CacheDependenciesIfNeeded();
+
+        if (!isActiveAndEnabled || !configurationIsValid ||
+            serviceStateService == null || !serviceStateService.AcceptsNewCustomers)
+        {
+            error = "El generador no está preparado para una llegada externa.";
+            return false;
+        }
+
+        if (groupSize < 1)
+        {
+            error = "El grupo externo necesita al menos un cliente.";
+            return false;
+        }
+
+        int groupId = nextGroupId;
+        nextGroupId++;
+        SpawnCustomerGroup(groupId, groupSize, BistroBuilderServiceMode.TableService);
+
+        IReadOnlyList<CustomerGroup> groups = tableAssignmentSystem.RegisteredGroups;
+        for (int index = 0; index < groups.Count; index++)
+        {
+            CustomerGroup candidate = groups[index];
+            if (candidate != null && candidate.GroupId == groupId)
+            {
+                group = candidate;
+                return true;
+            }
+        }
+
+        error = "El pipeline canónico no pudo materializar el grupo externo.";
+        return false;
+    }
+
     public void StopForRuntimeLoad()
     {
         StopSpawning();

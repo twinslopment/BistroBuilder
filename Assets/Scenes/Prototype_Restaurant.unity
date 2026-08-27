@@ -3616,6 +3616,7 @@ GameObject:
   - component: {fileID: 263645020}
   - component: {fileID: 263645021}
   - component: {fileID: 263645022}
+  - component: {fileID: 263645023}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -5882,6 +5883,27 @@ MonoBehaviour:
   seatRegistry: {fileID: 263644941}
   generalGameStateService: {fileID: 263644957}
   availabilityProfile: {fileID: 11400000, guid: dfc97eb60c694a8409673cd49254fc4c, type: 2}
+--- !u!114 &263645023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 993da2b43e98c2743ae2ff340f4fa022, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderReservationServiceIntegration
+  reservationService: {fileID: 263645021}
+  availabilityService: {fileID: 263645022}
+  runtimeProfile: {fileID: 11400000, guid: db517a5c3280de54d844e32a943c385f, type: 2}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  serviceStateService: {fileID: 263644923}
+  tableRegistry: {fileID: 263644926}
+  tableAssignmentSystem: {fileID: 263644908}
+  customerGroupSpawner: {fileID: 263644909}
 --- !u!1 &290893665
 GameObject:
   m_ObjectHideFlags: 0
