@@ -144,7 +144,8 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 
     private void Update()
     {
-        if (!Application.isPlaying)
+        if (!Application.isPlaying ||
+            BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
         {
             return;
         }
@@ -338,7 +339,38 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
     }
 
     /// <summary>
-    /// Notifica explícitamente que una línea acaba de ser servida.
+    /// Desmonta la proyeccion de consumo antes de reconstruir service.runtime.
+    /// No toca comandas ni clientes: elimina unicamente indices, temporizadores
+    /// y reconciliaciones que pertenecen al mundo que va a ser sustituido.
+    /// </summary>
+    public void ClearRuntimeForLoad()
+    {
+        if (activeOrders == null)
+        {
+            activeOrders =
+                new List<BistroBuilderCustomerDiningOrderRuntime>();
+        }
+        else
+        {
+            activeOrders.Clear();
+        }
+
+        runtimeByOrderId.Clear();
+        legacyByOrderId.Clear();
+        pendingReconciliationOrderIds.Clear();
+        pendingDrainBuffer.Clear();
+        completionBuffer.Clear();
+        lineIdBuffer.Clear();
+        consumedLineBuffer.Clear();
+        fullyClaimedLineBuffer.Clear();
+        customerCreationBuffer.Clear();
+        sharedProgressBuffer.Clear();
+        mutationScopeActive = false;
+        initialized = true;
+    }
+
+    /// <summary>
+    /// Notifica explicitamente que una linea acaba de ser servida.
     ///
     /// El servicio también escucha los eventos canónicos para restauraciones o
     /// mutaciones externas. La operación es idempotente y nunca inicia dos
@@ -2053,6 +2085,11 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 
     private void HandleOrderCreated(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         // 367H: el consumo en barra tiene su propia autoridad y no puede
         // forzarse a través de una RestaurantTable inexistente.
         if (order != null && order.HasBarDestination)
@@ -2071,11 +2108,21 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
 
     private void HandleOrderCompleted(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         RemoveRuntime(order, false);
     }
 
     private void HandleOrderCancelled(RestaurantOrder order)
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         RemoveRuntime(order, true);
     }
 
@@ -2083,6 +2130,11 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
         BistroBuilderCanonicalOrderChangedEvent change
     )
     {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+        {
+            return;
+        }
+
         if (BistroBuilderOrderIdUtility.IsValid(change.OrderId))
         {
             QueueReconciliation(change.OrderId);
@@ -2248,7 +2300,8 @@ public sealed class BistroBuilderCustomerDiningService : MonoBehaviour
     /// </summary>
     private void DrainPendingReconciliations()
     {
-        if (mutationScopeActive)
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring ||
+            mutationScopeActive)
         {
             return;
         }

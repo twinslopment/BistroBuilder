@@ -314,6 +314,8 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         ResetTransientWaiterRuntime();
         tableAssignmentSystem.ClearPendingBarTransitionReservationsForRuntimeLoad();
         barServiceSystem.ClearRuntimeForLoad();
+        courseAndSharingService.ClearRuntimeForLoad();
+        customerDiningService.ClearRuntimeForLoad();
         orderInventoryLifecycleService.ClearRuntimeForLoad();
         orderSystem.ClearRuntimeForLoad();
 
