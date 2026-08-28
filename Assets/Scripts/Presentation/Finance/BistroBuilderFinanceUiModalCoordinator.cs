@@ -24,7 +24,11 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
             "DishRecipeAuthoringModal",
             "MenuPortfolioModal",
             "InventoryWarehouseModal",
-            "SuppliersModal"
+            "SuppliersModal",
+            "ReservationsPanel",
+            "SchedulePanel",
+            "StaffPanel",
+            "TrainingModal"
         };
 
     private static readonly HashSet<string> ExistingGlobalButtonNames =
@@ -162,7 +166,7 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
         for (int index = 0; index < existingGlobalButtons.Count; index++)
         {
             Button button = existingGlobalButtons[index];
-            if (button == null)
+            if (button == null || button.gameObject.scene != gameObject.scene)
             {
                 continue;
             }
@@ -259,34 +263,43 @@ public sealed class BistroBuilderFinanceUiModalCoordinator : MonoBehaviour
             return;
         }
 
-        RectTransform[] rects = canvas.GetComponentsInChildren<RectTransform>(true);
+        RectTransform[] rects = UnityEngine.Object.FindObjectsByType<RectTransform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
         for (int index = 0; index < rects.Length; index++)
         {
             RectTransform rect = rects[index];
-            if (rect != null && ExistingModalNames.Contains(rect.name))
+            if (rect != null &&
+                rect.gameObject.scene == gameObject.scene &&
+                ExistingModalNames.Contains(rect.name))
             {
                 existingModalRoots.Add(rect);
             }
         }
 
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
+        Button[] buttons = UnityEngine.Object.FindObjectsByType<Button>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
         for (int index = 0; index < buttons.Length; index++)
         {
             Button button = buttons[index];
-            if (button == null)
+            if (button == null || button.gameObject.scene != gameObject.scene)
             {
                 continue;
             }
-            if (ExistingGlobalButtonNames.Contains(button.name))
-            {
-                existingGlobalButtons.Add(button);
-            }
-            else if (string.Equals(
-                         button.name,
-                         "OpenFinance",
-                         StringComparison.Ordinal))
+            if (string.Equals(
+                    button.name,
+                    "OpenFinance",
+                    StringComparison.Ordinal))
             {
                 financeOpenButton = button;
+            }
+            else if (ExistingGlobalButtonNames.Contains(button.name) ||
+                     button.name.StartsWith("Open", StringComparison.Ordinal))
+            {
+                // Regla extensible: los módulos posteriores pueden publicar un
+                // acceso global Open* sin obligar a modificar Finanzas.
+                existingGlobalButtons.Add(button);
             }
         }
 

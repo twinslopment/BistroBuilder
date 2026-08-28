@@ -109,7 +109,7 @@ public sealed class BistroBuilderOperatingExpenseProfile : ScriptableObject
 }
 
 /// <summary>
-/// Resumen de una nómina calculada por la futura autoridad de Personal.
+/// Resumen de una nómina calculada por la autoridad canónica de Personal.
 /// Finanzas recibe únicamente el total a pagar y el periodo; no posee
 /// empleados, contratos laborales, turnos ni salarios individuales.
 /// </summary>

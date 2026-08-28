@@ -2,9 +2,9 @@
 
 ## Estado
 
-Implementación en rama `feature/3j-finance-cash-ui`.
+**COMPLETO, VALIDADO Y CERRADO — 28/08/2026.**
 
-**No debe cerrarse 3J hasta que la fase de endurecimiento 3A–3I y su Queen Test financiera global hayan sido validadas en Unity.** La rama 3J se desarrolla sobre esa base para no detener el trabajo mientras la validación presencial queda pendiente.
+La implementación original de `feature/3j-finance-cash-ui` quedó integrada en la escena vigente y revalidada junto al endurecimiento 3A–3I, la Queen financiera global y la integración posterior con Personal/Horarios.
 
 ## Principio arquitectónico
 
@@ -177,12 +177,12 @@ con `Error/Exception/Assert: 0`.
 
 ## Gate de cierre
 
-3J solo podrá declararse cerrado cuando se cumplan todos estos puntos:
+3J queda declarado cerrado porque se han cumplido y revalidado todos estos puntos:
 
 1. compilación Unity: 0 errores;
 2. endurecimiento 3A–3I: validación/autotest limpios;
 3. Queen Test financiera global endurecida: SUPERADA;
 4. instalador/validador/autotest 3J: limpios;
 5. prueba runtime real 3J: SUPERADA;
-6. revisión visual funcional aceptada por el usuario;
-7. commit de instalación de escena subido y verificado.
+6. revisión visual funcional de las cinco pantallas: PASS, sin solapamiento de accesos globales posteriores;
+7. escena instalada y versionada en la rama de cierre final; commit/push se realiza como último acto del cierre.

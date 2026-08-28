@@ -138,7 +138,7 @@ public sealed class BistroBuilderFinancialResultsService : MonoBehaviour
 
     /// <summary>
     /// Proyecta un intervalo completo capturando Finanzas/Costes una sola vez.
-    /// 3H y la futura 3J deben usar esta API para históricos y gráficos.
+    /// 3H y 3J usan esta API para históricos y gráficos.
     /// </summary>
     public bool TryGetDayResults(
         int startDayIndex,

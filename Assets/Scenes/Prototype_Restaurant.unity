@@ -4280,6 +4280,10 @@ GameObject:
   - component: {fileID: 263645022}
   - component: {fileID: 263645023}
   - component: {fileID: 263645024}
+  - component: {fileID: 263645026}
+  - component: {fileID: 263645027}
+  - component: {fileID: 263645025}
+  - component: {fileID: 263645028}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -6260,6 +6264,7 @@ MonoBehaviour:
   gameClock: {fileID: 263644898}
   saveGameService: {fileID: 263644953}
   expenseProfile: {fileID: 11400000, guid: 4279fc5db70922b41808ace112c9a454, type: 2}
+  staffPayrollFinanceBridge: {fileID: 263645028}
 --- !u!114 &263645005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6583,6 +6588,102 @@ MonoBehaviour:
   saveGameService: {fileID: 263644953}
   reservationService: {fileID: 263645021}
   serviceIntegration: {fileID: 263645023}
+--- !u!114 &263645025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fa3b67c4bc943f485e5b5ea0e1a2394, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceDashboardService
+  financeService: {fileID: 263644999}
+  resultsService: {fileID: 263645008}
+  historyService: {fileID: 263645009}
+  financingService: {fileID: 263645026}
+  generalGameStateService: {fileID: 263644957}
+--- !u!114 &263645026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fd3b36d2e204fb0a4cb757306168bad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinancingService
+  financeService: {fileID: 263644999}
+  supplierFinanceBridge: {fileID: 263645001}
+  financialHistoryService: {fileID: 263645009}
+  operatingExpenseService: {fileID: 263645004}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  saveGameService: {fileID: 263644953}
+  liquidityHorizonDays: 7
+  lossAnalysisWindowDays: 7
+  delinquencyGraceDays: 7
+  maxActiveLoans: 3
+  maxOutstandingPrincipalCents: 5000000
+  offers:
+  - offerId: bridge
+    displayName: "Pr\xE9stamo puente"
+    principalCents: 500000
+    termDays: 30
+    totalInterestBasisPoints: 500
+    installmentCount: 5
+    active: 1
+  - offerId: growth
+    displayName: "Financiaci\xF3n de crecimiento"
+    principalCents: 1500000
+    termDays: 60
+    totalInterestBasisPoints: 800
+    installmentCount: 6
+    active: 1
+  - offerId: expansion
+    displayName: "Financiaci\xF3n de expansi\xF3n"
+    principalCents: 3000000
+    termDays: 90
+    totalInterestBasisPoints: 1200
+    installmentCount: 9
+    active: 1
+--- !u!114 &263645027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c60afde4f68472f861f49d780e024d8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinancingSaveSectionProvider
+  financingService: {fileID: 263645026}
+--- !u!114 &263645028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b4b72f09b105634f90f5fc9a18ab879, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderStaffPayrollFinanceBridge
+  operatingExpenseService: {fileID: 263645004}
+  financeService: {fileID: 263644999}
+  staffService: {fileID: 263645010}
+  sessionService: {fileID: 263645013}
+  scheduleService: {fileID: 263645018}
+  scheduleSessionBridge: {fileID: 263645019}
+  orderIntegration: {fileID: 263644962}
+  saveGameService: {fileID: 263644953}
 --- !u!1 &290893665
 GameObject:
   m_ObjectHideFlags: 0
@@ -17626,6 +17727,7 @@ RectTransform:
   - {fileID: 1202883992}
   - {fileID: 235254518}
   - {fileID: 1041256377}
+  - {fileID: 2019063681}
   m_Father: {fileID: 1208060064}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -35566,6 +35668,73 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2008572102}
   m_CullTransparentMesh: 1
+--- !u!1 &2019063680
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2019063681}
+  - component: {fileID: 2019063683}
+  - component: {fileID: 2019063682}
+  m_Layer: 5
+  m_Name: BB_3J_FinanceUI
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2019063681
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019063680}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 890497793}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2019063682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019063680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d9adfa0e0d45f5b09d36ed2222caa7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceUiModalCoordinator
+  financeView: {fileID: 2019063683}
+--- !u!114 &2019063683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2019063680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fb69ae8fd42480f90a64a6483840735, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinanceRuntimeView
+  dashboardService: {fileID: 263645025}
+  cameraController: {fileID: 330585548}
+  editInteractionController: {fileID: 263644933}
+  showOpenButton: 1
+  maximumRecentMovements: 80
 --- !u!1 &2022048813
 GameObject:
   m_ObjectHideFlags: 0

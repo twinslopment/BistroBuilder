@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -14,6 +15,8 @@ public static class BistroBuilderFinance3JRuntimeTest
 {
     private const string ArmedKey = "BB.Finance.3J.Runtime.Armed";
     private const string ResultKey = "BB.Finance.3J.Runtime.Result";
+    private const string CommandLineKey = "BB.Finance.3J.Runtime.CommandLine";
+    private const string ReportPath = "Block3JFinanceRuntimeReport.txt";
     private const double StartupTimeoutSeconds = 25d;
 
     private static double startupDeadline;
@@ -39,8 +42,19 @@ public static class BistroBuilderFinance3JRuntimeTest
         "Tools/Bistro Builder/Finanzas/3J - Prueba runtime real",
         false,
         3103)]
-    private static void Run()
+    private static void Run() => Begin(false);
+
+    public static void RunFromCommandLine()
     {
+        EditorSceneManager.OpenScene(
+            "Assets/Scenes/Prototype_Restaurant.unity",
+            OpenSceneMode.Single);
+        Begin(true);
+    }
+
+    private static void Begin(bool commandLine)
+    {
+        SessionState.SetBool(CommandLineKey, commandLine);
         if (SessionState.GetBool(ArmedKey, false))
         {
             EditorUtility.DisplayDialog(
@@ -113,6 +127,14 @@ public static class BistroBuilderFinance3JRuntimeTest
             return;
         }
         SessionState.EraseString(ResultKey);
+        bool commandLine = SessionState.GetBool(CommandLineKey, false);
+        SessionState.SetBool(CommandLineKey, false);
+        if (commandLine)
+        {
+            File.WriteAllText(Path.GetFullPath(ReportPath), message);
+            EditorApplication.Exit(message.Contains("SUPERADA") ? 0 : 1);
+            return;
+        }
         EditorUtility.DisplayDialog(
             "Bistro Builder — 3J",
             message,

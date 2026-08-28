@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -36,6 +37,8 @@ public static class BistroBuilderFinanceGlobalQueenHardenedTest
 
     private const string ArmedKey = "BB.Finance.GlobalQueenHardened.Armed";
     private const string ResultKey = "BB.Finance.GlobalQueenHardened.Result";
+    private const string CommandLineKey = "BB.Finance.GlobalQueenHardened.CommandLine";
+    private const string ReportPath = "Block3FinanceHardenedQueenReport.txt";
     private const double StartupTimeoutSeconds = 25d;
     private const double ReconcileTimeoutSeconds = 10d;
 
@@ -96,8 +99,19 @@ public static class BistroBuilderFinanceGlobalQueenHardenedTest
         "Tools/Bistro Builder/Finanzas/3 - QUEEN TEST FINANCIERA GLOBAL ENDURECIDA",
         false,
         3094)]
-    private static void Run()
+    private static void Run() => Begin(false);
+
+    public static void RunFromCommandLine()
     {
+        EditorSceneManager.OpenScene(
+            "Assets/Scenes/Prototype_Restaurant.unity",
+            OpenSceneMode.Single);
+        Begin(true);
+    }
+
+    private static void Begin(bool commandLine)
+    {
+        SessionState.SetBool(CommandLineKey, commandLine);
         if (SessionState.GetBool(ArmedKey, false))
         {
             EditorUtility.DisplayDialog(
@@ -167,6 +181,14 @@ public static class BistroBuilderFinanceGlobalQueenHardenedTest
             return;
         }
         SessionState.EraseString(ResultKey);
+        bool commandLine = SessionState.GetBool(CommandLineKey, false);
+        SessionState.SetBool(CommandLineKey, false);
+        if (commandLine)
+        {
+            File.WriteAllText(Path.GetFullPath(ReportPath), message);
+            EditorApplication.Exit(message.Contains("SUPERADA") ? 0 : 1);
+            return;
+        }
         EditorUtility.DisplayDialog(
             "Bistro Builder — Finanzas",
             message,

@@ -20,6 +20,7 @@ La regla arquitectónica sigue siendo vinculante: `finance.runtime` es la única
 10. **Caducidad sin impacto económico.** Product Cost 3D conserva una baja económica no monetaria para `Expiration/Waste`. Reduce el resultado mediante 3G pero nunca vuelve a sacar caja: la compra ya fue pagada al proveedor.
 11. **Compatibilidad Product Cost v1.** Los campos aditivos de bajas económicas se normalizan al cargar snapshots v1 anteriores que no los contenían.
 12. **Sección 3I opcional malinterpretada.** Una partida antigua puede no contener `finance.financing.runtime` únicamente si `finance.runtime` tampoco demuestra movimientos de financiación. Si el ledger contiene deuda y la sección falta, el Load falla de forma segura.
+13. **Nómina desconectada tras crear Personal/Horarios.** 3E ya no se limita al contrato abstracto de nómina: `BistroBuilderStaffPayrollFinanceBridge` consume la sesión real de Personal, publica un débito idempotente por día/servicio y añade los turnos explícitamente planificados a las obligaciones proyectadas que 3I usa para liquidez. Staff conserva salarios/empleados y 3A continúa siendo la única caja.
 
 ## Semántica contable de bajas de inventario
 
@@ -61,13 +62,13 @@ La prueba:
 - elimina ambos slots temporales;
 - exige `Error / Exception / Assert = 0`.
 
-## Criterio de avance a 3J
+## Criterio de avance a 3J — CUMPLIDO
 
-3J no debe comenzar hasta que:
+Este gate quedó cumplido y revalidado el 28/08/2026. Los cuatro requisitos siguientes se conservan como evidencia histórica:
 
 1. Unity compile con 0 errores en la rama de endurecimiento.
 2. El instalador/gate global termine con 0 errores y 0 fallos.
 3. La Queen Test financiera global endurecida muestre `SUPERADA`.
 4. La escena endurecida y cualquier cambio resultante queden versionados.
 
-Hasta cumplir los cuatro puntos, 3I se considera funcionalmente validado pero el bloque financiero completo permanece abierto a endurecimiento.
+**Estado final:** los cuatro puntos están cumplidos. 3A–3I queda endurecido y su Queen Test global está SUPERADA; el Bloque 3 completo se cierra conjuntamente con 3J según `FINANCE_BLOCK_3_CLOSURE_20260828.md`.

@@ -83,7 +83,7 @@ public sealed class BistroBuilderEmployeeRecord
 
     /// <summary>
     /// Coste contractual base por servicio programado, en céntimos. Personal
-    /// no mueve caja: 3E consumirá más adelante una proyección de nómina.
+    /// no mueve caja: el puente Staff/3E consume esta proyección salarial.
     /// </summary>
     public long salaryCentsPerService;
     public int hiredDayIndex = 1;

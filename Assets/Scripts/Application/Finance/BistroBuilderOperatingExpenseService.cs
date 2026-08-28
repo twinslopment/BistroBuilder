@@ -17,6 +17,7 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
     [SerializeField] private GameClock gameClock;
     [SerializeField] private BistroBuilderSaveGameService saveGameService;
     [SerializeField] private BistroBuilderOperatingExpenseProfile expenseProfile;
+    [SerializeField] private BistroBuilderStaffPayrollFinanceBridge staffPayrollFinanceBridge;
 
     public event Action<BistroBuilderFinanceTransactionRecord>
         OperatingExpensePosted;
@@ -24,6 +25,8 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
         PayrollPosted;
 
     public BistroBuilderOperatingExpenseProfile ExpenseProfile => expenseProfile;
+    public BistroBuilderStaffPayrollFinanceBridge StaffPayrollFinanceBridge =>
+        staffPayrollFinanceBridge;
 
     private bool subscribed;
 
@@ -155,8 +158,8 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
     /// Es una proyección pura: no publica movimientos ni cambia calendario.
     /// Una obligación ya registrada en finance.runtime se excluye para que el
     /// día actual pueda formar parte del horizonte sin doble contabilización.
-    /// Nóminas quedan fuera porque 3E recibe su importe desde Personal y no
-    /// dispone todavía de un calendario salarial autoritativo futuro.
+    /// Las nóminas de turnos explícitamente planificados se incorporan a través
+    /// del puente Staff/3E; la autoridad salarial continúa perteneciendo a Personal.
     /// </summary>
     public bool TryCalculateRecurringObligationsCents(
         int startDayIndex,
@@ -215,6 +218,22 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
                     }
                     dueDay = (int)next;
                 }
+            }
+
+            if (staffPayrollFinanceBridge != null)
+            {
+                if (!staffPayrollFinanceBridge.TryCalculateScheduledPayrollObligationsCents(
+                        startDayIndex,
+                        endDayIndex,
+                        out long payrollCents,
+                        out _,
+                        out error))
+                {
+                    totalCents = 0L;
+                    return false;
+                }
+
+                totalCents = checked(totalCents + payrollCents);
             }
         }
         catch (OverflowException)
@@ -395,6 +414,11 @@ public sealed class BistroBuilderOperatingExpenseService : MonoBehaviour
         if (saveGameService == null)
         {
             TryGetComponent(out saveGameService);
+        }
+
+        if (staffPayrollFinanceBridge == null)
+        {
+            TryGetComponent(out staffPayrollFinanceBridge);
         }
     }
 
