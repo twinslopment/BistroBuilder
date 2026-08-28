@@ -708,6 +708,13 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
             occupiedSpotBuffer.Clear();
             barRegistry.GetOccupiedSpots(group, occupiedSpotBuffer);
 
+            BistroBuilderCustomerAcquisitionTag acquisitionTag =
+                group.GetComponent<BistroBuilderCustomerAcquisitionTag>();
+            BistroBuilderCustomerAcquisitionProfile acquisition =
+                acquisitionTag != null
+                    ? acquisitionTag.CreateSnapshot()
+                    : BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
+
             var record = new BistroBuilderCustomerGroupSaveRecord
             {
                 groupId = group.GroupId,
@@ -727,7 +734,8 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
                 ),
                 worldRotation = new BistroBuilderSaveQuaternion(
                     group.transform.rotation
-                )
+                ),
+                acquisition = acquisition
             };
 
             for (int spotIndex = 0;

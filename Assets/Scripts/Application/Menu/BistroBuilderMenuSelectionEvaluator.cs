@@ -15,11 +15,14 @@ internal sealed class BistroBuilderMenuSelectionScratch
         new List<BistroBuilderMenuOfferItemSnapshot>(32);
     public readonly HashSet<string> UniqueDishIds =
         new HashSet<string>(StringComparer.Ordinal);
+    public readonly List<long> EffectiveWeights =
+        new List<long>(32);
 
     public void Clear()
     {
         Candidates.Clear();
         UniqueDishIds.Clear();
+        EffectiveWeights.Clear();
     }
 }
 
@@ -73,12 +76,65 @@ public static class BistroBuilderMenuSelectionEvaluator
         );
     }
 
+    public static bool TrySelectWithExternalWeights(
+        IList<BistroBuilderMenuOfferItemSnapshot> source,
+        BistroBuilderMenuCommercialPolicy policy,
+        BistroBuilderMenuSelectionContext context,
+        ISet<string> excludedDishIds,
+        IBistroBuilderMenuSelectionRandomSource randomSource,
+        IReadOnlyDictionary<string, int> externalWeightAdjustments,
+        out BistroBuilderMenuSelectionResult result,
+        out BistroBuilderMenuSelectionFailureReason failureReason,
+        out string error
+    )
+    {
+        return TrySelectWithScratch(
+            source,
+            policy,
+            context,
+            excludedDishIds,
+            randomSource,
+            externalWeightAdjustments,
+            new BistroBuilderMenuSelectionScratch(),
+            out result,
+            out failureReason,
+            out error
+        );
+    }
+
     internal static bool TrySelectWithScratch(
         IList<BistroBuilderMenuOfferItemSnapshot> source,
         BistroBuilderMenuCommercialPolicy policy,
         BistroBuilderMenuSelectionContext context,
         ISet<string> excludedDishIds,
         IBistroBuilderMenuSelectionRandomSource randomSource,
+        BistroBuilderMenuSelectionScratch scratch,
+        out BistroBuilderMenuSelectionResult result,
+        out BistroBuilderMenuSelectionFailureReason failureReason,
+        out string error
+    )
+    {
+        return TrySelectWithScratch(
+            source,
+            policy,
+            context,
+            excludedDishIds,
+            randomSource,
+            null,
+            scratch,
+            out result,
+            out failureReason,
+            out error
+        );
+    }
+
+    internal static bool TrySelectWithScratch(
+        IList<BistroBuilderMenuOfferItemSnapshot> source,
+        BistroBuilderMenuCommercialPolicy policy,
+        BistroBuilderMenuSelectionContext context,
+        ISet<string> excludedDishIds,
+        IBistroBuilderMenuSelectionRandomSource randomSource,
+        IReadOnlyDictionary<string, int> externalWeightAdjustments,
         BistroBuilderMenuSelectionScratch scratch,
         out BistroBuilderMenuSelectionResult result,
         out BistroBuilderMenuSelectionFailureReason failureReason,
@@ -248,23 +304,41 @@ public static class BistroBuilderMenuSelectionEvaluator
                 .DefaultSignatureSelectionWeightBasisPoints;
         int baseWeight = BistroBuilderMenuCommercialPolicy.BasisPointsPerUnit;
         long totalWeight = 0L;
-        int firstWeight = -1;
+        long firstWeight = -1L;
         bool hasDifferentWeights = false;
+        List<long> effectiveWeights = scratch.EffectiveWeights;
 
         for (int index = 0; index < candidates.Count; index++)
         {
-            int weight = candidates[index].SignatureDish
+            BistroBuilderMenuOfferItemSnapshot candidate = candidates[index];
+            int originalWeight = candidate.SignatureDish
                 ? signatureWeight
                 : baseWeight;
+            int adjustment = 0;
 
-            if (firstWeight < 0)
+            if (externalWeightAdjustments != null &&
+                externalWeightAdjustments.TryGetValue(
+                    candidate.DishId,
+                    out int externalAdjustment))
             {
+                if (externalAdjustment < -9000 || externalAdjustment > 50000)
+                {
+                    failureReason =
+                        BistroBuilderMenuSelectionFailureReason.InvalidPolicy;
+                    error = "Un ajuste externo de selección queda fuera de rango.";
+                    return false;
+                }
+
+                adjustment = externalAdjustment;
+            }
+
+            long weight = ApplyBasisPointAdjustment(originalWeight, adjustment);
+            effectiveWeights.Add(weight);
+
+            if (firstWeight < 0L)
                 firstWeight = weight;
-            }
             else if (firstWeight != weight)
-            {
                 hasDifferentWeights = true;
-            }
 
             totalWeight += weight;
         }
@@ -283,6 +357,12 @@ public static class BistroBuilderMenuSelectionEvaluator
             candidates,
             signatureWeight
         );
+        if (externalWeightAdjustments != null)
+            deterministicSeed = MixExternalWeights(
+                deterministicSeed,
+                candidates,
+                externalWeightAdjustments);
+
         bool usedInjectedRandom = randomSource != null;
         int selectedIndex;
 
@@ -303,13 +383,9 @@ public static class BistroBuilderMenuSelectionEvaluator
             ulong cumulative = 0UL;
             selectedIndex = candidates.Count - 1;
 
-            for (int index = 0; index < candidates.Count; index++)
+            for (int index = 0; index < effectiveWeights.Count; index++)
             {
-                int weight = candidates[index].SignatureDish
-                    ? signatureWeight
-                    : baseWeight;
-                cumulative += (ulong)weight;
-
+                cumulative += (ulong)effectiveWeights[index];
                 if (target < cumulative)
                 {
                     selectedIndex = index;
@@ -320,9 +396,7 @@ public static class BistroBuilderMenuSelectionEvaluator
 
         BistroBuilderMenuOfferItemSnapshot selected =
             candidates[selectedIndex];
-        int selectedWeight = selected.SignatureDish
-            ? signatureWeight
-            : baseWeight;
+        long selectedWeight = effectiveWeights[selectedIndex];
 
         result = new BistroBuilderMenuSelectionResult(
             selected,
@@ -336,6 +410,37 @@ public static class BistroBuilderMenuSelectionEvaluator
         failureReason = BistroBuilderMenuSelectionFailureReason.None;
         error = string.Empty;
         return true;
+    }
+
+    private static long ApplyBasisPointAdjustment(
+        int baseWeight,
+        int adjustmentBasisPoints)
+    {
+        long multiplier = 10000L + adjustmentBasisPoints;
+        long numerator = (long)baseWeight * multiplier;
+        return Math.Max(1L, (numerator + 5000L) / 10000L);
+    }
+
+    private static ulong MixExternalWeights(
+        ulong seed,
+        IList<BistroBuilderMenuOfferItemSnapshot> candidates,
+        IReadOnlyDictionary<string, int> adjustments)
+    {
+        unchecked
+        {
+            ulong mixed = seed ^ 0x9E3779B97F4A7C15UL;
+            for (int index = 0; index < candidates.Count; index++)
+            {
+                int value = adjustments.TryGetValue(
+                    candidates[index].DishId,
+                    out int adjustment)
+                        ? adjustment
+                        : 0;
+                mixed ^= (uint)value;
+                mixed *= 1099511628211UL;
+            }
+            return mixed != 0UL ? mixed : 0xD1B54A32D192ED03UL;
+        }
     }
 
     private static int PositiveModulo(int value, int modulus)

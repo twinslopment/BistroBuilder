@@ -112,6 +112,12 @@ public sealed class CustomerGroupSpawner :
     private readonly Queue<PlannedArrival> plannedArrivals =
         new Queue<PlannedArrival>();
 
+    // Plan externo y genérico para el siguiente servicio. El Spawner sigue
+    // siendo la única autoridad que materializa CustomerGroup.
+    private BistroBuilderCustomerDemandPlan queuedDemandPlan;
+    private string lastConsumedDemandPlanId = string.Empty;
+    private int lastPlannedGroupCount;
+
     private bool spawnScheduleInitialized;
     private bool spawnScheduleCompleted;
     private bool restoredScheduleAwaitingServiceActivation;
@@ -121,6 +127,48 @@ public sealed class CustomerGroupSpawner :
     public int PendingArrivalCount => plannedArrivals.Count;
     public bool HasInitializedSpawnSchedule => spawnScheduleInitialized;
     public bool HasCompletedSpawnSchedule => spawnScheduleCompleted;
+    public int BaselineGroupCount => Mathf.Max(1, numberOfGroups);
+    public int LastPlannedGroupCount => lastPlannedGroupCount;
+    public string LastConsumedDemandPlanId => lastConsumedDemandPlanId;
+    public bool HasQueuedDemandPlan => queuedDemandPlan != null;
+
+    /// <summary>
+    /// Cola un plan genérico para el siguiente servicio. Se acepta únicamente
+    /// antes de que exista un calendario activo para no reescribir llegadas
+    /// que ya forman parte del runtime persistible.
+    /// </summary>
+    public bool TryQueueDemandPlanForNextService(
+        BistroBuilderCustomerDemandPlan plan,
+        out string error)
+    {
+        error = string.Empty;
+        CacheDependenciesIfNeeded();
+        if (plan == null || !plan.TryValidate(out error))
+            return false;
+
+        if (serviceStateService != null &&
+            serviceStateService.AcceptsNewCustomers)
+        {
+            error = "No puede sustituirse el plan de demanda con el servicio abierto.";
+            return false;
+        }
+
+        if (spawnScheduleInitialized && !spawnScheduleCompleted)
+        {
+            error = "Ya existe un calendario de llegadas activo.";
+            return false;
+        }
+
+        queuedDemandPlan = plan.DeepClone();
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryGetQueuedDemandPlan(out BistroBuilderCustomerDemandPlan plan)
+    {
+        plan = queuedDemandPlan != null ? queuedDemandPlan.DeepClone() : null;
+        return plan != null;
+    }
 
     /// <summary>
     /// Crea un único grupo de mesa solicitado por una integración externa.
@@ -174,6 +222,7 @@ public sealed class CustomerGroupSpawner :
         ClearSpawnSchedule();
         diagnosticGroupSizes.Clear();
         diagnosticServiceModes.Clear();
+        queuedDemandPlan = null;
     }
 
     public void UnregisterAndDestroyGroupForRuntimeLoad(CustomerGroup group)
@@ -251,6 +300,21 @@ public sealed class CustomerGroupSpawner :
             return false;
         }
 
+        BistroBuilderCustomerAcquisitionTag acquisitionTag =
+            candidate.GetComponent<BistroBuilderCustomerAcquisitionTag>();
+        if (acquisitionTag == null)
+            acquisitionTag = candidate.gameObject.AddComponent<
+                BistroBuilderCustomerAcquisitionTag>();
+        BistroBuilderCustomerAcquisitionProfile acquisition =
+            record.acquisition != null
+                ? record.acquisition.DeepClone()
+                : BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
+        if (!acquisitionTag.TryConfigure(acquisition, out error))
+        {
+            Destroy(candidate.gameObject);
+            return false;
+        }
+
         CustomerMovementView movement =
             candidate.GetComponent<CustomerMovementView>();
 
@@ -321,7 +385,10 @@ public sealed class CustomerGroupSpawner :
                 new BistroBuilderCustomerArrivalPlanSaveRecord
                 {
                     groupSize = arrival.GroupSize,
-                    serviceMode = (int)arrival.ServiceMode
+                    serviceMode = (int)arrival.ServiceMode,
+                    acquisition = arrival.Acquisition != null
+                        ? arrival.Acquisition.DeepClone()
+                        : BistroBuilderCustomerAcquisitionProfile.CreateBaseline()
                 }
             );
         }
@@ -361,7 +428,10 @@ public sealed class CustomerGroupSpawner :
             plannedArrivals.Enqueue(
                 new PlannedArrival(
                     record.groupSize,
-                    (BistroBuilderServiceMode)record.serviceMode
+                    (BistroBuilderServiceMode)record.serviceMode,
+                    record.acquisition != null
+                        ? record.acquisition.DeepClone()
+                        : BistroBuilderCustomerAcquisitionProfile.CreateBaseline()
                 )
             );
         }
@@ -600,7 +670,13 @@ public sealed class CustomerGroupSpawner :
         StopSpawning();
         plannedArrivals.Clear();
 
-        for (int index = 0; index < numberOfGroups; index++)
+        BistroBuilderCustomerDemandPlan demandPlan = queuedDemandPlan;
+        queuedDemandPlan = null;
+        int plannedGroupCount = demandPlan != null
+            ? demandPlan.walkInGroupCount
+            : numberOfGroups;
+
+        for (int index = 0; index < plannedGroupCount; index++)
         {
             int groupSize = diagnosticGroupSizes.Count > 0
                 ? diagnosticGroupSizes.Dequeue()
@@ -609,11 +685,20 @@ public sealed class CustomerGroupSpawner :
                     maximumGroupSize + 1
                 );
             BistroBuilderServiceMode mode = ResolveServiceMode(groupSize);
+            BistroBuilderCustomerAcquisitionProfile acquisition =
+                demandPlan != null && index < demandPlan.profiles.Count
+                    ? demandPlan.profiles[index].DeepClone()
+                    : CreateBaselineAcquisitionProfile(index);
+
             plannedArrivals.Enqueue(
-                new PlannedArrival(groupSize, mode)
+                new PlannedArrival(groupSize, mode, acquisition)
             );
         }
 
+        lastPlannedGroupCount = plannedGroupCount;
+        lastConsumedDemandPlanId = demandPlan != null
+            ? demandPlan.planId
+            : string.Empty;
         spawnScheduleInitialized = true;
         spawnScheduleCompleted = plannedArrivals.Count == 0;
         restoredScheduleAwaitingServiceActivation = false;
@@ -724,7 +809,8 @@ public sealed class CustomerGroupSpawner :
             SpawnCustomerGroup(
                 groupId,
                 arrival.GroupSize,
-                arrival.ServiceMode
+                arrival.ServiceMode,
+                arrival.Acquisition
             );
 
             secondsUntilNextArrival = plannedArrivals.Count > 0
@@ -750,7 +836,8 @@ public sealed class CustomerGroupSpawner :
     private void SpawnCustomerGroup(
         int groupId,
         int groupSize,
-        BistroBuilderServiceMode serviceMode
+        BistroBuilderServiceMode serviceMode,
+        BistroBuilderCustomerAcquisitionProfile acquisition = null
     )
     {
         CustomerGroup newGroup =
@@ -777,6 +864,33 @@ public sealed class CustomerGroupSpawner :
                 newGroup.gameObject
             );
 
+            return;
+        }
+
+        BistroBuilderCustomerAcquisitionProfile resolvedAcquisition =
+            acquisition ?? CreateBaselineAcquisitionProfile(groupId);
+        if (!resolvedAcquisition.TryValidate(out string acquisitionError))
+        {
+            Debug.LogError(
+                "Perfil de captación inválido para grupo " + groupId +
+                ": " + acquisitionError,
+                newGroup
+            );
+            Destroy(newGroup.gameObject);
+            return;
+        }
+
+        BistroBuilderCustomerAcquisitionTag acquisitionTag =
+            newGroup.GetComponent<BistroBuilderCustomerAcquisitionTag>();
+        if (acquisitionTag == null)
+            acquisitionTag = newGroup.gameObject.AddComponent<
+                BistroBuilderCustomerAcquisitionTag>();
+        if (!acquisitionTag.TryConfigure(
+                resolvedAcquisition,
+                out acquisitionError))
+        {
+            Debug.LogError(acquisitionError, newGroup);
+            Destroy(newGroup.gameObject);
             return;
         }
 
@@ -882,6 +996,18 @@ public sealed class CustomerGroupSpawner :
             " cliente(s).",
             newGroup
         );
+    }
+
+    private static BistroBuilderCustomerAcquisitionProfile
+        CreateBaselineAcquisitionProfile(int referenceIndex)
+    {
+        return new BistroBuilderCustomerAcquisitionProfile
+        {
+            segmentId = "general",
+            sourceSystemId = "service.baseline",
+            sourceReferenceId = string.Empty,
+            marketingInfluenced = false
+        };
     }
 
     private BistroBuilderServiceMode ResolveServiceMode(int groupSize)
@@ -1060,14 +1186,19 @@ public sealed class CustomerGroupSpawner :
     {
         public int GroupSize { get; }
         public BistroBuilderServiceMode ServiceMode { get; }
+        public BistroBuilderCustomerAcquisitionProfile Acquisition { get; }
 
         public PlannedArrival(
             int groupSize,
-            BistroBuilderServiceMode serviceMode
+            BistroBuilderServiceMode serviceMode,
+            BistroBuilderCustomerAcquisitionProfile acquisition = null
         )
         {
             GroupSize = Mathf.Max(1, groupSize);
             ServiceMode = serviceMode;
+            Acquisition = acquisition != null
+                ? acquisition.DeepClone()
+                : CreateBaselineAcquisitionProfile(groupSize);
         }
     }
 

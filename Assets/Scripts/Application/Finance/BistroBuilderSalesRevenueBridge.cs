@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -26,12 +28,23 @@ public sealed class BistroBuilderSalesRevenueBridge : MonoBehaviour
     [SerializeField]
     private GameClock gameClock;
 
+    private readonly List<IBistroBuilderSalesPaymentAdjustmentProvider>
+        paymentAdjustmentProviders =
+            new List<IBistroBuilderSalesPaymentAdjustmentProvider>(4);
+    private readonly HashSet<string> paymentAdjustmentProviderIds =
+        new HashSet<string>(StringComparer.Ordinal);
+    private readonly List<string> orderedDishIds = new List<string>(16);
+
     public BistroBuilderFinanceService FinanceService => financeService;
     public OrderSystem OrderSystem => orderSystem;
     public BistroBuilderBarServiceSystem BarServiceSystem => barServiceSystem;
     public BistroBuilderGeneralGameStateService GeneralGameStateService =>
         generalGameStateService;
     public GameClock GameClock => gameClock;
+    public long LastBaseAmountCents { get; private set; }
+    public long LastFinalAmountCents { get; private set; }
+    public int LastPaymentAdjustmentBasisPoints { get; private set; }
+    public string LastAdjustedOrderId { get; private set; } = string.Empty;
 
     private void OnEnable()
     {
@@ -163,6 +176,23 @@ public sealed class BistroBuilderSalesRevenueBridge : MonoBehaviour
             amountCents = canonicalAmountCents;
         }
 
+        long baseAmountCents = amountCents;
+        if (!TryApplyPaymentAdjustments(
+                order,
+                snapshot,
+                baseAmountCents,
+                out amountCents,
+                out int paymentAdjustmentBasisPoints,
+                out error))
+        {
+            return false;
+        }
+
+        LastBaseAmountCents = baseAmountCents;
+        LastFinalAmountCents = amountCents;
+        LastPaymentAdjustmentBasisPoints = paymentAdjustmentBasisPoints;
+        LastAdjustedOrderId = snapshot.OrderId;
+
         // La carta admite platos gratuitos: un pago final de 0 € es válido,
         // pero no constituye un movimiento monetario.
         if (amountCents == 0L)
@@ -185,6 +215,165 @@ public sealed class BistroBuilderSalesRevenueBridge : MonoBehaviour
         }
 
         return financeService.TryPostTransaction(request, out _, out error);
+    }
+
+    private bool TryApplyPaymentAdjustments(
+        RestaurantOrder order,
+        BistroBuilderCanonicalOrder snapshot,
+        long baseAmountCents,
+        out long adjustedAmountCents,
+        out int aggregateBasisPoints,
+        out string error)
+    {
+        adjustedAmountCents = baseAmountCents;
+        aggregateBasisPoints = 0;
+
+        if (!TryCollectPaymentAdjustmentProviders(out error))
+            return false;
+
+        if (paymentAdjustmentProviders.Count == 0)
+        {
+            return BistroBuilderSalesRevenuePolicy.TryApplyPaymentAdjustment(
+                baseAmountCents,
+                0,
+                out adjustedAmountCents,
+                out error);
+        }
+
+        BistroBuilderSalesPaymentAdjustmentContext context =
+            BuildPaymentAdjustmentContext(order, snapshot, baseAmountCents);
+        long aggregate = 0L;
+
+        for (int index = 0;
+             index < paymentAdjustmentProviders.Count;
+             index++)
+        {
+            if (!paymentAdjustmentProviders[index]
+                    .TryGetAdjustmentBasisPoints(
+                        context,
+                        out int value,
+                        out error))
+                return false;
+
+            if (value < -9000 || value > 50000)
+            {
+                error = "Un proveedor de cobro devolvió un ajuste fuera de rango.";
+                return false;
+            }
+
+            aggregate += value;
+        }
+
+        if (aggregate < -9000L || aggregate > 50000L)
+        {
+            error = "La suma de ajustes comerciales queda fuera de rango.";
+            return false;
+        }
+
+        aggregateBasisPoints = (int)aggregate;
+        return BistroBuilderSalesRevenuePolicy.TryApplyPaymentAdjustment(
+            baseAmountCents,
+            aggregateBasisPoints,
+            out adjustedAmountCents,
+            out error);
+    }
+
+    private bool TryCollectPaymentAdjustmentProviders(out string error)
+    {
+        paymentAdjustmentProviders.Clear();
+        paymentAdjustmentProviderIds.Clear();
+
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        for (int index = 0; index < behaviours.Length; index++)
+        {
+            if (!(behaviours[index] is
+                    IBistroBuilderSalesPaymentAdjustmentProvider provider))
+                continue;
+
+            string providerId = NormalizeProviderId(provider.AdjustmentProviderId);
+            if (!IsSafeProviderId(providerId) ||
+                !paymentAdjustmentProviderIds.Add(providerId))
+            {
+                error = "Existe un proveedor de ajuste de cobro inválido o duplicado.";
+                return false;
+            }
+
+            paymentAdjustmentProviders.Add(provider);
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private BistroBuilderSalesPaymentAdjustmentContext
+        BuildPaymentAdjustmentContext(
+            RestaurantOrder order,
+            BistroBuilderCanonicalOrder snapshot,
+            long baseAmountCents)
+    {
+        orderedDishIds.Clear();
+        for (int index = 0; index < snapshot.Lines.Count; index++)
+        {
+            BistroBuilderCanonicalOrderLine line = snapshot.Lines[index];
+            if (line == null ||
+                line.State == BistroBuilderCanonicalOrderLineState.Cancelled)
+                continue;
+
+            string dishId = BistroBuilderMenuIdUtility.NormalizeStableId(
+                line.DishId);
+            if (BistroBuilderMenuIdUtility.IsValidStableId(dishId) &&
+                !orderedDishIds.Contains(dishId))
+                orderedDishIds.Add(dishId);
+        }
+
+        string segmentId = "general";
+        if (order != null && order.CustomerGroup != null)
+        {
+            BistroBuilderCustomerAcquisitionTag tag =
+                order.CustomerGroup.GetComponent<
+                    BistroBuilderCustomerAcquisitionTag>();
+            if (tag != null && !string.IsNullOrWhiteSpace(tag.SegmentId))
+                segmentId = tag.SegmentId;
+        }
+
+        return new BistroBuilderSalesPaymentAdjustmentContext
+        {
+            canonicalOrderId = snapshot.OrderId,
+            customerGroupReferenceId = snapshot.CustomerGroupReferenceId,
+            acquisitionSegmentId = segmentId,
+            serviceMode = snapshot.ServiceMode,
+            mealService = snapshot.MealService,
+            dayIndex = generalGameStateService.DayIndex,
+            minuteOfDay = gameClock.Hour * 60 + gameClock.Minute,
+            baseAmountCents = baseAmountCents,
+            orderedDishIds = new List<string>(orderedDishIds)
+        };
+    }
+
+    private static string NormalizeProviderId(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
+    }
+
+    private static bool IsSafeProviderId(string value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length > 96)
+            return false;
+
+        for (int index = 0; index < value.Length; index++)
+        {
+            char character = value[index];
+            bool allowed =
+                character >= 'a' && character <= 'z' ||
+                character >= '0' && character <= '9' ||
+                character == '_' || character == '-' || character == '.';
+            if (!allowed)
+                return false;
+        }
+
+        return true;
     }
 
     private void HandleOrderCompleted(RestaurantOrder order)

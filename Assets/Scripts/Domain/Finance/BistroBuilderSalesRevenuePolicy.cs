@@ -37,6 +37,38 @@ public static class BistroBuilderSalesRevenuePolicy
         return true;
     }
 
+    /// <summary>
+    /// Aplica un ajuste comercial al cobro sin modificar el precio histórico
+    /// de la comanda. Se limita para impedir importes negativos o explosivos.
+    /// </summary>
+    public static bool TryApplyPaymentAdjustment(
+        long baseAmountCents,
+        int adjustmentBasisPoints,
+        out long adjustedAmountCents,
+        out string error)
+    {
+        adjustedAmountCents = 0L;
+
+        if (baseAmountCents < 0L)
+        {
+            error = "El importe base del cobro no puede ser negativo.";
+            return false;
+        }
+
+        if (adjustmentBasisPoints < -9000 ||
+            adjustmentBasisPoints > 50000)
+        {
+            error = "El ajuste comercial del cobro queda fuera de rango.";
+            return false;
+        }
+
+        long multiplier = 10000L + adjustmentBasisPoints;
+        long numerator = checked(baseAmountCents * multiplier);
+        adjustedAmountCents = (numerator + 5000L) / 10000L;
+        error = string.Empty;
+        return true;
+    }
+
     public static bool TryBuildRequest(
         string canonicalOrderId,
         BistroBuilderServiceMode serviceMode,

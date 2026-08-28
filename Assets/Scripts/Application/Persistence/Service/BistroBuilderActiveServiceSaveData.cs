@@ -566,6 +566,8 @@ public sealed class BistroBuilderCustomerArrivalPlanSaveRecord
 {
     public int groupSize;
     public int serviceMode;
+    public BistroBuilderCustomerAcquisitionProfile acquisition =
+        BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
     public bool TryValidate(out string error)
     {
@@ -577,6 +579,10 @@ public sealed class BistroBuilderCustomerArrivalPlanSaveRecord
             error = "El plan contiene una llegada futura inválida.";
             return false;
         }
+
+        acquisition ??= BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
+        if (!acquisition.TryValidate(out error))
+            return false;
 
         error = string.Empty;
         return true;
@@ -597,10 +603,13 @@ public sealed class BistroBuilderCustomerGroupSaveRecord
     public List<string> occupiedBarSpotIds = new List<string>();
     public BistroBuilderSaveVector3 worldPosition;
     public BistroBuilderSaveQuaternion worldRotation;
+    public BistroBuilderCustomerAcquisitionProfile acquisition =
+        BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
     public bool TryValidate(out string error)
     {
         anchorBarSpotId = BistroBuilderOrderIdUtility.Normalize(anchorBarSpotId);
+        acquisition ??= BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
         if (groupId < 1 || groupSize < 1 ||
             !Enum.IsDefined(typeof(CustomerGroupState), state) ||
@@ -657,6 +666,9 @@ public sealed class BistroBuilderCustomerGroupSaveRecord
             error = "La plaza ancla no pertenece a la ocupación del grupo.";
             return false;
         }
+
+        if (!acquisition.TryValidate(out error))
+            return false;
 
         error = string.Empty;
         return true;

@@ -122,6 +122,23 @@ public interface IBistroBuilderMenuSelectionRandomSource
 }
 
 /// <summary>
+/// Puerto genérico para que sistemas externos ajusten la preferencia de un
+/// plato sin convertirse en autoridad de carta, oferta ni selección.
+/// 100 puntos básicos equivalen a +1 % sobre el peso base del candidato.
+/// </summary>
+public interface IBistroBuilderMenuSelectionWeightProvider
+{
+    string WeightProviderId { get; }
+
+    bool TryGetWeightAdjustmentBasisPoints(
+        BistroBuilderMenuSelectionContext context,
+        string dishId,
+        out int adjustmentBasisPoints,
+        out string error
+    );
+}
+
+/// <summary>
 /// Generador SplitMix64 pequeño, determinista y sin asignaciones por muestra.
 /// Se utiliza únicamente para decisiones de carta; no sustituye a otros
 /// generadores del juego.

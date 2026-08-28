@@ -36,6 +36,13 @@ public sealed class BistroBuilderMenuSelectionService : MonoBehaviour
         new HashSet<string>(StringComparer.Ordinal);
     private readonly BistroBuilderMenuSelectionScratch selectionScratch =
         new BistroBuilderMenuSelectionScratch();
+    private readonly List<IBistroBuilderMenuSelectionWeightProvider>
+        weightProviders =
+            new List<IBistroBuilderMenuSelectionWeightProvider>(4);
+    private readonly Dictionary<string, int> weightAdjustmentBuffer =
+        new Dictionary<string, int>(StringComparer.Ordinal);
+    private readonly HashSet<string> weightProviderIdBuffer =
+        new HashSet<string>(StringComparer.Ordinal);
 
     // Protege los buffers reutilizables y la publicación de eventos frente a
     // llamadas reentrantes desde un suscriptor de SelectionCompleted. Unity
@@ -189,12 +196,19 @@ public sealed class BistroBuilderMenuSelectionService : MonoBehaviour
                 return false;
             }
 
-            if (!BistroBuilderMenuSelectionEvaluator.TrySelectWithScratch(
+            if (!TryBuildExternalWeightAdjustments(
+                    context,
+                    candidates,
+                    out IReadOnlyDictionary<string, int> externalWeights,
+                    out error
+                ) ||
+                !BistroBuilderMenuSelectionEvaluator.TrySelectWithScratch(
                     candidates,
                     menuService.CommercialPolicy,
                     context,
                     excludedDishIds,
                     randomSource,
+                    externalWeights,
                     selectionScratch,
                     out result,
                     out _,
@@ -287,12 +301,24 @@ public sealed class BistroBuilderMenuSelectionService : MonoBehaviour
                         baseContext.FallbackDisplayOffset
                     );
 
+                if (!TryBuildExternalWeightAdjustments(
+                        context,
+                        candidates,
+                        out IReadOnlyDictionary<string, int> externalWeights,
+                        out error
+                    ))
+                {
+                    resultBuffer.Clear();
+                    return false;
+                }
+
                 if (!BistroBuilderMenuSelectionEvaluator.TrySelectWithScratch(
                         candidates,
                         menuService.CommercialPolicy,
                         context,
                         exclusionBuffer,
                         null,
+                        externalWeights,
                         selectionScratch,
                         out BistroBuilderMenuSelectionResult result,
                         out BistroBuilderMenuSelectionFailureReason reason,
@@ -341,6 +367,90 @@ public sealed class BistroBuilderMenuSelectionService : MonoBehaviour
         {
             operationInProgress = false;
         }
+    }
+
+    /// <summary>
+    /// Agrega proveedores externos instalados en el mismo host. El contrato
+    /// permanece genérico: Selección no conoce Marketing ni otros sistemas.
+    /// </summary>
+    private bool TryBuildExternalWeightAdjustments(
+        BistroBuilderMenuSelectionContext context,
+        IList<BistroBuilderMenuOfferItemSnapshot> candidates,
+        out IReadOnlyDictionary<string, int> adjustments,
+        out string error
+    )
+    {
+        adjustments = null;
+        weightProviders.Clear();
+        weightAdjustmentBuffer.Clear();
+        weightProviderIdBuffer.Clear();
+
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        for (int index = 0; index < behaviours.Length; index++)
+        {
+            if (!(behaviours[index] is
+                    IBistroBuilderMenuSelectionWeightProvider provider))
+                continue;
+
+            string providerId = BistroBuilderOrderIdUtility.Normalize(
+                provider.WeightProviderId);
+            if (!BistroBuilderOrderIdUtility.IsValid(providerId) ||
+                !weightProviderIdBuffer.Add(providerId))
+            {
+                error = "Existe un proveedor de peso externo inválido o duplicado.";
+                return false;
+            }
+            weightProviders.Add(provider);
+        }
+
+        if (weightProviders.Count == 0)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        for (int candidateIndex = 0;
+             candidateIndex < candidates.Count;
+             candidateIndex++)
+        {
+            string dishId = candidates[candidateIndex].DishId;
+            long aggregate = 0L;
+
+            for (int providerIndex = 0;
+                 providerIndex < weightProviders.Count;
+                 providerIndex++)
+            {
+                if (!weightProviders[providerIndex]
+                        .TryGetWeightAdjustmentBasisPoints(
+                            context,
+                            dishId,
+                            out int value,
+                            out error))
+                    return false;
+
+                if (value < -9000 || value > 50000)
+                {
+                    error = "Un proveedor devolvió un ajuste fuera de rango.";
+                    return false;
+                }
+                aggregate += value;
+            }
+
+            if (aggregate < -9000L || aggregate > 50000L)
+            {
+                error = "La suma de ajustes externos queda fuera de rango.";
+                return false;
+            }
+
+            if (aggregate != 0L)
+                weightAdjustmentBuffer[dishId] = (int)aggregate;
+        }
+
+        if (weightAdjustmentBuffer.Count > 0)
+            adjustments = weightAdjustmentBuffer;
+
+        error = string.Empty;
+        return true;
     }
 
     private bool IsCurrentOfferSnapshot(

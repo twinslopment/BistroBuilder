@@ -951,13 +951,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 74499941}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &74499939 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 74499938}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &74499940 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 74499938}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &74499941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 74499940}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 8
+  slotIndex: 1
 --- !u!1 &76345161
 GameObject:
   m_ObjectHideFlags: 0
@@ -2143,13 +2165,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 107685893}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &107685891 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 107685890}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &107685892 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 107685890}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &107685893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107685892}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 6
+  slotIndex: 0
 --- !u!1 &110835506
 GameObject:
   m_ObjectHideFlags: 0
@@ -3515,13 +3559,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 175859556}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &175859554 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 175859553}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &175859555 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 175859553}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &175859556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 175859555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 6
+  slotIndex: 2
 --- !u!1 &188042298
 GameObject:
   m_ObjectHideFlags: 0
@@ -3896,13 +3962,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 230465106}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &230465104 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 230465103}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &230465105 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 230465103}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &230465106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 230465105}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 7
+  slotIndex: 1
 --- !u!1 &235254517
 GameObject:
   m_ObjectHideFlags: 0
@@ -4020,13 +4108,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 243577947}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &243577945 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 243577944}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &243577946 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 243577944}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &243577947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 243577946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 9
+  slotIndex: 2
 --- !u!1 &246511720
 GameObject:
   m_ObjectHideFlags: 0
@@ -4143,13 +4253,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 259330896}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &259330894 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 259330893}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &259330895 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 259330893}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &259330896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 259330895}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 7
+  slotIndex: 0
 --- !u!1 &263644897
 GameObject:
   m_ObjectHideFlags: 0
@@ -4284,6 +4416,11 @@ GameObject:
   - component: {fileID: 263645027}
   - component: {fileID: 263645025}
   - component: {fileID: 263645028}
+  - component: {fileID: 263645029}
+  - component: {fileID: 263645030}
+  - component: {fileID: 263645031}
+  - component: {fileID: 263645032}
+  - component: {fileID: 263645033}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -6684,6 +6821,88 @@ MonoBehaviour:
   scheduleSessionBridge: {fileID: 263645019}
   orderIntegration: {fileID: 263644962}
   saveGameService: {fileID: 263644953}
+--- !u!114 &263645029
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 427e2f3473181324eb9f4434bffd3140, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingService
+  campaignCatalog: {fileID: 11400000, guid: cf0fd4b5b537d244da50f0a203f3e116, type: 2}
+  discretionaryFinanceService: {fileID: 263645007}
+  generalGameStateService: {fileID: 263644957}
+  menuService: {fileID: 263644959}
+  menuPortfolioService: {fileID: 263644987}
+--- !u!114 &263645030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb16f6718a518bc4d8cb63a1a49ca7fd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingDemandIntegrationService
+  marketingService: {fileID: 263645029}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  serviceStateService: {fileID: 263644923}
+  customerGroupSpawner: {fileID: 263644909}
+  menuPortfolioService: {fileID: 263644987}
+  reservationService: {fileID: 263645021}
+  reservationAvailabilityService: {fileID: 263645022}
+--- !u!114 &263645031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2010835eabe6a404a91cfd6ee00b3fc3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingSaveSectionProvider
+  saveGameService: {fileID: 263644953}
+  marketingService: {fileID: 263645029}
+  demandIntegration: {fileID: 263645030}
+--- !u!114 &263645032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 33e5927565190ee4b82d584f4238175f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingMenuSelectionWeightProvider
+  marketingService: {fileID: 263645029}
+  generalGameStateService: {fileID: 263644957}
+  gameClock: {fileID: 263644898}
+  tableAssignmentSystem: {fileID: 263644908}
+--- !u!114 &263645033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c238e500f625a484d90d5e4fa3bf4cdb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingSalesPaymentAdjustmentProvider
+  marketingService: {fileID: 263645029}
+  menuPortfolioService: {fileID: 263644987}
 --- !u!1 &290893665
 GameObject:
   m_ObjectHideFlags: 0
@@ -8347,7 +8566,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4293323755
   m_fontColor: {r: 0.92, g: 0.92, b: 0.9, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -8360,7 +8579,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -8845,13 +9064,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 392587916}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &392587914 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 392587913}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &392587915 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 392587913}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &392587916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 392587915}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 10
+  slotIndex: 0
 --- !u!1 &394435676
 GameObject:
   m_ObjectHideFlags: 0
@@ -10490,7 +10731,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4291948000
   m_fontColor: {r: 0.88, g: 0.93, b: 0.82, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -10503,7 +10744,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -11445,13 +11686,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 525924854}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &525924852 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 525924851}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &525924853 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 525924851}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &525924854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 525924853}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 10
+  slotIndex: 1
 --- !u!1 &532482022
 GameObject:
   m_ObjectHideFlags: 0
@@ -13215,13 +13478,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 595251104}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &595251102 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 595251101}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &595251103 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 595251101}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &595251104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 595251103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 9
+  slotIndex: 0
 --- !u!1 &617964220
 GameObject:
   m_ObjectHideFlags: 0
@@ -14235,13 +14520,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 714253606}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &714253604 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 714253603}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &714253605 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 714253603}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &714253606
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 714253605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 9
+  slotIndex: 1
 --- !u!1 &714453121
 GameObject:
   m_ObjectHideFlags: 0
@@ -15514,13 +15821,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 758379035}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &758379033 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 758379032}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &758379034 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 758379032}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &758379035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 758379034}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 6
+  slotIndex: 1
 --- !u!1 &764935463
 GameObject:
   m_ObjectHideFlags: 0
@@ -19425,13 +19754,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 997507445}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &997507443 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 997507442}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &997507444 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 997507442}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &997507445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 997507444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 8
+  slotIndex: 0
 --- !u!1001 &1009710996
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -19495,13 +19846,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1009710999}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1009710997 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1009710996}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1009710998 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1009710996}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1009710999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1009710998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 10
+  slotIndex: 2
 --- !u!1 &1012529239
 GameObject:
   m_ObjectHideFlags: 0
@@ -20858,13 +21231,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1071319441}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1071319439 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1071319438}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1071319440 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1071319438}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1071319441
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071319440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 5
+  slotIndex: 1
 --- !u!1001 &1092566728
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20928,13 +21323,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1092566731}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1092566729 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1092566728}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1092566730 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1092566728}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1092566731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1092566730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 5
+  slotIndex: 0
 --- !u!1 &1098568061
 GameObject:
   m_ObjectHideFlags: 0
@@ -21685,7 +22102,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 45
@@ -25766,13 +26183,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1379831247}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1379831245 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1379831244}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1379831246 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1379831244}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1379831247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1379831246}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 5
+  slotIndex: 3
 --- !u!1 &1384893536
 GameObject:
   m_ObjectHideFlags: 0
@@ -26871,13 +27310,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1447774214}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1447774212 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1447774211}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1447774213 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1447774211}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1447774214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1447774213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 9
+  slotIndex: 3
 --- !u!1 &1460341951
 GameObject:
   m_ObjectHideFlags: 0
@@ -29277,13 +29738,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1622087332}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1622087330 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1622087329}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1622087331 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1622087329}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1622087332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1622087331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 5
+  slotIndex: 2
 --- !u!1 &1633651439
 GameObject:
   m_ObjectHideFlags: 0
@@ -29860,13 +30343,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1667023782}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &1667023780 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 1667023779}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1667023781 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 1667023779}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1667023782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667023781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 6
+  slotIndex: 3
 --- !u!1 &1670790207
 GameObject:
   m_ObjectHideFlags: 0
@@ -36231,13 +36736,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2038329362}
   m_SourcePrefab: {fileID: 100100000, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
 --- !u!4 &2038329360 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1495456176154864095, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
   m_PrefabInstance: {fileID: 2038329359}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2038329361 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8181042188913427802, guid: c82385332a707944282ebaa7762a3a2d, type: 3}
+  m_PrefabInstance: {fileID: 2038329359}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2038329362
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2038329361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e112b24268d24e3d916bb4d22e502cf1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilder368AInstalledChair
+  tableId: 10
+  slotIndex: 3
 --- !u!1 &2048924511
 GameObject:
   m_ObjectHideFlags: 0
@@ -36511,7 +37038,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 46
