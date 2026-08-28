@@ -18,6 +18,12 @@ public static class BistroBuilderBlock6CapacityInstaller
         "Assets/Scenes/Prototype_Restaurant.unity";
     private const string TablePrefabPath =
         "Assets/Prefabs/Restaurant/Furniture/Table_Basic.prefab";
+    public const string FourSeatTablePrefabPath =
+        "Assets/Prefabs/Restaurant/Furniture/Table_Basic_4.prefab";
+    public const string FourSeatItemPath =
+        "Assets/Data/Restaurant/EditMode/PlaceableItems/PlaceableItemDefinition_TableBasic4.asset";
+    private const string CatalogPath =
+        "Assets/Data/Restaurant/EditMode/Catalog/RestaurantPlaceableCatalog_Main.asset";
     private const string ChairPrefabPath =
         "Assets/Prefabs/Restaurant/Generated/Furniture/SillaBistroDeMadera.prefab";
     private const string ConfigFolder =
@@ -31,8 +37,8 @@ public static class BistroBuilderBlock6CapacityInstaller
         new TableSpec(6, 4, new Vector3(-2.25f, 0.5f, -2.0f)),
         new TableSpec(7, 2, new Vector3(1.0f, 0.5f, -2.0f)),
         new TableSpec(8, 2, new Vector3(3.75f, 0.5f, -2.0f)),
-        new TableSpec(9, 4, new Vector3(-4.0f, 0.5f, 1.1f)),
-        new TableSpec(10, 4, new Vector3(0.0f, 0.5f, 1.1f))
+        new TableSpec(9, 4, new Vector3(-7.5f, 0.5f, 1.1f)),
+        new TableSpec(10, 4, new Vector3(6.5f, 0.5f, 1.1f))
     };
 
     private static readonly WaiterSpec[] WaiterSpecs =
@@ -126,17 +132,30 @@ public static class BistroBuilderBlock6CapacityInstaller
 
             RestaurantTableSeatingConfigurationDefinition fourSeatConfig =
                 EnsureFourSeatConfiguration();
+            RestaurantPlaceableItemDefinition fourSeatItem;
+            GameObject fourSeatTablePrefab = EnsureFourSeatTableAssets(
+                fourSeatConfig,
+                out fourSeatItem);
+            RestaurantPlaceableItemDefinition twoSeatItem =
+                tablePrefab.GetComponent<RestaurantPlaceableObject>()?.ItemDefinition;
+            if (twoSeatItem == null || fourSeatItem == null || fourSeatTablePrefab == null)
+                throw new InvalidOperationException("No se pudieron preparar las variantes persistibles de mesa.");
+
+            EnsureSaveDefinitionCatalogContains(scene, fourSeatItem);
+
             Transform root = EnsureExpansionRoot(scene).transform;
             foreach (TableSpec spec in TableSpecs)
             {
+                bool fourSeats = spec.Capacity == 4;
                 EnsureTableGroup(
                     scene,
                     root,
                     diningArea,
-                    tablePrefab,
+                    fourSeats ? fourSeatTablePrefab : tablePrefab,
                     chairPrefab,
                     spec,
-                    spec.Capacity == 4 ? fourSeatConfig : twoSeatConfig);
+                    fourSeats ? fourSeatConfig : twoSeatConfig,
+                    fourSeats ? fourSeatItem : twoSeatItem);
             }
 
             EnsureWaiters(scene, root, diningArea);
@@ -197,6 +216,173 @@ public static class BistroBuilderBlock6CapacityInstaller
         return config;
     }
 
+    /// <summary>
+    /// Crea una variante real de catálogo para 4 plazas. No basta con
+    /// sobrescribir la capacidad de una instancia: restaurant.structure
+    /// reconstruye desde el prefab de ItemDefinition y exige que sus slots
+    /// formen parte del contrato persistible del artículo.
+    /// </summary>
+    private static GameObject EnsureFourSeatTableAssets(
+        RestaurantTableSeatingConfigurationDefinition fourSeatConfig,
+        out RestaurantPlaceableItemDefinition itemDefinition)
+    {
+        const string baseItemPath =
+            "Assets/Data/Restaurant/EditMode/PlaceableItems/PlaceableItemDefinition_TableBasic.asset";
+        RestaurantPlaceableItemDefinition baseItem =
+            AssetDatabase.LoadAssetAtPath<RestaurantPlaceableItemDefinition>(baseItemPath);
+        if (baseItem == null || fourSeatConfig == null)
+            throw new InvalidOperationException("Falta la definición base para la mesa de 4 plazas.");
+
+        GameObject prefab =
+            AssetDatabase.LoadAssetAtPath<GameObject>(FourSeatTablePrefabPath);
+        if (prefab == null)
+        {
+            GameObject contents = PrefabUtility.LoadPrefabContents(TablePrefabPath);
+            try
+            {
+                contents.name = "Table_Basic_4";
+                ConfigureFourSeatPrefabContents(contents, fourSeatConfig, null);
+                if (PrefabUtility.SaveAsPrefabAsset(contents, FourSeatTablePrefabPath) == null)
+                    throw new InvalidOperationException("No se pudo crear Table_Basic_4.prefab.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(FourSeatTablePrefabPath);
+        }
+
+        itemDefinition =
+            AssetDatabase.LoadAssetAtPath<RestaurantPlaceableItemDefinition>(FourSeatItemPath);
+        if (itemDefinition == null)
+        {
+            itemDefinition = ScriptableObject.CreateInstance<RestaurantPlaceableItemDefinition>();
+            AssetDatabase.CreateAsset(itemDefinition, FourSeatItemPath);
+        }
+
+        SerializedObject itemSerialized = new SerializedObject(itemDefinition);
+        SetString(itemSerialized, "itemId", "table_basic_4");
+        SetString(itemSerialized, "displayName", "Mesa básica de 4 plazas");
+        SetInt(itemSerialized, "category", (int)baseItem.Category);
+        SetString(itemSerialized, "description", "Mesa básica rectangular para cuatro clientes.");
+        SetObject(itemSerialized, "catalogIcon", baseItem.CatalogIcon);
+        SetObject(itemSerialized, "prefab", prefab.GetComponent<RestaurantPlaceableObject>());
+        SetObject(itemSerialized, "editableDefinition", baseItem.EditableDefinition);
+        SetInt(itemSerialized, "purchasePrice", baseItem.PurchasePrice);
+        SetInt(itemSerialized, "disposalMode", (int)baseItem.DisposalMode);
+        SetInt(itemSerialized, "resaleBasisPoints", baseItem.ResaleBasisPoints);
+        SetInt(itemSerialized, "removalCost", baseItem.RemovalCost);
+        SetInt(itemSerialized, "demolitionBasisPoints", baseItem.DemolitionBasisPoints);
+        itemSerialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(itemDefinition);
+
+        GameObject finalContents = PrefabUtility.LoadPrefabContents(FourSeatTablePrefabPath);
+        try
+        {
+            ConfigureFourSeatPrefabContents(finalContents, fourSeatConfig, itemDefinition);
+            if (PrefabUtility.SaveAsPrefabAsset(finalContents, FourSeatTablePrefabPath) == null)
+                throw new InvalidOperationException("No se pudo actualizar Table_Basic_4.prefab.");
+        }
+        finally
+        {
+            PrefabUtility.UnloadPrefabContents(finalContents);
+        }
+
+        EnsureCatalogContains(itemDefinition);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.ImportAsset(FourSeatTablePrefabPath, ImportAssetOptions.ForceSynchronousImport);
+        return AssetDatabase.LoadAssetAtPath<GameObject>(FourSeatTablePrefabPath);
+    }
+
+    private static void ConfigureFourSeatPrefabContents(
+        GameObject root,
+        RestaurantTableSeatingConfigurationDefinition fourSeatConfig,
+        RestaurantPlaceableItemDefinition itemDefinition)
+    {
+        RestaurantTable table = root.GetComponent<RestaurantTable>();
+        RestaurantTableSeatingConfiguration configuration =
+            root.GetComponent<RestaurantTableSeatingConfiguration>();
+        RestaurantPlaceableObject placeable = root.GetComponent<RestaurantPlaceableObject>();
+        if (table == null || configuration == null || placeable == null)
+            throw new InvalidOperationException("La variante de mesa carece de componentes canónicos.");
+
+        SerializedObject tableSerialized = new SerializedObject(table);
+        SetInt(tableSerialized, "capacity", 4);
+        tableSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+        SerializedObject configSerialized = new SerializedObject(configuration);
+        SetObject(configSerialized, "definition", fourSeatConfig);
+        configSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+        if (itemDefinition != null)
+            placeable.SetItemDefinition(itemDefinition);
+    }
+
+    private static void EnsureCatalogContains(RestaurantPlaceableItemDefinition itemDefinition)
+    {
+        RestaurantPlaceableCatalogDefinition catalog =
+            AssetDatabase.LoadAssetAtPath<RestaurantPlaceableCatalogDefinition>(CatalogPath);
+        if (catalog == null)
+            throw new InvalidOperationException("No existe el catálogo canónico de colocables.");
+
+        SerializedObject serialized = new SerializedObject(catalog);
+        SerializedProperty items = serialized.FindProperty("items");
+        for (int index = 0; index < items.arraySize; index++)
+        {
+            if (ReferenceEquals(items.GetArrayElementAtIndex(index).objectReferenceValue, itemDefinition))
+                return;
+        }
+
+        int newIndex = items.arraySize;
+        items.InsertArrayElementAtIndex(newIndex);
+        items.GetArrayElementAtIndex(newIndex).objectReferenceValue = itemDefinition;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorUtility.SetDirty(catalog);
+    }
+    /// <summary>
+    /// Mantiene el catálogo de reconstrucción SaveGame alineado con el
+    /// catálogo jugable. restaurant.structure resuelve ItemId desde este
+    /// componente y no desde el asset del modo edición.
+    /// </summary>
+    private static void EnsureSaveDefinitionCatalogContains(
+        Scene scene,
+        RestaurantPlaceableItemDefinition itemDefinition)
+    {
+        BistroBuilderSaveDefinitionCatalog[] catalogs =
+            FindSceneComponents<BistroBuilderSaveDefinitionCatalog>(scene);
+        if (catalogs.Length != 1 || catalogs[0] == null)
+            throw new InvalidOperationException(
+                "No existe exactamente un BistroBuilderSaveDefinitionCatalog canónico.");
+
+        BistroBuilderSaveDefinitionCatalog catalog = catalogs[0];
+        SerializedObject serialized = new SerializedObject(catalog);
+        SerializedProperty definitions = serialized.FindProperty("definitions");
+        bool found = false;
+        for (int index = 0; index < definitions.arraySize; index++)
+        {
+            if (ReferenceEquals(
+                    definitions.GetArrayElementAtIndex(index).objectReferenceValue,
+                    itemDefinition))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            int newIndex = definitions.arraySize;
+            definitions.InsertArrayElementAtIndex(newIndex);
+            definitions.GetArrayElementAtIndex(newIndex).objectReferenceValue = itemDefinition;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
+        }
+
+        catalog.RebuildIndex();
+        if (!catalog.TryGetDefinition(itemDefinition.ItemId, out _))
+            throw new InvalidOperationException(
+                "El catálogo SaveGame no pudo registrar " + itemDefinition.ItemId + ".");
+    }
     private static GameObject EnsureExpansionRoot(Scene scene)
     {
         foreach (GameObject root in scene.GetRootGameObjects())
@@ -217,7 +403,8 @@ public static class BistroBuilderBlock6CapacityInstaller
         GameObject tablePrefab,
         GameObject chairPrefab,
         TableSpec spec,
-        RestaurantTableSeatingConfigurationDefinition seatingDefinition)
+        RestaurantTableSeatingConfigurationDefinition seatingDefinition,
+        RestaurantPlaceableItemDefinition itemDefinition)
     {
         string tableName = "BB_B6_Table_" + spec.TableId.ToString("00");
         RestaurantTable table = FindTable(scene, spec.TableId);
@@ -242,7 +429,13 @@ public static class BistroBuilderBlock6CapacityInstaller
         tableArea?.SetArea(diningArea);
         RestaurantPlaceableObject tablePlaceable =
             table.GetComponent<RestaurantPlaceableObject>();
-        tablePlaceable?.AssignInstanceId("b6_table_" + spec.TableId.ToString("00"));
+        if (tablePlaceable == null || itemDefinition == null)
+            throw new InvalidOperationException(tableName + " no tiene definición persistible.");
+        SerializedObject placeableSerialized = new SerializedObject(tablePlaceable);
+        SetObject(placeableSerialized, "itemDefinition", itemDefinition);
+        placeableSerialized.ApplyModifiedPropertiesWithoutUndo();
+        PrefabUtility.RecordPrefabInstancePropertyModifications(tablePlaceable);
+        tablePlaceable.AssignInstanceId("b6_table_" + spec.TableId.ToString("00"));
 
         RestaurantTableSeatingConfiguration configuration =
             table.GetComponent<RestaurantTableSeatingConfiguration>();

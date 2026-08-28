@@ -102,6 +102,38 @@ public static class BistroBuilderBlock6CapacityValidator
             four.ValidateConfiguration(2f, 1f, out _),
             "La definición de mesa de 4 plazas es canónica y válida.");
 
+        BistroBuilderSaveDefinitionCatalog[] saveCatalogs =
+            FindSceneComponents<BistroBuilderSaveDefinitionCatalog>(scene);
+        bool saveCatalogOk = saveCatalogs.Length == 1 &&
+            saveCatalogs[0] != null;
+        if (saveCatalogOk)
+        {
+            saveCatalogs[0].RebuildIndex();
+            saveCatalogOk = saveCatalogs[0].TryGetDefinition(
+                "table_basic_4",
+                out RestaurantPlaceableItemDefinition savedFourSeat) &&
+                savedFourSeat != null && savedFourSeat.HasValidPrefab;
+        }
+        Check(result, saveCatalogOk,
+            "SaveGame conoce la definición persistible table_basic_4.");
+
+        RestaurantPlacementValidationService[] placementServices =
+            FindSceneComponents<RestaurantPlacementValidationService>(scene);
+        if (placementServices.Length != 1 || placementServices[0] == null)
+        {
+            Error(result, "No existe una autoridad única de validación de colocación.");
+        }
+        else
+        {
+            RestaurantPlacementValidationSummary placement =
+                placementServices[0].ValidateAllRegisteredPlacements(true);
+            Check(result, placement.IsValid,
+                "Placement global limpio: " + placement.ValidCount + "/" +
+                placement.TotalCount + " válidos; overlap=" +
+                placement.PhysicalOverlapCount + ", clearance=" +
+                placement.ClearanceViolationCount + ", constraints=" +
+                placement.ConstraintViolationCount + ".");
+        }
         BistroBuilderSeatingFoundationValidationResult seating =
             BistroBuilderSeatingFoundationValidator.ValidateCurrentProject();
         if (seating.ErrorCount > 0)

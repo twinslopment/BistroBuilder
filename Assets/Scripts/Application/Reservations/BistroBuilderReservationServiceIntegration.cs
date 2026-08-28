@@ -421,6 +421,133 @@ public sealed class BistroBuilderReservationServiceIntegration : MonoBehaviour
         reservationIdByGroup.Clear();
     }
 
+    /// <summary>
+    /// Copia los enlaces runtime activos para persistencia 6D.
+    /// </summary>
+    public void CopyActiveRuntimeBindings(
+        List<BistroBuilderReservationRuntimeBindingSaveRecord> destination)
+    {
+        if (destination == null)
+            throw new ArgumentNullException(nameof(destination));
+
+        destination.Clear();
+        foreach (KeyValuePair<string, CustomerGroup> pair in groupByReservationId)
+        {
+            if (pair.Value == null)
+                continue;
+
+            destination.Add(new BistroBuilderReservationRuntimeBindingSaveRecord
+            {
+                reservationId = pair.Key,
+                groupId = pair.Value.GroupId
+            });
+        }
+
+        destination.Sort((left, right) =>
+            string.CompareOrdinal(left.reservationId, right.reservationId));
+    }
+
+    /// <summary>
+    /// Desconecta enlaces anteriores antes de que service.runtime reconstruya
+    /// los CustomerGroup de un slot objetivo.
+    /// </summary>
+    public void PrepareForRuntimeLoad()
+    {
+        ClearRuntimeBindings();
+    }
+
+    /// <summary>
+    /// Reconecta reservas activas con los CustomerGroup ya restaurados por
+    /// service.runtime. No crea grupos ni duplica la asignación de mesas.
+    /// </summary>
+    public bool TryRestoreRuntimeBindings(
+        IReadOnlyList<BistroBuilderReservationRuntimeBindingSaveRecord> bindings,
+        out string error)
+    {
+        error = string.Empty;
+        if (!ValidateConfiguration(out error))
+            return false;
+        if (bindings == null)
+        {
+            error = "Los enlaces runtime de Reservas son nulos.";
+            return false;
+        }
+
+        ClearRuntimeBindings();
+        var groupsById = new Dictionary<int, CustomerGroup>();
+        foreach (CustomerGroup group in tableAssignmentSystem.RegisteredGroups)
+        {
+            if (group != null && !groupsById.TryAdd(group.GroupId, group))
+            {
+                error = "service.runtime contiene GroupId duplicado: " + group.GroupId + ".";
+                ClearRuntimeBindings();
+                return false;
+            }
+        }
+
+        var reservationIds = new HashSet<string>(StringComparer.Ordinal);
+        var groupIds = new HashSet<int>();
+        for (int index = 0; index < bindings.Count; index++)
+        {
+            BistroBuilderReservationRuntimeBindingSaveRecord binding = bindings[index];
+            string reservationId = binding != null
+                ? BistroBuilderReservationEngine.NormalizeId(binding.reservationId)
+                : string.Empty;
+            if (binding == null || reservationId.Length == 0 || binding.groupId < 1 ||
+                !reservationIds.Add(reservationId) || !groupIds.Add(binding.groupId))
+            {
+                error = "reservations.state contiene un enlace runtime inválido o duplicado.";
+                ClearRuntimeBindings();
+                return false;
+            }
+
+            if (!reservationService.TryGetReservation(
+                    reservationId,
+                    out BistroBuilderReservationRecord reservation) ||
+                reservation == null || reservation.IsTerminal)
+            {
+                error = "El enlace runtime apunta a una reserva inexistente o terminal.";
+                ClearRuntimeBindings();
+                return false;
+            }
+
+            if (!groupsById.TryGetValue(binding.groupId, out CustomerGroup group) ||
+                group == null || group.GroupSize != reservation.partySize ||
+                group.CurrentState == CustomerGroupState.Finished)
+            {
+                error = "El CustomerGroup restaurado no coincide con la reserva " + reservationId + ".";
+                ClearRuntimeBindings();
+                return false;
+            }
+
+            if (group.HasAssignedTable)
+            {
+                if (reservation.tableId < 1 ||
+                    group.AssignedTable.TableId != reservation.tableId)
+                {
+                    error = "La mesa restaurada del grupo no coincide con la reserva " + reservationId + ".";
+                    ClearRuntimeBindings();
+                    return false;
+                }
+            }
+            else if (reservation.tableId > 0)
+            {
+                if (!tableRegistry.TryGetTableById(reservation.tableId, out RestaurantTable table) ||
+                    table == null ||
+                    !tableAssignmentSystem.TryReservePreferredTable(group, table, out error))
+                {
+                    ClearRuntimeBindings();
+                    return false;
+                }
+            }
+
+            groupByReservationId.Add(reservationId, group);
+            reservationIdByGroup.Add(group, reservationId);
+            group.StateChanged += HandleReservationGroupStateChanged;
+        }
+
+        return true;
+    }
     private void CacheDependencies()
     {
         if (reservationService == null)

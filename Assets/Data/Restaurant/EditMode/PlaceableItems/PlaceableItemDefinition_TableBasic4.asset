@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_TableBasic4
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: table_basic_4
+  displayName: "Mesa b\xE1sica de 4 plazas"
+  category: 0
+  description: "Mesa b\xE1sica rectangular para cuatro clientes."
+  catalogIcon: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
+  prefab: {fileID: 5514874592414125530, guid: be16f1dc0f4600445872b89191bbdec9, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
+  purchasePrice: 0
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500
