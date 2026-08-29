@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -20,6 +20,8 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
 
     private static BistroBuilderSaveGameService saveGame;
     private static BistroBuilderMarketingService marketing;
+    private static BistroBuilderGuestRelationsService relations;
+    private static BistroBuilderReputationService reputation;
     private static BistroBuilderMarketingDemandIntegrationService demand;
     private static BistroBuilderReservationService reservations;
     private static BistroBuilderGeneralGameStateService general;
@@ -27,6 +29,8 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
     private static CustomerGroupSpawner spawner;
 
     private static BistroBuilderMarketingSnapshot checkpointMarketing;
+    private static BistroBuilderGuestRelationsSnapshot checkpointRelations;
+    private static BistroBuilderReputationSnapshot checkpointReputation;
     private static int checkpointLeads;
     private static int checkpointLeadDay;
     private static int checkpointReservations;
@@ -110,15 +114,17 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
     {
         saveGame = Find<BistroBuilderSaveGameService>();
         marketing = Find<BistroBuilderMarketingService>();
+        relations = Find<BistroBuilderGuestRelationsService>();
+        reputation = Find<BistroBuilderReputationService>();
         demand = Find<BistroBuilderMarketingDemandIntegrationService>();
         reservations = Find<BistroBuilderReservationService>();
         general = Find<BistroBuilderGeneralGameStateService>();
         service = Find<RestaurantServiceStateService>();
         spawner = Find<CustomerGroupSpawner>();
 
-        if (saveGame == null || marketing == null || demand == null ||
-            reservations == null || general == null || service == null ||
-            spawner == null)
+        if (saveGame == null || marketing == null || relations == null ||
+            demand == null || reservations == null || general == null ||
+            service == null || spawner == null)
         {
             Finish(false, "7C SaveLoad: faltan autoridades runtime.", commandLine);
             return;
@@ -157,6 +163,21 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
                 commandLine);
             return;
         }
+        string relationsResetError = string.Empty;
+        string reputationResetError = string.Empty;
+        if (!relations.TryRestoreSnapshot(
+                BistroBuilderGuestRelationsEngine.CreateEmptySnapshot(),
+                out relationsResetError) ||
+            !reputation.TryRestoreSnapshot(
+                BistroBuilderReputationEngine.CreateInitialSnapshot(),
+                out reputationResetError))
+        {
+            Finish(false,
+                "7C SaveLoad: no pudo limpiar GuestRelations/Reputación. " +
+                relationsResetError + " " + reputationResetError,
+                commandLine);
+            return;
+        }
 
         int testLevel = Math.Max(5, general.ProgressionLevel);
         if (!general.TrySetProgression(general.ProgressionStageId, testLevel))
@@ -180,8 +201,32 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
             return;
         }
 
+        string reputationError = string.Empty;
+        string cohortError = string.Empty;
+        bool reputationOk = relations.TryApplyReputationCredit(
+            "block7.saveload.reputation",
+            3,
+            out bool reputationChanged,
+            out reputationError);
+        bool cohortOk = relations.TryRecordCompletedVisit(
+            "general",
+            2,
+            string.Empty,
+            out _,
+            out cohortError);
+        if (!reputationOk || !reputationChanged || !cohortOk)
+        {
+            Finish(false,
+                "7C SaveLoad: no pudo preparar GuestRelations. " +
+                reputationError + " " + cohortError,
+                commandLine);
+            return;
+        }
+
         BistroBuilderMarketingDemandProjection projection = demand.LastProjection;
         checkpointMarketing = marketing.CreateSnapshot();
+        checkpointRelations = relations.CreateSnapshot();
+        checkpointReputation = reputation.CreateSnapshot();
         checkpointLeads = demand.GeneratedReservationLeadsToday;
         checkpointLeadDay = demand.ReservationLeadDay;
         checkpointReservations = reservations.ReservationCount;
@@ -189,15 +234,28 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
             ? projection.adjustedWalkInGroups
             : -1;
 
+        BistroBuilderCustomerDemandPlan plan = null;
+        bool hasPlan = spawner.TryGetQueuedDemandPlan(out plan);
+
         if (checkpointMarketing.campaigns.Count != 3 ||
+            checkpointRelations == null ||
+            checkpointRelations.cohorts.Count != 1 ||
+            checkpointReputation == null ||
+            checkpointReputation.externalReputationPoints != 3 ||
             checkpointLeads != 1 || checkpointLeadDay != general.DayIndex ||
-            expectedGroups != 4 ||
-            !spawner.TryGetQueuedDemandPlan(out var plan) ||
-            plan == null || plan.walkInGroupCount != 4)
+            expectedGroups <= 0 ||
+            !hasPlan ||
+            plan == null || plan.walkInGroupCount != expectedGroups)
         {
             Finish(false,
-                "7C SaveLoad: checkpoint Closed no contiene 3 campañas, " +
-                "1 lead y plan 4 grupos.", commandLine);
+                "7C SaveLoad: checkpoint Closed inválido. Marketing=" +
+                (checkpointMarketing != null ? checkpointMarketing.campaigns.Count : -1) +
+                " | Cohortes=" + (checkpointRelations != null ? checkpointRelations.cohorts.Count : -1) +
+                " | Reputación=" + (checkpointReputation != null ? checkpointReputation.externalReputationPoints : -1) +
+                " | Leads=" + checkpointLeads + "@" + checkpointLeadDay +
+                " | Día=" + general.DayIndex + " | Grupos=" + expectedGroups +
+                " | Plan=" + (plan != null ? plan.walkInGroupCount : -1) + ".",
+                commandLine);
             return;
         }
 
@@ -288,9 +346,9 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
         if (stage.StartsWith("delete_active_", StringComparison.Ordinal))
         {
             Finish(true,
-                "PASS — marketing.state restaura Closed y Open sin duplicar " +
-                "reservas, y service.runtime conserva atribución de grupos " +
-                "y llegadas pendientes.",
+                "PASS — marketing.state, guest_relations.state y reputation.state restauran " +
+                "Closed y Open sin duplicar reservas; service.runtime conserva " +
+                "atribución de grupos y llegadas pendientes.",
                 commandLine);
             return;
         }
@@ -317,6 +375,8 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
     private static void ContinueAfterClosedLoad(bool commandLine)
     {
         if (!MarketingMatchesCheckpoint() ||
+            !RelationsMatchCheckpoint() ||
+            !ReputationMatchesCheckpoint() ||
             demand.GeneratedReservationLeadsToday != checkpointLeads ||
             demand.ReservationLeadDay != checkpointLeadDay ||
             reservations.ReservationCount != checkpointReservations ||
@@ -431,6 +491,8 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
             out _);
         if (!service.AcceptsNewCustomers ||
             !MarketingMatchesCheckpoint() ||
+            !RelationsMatchCheckpoint() ||
+            !ReputationMatchesCheckpoint() ||
             demand.GeneratedReservationLeadsToday != checkpointLeads ||
             demand.ReservationLeadDay != checkpointLeadDay ||
             reservations.ReservationCount != checkpointReservations ||
@@ -461,6 +523,8 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
     private static void MutateMarketingBeforeLoad()
     {
         marketing.TryResetForLegacyLoad(out _);
+        relations.TryResetForLegacyLoad(out _);
+        reputation.TryResetForLegacyLoad(out _);
         demand.TryRestorePersistenceState(0, 0, out _);
     }
 
@@ -505,6 +569,30 @@ public static class BistroBuilderMarketing7CSaveLoadPlayModeSelfTest
         return true;
     }
 
+    private static bool RelationsMatchCheckpoint()
+    {
+        if (checkpointRelations == null || relations == null)
+            return false;
+
+        BistroBuilderGuestRelationsSnapshot current = relations.CreateSnapshot();
+        return current != null && string.Equals(
+            JsonUtility.ToJson(current),
+            JsonUtility.ToJson(checkpointRelations),
+            StringComparison.Ordinal);
+    }
+
+
+    private static bool ReputationMatchesCheckpoint()
+    {
+        if (checkpointReputation == null || reputation == null)
+            return false;
+
+        BistroBuilderReputationSnapshot current = reputation.CreateSnapshot();
+        return current != null && string.Equals(
+            JsonUtility.ToJson(current),
+            JsonUtility.ToJson(checkpointReputation),
+            StringComparison.Ordinal);
+    }
     private static bool AllProfilesMarketing(
         IReadOnlyList<BistroBuilderCustomerAcquisitionProfile> profiles)
     {

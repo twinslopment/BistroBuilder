@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -386,6 +386,7 @@ public sealed class CustomerGroupSpawner :
                 {
                     groupSize = arrival.GroupSize,
                     serviceMode = (int)arrival.ServiceMode,
+                    delayBeforeArrivalSeconds = arrival.DelayBeforeArrivalSeconds,
                     acquisition = arrival.Acquisition != null
                         ? arrival.Acquisition.DeepClone()
                         : BistroBuilderCustomerAcquisitionProfile.CreateBaseline()
@@ -431,7 +432,8 @@ public sealed class CustomerGroupSpawner :
                     (BistroBuilderServiceMode)record.serviceMode,
                     record.acquisition != null
                         ? record.acquisition.DeepClone()
-                        : BistroBuilderCustomerAcquisitionProfile.CreateBaseline()
+                        : BistroBuilderCustomerAcquisitionProfile.CreateBaseline(),
+                    record.delayBeforeArrivalSeconds
                 )
             );
         }
@@ -678,20 +680,29 @@ public sealed class CustomerGroupSpawner :
 
         for (int index = 0; index < plannedGroupCount; index++)
         {
-            int groupSize = diagnosticGroupSizes.Count > 0
-                ? diagnosticGroupSizes.Dequeue()
-                : Random.Range(
-                    minimumGroupSize,
-                    maximumGroupSize + 1
-                );
-            BistroBuilderServiceMode mode = ResolveServiceMode(groupSize);
             BistroBuilderCustomerAcquisitionProfile acquisition =
                 demandPlan != null && index < demandPlan.profiles.Count
                     ? demandPlan.profiles[index].DeepClone()
                     : CreateBaselineAcquisitionProfile(index);
+            int groupSize = diagnosticGroupSizes.Count > 0
+                ? diagnosticGroupSizes.Dequeue()
+                : acquisition.preferredGroupSize > 0
+                    ? acquisition.preferredGroupSize
+                    : Random.Range(
+                        minimumGroupSize,
+                        maximumGroupSize + 1
+                    );
+            BistroBuilderServiceMode mode = ResolveServiceMode(groupSize);
+            float delayBeforeArrival = demandPlan != null &&
+                demandPlan.arrivalDelaySeconds != null &&
+                demandPlan.arrivalDelaySeconds.Count == plannedGroupCount
+                    ? demandPlan.arrivalDelaySeconds[index]
+                    : index == 0
+                        ? Mathf.Max(0f, firstSpawnDelay)
+                        : Mathf.Max(0.1f, timeBetweenGroups);
 
             plannedArrivals.Enqueue(
-                new PlannedArrival(groupSize, mode, acquisition)
+                new PlannedArrival(groupSize, mode, acquisition, delayBeforeArrival)
             );
         }
 
@@ -704,7 +715,7 @@ public sealed class CustomerGroupSpawner :
         restoredScheduleAwaitingServiceActivation = false;
         secondsUntilNextArrival = spawnScheduleCompleted
             ? 0f
-            : Mathf.Max(0f, firstSpawnDelay);
+            : Mathf.Max(0f, plannedArrivals.Peek().DelayBeforeArrivalSeconds);
     }
 
     /// <summary>
@@ -814,7 +825,7 @@ public sealed class CustomerGroupSpawner :
             );
 
             secondsUntilNextArrival = plannedArrivals.Count > 0
-                ? Mathf.Max(0.1f, timeBetweenGroups)
+                ? Mathf.Max(0f, plannedArrivals.Peek().DelayBeforeArrivalSeconds)
                 : 0f;
 
             yield return null;
@@ -1187,11 +1198,13 @@ public sealed class CustomerGroupSpawner :
         public int GroupSize { get; }
         public BistroBuilderServiceMode ServiceMode { get; }
         public BistroBuilderCustomerAcquisitionProfile Acquisition { get; }
+        public float DelayBeforeArrivalSeconds { get; }
 
         public PlannedArrival(
             int groupSize,
             BistroBuilderServiceMode serviceMode,
-            BistroBuilderCustomerAcquisitionProfile acquisition = null
+            BistroBuilderCustomerAcquisitionProfile acquisition = null,
+            float delayBeforeArrivalSeconds = 0f
         )
         {
             GroupSize = Mathf.Max(1, groupSize);
@@ -1199,6 +1212,7 @@ public sealed class CustomerGroupSpawner :
             Acquisition = acquisition != null
                 ? acquisition.DeepClone()
                 : CreateBaselineAcquisitionProfile(groupSize);
+            DelayBeforeArrivalSeconds = Mathf.Max(0f, delayBeforeArrivalSeconds);
         }
     }
 

@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d27b08b69f19bd4f85683cc2cdb7c28, type: 3}
+  m_Name: BB_Progression_Milestone_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderProgressionMilestoneCatalog
+  milestones:
+  - milestoneId: progression.established
+    stageId: restaurant.established
+    displayName: Restaurante establecido
+    targetLevel: 2
+    requiredReputationBasisPoints: 5000
+    requiredPurchasedUpgradeCount: 2
+    requiredCumulativeRevenueCents: 50000
+    requiredProfitableDays: 0
+  - milestoneId: progression.growing
+    stageId: restaurant.growing
+    displayName: Restaurante en crecimiento
+    targetLevel: 3
+    requiredReputationBasisPoints: 5250
+    requiredPurchasedUpgradeCount: 4
+    requiredCumulativeRevenueCents: 150000
+    requiredProfitableDays: 2
+  - milestoneId: progression.consolidated
+    stageId: restaurant.consolidated
+    displayName: Restaurante consolidado
+    targetLevel: 4
+    requiredReputationBasisPoints: 5500
+    requiredPurchasedUpgradeCount: 7
+    requiredCumulativeRevenueCents: 400000
+    requiredProfitableDays: 4
+  - milestoneId: progression.signature
+    stageId: restaurant.signature
+    displayName: Restaurante de referencia
+    targetLevel: 5
+    requiredReputationBasisPoints: 5800
+    requiredPurchasedUpgradeCount: 10
+    requiredCumulativeRevenueCents: 800000
+    requiredProfitableDays: 7

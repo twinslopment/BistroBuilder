@@ -265,6 +265,67 @@ public static class BistroBuilderMarketingEngine
         return true;
     }
 
+    /// <summary>
+    /// Cancela una campaña activa sin revertir el coste ni efectos ya materializados.
+    /// La cancelación solo retira sus efectos para días/operaciones posteriores.
+    /// </summary>
+    public static bool TryCancelCampaign(
+        BistroBuilderMarketingSnapshot source,
+        string instanceId,
+        int currentDayIndex,
+        out BistroBuilderMarketingSnapshot candidate,
+        out string error)
+    {
+        candidate = null;
+        if (!TryValidateSnapshot(source, out error))
+            return false;
+        if (currentDayIndex < 1)
+        {
+            error = "El día actual de Marketing es inválido.";
+            return false;
+        }
+
+        string normalized = NormalizeId(instanceId);
+        if (normalized.Length == 0)
+        {
+            error = "La instancia de campaña es inválida.";
+            return false;
+        }
+
+        int matchIndex = -1;
+        for (int i = 0; i < source.campaigns.Count; i++)
+        {
+            BistroBuilderMarketingCampaignRecord record = source.campaigns[i];
+            if (record != null && NormalizeId(record.instanceId) == normalized)
+            {
+                matchIndex = i;
+                if (!record.IsActiveOnDay(currentDayIndex))
+                {
+                    error = "La campaña ya no está activa.";
+                    return false;
+                }
+                break;
+            }
+        }
+
+        if (matchIndex < 0)
+        {
+            error = "No existe la instancia de campaña indicada.";
+            return false;
+        }
+
+        candidate = source.DeepClone();
+        candidate.campaigns.RemoveAt(matchIndex);
+        candidate.revision = checked(source.revision + 1L);
+        if (!TryValidateSnapshot(candidate, out error))
+        {
+            candidate = null;
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
     public static bool TryPruneExpired(
         BistroBuilderMarketingSnapshot source,
         int currentDayIndex,
@@ -399,6 +460,107 @@ public static class BistroBuilderMarketingEngine
         return true;
     }
 
+    /// <summary>
+    /// Evalúa la presión operativa aplicable a una unidad de trabajo concreta.
+    /// Las campañas dirigidas solo contribuyen si su DishId/MenuId afecta a la
+    /// línea que se está preparando.
+    /// </summary>
+    public static bool TryEvaluateOperationalPressure(
+        BistroBuilderMarketingSnapshot snapshot,
+        IReadOnlyList<BistroBuilderMarketingCampaignDefinition> definitions,
+        int dayIndex,
+        BistroBuilderMarketingCustomerSegment segment,
+        BistroBuilderMarketingDayPart dayPart,
+        ISet<string> applicableTargetIds,
+        out int basisPoints,
+        out int contributingCampaigns,
+        out string error)
+    {
+        basisPoints = 0;
+        contributingCampaigns = 0;
+        if (!TryValidateSnapshot(snapshot, out error) ||
+            !TryValidateCatalog(definitions, out error))
+            return false;
+
+        if (dayIndex < 1)
+        {
+            error = "La consulta de presión operativa necesita un día válido.";
+            return false;
+        }
+
+        var normalizedTargets = new HashSet<string>(StringComparer.Ordinal);
+        if (applicableTargetIds != null)
+        {
+            foreach (string targetId in applicableTargetIds)
+            {
+                string normalized = NormalizeId(targetId);
+                if (normalized.Length > 0)
+                    normalizedTargets.Add(normalized);
+            }
+        }
+
+        var byId =
+            new Dictionary<string, BistroBuilderMarketingCampaignDefinition>(
+                StringComparer.Ordinal);
+        for (int i = 0; i < definitions.Count; i++)
+            byId.Add(NormalizeId(definitions[i].campaignId), definitions[i]);
+
+        var query = new BistroBuilderMarketingEffectQuery
+        {
+            dayIndex = dayIndex,
+            segment = segment,
+            dayPart = dayPart
+        };
+        var contributors = new HashSet<string>(StringComparer.Ordinal);
+        long aggregate = 0L;
+
+        for (int i = 0; i < snapshot.campaigns.Count; i++)
+        {
+            BistroBuilderMarketingCampaignRecord record = snapshot.campaigns[i];
+            if (record == null || !record.IsActiveOnDay(dayIndex))
+                continue;
+
+            if (!byId.TryGetValue(
+                    NormalizeId(record.campaignId),
+                    out BistroBuilderMarketingCampaignDefinition definition))
+            {
+                error = "marketing.state referencia una campaña ausente del catálogo.";
+                return false;
+            }
+
+            if (definition.targetKind != BistroBuilderMarketingTargetKind.None &&
+                !normalizedTargets.Contains(NormalizeId(record.targetId)))
+                continue;
+
+            bool contributed = false;
+            for (int j = 0; j < definition.modifiers.Count; j++)
+            {
+                BistroBuilderMarketingModifier modifier = definition.modifiers[j];
+                if (modifier == null ||
+                    modifier.kind !=
+                        BistroBuilderMarketingModifierKind.OperationalPressure ||
+                    !MatchesContext(modifier, query))
+                    continue;
+
+                aggregate += modifier.basisPoints;
+                contributed = true;
+            }
+
+            if (contributed)
+                contributors.Add(record.instanceId);
+        }
+
+        if (aggregate < int.MinValue || aggregate > int.MaxValue)
+        {
+            error = "La presión operativa agregada desborda el rango permitido.";
+            return false;
+        }
+
+        basisPoints = (int)aggregate;
+        contributingCampaigns = contributors.Count;
+        error = string.Empty;
+        return true;
+    }
     public static bool TryEvaluate(
         BistroBuilderMarketingSnapshot snapshot,
         IReadOnlyList<BistroBuilderMarketingCampaignDefinition> definitions,

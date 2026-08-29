@@ -207,6 +207,20 @@ public sealed class BistroBuilderReservationServiceIntegration : MonoBehaviour
                 out _))
             return false;
 
+        BistroBuilderCustomerAcquisitionTag acquisitionTag =
+            group.GetComponent<BistroBuilderCustomerAcquisitionTag>();
+        BistroBuilderCustomerAcquisitionProfile acquisition =
+            BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
+        acquisition.sourceSystemId = "reservations.runtime";
+        acquisition.sourceReferenceId = reservationId;
+        acquisition.discoverySourceId = "reservation";
+        if (acquisitionTag == null ||
+            !acquisitionTag.TryConfigure(acquisition, out _))
+        {
+            customerGroupSpawner.UnregisterAndDestroyGroupForRuntimeLoad(group);
+            return false;
+        }
+
         if (!tableAssignmentSystem.TryReservePreferredTable(
                 group,
                 table,

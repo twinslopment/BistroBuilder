@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -566,12 +566,16 @@ public sealed class BistroBuilderCustomerArrivalPlanSaveRecord
 {
     public int groupSize;
     public int serviceMode;
+    public float delayBeforeArrivalSeconds;
     public BistroBuilderCustomerAcquisitionProfile acquisition =
         BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
     public bool TryValidate(out string error)
     {
         if (groupSize < 1 ||
+            float.IsNaN(delayBeforeArrivalSeconds) ||
+            float.IsInfinity(delayBeforeArrivalSeconds) ||
+            delayBeforeArrivalSeconds < 0f || delayBeforeArrivalSeconds > 120f ||
             !BistroBuilderServiceModeUtility.IsDefined(
                 (BistroBuilderServiceMode)serviceMode
             ))

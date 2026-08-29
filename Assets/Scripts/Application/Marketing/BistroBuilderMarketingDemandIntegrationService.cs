@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,10 +15,19 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
     [SerializeField] private GameClock gameClock;
     [SerializeField] private RestaurantServiceStateService serviceStateService;
     [SerializeField] private CustomerGroupSpawner customerGroupSpawner;
+    [SerializeField] private BistroBuilderDynamicDemandService dynamicDemandService;
     [SerializeField] private BistroBuilderMenuPortfolioService menuPortfolioService;
     [SerializeField] private BistroBuilderReservationService reservationService;
     [SerializeField] private BistroBuilderReservationAvailabilityService
         reservationAvailabilityService;
+    [SerializeField] private BistroBuilderGuestRelationsService guestRelationsService;
+    [SerializeField] private BistroBuilderReputationService reputationService;
+
+    private readonly List<BistroBuilderGuestVisitCohortRecord> eligibleCohorts =
+        new List<BistroBuilderGuestVisitCohortRecord>(32);
+    private readonly HashSet<string> selectedReturnCohortIds =
+        new HashSet<string>(StringComparer.Ordinal);
+    private readonly HashSet<int> replacedReturnSlots = new HashSet<int>();
 
     private readonly Dictionary<BistroBuilderMarketingCustomerSegment,
         BistroBuilderMarketingEffectSnapshot> segmentEffects =
@@ -103,9 +112,11 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
         CacheDependencies();
         if (marketingService == null || generalGameStateService == null ||
             gameClock == null || serviceStateService == null ||
-            customerGroupSpawner == null || menuPortfolioService == null ||
+            customerGroupSpawner == null || dynamicDemandService == null ||
+            menuPortfolioService == null ||
             reservationService == null ||
-            reservationAvailabilityService == null)
+            reservationAvailabilityService == null ||
+            guestRelationsService == null || reputationService == null)
         {
             error = "7B necesita Marketing, calendario, servicio, clientes y Reservas.";
             return false;
@@ -115,14 +126,11 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             !generalGameStateService.ValidateConfiguration(out error) ||
             !menuPortfolioService.ValidateConfiguration(out error) ||
             !reservationService.ValidateConfiguration(out error) ||
-            !reservationAvailabilityService.ValidateConfiguration(out error))
+            !reservationAvailabilityService.ValidateConfiguration(out error) ||
+            !guestRelationsService.ValidateConfiguration(out error) ||
+            !reputationService.ValidateConfiguration(out error) ||
+            !dynamicDemandService.ValidateConfiguration(out error))
             return false;
-
-        if (customerGroupSpawner.BaselineGroupCount < 1)
-        {
-            error = "El flujo de walk-ins no expone una demanda base válida.";
-            return false;
-        }
 
         error = string.Empty;
         return true;
@@ -142,9 +150,12 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
         lastProjection = projection.DeepClone();
         if (!serviceStateService.AcceptsNewCustomers)
         {
-            BistroBuilderCustomerDemandPlan plan = BuildCustomerDemandPlan(
-                projection,
-                globalEffects);
+            if (!TryBuildCustomerDemandPlan(
+                    projection,
+                    globalEffects,
+                    out BistroBuilderCustomerDemandPlan plan,
+                    out error))
+                return false;
             if (!customerGroupSpawner.TryQueueDemandPlanForNextService(
                     plan,
                     out error))
@@ -200,6 +211,11 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
         projection = null;
         globalEffects = null;
         if (!ValidateConfiguration(out error))
+            return false;
+
+        if (!dynamicDemandService.TryBuildProjection(
+                out BistroBuilderDynamicDemandProjection baseProjection,
+                out error))
             return false;
 
         int dayIndex = generalGameStateService.DayIndex;
@@ -277,37 +293,69 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             segmentEffects.Add(segment, effects);
         }
 
+        int reputationDemandBasisPoints =
+            reputationService.PersistentDemandBasisPoints;
+        if (reputationDemandBasisPoints != 0)
+        {
+            globalEffects.overallDemandBasisPoints += reputationDemandBasisPoints;
+            foreach (KeyValuePair<BistroBuilderMarketingCustomerSegment,
+                     BistroBuilderMarketingEffectSnapshot> pair in segmentEffects)
+            {
+                pair.Value.overallDemandBasisPoints +=
+                    reputationDemandBasisPoints;
+            }
+        }
+
         return BistroBuilderMarketingDemandEngine.TryBuildProjection(
-            customerGroupSpawner.BaselineGroupCount,
+            baseProjection.baseWalkInGroups,
             globalEffects,
             segmentEffects,
             out projection,
             out error);
     }
 
-    private BistroBuilderCustomerDemandPlan BuildCustomerDemandPlan(
+    private bool TryBuildCustomerDemandPlan(
         BistroBuilderMarketingDemandProjection projection,
-        BistroBuilderMarketingEffectSnapshot globalEffects)
+        BistroBuilderMarketingEffectSnapshot globalEffects,
+        out BistroBuilderCustomerDemandPlan plan,
+        out string error)
     {
-        string planId = "marketing.demand.day" +
-            generalGameStateService.DayIndex + ".rev" + marketingService.Revision;
-        var plan = new BistroBuilderCustomerDemandPlan
+        plan = null;
+        error = string.Empty;
+        if (projection == null || globalEffects == null)
+        {
+            error = "No existe una proyección válida para componer demanda.";
+            return false;
+        }
+
+        string planId = "demand.day" + generalGameStateService.DayIndex +
+            ".h" + gameClock.Hour + ".base" + projection.baselineWalkInGroups +
+            ".mrev" + marketingService.Revision;
+        plan = new BistroBuilderCustomerDemandPlan
         {
             planId = planId,
             walkInGroupCount = projection.adjustedWalkInGroups,
-            profiles = new List<BistroBuilderCustomerAcquisitionProfile>()
+            profiles = new List<BistroBuilderCustomerAcquisitionProfile>(),
+            arrivalDelaySeconds = new List<float>()
         };
+
+        int reputationBasisPoints = reputationService != null
+            ? reputationService.PersistentDemandBasisPoints
+            : 0;
+        int directGlobalOverall =
+            globalEffects.overallDemandBasisPoints - reputationBasisPoints;
 
         for (int index = 0; index < projection.walkInSegments.Count; index++)
         {
             BistroBuilderMarketingCustomerSegment segment =
                 projection.walkInSegments[index];
             BistroBuilderMarketingEffectSnapshot effects = segmentEffects[segment];
+            int directSegmentOverall =
+                effects.overallDemandBasisPoints - reputationBasisPoints;
             bool influenced =
-                globalEffects.overallDemandBasisPoints != 0 ||
+                directGlobalOverall != 0 ||
                 globalEffects.walkInDemandBasisPoints != 0 ||
-                effects.overallDemandBasisPoints !=
-                    globalEffects.overallDemandBasisPoints ||
+                directSegmentOverall != directGlobalOverall ||
                 effects.walkInDemandBasisPoints !=
                     globalEffects.walkInDemandBasisPoints;
 
@@ -316,14 +364,220 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
                 segmentId = segment.ToString().ToLowerInvariant(),
                 sourceSystemId = influenced
                     ? BistroBuilderMarketingService.FinanceSourceSystemId
-                    : "service.baseline",
-                sourceReferenceId = influenced ? planId : string.Empty,
-                marketingInfluenced = influenced
+                    : "service.dynamic_demand",
+                sourceReferenceId = planId,
+                marketingInfluenced = influenced,
+                discoverySourceId = influenced ? "marketing" : "organic"
             });
         }
-        return plan;
+
+        if (!dynamicDemandService.TryBuildArrivalDelays(
+                projection.adjustedWalkInGroups,
+                plan.arrivalDelaySeconds,
+                out error))
+            return false;
+
+        ApplyReputationDiscoveryAttribution(
+            plan,
+            reputationBasisPoints,
+            projection.baselineWalkInGroups);
+        ApplyRepeatVisitSubstitutions(plan, globalEffects);
+        if (!plan.TryValidate(out error))
+            return false;
+        return true;
+    }
+    private void ApplyReputationDiscoveryAttribution(
+        BistroBuilderCustomerDemandPlan plan,
+        int reputationBasisPoints,
+        int baselineWalkInGroups)
+    {
+        if (plan == null || reputationBasisPoints <= 0 ||
+            customerGroupSpawner == null || plan.profiles == null)
+            return;
+
+        int remaining = Math.Max(
+            0,
+            plan.walkInGroupCount - Math.Max(1, baselineWalkInGroups));
+        for (int index = plan.profiles.Count - 1;
+             index >= 0 && remaining > 0;
+             index--)
+        {
+            BistroBuilderCustomerAcquisitionProfile profile = plan.profiles[index];
+            if (profile == null || profile.marketingInfluenced)
+                continue;
+            profile.sourceSystemId = "reputation.word_of_mouth";
+            profile.sourceReferenceId = plan.planId;
+            profile.discoverySourceId = "word_of_mouth";
+            remaining--;
+        }
     }
 
+    private void ApplyRepeatVisitSubstitutions(
+        BistroBuilderCustomerDemandPlan plan,
+        BistroBuilderMarketingEffectSnapshot globalEffects)
+    {
+        if (plan == null || globalEffects == null ||
+            guestRelationsService == null || plan.profiles.Count == 0)
+            return;
+
+        guestRelationsService.CopyEligibleCohorts(
+            generalGameStateService.DayIndex,
+            eligibleCohorts);
+        if (eligibleCohorts.Count == 0)
+            return;
+
+        selectedReturnCohortIds.Clear();
+        replacedReturnSlots.Clear();
+
+        int globalRepeat = Math.Max(0, globalEffects.repeatVisitBasisPoints);
+        int globalCount =
+            BistroBuilderGuestRelationsEngine.ConvertRepeatVisitBasisPointsToCount(
+                globalRepeat,
+                eligibleCohorts.Count,
+                plan.profiles.Count);
+        ReplaceReturnProfiles(
+            plan,
+            BistroBuilderMarketingCustomerSegment.Any,
+            globalCount,
+            true);
+
+        int organicRepeat = reputationService != null
+            ? reputationService.OrganicRepeatVisitBasisPoints
+            : 0;
+        int organicCount =
+            BistroBuilderGuestRelationsEngine.ConvertRepeatVisitBasisPointsToCount(
+                organicRepeat,
+                Math.Max(0, eligibleCohorts.Count - selectedReturnCohortIds.Count),
+                Math.Max(0, plan.profiles.Count - replacedReturnSlots.Count));
+        ReplaceReturnProfiles(
+            plan,
+            BistroBuilderMarketingCustomerSegment.Any,
+            organicCount,
+            false);
+
+        IReadOnlyList<BistroBuilderMarketingCustomerSegment> segments =
+            BistroBuilderMarketingDemandEngine.Segments;
+        for (int index = 0; index < segments.Count; index++)
+        {
+            if (replacedReturnSlots.Count >= plan.profiles.Count ||
+                replacedReturnSlots.Count >=
+                    BistroBuilderGuestRelationsEngine.MaximumReturnGroupsPerService)
+                break;
+
+            BistroBuilderMarketingCustomerSegment segment = segments[index];
+            int specific = Math.Max(
+                0,
+                segmentEffects[segment].repeatVisitBasisPoints - globalRepeat);
+            int availableSlots = plan.profiles.Count - replacedReturnSlots.Count;
+            int eligible = CountEligibleCohorts(segment);
+            int count =
+                BistroBuilderGuestRelationsEngine.ConvertRepeatVisitBasisPointsToCount(
+                    specific,
+                    eligible,
+                    availableSlots);
+            ReplaceReturnProfiles(plan, segment, count, true);
+        }
+    }
+
+    private int CountEligibleCohorts(
+        BistroBuilderMarketingCustomerSegment segment)
+    {
+        int count = 0;
+        for (int index = 0; index < eligibleCohorts.Count; index++)
+        {
+            BistroBuilderGuestVisitCohortRecord cohort = eligibleCohorts[index];
+            if (cohort == null ||
+                selectedReturnCohortIds.Contains(cohort.cohortId))
+                continue;
+            if (segment == BistroBuilderMarketingCustomerSegment.Any ||
+                IsCohortSegment(cohort, segment))
+                count++;
+        }
+        return count;
+    }
+    private void ReplaceReturnProfiles(
+        BistroBuilderCustomerDemandPlan plan,
+        BistroBuilderMarketingCustomerSegment requiredSegment,
+        int count,
+        bool marketingDriven)
+    {
+        for (int replacement = 0; replacement < count; replacement++)
+        {
+            BistroBuilderGuestVisitCohortRecord cohort =
+                FindNextEligibleCohort(requiredSegment);
+            if (cohort == null)
+                return;
+
+            int slot = FindReplacementSlot(plan, requiredSegment);
+            if (slot < 0)
+                return;
+
+            plan.profiles[slot] = new BistroBuilderCustomerAcquisitionProfile
+            {
+                segmentId = cohort.segmentId,
+                sourceSystemId = marketingDriven
+                    ? BistroBuilderMarketingService.FinanceSourceSystemId
+                    : "reputation.returning",
+                sourceReferenceId = plan.planId,
+                marketingInfluenced = marketingDriven,
+                discoverySourceId = "returning_guest",
+                returningVisit = true,
+                guestRelationsReferenceId = cohort.cohortId,
+                preferredGroupSize = cohort.partySize
+            };
+            selectedReturnCohortIds.Add(cohort.cohortId);
+            replacedReturnSlots.Add(slot);
+        }
+    }
+
+    private BistroBuilderGuestVisitCohortRecord FindNextEligibleCohort(
+        BistroBuilderMarketingCustomerSegment requiredSegment)
+    {
+        for (int index = 0; index < eligibleCohorts.Count; index++)
+        {
+            BistroBuilderGuestVisitCohortRecord cohort = eligibleCohorts[index];
+            if (cohort == null ||
+                selectedReturnCohortIds.Contains(cohort.cohortId))
+                continue;
+            if (requiredSegment != BistroBuilderMarketingCustomerSegment.Any &&
+                !IsCohortSegment(cohort, requiredSegment))
+                continue;
+            return cohort;
+        }
+        return null;
+    }
+
+    private int FindReplacementSlot(
+        BistroBuilderCustomerDemandPlan plan,
+        BistroBuilderMarketingCustomerSegment requiredSegment)
+    {
+        string requiredId = requiredSegment == BistroBuilderMarketingCustomerSegment.Any
+            ? string.Empty
+            : requiredSegment.ToString().ToLowerInvariant();
+
+        for (int index = 0; index < plan.profiles.Count; index++)
+        {
+            if (replacedReturnSlots.Contains(index))
+                continue;
+            if (requiredId.Length == 0 ||
+                string.Equals(
+                    plan.profiles[index].segmentId,
+                    requiredId,
+                    StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+        return -1;
+    }
+
+    private static bool IsCohortSegment(
+        BistroBuilderGuestVisitCohortRecord cohort,
+        BistroBuilderMarketingCustomerSegment segment)
+    {
+        return cohort != null && string.Equals(
+            cohort.segmentId,
+            segment.ToString(),
+            StringComparison.OrdinalIgnoreCase);
+    }
     private bool TryGenerateIncrementalReservations(
         BistroBuilderMarketingDemandProjection projection,
         out int generatedNow,
@@ -496,6 +750,15 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             TryRefreshDemandForNextService(out _);
     }
 
+    private void HandleBaseDemandChanged()
+    {
+        if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
+            return;
+        if (serviceStateService != null && !serviceStateService.AcceptsNewCustomers)
+            TryRefreshDemandForNextService(out _);
+    }
+
+    private void HandleReputationChanged(long revision) => HandleBaseDemandChanged();
     private void Subscribe()
     {
         if (serviceStateService != null)
@@ -516,6 +779,15 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
         {
             generalGameStateService.CalendarChanged -= HandleCalendarChanged;
             generalGameStateService.CalendarChanged += HandleCalendarChanged;
+            generalGameStateService.ProgressionChanged -= HandleBaseDemandChanged;
+            generalGameStateService.ProgressionChanged += HandleBaseDemandChanged;
+        }
+        if (reputationService != null)
+        {
+            reputationService.ReputationChanged -= HandleReputationChanged;
+            reputationService.ReputationChanged += HandleReputationChanged;
+            reputationService.ReputationRestored -= HandleBaseDemandChanged;
+            reputationService.ReputationRestored += HandleBaseDemandChanged;
         }
     }
 
@@ -530,7 +802,15 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             marketingService.MarketingRestored -= HandleMarketingRestored;
         }
         if (generalGameStateService != null)
+        {
             generalGameStateService.CalendarChanged -= HandleCalendarChanged;
+            generalGameStateService.ProgressionChanged -= HandleBaseDemandChanged;
+        }
+        if (reputationService != null)
+        {
+            reputationService.ReputationChanged -= HandleReputationChanged;
+            reputationService.ReputationRestored -= HandleBaseDemandChanged;
+        }
     }
 
     private void CacheDependencies()
@@ -545,12 +825,18 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             serviceStateService = FindFirstObjectByType<RestaurantServiceStateService>();
         if (customerGroupSpawner == null)
             customerGroupSpawner = FindFirstObjectByType<CustomerGroupSpawner>();
+        if (dynamicDemandService == null)
+            TryGetComponent(out dynamicDemandService);
         if (menuPortfolioService == null)
             TryGetComponent(out menuPortfolioService);
         if (reservationService == null)
             TryGetComponent(out reservationService);
         if (reservationAvailabilityService == null)
             TryGetComponent(out reservationAvailabilityService);
+        if (guestRelationsService == null)
+            TryGetComponent(out guestRelationsService);
+        if (reputationService == null)
+            TryGetComponent(out reputationService);
     }
 
 #if UNITY_EDITOR

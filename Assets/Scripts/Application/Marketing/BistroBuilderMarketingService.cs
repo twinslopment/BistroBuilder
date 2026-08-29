@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -210,6 +210,71 @@ public sealed class BistroBuilderMarketingService : MonoBehaviour
             out error);
     }
 
+    /// <summary>
+    /// Evalúa la presión operativa aplicable a una unidad de trabajo concreta.
+    /// Marketing aporta el porcentaje; cocina conserva autoridad sobre tiempos.
+    /// </summary>
+    public bool TryEvaluateOperationalPressure(
+        int dayIndex,
+        BistroBuilderMarketingCustomerSegment segment,
+        BistroBuilderMarketingDayPart dayPart,
+        ISet<string> applicableTargetIds,
+        out int basisPoints,
+        out int contributingCampaigns,
+        out string error)
+    {
+        basisPoints = 0;
+        contributingCampaigns = 0;
+        if (!ValidateConfiguration(out error))
+            return false;
+
+        if (dayIndex < 1)
+            dayIndex = CurrentDayIndex;
+
+        return BistroBuilderMarketingEngine.TryEvaluateOperationalPressure(
+            state,
+            campaignCatalog.Campaigns,
+            dayIndex,
+            segment,
+            dayPart,
+            applicableTargetIds,
+            out basisPoints,
+            out contributingCampaigns,
+            out error);
+    }
+    /// <summary>
+    /// Cancela una campaña activa. El coste es prepago y no se devuelve;
+    /// tampoco se revierten reservas, reputación u otros efectos ya consumados.
+    /// </summary>
+    public bool TryCancelCampaign(
+        string instanceId,
+        out BistroBuilderMarketingCampaignRecord cancelled,
+        out string error)
+    {
+        cancelled = null;
+        if (!ValidateConfiguration(out error))
+            return false;
+        if (!TryGetCampaignInstance(instanceId, out BistroBuilderMarketingCampaignRecord existing) ||
+            existing == null)
+        {
+            error = "No existe la campaña activa indicada.";
+            return false;
+        }
+
+        if (!BistroBuilderMarketingEngine.TryCancelCampaign(
+                state,
+                instanceId,
+                CurrentDayIndex,
+                out BistroBuilderMarketingSnapshot candidate,
+                out error))
+            return false;
+
+        cancelled = existing;
+        state = candidate;
+        MarketingChanged?.Invoke(state.revision);
+        error = string.Empty;
+        return true;
+    }
     /// <summary>Retira del estado campañas ya vencidas; nunca toca Finanzas.</summary>
     public bool TryRefreshForCurrentDay(out string error)
     {
