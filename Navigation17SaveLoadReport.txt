@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 17 / SAVE-LOAD REAL ===
+[PASS] PASS - Save/Load real conserva y reconstruye Navigation: topologia, Route Graph, rutas cliente/camarero, sillas y ausencia de deadlocks fantasma.

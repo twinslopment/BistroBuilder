@@ -1,0 +1,10 @@
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Editor.deps.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Editor.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Editor.pdb
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.csproj.AssemblyReference.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.csproj.CoreCompileInputs.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.sourcelink.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBu.E0ADF1CB.Up2Date
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Editor\BistroBuilder.AssetStudioBB.Editor.pdb

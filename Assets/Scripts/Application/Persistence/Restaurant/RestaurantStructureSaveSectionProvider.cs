@@ -723,8 +723,15 @@ public sealed class RestaurantStructureSaveSectionProvider :
 
             Physics.SyncTransforms();
 
+            // Durante una restauraciÃ³n atÃ³mica las relaciones entre colocables
+            // todavÃ­a no estÃ¡n reconstruidas. Se difieren las reglas cruzadas
+            // hasta que el conjunto completo y su topologÃ­a estÃ©n disponibles.
             RestaurantPlacementValidationResult placementResult =
-                validationService.ValidateCurrentPlacement(member);
+                validationService.ValidatePlacement(
+                    member,
+                    member.transform.position,
+                    member.transform.rotation,
+                    false);
 
             if (!placementResult.IsValid ||
                 placementResult.CandidateArea == null)
@@ -810,6 +817,12 @@ public sealed class RestaurantStructureSaveSectionProvider :
         Physics.SyncTransforms();
         seatingTopologyService.RebuildImmediately();
 
+        if (!ValidateRestoredPlacements(out string restoredPlacementError))
+        {
+            context.Fail(restoredPlacementError);
+            yield break;
+        }
+
         if (!ValidateRestoredSeatLinks(
                 data,
                 out string seatLinkError
@@ -847,6 +860,36 @@ public sealed class RestaurantStructureSaveSectionProvider :
         }
     }
 
+    private bool ValidateRestoredPlacements(out string error)
+    {
+        error = string.Empty;
+        for (int index = 0; index < loadOrderBuffer.Count; index++)
+        {
+            RestaurantPlaceableSaveRecord record = loadOrderBuffer[index];
+            if (record == null) continue;
+            string instanceId = NormalizeId(record.instanceId);
+            if (!loadedPlaceablesById.TryGetValue(
+                    instanceId,
+                    out RestaurantPlaceableObject placeable) ||
+                placeable == null ||
+                !placeable.TryGetComponent(out RestaurantAreaMember member))
+            {
+                error = "No se pudo validar el colocable restaurado " +
+                        instanceId + ".";
+                return false;
+            }
+
+            RestaurantPlacementValidationResult result =
+                validationService.ValidateCurrentPlacement(member);
+            if (!result.IsValid || result.CandidateArea == null)
+            {
+                error = BuildPlacementLoadError(placeable, result);
+                return false;
+            }
+            member.SetArea(result.CandidateArea);
+        }
+        return true;
+    }
     private bool ValidateRestoredSeatLinks(
         RestaurantStructureSaveData data,
         out string error

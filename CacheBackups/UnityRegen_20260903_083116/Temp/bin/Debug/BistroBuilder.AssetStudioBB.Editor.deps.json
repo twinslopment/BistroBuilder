@@ -1,0 +1,40 @@
+{
+  "runtimeTarget": {
+    "name": ".NETStandard,Version=v2.1/",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETStandard,Version=v2.1": {},
+    ".NETStandard,Version=v2.1/": {
+      "BistroBuilder.AssetStudioBB.Editor/1.0.0": {
+        "dependencies": {
+          "BistroBuilder.AssetStudioBB.Runtime": "1.0.0"
+        },
+        "runtime": {
+          "BistroBuilder.AssetStudioBB.Editor.dll": {}
+        }
+      },
+      "BistroBuilder.AssetStudioBB.Runtime/1.0.0": {
+        "runtime": {
+          "BistroBuilder.AssetStudioBB.Runtime.dll": {
+            "assemblyVersion": "0.0.0.0",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BistroBuilder.AssetStudioBB.Editor/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "BistroBuilder.AssetStudioBB.Runtime/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

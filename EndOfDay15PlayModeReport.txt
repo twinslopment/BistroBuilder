@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 15 / PLAY MODE REAL ===
+[PASS] PASS - cierre operativo, bloqueo de nuevas entradas, consolidacion, resumen, comparacion/persistencia y preparacion del siguiente dia funcionan en Play Mode real.

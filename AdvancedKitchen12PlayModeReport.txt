@@ -1,0 +1,2 @@
+=== BISTRO BUILDER — BLOQUE 12 / PLAY MODE REAL ===
+[PASS] PASS — estaciones, capacidad, colas, prioridad limitada, bloqueo por avería, cocinero, calidad, UI y flujo real comanda-inventario-cocina son coherentes.

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +13,15 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
     [Header("Posiciones de espera")]
     [SerializeField]
     private Transform[] waitingPoints;
+
+    [SerializeField]
+    private BistroBuilderAdvancedFrontOfHouseService advancedFrontOfHouseService;
+
+    [SerializeField]
+    private BistroBuilderNavigationService navigationService;
+
+    [SerializeField]
+    private string navigationQueueId = "front.waiting.table";
 
     // Grupos conocidos por este sistema.
     private readonly List<CustomerGroup> registeredGroups =
@@ -29,6 +38,10 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
 
     private void Start()
     {
+        if (advancedFrontOfHouseService == null)
+            advancedFrontOfHouseService = FindFirstObjectByType<BistroBuilderAdvancedFrontOfHouseService>();
+        if (navigationService == null)
+            navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
         ValidateConfiguration();
     }
 
@@ -45,6 +58,7 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
             }
         }
 
+        navigationService?.ClearPhysicalQueueEntries(navigationQueueId);
         registeredGroups.Clear();
         waitingGroups.Clear();
         assignedWaitingPoints.Clear();
@@ -216,6 +230,11 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
 
     private void ReorganizeWaitingQueue()
     {
+        if (advancedFrontOfHouseService == null)
+            advancedFrontOfHouseService = FindFirstObjectByType<BistroBuilderAdvancedFrontOfHouseService>();
+        if (advancedFrontOfHouseService != null && waitingGroups.Count > 1)
+            waitingGroups.Sort(advancedFrontOfHouseService.CompareWaitingGroups);
+
         // Eliminamos referencias destruidas o grupos que ya no esperan.
         for (int index = waitingGroups.Count - 1;
              index >= 0;
@@ -231,6 +250,9 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
                 waitingGroups.RemoveAt(index);
             }
         }
+
+        if (TryReorganizeWithNavigation())
+            return;
 
         Dictionary<CustomerGroup, Transform>
             previousAssignments =
@@ -305,6 +327,66 @@ public sealed class CustomerWaitingAreaSystem : MonoBehaviour
                 waitingPoint
             );
         }
+    }
+
+    private bool TryReorganizeWithNavigation()
+    {
+        if (navigationService == null)
+            navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
+        if (navigationService == null || waitingPoints == null || waitingPoints.Length == 0)
+            return false;
+
+        var validPoints = new List<Transform>(waitingPoints.Length);
+        var positions = new List<Vector3>(waitingPoints.Length);
+        for (int i = 0; i < waitingPoints.Length; i++)
+        {
+            Transform point = waitingPoints[i];
+            if (point == null) continue;
+            validPoints.Add(point);
+            positions.Add(point.position);
+        }
+        if (validPoints.Count == 0 ||
+            !navigationService.ConfigurePhysicalQueue(navigationQueueId, positions))
+            return false;
+
+        navigationService.ClearPhysicalQueueEntries(navigationQueueId);
+        int logicalOrder = 0;
+        for (int i = 0; i < waitingGroups.Count; i++)
+        {
+            CustomerGroup group = waitingGroups[i];
+            if (group == null || group.IsOccupyingBar) continue;
+            navigationService.EnqueuePhysicalQueue(
+                navigationQueueId, group.GroupId.ToString(), logicalOrder++);
+        }
+        var previousAssignments =
+            new Dictionary<CustomerGroup, Transform>(assignedWaitingPoints);
+        assignedWaitingPoints.Clear();
+
+        for (int i = 0; i < waitingGroups.Count; i++)
+        {
+            CustomerGroup group = waitingGroups[i];
+            if (group == null || group.IsOccupyingBar) continue;
+            if (!navigationService.TryGetPhysicalQueueTarget(
+                    group.GroupId.ToString(), out _, out int slotIndex,
+                    out _, out bool overflow) || overflow ||
+                slotIndex < 0 || slotIndex >= validPoints.Count)
+                continue;
+
+            Transform waitingPoint = validPoints[slotIndex];
+            assignedWaitingPoints[group] = waitingPoint;
+            if (previousAssignments.TryGetValue(group, out Transform previous) &&
+                previous == waitingPoint)
+                continue;
+
+            CustomerMovementView movementView =
+                group.GetComponent<CustomerMovementView>();
+            if (movementView != null)
+                movementView.MoveToWaitingPoint(waitingPoint);
+            else
+                Debug.LogError(
+                    $"El grupo {group.GroupId} no contiene CustomerMovementView.", group);
+        }
+        return true;
     }
 
     /// <summary>

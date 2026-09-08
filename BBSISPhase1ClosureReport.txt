@@ -1,0 +1,50 @@
+=== BISTRO BUILDER - BBSIS FASE 1 / CLOSURE GATE ===
+[PASS] Fase 1 instalada y validada.
+BBSIS FASE 1 - VALIDACION
+OK - Existe una única autoridad semántica BBSIS
+OK - Configuración base BBSIS válida
+OK - Catálogo data-driven de familias/traits instalado
+OK - Familias espaciales base disponibles sin hardcodes por asset
+OK - BBSIS no introduce Rigidbody indiscriminado
+OK - Bloque 17 conserva una única autoridad de rutas
+OK - Bloque 17 consume BBSIS sin absorber su semántica espacial
+OK - Obstáculos dinámicos pueden delegar su reserva temporal en BBSIS
+OK - Contrato de reconstrucción Save/Load BBSIS versionado
+OK - Spatial Subjects existentes tienen IDs estables y contratos/proxies válidos
+OK - Adaptive Spatial Proxy expone geometría funcional desacoplada del render
+OK - Adaptive Spatial Proxy soporta Simple/Compound/Layered/Articulated
+OK - Claims, Spatial Leases y Spatial Episodes están disponibles
+OK - Load puede descartar Claims/Leases/Episodes transitorios y reconstruir BBSIS
+Resultado: 14 OK / 0 errores.
+
+BBSIS FASE 1 - AUTOTEST
+OK - Servicio BBSIS instalado
+OK - Servicio BBSIS configurado
+OK - OBB contiene puntos reales en ejes orientados
+OK - Solape Circle/OBB es simétrico
+OK - Volúmenes separados no producen falso conflicto
+OK - Primer Spatial Lease incompatible se concede
+OK - Leases incompatibles nunca coexisten
+OK - Claims COMPATIBLE pueden compartir espacio por contrato
+OK - Spatial Leases se liberan explícitamente
+OK - Spatial Episode inicia con identidad estable
+OK - Spatial Episode puede poseer Claims/Leases
+OK - Cerrar Spatial Episode termina su ciclo de vida
+OK - Cerrar Spatial Episode libera sus Leases
+OK - Reserva preferida y alternativa se resuelven de forma estable
+OK - Selección de alternativa es determinista
+OK - Dos Claims reservables no ocupan el mismo destino
+OK - Proxy Simple admite contorno convexo realista
+OK - Proxy Compound combina varias geometrías espaciales
+OK - Proxy Layered separa geometría Static/Operational/Dynamic
+OK - Proxy Articulated sigue articulaciones reales sin Rigidbody obligatorio
+OK - Adaptive Spatial Proxy no requiere física dinámica
+OK - Stress 1000 Acquire/Release no deja fugas de leases
+OK - Snapshot runtime conserva solo esquema/revisión reconstruible
+OK - Load descarta estado espacial transitorio
+Resultado: 24 OK / 0 fallos.
+
+OK - Play Mode real BBSIS
+OK - Regresión real Navegación 17
+OK - Save/Load real 17 + 368EF
+Resultado acumulado: 41 OK / 0 fallos.

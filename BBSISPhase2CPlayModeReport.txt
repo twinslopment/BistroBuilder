@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BBSIS FASE 2C / PLAY MODE REAL ===
+[PASS] PASS - preflight funcional, feedback, confirmación, Undo/Redo y reconstrucción espacial funcionan en runtime.

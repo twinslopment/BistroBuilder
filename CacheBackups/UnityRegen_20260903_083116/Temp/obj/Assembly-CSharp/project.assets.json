@@ -1,0 +1,155 @@
+{
+  "version": 4,
+  "targets": {
+    "netstandard2.1": {
+      "BistroBuilder.AssetStudioBB.Editor/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.1",
+        "dependencies": {
+          "BistroBuilder.AssetStudioBB.Runtime": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/BistroBuilder.AssetStudioBB.Editor.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/BistroBuilder.AssetStudioBB.Editor.dll": {}
+        }
+      },
+      "BistroBuilder.AssetStudioBB.Runtime/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.1",
+        "compile": {
+          "bin/placeholder/BistroBuilder.AssetStudioBB.Runtime.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/BistroBuilder.AssetStudioBB.Runtime.dll": {}
+        }
+      },
+      "BistroBuilder.SmartAssets.Editor/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.1",
+        "dependencies": {
+          "BistroBuilder.SmartAssets.Runtime": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/BistroBuilder.SmartAssets.Editor.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/BistroBuilder.SmartAssets.Editor.dll": {}
+        }
+      },
+      "BistroBuilder.SmartAssets.Runtime/1.0.0": {
+        "type": "project",
+        "framework": ".NETStandard,Version=v2.1",
+        "compile": {
+          "bin/placeholder/BistroBuilder.SmartAssets.Runtime.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/BistroBuilder.SmartAssets.Runtime.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BistroBuilder.AssetStudioBB.Editor/1.0.0": {
+      "type": "project",
+      "path": "BistroBuilder.AssetStudioBB.Editor.csproj",
+      "msbuildProject": "BistroBuilder.AssetStudioBB.Editor.csproj"
+    },
+    "BistroBuilder.AssetStudioBB.Runtime/1.0.0": {
+      "type": "project",
+      "path": "BistroBuilder.AssetStudioBB.Runtime.csproj",
+      "msbuildProject": "BistroBuilder.AssetStudioBB.Runtime.csproj"
+    },
+    "BistroBuilder.SmartAssets.Editor/1.0.0": {
+      "type": "project",
+      "path": "BistroBuilder.SmartAssets.Editor.csproj",
+      "msbuildProject": "BistroBuilder.SmartAssets.Editor.csproj"
+    },
+    "BistroBuilder.SmartAssets.Runtime/1.0.0": {
+      "type": "project",
+      "path": "BistroBuilder.SmartAssets.Runtime.csproj",
+      "msbuildProject": "BistroBuilder.SmartAssets.Runtime.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "netstandard2.1": [
+      "BistroBuilder.AssetStudioBB.Editor >= 1.0.0",
+      "BistroBuilder.AssetStudioBB.Runtime >= 1.0.0",
+      "BistroBuilder.SmartAssets.Editor >= 1.0.0",
+      "BistroBuilder.SmartAssets.Runtime >= 1.0.0"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\mruperez\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\Assembly-CSharp.csproj",
+      "projectName": "Assembly-CSharp",
+      "projectPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\Assembly-CSharp.csproj",
+      "packagesPath": "C:\\Users\\mruperez\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\Temp\\obj\\Assembly-CSharp\\",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "C:\\Users\\mruperez\\AppData\\Roaming\\NuGet\\NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "netstandard2.1"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "netstandard2.1": {
+          "framework": "netstandard2.1",
+          "targetAlias": "netstandard2.1",
+          "projectReferences": {
+            "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.AssetStudioBB.Editor.csproj": {
+              "projectPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.AssetStudioBB.Editor.csproj"
+            },
+            "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.AssetStudioBB.Runtime.csproj": {
+              "projectPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.AssetStudioBB.Runtime.csproj"
+            },
+            "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.SmartAssets.Editor.csproj": {
+              "projectPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.SmartAssets.Editor.csproj"
+            },
+            "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.SmartAssets.Runtime.csproj": {
+              "projectPath": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder\\BistroBuilder.SmartAssets.Runtime.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "10.0.300"
+    },
+    "frameworks": {
+      "netstandard2.1": {
+        "framework": "netstandard2.1",
+        "targetAlias": "netstandard2.1",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301\\RuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

@@ -43,6 +43,9 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
     [SerializeField]
     private BistroBuilderBarServiceSystem barServiceSystem;
 
+    [SerializeField]
+    private BistroBuilderAdvancedFrontOfHouseService advancedFrontOfHouseService;
+
     [Header("Comandas y cocina")]
     [SerializeField]
     private OrderSystem orderSystem;
@@ -181,7 +184,7 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
 
         if (customerGroupSpawner == null || tableRegistry == null ||
             tableAssignmentSystem == null || barRegistry == null ||
-            barServiceSystem == null)
+            barServiceSystem == null || advancedFrontOfHouseService == null)
         {
             error = "Faltan los sistemas de clientes, mesas o barra.";
             return false;
@@ -201,6 +204,7 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         if (!orderSystem.ValidateConfiguration(out error) ||
             !barRegistry.ValidateConfiguration(out error) ||
             !barServiceSystem.ValidateConfiguration(out error) ||
+            !advancedFrontOfHouseService.ValidateConfiguration(out error) ||
             !orderInventoryLifecycleService.ValidateConfiguration(out error))
         {
             return false;
@@ -271,8 +275,9 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
 
         if (!CaptureCustomers(data, out error) ||
             !CaptureTables(data, out error) ||
-            !CapturePendingBarTableReservations(data, out error) ||
             !CaptureWaiters(data, out error) ||
+            !advancedFrontOfHouseService.TryCaptureRuntimeSnapshot(
+                out data.advancedFrontOfHouse, out error) ||
             !CaptureOrdersAndSubsystems(data, out error))
         {
             context.Fail(error);
@@ -313,6 +318,7 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         customerGroupSpawner.StopForRuntimeLoad();
         ResetTransientWaiterRuntime();
         tableAssignmentSystem.ClearPendingBarTransitionReservationsForRuntimeLoad();
+        advancedFrontOfHouseService.ResetForRuntimeLoad();
         barServiceSystem.ClearRuntimeForLoad();
         orderInventoryLifecycleService.ClearRuntimeForLoad();
         orderSystem.ClearRuntimeForLoad();
@@ -515,7 +521,9 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
             yield break;
         }
 
-        if (!RestoreAssignmentsAndStates(pendingData, out error))
+        if (!RestoreAssignmentsAndStates(pendingData, out error) ||
+            !advancedFrontOfHouseService.TryRestoreRuntimeSnapshot(
+                pendingData.advancedFrontOfHouse, out error))
         {
             context.Fail(error);
             yield break;
@@ -860,7 +868,7 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
                 return false;
             }
 
-            data.waiters.Add(new BistroBuilderWaiterRuntimeSaveRecord
+            var record = new BistroBuilderWaiterRuntimeSaveRecord
             {
                 waiterId = waiter.WaiterId,
                 worldPosition = new BistroBuilderSaveVector3(
@@ -869,7 +877,20 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
                 worldRotation = new BistroBuilderSaveQuaternion(
                     waiter.transform.rotation
                 )
-            });
+            };
+
+            BistroBuilderAdvancedWaiterProfile advancedProfile =
+                waiter.GetComponent<BistroBuilderAdvancedWaiterProfile>();
+            if (advancedProfile != null)
+            {
+                record.hasAdvancedWaiterProfile = true;
+                record.primaryZoneId = advancedProfile.PrimaryZoneId;
+                record.simultaneousPlanCapacity = advancedProfile.SimultaneousPlanCapacity;
+                record.serviceEfficiency = advancedProfile.ServiceEfficiency;
+                advancedProfile.CopySecondaryZones(record.secondaryZoneIds);
+            }
+
+            data.waiters.Add(record);
         }
 
         return true;
@@ -1097,6 +1118,24 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
                 record.worldPosition.ToVector3(),
                 record.worldRotation.ToQuaternion()
             );
+
+            if (record.hasAdvancedWaiterProfile)
+            {
+                BistroBuilderAdvancedWaiterProfile profile =
+                    waiter.GetComponent<BistroBuilderAdvancedWaiterProfile>();
+                if (profile == null)
+                    profile = waiter.gameObject.AddComponent<BistroBuilderAdvancedWaiterProfile>();
+                if (!profile.TryRestorePersistentSettings(
+                        record.primaryZoneId,
+                        record.secondaryZoneIds,
+                        record.simultaneousPlanCapacity,
+                        record.serviceEfficiency,
+                        out error
+                    ))
+                {
+                    return;
+                }
+            }
         }
     }
 
@@ -1165,6 +1204,8 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
             TryGetComponent(out tableAssignmentSystem);
         if (barRegistry == null) TryGetComponent(out barRegistry);
         if (barServiceSystem == null) TryGetComponent(out barServiceSystem);
+        if (advancedFrontOfHouseService == null)
+            TryGetComponent(out advancedFrontOfHouseService);
         if (orderSystem == null) TryGetComponent(out orderSystem);
         if (canonicalOrderService == null)
             TryGetComponent(out canonicalOrderService);

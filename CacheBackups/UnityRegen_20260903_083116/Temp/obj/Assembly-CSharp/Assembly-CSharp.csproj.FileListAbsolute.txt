@@ -1,0 +1,4 @@
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\Assembly-CSharp\Assembly-CSharp.csproj.AssemblyReference.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\Assembly-CSharp\Assembly-CSharp.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\Assembly-CSharp\Assembly-CSharp.csproj.CoreCompileInputs.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\Assembly-CSharp\Assembly-CSharp.sourcelink.json

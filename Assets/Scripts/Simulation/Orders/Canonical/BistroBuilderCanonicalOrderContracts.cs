@@ -109,7 +109,10 @@ public enum BistroBuilderCanonicalOrderChangeType
     OrderCancelled = 2,
     OrderRemoved = 3,
     StateRestored = 4,
-    AllOrdersCleared = 5
+    AllOrdersCleared = 5,
+    LineAdded = 6,
+    LineSuperseded = 7,
+    LineIncidentChanged = 8
 }
 
 public enum BistroBuilderCanonicalOrderFailureReason
@@ -132,7 +135,9 @@ public enum BistroBuilderCanonicalOrderFailureReason
     DuplicateLineId = 15,
     InvalidSnapshot = 16,
     NoOrderableDishes = 17,
-    NoChange = 18
+    NoChange = 18,
+    MutationRestricted = 19,
+    InventoryRejected = 20
 }
 
 /// <summary>

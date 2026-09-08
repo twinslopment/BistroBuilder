@@ -220,6 +220,7 @@ public sealed class CustomerGroup : MonoBehaviour
     {
         if (barSpot == null ||
             assignedBarSpot != null ||
+            assignedTable != null ||
             !BistroBuilderServiceModeUtility.IsBarMode(serviceMode) ||
             !ReferenceEquals(barSpot.AssignedCustomerGroup, this))
         {

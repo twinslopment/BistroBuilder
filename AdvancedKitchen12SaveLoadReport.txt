@@ -1,0 +1,19 @@
+=== BISTRO BUILDER — BLOQUE 12 / SAVE-LOAD REAL ===
+[PASS] PASS — BISTRO BUILDER — PRUEBA REAL DE SERVICIO ACTIVO 368EF SUPERADA
+
+- Guardado aceptado con servicio Open y comanda real Preparing.
+- Carga aceptada mientras el servicio seguía activo.
+- Grupo, plaza de barra, camarero y posiciones reconstruidos.
+- Comanda legacy y canónica conservan sus identidades y estado.
+- Metadata avanzada 11 (incidencia, origen, billing y motivo) restaurada por service.runtime.
+- Cocina reanuda la misma línea con tiempo restante.
+- Reserva consumida, balances y disponibilidad restaurados.
+- Sesión WaitingAtBar y siguientes IDs reconstruidos.
+- Reserva temporal de mesa restaurada sin reasignarla.
+- Servicio gastronómico activo restaurado sin reinterpretar la carta.
+- Pausa, velocidad y Time.timeScale restaurados por GameClock.
+- Calendario de llegadas, modalidades y tiempos conservados.
+- Mutaciones posteriores al guardado fueron descartadas.
+- Slot diagnóstico eliminado.
+
+Sal ahora de Play Mode para descartar los ajustes de prueba.

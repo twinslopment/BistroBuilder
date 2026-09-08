@@ -48,6 +48,7 @@ public sealed class BistroBuilderActiveServiceSaveData
     public BistroBuilderCanonicalOrderRuntimeSnapshot canonicalOrders;
     public BistroBuilderCourseAndSharingRuntimeSnapshot coursesAndSharing;
     public BistroBuilderCustomerDiningRuntimeSnapshot customerDining;
+    public BistroBuilderAdvancedFrontOfHouseRuntimeSnapshot advancedFrontOfHouse;
     public List<BistroBuilderKitchenRuntimeSnapshot> kitchens =
         new List<BistroBuilderKitchenRuntimeSnapshot>();
 
@@ -136,7 +137,9 @@ public sealed class BistroBuilderActiveServiceSaveData
 
         if (!canonicalOrders.TryValidate(out error) ||
             !coursesAndSharing.TryValidate(out error) ||
-            !customerDining.TryValidate(out error))
+            !customerDining.TryValidate(out error) ||
+            (advancedFrontOfHouse != null &&
+             !advancedFrontOfHouse.TryValidate(out error)))
         {
             return false;
         }
@@ -729,6 +732,11 @@ public sealed class BistroBuilderWaiterRuntimeSaveRecord
     public int waiterId;
     public BistroBuilderSaveVector3 worldPosition;
     public BistroBuilderSaveQuaternion worldRotation;
+    public bool hasAdvancedWaiterProfile;
+    public string primaryZoneId = string.Empty;
+    public List<string> secondaryZoneIds = new List<string>();
+    public int simultaneousPlanCapacity;
+    public float serviceEfficiency;
 
     public bool TryValidate(out string error)
     {
@@ -737,6 +745,19 @@ public sealed class BistroBuilderWaiterRuntimeSaveRecord
         {
             error = "service.runtime contiene un camarero inválido.";
             return false;
+        }
+
+        if (hasAdvancedWaiterProfile)
+        {
+            primaryZoneId = BistroBuilderAdvancedWaiterProfile.NormalizeZone(primaryZoneId);
+            secondaryZoneIds ??= new List<string>();
+            if (simultaneousPlanCapacity < 2 || simultaneousPlanCapacity > 6 ||
+                float.IsNaN(serviceEfficiency) || float.IsInfinity(serviceEfficiency) ||
+                serviceEfficiency < 0.75f || serviceEfficiency > 1.25f)
+            {
+                error = "service.runtime contiene un perfil avanzado de camarero inválido.";
+                return false;
+            }
         }
 
         error = string.Empty;

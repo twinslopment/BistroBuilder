@@ -1,0 +1,1909 @@
+﻿<Project>
+  <!-- Generated file, do not modify, your changes will be overwritten (use AssetPostprocessor.OnGeneratedCSProject) -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>Temp\obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <UseCommonOutputDirectory>true</UseCommonOutputDirectory>
+    <OutputPath>Temp\bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <ItemGroup>
+    <ProjectCapability Include="Unity" />
+    <ProjectCapability Include="EnableOnDemandExcludedFolderLoading" />
+  </ItemGroup>
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <LangVersion>9.0</LangVersion>
+    <RootNamespace></RootNamespace>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <BaseDirectory>.</BaseDirectory>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoWarn>0169;USG0001</NoWarn>
+    <DefineConstants>UNITY_6000_3_19;UNITY_6000_3;UNITY_6000;UNITY_5_3_OR_NEWER;UNITY_5_4_OR_NEWER;UNITY_5_5_OR_NEWER;UNITY_5_6_OR_NEWER;UNITY_2017_1_OR_NEWER;UNITY_2017_2_OR_NEWER;UNITY_2017_3_OR_NEWER;UNITY_2017_4_OR_NEWER;UNITY_2018_1_OR_NEWER;UNITY_2018_2_OR_NEWER;UNITY_2018_3_OR_NEWER;UNITY_2018_4_OR_NEWER;UNITY_2019_1_OR_NEWER;UNITY_2019_2_OR_NEWER;UNITY_2019_3_OR_NEWER;UNITY_2019_4_OR_NEWER;UNITY_2020_1_OR_NEWER;UNITY_2020_2_OR_NEWER;UNITY_2020_3_OR_NEWER;UNITY_2021_1_OR_NEWER;UNITY_2021_2_OR_NEWER;UNITY_2021_3_OR_NEWER;UNITY_2022_1_OR_NEWER;UNITY_2022_2_OR_NEWER;UNITY_2022_3_OR_NEWER;UNITY_2023_1_OR_NEWER;UNITY_2023_2_OR_NEWER;UNITY_2023_3_OR_NEWER;UNITY_6000_0_OR_NEWER;UNITY_6000_1_OR_NEWER;UNITY_6000_2_OR_NEWER;UNITY_6000_3_OR_NEWER;PLATFORM_ARCH_64;UNITY_64;UNITY_INCLUDE_TESTS;ENABLE_AR;ENABLE_AUDIO;ENABLE_AUDIO_SCRIPTABLE_PIPELINE;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_EVENT_QUEUE;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_PHYSICS;ENABLE_TEXTURE_STREAMING;ENABLE_VIRTUALTEXTURING;ENABLE_LZMA;ENABLE_UNITYEVENTS;ENABLE_VR;ENABLE_WEBCAM;ENABLE_UNITYWEBREQUEST;ENABLE_WWW;ENABLE_CLOUD_SERVICES;ENABLE_CLOUD_SERVICES_ADS;ENABLE_CLOUD_SERVICES_USE_WEBREQUEST;ENABLE_UNITY_CONSENT;ENABLE_UNITY_CLOUD_IDENTIFIERS;ENABLE_CLOUD_SERVICES_CRASH_REPORTING;ENABLE_CLOUD_SERVICES_NATIVE_CRASH_REPORTING;ENABLE_CLOUD_SERVICES_PURCHASING;ENABLE_CLOUD_SERVICES_ANALYTICS;ENABLE_CLOUD_SERVICES_BUILD;ENABLE_EDITOR_GAME_SERVICES;ENABLE_UNITY_GAME_SERVICES_ANALYTICS_SUPPORT;ENABLE_CLOUD_LICENSE;ENABLE_EDITOR_HUB_LICENSE;ENABLE_WEBSOCKET_CLIENT;ENABLE_GENERATE_NATIVE_PLUGINS_FOR_ASSEMBLIES_API;ENABLE_DIRECTOR_AUDIO;ENABLE_DIRECTOR_TEXTURE;ENABLE_MANAGED_JOBS;ENABLE_MANAGED_TRANSFORM_JOBS;ENABLE_MANAGED_ANIMATION_JOBS;ENABLE_MANAGED_AUDIO_JOBS;ENABLE_MANAGED_UNITYTLS;INCLUDE_DYNAMIC_GI;ENABLE_SCRIPTING_GC_WBARRIERS;PLATFORM_SUPPORTS_MONO;RENDER_SOFTWARE_CURSOR;ENABLE_MARSHALLING_TESTS;ENABLE_VIDEO;ENABLE_NAVIGATION_OFFMESHLINK_TO_NAVMESHLINK;ENABLE_ACCELERATOR_CLIENT_DEBUGGING;ENABLE_ACCESSIBILITY_SCREEN_READER;TEXTCORE_1_0_OR_NEWER;EDITOR_ONLY_NAVMESH_BUILDER_DEPRECATED;PLATFORM_STANDALONE_WIN;PLATFORM_STANDALONE;UNITY_STANDALONE_WIN;UNITY_STANDALONE;ENABLE_RUNTIME_GI;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_NVIDIA;ENABLE_AMD;ENABLE_CRUNCH_TEXTURE_COMPRESSION;ENABLE_CLOUD_SERVICES_ENGINE_DIAGNOSTICS;ENABLE_OUT_OF_PROCESS_CRASH_HANDLER;ENABLE_CLUSTER_SYNC;ENABLE_CLUSTERINPUT;PLATFORM_UPDATES_TIME_OUTSIDE_OF_PLAYER_LOOP;GFXDEVICE_WAITFOREVENT_MESSAGEPUMP;PLATFORM_USES_EXPLICIT_MEMORY_MANAGER_INITIALIZER;PLATFORM_SUPPORTS_WAIT_FOR_PRESENTATION;PLATFORM_SUPPORTS_SPLIT_GRAPHICS_JOBS;PLATFORM_USES_VULKAN_OLD_SWAPCHAIN;ENABLE_MONO;NET_STANDARD_2_0;NET_STANDARD;NET_STANDARD_2_1;NETSTANDARD;NETSTANDARD2_1;ENABLE_PROFILER;ENABLE_PROFILER_ASSISTANT_INTEGRATION;DEBUG;TRACE;UNITY_ASSERTIONS;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN;ENABLE_UNITY_COLLECTIONS_CHECKS;ENABLE_BURST_AOT;UNITY_TEAM_LICENSE;ENABLE_CUSTOM_RENDER_TEXTURE;ENABLE_DIRECTOR;ENABLE_LOCALIZATION;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_TILEMAP;ENABLE_TIMELINE;ENABLE_INPUT_SYSTEM;TEXTCORE_FONT_ENGINE_1_5_OR_NEWER;TEXTCORE_TEXT_ENGINE_1_5_OR_NEWER;TEXTCORE_FONT_ENGINE_1_6_OR_NEWER;CSHARP_7_OR_LATER;CSHARP_7_3_OR_NEWER</DefineConstants>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NoStandardLibraries>true</NoStandardLibraries>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+  <PropertyGroup>
+    <UnityProjectGenerator>Package</UnityProjectGenerator>
+    <UnityProjectGeneratorVersion>2.0.26</UnityProjectGeneratorVersion>
+    <UnityProjectGeneratorStyle>SDK</UnityProjectGeneratorStyle>
+    <UnityProjectType>Game:1</UnityProjectType>
+    <UnityBuildTarget>StandaloneWindows64:19</UnityBuildTarget>
+    <UnityVersion>6000.3.19f1</UnityVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Analyzer Include="C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\Extensions\Microsoft\Visual Studio Tools for Unity\Analyzers\Microsoft.Unity.Analyzers.dll" />
+    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.SourceGenerators.dll" />
+    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
+    <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Tools\BuildPipeline\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerAdvocacyEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancialHistoryEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Persistence\BistroBuilderEditInteractionSaveParticipant.cs" />
+    <Compile Include="Assets\Scripts\Domain\Recipes\BistroBuilderRecipeEconomics.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffSessionModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Bar\BistroBuilderBarServiceRegistry.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\IBistroBuilderStaffRuntimeMutationGuard.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuItemRuntimeState.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Areas\RestaurantArea.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Inventory\BistroBuilderInventoryWarehouseRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingCampaignCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderFileSaveStorage.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Seating\RestaurantSeatingPlacementConstraintRule.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingMenuSelectionWeightProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCatalogValidator.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\Scheduling\BistroBuilderStaffSchedulePlayerModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\RestaurantPlaceableRegistry.cs" />
+    <Compile Include="Assets\Scripts\Application\Reputation\BistroBuilderReputationService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Opening\BistroBuilderNewGameOpeningSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerHistoryEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Orders\Advanced\BistroBuilderAdvancedOrderPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderDishAvailabilityService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantSeatingTypes.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffDevelopmentEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\LinkedGroups\RestaurantMoveLinkedGroupHistoryCommand.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderSalesRevenueBridge.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinanceEngine.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\Tasks\WaiterTask.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderProfessionalCameraMath.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerTrainingPanel.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Marketing\BistroBuilderMarketingPlayerUiModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Inventory\BistroBuilderInventoryPolicySaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderNavigableDoor.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderMenuSelectionContracts.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Progression\BistroBuilderProgressionPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Domain\Service\Demand\BistroBuilderDynamicDemandEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderPlacementOperationSaveGuard.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderOperationalSpatialCoordinator.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\WaiterState.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderMobilitySpatialCoordinator.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliveryPresentationService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrdersAssemblyInfo.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffSessionRestorePreflight.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\WaiterTaskCoordinator.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderFinanceDashboardService.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderProfessionalCameraController.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reservations\BistroBuilderReservationPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\TableAssignmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderObjectMotionDriver.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderKitchenSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reputation\BistroBuilderReputationPlayerUiModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Inventory\BistroBuilderInventoryPolicySaveData.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderCanonicalOrderService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Service\EndOfDay\BistroBuilderEndOfDayPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerAdvocacyService.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderFinancialHistoryService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerUiModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerCandidateRowView.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCharacterRigAdapter.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderProductCostService.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderOrderCompositionService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderFinanceHistoryChartGraphic.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Customers\BistroBuilderAdvancedCustomerMemberVisualGroup.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Areas\RestaurantAreaRegistry.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Service\Bar\BistroBuilder367HInstalledFixture.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderGoodsReceivingContracts.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraContextMode.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Lifecycle\RestaurantPlaceableLifecycleHistoryCommands.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrderFactory.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerServicePreferenceModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuEditSessionContracts.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderIngredientDefinition.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimation18RuntimePlayProbe.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAssetInteractionDescriptor.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Constraints\RestaurantPlacementConstraintService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Kitchen\Advanced\BistroBuilderAdvancedKitchenPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Application\Progression\BistroBuilderUpgradeService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancialHistoryModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuSaveData.cs" />
+    <Compile Include="Assets\Scripts\Domain\Spatial\BistroBuilderSpatialSemantics.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\RestaurantPlacementValidationService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Logistics\BistroBuilderSupplierLogisticsPlanningEngine.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Courses\BistroBuilderCourseAndSharingRuntime.cs" />
+    <Compile Include="Assets\Scripts\Domain\Spatial\BistroBuilderSpatialFamilyCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\RestaurantTableOperationalRegistrationService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\BistroBuilderAdvancedWaiterProfile.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimation18PortalVisualRuntimeProbe.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuStateV1ToV2Migration.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Deletion\RestaurantPlaceableDeletionService.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderNavigationAccessZone.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\FoodDeliveryAssignmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\Scheduling\BistroBuilderStaffScheduleModels.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\RestaurantOrder.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderSaveGameService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Orders\IBistroBuilderPurchaseOrderConfirmationGate.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerExperienceModels.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrderContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Creation\RestaurantPlaceableCreationService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffRecruitmentModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\TableCleaningServiceFlow.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffEmploymentEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\Scheduling\BistroBuilderStaffSchedulePlanner.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\Catalog\RestaurantPlaceableCatalogCategoryView.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuEditorUtility.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderDishRecipeAuthoringService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Seating\RestaurantSeatingTopologyService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Tables\TableState.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Authoring\BistroBuilderSupplierAuthoringRepositories.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Economy\RestaurantPlaceableEconomyContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingGuestRelationsBridge.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerHistoryService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\RestaurantPlacementObstacleRegistry.cs" />
+    <Compile Include="Assets\Scripts\Application\Reservations\BistroBuilderReservationServiceIntegration.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuEditSessionService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderOperatingExpensePolicy.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderNavigationService.AdvancedRouting.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Catalog\RestaurantPlaceableCatalogService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderInventoryWarehouseContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Reputation\BistroBuilderReputationSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Progression\BistroBuilderProgressionMilestoneService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrderLine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Finance\BistroBuilderFinanceSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Progression\BistroBuilderUpgradeEffectsService.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuOfferService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Inventory\BistroBuilderInventorySaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Kitchen\Advanced\BistroBuilderAdvancedKitchenPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Tables\TableStateView.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Advanced\BistroBuilderWaiterRoutingService.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialRuntimeBinder.cs" />
+    <Compile Include="Assets\Scripts\Domain\Progression\BistroBuilderProgressionEngine.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\EditMode\Catalog\RestaurantPlaceableCatalogDefinition.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraInspectionBounds.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderRecipeIngredientDraftRowView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Recipes\BistroBuilderRecipeCatalog.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderInteractionFamilyProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliveryBrandingView.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingDemandIntegrationService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishDefinition.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraInspectionSettings.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderMenuEditorContracts.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCarryPresenter.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\IBistroBuilderReturnCohortPriorityProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Market\BistroBuilderSupplierMarketModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerExperienceEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerProfileCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCatalogBuilder.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\General\BistroBuilderSimulationSaveParticipant.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishAvailabilityContracts.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerHistoryModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuActivationContextService.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliveryPresentationController.cs" />
+    <Compile Include="Assets\Scripts\Domain\Opening\BistroBuilderNewGameModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\IBistroBuilderOperationalSpatialGate.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderDishRecipeAuthoringContracts.cs" />
+    <Compile Include="Assets\Scripts\Domain\Spatial\BistroBuilderMobilitySpatialProfileDefinition.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderProfessionalCameraInput.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffDevelopmentService.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliveryVisualFactory.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerBehaviorService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Orders\Advanced\BistroBuilderAdvancedOrderPlayerModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderInventoryContracts.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Service\BistroBuilderServiceMode.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\Scheduling\BistroBuilderStaffSchedulePlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerExitFlow.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraViewMath.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Progression\BistroBuilderUpgradeSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\IRestaurantOrderTransitionGate.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierProgressionService.cs" />
+    <Compile Include="Assets\Scripts\Application\Kitchen\Advanced\BistroBuilderAdvancedKitchenService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Spatial\BistroBuilderSpatialContractDefinition.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffSessionClosePreflight.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerArrivalFlow.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Authoring\BistroBuilderSupplierAuthoringDatabase.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\SmartPurchase\BistroBuilderSupplierSmartPurchaseSettings.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderLocomotionAnimationPresenter.cs" />
+    <Compile Include="Assets\Scripts\Domain\Marketing\BistroBuilderMarketingDemandEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reputation\BistroBuilderReputationPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reputation\BistroBuilderReputationRuntimeModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Areas\RestaurantAreaMemberRegistry.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerProfileEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffSessionViews.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierMarketService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancialResultModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderSupplierPurchaseFinanceBridge.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderDishRecipePersistenceService.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerSeatingPreferenceService.cs" />
+    <Compile Include="Assets\Scripts\Application\Progression\BistroBuilderProgressionMilestoneCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\General\BistroBuilderGeneralGameStateService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Waiters\Advanced\BistroBuilderAdvancedWaiterPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Placement\RestaurantPlacementShape.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderObjectMotionProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Service\BistroBuilderActiveServiceSaveData.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Snapping\RestaurantPlacementSnapVisualizer.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\LinkedGroups\RestaurantPlacementLinkedGroupTypes.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Finance\BistroBuilderFinancingSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraNavigationSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\TableCleaningAssignmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\General\BistroBuilderGeneralGameSaveData.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialPlacementConstraintRule.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderInteractionPresentationService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Inventory\BistroBuilderGoodsReceivingRoute.cs" />
+    <Compile Include="Assets\Scripts\Core\GameClock.cs" />
+    <Compile Include="Assets\Scripts\Domain\Marketing\BistroBuilderMarketingEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\RestaurantServiceStateService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\LinkedGroups\RestaurantLinkedGroupPlacementConstraintRule.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffRecruitmentService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationRuntimeProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderDishCatalogService.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuPolicyEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantTableSeatingConfiguration.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Progression\BistroBuilderSupplierProgressionEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\Advanced\BistroBuilderAdvancedOrderService.cs" />
+    <Compile Include="Assets\Scripts\UI\SpeedButtonController.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationAvailabilityProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuPortfolioService.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderNavigationEditIntegration.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\Scheduling\BistroBuilderStaffScheduleProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderRestaurantMenuCollectionService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderPlaceableFinancePolicy.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialPlacementAssessmentService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Orders\Advanced\BistroBuilderAdvancedOrderPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerAdvocacyModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCharacterVisualGroundingAdapter.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\RestaurantEditPlacementVisualFeedback.cs" />
+    <Compile Include="Assets\Scripts\Domain\Orders\Advanced\BistroBuilderAdvancedOrderModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\DeliveryPresentation\BistroBuilderSupplierDeliveryPresentationModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\Scheduling\BistroBuilderStaffScheduleSessionBridge.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderAdaptiveSpatialProxy.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Authoring\BistroBuilderSupplierAuthoringValidation.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\DeliveryPresentation\BistroBuilderSupplierDeliveryPresentationSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\History\RestaurantEditHistoryOperationParticipant.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierLogisticsService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\EditMode\RestaurantEditableObject.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialPortAnchors.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderInventoryPlanningService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\RestaurantPlacementRegistry.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\OrderState.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderMenuEditorUiFactory.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Reservations\BistroBuilderReservationsSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerInspectionService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Marketing\BistroBuilderMarketingModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderCourseAndSharingService.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialBindingUtility.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\Tasks\WaiterTaskDefinitions.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Inventory\BistroBuilderInventoryPlanningRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimationProfiles.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\Waiter.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Commercial\BistroBuilderSupplierCommercialIntelligenceModels.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraInspectionService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\Scheduling\BistroBuilderStaffScheduleService.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\EndOfDay\BistroBuilderEndOfDayService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Marketing\BistroBuilderMarketingSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Staff\BistroBuilderStaffSessionSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Customers\BistroBuilderAdvancedCustomerInspectionController.cs" />
+    <Compile Include="Assets\Scripts\Domain\Progression\BistroBuilderProgressionMilestoneEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuStateV3ToV4Migration.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\EditMode\RestaurantPlaceableItemDefinition.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reservations\BistroBuilderReservationPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuOfferEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierReceivingBridge23L.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\Catalog\RestaurantPlaceableCatalogItemView.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderSaveDefinitionCatalog.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\OrderSystem.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Customers\CustomerGroupState.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderInventoryWarehouseService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Kitchen\KitchenState.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffRecruitmentProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\History\RestaurantEditHistoryCommand.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderSignatureDishTelemetryService.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderBarSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Customers\BistroBuilderAdvancedCustomerHistorySaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialSubject.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Customers\CustomerGroup.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderGoodsReceivingService.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderPlaceableFinanceBridge.cs" />
+    <Compile Include="Assets\Scripts\Application\Opening\BistroBuilderNewGameOpeningService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\Scheduling\BistroBuilderStaffScheduleEmployeeRowView.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Inventory\BistroBuilder368BInstalledHudDock.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCarrySocketSet.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Snapping\RestaurantPlacementSnapService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reputation\BistroBuilderCustomerExperienceEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\LinkedGroups\RestaurantPlacementLinkedGroupService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderMoneyPopupPresenter.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\RestaurantEditModeService.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderFinancialResultsService.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierMarketGameDayResolver.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\RestaurantEditInteractionController.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancingModels.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\EditMode\RestaurantPlaceableObject.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimation18StandaloneRuntimeProbe.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Placement\RestaurantPlacementCollisionUtility.cs" />
+    <Compile Include="Assets\Scripts\Debug\TableStateTester.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderSignatureDishTelemetryContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderOrderLineExecutionService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Restaurant\RestaurantStructureSaveData.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Marketing\BistroBuilderGuestRelationsSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinanceDashboardModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderRestaurantMenuRuntimeState.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderOpeningStockProfile.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantSeatingStandardsDefinition.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Kitchen\BistroBuilderKitchenLineRuntimeModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Reservations\BistroBuilderReservationAvailabilityService.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraNavigationState.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffDevelopmentModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderTransferableVisual.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Opening\BistroBuilderNewGameOpeningPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Domain\Service\EndOfDay\BistroBuilderEndOfDayModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Inventory\BistroBuilderSupplyDeliveryVisual.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderMotionCatalog.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Areas\RestaurantAreaCapabilityDefinition.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Seating\RestaurantSeatingLinkedGroupProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingPreparationDurationAdjustmentProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCommercialIntelligenceService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Seating\RestaurantSeatRegistry.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancialResultsEngine.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Customers\Dining\BistroBuilderCustomerDiningRuntime.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\SmartPurchase\BistroBuilderSupplierSmartPurchaseModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderFinanceService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderOperatingExpenseProfile.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Areas\RestaurantAreaDefinition.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Reservations\BistroBuilderReservationsSaveModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\Catalog\RestaurantPlaceableCatalogPanel.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialInteractionService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Courses\BistroBuilderCourseAndSharingContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderDiscretionaryFinanceService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationAvailabilityModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderInventoryRuntimeSnapshot.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Kitchen\KitchenSystem.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffSessionEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Service\BistroBuilderEndOfDaySaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Marketing\BistroBuilderMarketingPlayerRowView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderDiscretionaryFinanceContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Service\BistroBuilderActiveServiceSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderMenuOfferContracts.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Suppliers\BistroBuilderSupplierPlayerUiFormat.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffSessionService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimation18VisualRuntimeProbe.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerGroupSpawner.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerInspectionModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Market\BistroBuilderSupplierMarketSettings.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffDevelopmentProfile.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Authoring\BistroBuilderSupplierAuthoringModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishEnums.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderRecipeCatalogService.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderFinancingService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderProductCostModels.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantSeatUseProfileDefinition.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Progression\BistroBuilderSupplierProgressionSettings.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffRoleCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Customers\BistroBuilderAdvancedCustomerMemberHitTarget.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Suppliers\BistroBuilderSupplierIntegratedSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Marketing\BistroBuilderMarketingSaveData.cs" />
+    <Compile Include="Assets\Scripts\Domain\Recipes\BistroBuilderRecipeIngredientAmount.cs" />
+    <Compile Include="Assets\Scripts\Domain\Recipes\BistroBuilderRecipeDefinition.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraViewService.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerSeatingFlow.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Lifecycle\RestaurantTablePlaceableRegistrationService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Spatial\BistroBuilderSpatialModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Logistics\BistroBuilderSupplierLogisticsPlanningSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerTableProfile.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Suppliers\BistroBuilderSupplierPlayerRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderStaffPayrollFinanceBridge.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderMotionProfile.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Staff\BistroBuilderStaffScheduleSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\SmartPurchase\BistroBuilderSupplierSmartPurchaseEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\BistroBuilderStaffPlayerRowViews.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BistroBuilderCustomerDemandPlan.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliverySceneAnchors.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderSeatCirculationEnvelope.cs" />
+    <Compile Include="Assets\Scripts\UI\PauseButtonController.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\BistroBuilderGuestRelationsModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderSalesRevenuePolicy.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierSmartPurchaseService.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\WaiterTableServiceFlow.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderPreparationDurationAdjustmentContracts.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishCategoryDefinition.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reservations\BistroBuilderReservationRowView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Orders\BistroBuilderSupplierPurchaseOrderModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reputation\BistroBuilderReputationModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderMenuEditorDishRowView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderSupplierPurchaseFinancePolicy.cs" />
+    <Compile Include="Assets\Scripts\Domain\Progression\BistroBuilderUpgradeEffectsEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationAvailabilityEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Marketing\BistroBuilderMarketingSalesPaymentAdjustmentProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\RestaurantServiceEditModeAvailabilityRule.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Common\BistroBuilderUnifiedUiInteractionService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderProductCostEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderInventoryService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Progression\BistroBuilderProgressionModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Commercial\BistroBuilderSupplierCommercialIntelligenceSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Inventory\BistroBuilderInventoryStateV1ToV2Migration.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderTableSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinanceModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\RestaurantPlacementHistoryService.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierDeliveryVisualDemoCamera.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraViewDefinition.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantTableSeatingConfigurationDefinition.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderPortalAnimationDescriptor.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrder.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\FrontOfHouse\BistroBuilderAdvancedFrontOfHouseService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffRecruitmentEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reservations\BistroBuilderReservationModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderNavigationService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Staff\BistroBuilderStaffRecruitmentSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Logistics\BistroBuilderSupplierLogisticsModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderOperationalSpatialBindingUtility.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\General\BistroBuilderGeneralGameSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderFinanceUiModalCoordinator.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderAnimationRuntimeComponents.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraViewSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialEditModeIntegration.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderMenuCommercialPolicy.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Advanced\BistroBuilderAdvancedWaiterService.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSeatSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCarryableDescriptor.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraInspectable.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\BistroBuilderGuestRelationsEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderServiceOrderIdentityUtility.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Customers\CustomerMovementView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderDishCategoryCatalog.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\Tasks\WaiterTaskQueue.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderMenuPortfolioRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Seating\RestaurantSeat.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Progression\BistroBuilderProgressionPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderJsonSaveSerializer.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderDishRecipeSaveDataUtility.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\FoodDeliveryServiceFlow.cs" />
+    <Compile Include="Assets\Scripts\Application\Inventory\BistroBuilderOrderInventoryLifecycleService.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCatalogService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Progression\BistroBuilderProgressionMilestoneModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderCanonicalIngredientDiscovery.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraBounds.cs" />
+    <Compile Include="Assets\Scripts\Application\Reputation\BistroBuilderCustomerExperienceTrackingService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Waiters\WaiterAssignmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Authoring\BistroBuilderIngredientAuthoringDatabase.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Canonical\BistroBuilderCanonicalOrderRuntimeSnapshot.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierSmartPurchaseRuntimeResolver.cs" />
+    <Compile Include="Assets\Scripts\Debug\CustomerGroupTester.cs" />
+    <Compile Include="Assets\Scripts\UI\ClockDisplay.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderOperatingExpenseService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\EditMode\RestaurantEditableObjectDefinition.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCatalogSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Reservations\BistroBuilderReservationService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\Scheduling\BistroBuilderStaffScheduleEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffIdentity.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Inventory\BistroBuilderGoodsReceivingPresentation.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuSelectionService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Progression\BistroBuilderProgressionPlayerUiModels.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Orders\Courses\BistroBuilderOrderCompositionProfile.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderCharacterAnimationDriver.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Waiters\WaiterMovementView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Waiters\Advanced\BistroBuilderAdvancedWaiterModels.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderFinanceRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Development\Restaurant\Placement\RestaurantPlacementTransactionSmokeTest.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reservations\BistroBuilderReservationPlayerModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Staff\BistroBuilderStaffStateSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Orders\BistroBuilderSupplierPurchaseOrderEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderInventoryPlanningContracts.cs" />
+    <Compile Include="Assets\Scripts\Domain\Reputation\BistroBuilderReputationEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Finance\BistroBuilderProductCostSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuStateV2ToV3Migration.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Staff\Scheduling\BistroBuilderStaffSchedulePlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Service\FrontOfHouse\BistroBuilderAdvancedFrontOfHousePlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerBehaviorEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Areas\RestaurantAreaAssignmentService.cs" />
+    <Compile Include="Assets\Scripts\Application\Customers\BistroBuilderAdvancedCustomerProfileService.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\RestaurantTableRegistry.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Marketing\BistroBuilderMarketingPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderSpatialAssessmentService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerBehaviorModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Progression\BistroBuilderSupplierProgressionModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Orders\BistroBuilderCanonicalOrderIntegrationService.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderSaveModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Constraints\RestaurantPlacementConstraintTypes.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderIngredientCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Snapping\RestaurantPlacementSnapTypes.cs" />
+    <Compile Include="Assets\Scripts\Application\Progression\BistroBuilderUpgradeCatalog.cs" />
+    <Compile Include="Assets\Scripts\Domain\Finance\BistroBuilderFinancingEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Menu\BistroBuilderMenuPortfolioContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerWaitingAreaSystem.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderRestaurantMenuService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Integrated\BistroBuilderSupplierIntegratedSaveState.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Inventory\BistroBuilder368AInstalledChair.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\General\BistroBuilderActiveServiceSaveGuard.cs" />
+    <Compile Include="Assets\Scripts\Domain\Kitchen\Advanced\BistroBuilderAdvancedKitchenModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\BistroBuilderSaveContracts.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Commercial\BistroBuilderSupplierCommercialIntelligenceEngine.cs" />
+    <Compile Include="Assets\Scripts\Domain\Kitchen\Advanced\BistroBuilderKitchenStationCatalog.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderDoorSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\CustomerDiningFlow.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Placement\Constraints\RestaurantOperationalClearanceSet.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Marketing\BistroBuilderMarketingPlayerScreen.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierCatalogBootstrap.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Orders\BistroBuilderSupplierPurchaseOrderSettings.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\EditMode\Lifecycle\RestaurantPlaceableLifecycleService.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\RestaurantPlacementTransactionService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Reputation\BistroBuilderReputationPlayerFacade.cs" />
+    <Compile Include="Assets\Scripts\Domain\Staff\BistroBuilderStaffModels.cs" />
+    <Compile Include="Assets\Scripts\Domain\Inventory\BistroBuilderMeasurementTypes.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerServicePreferenceEngine.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderDishRecipeAuthoringRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Application\Finance\BistroBuilderSalesPaymentAdjustmentContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuSelectionEvaluator.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderFinanceUiFormat.cs" />
+    <Compile Include="Assets\Scripts\BistroBuilder\Camera\BistroBuilderCameraViewId.cs" />
+    <Compile Include="Assets\Scripts\Application\Spatial\BistroBuilderMobileSpatialAdapter.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Seating\RestaurantSeatingSnapProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderDynamicCirculationEnvelope.cs" />
+    <Compile Include="Assets\Scripts\Application\Restaurant\Placement\Constraints\RestaurantOperationalClearanceConstraintRule.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Finance\BistroBuilderMoneyPopupService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Suppliers\Market\BistroBuilderSupplierMarketEngine.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Restaurant\RestaurantStructureSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Service\Bar\BistroBuilderBarServiceSpot.cs" />
+    <Compile Include="Assets\Scripts\Domain\Service\Advanced\BistroBuilderAdvancedFrontOfHouseModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderMenuEditorService.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Placement\RestaurantPlacementFootprint.cs" />
+    <Compile Include="Assets\Scripts\Application\Navigation\BistroBuilderDoorCirculationEnvelope.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BistroBuilderCustomerDiningService.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Bar\BistroBuilderBarServiceContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Menu\BistroBuilderMenuStateV4ToV5Migration.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Animation\BistroBuilderInteractionContracts.cs" />
+    <Compile Include="Assets\Scripts\Application\Staff\BistroBuilderStaffEligibilityBatch.cs" />
+    <Compile Include="Assets\Scripts\Domain\Service\Demand\BistroBuilderDynamicDemandModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Demand\BistroBuilderDynamicDemandService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Menu\BistroBuilderMenuEditorRuntimeView.cs" />
+    <Compile Include="Assets\Scripts\Domain\Customers\Advanced\BistroBuilderAdvancedCustomerModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BistroBuilderDeliveryRun.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Tables\RestaurantTable.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Customers\Dining\BistroBuilderCustomerDiningContracts.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Placement\RestaurantPlacementObstacle.cs" />
+    <Compile Include="Assets\Scripts\Application\Persistence\Reputation\BistroBuilderReputationRuntimeSaveSectionProvider.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BillAssignmentSystem.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BillServiceFlow.cs" />
+    <Compile Include="Assets\Scripts\Simulation\Restaurant\Areas\RestaurantAreaMember.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\BistroBuilderGuestRelationsService.cs" />
+    <Compile Include="Assets\Scripts\Domain\Navigation\BistroBuilderNavigationModels.cs" />
+    <Compile Include="Assets\Scripts\Application\Menu\BistroBuilderDishCategoryCatalogService.cs" />
+    <Compile Include="Assets\Scripts\Presentation\Restaurant\EditMode\Context\RestaurantPlaceableContextPanel.cs" />
+    <Compile Include="Assets\Scripts\Application\Service\Bar\BistroBuilderBarServiceSystem.cs" />
+    <Compile Include="Assets\Scripts\Application\Suppliers\BistroBuilderSupplierPurchaseOrderService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile-2-Pass.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
+    <None Include="Assets\ThirdParty\Quaternius\UniversalAnimationLibrary\License.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
+    <None Include="Assets\ThirdParty\Quaternius\UniversalAnimationLibrary\README.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
+    <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile SSD.shader" />
+    <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
+    <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
+    <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />
+    <None Include="Assets\TextMesh Pro\Shaders\TMP_Sprite.shader" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ARModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ARModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AccessibilityModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AccessibilityModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AdaptivePerformanceModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AdaptivePerformanceModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AndroidJNIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AndroidJNIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.AudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClothModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ClothModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterInputModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ClusterInputModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterRendererModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ClusterRendererModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ContentLoadModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ContentLoadModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CrashReportingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.CrashReportingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.DSPGraphModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.DSPGraphModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.DirectorModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.DirectorModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.GIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GameCenterModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.GameCenterModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GraphicsStateCollectionSerializerModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.GraphicsStateCollectionSerializerModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.GridModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.GridModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.HierarchyCoreModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.HierarchyCoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.HotReloadModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.HotReloadModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IdentifiersModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.IdentifiersModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.InputModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputForUIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.InputForUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InsightsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.InsightsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.JSONSerializeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.LocalizationModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.LocalizationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.MarshallingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.MarshallingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.MultiplayerModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.MultiplayerModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ParticleSystemModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PerformanceReportingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.PerformanceReportingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.Physics2DModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.Physics2DModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsBackendPhysXModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.PhysicsBackendPhysXModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PropertiesModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.PropertiesModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.RenderAs2DModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.RenderAs2DModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.RuntimeInitializeOnLoadManagerInitializerModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ScreenCaptureModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ScreenCaptureModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ShaderRuntimeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ShaderRuntimeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ShaderVariantAnalyticsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.ShaderVariantAnalyticsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SharedInternalsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.SharedInternalsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteMaskModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.SpriteMaskModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteShapeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.SpriteShapeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.StreamingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.StreamingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SubstanceModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.SubstanceModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.SubsystemsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.SubsystemsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TLSModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TLSModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TerrainModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainPhysicsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextCoreFontEngineModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextCoreTextEngineModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TilemapModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.TilemapModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UmbraModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UmbraModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsCommonModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityAnalyticsCommonModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityConnectModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityConnectModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityConsentModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityConsentModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityCurlModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityCurlModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAssetBundleModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestTextureModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VFXModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VFXModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VRModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VRModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VectorGraphicsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VectorGraphicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VehiclesModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VehiclesModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VideoModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VideoModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VirtualTexturingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.VirtualTexturingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.WindModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.WindModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.XRModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEngine.XRModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.AccessibilityModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.AccessibilityModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.AdaptivePerformanceModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.AdaptivePerformanceModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.AssetComplianceModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.AssetComplianceModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.BuildProfileModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.BuildProfileModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.ClothModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.ClothModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.CoreBusinessMetricsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.CoreBusinessMetricsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.CoreModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.DeviceSimulatorModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.DeviceSimulatorModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.DiagnosticsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.DiagnosticsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.EditorToolbarModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.EditorToolbarModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.EmbreeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.EmbreeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.GIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.GIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.GraphViewModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.GraphViewModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.GraphicsStateCollectionSerializerModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.GraphicsStateCollectionSerializerModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.GridAndSnapModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.GridAndSnapModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.GridModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.GridModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.HierarchyModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.HierarchyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.MediaModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.MediaModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.MultiplayerModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.MultiplayerModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.Physics2DModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.Physics2DModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.PhysicsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.PlayModeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.PlayModeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.PresetsUIModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.PresetsUIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.PropertiesModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.PropertiesModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.QuickInstallModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.QuickInstallModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.QuickSearchModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.QuickSearchModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SafeModeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SafeModeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SceneTemplateModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SceneTemplateModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SceneViewModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SceneViewModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.ShaderBuildSettingsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.ShaderBuildSettingsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.ShaderCompilationModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.ShaderCompilationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.ShaderFoundryModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.ShaderFoundryModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SketchUpModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SketchUpModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SpriteMaskModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SpriteMaskModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SpriteShapeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SpriteShapeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.SubstanceModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.SubstanceModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TerrainModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TerrainModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TextCoreFontEngineModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TextCoreFontEngineModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TextCoreTextEngineModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TextCoreTextEngineModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TextRenderingModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TextRenderingModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TilemapModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TilemapModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.TreeModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.TreeModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UIAutomationModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UIAutomationModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UIBuilderModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UIBuilderModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UIElementsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UIElementsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UIElementsSamplesModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UIElementsSamplesModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UIToolkitAuthoringModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UIToolkitAuthoringModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UmbraModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UmbraModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UnityConnectModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UnityConnectModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.VFXModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.VFXModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.VectorGraphicsModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.VectorGraphicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.VideoModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.VideoModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.XRModule">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.XRModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Collections.LowLevel.ILSupport">
+      <HintPath>Library\PackageCache\com.unity.collections@9796e5ee0d9e\Unity.Collections.LowLevel.ILSupport\Unity.Collections.LowLevel.ILSupport.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>Library\PackageCache\com.unity.ext.nunit@d8c07649098d\net40\unity-custom\nunit.framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Hashing">
+      <HintPath>Library\PackageCache\com.unity.collections@9796e5ee0d9e\Unity.Collections.Tests\System.IO.Hashing\System.IO.Hashing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
+      <HintPath>Library\PackageCache\com.unity.visualscripting@8bed5ad90189\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>Library\PackageCache\com.unity.collections@9796e5ee0d9e\Unity.Collections.Tests\System.Runtime.CompilerServices.Unsafe\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="netstandard">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\ref\2.1.0\netstandard.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Microsoft.Win32.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\Microsoft.Win32.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.AppContext">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.AppContext.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Buffers.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Collections.Concurrent">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Collections.Concurrent.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Collections">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Collections.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Collections.NonGeneric">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Collections.NonGeneric.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Collections.Specialized">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Collections.Specialized.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ComponentModel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel.EventBasedAsync">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ComponentModel.EventBasedAsync.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ComponentModel.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel.TypeConverter">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ComponentModel.TypeConverter.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Console">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Console.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data.Common">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Data.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.Contracts">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.Contracts.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.Debug">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.Debug.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.FileVersionInfo">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.FileVersionInfo.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.Process">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.Process.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.StackTrace">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.StackTrace.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.TextWriterTraceListener">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.TextWriterTraceListener.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.Tools">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.Tools.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.TraceSource">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.TraceSource.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.Tracing">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Diagnostics.Tracing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Drawing.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Drawing.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Dynamic.Runtime">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Dynamic.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Globalization.Calendars">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Globalization.Calendars.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Globalization">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Globalization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Globalization.Extensions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Globalization.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.Compression.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression.ZipFile">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.Compression.ZipFile.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.FileSystem">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.FileSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.FileSystem.DriveInfo">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.FileSystem.DriveInfo.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.FileSystem.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.FileSystem.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.FileSystem.Watcher">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.FileSystem.Watcher.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.IsolatedStorage">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.IsolatedStorage.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.MemoryMappedFiles">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.MemoryMappedFiles.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Pipes">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.Pipes.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.UnmanagedMemoryStream">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.IO.UnmanagedMemoryStream.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Linq">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Linq.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Linq.Expressions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Linq.Expressions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Linq.Parallel">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Linq.Parallel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Linq.Queryable">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Linq.Queryable.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Memory.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Http">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Http.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.NameResolution">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.NameResolution.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.NetworkInformation">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.NetworkInformation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Ping">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Ping.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Requests">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Requests.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Security">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Security.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.Sockets">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.Sockets.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.WebHeaderCollection">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.WebHeaderCollection.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.WebSockets.Client">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.WebSockets.Client.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net.WebSockets">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Net.WebSockets.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Numerics.Vectors.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ObjectModel">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ObjectModel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.DispatchProxy">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.DispatchProxy.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.Emit">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.Emit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.Emit.ILGeneration">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.Emit.ILGeneration.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.Emit.Lightweight">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.Emit.Lightweight.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.Extensions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Reflection.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Reflection.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Resources.Reader">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Resources.Reader.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Resources.ResourceManager">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Resources.ResourceManager.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Resources.Writer">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Resources.Writer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.VisualC">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.CompilerServices.VisualC.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Extensions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Handles">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Handles.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.InteropServices.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.InteropServices.RuntimeInformation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Numerics">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Numerics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization.Formatters">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Serialization.Formatters.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization.Json">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Serialization.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Serialization.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization.Xml">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Runtime.Serialization.Xml.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Claims">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Claims.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Algorithms">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Cryptography.Algorithms.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Csp">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Cryptography.Csp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Encoding">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Cryptography.Encoding.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Primitives">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Cryptography.Primitives.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.X509Certificates">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Cryptography.X509Certificates.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.Principal">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.Principal.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Security.SecureString">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Security.SecureString.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Text.Encoding">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Text.Encoding.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Text.Encoding.Extensions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Text.Encoding.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Text.RegularExpressions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Text.RegularExpressions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Overlapped">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Overlapped.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Tasks.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Tasks.Extensions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Parallel">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Tasks.Parallel.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Thread">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Thread.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.ThreadPool">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.ThreadPool.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Threading.Timer">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Threading.Timer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.ValueTuple.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.ReaderWriter">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.ReaderWriter.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.XDocument">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.XDocument.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.XmlDocument">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.XmlDocument.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.XmlSerializer">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.XmlSerializer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.XPath">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.XPath.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.XPath.XDocument">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netstandard\System.Xml.XPath.XDocument.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices.WindowsRuntime">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\Extensions\2.0.0\System.Runtime.InteropServices.WindowsRuntime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="mscorlib">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\mscorlib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ComponentModel.Composition">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.ComponentModel.Composition.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Data.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Drawing">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Drawing.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.IO.Compression.FileSystem">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.IO.Compression.FileSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Net">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Net.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Numerics">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Numerics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Runtime.Serialization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.ServiceModel.Web">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.ServiceModel.Web.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Transactions">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Transactions.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Web">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Web.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Windows">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Windows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Linq.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Serialization">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Data\NetStandard\compat\2.1.0\shims\netfx\System.Xml.Serialization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UI.Analytics">
+      <HintPath>Library\ScriptAssemblies\UnityEditor.UI.Analytics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Rendering.LightTransport.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Rendering.LightTransport.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.ShaderLibrary">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.ShaderLibrary.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.SettingsProvider.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.SettingsProvider.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.2D.Editor.Overrides">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.2D.Editor.Overrides.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation.Updater">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Updater.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Timeline">
+      <HintPath>Library\ScriptAssemblies\Unity.Timeline.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="PPv2URPConverters">
+      <HintPath>Library\ScriptAssemblies\PPv2URPConverters.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Animation.Rigging.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Animation.Rigging.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime.Shared">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.Shared.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.2D.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.2D.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Shared.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Shared.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Searcher.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Searcher.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.PlasticSCM.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.PlasticSCM.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Burst.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Burst.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Core">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.UnifiedRayTracing.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.UnifiedRayTracing.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Animation.Rigging">
+      <HintPath>Library\ScriptAssemblies\Unity.Animation.Rigging.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Rider.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation.Editor.ConversionSystem">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Editor.ConversionSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Flow">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.TextMeshPro.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Flow.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Flow.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualStudio.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualStudio.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Collections">
+      <HintPath>Library\ScriptAssemblies\Unity.Collections.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem.ForUI">
+      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.ForUI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.GPUDriven.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.GPUDriven.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Timeline.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Timeline.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.State.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Mathematics">
+      <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Shaders">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Shaders.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>Library\ScriptAssemblies\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Multiplayer.Center.Common">
+      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Common.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Burst">
+      <HintPath>Library\ScriptAssemblies\Unity.Burst.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.Core.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.Core.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.InternalAPIEngineBridge.004">
+      <HintPath>Library\ScriptAssemblies\Unity.InternalAPIEngineBridge.004.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Multiplayer.Center.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Multiplayer.Center.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.VisualScripting.State">
+      <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Config.Runtime">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Config.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipeline.Universal.ShaderLibrary">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipeline.Universal.ShaderLibrary.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.Collections.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.Collections.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.ShaderGraph.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.ShaderGraph.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Editor.Shared">
+      <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.Shared.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>Library\ScriptAssemblies\Unity.InputSystem.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEditor.UI">
+      <HintPath>Library\ScriptAssemblies\UnityEditor.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="BistroBuilder.AssetStudioBB.Editor.csproj" />
+    <ProjectReference Include="BistroBuilder.SmartAssets.Runtime.csproj" />
+    <ProjectReference Include="BistroBuilder.SmartAssets.Editor.csproj" />
+    <ProjectReference Include="BistroBuilder.AssetStudioBB.Runtime.csproj" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <ItemGroup>
+    <ProjectCapability Remove="LaunchProfiles" />
+    <ProjectCapability Remove="SharedProjectReferences" />
+    <ProjectCapability Remove="ReferenceManagerSharedProjects" />
+    <ProjectCapability Remove="ReferenceManagerProjects" />
+    <ProjectCapability Remove="COMReferences" />
+    <ProjectCapability Remove="ReferenceManagerCOM" />
+    <ProjectCapability Remove="AssemblyReferences" />
+    <ProjectCapability Remove="ReferenceManagerAssemblies" />
+  </ItemGroup>
+</Project>

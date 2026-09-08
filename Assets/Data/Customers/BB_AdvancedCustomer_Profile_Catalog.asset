@@ -1,0 +1,211 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74aff1e721e5aa445a42a788234f17f1, type: 3}
+  m_Name: BB_AdvancedCustomer_Profile_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderAdvancedCustomerProfileCatalog
+  archetypes:
+  - archetypeId: balanced
+    displayName: Cliente equilibrado
+    baseWeight: 240
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - general
+    - groups
+    tableWaitToleranceSeconds: 75
+    waiterWaitToleranceSeconds: 45
+    foodWaitToleranceBasisPoints: 16000
+    billWaitToleranceSeconds: 40
+    serviceSensitivityBasisPoints: 5000
+    qualitySensitivityBasisPoints: 5000
+    priceSensitivityBasisPoints: 5000
+    ambienceSensitivityBasisPoints: 5000
+    preferredDishCategoryIds: []
+    avoidedDishCategoryIds: []
+    preferredZoneTagId:
+  - archetypeId: local_regular
+    displayName: Habitual de barrio
+    baseWeight: 100
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - localresidents
+    - traditional
+    tableWaitToleranceSeconds: 90
+    waiterWaitToleranceSeconds: 50
+    foodWaitToleranceBasisPoints: 17500
+    billWaitToleranceSeconds: 45
+    serviceSensitivityBasisPoints: 5200
+    qualitySensitivityBasisPoints: 6200
+    priceSensitivityBasisPoints: 4800
+    ambienceSensitivityBasisPoints: 4500
+    preferredDishCategoryIds:
+    - category_main_course
+    - category_shared_dish
+    avoidedDishCategoryIds: []
+    preferredZoneTagId:
+  - archetypeId: worker_quick
+    displayName: Cliente con prisa
+    baseWeight: 90
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - workers
+    tableWaitToleranceSeconds: 35
+    waiterWaitToleranceSeconds: 22
+    foodWaitToleranceBasisPoints: 12000
+    billWaitToleranceSeconds: 20
+    serviceSensitivityBasisPoints: 8500
+    qualitySensitivityBasisPoints: 4300
+    priceSensitivityBasisPoints: 6000
+    ambienceSensitivityBasisPoints: 2200
+    preferredDishCategoryIds:
+    - category_main_course
+    - category_beverage
+    avoidedDishCategoryIds: []
+    preferredZoneTagId:
+  - archetypeId: social
+    displayName: Cliente social
+    baseWeight: 100
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - youngadults
+    - groups
+    tableWaitToleranceSeconds: 65
+    waiterWaitToleranceSeconds: 45
+    foodWaitToleranceBasisPoints: 16000
+    billWaitToleranceSeconds: 45
+    serviceSensitivityBasisPoints: 5600
+    qualitySensitivityBasisPoints: 5000
+    priceSensitivityBasisPoints: 5700
+    ambienceSensitivityBasisPoints: 7600
+    preferredDishCategoryIds:
+    - category_beverage
+    - category_shared_dish
+    avoidedDishCategoryIds: []
+    preferredZoneTagId:
+  - archetypeId: foodie_quality
+    displayName: "Amante de la gastronom\xEDa"
+    baseWeight: 80
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - foodies
+    tableWaitToleranceSeconds: 95
+    waiterWaitToleranceSeconds: 55
+    foodWaitToleranceBasisPoints: 20000
+    billWaitToleranceSeconds: 50
+    serviceSensitivityBasisPoints: 5800
+    qualitySensitivityBasisPoints: 9500
+    priceSensitivityBasisPoints: 2500
+    ambienceSensitivityBasisPoints: 6500
+    preferredDishCategoryIds:
+    - category_tasting_item
+    - category_starter
+    - category_main_course
+    avoidedDishCategoryIds: []
+    preferredZoneTagId:
+  - archetypeId: traditional_patient
+    displayName: Cliente tradicional
+    baseWeight: 90
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - traditional
+    - localresidents
+    tableWaitToleranceSeconds: 105
+    waiterWaitToleranceSeconds: 60
+    foodWaitToleranceBasisPoints: 19000
+    billWaitToleranceSeconds: 55
+    serviceSensitivityBasisPoints: 6000
+    qualitySensitivityBasisPoints: 7200
+    priceSensitivityBasisPoints: 5200
+    ambienceSensitivityBasisPoints: 4500
+    preferredDishCategoryIds:
+    - category_main_course
+    - category_dessert
+    avoidedDishCategoryIds:
+    - category_tasting_item
+    preferredZoneTagId:
+  - archetypeId: price_conscious
+    displayName: Cliente sensible al precio
+    baseWeight: 90
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - pricesensitive
+    tableWaitToleranceSeconds: 70
+    waiterWaitToleranceSeconds: 45
+    foodWaitToleranceBasisPoints: 17000
+    billWaitToleranceSeconds: 45
+    serviceSensitivityBasisPoints: 5000
+    qualitySensitivityBasisPoints: 5000
+    priceSensitivityBasisPoints: 9800
+    ambienceSensitivityBasisPoints: 3800
+    preferredDishCategoryIds:
+    - category_main_course
+    - category_side_dish
+    avoidedDishCategoryIds:
+    - category_tasting_item
+    preferredZoneTagId:
+  - archetypeId: planner
+    displayName: Cliente planificador
+    baseWeight: 80
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - planners
+    tableWaitToleranceSeconds: 55
+    waiterWaitToleranceSeconds: 35
+    foodWaitToleranceBasisPoints: 15000
+    billWaitToleranceSeconds: 30
+    serviceSensitivityBasisPoints: 7600
+    qualitySensitivityBasisPoints: 6200
+    priceSensitivityBasisPoints: 4200
+    ambienceSensitivityBasisPoints: 6000
+    preferredDishCategoryIds:
+    - category_starter
+    - category_main_course
+    avoidedDishCategoryIds: []
+    preferredZoneTagId: quiet
+  - archetypeId: couple_experience
+    displayName: Pareja de experiencia
+    baseWeight: 80
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - couples
+    tableWaitToleranceSeconds: 85
+    waiterWaitToleranceSeconds: 55
+    foodWaitToleranceBasisPoints: 18000
+    billWaitToleranceSeconds: 55
+    serviceSensitivityBasisPoints: 6200
+    qualitySensitivityBasisPoints: 7000
+    priceSensitivityBasisPoints: 3500
+    ambienceSensitivityBasisPoints: 9000
+    preferredDishCategoryIds:
+    - category_starter
+    - category_dessert
+    avoidedDishCategoryIds: []
+    preferredZoneTagId: quiet
+  - archetypeId: high_value
+    displayName: Cliente premium
+    baseWeight: 60
+    segmentAffinityBonusWeight: 450
+    segmentAffinityIds:
+    - highvalue
+    tableWaitToleranceSeconds: 65
+    waiterWaitToleranceSeconds: 30
+    foodWaitToleranceBasisPoints: 15000
+    billWaitToleranceSeconds: 30
+    serviceSensitivityBasisPoints: 9000
+    qualitySensitivityBasisPoints: 9000
+    priceSensitivityBasisPoints: 1500
+    ambienceSensitivityBasisPoints: 8500
+    preferredDishCategoryIds:
+    - category_tasting_item
+    - category_main_course
+    - category_dessert
+    avoidedDishCategoryIds: []
+    preferredZoneTagId: premium

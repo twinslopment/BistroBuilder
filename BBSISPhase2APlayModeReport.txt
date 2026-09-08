@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BBSIS FASE 2A / PLAY MODE REAL ===
+[PASS] PASS - mesas y sillas reales publican su semántica BBSIS; los sweeps de silla/puerta se reservan y bloquean antes de uso; Spatial Quality/Bottleneck Ledger son estables en runtime.

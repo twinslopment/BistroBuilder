@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -21,6 +22,9 @@ public sealed class CustomerMovementView : MonoBehaviour
     [SerializeField]
     private Transform restaurantExitPoint;
 
+    [SerializeField]
+    private BistroBuilderNavigationService navigationService;
+
     [Header("Movimiento")]
     [SerializeField, Min(0.1f)]
     private float movementSpeed = 2f;
@@ -28,7 +32,10 @@ public sealed class CustomerMovementView : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float arrivalDistance = 0.05f;
 
-    /// <summary>
+    [SerializeField, Min(0.1f)]
+    private float circulationRadius = 0.32f;
+
+/// <summary>
     /// Se ejecuta cuando el grupo llega al destino actual.
     ///
     /// Los distintos flujos comprueban el estado del grupo para saber
@@ -40,6 +47,12 @@ public sealed class CustomerMovementView : MonoBehaviour
 
     private Transform currentDestination;
     private bool isMoving;
+    private readonly List<Vector3> routePoints = new List<Vector3>(24);
+    private int currentRouteIndex;
+    private Vector3 reservedArrivalPosition;
+    private bool hasReservedArrival;
+    private float blockedSince = -1f;
+    private int plannedNavigationRevision;
 
     private void Awake()
     {
@@ -47,6 +60,10 @@ public sealed class CustomerMovementView : MonoBehaviour
         {
             customerGroup =
                 GetComponent<CustomerGroup>();
+        }
+        if (navigationService == null)
+        {
+            navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
         }
     }
 
@@ -75,28 +92,107 @@ public sealed class CustomerMovementView : MonoBehaviour
             customerGroup.StateChanged -=
                 HandleStateChanged;
         }
+
+
+        navigationService?.CancelNavigation(GetNavigationOwnerId());
+        navigationService?.RemoveAgentPresence(GetNavigationOwnerId());
+        isMoving = false;
+        currentDestination = null;
+        hasReservedArrival = false;
     }
 
     private void Update()
     {
-        if (!isMoving || currentDestination == null)
+        string ownerId = GetNavigationOwnerId();
+        if (navigationService != null)
+        {
+            navigationService.UpdateAgentPresence(
+                ownerId,
+                BistroBuilderNavigationAgentMask.Customer,
+                transform.position,
+                circulationRadius,
+                0);
+            navigationService.ReportNavigationPosition(ownerId, transform.position);
+        }
+
+        if (!isMoving || currentDestination == null) return;
+
+        if (!EnsureScheduledRouteReady(ownerId)) return;
+
+        if (navigationService != null &&
+            plannedNavigationRevision != navigationService.Revision)
+            ReplanCurrentRoute(BistroBuilderNavigationReplanLevel.RouteSuffixRepair);
+
+        Vector3 target = currentRouteIndex < routePoints.Count
+            ? routePoints[currentRouteIndex]
+            : GetArrivalPosition();
+
+        Vector3 proposed = transform.position;
+        BistroBuilderNavigationLocalMoveDecision decision = default;
+        bool canMove = navigationService == null ||
+            navigationService.TryResolveMovementStep(
+                ownerId,
+                BistroBuilderNavigationAgentMask.Customer,
+                transform.position,
+                target,
+                movementSpeed,
+                circulationRadius,
+                0,
+                Time.deltaTime,
+                out proposed,
+                out decision);
+
+        if (navigationService == null)
+        {
+            proposed = Vector3.MoveTowards(
+                transform.position, target, movementSpeed * Time.deltaTime);
+            decision = default;
+            canMove = true;
+        }
+
+        if (!canMove)
+        {
+            if (blockedSince < 0f) blockedSince = Time.unscaledTime;
+            BistroBuilderNavigationWaitingReason reason =
+                decision.waitingReason == BistroBuilderNavigationWaitingReason.None
+                    ? BistroBuilderNavigationWaitingReason.Yield
+                    : decision.waitingReason;
+            navigationService?.ReportNavigationPosition(
+                ownerId,
+                transform.position,
+                reason,
+                decision.yieldingTo);
+
+            if (navigationService != null &&
+                navigationService.TryGetNavigationTrace(
+                    ownerId,
+                    out BistroBuilderNavigationDecisionTrace trace))
+            {
+                if (trace.recoveryStage ==
+                    BistroBuilderNavigationRecoveryStage.FullReplan)
+                    ReplanCurrentRoute(BistroBuilderNavigationReplanLevel.FullReplan);
+                else if (trace.recoveryStage ==
+                         BistroBuilderNavigationRecoveryStage.CorridorRepair)
+                    ReplanCurrentRoute(BistroBuilderNavigationReplanLevel.CorridorRepair);
+            }
+
+            navigationService?.RefreshDestination(ownerId);
             return;
+        }
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            currentDestination.position,
-            movementSpeed * Time.deltaTime
-        );
+        blockedSince = -1f;
+        transform.position = proposed;
+        navigationService?.ReportNavigationPosition(ownerId, transform.position);
+        navigationService?.RefreshDestination(ownerId);
 
-        float remainingDistance = Vector3.Distance(
-            transform.position,
-            currentDestination.position
-        );
+        if ((transform.position - target).sqrMagnitude <=
+            arrivalDistance * arrivalDistance &&
+            currentRouteIndex < routePoints.Count - 1)
+            currentRouteIndex++;
 
-        if (remainingDistance > arrivalDistance)
-            return;
-
-        CompleteMovement();
+        if ((transform.position - GetArrivalPosition()).sqrMagnitude <=
+            arrivalDistance * arrivalDistance)
+            CompleteMovement();
     }
 
     /// <summary>
@@ -284,25 +380,152 @@ public sealed class CustomerMovementView : MonoBehaviour
         currentDestination = destination;
         HasReachedDestination = false;
         isMoving = true;
+        blockedSince = -1f;
+        hasReservedArrival = false;
+        Vector3 target = destination.position;
+        if (navigationService != null)
+        {
+            hasReservedArrival = navigationService.TryReserveDestination(
+                GetNavigationOwnerId(),
+                BistroBuilderNavigationAgentMask.Customer,
+                target,
+                circulationRadius,
+                0,
+                out reservedArrivalPosition);
+            if (hasReservedArrival) target = reservedArrivalPosition;
+        }
+        RebuildRouteTo(target);
     }
 
     /// <summary>
     /// Finaliza el desplazamiento y avisa a los flujos interesados.
     /// </summary>
+    private string GetNavigationOwnerId()
+    {
+        return customerGroup != null
+            ? "customer-group:" + customerGroup.GroupId
+            : "customer-view:" + GetInstanceID();
+    }
+
+    private Vector3 GetArrivalPosition()
+    {
+        return hasReservedArrival
+            ? reservedArrivalPosition
+            : currentDestination != null
+                ? currentDestination.position
+                : transform.position;
+    }
+
+    private void ReplanCurrentRoute(
+        BistroBuilderNavigationReplanLevel level =
+            BistroBuilderNavigationReplanLevel.RouteSuffixRepair)
+    {
+        if (!isMoving || currentDestination == null) return;
+        RebuildRouteTo(GetArrivalPosition(), level);
+    }
+
+    private void RebuildRouteTo(
+        Vector3 target,
+        BistroBuilderNavigationReplanLevel level =
+            BistroBuilderNavigationReplanLevel.Steering)
+    {
+        currentRouteIndex = 0;
+
+        if (navigationService != null)
+        {
+            string ownerId = GetNavigationOwnerId();
+            if (navigationService.TryGetNavigationTrace(ownerId, out _))
+            {
+                if (navigationService.TryReplanNavigation(
+                        ownerId,
+                        transform.position,
+                        target,
+                        level,
+                        out BistroBuilderNavigationRoute rebuilt) &&
+                    rebuilt != null && rebuilt.points != null)
+                {
+                    routePoints.Clear();
+                    routePoints.AddRange(rebuilt.points);
+                }
+            }
+            else
+            {
+                routePoints.Clear();
+                var request = new BistroBuilderNavigationRequest
+                {
+                    ownerId = ownerId,
+                    agentMask = BistroBuilderNavigationAgentMask.Customer,
+                    origin = transform.position,
+                    destination = target,
+                    nominalSpeed = movementSpeed,
+                    mobilityRadius = circulationRadius,
+                    externalUrgency = 0
+                };
+
+                if (navigationService.TryStartNavigation(
+                        request,
+                        out BistroBuilderNavigationPlan plan,
+                        out _) &&
+                    plan != null && plan.route != null && plan.route.points != null)
+                    routePoints.AddRange(plan.route.points);
+            }
+
+            plannedNavigationRevision = navigationService.Revision;
+            return;
+        }
+
+        routePoints.Clear();
+        routePoints.Add(target);
+    }
+
+    private bool EnsureScheduledRouteReady(string ownerId)
+    {
+        if (navigationService == null || routePoints.Count > 0)
+            return true;
+
+        if (navigationService.TryGetNavigationPlan(
+                ownerId,
+                out BistroBuilderNavigationPlan plan) &&
+            plan != null && plan.route != null && plan.route.points != null &&
+            plan.route.points.Count > 0)
+        {
+            routePoints.AddRange(plan.route.points);
+            currentRouteIndex = 0;
+            plannedNavigationRevision = navigationService.Revision;
+            return true;
+        }
+
+        if (navigationService.TryGetNavigationTrace(
+                ownerId,
+                out BistroBuilderNavigationDecisionTrace trace) &&
+            trace.state == BistroBuilderNavigationTravelState.RequestingRoute)
+        {
+            navigationService.ReportNavigationPosition(
+                ownerId,
+                transform.position,
+                BistroBuilderNavigationWaitingReason.AwaitingCorridor);
+            navigationService.RefreshDestination(ownerId);
+            return false;
+        }
+
+        navigationService.ReleaseDestination(ownerId);
+        hasReservedArrival = false;
+        isMoving = false;
+        currentDestination = null;
+        return false;
+    }
     private void CompleteMovement()
     {
-        transform.position =
-            currentDestination.position;
-
+        transform.position = GetArrivalPosition();
+        navigationService?.CompleteNavigation(GetNavigationOwnerId());
+        navigationService?.ReleaseDestination(GetNavigationOwnerId());
         currentDestination = null;
         isMoving = false;
+        hasReservedArrival = false;
         HasReachedDestination = true;
-
         Debug.Log(
             $"Grupo {customerGroup.GroupId} ha llegado a su destino.",
-            this
-        );
-
+            this);
         DestinationReached?.Invoke(this);
     }
 }

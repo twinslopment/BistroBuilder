@@ -1,0 +1,5 @@
+=== BISTRO BUILDER - BBSIS FASE 2C / REGRESIÓN MODO EDICIÓN ===
+[PASS] Resultado: CORRECTO
+Pruebas superadas: 15
+Pruebas fallidas: 0
+Limpieza: correcta

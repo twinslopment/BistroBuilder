@@ -1,0 +1,59 @@
+=== BISTRO BUILDER - BBSIS FASE 2D / CLOSURE GATE ===
+[PASS] Fase 2D cerrada con evidencia real.
+BBSIS FASE 2D - VALIDACION
+OK - Autoridad BBSIS disponible
+OK - Coordinador de movilidad configurado
+OK - Contrato runtime de logistica disponible
+OK - Spatial Contract de carrito valido
+OK - Traits Mobility y Carry declarados
+OK - Perfil espacial data-driven valido
+OK - Familia logistics.cart catalogada
+OK - Claims Mobility y Carry disponibles
+OK - Semantica Mobility/Carry disponible
+OK - BBSIS 2D no exige Rigidbody
+OK - Dimensiones independientes del render
+OK - Proxy Layered para cuerpo/movilidad/carga
+OK - Binding logistico unico e idempotente
+OK - Actualizacion espacial explicita sin rutas paralelas
+OK - Reconstruccion post-Load disponible
+Resultado: 15 OK / 0 errores.
+
+BBSIS FASE 2D - AUTOTEST
+OK - Servicio BBSIS disponible
+OK - Coordinador 2D disponible
+OK - Contrato y perfil cargados
+OK - Actor movil configurado
+OK - Actor movil funciona sin Rigidbody
+OK - Mobility Lease inicial concedido
+OK - Mobility Lease tiene identidad estable
+OK - Bloqueador selectivo de Carry concedido
+OK - Carry bloqueado rechaza la transaccion completa
+OK - Rechazo Carry conserva Mobility sin estado partido
+OK - Carry Lease con carga concedido tras liberar
+OK - Carry Envelope activo con carga
+OK - Relocalizacion atomica actualiza el lease
+OK - Movimiento abre Spatial Episode
+OK - Bloqueador de stress concedido
+OK - Conflicto conserva el lease anterior sin hueco
+OK - Rechazo movil expone causa determinista
+OK - Movimiento reintenta tras liberar el espacio
+OK - Stress 300 relocalizaciones sin fugas
+OK - Semantica Mobility Envelope publicada
+OK - Semantica Carry Envelope publicada
+OK - Mobility contra Work Zone se clasifica bloqueante
+OK - Load descarta estado movil transitorio
+OK - Estado movil se reconstruye despues de Load
+OK - Descarga libera Carry Lease
+OK - Limpieza restaura el conteo de leases
+OK - Limpieza restaura Spatial Episodes
+OK - Bloqueador de arranque invalido concedido
+OK - Arranque bloqueado no fabrica reserva falsa
+OK - Recuperacion desde pose inicial invalida sin barrido fantasma
+OK - Recuperacion limpia todo el estado transitorio
+Resultado: 31 OK / 0 fallos.
+
+OK - Play Mode real BBSIS 2D
+OK - Regresion acumulativa BBSIS 2C
+OK - Regresion real Navegacion 17
+OK - Save/Load real 17 + 368EF
+Resultado acumulado: 50 OK / 0 fallos.

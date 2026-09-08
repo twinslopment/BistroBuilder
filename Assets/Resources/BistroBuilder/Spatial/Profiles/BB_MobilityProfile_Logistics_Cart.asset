@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d287d4f20bdb11c428293424b3b85804, type: 3}
+  m_Name: BB_MobilityProfile_Logistics_Cart
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMobilitySpatialProfileDefinition
+  profileId: mobility.logistics.cart.standard
+  bodyWidth: 0.68
+  bodyDepth: 0.92
+  movementMargin: 0.12
+  trailingClearance: 0.18
+  carryWidthExpansion: 0.2
+  carryDepthExpansion: 0.28
+  maximumLoadUnits: 6
+  movementThreshold: 0.04

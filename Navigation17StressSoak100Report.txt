@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 17 / STRESS-SOAK ===
+[PASS] PASS - 100 agentes logicos en PlayMode durante 22 s. Legs=792, replans=0, maxPending=97, maxEncounters=988, maxDependencies=66, maxDeadlocks=44, yields=335705, recoveries=612, hardFailures=0.

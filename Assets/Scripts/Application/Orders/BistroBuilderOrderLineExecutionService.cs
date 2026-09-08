@@ -23,6 +23,18 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
     [SerializeField]
     private BistroBuilderCanonicalOrderIntegrationService integrationService;
 
+<<<<<<< Updated upstream
+=======
+    [SerializeField]
+    private BistroBuilderDishCustodyCoordinator dishCustodyCoordinator;
+
+    private readonly List<IBistroBuilderPreparationDurationAdjustmentProvider>
+        preparationDurationAdjustmentProviders =
+            new List<IBistroBuilderPreparationDurationAdjustmentProvider>(4);
+    private readonly HashSet<string> preparationDurationAdjustmentProviderIds =
+        new HashSet<string>(StringComparer.Ordinal);
+
+>>>>>>> Stashed changes
     [Header("Depuración")]
 
     [SerializeField]
@@ -65,6 +77,13 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
 
         if (!integrationService.ValidateConfiguration(out error))
         {
+            return false;
+        }
+
+        if (FindFirstObjectByType<BistroBuilderInteractionService>() != null &&
+            dishCustodyCoordinator == null)
+        {
+            error = "Interaction v1 está activo, pero falta Dish Custody Coordinator.";
             return false;
         }
 
@@ -423,6 +442,17 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+        if (dishCustodyCoordinator != null &&
+            !dishCustodyCoordinator.EnsureReadyDishCustody(
+                line.LineId,
+                kitchenReferenceId,
+                out string custodyError))
+        {
+            error = "No pudo materializarse Custody del plato: " + custodyError;
+            return false;
+        }
+
         BistroBuilderCanonicalOrderOperationResult result =
             canonicalOrderService.TryTransitionLine(
                 line.LineId,
@@ -432,6 +462,9 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
 
         if (!result.Succeeded)
         {
+            dishCustodyCoordinator?.TryReleaseDishCustody(
+                line.LineId,
+                BistroBuilderInteractionReasonCode.TaskCancelled);
             error = result.Message;
             return false;
         }
@@ -674,6 +707,17 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+        if (dishCustodyCoordinator != null &&
+            !dishCustodyCoordinator.TryPickupByWaiter(
+                orderLineId,
+                waiter,
+                out string custodyError))
+        {
+            error = "No pudo recogerse Custody del plato: " + custodyError;
+            return false;
+        }
+
         BistroBuilderCanonicalOrderOperationResult result =
             canonicalOrderService.TryTransitionLine(
                 orderLineId,
@@ -682,14 +726,16 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
                     .BuildWaiterReference(waiter.WaiterId)
             );
 
-        error = result.Succeeded ? string.Empty : result.Message;
-
-        if (result.Succeeded)
+        if (!result.Succeeded)
         {
-            LogTransition(order, orderLineId, "InTransit");
+            dishCustodyCoordinator?.TryReturnToOriginPass(orderLineId, out _);
+            error = result.Message;
+            return false;
         }
 
-        return result.Succeeded;
+        LogTransition(order, orderLineId, "InTransit");
+        error = string.Empty;
+        return true;
     }
 
     public bool TryMarkLineServed(
@@ -726,6 +772,18 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+        if (dishCustodyCoordinator != null &&
+            !dishCustodyCoordinator.TryStageDeliveryToDestination(
+                orderLineId,
+                order,
+                waiter,
+                out string custodyStageError))
+        {
+            error = "No pudo entregarse Custody del plato: " + custodyStageError;
+            return false;
+        }
+
         BistroBuilderCanonicalOrderOperationResult result =
             canonicalOrderService.TryTransitionLine(
                 orderLineId,
@@ -736,9 +794,21 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
 
         if (!result.Succeeded)
         {
+            if (dishCustodyCoordinator != null)
+                dishCustodyCoordinator.TryRestoreHolder(
+                    orderLineId,
+                    BistroBuilderInteractionHolderKind.Actor,
+                    "waiter:" + waiter.WaiterId,
+                    out _);
             error = result.Message;
             return false;
         }
+
+        string custodyFinalizeError = string.Empty;
+        bool custodyFinalized = dishCustodyCoordinator == null ||
+            dishCustodyCoordinator.TryFinalizeDeliveredDish(
+                orderLineId,
+                out custodyFinalizeError);
 
         if (!TrySynchronizeLegacyOrder(
                 order,
@@ -747,11 +817,15 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
                 out error
             ))
         {
+            if (!custodyFinalized)
+                error += " Custody necesita reconciliación: " + custodyFinalizeError;
             return false;
         }
 
         LogTransition(order, orderLineId, "Served");
-        error = string.Empty;
+        error = custodyFinalized
+            ? string.Empty
+            : "Served confirmado; Custody necesita reconciliación: " + custodyFinalizeError;
         return true;
     }
 
@@ -812,6 +886,32 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
+        CacheDependenciesIfNeeded();
+        BistroBuilderInteractionHolderKind previousHolderKind =
+            BistroBuilderInteractionHolderKind.Station;
+        string previousHolderId = string.Empty;
+        bool custodyMoved = false;
+        if (dishCustodyCoordinator != null)
+        {
+            if (!dishCustodyCoordinator.TryGetCurrentHolder(
+                    line.LineId,
+                    out previousHolderKind,
+                    out previousHolderId,
+                    out string holderError))
+            {
+                error = "No pudo leerse Custody antes del rollback: " + holderError;
+                return false;
+            }
+            if (!dishCustodyCoordinator.TryReturnToOriginPass(
+                    line.LineId,
+                    out string custodyError))
+            {
+                error = "No pudo devolverse Custody al pass: " + custodyError;
+                return false;
+            }
+            custodyMoved = true;
+        }
+
         BistroBuilderCanonicalOrderOperationResult result =
             canonicalOrderService.TryTransitionLine(
                 line.LineId,
@@ -819,8 +919,20 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
                 actorReferenceId
             );
 
-        error = result.Succeeded ? string.Empty : result.Message;
-        return result.Succeeded;
+        if (!result.Succeeded)
+        {
+            if (custodyMoved)
+                dishCustodyCoordinator.TryRestoreHolder(
+                    line.LineId,
+                    previousHolderKind,
+                    previousHolderId,
+                    out _);
+            error = result.Message;
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     public bool IsLineReadyForPickup(
@@ -1155,6 +1267,12 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         if (integrationService == null)
         {
             TryGetComponent(out integrationService);
+        }
+        if (dishCustodyCoordinator == null)
+        {
+            TryGetComponent(out dishCustodyCoordinator);
+            if (dishCustodyCoordinator == null)
+                dishCustodyCoordinator = FindFirstObjectByType<BistroBuilderDishCustodyCoordinator>();
         }
     }
 

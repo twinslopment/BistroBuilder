@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 14 / PLAY MODE REAL ===
+[PASS] PASS - cola priorizada, estado operativo, proteccion de mesa, envio manual a barra, clientes avanzados y persistencia funcionan en Play Mode real.

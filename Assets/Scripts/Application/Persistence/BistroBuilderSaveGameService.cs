@@ -1323,6 +1323,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             }
             catch (Exception exception)
             {
+                Debug.LogException(exception, this);
                 context.Fail(
                     finalizeProviders[index].SectionId +
                     ": " +
@@ -1364,6 +1365,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             }
             catch (Exception exception)
             {
+                Debug.LogException(exception, this);
                 result.Exception = exception;
                 yield break;
             }

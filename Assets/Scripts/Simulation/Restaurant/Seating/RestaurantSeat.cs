@@ -133,6 +133,8 @@ public sealed class RestaurantSeat :
     {
         CacheReferencesIfNeeded();
         CaptureParkedMotionPose();
+        if (GetComponent<BistroBuilderSeatCirculationEnvelope>() == null)
+            gameObject.AddComponent<BistroBuilderSeatCirculationEnvelope>();
     }
 
     private void OnEnable()
@@ -694,6 +696,26 @@ public sealed class RestaurantSeat :
     }
 
 #if UNITY_EDITOR
+    /// <summary>
+    /// Configuración idempotente para instaladores/validadores de Editor.
+    /// Evita reflection/SerializedObject para referencias críticas del asiento.
+    /// </summary>
+    public void ConfigureForEditor(
+        RestaurantSeatUseProfileDefinition configuredUseProfile,
+        Transform configuredAssociationPoint,
+        Transform configuredOperationalMotionRoot,
+        Transform configuredSeatPoint,
+        Transform configuredCustomerApproachPoint)
+    {
+        useProfile = configuredUseProfile;
+        associationPoint = configuredAssociationPoint;
+        operationalMotionRoot = configuredOperationalMotionRoot;
+        seatPoint = configuredSeatPoint;
+        customerApproachPoint = configuredCustomerApproachPoint;
+        CacheReferencesIfNeeded();
+        CaptureParkedMotionPose();
+    }
+
     private void Reset()
     {
         CacheReferencesIfNeeded();

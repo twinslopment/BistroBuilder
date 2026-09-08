@@ -1,0 +1,89 @@
+=== BISTRO BUILDER - BLOQUE 17 / CLOSURE GATE ===
+BLOQUE 17 - VALIDACION
+OK - Autoridad unica de navegacion instalada
+OK - Configuracion de navegacion valida
+OK - No hay autoridades de navegacion duplicadas
+OK - Superficie NavMesh profesional instalada
+OK - Modo Edicion sincroniza la topologia de circulacion
+OK - IA de rutas de Camareros 13 conectable a Navegacion 17
+OK - Zonas transitables canonicas presentes
+OK - Todas las zonas tienen politica de acceso
+OK - Clientes no pueden usar cocina como atajo
+OK - Camareros conservan acceso a cocina
+OK - Sillas funcionales detectadas
+OK - Movimiento de todas las sillas reserva espacio de circulacion
+OK - Puertas disponen de barrido y bloqueo dinamico
+OK - Rutas de reparto siguen integradas
+OK - Clientes usan el proveedor comun de circulacion
+OK - Camareros usan rutas y evitacion de Navegacion 17
+OK - Obstaculos temporales universales disponibles
+OK - Solver reciproco y Controlled Passages v1 disponibles
+OK - Block Dependency Graph y recuperacion anti-deadlock disponibles
+OK - Traffic Heat, Route Cache y Route Graph v1 disponibles
+OK - Navigation consume BBSIS como autoridad espacial
+OK - Route Graph v1 construido sobre la topologia real
+OK - No existen deadlocks fantasma al validar
+Circulacion: 21/21 conexiones; 0 avisos; 0 bloqueos.
+OK - Auditoria de salud de circulacion ejecutable
+OK - Conexiones criticas del restaurante son transitables
+OK - Validacion se integra con colocacion y reformas
+OK - Acceso de almacen/reparto participa en auditoria
+Resultado: 27 OK / 0 errores.
+
+BLOQUE 17 - AUTOTEST
+OK - Servicio disponible
+OK - Configuracion valida
+OK - BBSIS disponible como autoridad unica de reservas espaciales
+OK - Navigation no mantiene un sistema paralelo de reservas de destino
+OK - Navigation observa cero leases de destino BBSIS al arrancar
+OK - Adaptador de destino conserva la frontera de delegacion a BBSIS
+OK - Urgencia externa estable resuelve conflicto sin prioridad por profesion
+OK - Presencia transitoria se limpia
+OK - Obstaculo dinamico bloquea el paso
+OK - Propietario puede ocupar su propio espacio temporal
+OK - Cambios dinamicos no invalidan la topologia estructural
+OK - Cambios dinamicos actualizan TrafficEpoch
+OK - Politica impide atajo de clientes por cocina
+OK - Politica permite paso de camareros por cocina
+OK - Sillas participan en espacio dinamico
+OK - Puertas exponen apertura coordinada con navegacion
+OK - IA de Camareros 13 delega en Navegacion 17
+OK - Clientes delegan en Navegacion 17
+OK - Repartidores delegan en Navegacion 17
+OK - Contrato de persistencia/reconstruccion estable
+OK - Salud de circulacion inspecciona conexiones reales
+OK - Restaurante actual no tiene rutas criticas bloqueadas
+Resultado: 22 OK / 0 fallos.
+
+NAVIGATION & CROWD FLOW V1 - CORE AUTOTEST
+OK - Encounter determinista resuelve dos agentes de frente
+OK - Passing side permanece estable a la derecha
+OK - Empate usa Stable Agent ID y no aleatoriedad
+OK - Controlled Passage impide cruce incompatible simultaneo
+OK - Controlled Passage drena y cambia de sentido sin starvation
+OK - Controlled Passage registra espera observable
+OK - Block Dependency Graph detecta y canoniza ciclos
+OK - Deadlock recovery tiene desempate determinista
+OK - Traffic Heat convierte densidad y baja velocidad en coste
+OK - Traffic Heat mantiene celdas compactas de telemetria
+OK - Structural Route Cache reutiliza rutas por revision
+OK - Route Cache no reutiliza una ruta validada con menor Mobility Envelope
+OK - Route Cache permite reutilizar una ruta validada con envelope mayor
+OK - Negative Route Cache evita repetir rutas conocidas imposibles
+OK - Negative Cache no descarta un envelope menor por fallo de uno mayor
+OK - Path Query Scheduler respeta prioridad, coalescing y orden estable
+OK - Path Query Scheduler limita trabajo por tick sin duplicar peticiones
+OK - Path Query Scheduler conserva consultas aplazadas para el siguiente tick
+OK - Navigation v1 esta instalado en la escena real
+OK - Route Graph se construye desde zonas y Spatial Gates reales
+OK - Block Dependency Graph arranca sin dependencias fantasma
+OK - Runtime arranca sin deadlocks fantasma
+Resultado: 22 OK / 0 fallos.
+
+OK - Play Mode real 17
+OK - Save/Load real especifico 17
+OK - Regresion Camareros 13
+OK - Regresion Sala 14
+OK - Stress/Soak 50 NPC
+OK - Stress/Soak 100 NPC
+Resultado acumulado: 77 OK / 0 fallos.

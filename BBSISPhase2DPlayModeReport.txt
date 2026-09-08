@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BBSIS FASE 2D / PLAY MODE REAL ===
+[PASS] PASS - Mobility/Carry, relocalizacion, conflictos y reconstruccion post-Load funcionan en runtime.

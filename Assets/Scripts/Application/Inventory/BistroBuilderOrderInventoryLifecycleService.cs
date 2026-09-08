@@ -221,6 +221,122 @@ public sealed class BistroBuilderOrderInventoryLifecycleService : MonoBehaviour
     }
 
     /// <summary>
+    /// Reserva inventario para una línea añadida por el bloque 11. La nueva
+    /// LineId produce una reserva determinista nueva y evita reinterpretar la
+    /// reserva de la línea original.
+    /// </summary>
+    public bool TryReserveAdditionalCanonicalLine(
+        RestaurantOrder order,
+        string canonicalLineId,
+        string dishId,
+        out string error)
+    {
+        error = string.Empty;
+        if (order == null || string.IsNullOrWhiteSpace(canonicalLineId) ||
+            string.IsNullOrWhiteSpace(dishId))
+        {
+            error = "La línea adicional 11 no contiene identidades válidas.";
+            return false;
+        }
+        if (!sessionsByLegacyOrderId.TryGetValue(
+                order.OrderId, out OrderInventorySession session) || session == null)
+        {
+            error = "No existe sesión 368CD para la comanda avanzada.";
+            return false;
+        }
+        string normalizedLineId = BistroBuilderOrderIdUtility.Normalize(canonicalLineId);
+        if (session.ReservationIdByLineId.ContainsKey(normalizedLineId))
+        {
+            error = "La línea avanzada ya tiene una reserva de inventario.";
+            return false;
+        }
+        if (!recipeCatalogService.TryGetRecipeByDishId(
+                dishId, out BistroBuilderRecipeDefinition recipe) || recipe == null)
+        {
+            error = "No existe receta para la nueva línea " + dishId + ".";
+            return false;
+        }
+        if (!TryBuildReservationLines(
+                recipe, out List<BistroBuilderInventoryQuantityLine> quantities,
+                out error))
+            return false;
+
+        string reservationId = BuildReservationId(
+            order.CanonicalOrderId, normalizedLineId);
+        if (!inventoryService.TryCreateReservation(
+                BuildOperationId("reserve11", order.CanonicalOrderId,
+                    normalizedLineId, string.Empty),
+                reservationId,
+                BuildSourceId(order.CanonicalOrderId, normalizedLineId),
+                quantities,
+                out _,
+                out error))
+            return false;
+
+        session.ReservationIdByLineId.Add(normalizedLineId, reservationId);
+        Log("11 reservó " + reservationId + " para una línea revisada.");
+        return true;
+    }
+
+    /// <summary>
+    /// Libera una línea cancelada antes de preparar. Si la reserva ya fue
+    /// consumida, no repone ingredientes: la operación se considera coherente.
+    /// </summary>
+    public bool TryReleaseCanonicalLineReservation(
+        RestaurantOrder order,
+        string canonicalLineId,
+        string reason,
+        out string error)
+    {
+        error = string.Empty;
+        if (order == null || string.IsNullOrWhiteSpace(canonicalLineId) ||
+            !sessionsByLegacyOrderId.TryGetValue(
+                order.OrderId, out OrderInventorySession session) || session == null ||
+            !session.ReservationIdByLineId.TryGetValue(
+                BistroBuilderOrderIdUtility.Normalize(canonicalLineId),
+                out string reservationId))
+        {
+            error = "No existe reserva 368CD para la línea a liberar.";
+            return false;
+        }
+        if (!inventoryService.TryGetReservationSnapshot(
+                reservationId, out BistroBuilderInventoryReservationSnapshot snapshot) ||
+            snapshot == null)
+        {
+            error = "No se encontró la reserva canónica de la línea.";
+            return false;
+        }
+        if (snapshot.Status != BistroBuilderInventoryReservationStatus.Active)
+        {
+            // Consumed significa que el coste físico ya ocurrió; Released es idempotente.
+            error = string.Empty;
+            return true;
+        }
+        return inventoryService.TryReleaseReservation(
+            BuildOperationId("release11", order.CanonicalOrderId,
+                canonicalLineId, string.Empty),
+            reservationId,
+            string.IsNullOrWhiteSpace(reason)
+                ? "Revisión/cancelación de línea del bloque 11." : reason,
+            out error);
+    }
+
+    public bool TryGetCanonicalLineReservation(
+        RestaurantOrder order,
+        string canonicalLineId,
+        out BistroBuilderInventoryReservationSnapshot snapshot)
+    {
+        snapshot = null;
+        if (order == null || string.IsNullOrWhiteSpace(canonicalLineId) ||
+            !sessionsByLegacyOrderId.TryGetValue(
+                order.OrderId, out OrderInventorySession session) || session == null ||
+            !session.ReservationIdByLineId.TryGetValue(
+                BistroBuilderOrderIdUtility.Normalize(canonicalLineId),
+                out string reservationId))
+            return false;
+        return inventoryService.TryGetReservationSnapshot(reservationId, out snapshot);
+    }
+    /// <summary>
     /// API explícita para fallos de producción futuros. La cantidad adicional
     /// de merma debe representar pérdida física extra, no ingredientes ya
     /// consumidos por la receta, evitando doble descuento.

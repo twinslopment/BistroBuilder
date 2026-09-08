@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 18 / PLAY MODE REAL ===
+[PASS] PASS - Transfer commit, cancelacion pre-commit, Seat/Stand real, Commit Frontier, reconciliacion y Portal funcionan.

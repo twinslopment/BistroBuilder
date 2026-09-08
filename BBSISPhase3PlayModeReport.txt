@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BBSIS FASE 3 / PLAY MODE REAL ===
+[PASS] PASS - determinismo, reset observable y stress denso funcionan en runtime.

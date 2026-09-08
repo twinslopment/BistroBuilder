@@ -234,7 +234,7 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
 
         if (group == null || group.GroupSize < 1 ||
             !BistroBuilderServiceModeUtility.IsBarMode(serviceMode) ||
-            group.HasAssignedBarSpot)
+            group.HasAssignedBarSpot || group.HasAssignedTable)
         {
             return false;
         }
@@ -336,6 +336,7 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
 
         if (group == null || occupiedSpotIds == null ||
             occupiedSpotIds.Count == 0 || group.HasAssignedBarSpot ||
+            group.HasAssignedTable ||
             !BistroBuilderServiceModeUtility.IsBarMode(serviceMode))
         {
             error = "La ocupación persistente de barra no es válida.";

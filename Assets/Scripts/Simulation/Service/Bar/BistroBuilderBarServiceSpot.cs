@@ -68,6 +68,19 @@ public sealed class BistroBuilderBarServiceSpot : MonoBehaviour
             return false;
         }
 
+        BistroBuilderBarSpatialAdapter spatialAdapter =
+            GetComponent<BistroBuilderBarSpatialAdapter>();
+        if (spatialAdapter != null &&
+            !spatialAdapter.TryAcquireCustomerLease(
+                group, out string spatialRejection))
+        {
+            Debug.LogWarning(
+                "BBSIS rechazó la ocupación de " + BarSpotId +
+                ": " + spatialRejection,
+                this);
+            return false;
+        }
+
         CustomerGroup previous = assignedCustomerGroup;
         assignedCustomerGroup = group;
         OccupancyChanged?.Invoke(this, previous, assignedCustomerGroup);
@@ -91,6 +104,9 @@ public sealed class BistroBuilderBarServiceSpot : MonoBehaviour
 
         CustomerGroup previous = assignedCustomerGroup;
         assignedCustomerGroup = null;
+        BistroBuilderBarSpatialAdapter spatialAdapter =
+            GetComponent<BistroBuilderBarSpatialAdapter>();
+        spatialAdapter?.ReleaseCustomerLease();
         OccupancyChanged?.Invoke(this, previous, null);
 
         Debug.Log(

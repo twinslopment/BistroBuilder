@@ -1,0 +1,10 @@
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.SmartAssets.Editor.deps.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.SmartAssets.Editor.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.SmartAssets.Editor.pdb
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.csproj.AssemblyReference.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.csproj.CoreCompileInputs.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.sourcelink.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBu.146FF56D.Up2Date
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.SmartAssets.Editor\BistroBuilder.SmartAssets.Editor.pdb

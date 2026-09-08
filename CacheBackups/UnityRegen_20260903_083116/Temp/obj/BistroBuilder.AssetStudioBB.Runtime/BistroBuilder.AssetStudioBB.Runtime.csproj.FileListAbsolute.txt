@@ -1,0 +1,9 @@
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Runtime.deps.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Runtime.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\bin\Debug\BistroBuilder.AssetStudioBB.Runtime.pdb
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.csproj.AssemblyReference.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.csproj.CoreCompileInputs.cache
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.sourcelink.json
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.dll
+C:\Users\mruperez\ProyectoBB\BistroBuilder\Temp\obj\BistroBuilder.AssetStudioBB.Runtime\BistroBuilder.AssetStudioBB.Runtime.pdb

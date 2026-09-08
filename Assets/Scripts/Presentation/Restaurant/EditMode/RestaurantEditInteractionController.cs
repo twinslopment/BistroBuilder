@@ -669,6 +669,24 @@ public sealed class RestaurantEditInteractionController :
     /// La selección y la colocación son estados distintos: seleccionar
     /// no modifica la escena; mover abre una transacción explícita.
     /// </summary>
+    /// <summary>
+    /// Selecciona programáticamente un colocable mediante su identidad real,
+    /// sin abrir todavía una transacción de movimiento.
+    /// </summary>
+    public bool TrySelectPlaceable(RestaurantPlaceableObject placeable)
+    {
+        if (placeable == null || editModeService == null || !editModeService.IsEditModeActive)
+            return false;
+        if (transactionService != null && transactionService.HasActiveTransaction)
+            return false;
+        if (!placeable.TryGetComponent(out RestaurantEditableObject editableObject) ||
+            !placeable.TryGetComponent(out RestaurantAreaMember member) ||
+            !editableObject.EditingEnabled || !editableObject.HasValidDefinition)
+            return false;
+
+        SelectEditableObject(editableObject, member, placeable.transform.position);
+        return true;
+    }
     public bool TryBeginMoveSelected()
     {
         if (!editModeService.IsEditModeActive)

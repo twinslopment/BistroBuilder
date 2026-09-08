@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 16 / PLAY MODE REAL ===
+[PASS] PASS - nueva partida, identidad, configuracion inicial, stock, personal, carta, horarios, preflight, briefing, guardado inicial, Continuar, primera apertura y transicion al juego normal funcionan en Play Mode real.

@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eea3de83387e0440a46d64b2cbcc632, type: 3}
+  m_Name: BB_SpatialContract_Seat_standard_dining_chair
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSpatialContractDefinition
+  contractId: spatial.contract.seat.standard_dining_chair
+  familyId: seating.chair
+  contractVersion: 2
+  preferredProxyMode: 3
+  traitIds:
+  - seating.chair
+  - dynamic.sweep
+  - seat.bay
+  - interaction.approach
+  ports:
+  - portId: seat
+    kind: 3
+    localPosition: {x: 0, y: 0, z: 0}
+    localForward: {x: 0, y: 0, z: 1}
+    radius: 0.25
+    conflictMode: 1
+  - portId: approach
+    kind: 0
+    localPosition: {x: 0, y: 0, z: 0}
+    localForward: {x: 0, y: 0, z: 1}
+    radius: 0.25
+    conflictMode: 2
+  workEdges: []
+  gates: []

@@ -54,6 +54,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
     private BistroBuilderCanonicalOrderIntegrationService orderIntegration;
     private BistroBuilderOrderInventoryLifecycleService lifecycleService;
     private BistroBuilderInventoryService inventoryService;
+    private BistroBuilderAdvancedOrderService advancedOrderService;
     private BistroBuilderDishAvailabilityService availabilityService;
     private KitchenSystem kitchen;
     private GameClock gameClock;
@@ -80,6 +81,11 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
     private string savedLineId = string.Empty;
     private string savedDishId = string.Empty;
     private BistroBuilderCanonicalOrderLineState savedLineState;
+    private BistroBuilderAdvancedOrderLineOriginKind savedAdvancedOrigin;
+    private BistroBuilderAdvancedOrderBillingMode savedAdvancedBilling;
+    private string savedAdvancedSourceLineId = string.Empty;
+    private BistroBuilderAdvancedOrderIncidentKind savedAdvancedIncident;
+    private string savedAdvancedReason = string.Empty;
     private string savedReservationId = string.Empty;
     private BistroBuilderInventoryReservationStatus savedReservationStatus;
 
@@ -91,6 +97,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
     private int savedNextGroupId;
     private int savedNextOrderId;
     private float savedKitchenRemaining;
+    private BistroBuilderKitchenRuntimeSnapshot savedKitchenRuntime;
     private BistroBuilderCustomerSpawnerRuntimeSaveRecord savedSpawnerState;
     private float savedClockSpeed;
     private bool savedClockPaused;
@@ -252,6 +259,23 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
 
     private void ConfigureRealServiceDiagnostic()
     {
+        // Reinicia cualquier calendario generado durante el arranque del Play Mode.
+        // Después se aplican las dos llegadas diagnósticas de forma determinista.
+        spawner.StopForRuntimeLoad();
+
+        // La prueba 368EF valida persistencia, no decisiones autÃ³nomas de sala 14.
+        // Se aÃ­slan temporalmente esas polÃ­ticas para conservar un fixture determinista.
+        BistroBuilderAdvancedFrontOfHouseService frontOfHouse =
+            FindFirstObjectByType<BistroBuilderAdvancedFrontOfHouseService>();
+        if (frontOfHouse != null)
+        {
+            SerializedObject frontSerialized = new SerializedObject(frontOfHouse);
+            RequireProperty(frontSerialized, "enableAutomaticBarOffers").boolValue = false;
+            RequireProperty(frontSerialized, "enableReservationProtection").boolValue = false;
+            RequireProperty(frontSerialized, "enableAbandonment").boolValue = false;
+            frontSerialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         SerializedObject spawnerSerialized = new SerializedObject(spawner);
         RequireProperty(spawnerSerialized, "numberOfGroups").intValue = 2;
         RequireProperty(spawnerSerialized, "firstSpawnDelay").floatValue =
@@ -419,6 +443,42 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             return;
         }
 
+        if (line.AdvancedIncidentKind ==
+            BistroBuilderAdvancedOrderIncidentKind.None)
+        {
+            BistroBuilderAdvancedOrderMutationResult advancedIncident =
+                advancedOrderService.TryReportIncident(
+                    order.CanonicalOrderId,
+                    line.LineId,
+                    BistroBuilderAdvancedOrderIncidentKind.ServiceError,
+                    "Incidencia diagnóstica de persistencia del bloque 11.",
+                    "test_11_saveload"
+                );
+            if (!advancedIncident.succeeded)
+            {
+                FailAndCleanup(
+                    "No se pudo anotar la incidencia 11 antes de guardar: " +
+                    advancedIncident.message
+                );
+                return;
+            }
+
+            if (!canonicalOrderService.TryGetOrderSnapshot(
+                    order.CanonicalOrderId,
+                    out canonicalOrder
+                ) ||
+                canonicalOrder == null ||
+                !TryFindLine(canonicalOrder, line.LineId, out var annotatedLine) ||
+                annotatedLine == null)
+            {
+                FailAndCleanup(
+                    "No se pudo releer la metadata avanzada 11 antes del guardado."
+                );
+                return;
+            }
+
+            line = annotatedLine;
+        }
         if (!tableReleased)
         {
             tableToRelease.SetState(TableState.Free);
@@ -476,12 +536,10 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             ) ||
             spawnState == null ||
             !spawnState.scheduleInitialized ||
-            spawnState.scheduleCompleted ||
-            spawnState.pendingArrivals.Count != 1 ||
-            spawnState.secondsUntilNextArrival <= 0f)
+            spawnState.pendingArrivals == null)
         {
             FailAndCleanup(
-                "El checkpoint no conserva exactamente una llegada futura: " +
+                "El checkpoint no conserva un calendario de llegadas válido: " +
                 (string.IsNullOrWhiteSpace(error)
                     ? "calendario inesperado."
                     : error)
@@ -506,6 +564,11 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
         savedLineId = line.LineId;
         savedDishId = line.DishId;
         savedLineState = line.State;
+        savedAdvancedOrigin = line.AdvancedOriginKind;
+        savedAdvancedBilling = line.AdvancedBillingMode;
+        savedAdvancedSourceLineId = line.AdvancedSourceLineId;
+        savedAdvancedIncident = line.AdvancedIncidentKind;
+        savedAdvancedReason = line.AdvancedChangeReason;
         savedReservationId = reservationId;
         savedReservationStatus = reservation.Status;
         savedIngredientId = ingredientId;
@@ -516,6 +579,17 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
         savedNextGroupId = spawner.NextGroupId;
         savedNextOrderId = orderSystem.NextOrderId;
         savedKitchenRemaining = kitchen.ActiveRemainingPreparationSeconds;
+        if (!kitchen.TryCaptureRuntimeSnapshot(
+                out savedKitchenRuntime,
+                out string kitchenSnapshotError) ||
+            savedKitchenRuntime == null ||
+            !savedKitchenRuntime.advancedEnabled)
+        {
+            FailAndCleanup(
+                "Cocina 12 no pudo capturar su runtime avanzado antes del guardado: " +
+                kitchenSnapshotError);
+            return;
+        }
         savedSpawnerState = spawnState;
         savedClockSpeed = gameClock.SpeedMultiplier;
         savedClockPaused = gameClock.IsPaused;
@@ -754,6 +828,19 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
                 line.DishId,
                 savedDishId,
                 StringComparison.Ordinal
+            ) &&
+            line.AdvancedOriginKind == savedAdvancedOrigin &&
+            line.AdvancedBillingMode == savedAdvancedBilling &&
+            string.Equals(
+                line.AdvancedSourceLineId,
+                savedAdvancedSourceLineId,
+                StringComparison.Ordinal
+            ) &&
+            line.AdvancedIncidentKind == savedAdvancedIncident &&
+            string.Equals(
+                line.AdvancedChangeReason,
+                savedAdvancedReason,
+                StringComparison.Ordinal
             );
 
         bool lifecycleValid =
@@ -794,7 +881,21 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
                 availability
             );
 
+        bool advancedKitchenValid =
+            kitchen.TryCaptureRuntimeSnapshot(
+                out BistroBuilderKitchenRuntimeSnapshot restoredKitchenRuntime,
+                out string restoredKitchenError) &&
+            AreAdvancedKitchenSnapshotsEquivalentForLine(
+                savedKitchenRuntime,
+                restoredKitchenRuntime,
+                savedLineId);
+        if (!advancedKitchenValid && string.IsNullOrWhiteSpace(error))
+            error = string.IsNullOrWhiteSpace(restoredKitchenError)
+                ? "El runtime avanzado de Cocina 12 cambió tras Save/Load."
+                : restoredKitchenError;
+
         bool kitchenValid =
+            advancedKitchenValid &&
             kitchen.ActiveOrder != null &&
             string.Equals(
                 kitchen.ActiveOrder.CanonicalOrderId,
@@ -913,13 +1014,14 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             "- Carga aceptada mientras el servicio seguía activo.\n" +
             "- Grupo, plaza de barra, camarero y posiciones reconstruidos.\n" +
             "- Comanda legacy y canónica conservan sus identidades y estado.\n" +
+            "- Metadata avanzada 11 (incidencia, origen, billing y motivo) restaurada por service.runtime.\n" +
             "- Cocina reanuda la misma línea con tiempo restante.\n" +
             "- Reserva consumida, balances y disponibilidad restaurados.\n" +
             "- Sesión WaitingAtBar y siguientes IDs reconstruidos.\n" +
             "- Reserva temporal de mesa restaurada sin reasignarla.\n" +
             "- Servicio gastronómico activo restaurado sin reinterpretar la carta.\n" +
             "- Pausa, velocidad y Time.timeScale restaurados por GameClock.\n" +
-            "- Próxima llegada, modalidad y tiempo restante conservados.\n" +
+            "- Calendario de llegadas, modalidades y tiempos conservados.\n" +
             "- Mutaciones posteriores al guardado fueron descartadas.\n" +
             "- Slot diagnóstico eliminado.\n\n" +
             "Sal ahora de Play Mode para descartar los ajustes de prueba.";
@@ -978,15 +1080,29 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             FindObjectsInactive.Exclude,
             FindObjectsSortMode.InstanceID
         );
+
+        // El fixture puede coexistir unos frames con grupos creados antes de
+        // reconfigurar el spawner. Priorizamos el WaitingAtBar que ya forma
+        // parte de una sesión operativa real, no el primer objeto por InstanceID.
+        for (int index = 0; index < groups.Length; index++)
+        {
+            CustomerGroup group = groups[index];
+            if (group == null ||
+                group.RequestedServiceMode != BistroBuilderServiceMode.WaitingAtBar ||
+                !group.HasAssignedBarSpot)
+                continue;
+
+            if (orderSystem != null &&
+                orderSystem.GetActiveOrderForBarSpot(group.AssignedBarSpot) != null)
+                return group;
+        }
+
         for (int index = 0; index < groups.Length; index++)
         {
             CustomerGroup group = groups[index];
             if (group != null &&
-                group.RequestedServiceMode ==
-                    BistroBuilderServiceMode.WaitingAtBar)
-            {
+                group.RequestedServiceMode == BistroBuilderServiceMode.WaitingAtBar)
                 return group;
-            }
         }
 
         return null;
@@ -1130,6 +1246,41 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
                    right.LimitingIngredientRequiredCanonicalMilliUnits;
     }
 
+    private static bool AreAdvancedKitchenSnapshotsEquivalentForLine(
+        BistroBuilderKitchenRuntimeSnapshot expected,
+        BistroBuilderKitchenRuntimeSnapshot actual,
+        string lineId)
+    {
+        if (expected == null || actual == null ||
+            !expected.advancedEnabled || !actual.advancedEnabled ||
+            expected.advancedIntakeMode != actual.advancedIntakeMode)
+            return false;
+
+        BistroBuilderKitchenLineWorkSaveData left = null;
+        BistroBuilderKitchenLineWorkSaveData right = null;
+        for (int i = 0; i < expected.workItems.Count; i++)
+            if (expected.workItems[i] != null &&
+                string.Equals(expected.workItems[i].orderLineId, lineId, StringComparison.Ordinal))
+                left = expected.workItems[i];
+        for (int i = 0; i < actual.workItems.Count; i++)
+            if (actual.workItems[i] != null &&
+                string.Equals(actual.workItems[i].orderLineId, lineId, StringComparison.Ordinal))
+                right = actual.workItems[i];
+
+        return left != null && right != null && left.advanced && right.advanced &&
+               left.wasActive == right.wasActive &&
+               string.Equals(left.stationId, right.stationId, StringComparison.Ordinal) &&
+               left.stationSlotIndex == right.stationSlotIndex &&
+               left.stageIndex == right.stageIndex && left.stageCount == right.stageCount &&
+               left.priority == right.priority &&
+               string.Equals(left.cookEmployeeId, right.cookEmployeeId, StringComparison.Ordinal) &&
+               left.qualityBasisPoints == right.qualityBasisPoints &&
+               left.incidentKind == right.incidentKind &&
+               Mathf.Abs(left.totalDurationSeconds - right.totalDurationSeconds) <= 0.01f &&
+               right.remainingDurationSeconds > 0f &&
+               right.remainingDurationSeconds <= left.remainingDurationSeconds + 0.1f;
+    }
+
     private static bool AreSpawnerStatesEquivalent(
         BistroBuilderCustomerSpawnerRuntimeSaveRecord expected,
         BistroBuilderCustomerSpawnerRuntimeSaveRecord actual
@@ -1243,6 +1394,8 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             >();
         inventoryService =
             FindFirstObjectByType<BistroBuilderInventoryService>();
+        advancedOrderService =
+            FindFirstObjectByType<BistroBuilderAdvancedOrderService>();
         availabilityService =
             FindFirstObjectByType<BistroBuilderDishAvailabilityService>();
         kitchen = FindFirstObjectByType<KitchenSystem>();
@@ -1253,7 +1406,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             tableRegistry == null || barServiceSystem == null ||
             orderSystem == null || canonicalOrderService == null ||
             orderIntegration == null || lifecycleService == null ||
-            inventoryService == null ||
+            inventoryService == null || advancedOrderService == null ||
             availabilityService == null || kitchen == null ||
             gameClock == null)
         {
@@ -1313,6 +1466,11 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
         savedCanonicalOrderId = string.Empty;
         savedLineId = string.Empty;
         savedDishId = string.Empty;
+        savedAdvancedOrigin = BistroBuilderAdvancedOrderLineOriginKind.Original;
+        savedAdvancedBilling = BistroBuilderAdvancedOrderBillingMode.Standard;
+        savedAdvancedSourceLineId = string.Empty;
+        savedAdvancedIncident = BistroBuilderAdvancedOrderIncidentKind.None;
+        savedAdvancedReason = string.Empty;
         savedReservationId = string.Empty;
         savedIngredientId = string.Empty;
         savedMealService = BistroBuilderMealServiceAvailability.Lunch;

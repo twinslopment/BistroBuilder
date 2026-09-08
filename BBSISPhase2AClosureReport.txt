@@ -1,0 +1,56 @@
+=== BISTRO BUILDER - BBSIS FASE 2A / CLOSURE GATE ===
+[PASS] Fase 2A cerrada con evidencia real.
+BBSIS FASE 2A - VALIDACION
+OK - Autoridad BBSIS disponible
+OK - Spatial Assessment configurado
+OK - Runtime Binder data-driven configurado
+OK - Sillas reales detectadas
+OK - Todas las sillas reales tienen Subject/Contract/Proxy/Adapter
+OK - Seat y Approach Ports resuelven anclajes reales
+OK - Mesas reales detectadas
+OK - Todas las mesas reales tienen Subject/Contract/Proxy/Adapter
+OK - Seat Bays contractuales coinciden con capacidad real
+OK - Puertas presentes exponen Subject/Contract/Sweep Adapter
+OK - Subjects espaciales válidos, estables y únicos
+OK - BBSIS 2A no introduce Rigidbody obligatorio
+OK - Preflight contra geometría estática disponible
+OK - Spatial Quality produce diagnóstico
+OK - Spatial Quality es determinista
+OK - Bottleneck Ledger y Flow Quality disponibles
+OK - Contratos reales de Fase 2A versionados
+Resultado: 17 OK / 0 errores.
+
+BBSIS FASE 2A - AUTOTEST
+OK - Servicio BBSIS disponible
+OK - Spatial Assessment disponible
+OK - Preflight estático bloquea sweep imposible
+OK - Relación espacial explícita evita falso positivo estático
+OK - Subject no colisiona contra su propia geometría
+OK - Sweep libre obtiene Spatial Lease
+OK - Sweeps incompatibles no coexisten
+OK - Stress 200 preflights bloqueados sin fugas
+OK - Pruebas sintéticas no dejan Spatial Leases
+OK - Fixture real contiene sillas
+OK - Silla real expone Subject y Adapter
+OK - Seat Port usa el anclaje real
+OK - Approach Port usa el anclaje real
+OK - Silla real expone clearance de aproximación
+OK - Silla real expone Dynamic Sweep previo al movimiento
+OK - Silla real usa Adaptive Spatial Proxy articulado
+OK - Fixture real contiene mesas
+OK - Mesa real expone Subject y Adapter
+OK - Mesa genera un Seat Bay por plaza real
+OK - Plazas de mesa se publican como Seat Bays
+OK - Spatial Contract de mesa conserva sus plazas
+OK - Mesa real usa proxy Static + Operational
+OK - Spatial Quality acotada
+OK - Evaluación repetida estable
+OK - Bottleneck Ledger generado
+OK - Runtime Binder instalado
+OK - Roles semánticos espaciales completos
+Resultado: 27 OK / 0 fallos.
+
+OK - Play Mode real BBSIS 2A
+OK - Regresión real Navegación 17
+OK - Save/Load real 17 + 368EF
+Resultado acumulado: 47 OK / 0 fallos.

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -6,8 +7,8 @@ using UnityEngine.Serialization;
 /// Asigna grupos de clientes a las mesas operativas disponibles.
 ///
 /// Las mesas ya no proceden de un array fijo del Inspector.
-/// Se sincronizan dinámicamente mediante RestaurantTableRegistry,
-/// por lo que una mesa añadida desde el modo edición podrá participar
+/// Se sincronizan dinÃ¡micamente mediante RestaurantTableRegistry,
+/// por lo que una mesa aÃ±adida desde el modo ediciÃ³n podrÃ¡ participar
 /// sin reiniciar la escena.
 /// </summary>
 public sealed class TableAssignmentSystem :
@@ -22,17 +23,25 @@ public sealed class TableAssignmentSystem :
     [Header("Sistemas")]
 
     [Tooltip(
-        "Registro dinámico de las mesas operativas."
+        "Registro dinÃ¡mico de las mesas operativas."
     )]
     [SerializeField]
     private RestaurantTableRegistry tableRegistry;
 
     [Tooltip(
-        "Autoridad de barra que debe cerrar una sesión WaitingAtBar antes " +
+        "Autoridad de barra que debe cerrar una sesiÃ³n WaitingAtBar antes " +
         "de que el grupo pueda caminar a una mesa."
     )]
     [SerializeField]
     private BistroBuilderBarServiceSystem barServiceSystem;
+
+    [Tooltip("Autoridad avanzada de cola, reservas y rotaciÃƒÂ³n del Bloque 14.")]
+    [SerializeField]
+    private BistroBuilderAdvancedFrontOfHouseService advancedFrontOfHouseService;
+
+    [Tooltip("Autoridad Ãºnica del derecho lÃ³gico grupo â†’ mesa.")]
+    [SerializeField]
+    private BistroBuilderSeatingReservationCoordinator seatingReservationCoordinator;
 
     private readonly List<CustomerGroup>
         registeredGroups =
@@ -46,16 +55,15 @@ public sealed class TableAssignmentSystem :
         registeredTables =
             new HashSet<RestaurantTable>();
 
-    // Reserva lógica de una mesa mientras WaitingAtBar termina su consumo.
-    // No cambia el estado de RestaurantTable. Desde 368EF se captura y
-    // restaura explícitamente dentro de service.runtime.
-    private readonly Dictionary<CustomerGroup, RestaurantTable>
-        pendingBarTableReservations =
-            new Dictionary<CustomerGroup, RestaurantTable>();
 
-    private readonly HashSet<RestaurantTable> reservedForBarTransitions =
-        new HashSet<RestaurantTable>();
+    /// <summary>Se emite tras registrar el grupo y antes de intentar asignarle mesa.</summary>
+    public event Action<CustomerGroup> CustomerGroupRegistered;
 
+<<<<<<< Updated upstream
+=======
+    public event Action<CustomerGroup, RestaurantTable> TableAssigned;
+
+>>>>>>> Stashed changes
     public IReadOnlyList<CustomerGroup>
         RegisteredGroups
     {
@@ -74,8 +82,8 @@ public sealed class TableAssignmentSystem :
     }
 
     /// <summary>
-    /// Consulta la reserva lógica de transición a mesa de un grupo que sigue
-    /// ocupando barra. La reserva no modifica el estado público de la mesa.
+    /// Consulta la reserva lÃ³gica de transiciÃ³n a mesa de un grupo que sigue
+    /// ocupando barra. La reserva no modifica el estado pÃºblico de la mesa.
     /// </summary>
     public bool TryGetPendingBarTransitionTable(
         CustomerGroup group,
@@ -83,27 +91,35 @@ public sealed class TableAssignmentSystem :
     )
     {
         table = null;
-
-        return group != null &&
-               pendingBarTableReservations.TryGetValue(group, out table) &&
-               table != null &&
-               reservedForBarTransitions.Contains(table);
+        return group != null && group.IsOccupyingBar && !group.HasAssignedTable &&
+               seatingReservationCoordinator != null &&
+               seatingReservationCoordinator.TryGetTableRight(group, out table, out _);
     }
 
     /// <summary>
-    /// Elimina exclusivamente las reservas lógicas transitorias antes de una
+    /// Elimina exclusivamente las reservas lÃ³gicas transitorias antes de una
     /// carga. Las asignaciones reales grupo-mesa se limpian por sus propios
     /// agregados.
     /// </summary>
     public void ClearPendingBarTransitionReservationsForRuntimeLoad()
     {
+<<<<<<< Updated upstream
         pendingBarTableReservations.Clear();
         reservedForBarTransitions.Clear();
+=======
+        if (seatingReservationCoordinator == null) return;
+        for (int i = 0; i < registeredGroups.Count; i++)
+        {
+            CustomerGroup group = registeredGroups[i];
+            if (group != null && !group.HasAssignedTable)
+                seatingReservationCoordinator.ReleaseGroupRight(group);
+        }
+>>>>>>> Stashed changes
     }
 
     /// <summary>
     /// Reconstruye una reserva WaitingAtBar desde service.runtime sin ejecutar
-    /// una nueva selección de mesa ni publicar eventos prematuros.
+    /// una nueva selecciÃ³n de mesa ni publicar eventos prematuros.
     /// </summary>
     public bool TryRestorePendingBarTransitionReservation(
         CustomerGroup group,
@@ -115,14 +131,14 @@ public sealed class TableAssignmentSystem :
 
         if (group == null || table == null)
         {
-            error = "No puede restaurarse una reserva de transición nula.";
+            error = "No puede restaurarse una reserva de transiciÃ³n nula.";
             return false;
         }
 
         if (!registeredGroups.Contains(group) ||
             !registeredTables.Contains(table))
         {
-            error = "El grupo o la mesa de transición no están registrados.";
+            error = "El grupo o la mesa de transiciÃ³n no estÃ¡n registrados.";
             return false;
         }
 
@@ -132,7 +148,7 @@ public sealed class TableAssignmentSystem :
                 BistroBuilderServiceMode.WaitingAtBar ||
             !group.IsOccupyingBar || group.HasAssignedTable)
         {
-            error = "La reserva de transición no pertenece a un grupo " +
+            error = "La reserva de transiciÃ³n no pertenece a un grupo " +
                     "WaitingAtBar coherente.";
             return false;
         }
@@ -145,16 +161,14 @@ public sealed class TableAssignmentSystem :
             return false;
         }
 
-        if (pendingBarTableReservations.ContainsKey(group) ||
-            reservedForBarTransitions.Contains(table))
+        if (seatingReservationCoordinator == null)
         {
-            error = "La reserva de transición está duplicada.";
+            error = "Interaction & Reservation no estÃ¡ disponible.";
             return false;
         }
 
-        pendingBarTableReservations.Add(group, table);
-        reservedForBarTransitions.Add(table);
-        return true;
+        return seatingReservationCoordinator.TryAcquireTableRight(
+            group, table, int.MaxValue / 8, out _, out error);
     }
 
     private void Awake()
@@ -183,11 +197,19 @@ public sealed class TableAssignmentSystem :
         UnsubscribeFromTables();
         UnsubscribeFromCustomerGroups();
 
+        if (seatingReservationCoordinator != null)
+            for (int i = 0; i < registeredGroups.Count; i++)
+                if (registeredGroups[i] != null)
+                    seatingReservationCoordinator.ReleaseGroupRight(registeredGroups[i]);
+
         registeredTables.Clear();
         registeredGroups.Clear();
         waitingGroups.Clear();
+<<<<<<< Updated upstream
         pendingBarTableReservations.Clear();
         reservedForBarTransitions.Clear();
+=======
+>>>>>>> Stashed changes
     }
 
     public bool RegisterCustomerGroup(
@@ -209,10 +231,12 @@ public sealed class TableAssignmentSystem :
         customerGroup.StateChanged +=
             HandleCustomerGroupStateChanged;
 
+        CustomerGroupRegistered?.Invoke(customerGroup);
+
         Debug.Log(
             "Grupo " +
             customerGroup.GroupId +
-            " registrado en el sistema de asignación de mesas.",
+            " registrado en el sistema de asignaciÃ³n de mesas.",
             customerGroup
         );
 
@@ -247,12 +271,16 @@ public sealed class TableAssignmentSystem :
         waitingGroups.Remove(
             customerGroup
         );
+<<<<<<< Updated upstream
         ReleasePendingBarReservation(customerGroup, true);
+=======
+        seatingReservationCoordinator?.ReleaseGroupRight(customerGroup);
+>>>>>>> Stashed changes
 
         Debug.Log(
             "Grupo " +
             customerGroup.GroupId +
-            " eliminado del sistema de asignación de mesas.",
+            " eliminado del sistema de asignaciÃ³n de mesas.",
             customerGroup
         );
 
@@ -376,7 +404,11 @@ public sealed class TableAssignmentSystem :
 
         table.StateChanged -=
             HandleTableStateChanged;
+<<<<<<< Updated upstream
         ReleaseReservationsForTable(table);
+=======
+        seatingReservationCoordinator?.ReleaseTableRight(table);
+>>>>>>> Stashed changes
 
         return true;
     }
@@ -432,7 +464,10 @@ public sealed class TableAssignmentSystem :
         waitingGroups.Remove(
             customerGroup
         );
+<<<<<<< Updated upstream
         ReleasePendingBarReservation(customerGroup, false);
+=======
+>>>>>>> Stashed changes
 
         if (newState ==
             CustomerGroupState.Finished)
@@ -448,11 +483,10 @@ public sealed class TableAssignmentSystem :
         TableState newState
     )
     {
-        if (table != null &&
-            reservedForBarTransitions.Contains(table) &&
-            newState != TableState.Free)
+        if (table != null && newState != TableState.Free &&
+            table.AssignedCustomerGroup == null)
         {
-            ReleaseReservationsForTable(table);
+            seatingReservationCoordinator?.ReleaseTableRight(table);
         }
 
         if (newState ==
@@ -480,16 +514,98 @@ public sealed class TableAssignmentSystem :
     }
 
     /// <summary>
-    /// Solicita una nueva evaluación desde sistemas externos, por ejemplo
-    /// cuando una sesión WaitingAtBar termina y libera al grupo.
+    /// Solicita una nueva evaluaciÃ³n desde sistemas externos, por ejemplo
+    /// cuando una sesiÃ³n WaitingAtBar termina y libera al grupo.
     /// </summary>
     public void RequestReevaluation()
     {
         TryAssignWaitingGroups();
     }
 
+<<<<<<< Updated upstream
+=======
+    public bool TryReleasePreferredTableReservation(CustomerGroup customerGroup)
+    {
+        if (customerGroup == null || customerGroup.HasAssignedTable ||
+            seatingReservationCoordinator == null ||
+            !seatingReservationCoordinator.TryGetTableRight(customerGroup, out _, out _))
+            return false;
+        bool released = seatingReservationCoordinator.ReleaseGroupRight(customerGroup);
+        if (released) TryAssignWaitingGroups();
+        return released;
+    }
+
+    /// <summary>
+    /// Reserva lÃ³gicamente una mesa concreta para un grupo ya registrado.
+    /// La mesa sigue Free hasta que el flujo normal lleve al grupo a
+    /// WaitingForTable; entonces la asignaciÃ³n canÃ³nica utilizarÃ¡ esta mesa.
+    /// </summary>
+    public bool TryReservePreferredTable(
+        CustomerGroup customerGroup,
+        RestaurantTable table,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (customerGroup == null || table == null)
+        {
+            error = "El grupo y la mesa preferente deben existir.";
+            return false;
+        }
+
+        if (!registeredGroups.Contains(customerGroup) ||
+            !registeredTables.Contains(table))
+        {
+            error = "El grupo o la mesa preferente no estÃ¡n registrados.";
+            return false;
+        }
+
+        if (customerGroup.HasAssignedTable ||
+            customerGroup.RequestedServiceMode == BistroBuilderServiceMode.BarService)
+        {
+            error = "El grupo no admite una reserva de mesa preferente.";
+            return false;
+        }
+
+        if (table.Capacity < customerGroup.GroupSize)
+        {
+            error = "La mesa preferente no tiene capacidad suficiente.";
+            return false;
+        }
+
+        if (seatingReservationCoordinator == null)
+        {
+            error = "Interaction & Reservation no estÃ¡ disponible.";
+            return false;
+        }
+        if (seatingReservationCoordinator.TryGetTableRight(
+                customerGroup, out RestaurantTable current, out _))
+        {
+            if (ReferenceEquals(current, table)) return true;
+            error = "El grupo ya tiene otra mesa reservada lÃ³gicamente.";
+            return false;
+        }
+        return seatingReservationCoordinator.TryAcquireTableRight(
+            customerGroup, table, int.MaxValue / 8, out _, out error);
+    }
+
+    public bool TryGetPreferredTable(
+        CustomerGroup customerGroup,
+        out RestaurantTable table)
+    {
+        table = null;
+        return customerGroup != null && !customerGroup.HasAssignedTable &&
+               seatingReservationCoordinator != null &&
+               seatingReservationCoordinator.TryGetTableRight(
+                   customerGroup, out table, out _);
+    }
+
+>>>>>>> Stashed changes
     private void TryAssignWaitingGroups()
     {
+        if (advancedFrontOfHouseService != null && waitingGroups.Count > 1)
+            waitingGroups.Sort(advancedFrontOfHouseService.CompareWaitingGroups);
+
         int groupIndex = 0;
 
         while (groupIndex <
@@ -510,8 +626,8 @@ public sealed class TableAssignmentSystem :
                 continue;
             }
 
-            // Un cliente de barra exclusiva nunca entra en la asignación de
-            // mesas. WaitingAtBar sí conserva su posición normal en la cola.
+            // Un cliente de barra exclusiva nunca entra en la asignaciÃ³n de
+            // mesas. WaitingAtBar sÃ­ conserva su posiciÃ³n normal en la cola.
             if (customerGroup.RequestedServiceMode ==
                 BistroBuilderServiceMode.BarService)
             {
@@ -540,7 +656,11 @@ public sealed class TableAssignmentSystem :
 
             if (customerGroup.IsOccupyingBar)
             {
-                ReserveTableForBarTransition(customerGroup, bestTable);
+                if (!ReserveTableForBarTransition(customerGroup, bestTable))
+                {
+                    groupIndex++;
+                    continue;
+                }
 
                 string barTransitionReason = barServiceSystem == null
                     ? "No existe una autoridad de barra conectada."
@@ -570,17 +690,21 @@ public sealed class TableAssignmentSystem :
                 }
             }
 
-            // La reserva deja de ser necesaria justo antes de la asignación
-            // real. Ningún otro grupo ha podido usar la mesa en este intervalo.
-            ReleasePendingBarReservation(customerGroup, false);
+            string logicalError = "Interaction & Reservation no está disponible.";
+            if (seatingReservationCoordinator == null ||
+                !seatingReservationCoordinator.TryAcquireTableRight(
+                    customerGroup, bestTable, 0, out _, out logicalError))
+            {
+                Debug.LogWarning("No pudo adquirirse Assignment grupo->mesa: " + logicalError, this);
+                groupIndex++;
+                continue;
+            }
 
-            bool assigned =
-                customerGroup.AssignTable(
-                    bestTable
-                );
+            bool assigned = customerGroup.AssignTable(bestTable);
 
             if (!assigned)
             {
+                seatingReservationCoordinator?.ReleaseGroupRight(customerGroup);
                 groupIndex++;
                 continue;
             }
@@ -599,8 +723,10 @@ public sealed class TableAssignmentSystem :
                 CustomerGroupState.WalkingToTable
             );
 
+            TableAssigned?.Invoke(customerGroup, bestTable);
+
             Debug.Log(
-                "TableAssignmentSystem asignó la mesa " +
+                "TableAssignmentSystem asignÃ³ la mesa " +
                 bestTable.TableId +
                 " al grupo " +
                 customerGroup.GroupId +
@@ -614,6 +740,7 @@ public sealed class TableAssignmentSystem :
         CustomerGroup customerGroup
     )
     {
+<<<<<<< Updated upstream
         if (customerGroup != null &&
             pendingBarTableReservations.TryGetValue(
                 customerGroup,
@@ -629,186 +756,129 @@ public sealed class TableAssignmentSystem :
             ReleasePendingBarReservation(customerGroup, true);
         }
 
+=======
+        if (customerGroup != null && seatingReservationCoordinator != null &&
+            seatingReservationCoordinator.TryGetTableRight(
+                customerGroup, out RestaurantTable reserved, out _))
+        {
+            if (reserved == null || !registeredTables.Contains(reserved) ||
+                reserved.Capacity < customerGroup.GroupSize)
+            {
+                seatingReservationCoordinator.ReleaseGroupRight(customerGroup);
+                return null;
+            }
+            return reserved.CanSeatGroup(customerGroup.GroupSize) ? reserved : null;
+        }
+>>>>>>> Stashed changes
         return FindBestTableForGroup(customerGroup);
     }
 
-    private void ReserveTableForBarTransition(
+    private bool ReserveTableForBarTransition(
         CustomerGroup group,
         RestaurantTable table
     )
     {
-        if (group == null || table == null)
+        if (group == null || table == null || seatingReservationCoordinator == null)
+            return false;
+        if (!seatingReservationCoordinator.TryAcquireTableRight(
+                group, table, 0, out _, out string error))
         {
-            return;
+            Debug.LogWarning("No pudo reservarse lÃ³gicamente mesa de transiciÃ³n: " + error, this);
+            return false;
         }
-
-        if (pendingBarTableReservations.TryGetValue(
-                group,
-                out RestaurantTable current
-            ))
-        {
-            if (ReferenceEquals(current, table))
-            {
-                return;
-            }
-
-            ReleasePendingBarReservation(group, true);
-        }
-
-        pendingBarTableReservations[group] = table;
-        reservedForBarTransitions.Add(table);
-
-        Debug.Log(
-            "Mesa " + table.TableId +
-            " reservada temporalmente para el grupo " + group.GroupId +
-            " mientras finaliza su sesión WaitingAtBar.",
-            this
-        );
+        Debug.Log("Mesa " + table.TableId + " reservada por Interaction para grupo " +
+                  group.GroupId + " mientras finaliza WaitingAtBar.", this);
+        return true;
     }
 
+<<<<<<< Updated upstream
+=======
+    private void ReleasePreferredTableReservation(CustomerGroup group)
+    {
+        if (group == null || group.HasAssignedTable) return;
+        seatingReservationCoordinator?.ReleaseGroupRight(group);
+    }
+
+    private void ReleasePreferredReservationsForTable(RestaurantTable table)
+    {
+        seatingReservationCoordinator?.ReleaseTableRight(table);
+    }
+
+>>>>>>> Stashed changes
     private void ReleasePendingBarReservation(
         CustomerGroup group,
         bool logRelease
     )
     {
-        if (group == null ||
-            !pendingBarTableReservations.TryGetValue(
-                group,
-                out RestaurantTable table
-            ))
-        {
-            return;
-        }
-
-        pendingBarTableReservations.Remove(group);
-
-        if (table != null)
-        {
-            reservedForBarTransitions.Remove(table);
-
-            if (logRelease)
-            {
-                Debug.Log(
-                    "Reserva temporal de la mesa " + table.TableId +
-                    " liberada para el grupo " + group.GroupId + ".",
-                    this
-                );
-            }
-        }
+        if (group == null || group.HasAssignedTable) return;
+        bool released = seatingReservationCoordinator != null &&
+            seatingReservationCoordinator.ReleaseGroupRight(group);
+        if (released && logRelease)
+            Debug.Log("Assignment temporal de mesa liberado para grupo " + group.GroupId + ".", this);
     }
 
     private void ReleaseReservationsForTable(RestaurantTable table)
     {
-        if (table == null || !reservedForBarTransitions.Remove(table))
-        {
-            return;
-        }
-
-        CustomerGroup owner = null;
-
-        foreach (KeyValuePair<CustomerGroup, RestaurantTable> pair
-                 in pendingBarTableReservations)
-        {
-            if (ReferenceEquals(pair.Value, table))
-            {
-                owner = pair.Key;
-                break;
-            }
-        }
-
-        if (owner != null)
-        {
-            pendingBarTableReservations.Remove(owner);
-        }
+        seatingReservationCoordinator?.ReleaseTableRight(table);
     }
 
     private RestaurantTable FindBestTableForGroup(
         CustomerGroup customerGroup
     )
     {
-        if (customerGroup == null ||
-            registeredTables.Count == 0)
-        {
+        if (customerGroup == null || registeredTables.Count == 0)
             return null;
-        }
 
-        RestaurantTable bestTable =
-            null;
+        RestaurantTable bestTable = null;
+        float bestAdvancedScore = float.MinValue;
+        int lowestUnusedCapacity = int.MaxValue;
+        float shortestDistanceSquared = float.MaxValue;
 
-        int lowestUnusedCapacity =
-            int.MaxValue;
-
-        float shortestDistanceSquared =
-            float.MaxValue;
-
-        foreach (RestaurantTable table
-                 in registeredTables)
+        foreach (RestaurantTable table in registeredTables)
         {
+<<<<<<< Updated upstream
             if (table == null ||
                 reservedForBarTransitions.Contains(table) ||
                 !table.CanSeatGroup(
                     customerGroup.GroupSize
                 ))
+=======
+            if (table == null || !table.CanSeatGroup(customerGroup.GroupSize) ||
+                (seatingReservationCoordinator != null &&
+                 seatingReservationCoordinator.IsTableClaimedByOther(table, customerGroup)))
+                continue;
+
+            if (advancedFrontOfHouseService != null)
+>>>>>>> Stashed changes
             {
+                float score = advancedFrontOfHouseService.EvaluateTableScore(customerGroup, table);
+                if (score == float.MinValue) continue;
+                if (bestTable == null || score > bestAdvancedScore ||
+                    (Mathf.Approximately(score, bestAdvancedScore) && table.TableId < bestTable.TableId))
+                {
+                    bestTable = table;
+                    bestAdvancedScore = score;
+                }
                 continue;
             }
 
-            int unusedCapacity =
-                table.Capacity -
-                customerGroup.GroupSize;
-
-            Vector3 destinationPosition =
-                table.CustomerApproachPoint != null
-                    ? table.CustomerApproachPoint.position
-                    : table.transform.position;
-
-            float distanceSquared =
-                (
-                    customerGroup.transform.position -
-                    destinationPosition
-                ).sqrMagnitude;
-
-            bool hasBetterCapacity =
-                unusedCapacity <
-                lowestUnusedCapacity;
-
-            bool sameCapacityButCloser =
-                unusedCapacity ==
-                    lowestUnusedCapacity &&
-                distanceSquared <
-                    shortestDistanceSquared;
-
-            bool sameScoreButLowerTableId =
-                unusedCapacity ==
-                    lowestUnusedCapacity &&
-                Mathf.Approximately(
-                    distanceSquared,
-                    shortestDistanceSquared
-                ) &&
-                bestTable != null &&
-                table.TableId <
-                    bestTable.TableId;
-
-            if (!hasBetterCapacity &&
-                !sameCapacityButCloser &&
-                !sameScoreButLowerTableId)
-            {
-                continue;
-            }
-
-            bestTable =
-                table;
-
-            lowestUnusedCapacity =
-                unusedCapacity;
-
-            shortestDistanceSquared =
-                distanceSquared;
+            int unusedCapacity = table.Capacity - customerGroup.GroupSize;
+            Vector3 destinationPosition = table.CustomerApproachPoint != null
+                ? table.CustomerApproachPoint.position
+                : table.transform.position;
+            float distanceSquared = (customerGroup.transform.position - destinationPosition).sqrMagnitude;
+            bool better = bestTable == null || unusedCapacity < lowestUnusedCapacity ||
+                (unusedCapacity == lowestUnusedCapacity && distanceSquared < shortestDistanceSquared) ||
+                (unusedCapacity == lowestUnusedCapacity && Mathf.Approximately(distanceSquared, shortestDistanceSquared) &&
+                 table.TableId < bestTable.TableId);
+            if (!better) continue;
+            bestTable = table;
+            lowestUnusedCapacity = unusedCapacity;
+            shortestDistanceSquared = distanceSquared;
         }
 
         return bestTable;
     }
-
     private void CacheDependenciesIfNeeded()
     {
         if (tableRegistry == null)
@@ -822,10 +892,25 @@ public sealed class TableAssignmentSystem :
                 BistroBuilderBarServiceSystem
             >();
         }
+
+        if (advancedFrontOfHouseService == null)
+            advancedFrontOfHouseService = FindFirstObjectByType<BistroBuilderAdvancedFrontOfHouseService>();
+
+        if (seatingReservationCoordinator == null)
+            seatingReservationCoordinator = FindFirstObjectByType<BistroBuilderSeatingReservationCoordinator>();
     }
 
     private void ValidateConfiguration()
     {
+        string seatingError = "Interaction & Reservation no está disponible.";
+        if (seatingReservationCoordinator == null ||
+            !seatingReservationCoordinator.ValidateConfiguration(out seatingError))
+        {
+            Debug.LogError(nameof(TableAssignmentSystem) +
+                " necesita Interaction & Reservation para seating: " + seatingError, this);
+            return;
+        }
+
         if (tableRegistry == null)
         {
             Debug.LogError(
@@ -852,7 +937,7 @@ public sealed class TableAssignmentSystem :
         {
             Debug.LogWarning(
                 nameof(TableAssignmentSystem) +
-                " no tiene autoridad de barra; WaitingAtBar no podrá " +
+                " no tiene autoridad de barra; WaitingAtBar no podrÃ¡ " +
                 "cerrarse de forma transaccional.",
                 this
             );

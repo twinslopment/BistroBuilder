@@ -114,7 +114,8 @@ public sealed class RestaurantPlacementValidationService :
         ValidatePlacement(
             RestaurantAreaMember member,
             Vector3 candidateRootPosition,
-            Quaternion candidateRootRotation
+            Quaternion candidateRootRotation,
+            bool includeSpecializedConstraints = true
         )
     {
         if (member == null)
@@ -182,7 +183,7 @@ public sealed class RestaurantPlacementValidationService :
             constraintEvaluation =
                 RestaurantPlacementConstraintEvaluation.Valid();
 
-        if (constraintService != null)
+        if (includeSpecializedConstraints && constraintService != null)
         {
             RestaurantPlacementConstraintContext context =
                 new RestaurantPlacementConstraintContext(
