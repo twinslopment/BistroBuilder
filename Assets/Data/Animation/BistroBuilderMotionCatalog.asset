@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c95cecc957b41ab45a1e207cce0edece, type: 3}
+  m_Name: BistroBuilderMotionCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMotionCatalog
+  motions:
+  - {fileID: 11400000, guid: dfb589030f97cd84595d2179abdba16b, type: 2}
+  - {fileID: 11400000, guid: f5acb6260dae77a46a4cb5d528790547, type: 2}
+  - {fileID: 11400000, guid: 868430736e01bb9428f91fc87db92c06, type: 2}
+  - {fileID: 11400000, guid: 1de99bc25c4ff624691c29cbf8318c51, type: 2}
+  - {fileID: 11400000, guid: 9f2d80446f3820b408d5c080e81c132c, type: 2}
+  - {fileID: 11400000, guid: 423880dd908ac8940bf891f320fdfa4c, type: 2}
+  - {fileID: 11400000, guid: 1dbfd48989f665e429b03d1b4e4057f1, type: 2}
+  - {fileID: 11400000, guid: c835540b5efe55444a0e840efc1636b4, type: 2}
+  - {fileID: 11400000, guid: d659efee0a84f9043931fe103e20619c, type: 2}
+  - {fileID: 11400000, guid: 83533e128e207ec429526e34ca7190af, type: 2}
+  - {fileID: 11400000, guid: f2f14ac452a93734190e8ba8ea51a1f8, type: 2}
+  - {fileID: 11400000, guid: 8ae0b08759595d245bb08f9e59db2010, type: 2}
+  - {fileID: 11400000, guid: 36e0e4e5bd2c1d0408f264bced319094, type: 2}
