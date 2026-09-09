@@ -10195,6 +10195,9 @@ GameObject:
   - component: {fileID: 263645102}
   - component: {fileID: 263645101}
   - component: {fileID: 263645100}
+  - component: {fileID: 263645108}
+  - component: {fileID: 263645107}
+  - component: {fileID: 263645106}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -10380,8 +10383,6 @@ MonoBehaviour:
   initialCustomerGroups: []
   tableRegistry: {fileID: 263644926}
   barServiceSystem: {fileID: 263644967}
-  advancedFrontOfHouseService: {fileID: 263645040}
-  seatingReservationCoordinator: {fileID: 263645013}
 --- !u!114 &263644909
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10425,9 +10426,6 @@ MonoBehaviour:
   - {fileID: 1985212275}
   - {fileID: 2050404729}
   - {fileID: 295579757}
-  advancedFrontOfHouseService: {fileID: 0}
-  navigationService: {fileID: 0}
-  navigationQueueId: front.waiting.table
 --- !u!114 &263644911
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10446,8 +10444,6 @@ MonoBehaviour:
   manageBillTasks: 1
   manageCleaningTasks: 1
   lineExecutionService: {fileID: 263644963}
-  advancedWaiterService: {fileID: 0}
-  interactionTaskClaims: {fileID: 0}
   enableMultiTableDeliveryRuns: 1
   maxDeliveryRunSize: 3
   preferCompletingTables: 1
@@ -11333,7 +11329,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderOrderLineExecutionService
   canonicalOrderService: {fileID: 263644961}
   integrationService: {fileID: 263644962}
-  dishCustodyCoordinator: {fileID: 0}
   logTransitions: 1
 --- !u!114 &263644964
 MonoBehaviour:
@@ -11498,7 +11493,6 @@ MonoBehaviour:
   tableAssignmentSystem: {fileID: 263644908}
   barRegistry: {fileID: 263644968}
   barServiceSystem: {fileID: 263644967}
-  advancedFrontOfHouseService: {fileID: 263645040}
   orderSystem: {fileID: 263644903}
   canonicalOrderService: {fileID: 263644961}
   orderIntegration: {fileID: 263644962}
@@ -13929,6 +13923,55 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderEditPlayerFacade
   coordinator: {fileID: 263645006}
+--- !u!114 &263645106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaa25cb118fd77c44850a7b6b3e11f07, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderWeatherVisualController
+  climateService: {fileID: 263645108}
+  rainVisualRoot: {fileID: 0}
+  snowVisualRoot: {fileID: 0}
+  windVisualRoot: {fileID: 0}
+  sunLight: {fileID: 0}
+  clearSunIntensity: 1
+  cloudySunIntensity: 0.72
+  precipitationSunIntensity: 0.58
+--- !u!114 &263645107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85f6fe47a644e62408e52589100f1aef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderClimateSaveSectionProvider
+  climateService: {fileID: 263645108}
+--- !u!114 &263645108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1afe7afb655edca4cad4c84bec534752, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderClimateService
+  settings: {fileID: 11400000, guid: 0b322851e91fcb143ba5d3a0ed9c0ba6, type: 2}
+  gameClock: {fileID: 263644898}
+  generalGameState: {fileID: 263644957}
+  logWeatherChanges: 0
 --- !u!1 &265149367
 GameObject:
   m_ObjectHideFlags: 0
@@ -72857,6 +72900,7 @@ MonoBehaviour:
   editModeService: {fileID: 263644918}
   interactionController: {fileID: 263644933}
   deletionService: {fileID: 263644937}
+  placeableFinanceBridge: {fileID: 0}
   contentRoot: {fileID: 1335646757}
   nameText: {fileID: 1512008399}
   categoryText: {fileID: 1490988253}
