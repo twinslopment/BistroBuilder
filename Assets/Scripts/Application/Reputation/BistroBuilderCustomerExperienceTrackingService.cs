@@ -19,6 +19,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
     [SerializeField] private BistroBuilderUpgradeEffectsService upgradeEffectsService;
     [SerializeField] private BistroBuilderAdvancedCustomerProfileService advancedCustomerProfileService;
+    [SerializeField] private BistroBuilderAdvancedKitchenService advancedKitchenService;
 
     private readonly Dictionary<int, BistroBuilderReputationVisitRuntimeRecord> visitsByGroup =
         new Dictionary<int, BistroBuilderReputationVisitRuntimeRecord>();
@@ -503,6 +504,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (upgradeEffectsService == null) TryGetComponent(out upgradeEffectsService);
         if (advancedCustomerProfileService == null)
             TryGetComponent(out advancedCustomerProfileService);
+        if (advancedKitchenService == null)
+            TryGetComponent(out advancedKitchenService);
     }
 
     private static bool ContainsReference(

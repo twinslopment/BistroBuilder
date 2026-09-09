@@ -16,7 +16,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     [SerializeField] private BistroBuilderCanonicalOrderService canonicalOrderService;
     [SerializeField] private BistroBuilderKitchenStationCatalog stationCatalog;
     [SerializeField] private BistroBuilderStaffService staffService;
-    [SerializeField] private BistroBuilderKitchenInteractionCoordinator interactionCoordinator;
     [SerializeField] private bool automaticIncidents = true;
     [SerializeField, Range(2f, 60f)] private float equipmentRepairSeconds = 8f;
 
@@ -36,7 +35,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     private int completedLineCount;
     private int recentQualitySum;
     private int recentQualityCount;
-    private IBistroBuilderOperationalSpatialGate spatialGate;
 
     public event Action Changed;
     public event Action<BistroBuilderKitchenLoadState> LoadStateChanged;
@@ -445,7 +443,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
 
     public void ClearRuntimeForLoad()
     {
-        interactionCoordinator?.ReleaseAllProcessSlots();
         workByLine.Clear();
         completedQualityByLine.Clear();
         completedLineCount = 0;
@@ -482,31 +479,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
                 }
 
                 int candidateSlot = NextFreeSlot(station);
-                if (interactionCoordinator == null ||
-                    !interactionCoordinator.TryAcquireProcessSlot(
-                        station.Definition.stationId,
-                        work.LineId,
-                        work.StageIndex,
-                        candidateSlot,
-                        (int)work.Priority))
-                {
-                    station.Queued.Insert(0, work);
-                    break;
-                }
-
-                if (spatialGate != null &&
-                    !spatialGate.TryAcquireKitchenWork(
-                        station.Definition.stationId,
-                        work.LineId,
-                        candidateSlot,
-                        out _))
-                {
-                    interactionCoordinator.ReleaseProcessSlot(
-                        work.LineId,
-                        BistroBuilderInteractionReasonCode.SpatialDenied);
-                    station.Queued.Insert(0, work);
-                    break;
-                }
 
                 if (work.StageIndex == 0 &&
                     !lineExecutionService.TryBeginPreparation(
@@ -516,8 +488,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
                         out string beginError))
                 {
                     Debug.LogWarning(beginError, this);
-                    spatialGate?.ReleaseKitchenWork(work.LineId);
-                    interactionCoordinator.ReleaseProcessSlot(work.LineId);
                     ReleaseWork(work, false);
                     continue;
                 }
@@ -527,10 +497,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
                 MaybeTriggerAutomaticIncident(work, station);
                 if (station.BlockedSeconds > 0f)
                 {
-                    spatialGate?.ReleaseKitchenWork(work.LineId);
-                    interactionCoordinator.ReleaseProcessSlot(
-                        work.LineId,
-                        BistroBuilderInteractionReasonCode.Interrupted);
                     work.Active = false;
                     work.StationSlotIndex = -1;
                     station.Queued.Insert(0, work);
@@ -570,8 +536,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
 
     private void CompleteStage(WorkItem work, StationRuntime station)
     {
-        spatialGate?.ReleaseKitchenWork(work.LineId);
-        interactionCoordinator?.CompleteProcessSlot(work.LineId);
         BistroBuilderEmployeeRecord cook = ResolveCook(work.CookEmployeeId);
         int stageQuality = BistroBuilderAdvancedKitchenPolicy.ResolveQuality(
             cook,
@@ -667,13 +631,7 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     private void ReleaseWork(WorkItem work, bool interrupt)
     {
         if (work == null) return;
-        spatialGate?.ReleaseKitchenWork(work.LineId);
-        interactionCoordinator?.ReleaseProcessSlot(
-            work.LineId,
-            interrupt
-                ? BistroBuilderInteractionReasonCode.Interrupted
-                : BistroBuilderInteractionReasonCode.TaskCancelled);
-        workByLine.Remove(work.LineId);
+workByLine.Remove(work.LineId);
         if (interrupt && work.Order != null)
             lineExecutionService.TryInterruptPreparation(
                 work.Order,
@@ -935,15 +893,6 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
 
     private void CacheDependencies()
     {
-        if (spatialGate == null)
-        {
-            BistroBuilderOperationalSpatialCoordinator coordinator =
-                GetComponent<BistroBuilderOperationalSpatialCoordinator>();
-            if (coordinator == null)
-                coordinator = FindFirstObjectByType<
-                    BistroBuilderOperationalSpatialCoordinator>();
-            spatialGate = coordinator;
-        }
         if (kitchenSystem == null)
             kitchenSystem = FindFirstObjectByType<KitchenSystem>();
         if (lineExecutionService == null && kitchenSystem != null)
@@ -951,55 +900,8 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
         if (canonicalOrderService == null && lineExecutionService != null)
             canonicalOrderService = lineExecutionService.CanonicalOrderService;
         if (staffService == null) TryGetComponent(out staffService);
-        if (interactionCoordinator == null)
-        {
-            interactionCoordinator = GetComponent<BistroBuilderKitchenInteractionCoordinator>();
-            if (interactionCoordinator == null)
-                interactionCoordinator = FindFirstObjectByType<BistroBuilderKitchenInteractionCoordinator>();
-        }
     }
 
-    /// <summary>
-    /// Reconstruye los permits efímeros después de que Interaction haya
-    /// restaurado su snapshot canónico durante el Load.
-    /// </summary>
-    public bool TryReconcileInteractionProcessPermitsAfterLoad(out string error)
-    {
-        return TryRebuildInteractionProcessPermits(out error);
-    }
-
-    private bool TryRebuildInteractionProcessPermits(out string error)
-    {
-        error = string.Empty;
-        CacheDependencies();
-        if (interactionCoordinator == null)
-        {
-            error = "Falta el coordinador Interaction de procesos de cocina.";
-            return false;
-        }
-
-        interactionCoordinator.ReleaseAllProcessSlots();
-        foreach (StationRuntime station in stations.Values)
-        {
-            for (int i = 0; i < station.Active.Count; i++)
-            {
-                WorkItem work = station.Active[i];
-                if (work == null || work.StationSlotIndex < 0 ||
-                    !interactionCoordinator.TryAcquireProcessSlot(
-                        station.Definition.stationId,
-                        work.LineId,
-                        work.StageIndex,
-                        work.StationSlotIndex,
-                        (int)work.Priority))
-                {
-                    error = "No pudo reconstruirse la ocupaciÃ³n lÃ³gica de cocina para " +
-                            (work != null ? work.LineId : "<null>") + ".";
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
     private static void SortQueue(StationRuntime station)
     {
         station.Queued.Sort((left, right) =>

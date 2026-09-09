@@ -24,15 +24,16 @@ MonoBehaviour:
   maximumSkill: 72
   enabledRoleIds:
   - waiter
+  - cook
   firstNames:
-  - Lucía
+  - "Luc\xEDa"
   - Marta
   - Claudia
   - Irene
   - Paula
   - Sara
   - Daniel
-  - Álvaro
+  - "\xC1lvaro"
   - Marcos
   - Hugo
   - Javier
@@ -40,25 +41,25 @@ MonoBehaviour:
   - Nerea
   - Aitana
   - Carmen
-  - Adrián
+  - "Adri\xE1n"
   - Pablo
   - Bruno
   lastNames:
-  - Álvarez
+  - "\xC1lvarez"
   - Santos
-  - Fernández
-  - García
-  - Martín
-  - Suárez
+  - "Fern\xE1ndez"
+  - "Garc\xEDa"
+  - "Mart\xEDn"
+  - "Su\xE1rez"
   - Iglesias
   - Vega
-  - Díaz
+  - "D\xEDaz"
   - Rubio
   - Prieto
-  - Méndez
-  - López
+  - "M\xE9ndez"
+  - "L\xF3pez"
   - Blanco
-  - Pérez
+  - "P\xE9rez"
   - Ramos
   - Ortega
   - Castro
