@@ -107,6 +107,17 @@ public sealed class BistroBuilderMotionSyncPoint
     [SerializeField, Range(0f, 1f)] private float normalizedTime = 0.5f;
     [SerializeField] private BistroBuilderMotionSyncPointKind kind = BistroBuilderMotionSyncPointKind.SyncMarker;
 
+#if UNITY_EDITOR
+    public void ConfigureForEditor(
+        string configuredMarkerId,
+        float configuredNormalizedTime,
+        BistroBuilderMotionSyncPointKind configuredKind)
+    {
+        markerId = configuredMarkerId ?? string.Empty;
+        normalizedTime = Mathf.Clamp01(configuredNormalizedTime);
+        kind = configuredKind;
+    }
+#endif
     public string MarkerId => string.IsNullOrWhiteSpace(markerId) ? string.Empty : markerId.Trim().ToLowerInvariant();
     public float NormalizedTime => Mathf.Clamp01(normalizedTime);
     public BistroBuilderMotionSyncPointKind Kind => kind;

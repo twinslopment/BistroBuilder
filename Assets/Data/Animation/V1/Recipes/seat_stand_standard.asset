@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d637ae19ec8a4e48913ae4f226b45d1, type: 3}
+  m_Name: seat_stand_standard
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMotionRecipe
+  motionId: seat.stand.standard
+  bodyMode: 0
+  loop: 0
+  nominalSpeedMetersPerSecond: 0.01
+  mirrorable: 0
+  interruptPolicy: 1
+  fallbackMotionId:
+  syncPoints:
+  - markerId: contact
+    normalizedTime: 0.5
+    kind: 1
+  - markerId: interrupt.safe
+    normalizedTime: 0.82
+    kind: 2
+  variants:
+  - variantId: primary
+    clip: {fileID: 497093190674883199, guid: 96ef3c667ef97f54a96aa4a2f2fd3347, type: 3}
+    animatorStateName:
+    animatorLayer: 0
+    avatarMask: {fileID: 0}
+    mirrored: 0
+    weight: 1
+    minimumQualityTier: 1
+    estimatedCpuCost: 0.4
+  certified: 1
+  certificationId: bbv1:seat.stand.standard:ual1
+  compilerVersion: bb.motion.compiler.v1
+  schemaVersion: 1.0
+  certifiedMinScale: 0.85
+  certifiedMaxScale: 1.15
+  sourceProvider: Quaternius
+  sourceReference: https://quaternius.itch.io/universal-animation-library
+  licenseNote: CC0 1.0 Universal
+  sourceVersion: UAL1 Standard 2026-06-16
