@@ -19,6 +19,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
     [SerializeField] private BistroBuilderUpgradeEffectsService upgradeEffectsService;
     [SerializeField] private BistroBuilderAdvancedCustomerProfileService advancedCustomerProfileService;
+    [SerializeField] private BistroBuilderAdvancedKitchenService advancedKitchenService;
 
     private readonly Dictionary<int, BistroBuilderReputationVisitRuntimeRecord> visitsByGroup =
         new Dictionary<int, BistroBuilderReputationVisitRuntimeRecord>();
@@ -136,6 +137,61 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         return true;
     }
 
+    public bool TryApplyWaiterContextAction(
+        CustomerGroup group,
+        BistroBuilderWaiterContextActionKind action,
+        out string error)
+    {
+        error = string.Empty;
+        if (group == null || group.GroupId < 1 ||
+            !Enum.IsDefined(typeof(BistroBuilderWaiterContextActionKind), action) ||
+            action == BistroBuilderWaiterContextActionKind.None)
+        {
+            error = "La acción contextual de camarero es inválida.";
+            return false;
+        }
+
+        RegisterGroup(group);
+        if (!visitsByGroup.TryGetValue(
+                group.GroupId,
+                out BistroBuilderReputationVisitRuntimeRecord visit
+            ) || visit == null || visit.finalized)
+        {
+            error = "No existe una visita activa para aplicar la atención contextual.";
+            return false;
+        }
+
+        switch (action)
+        {
+            case BistroBuilderWaiterContextActionKind.Apologize:
+                visit.waiterCareCreditSeconds = Math.Min(
+                    20f, visit.waiterCareCreditSeconds + 3f);
+                break;
+            case BistroBuilderWaiterContextActionKind.CalmCustomer:
+                visit.waiterCareCreditSeconds = Math.Min(
+                    20f, visit.waiterCareCreditSeconds + 7f);
+                break;
+            case BistroBuilderWaiterContextActionKind.ExplainDelay:
+                visit.foodCareCreditSeconds = Math.Min(
+                    25f, visit.foodCareCreditSeconds + 5f);
+                break;
+            case BistroBuilderWaiterContextActionKind.ReviewOrder:
+                visit.waiterCareCreditSeconds = Math.Min(
+                    20f, visit.waiterCareCreditSeconds + 2f);
+                break;
+            case BistroBuilderWaiterContextActionKind.AccelerateBill:
+                visit.billCareCreditSeconds = Math.Min(
+                    15f, visit.billCareCreditSeconds + 5f);
+                break;
+            case BistroBuilderWaiterContextActionKind.SuggestiveSale:
+                break;
+        }
+
+        visit.waiterContextActionCount = Math.Min(
+            64, visit.waiterContextActionCount + 1);
+        ExperienceRuntimeChanged?.Invoke();
+        return true;
+    }
     public bool TryRestoreRuntimeSnapshot(
         BistroBuilderReputationRuntimeSnapshot snapshot,
         out string error)
@@ -503,6 +559,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (upgradeEffectsService == null) TryGetComponent(out upgradeEffectsService);
         if (advancedCustomerProfileService == null)
             TryGetComponent(out advancedCustomerProfileService);
+        if (advancedKitchenService == null)
+            TryGetComponent(out advancedKitchenService);
     }
 
     private static bool ContainsReference(
