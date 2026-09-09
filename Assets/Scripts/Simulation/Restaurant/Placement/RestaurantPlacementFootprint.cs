@@ -263,6 +263,21 @@ public sealed class RestaurantPlacementFootprint :
         );
     }
 
+    public void ConfigureRuntime(
+        Vector3 configuredLocalCenter,
+        Vector2 configuredSize,
+        float configuredMinimumClearance = 0f,
+        bool configuredBlocksOtherPlacements = true,
+        float configuredBoundaryInset = 0.02f)
+    {
+        localCenter = configuredLocalCenter;
+        size = new Vector2(
+            Mathf.Max(0.05f, configuredSize.x),
+            Mathf.Max(0.05f, configuredSize.y));
+        minimumClearance = Mathf.Max(0f, configuredMinimumClearance);
+        blocksOtherPlacements = configuredBlocksOtherPlacements;
+        boundaryInset = Mathf.Max(0f, configuredBoundaryInset);
+    }
 #if UNITY_EDITOR
     private void OnValidate()
     {
