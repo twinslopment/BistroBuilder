@@ -768,7 +768,7 @@ public sealed class BistroBuilderWaiterRuntimeSaveRecord
                 float.IsNaN(serviceEfficiency) || float.IsInfinity(serviceEfficiency) ||
                 serviceEfficiency < 0.75f || serviceEfficiency > 1.25f)
             {
-                error = service.runtime contiene un perfil avanzado de camarero inválido.;
+                error = "service.runtime contiene un perfil avanzado de camarero inválido.";
                 return false;
             }
         }
