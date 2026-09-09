@@ -1,6 +1,6 @@
 # BB Procedural Layout & Furnishing System (BBPLFS)
 
-Status: V1 design in progress
+Status: V1.0 DESIGN CLOSED / READY FOR UNITY IMPLEMENTATION
 Branch: `feature/bbplfs-v1`
 
 ## Permanent principles
@@ -106,7 +106,9 @@ The brief contains intent, not placement instructions.
 - Block 1 System Contract: CLOSED.
 - Block 2 Premises Model: CLOSED.
 - Block 3 AI + LayoutBrief: CLOSED.
-- Next design block: Asset Layout Profiles + Furnishing Sets.## Block 4 — Asset Layout Profiles
+- Next design block: Asset Layout Profiles + Furnishing Sets.
+
+## Block 4 — Asset Layout Profiles
 `AssetLayoutProfile` is the small BBPLFS-facing description of an asset. It does not duplicate full asset, BBSIS or Economy data.
 
 Minimum fields:
@@ -378,4 +380,192 @@ AI may phrase the explanation but cannot silently apply the relaxation.
 - Block 5 Furnishing Sets: CLOSED.
 - Block 6 Layout Generator: CLOSED.
 - Block 7 Constraint Model + Validation/Scoring/Optimization: CLOSED.
-- Next design block: Incremental re-layout + mixed manual/procedural editing.
+
+## Macro-block A — Incremental re-layout + mixed manual/procedural editing
+
+BBPLFS never owns a room after generation. Accepted results immediately become normal Edit Mode content.
+
+### Re-layout states
+Objects in the active scope may be:
+- `Free` — BBPLFS may move/replace them.
+- `Preserve` — keep the current object and position unless the player changes this rule.
+- `Locked` — untouchable by BBPLFS.
+
+### Incremental repair
+When geometry or content changes, BBPLFS first repairs only the affected neighborhood.
+It identifies impacted generated/manual relationships, reopens only relevant placements and tries local reinsertion/re-spacing before any full-room regeneration.
+A full regeneration is allowed only when local repair cannot satisfy the active hard constraints or when the player explicitly requests it.
+
+### Mixed workflow
+Supported V1 flows include:
+- manual room + BBPLFS completion;
+- BBPLFS room + later manual edits;
+- manual kitchen + BBPLFS dining room;
+- BBPLFS kitchen + manual dining room;
+- partial-zone optimization inside an otherwise manual room;
+- multi-room generation only when explicitly selected.
+### Edit Mode transaction
+BBPLFS output is always a proposal/preview owned by the existing Edit Mode transaction flow.
+The player can inspect alternatives, accept one, modify it manually before confirmation, or cancel without changing the authoritative scene.
+Construction/destruction needed by a proposal is materialized only through Edit Mode.
+
+### UX contract
+Minimum player flow:
+1. select scope;
+2. choose BBPLFS action or describe intent to AI;
+3. receive validated alternatives;
+4. compare capacity/cost/key trade-offs;
+5. preview one alternative in the normal scene;
+6. accept, modify manually, regenerate, or cancel.
+
+The system must not force the player through AI text entry; the same operations are reachable through normal controls.
+
+### Preservation rule
+Manual work is treated as first-class input, not as noise to overwrite.
+BBPLFS should maximize retained valid work during incremental changes, but preservation is secondary to explicit hard constraints.
+If preservation makes the request infeasible, the system reports exactly what is blocking it and asks the player to change the scope/rule rather than moving it silently.
+
+Macro-block A: CLOSED.
+## Macro-block B — Auto Furnish, reusable layouts, scale and persistence
+
+### Auto Furnish
+`Auto Furnish` is the standard orchestration of the already-defined pipeline:
+Premises/Scope → LayoutBrief → compatible sets/assets → candidate generation → BBSIS → Navigation → scoring → alternatives.
+It is not a separate generator and does not bypass validation.
+
+### Reusable parametric layouts
+V1 supports `LayoutTemplate` data for repeatable design intent without storing room-specific coordinates.
+A template may define:
+- supported space function;
+- required/optional furnishing sets;
+- preferred arrangement families;
+- relative anchors/adjacencies;
+- capacity or density ranges;
+- style/quality defaults;
+- default goal profile and soft preferences.
+
+Templates adapt to the current room and catalog through the normal generator.
+A template never guarantees that a layout is valid in another premises.
+
+### Multi-room / whole-premises generation
+The same pipeline can run over multiple explicitly authorized spaces.
+Each space keeps its own geometry and constraints while the generator may optimize shared goals such as total capacity, cost or service efficiency.
+Unselected rooms remain read-only context.
+### Change tracking and invalidation
+BBPLFS keys derived data by premises revision, scope revision, catalog/profile revision and relevant tuning revision.
+Structural edits invalidate only affected spatial data where practical.
+Catalog/profile changes invalidate affected candidate pools/templates, not unrelated premises understanding.
+Accepted scene content remains authoritative even if BBPLFS caches are discarded.
+
+### Performance and graceful degradation
+Generation has configurable work budgets by operation size/quality target.
+To remain responsive, BBPLFS may reduce candidate density, beam width, refinement passes or number of alternatives.
+It may never reduce BBSIS/Navigation validity requirements or silently relax hard constraints.
+Heavy recomputation should reuse cached footprints, room decomposition, compatibility pools and unchanged validation results when their revisions still match.
+
+### Failure/fallback behavior
+If a good complete layout cannot be produced, BBPLFS may return:
+- fewer valid alternatives;
+- a valid partial completion when the brief permits it;
+- an infeasibility report with explicit player-approved relaxation options.
+It must not fill the room with knowingly invalid content merely to return a result.
+
+### Persistence
+Persist only durable intent/data that is useful after reload:
+- accepted scene objects through the normal project save system;
+- player-created `LayoutTemplate`/preset data when saved;
+- explicit preserve/lock metadata where owned by Edit Mode/shared authoring data;
+- stored seed/brief only when needed to reproduce a saved procedural operation.
+Transient candidate pools, scores and previews are rebuildable caches and need not be authoritative save data.
+
+Macro-block B: CLOSED.
+## Macro-block C — V1 architecture audit and closure
+
+### Authority audit
+No authority duplication is permitted:
+- Edit Mode owns authoritative construction/edit transactions and final materialization.
+- BBSIS owns spatial usability and spatial contracts.
+- Navigation owns routes, reachability, circulation and traffic evaluation.
+- Interaction & Reservation owns logical grants/reservations; BBPLFS only consumes requirements when relevant.
+- Catalog/Assets4All owns canonical asset identity/metadata sources; BBPLFS consumes layout profiles.
+- Economy owns authoritative prices/budgets/transactions; BBPLFS only evaluates cost references.
+- BBPLFS owns only interpretation-to-layout orchestration, candidate generation, layout comparison and optimization within Design Scope.
+
+### Public V1 contracts
+Implementation must expose clear equivalents of:
+- `PremisesModel` / revisioned premises snapshot;
+- `DesignScope`;
+- `LayoutBrief`;
+- `AssetLayoutProfile`;
+- `FurnishingSet`;
+- `LayoutTemplate`;
+- candidate layout/result model;
+- BBSIS validation request/result adapter;
+- Navigation evaluation request/result adapter;
+- scoring/profile configuration;
+- Edit Mode preview/commit/cancel handoff.
+
+Names may change during implementation, but these responsibilities may not collapse across authority boundaries.
+### V1 invariants
+- No operation writes outside explicit `DesignScope`.
+- AI never owns authoritative placement coordinates or validity.
+- Accepted results become ordinary editable scene content.
+- Manual and procedural editing remain interchangeable.
+- Hard constraints are never traded for score.
+- BBSIS/Navigation failures cannot be overridden by BBPLFS scoring.
+- Same authoritative inputs + seed reproduce the same generator ordering/results within the same algorithm/tuning revision.
+- Derived caches are disposable and never replace canonical project data.
+
+### V1 acceptance criteria
+V1 is ready to ship only when it can demonstrably:
+- analyze purchased/rented premises and build a valid premises snapshot;
+- generate only within selected room/zone/multi-room scopes;
+- accept UI and natural-language briefs;
+- preserve locked/manual work;
+- generate multiple useful alternatives for representative dining/kitchen/bar/support cases;
+- handle non-rectangular rooms and fixed obstacles;
+- reject layouts failing BBSIS or mandatory Navigation checks;
+- rank valid layouts under all five goal profiles;
+- complete/repair an already partially furnished room without unnecessary full regeneration;
+- preview/accept/cancel through normal Edit Mode;
+- reload accepted results as ordinary project content;
+- fail explainably when the requested layout is infeasible.
+
+### Explicitly outside V1
+- AI-generated arbitrary coordinates/scene edits;
+- learning player taste through opaque online training;
+- automatic structural renovation without explicit Edit Mode authorization;
+- replacing BBSIS/Navigation with BBPLFS geometry estimates;
+- mathematically proving a global optimum;
+- complex Pareto/evolutionary optimizer infrastructure unless later evidence justifies it;
+- procedural ownership that prevents manual editing after acceptance.
+### Main implementation risks
+1. Candidate explosion in dense rooms — control with semantic candidate pools, family collapsing and strict budgets.
+2. Expensive repeated BBSIS/Navigation validation — shortlist aggressively and cache revision-safe results.
+3. Weak asset metadata — reject/flag incomplete profiles instead of making silent semantic guesses.
+4. Procedural edits fighting manual intent — preserve/lock rules and local repair are mandatory.
+5. Style scoring becoming subjective/opaque — keep V1 aesthetics based on explicit deterministic composition/style metrics and data-driven tuning.
+6. AI hallucinating capabilities or scope — structured `LayoutBrief` validation is mandatory before generation.
+
+### Final simplification audit
+Removed from V1 as unnecessary architecture unless implementation evidence later proves a need:
+- dedicated Pareto archive;
+- evolutionary optimizer as a core subsystem;
+- simulated annealing as a named core dependency;
+- separate candidate-conflict subsystem exposed as architecture;
+- duplicated scene graph authority;
+- procedural room ownership;
+- solver-backend abstraction layers with no immediate use.
+
+The V1 architecture remains six practical responsibilities:
+1. Premises understanding + scope.
+2. AI/UI intent → `LayoutBrief`.
+3. Asset profiles + furnishing sets/templates.
+4. Layout generation and incremental repair.
+5. External validation + scoring/optimization.
+6. Edit Mode preview/accept/manual continuation.
+
+Macro-block C: CLOSED.
+
+# BBPLFS V1.0 — DESIGN CLOSED / READY FOR UNITY IMPLEMENTATION
+All design blocks and the three closure macro-blocks are binding for V1 unless implementation uncovers evidence requiring an explicit design amendment.
