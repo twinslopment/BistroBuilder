@@ -35,6 +35,10 @@ public static class BistroBuilderAnimationV1Validator
 
         BistroBuilderCharacterAnimationServiceV1[] services = UnityEngine.Object.FindObjectsByType<BistroBuilderCharacterAnimationServiceV1>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         Check(services.Length == 1, "Exactly one V1 runtime animation orchestrator is installed");
+        BistroBuilderAnimationRuntimeBootstrapV1 existingBootstrap = services.Length == 1 ? services[0].GetComponent<BistroBuilderAnimationRuntimeBootstrapV1>() : null;
+        BistroBuilderAnimationRuntimeBootstrapV1 provisionedBootstrap = services.Length == 1 ? services[0].EnsureRuntimeBootstrap() : null;
+        Check(provisionedBootstrap != null && UnityEngine.Object.FindObjectsByType<BistroBuilderAnimationRuntimeBootstrapV1>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 1, "V1 runtime bootstrap provisions exactly once from the animation service");
+        if (existingBootstrap == null && provisionedBootstrap != null) UnityEngine.Object.DestroyImmediate(provisionedBootstrap);
         Check(typeof(IBBCharacterAnimationService).IsAssignableFrom(typeof(BistroBuilderCharacterAnimationServiceV1)), "Runtime orchestrator implements public animation service contract");
         Check(UnityEngine.Object.FindObjectsByType<BistroBuilderInteractionPresentationService>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0, "Legacy BB18 interaction mutator is not installed in production scene");
 

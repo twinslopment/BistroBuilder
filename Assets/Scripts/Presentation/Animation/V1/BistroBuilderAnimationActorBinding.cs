@@ -30,8 +30,7 @@ public sealed class BistroBuilderAnimationActorBinding : MonoBehaviour
     public BistroBuilderCharacterRigAdapter RigAdapter => rigAdapter != null ? rigAdapter : GetComponent<BistroBuilderCharacterRigAdapter>();
     public BistroBuilderCarryPresenter CarryPresenter => carryPresenter != null ? carryPresenter : GetComponent<BistroBuilderCarryPresenter>();
 
-#if UNITY_EDITOR
-    public void ConfigureForEditor(
+    public void ConfigureRuntime(
         string configuredActorId,
         BistroBuilderCharacterAnimationDriver configuredDriver,
         BistroBuilderMotionRecipePlayerV1 configuredRecipePlayer,
@@ -44,6 +43,17 @@ public sealed class BistroBuilderAnimationActorBinding : MonoBehaviour
         recipePlayer = configuredRecipePlayer != null ? configuredRecipePlayer : GetComponent<BistroBuilderMotionRecipePlayerV1>();
         rigAdapter = configuredRigAdapter != null ? configuredRigAdapter : GetComponent<BistroBuilderCharacterRigAdapter>();
         carryPresenter = configuredCarryPresenter != null ? configuredCarryPresenter : GetComponent<BistroBuilderCarryPresenter>();
+    }
+
+#if UNITY_EDITOR
+    public void ConfigureForEditor(
+        string configuredActorId,
+        BistroBuilderCharacterAnimationDriver configuredDriver,
+        BistroBuilderMotionRecipePlayerV1 configuredRecipePlayer,
+        BistroBuilderCharacterRigAdapter configuredRigAdapter,
+        BistroBuilderCarryPresenter configuredCarryPresenter)
+    {
+        ConfigureRuntime(configuredActorId, configuredDriver, configuredRecipePlayer, configuredRigAdapter, configuredCarryPresenter);
     }
 #endif
 

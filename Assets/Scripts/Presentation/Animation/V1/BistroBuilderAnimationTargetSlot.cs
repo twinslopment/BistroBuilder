@@ -22,8 +22,7 @@ public sealed class BistroBuilderAnimationTargetSlot
     public Transform LeftHandTarget => leftHandTarget;
     public Transform LookTarget => lookTarget;
 
-#if UNITY_EDITOR
-    public void ConfigureForEditor(
+    public void ConfigureRuntime(
         string configuredSlotId,
         BistroBuilderInteractionFamily configuredFamily,
         Transform configuredInteractionFrame,
@@ -41,6 +40,20 @@ public sealed class BistroBuilderAnimationTargetSlot
         rightHandTarget = configuredRightHandTarget;
         leftHandTarget = configuredLeftHandTarget;
         lookTarget = configuredLookTarget;
+    }
+
+#if UNITY_EDITOR
+    public void ConfigureForEditor(
+        string configuredSlotId,
+        BistroBuilderInteractionFamily configuredFamily,
+        Transform configuredInteractionFrame,
+        Transform configuredSeatFrame,
+        Transform configuredExitFrame,
+        Transform configuredRightHandTarget,
+        Transform configuredLeftHandTarget,
+        Transform configuredLookTarget)
+    {
+        ConfigureRuntime(configuredSlotId, configuredFamily, configuredInteractionFrame, configuredSeatFrame, configuredExitFrame, configuredRightHandTarget, configuredLeftHandTarget, configuredLookTarget);
     }
 #endif
 

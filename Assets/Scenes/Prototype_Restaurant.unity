@@ -6575,7 +6575,6 @@ GameObject:
   - component: {fileID: 263645026}
   - component: {fileID: 263645027}
   - component: {fileID: 263645025}
-  - component: {fileID: 263645028}
   - component: {fileID: 263645029}
   - component: {fileID: 263645030}
   - component: {fileID: 263645031}
@@ -8989,26 +8988,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderFinancingSaveSectionProvider
   financingService: {fileID: 263645026}
---- !u!114 &263645028
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b4b72f09b105634f90f5fc9a18ab879, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderStaffPayrollFinanceBridge
-  operatingExpenseService: {fileID: 263645004}
-  financeService: {fileID: 263644999}
-  staffService: {fileID: 263645010}
-  sessionService: {fileID: 263645013}
-  scheduleService: {fileID: 263645018}
-  scheduleSessionBridge: {fileID: 263645019}
-  orderIntegration: {fileID: 263644962}
-  saveGameService: {fileID: 263644953}
 --- !u!114 &263645029
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -92,6 +92,11 @@ public sealed class BistroBuilderMotionRecipePlayerV1 : MonoBehaviour
         return legacyDriver != null && legacyDriver.ReturnToBaselinePose();
     }
 
+    public void ConfigureRuntime(Animator configuredAnimator, BistroBuilderCharacterAnimationDriver configuredLegacyDriver)
+    {
+        animator = configuredAnimator != null ? configuredAnimator : GetComponentInChildren<Animator>(true);
+        legacyDriver = configuredLegacyDriver != null ? configuredLegacyDriver : GetComponent<BistroBuilderCharacterAnimationDriver>();
+    }
 #if UNITY_EDITOR
     public void ConfigureForEditor(Animator configuredAnimator, BistroBuilderCharacterAnimationDriver configuredLegacyDriver)
     {
