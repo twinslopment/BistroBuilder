@@ -31,6 +31,9 @@ public sealed class KitchenSystem : MonoBehaviour
     private BistroBuilderCanonicalOrderService canonicalOrderService;
 
     [SerializeField]
+    private BistroBuilderAdvancedKitchenService advancedKitchenService;
+
+    [SerializeField]
     private Transform pickupPoint;
 
     [Header("Preparación por plato")]
@@ -86,12 +89,23 @@ public sealed class KitchenSystem : MonoBehaviour
 
     public string KitchenId => kitchenId ?? string.Empty;
     public KitchenState CurrentState => currentState;
-    public RestaurantOrder ActiveOrder => activeWork?.Order;
-    public string ActiveOrderLineId => activeWork?.OrderLineId ?? string.Empty;
-    public float ActiveRemainingPreparationSeconds =>
-        activeWork != null ? activeWork.RemainingDurationSeconds : 0f;
-    public int PendingOrderCount => pendingLines.Count;
-    public int PendingLineCount => pendingLines.Count;
+    public RestaurantOrder ActiveOrder => AdvancedOperational
+        ? advancedKitchenService.FirstActiveOrder
+        : activeWork?.Order;
+    public string ActiveOrderLineId => AdvancedOperational
+        ? advancedKitchenService.FirstActiveLineId
+        : activeWork?.OrderLineId ?? string.Empty;
+    public float ActiveRemainingPreparationSeconds => AdvancedOperational
+        ? advancedKitchenService.FirstActiveRemainingSeconds
+        : activeWork != null ? activeWork.RemainingDurationSeconds : 0f;
+    public int PendingOrderCount => AdvancedOperational
+        ? advancedKitchenService.QueuedCount
+        : pendingLines.Count;
+    public int PendingLineCount => PendingOrderCount;
+    public BistroBuilderAdvancedKitchenService AdvancedKitchenService =>
+        advancedKitchenService;
+    private bool AdvancedOperational =>
+        advancedKitchenService != null && advancedKitchenService.IsOperational;
     public Transform PickupPoint => pickupPoint;
     public BistroBuilderOrderLineExecutionService LineExecutionService =>
         lineExecutionService;
@@ -100,6 +114,7 @@ public sealed class KitchenSystem : MonoBehaviour
     {
         kitchenId = BistroBuilderOrderIdUtility.Normalize(kitchenId);
         ResolveCanonicalDependency();
+        ResolveAdvancedKitchenDependency();
     }
 
     private void OnEnable()
@@ -111,6 +126,7 @@ public sealed class KitchenSystem : MonoBehaviour
         }
 
         ResolveCanonicalDependency();
+        ResolveAdvancedKitchenDependency();
 
         if (canonicalOrderService != null)
         {
@@ -132,6 +148,10 @@ public sealed class KitchenSystem : MonoBehaviour
         if (Application.isPlaying)
         {
             DrainPendingCanonicalScans();
+            if (AdvancedOperational)
+            {
+                UpdateKitchenState();
+            }
         }
     }
 
@@ -264,6 +284,13 @@ public sealed class KitchenSystem : MonoBehaviour
             return false;
         }
 
+        ResolveAdvancedKitchenDependency();
+        if (advancedKitchenService != null &&
+            !advancedKitchenService.ValidateConfiguration(out error))
+        {
+            return false;
+        }
+
         error = string.Empty;
         return true;
     }
@@ -278,6 +305,15 @@ public sealed class KitchenSystem : MonoBehaviour
         if (!ValidateConfiguration(out error))
         {
             return false;
+        }
+
+        if (AdvancedOperational)
+        {
+            return advancedKitchenService.TryCaptureRuntimeSnapshot(
+                KitchenId,
+                nextWorkSequence,
+                out snapshot,
+                out error);
         }
 
         snapshot = new BistroBuilderKitchenRuntimeSnapshot
@@ -350,6 +386,39 @@ public sealed class KitchenSystem : MonoBehaviour
         {
             error = "El registro de comandas restauradas es nulo.";
             return false;
+        }
+
+        if (snapshot.advancedEnabled)
+        {
+            ResolveAdvancedKitchenDependency();
+            if (!AdvancedOperational)
+            {
+                error = "El save contiene cocina avanzada pero su servicio no está disponible.";
+                return false;
+            }
+
+            StopProcessingRoutine();
+            pendingLines.Clear();
+            trackedLineIds.Clear();
+            activeWork = null;
+            nextWorkSequence = snapshot.nextSequence;
+            for (int index = 0; index < snapshot.workItems.Count; index++)
+            {
+                BistroBuilderKitchenLineWorkSaveData data = snapshot.workItems[index];
+                trackedLineIds.Add(data.orderLineId);
+            }
+
+            if (!advancedKitchenService.TryRestoreRuntimeSnapshot(
+                    snapshot,
+                    ordersByCanonicalId,
+                    out error))
+            {
+                trackedLineIds.Clear();
+                return false;
+            }
+
+            UpdateKitchenState();
+            return true;
         }
 
         List<LineWorkItem> candidates = new List<LineWorkItem>();
@@ -628,6 +697,22 @@ public sealed class KitchenSystem : MonoBehaviour
                 continue;
             }
 
+            if (AdvancedOperational)
+            {
+                long sequence = nextWorkSequence++;
+                if (!advancedKitchenService.TryEnqueueLine(
+                        order,
+                        line,
+                        sequence,
+                        duration,
+                        out error))
+                {
+                    trackedLineIds.Remove(line.LineId);
+                    Debug.LogError(error, this);
+                }
+                continue;
+            }
+
             pendingLines.Enqueue(
                 new LineWorkItem(
                     order,
@@ -653,6 +738,12 @@ public sealed class KitchenSystem : MonoBehaviour
 
     private void EnsureProcessingRoutine()
     {
+        if (AdvancedOperational)
+        {
+            UpdateKitchenState();
+            return;
+        }
+
         if (!isActiveAndEnabled ||
             pendingLines.Count == 0 ||
             !TryClaimProcessingLoop())
@@ -868,15 +959,33 @@ public sealed class KitchenSystem : MonoBehaviour
 
     private void UpdateKitchenState()
     {
-        int workload = pendingLines.Count + (activeWork != null ? 1 : 0);
+        int workload = AdvancedOperational
+            ? advancedKitchenService.ActiveCount + advancedKitchenService.QueuedCount
+            : pendingLines.Count + (activeWork != null ? 1 : 0);
 
-        KitchenState newState = workload switch
+        KitchenState newState;
+        if (AdvancedOperational)
         {
-            0 => KitchenState.Idle,
-            1 => KitchenState.Working,
-            <= 4 => KitchenState.Busy,
-            _ => KitchenState.Overloaded
-        };
+            newState = workload == 0
+                ? KitchenState.Idle
+                : advancedKitchenService.LoadState switch
+                {
+                    BistroBuilderKitchenLoadState.Blocked => KitchenState.Blocked,
+                    BistroBuilderKitchenLoadState.Saturated => KitchenState.Overloaded,
+                    BistroBuilderKitchenLoadState.Loaded => KitchenState.Busy,
+                    _ => KitchenState.Working
+                };
+        }
+        else
+        {
+            newState = workload switch
+            {
+                0 => KitchenState.Idle,
+                1 => KitchenState.Working,
+                <= 4 => KitchenState.Busy,
+                _ => KitchenState.Overloaded
+            };
+        }
 
         if (currentState == newState)
         {
@@ -893,6 +1002,33 @@ public sealed class KitchenSystem : MonoBehaviour
         StateChanged?.Invoke(currentState);
     }
 
+    public void NotifyAdvancedLineReady(
+        RestaurantOrder order,
+        string lineId,
+        string dishId,
+        bool productionComplete,
+        int qualityBasisPoints)
+    {
+        string normalized = BistroBuilderOrderIdUtility.Normalize(lineId);
+        trackedLineIds.Remove(normalized);
+        OrderLineReady?.Invoke(new BistroBuilderOrderLineReadyEvent(
+            this,
+            order,
+            normalized,
+            dishId));
+        if (productionComplete && order != null)
+        {
+            OrderReady?.Invoke(order);
+        }
+        UpdateKitchenState();
+    }
+
+    public void NotifyAdvancedLineReleased(string lineId)
+    {
+        trackedLineIds.Remove(BistroBuilderOrderIdUtility.Normalize(lineId));
+        UpdateKitchenState();
+    }
+
     private void ResolveCanonicalDependency()
     {
         if (canonicalOrderService == null && lineExecutionService != null)
@@ -903,6 +1039,21 @@ public sealed class KitchenSystem : MonoBehaviour
         if (canonicalOrderService == null)
         {
             TryGetComponent(out canonicalOrderService);
+        }
+    }
+
+    private void ResolveAdvancedKitchenDependency()
+    {
+        if (advancedKitchenService != null)
+        {
+            return;
+        }
+
+        TryGetComponent(out advancedKitchenService);
+        if (advancedKitchenService == null)
+        {
+            advancedKitchenService = FindFirstObjectByType<
+                BistroBuilderAdvancedKitchenService>();
         }
     }
 
