@@ -93,4 +93,5 @@ public static class BistroBuilderStaffStableIdUtility
 public static class BistroBuilderStaffOperationalAdapterIds
 {
     public const string WaiterAgent = "waiter.agent";
+    public const string CookAgent = "cook.agent";
 }
