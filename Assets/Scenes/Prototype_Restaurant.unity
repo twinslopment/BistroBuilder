@@ -6607,6 +6607,8 @@ GameObject:
   - component: {fileID: 263645056}
   - component: {fileID: 263645059}
   - component: {fileID: 263645058}
+  - component: {fileID: 263645201}
+  - component: {fileID: 263645200}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -60539,3 +60541,34 @@ SceneRoots:
   - {fileID: 1628535881}
   - {fileID: 617943410}
   - {fileID: 532408703}
+--- !u!114 &263645200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84048cb8c2bb1be4088dd01c0f8c8701, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCharacterAnimationServiceV1
+  recipeCatalog: {fileID: 11400000, guid: 83278b8894999894798317e752fa38a3, type: 2}
+  budgeter: {fileID: 263645201}
+  defaultPerceptualImportance: 0.65
+  variantHistoryDepth: 3
+--- !u!114 &263645201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a4d7479854604428da40aa2cf02fa2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderPerceptualAnimationBudgeter
+  profile: {fileID: 11400000, guid: a50127423910c7441bbef1258ae8d361, type: 2}
+  cpuPressure: 0
+  crowdPressure: 0
