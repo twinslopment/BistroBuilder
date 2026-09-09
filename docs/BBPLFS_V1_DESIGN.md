@@ -167,3 +167,104 @@ AI may translate player language into tags/preferences, but it may not bypass th
 - Block 4 Asset Layout Profiles: CLOSED.
 - Block 5 Furnishing Sets: CLOSED.
 - Next design block: Layout Generator — candidate positions, room patterns, irregular geometry and candidate generation strategy.
+
+## Block 6 — Layout Generator
+
+The V1 generator uses a staged deterministic pipeline, not free placement by AI.
+
+### 6.1 Input
+The generator receives:
+- `PremisesModel`;
+- active `DesignScope`;
+- validated `LayoutBrief`;
+- compatible `FurnishingSets` and asset families;
+- preserved/locked existing content.
+
+### 6.2 Placement domain
+The generator derives only plausible placement domains inside the selected scope.
+Sources include:
+- usable floor regions;
+- wall bands;
+- corners;
+- room axes;
+- adaptive grids;
+- existing alignment lines;
+- anchors created by fixed/manual content;
+- functional adjacency zones.
+
+The domain is sparse and semantic: BBPLFS must not brute-force every coordinate of the room.
+### 6.3 Candidate generation
+For each furnishing module, BBPLFS creates a bounded set of candidate poses using:
+- wall-aligned placement;
+- row/column patterns;
+- staggered patterns when useful;
+- center/axis placement;
+- corner placement;
+- adjacency to compatible modules;
+- continuation of manually established patterns;
+- a coarse adaptive grid for free placement.
+
+Only meaningful orientations from the asset/family profile are generated.
+Candidates failing cheap containment, boundary or obvious-overlap tests are discarded immediately.
+
+### 6.4 Irregular geometry
+Irregular/concave rooms are supported in V1.
+BBPLFS uses polygon containment plus configuration-space style exclusion for fast geometric pruning.
+No-Fit Polygon / Minkowski-style techniques may be used internally where they reduce repeated overlap tests, but they are geometry tools, not the global layout solver.
+
+### 6.5 Layout construction
+Layouts are assembled from candidates incrementally.
+The default search strategy is a bounded heuristic/beam search with deterministic ordering and seeded tie-breaking.
+It prioritizes the most constrained or functionally important modules first, then expands the best partial layouts.
+Branch-and-bound pruning removes partial layouts that cannot beat current feasible candidates or cannot satisfy hard targets.
+CP-SAT is retained as a targeted solver option for dense discrete subproblems, not as the mandatory engine for every room.
+It is especially suitable when candidate positions are already discrete and many optional rectangular placements must be selected without overlap.
+
+### 6.6 Validation ladder
+Generation uses three levels:
+1. cheap BBPLFS geometric precheck;
+2. BBSIS validation for shortlisted layouts;
+3. Navigation evaluation for layouts that pass BBSIS.
+
+A BBPLFS precheck never means spatial validity.
+BBSIS remains the authority for Seat Bays, Work Edges, Ports, Sweeps, doors, envelopes and spatial gates.
+Navigation remains the authority for reachability, routes, circulation and traffic quality.
+
+### 6.7 Candidate budget
+Search is explicitly bounded by time/work budgets.
+BBPLFS returns the best valid layouts found rather than searching for a mathematically proven global optimum.
+The generator must degrade gracefully on large/complex rooms by reducing candidate density and search breadth, never by relaxing hard constraints.
+
+### 6.8 Determinism
+Same premises revision + same brief + same catalog revision + same seed must reproduce the same candidate ordering and result set.
+Randomized exploration is allowed only through an explicit stored seed.
+This makes previews, saves, testing and debugging reproducible.
+### 6.9 Output
+The generator returns a small shortlist of valid candidate layouts, normally 3–5 when enough distinct solutions exist.
+Near-duplicates are removed using simple structural differences such as module count, dominant orientation, aisle structure and zone occupancy.
+It is valid to return fewer candidates when the room or hard constraints do not support meaningful alternatives.
+
+Generated content never extends beyond `DesignScope`.
+Existing manual content marked preserve/locked is treated as part of the environment, not regenerated.
+
+### V1 generator decisions
+- No AI coordinate placement.
+- No exhaustive continuous search.
+- No single packing algorithm as the whole solution.
+- Semantic sparse candidate generation first.
+- Cheap geometry for pruning only.
+- Bounded heuristic/beam search is the default layout builder.
+- Branch-and-bound pruning is used where useful.
+- CP-SAT is optional for appropriate discrete subproblems.
+- NFP/Minkowski-style geometry is optional for irregular-shape pruning.
+- BBSIS and Navigation validate shortlisted layouts through their own authority.
+- Search is reproducible and time/work bounded.
+
+## Closed decisions so far
+- Block 1 System Contract: CLOSED.
+- Block 2 Premises Model: CLOSED.
+- Block 3 AI + LayoutBrief: CLOSED.
+- Block 4 Asset Layout Profiles: CLOSED.
+- Block 5 Furnishing Sets: CLOSED.
+- Block 6 Layout Generator: CLOSED.
+- Next design block: Constraint Model + validation/scoring/optimization.
