@@ -40,6 +40,7 @@ public static class BistroBuilderAnimationV1Installer
         budgeter.ConfigureForEditor(budgetProfile);
         BistroBuilderCharacterAnimationServiceV1 service = EnsureComponent<BistroBuilderCharacterAnimationServiceV1>(systems);
         service.ConfigureForEditor(catalog, budgeter);
+        RemoveLegacyPresentationAuthority();
         MigrateSceneActors();
         MigrateSceneTargets();
 
@@ -228,6 +229,15 @@ public static class BistroBuilderAnimationV1Installer
         return profile;
     }
 
+    private static void RemoveLegacyPresentationAuthority()
+    {
+        BistroBuilderInteractionPresentationService[] legacyServices = UnityEngine.Object.FindObjectsByType<BistroBuilderInteractionPresentationService>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < legacyServices.Length; i++)
+        {
+            BistroBuilderInteractionPresentationService legacy = legacyServices[i];
+            if (legacy != null) UnityEngine.Object.DestroyImmediate(legacy);
+        }
+    }
     private static void MigrateSceneActors()
     {
         BistroBuilderMotionCatalog legacyCatalog = AssetDatabase.LoadAssetAtPath<BistroBuilderMotionCatalog>(LegacyCatalogPath);

@@ -38,7 +38,16 @@ public sealed class BistroBuilderCharacterAnimationServiceV1 : MonoBehaviour, IB
     private void Awake()
     {
         variantScheduler = new BistroBuilderMotionVariantScheduler(variantHistoryDepth);
+        EnsureRuntimeBootstrap();
         RefreshRegistry();
+    }
+
+    public BistroBuilderAnimationRuntimeBootstrapV1 EnsureRuntimeBootstrap()
+    {
+        BistroBuilderAnimationRuntimeBootstrapV1 bootstrap = GetComponent<BistroBuilderAnimationRuntimeBootstrapV1>();
+        if (bootstrap == null) bootstrap = gameObject.AddComponent<BistroBuilderAnimationRuntimeBootstrapV1>();
+        bootstrap.ConfigureRuntime(this);
+        return bootstrap;
     }
 
     public void RefreshRegistry()

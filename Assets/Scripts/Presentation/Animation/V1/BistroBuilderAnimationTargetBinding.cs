@@ -31,8 +31,7 @@ public sealed class BistroBuilderAnimationTargetBinding : MonoBehaviour
         return false;
     }
 
-#if UNITY_EDITOR
-    public void ConfigureForEditor(
+    public void ConfigureRuntime(
         string configuredTargetId,
         long configuredGeneration,
         BistroBuilderAnimationTargetKind configuredTargetKind,
@@ -42,6 +41,16 @@ public sealed class BistroBuilderAnimationTargetBinding : MonoBehaviour
         generation = Math.Max(1L, configuredGeneration);
         targetKind = configuredTargetKind;
         slots = configuredSlots ?? new List<BistroBuilderAnimationTargetSlot>();
+    }
+
+#if UNITY_EDITOR
+    public void ConfigureForEditor(
+        string configuredTargetId,
+        long configuredGeneration,
+        BistroBuilderAnimationTargetKind configuredTargetKind,
+        List<BistroBuilderAnimationTargetSlot> configuredSlots)
+    {
+        ConfigureRuntime(configuredTargetId, configuredGeneration, configuredTargetKind, configuredSlots);
     }
 #endif
 

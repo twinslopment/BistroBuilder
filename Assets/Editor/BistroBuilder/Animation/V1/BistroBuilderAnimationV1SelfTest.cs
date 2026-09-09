@@ -115,6 +115,33 @@ public static class BistroBuilderAnimationV1SelfTest
         budgeter.Release(qh3);
         Check(budgeter.ActiveAssignmentCount == 0, "Budget assignments release without leaks");
 
+        GameObject runtimeGo = new GameObject("BB_AnimationV1_SelfTest_Runtime");
+        BistroBuilderCharacterAnimationServiceV1 runtimeService = runtimeGo.AddComponent<BistroBuilderCharacterAnimationServiceV1>();
+        BistroBuilderAnimationRuntimeBootstrapV1 runtimeBootstrap = runtimeGo.AddComponent<BistroBuilderAnimationRuntimeBootstrapV1>();
+        runtimeBootstrap.ConfigureRuntime(runtimeService, 1f);
+
+        GameObject dynamicActor = new GameObject("BB_AnimationV1_DynamicActor");
+        dynamicActor.AddComponent<Animator>();
+        dynamicActor.AddComponent<BistroBuilderCharacterAnimationDriver>();
+        bool actorBootstrapped = runtimeBootstrap.TryBootstrapActor(dynamicActor);
+        Check(actorBootstrapped && dynamicActor.GetComponent<BistroBuilderAnimationActorBinding>() != null && dynamicActor.GetComponent<BistroBuilderMotionRecipePlayerV1>() != null,
+            "Runtime bootstrap equips dynamically materialized semantic actors");
+
+        GameObject dynamicTarget = new GameObject("BB_AnimationV1_DynamicTarget");
+        BistroBuilderInteractionTarget logicalTarget = dynamicTarget.AddComponent<BistroBuilderInteractionTarget>();
+        logicalTarget.ConfigureForEditor("selftest.dynamic.target", null, null);
+        BistroBuilderAssetInteractionDescriptor descriptor = dynamicTarget.AddComponent<BistroBuilderAssetInteractionDescriptor>();
+        var legacySlot = new BistroBuilderAnimationInteractionSlotDefinition();
+        legacySlot.ConfigureForEditor("default", BistroBuilderInteractionFamily.Transfer, dynamicTarget.transform);
+        descriptor.ConfigureForEditor(new List<BistroBuilderAnimationInteractionSlotDefinition> { legacySlot });
+        bool targetBootstrapped = runtimeBootstrap.TryBootstrapTarget(descriptor);
+        BistroBuilderAnimationTargetBinding dynamicBinding = dynamicTarget.GetComponent<BistroBuilderAnimationTargetBinding>();
+        Check(targetBootstrapped && dynamicBinding != null && dynamicBinding.Handle.IsValid && dynamicBinding.TargetId == "selftest.dynamic.target",
+            "Runtime bootstrap equips dynamically materialized typed interaction targets");
+
+        UnityEngine.Object.DestroyImmediate(dynamicTarget);
+        UnityEngine.Object.DestroyImmediate(dynamicActor);
+        UnityEngine.Object.DestroyImmediate(runtimeGo);
         UnityEngine.Object.DestroyImmediate(budgetGo);
         UnityEngine.Object.DestroyImmediate(budgetProfile);
         UnityEngine.Object.DestroyImmediate(costRecipe);
