@@ -13,6 +13,10 @@ public sealed class BistroBuilderReputationVisitRuntimeRecord
     public float waiterWaitSeconds;
     public float foodWaitSeconds;
     public float billWaitSeconds;
+    public float waiterCareCreditSeconds;
+    public float foodCareCreditSeconds;
+    public float billCareCreditSeconds;
+    public int waiterContextActionCount;
     public long paidAmountCents;
     public long referenceAmountCents;
     public float expectedFoodSeconds;
