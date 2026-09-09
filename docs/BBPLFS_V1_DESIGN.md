@@ -267,4 +267,115 @@ Existing manual content marked preserve/locked is treated as part of the environ
 - Block 4 Asset Layout Profiles: CLOSED.
 - Block 5 Furnishing Sets: CLOSED.
 - Block 6 Layout Generator: CLOSED.
-- Next design block: Constraint Model + validation/scoring/optimization.
+## Block 7 — Constraint Model, Validation, Scoring and Optimization
+
+BBPLFS separates non-negotiable validity from preferences.
+
+### 7.1 Hard constraints
+A candidate is rejected if any hard constraint fails.
+Sources are:
+- explicit player requirements in `LayoutBrief`;
+- active `DesignScope` and preserve/lock rules;
+- required furnishing-set composition;
+- catalog/asset compatibility and availability;
+- BBSIS authoritative spatial validation;
+- Navigation authoritative reachability/critical circulation requirements;
+- authoritative budget ceiling when the player defines one as mandatory.
+
+Hard constraints are never converted into penalties and are never relaxed to obtain a higher score.
+Each rejection keeps machine-readable reason codes so the UI/AI can explain why a request is infeasible.
+
+### 7.2 Soft objectives
+Valid candidates are compared using a small normalized objective vector:
+- `CapacityScore`;
+- `ComfortScore`;
+- `ServiceEfficiencyScore`;
+- `CirculationQualityScore`;
+- `AestheticCoherenceScore`;
+- `CostFitnessScore`.
+
+No additional objective is added unless it changes player-visible decisions.
+
+### 7.3 Metric authority
+BBPLFS owns only the comparison formula.
+- Capacity comes from the realized functional layout.
+- Comfort uses BBPLFS layout-level spacing/composition metrics plus BBSIS results where relevant.
+- Service efficiency consumes Navigation route/service-cost metrics and layout structure.
+- Circulation quality consumes Navigation results; BBPLFS does not recreate pathfinding.
+- Aesthetic coherence uses deterministic layout/style rules: alignment, repetition, spacing consistency, family/style compatibility and composition balance.
+- Cost fitness uses authoritative catalog/Economy values; BBPLFS does not own prices or transactions.
+
+### 7.4 Validation ladder
+For each promising candidate:
+1. BBPLFS cheap geometry/semantic checks;
+2. BBSIS validates true spatial usability;
+3. Navigation validates required access and evaluates circulation;
+4. hard budget/brief constraints are checked against authoritative values;
+5. only fully valid candidates enter scoring.
+
+External validators return structured metrics and reason codes, not placement decisions.
+BBPLFS may use those results to choose another candidate or request a new generation pass.
+
+### 7.5 Scoring
+Each soft objective is normalized to a stable 0–1 range using project tuning data.
+The active `GoalProfile` supplies weights and optional minimum quality floors.
+Final ranking is a weighted score only after all hard constraints and profile floors pass.
+
+This keeps the five player modes as profiles of one optimizer rather than separate algorithms.
+
+### 7.6 Goal profiles
+V1 profiles:
+- `Balanced` — no single objective dominates.
+- `MaxCapacity` — favors capacity while preserving mandatory comfort/circulation floors.
+- `MaxComfort` — favors spacing and circulation over seat count.
+- `ServiceEfficient` — favors service routes and circulation quality.
+- `Premium` — favors comfort, aesthetic coherence and higher-quality compatible assets; it never means spending money for its own sake.
+
+Exact weights are tuning data, not hardcoded architecture.
+They can be adjusted without changing the solver.
+
+### 7.7 Optimization loop
+The optimizer:
+1. ranks valid layouts under the selected profile;
+2. keeps a small elite set;
+3. applies bounded local improvements such as small translations, orientation swaps, equivalent-module substitutions or row-spacing adjustments;
+4. revalidates any change that can affect BBSIS or Navigation;
+5. stops when the work budget is exhausted or improvement becomes negligible.
+
+Local refinement never changes the requested Design Scope or hard requirements.
+
+### 7.8 Alternatives and diversity
+The final shortlist is selected from high-scoring valid layouts with a minimum structural difference.
+Difference may use module distribution, dominant orientation, aisle structure, zone occupancy and capacity.
+A slightly lower-scoring candidate may be retained when it provides a meaningfully different player choice.
+
+BBPLFS does not maintain a complex Pareto subsystem in V1.
+
+### 7.9 Infeasible requests
+If no valid layout exists, BBPLFS returns:
+- the failed hard constraints;
+- the best near-feasible diagnostic candidates when useful;
+- deterministic relaxation suggestions ordered by smallest impact.
+
+Relaxations are proposals only. The player must explicitly change the brief/scope before regeneration.
+AI may phrase the explanation but cannot silently apply the relaxation.
+
+### V1 decisions
+- Hard validity and soft scoring are strictly separated.
+- BBSIS and Navigation remain authoritative validators.
+- One normalized objective vector powers all player modes.
+- Goal-profile weights are data-driven tuning values.
+- Weighted ranking is used only after validity and minimum floors pass.
+- Optimization uses bounded local refinement, not an unbounded metaheuristic.
+- Diverse high-quality alternatives are retained without a heavy Pareto architecture.
+- Failure is explainable through structured reason codes and explicit relaxation proposals.
+
+## Closed decisions so far
+- Block 1 System Contract: CLOSED.
+- Block 2 Premises Model: CLOSED.
+- Block 3 AI + LayoutBrief: CLOSED.
+- Block 4 Asset Layout Profiles: CLOSED.
+- Block 5 Furnishing Sets: CLOSED.
+- Block 6 Layout Generator: CLOSED.
+- Block 7 Constraint Model + Validation/Scoring/Optimization: CLOSED.
+- Next design block: Incremental re-layout + mixed manual/procedural editing.
