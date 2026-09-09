@@ -511,6 +511,16 @@ public sealed class TableAssignmentSystem :
         TryAssignWaitingGroups();
     }
 
+    public bool TryReleasePreferredTableReservation(CustomerGroup customerGroup)
+    {
+        if (customerGroup == null || !preferredTableReservations.ContainsKey(customerGroup))
+            return false;
+
+        ReleasePreferredTableReservation(customerGroup);
+        TryAssignWaitingGroups();
+        return true;
+    }
+
     /// <summary>
     /// Reserva lógicamente una mesa concreta para un grupo ya registrado.
     /// La mesa sigue Free hasta que el flujo normal lleve al grupo a
