@@ -106,4 +106,64 @@ The brief contains intent, not placement instructions.
 - Block 1 System Contract: CLOSED.
 - Block 2 Premises Model: CLOSED.
 - Block 3 AI + LayoutBrief: CLOSED.
-- Next design block: Asset Layout Profiles + Furnishing Sets.
+- Next design block: Asset Layout Profiles + Furnishing Sets.## Block 4 — Asset Layout Profiles
+`AssetLayoutProfile` is the small BBPLFS-facing description of an asset. It does not duplicate full asset, BBSIS or Economy data.
+
+Minimum fields:
+- `AssetRef` — canonical catalog asset.
+- `LayoutRole` — table, seat, counter, appliance, storage, decor, etc.
+- `LayoutFamily` — interchangeable family used to reduce search space.
+- `FunctionTags` — functions this asset can fulfil.
+- `StyleTags` — compact visual/style classification.
+- `QualityTier` — coarse quality/premium level where relevant.
+- `PlacementType` — floor, wall, support surface or other supported placement.
+- `AllowedOrientations` — only when the asset is not freely rotatable for layout purposes.
+- `CompatibilityTags` — semantic compatibility with set slots/other assets.
+- `FastFootprintRef` — revisioned derived footprint/envelope used only for cheap candidate generation.
+- `BBSISDescriptorRef` — authoritative spatial-validation reference.
+- `CostRef` — authoritative economy/catalog price reference.
+
+Rules:
+- Asset dimensions, ports, Work Edges, Seat Bays, sweeps and true spatial validity remain authoritative outside BBPLFS.
+- `FastFootprintRef` is disposable cache data; if stale, it is rebuilt from canonical data.
+- Visual variants that behave identically may share one layout family/profile and differ only at concrete asset selection.
+- Assets4All/catalog authoring should populate as much of this profile automatically as reliable metadata permits; uncertain semantic tags remain reviewable rather than silently trusted.
+## Block 5 — Furnishing Sets
+A `FurnishingSet` is a functional recipe, not a prefab and not a permanent ownership container.
+
+It defines:
+- `SetRole` — functional purpose, e.g. DiningSet4, BarRun, PrepStation.
+- required slots and quantities;
+- optional slots;
+- compatibility requirements for each slot;
+- simple layout relationships needed to generate the set: around, aligned, attached, repeated or adjacent;
+- permitted arrangement families when the function requires them.
+
+Example:
+`DiningSet4` = 1 dining table + 4 compatible dining seats arranged around it.
+
+Rules:
+- Sets describe what must exist together; BBSIS decides whether the concrete arrangement is spatially usable.
+- Sets may be partially satisfied by existing manual objects inside the Design Scope.
+- Locked/manual objects can therefore become fixed members of a generated set without being recreated.
+- A set may substitute compatible concrete assets without changing its functional meaning.
+- The generator first works with a small compatible candidate pool/layout families, then resolves concrete assets before final BBSIS/Navigation validation.
+- BBPLFS must never enumerate the entire catalog combinatorially when equivalent families can be collapsed.
+- Once the player accepts the result, set membership is not required to keep the objects editable; normal Edit Mode remains authoritative for subsequent manual editing.
+
+## Asset matching rule
+Concrete asset selection uses deterministic filtering first:
+1. required function/slot compatibility;
+2. availability and scope restrictions;
+3. hard player requirements;
+4. footprint/layout compatibility;
+5. style, quality, cost and soft preferences for ranking.
+
+AI may translate player language into tags/preferences, but it may not bypass these filters or invent catalog assets.
+## Current closure state
+- Block 1 System Contract: CLOSED.
+- Block 2 Premises Model: CLOSED.
+- Block 3 AI + LayoutBrief: CLOSED.
+- Block 4 Asset Layout Profiles: CLOSED.
+- Block 5 Furnishing Sets: CLOSED.
+- Next design block: Layout Generator — candidate positions, room patterns, irregular geometry and candidate generation strategy.
