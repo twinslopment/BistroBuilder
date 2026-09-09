@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -21,6 +22,9 @@ public sealed class WaiterMovementView : MonoBehaviour
 
     [SerializeField]
     private KitchenSystem kitchenSystem;
+
+    [SerializeField]
+    private BistroBuilderWaiterRoutingService routingService;
 
     [Header("Movimiento")]
 
@@ -44,6 +48,13 @@ public sealed class WaiterMovementView : MonoBehaviour
     private Transform currentDestination;
 
     private bool isMoving;
+    private readonly List<Vector3> routePoints = new List<Vector3>(16);
+    private int currentRouteIndex;
+
+    public BistroBuilderWaiterRouteKind CurrentRouteKind =>
+        routingService != null
+            ? routingService.LastRouteKind
+            : BistroBuilderWaiterRouteKind.DirectFallback;
 
     /// <summary>
     /// Corrutina utilizada cuando el camarero ya está dentro
@@ -68,6 +79,8 @@ public sealed class WaiterMovementView : MonoBehaviour
         {
             waiter = GetComponent<Waiter>();
         }
+
+        ResolveRoutingService();
     }
 
     private void OnEnable()
@@ -100,21 +113,33 @@ public sealed class WaiterMovementView : MonoBehaviour
         HasReachedDestination = false;
 
         movementRequestVersion++;
+        routePoints.Clear();
+        currentRouteIndex = 0;
     }
 
     private void Update()
     {
-        if (!isMoving ||
-            currentDestination == null)
+        if (!isMoving || currentDestination == null)
         {
             return;
         }
 
+        Vector3 movementTarget = routePoints.Count > 0
+            ? routePoints[Mathf.Clamp(currentRouteIndex, 0, routePoints.Count - 1)]
+            : currentDestination.position;
+
         transform.position = Vector3.MoveTowards(
             transform.position,
-            currentDestination.position,
+            movementTarget,
             movementSpeed * Time.deltaTime
         );
+
+        float arrivalDistanceSquared = arrivalDistance * arrivalDistance;
+        if ((transform.position - movementTarget).sqrMagnitude <= arrivalDistanceSquared &&
+            currentRouteIndex < routePoints.Count - 1)
+        {
+            currentRouteIndex++;
+        }
 
         TryCompleteCurrentMovement();
     }
@@ -284,6 +309,20 @@ public sealed class WaiterMovementView : MonoBehaviour
         HasReachedDestination = false;
         isMoving = true;
 
+        ResolveRoutingService();
+        routePoints.Clear();
+        currentRouteIndex = 0;
+        if (routingService == null ||
+            !routingService.TryBuildRoute(
+                transform.position,
+                destination.position,
+                routePoints,
+                out _) ||
+            routePoints.Count == 0)
+        {
+            routePoints.Add(destination.position);
+        }
+
         movementRequestVersion++;
 
         if (!IsWithinArrivalDistance(destination))
@@ -407,6 +446,8 @@ public sealed class WaiterMovementView : MonoBehaviour
         currentDestination = null;
         isMoving = false;
         HasReachedDestination = true;
+        routePoints.Clear();
+        currentRouteIndex = 0;
 
         movementRequestVersion++;
 
@@ -430,7 +471,15 @@ public sealed class WaiterMovementView : MonoBehaviour
         currentDestination = null;
         isMoving = false;
         HasReachedDestination = false;
+        routePoints.Clear();
+        currentRouteIndex = 0;
         movementRequestVersion++;
+    }
+
+    private void ResolveRoutingService()
+    {
+        if (routingService != null) return;
+        routingService = FindFirstObjectByType<BistroBuilderWaiterRoutingService>();
     }
 
     /// <summary>

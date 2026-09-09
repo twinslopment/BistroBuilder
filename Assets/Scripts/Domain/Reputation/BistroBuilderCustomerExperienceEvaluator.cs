@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 /// <summary>
 /// Convierte métricas verificables de una visita en satisfacción percibida.
@@ -16,23 +16,30 @@ public static class BistroBuilderCustomerExperienceEvaluator
         if (!TryValidateRuntimeVisit(visit, out error) || dayIndex < 1)
             return false;
 
+        float effectiveWaiterWait = Math.Max(
+            0f, visit.waiterWaitSeconds - visit.waiterCareCreditSeconds);
+        float effectiveFoodWait = Math.Max(
+            0f, visit.foodWaitSeconds - visit.foodCareCreditSeconds);
+        float effectiveBillWait = Math.Max(
+            0f, visit.billWaitSeconds - visit.billCareCreditSeconds);
+
         int service = Average(
             BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.waiterWaitSeconds, 8f, 60f),
+                effectiveWaiterWait, 8f, 60f),
             BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.billWaitSeconds, 8f, 45f));
+                effectiveBillWait, 8f, 45f));
 
         float expected = Math.Max(4f, visit.expectedFoodSeconds);
         int waiting = Average(
             BistroBuilderReputationEngine.ScoreWaitSeconds(
                 visit.tableWaitSeconds, 20f, 120f),
             BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.waiterWaitSeconds, 8f, 60f),
+                effectiveWaiterWait, 8f, 60f),
             BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.foodWaitSeconds, expected * 1.35f + 4f,
+                effectiveFoodWait, expected * 1.35f + 4f,
                 expected * 3f + 30f),
             BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.billWaitSeconds, 8f, 45f));
+                effectiveBillWait, 8f, 45f));
 
         int food = ComputeFoodQuality(visit, expected);
         int value = ComputeValueForMoney(
@@ -78,6 +85,11 @@ public static class BistroBuilderCustomerExperienceEvaluator
                 visit.discoverySource) ||
             !Finite(visit.tableWaitSeconds) || !Finite(visit.waiterWaitSeconds) ||
             !Finite(visit.foodWaitSeconds) || !Finite(visit.billWaitSeconds) ||
+            !Finite(visit.waiterCareCreditSeconds) ||
+            !Finite(visit.foodCareCreditSeconds) ||
+            !Finite(visit.billCareCreditSeconds) ||
+            visit.waiterContextActionCount < 0 ||
+            visit.waiterContextActionCount > 64 ||
             !Finite(visit.expectedFoodSeconds) || visit.paidAmountCents < 0L ||
             visit.referenceAmountCents < 0L ||
             visit.foodQualityPotentialBasisPoints < 0 ||

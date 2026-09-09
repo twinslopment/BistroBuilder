@@ -68,7 +68,10 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     [SerializeField]
     private BistroBuilderOrderLineExecutionService lineExecutionService;
 
-    [Header("Rondas inteligentes 367G")]
+    [Header("Camareros avanzados 13")]
+    [SerializeField]
+    private BistroBuilderAdvancedWaiterService advancedWaiterService;
+[Header("Rondas inteligentes 367G")]
 
     [Tooltip(
         "Agrupa líneas ya preparadas de una misma cocina en una sola " +
@@ -281,6 +284,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     {
         EnsureTaskQueueCreated();
         ResolveLineExecutionService();
+        ResolveAdvancedWaiterService();
     }
 
     private void OnEnable()
@@ -411,6 +415,9 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         if (!registeredWaiters.Add(waiter))
             return false;
 
+        ResolveAdvancedWaiterService();
+        advancedWaiterService?.RegisterWaiter(waiter);
+
         if (isActiveAndEnabled)
         {
             SubscribeToWaiter(waiter);
@@ -436,6 +443,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
         UnsubscribeFromWaiter(waiter);
         RecoverTasksAssignedToWaiter(waiter);
+        advancedWaiterService?.UnregisterWaiter(waiter);
         RequestDispatch();
 
         return true;
@@ -797,6 +805,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         taskQueue.Clear();
         kitchenByOrderLineId.Clear();
         deliveryTaskReadyRealtimeByLineId.Clear();
+        advancedWaiterService?.ResetForRuntimeLoad();
     }
 
     public bool RebuildTasksAfterRuntimeLoad(
@@ -923,9 +932,16 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     {
         if (taskQueue == null)
         {
-            taskQueue =
-                new WaiterTaskQueue();
+            taskQueue = new WaiterTaskQueue();
+            taskQueue.TaskCompleted += HandleAdvancedTaskEnded;
+            taskQueue.TaskCancelled += HandleAdvancedTaskEnded;
         }
+    }
+
+    private void HandleAdvancedTaskEnded(WaiterTask task)
+    {
+        ResolveAdvancedWaiterService();
+        advancedWaiterService?.NotifyTaskEnded(task);
     }
 
     /// <summary>
@@ -1467,6 +1483,13 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
         try
         {
+            ResolveAdvancedWaiterService();
+            advancedWaiterService?.RebuildPlans(
+                taskQueue.ActiveTasks,
+                registeredWaiters,
+                GetTaskDestinationPosition
+            );
+
             while (true)
             {
                 WaiterTask task = GetNextDispatchableTask(
@@ -1507,8 +1530,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                     // ciclo. Una nueva señal de estado volverá a intentarlo.
                     break;
                 }
-
-                if (!taskQueue.TryAssignTask(
+if (!taskQueue.TryAssignTask(
                         task,
                         waiter
                     ))
@@ -1524,8 +1546,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
                 if (!waiterAcceptedTask)
                 {
-                    taskQueue
-                        .TryReleaseTaskAssignment(task);
+                    ReleaseTaskAssignment(task);
 
                     Debug.LogWarning(
                         $"El camarero {waiter.WaiterId} no pudo " +
@@ -1550,6 +1571,8 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
                     break;
                 }
+
+                advancedWaiterService?.NotifyTaskAssigned(waiter, task);
 
                 Debug.Log(
                     $"Tarea {task.TaskId} ({task.Type}) asignada " +
@@ -1605,11 +1628,17 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                 }
             }
 
+            float candidateScore = advancedWaiterService != null
+                ? advancedWaiterService.ResolveDispatchScore(candidate)
+                : (int)candidate.Priority;
+            float selectedScore = selectedTask != null && advancedWaiterService != null
+                ? advancedWaiterService.ResolveDispatchScore(selectedTask)
+                : selectedTask != null ? (int)selectedTask.Priority : float.MinValue;
+
             if (selectedTask == null ||
-                candidate.Priority > selectedTask.Priority ||
-                (candidate.Priority == selectedTask.Priority &&
-                 candidate.CreationSequence <
-                    selectedTask.CreationSequence))
+                candidateScore > selectedScore ||
+                (Mathf.Approximately(candidateScore, selectedScore) &&
+                 candidate.CreationSequence < selectedTask.CreationSequence))
             {
                 selectedTask = candidate;
             }
@@ -1857,8 +1886,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
         List<WaiterTask> assignedTasks =
             new List<WaiterTask>(orderedTasks.Count);
-
-        for (int index = 0; index < orderedTasks.Count; index++)
+for (int index = 0; index < orderedTasks.Count; index++)
         {
             WaiterTask task = orderedTasks[index];
 
@@ -1932,6 +1960,11 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             return false;
         }
 
+        for (int index = 0; index < assignedTasks.Count; index++)
+        {
+            advancedWaiterService?.NotifyTaskAssigned(waiter, assignedTasks[index]);
+        }
+
         if (diagnosticReleased &&
             diagnosticObservedRun == null &&
             deliveryRun.Items.Count >= diagnosticTargetLineCount &&
@@ -1959,7 +1992,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
     /// <summary>
     /// Selecciona únicamente líneas ya preparadas, de la misma cocina y hasta
     /// la capacidad disponible. Primero completa la mesa ancla y después usa
-    /// una ruta de vecino más próximo entre las demás mesas.
+    /// la mejor ruta estimada por el proveedor de navegación entre destinos.
     /// </summary>
     private List<WaiterTask> BuildDeliveryRunTasks(
         WaiterTask anchorTask,
@@ -2023,7 +2056,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         {
             string selectedDestinationId = null;
             List<WaiterTask> selectedTasks = null;
-            float shortestDistanceSquared = float.MaxValue;
+            float shortestRouteMeters = float.MaxValue;
             long oldestSequence = long.MaxValue;
             bool selectedCompletesDestination = false;
             int remainingCapacity = capacity - result.Count;
@@ -2043,9 +2076,10 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
                 bool completesDestination =
                     destinationTasks.Count <= remainingCapacity;
-                float distanceSquared =
-                    (GetServicePosition(destinationAnchor) - currentPosition)
-                    .sqrMagnitude;
+                float routeMeters = EstimateWaiterRouteMeters(
+                    currentPosition,
+                    GetServicePosition(destinationAnchor)
+                );
                 long candidateOldestSequence =
                     destinationAnchor.CreationSequence;
 
@@ -2059,14 +2093,14 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                     continue;
                 }
 
-                bool closer = distanceSquared < shortestDistanceSquared;
+                bool closer = routeMeters < shortestRouteMeters;
                 bool sameDistanceOlder = Mathf.Approximately(
-                        distanceSquared,
-                        shortestDistanceSquared
+                        routeMeters,
+                        shortestRouteMeters
                     ) && candidateOldestSequence < oldestSequence;
                 bool stableDestinationTie = Mathf.Approximately(
-                        distanceSquared,
-                        shortestDistanceSquared
+                        routeMeters,
+                        shortestRouteMeters
                     ) && candidateOldestSequence == oldestSequence &&
                     selectedDestinationId != null &&
                     string.CompareOrdinal(
@@ -2081,7 +2115,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                 {
                     selectedDestinationId = pair.Key;
                     selectedTasks = destinationTasks;
-                    shortestDistanceSquared = distanceSquared;
+                    shortestRouteMeters = routeMeters;
                     oldestSequence = candidateOldestSequence;
                     selectedCompletesDestination = completesDestination;
                 }
@@ -2100,6 +2134,19 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         return result;
     }
 
+    private float EstimateWaiterRouteMeters(Vector3 origin, Vector3 destination)
+    {
+        if (advancedWaiterService != null &&
+            advancedWaiterService.RoutingService != null)
+        {
+            return advancedWaiterService.RoutingService.EstimateRouteMeters(
+                origin,
+                destination
+            );
+        }
+
+        return Vector3.Distance(origin, destination);
+    }
     private bool IsDeliveryRunResponsibilityCompatible(
         WaiterTask anchorTask,
         WaiterTask candidateTask
@@ -2208,11 +2255,20 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         return nextDeliveryRunId++;
     }
 
+    private bool ReleaseTaskAssignment(WaiterTask task)
+    {
+        if (task == null)
+            return false;
+
+        bool released = taskQueue != null && taskQueue.TryReleaseTaskAssignment(task);
+        return released;
+    }
+
     private void ReleaseAssignedDeliveryTasks(List<WaiterTask> tasks)
     {
         for (int index = tasks.Count - 1; index >= 0; index--)
         {
-            taskQueue.TryReleaseTaskAssignment(tasks[index]);
+            ReleaseTaskAssignment(tasks[index]);
         }
     }
 
@@ -2257,7 +2313,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
             if (task.State == WaiterTaskState.Assigned)
             {
-                taskQueue.TryReleaseTaskAssignment(task);
+                ReleaseTaskAssignment(task);
                 continue;
             }
 
@@ -2375,7 +2431,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             waiter.ClearAssignment();
         }
 
-        taskQueue.TryReleaseTaskAssignment(task);
+        ReleaseTaskAssignment(task);
     }
 
     /// <summary>
@@ -2478,6 +2534,19 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
             task.Order != null
                 ? task.Order.AssignedWaiter
                 : null;
+
+        ResolveAdvancedWaiterService();
+        if (advancedWaiterService != null && advancedWaiterService.IsOperational)
+        {
+            Waiter intelligent = advancedWaiterService.FindBestAvailableWaiter(
+                task,
+                registeredWaiters,
+                GetTaskDestinationPosition(task),
+                responsibleWaiter,
+                out _
+            );
+            if (intelligent != null) return intelligent;
+        }
 
         if (responsibleWaiter != null &&
             registeredWaiters.Contains(responsibleWaiter) &&
@@ -2697,7 +2766,7 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
                     );
                 }
 
-                taskQueue.TryReleaseTaskAssignment(task);
+                ReleaseTaskAssignment(task);
 
                 if (ReferenceEquals(waiter.AssignedOrder, task.Order) ||
                     ReferenceEquals(waiter.AssignedTable, task.Table))
@@ -2973,6 +3042,14 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
 
         error = string.Empty;
         return true;
+    }
+
+    private void ResolveAdvancedWaiterService()
+    {
+        if (advancedWaiterService != null) return;
+        advancedWaiterService = GetComponent<BistroBuilderAdvancedWaiterService>();
+        if (advancedWaiterService == null)
+            advancedWaiterService = FindFirstObjectByType<BistroBuilderAdvancedWaiterService>();
     }
 
     private void ResolveLineExecutionService()
