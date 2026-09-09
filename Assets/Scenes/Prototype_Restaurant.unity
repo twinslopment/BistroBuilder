@@ -12778,7 +12778,7 @@ MonoBehaviour:
   tableRegistry: {fileID: 263644926}
   placementValidationService: {fileID: 263644916}
   saveGameService: {fileID: 263644953}
-  defaultSaveSlot: 0
+  defaultSaveSlot: 1
   initialOpeningHour: 12
   initialClosingHour: 15
   minimumStockedIngredients: 4

@@ -33,7 +33,7 @@ public static class BistroBuilderPlaytestBuild
             scenes = new[] { ScenePath },
             locationPathName = output,
             target = BuildTarget.StandaloneWindows64,
-            options = BuildOptions.Development
+            options = BuildOptions.None
         };
 
         BuildReport report = BuildPipeline.BuildPlayer(options);

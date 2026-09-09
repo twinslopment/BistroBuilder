@@ -25,7 +25,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     [SerializeField] private BistroBuilderSaveGameService saveGameService;
 
     [Header("Nueva partida")]
-    [SerializeField, Range(0, 99)] private int defaultSaveSlot = 0;
+    [SerializeField, Range(1, 999)] private int defaultSaveSlot = 1;
     [SerializeField, Range(0, 23)] private int initialOpeningHour = 12;
     [SerializeField, Range(0, 23)] private int initialClosingHour = 15;
     [SerializeField, Min(1)] private int minimumStockedIngredients = 4;
@@ -41,14 +41,16 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     public event Action FirstServiceOpened;
 
     public BistroBuilderNewGamePhase Phase => state != null ? state.phase : BistroBuilderNewGamePhase.StartMenu;
-    public bool CanContinue => saveGameService != null && saveGameService.SlotExists(defaultSaveSlot);
+    public bool CanContinue => saveGameService != null && saveGameService.SlotExists(EffectiveSaveSlot);
     public string RestaurantName => state != null ? state.restaurantName : string.Empty;
     public string Briefing => state != null ? state.lastBriefing : string.Empty;
     public BistroBuilderOpeningPreflightReport LastPreflight => lastPreflight?.DeepClone();
+    private int EffectiveSaveSlot => Mathf.Clamp(defaultSaveSlot, 1, 999);
 
     private void Awake()
     {
         CacheDependencies();
+        defaultSaveSlot = EffectiveSaveSlot;
         EnsureState();
     }
 
@@ -76,7 +78,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             !advancedKitchenService.ValidateConfiguration(out error) ||
             !saveGameService.ValidateConfiguration(out error))
             return false;
-        if (initialOpeningHour == initialClosingHour || minimumStockedIngredients < 1 || minimumDiningSeats < 1)
+        if (defaultSaveSlot < 1 || defaultSaveSlot > 999 || initialOpeningHour == initialClosingHour || minimumStockedIngredients < 1 || minimumDiningSeats < 1)
         {
             error = "La configuracion inicial de apertura es invalida.";
             return false;
@@ -145,7 +147,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             premisesProfile = premisesProfile,
             initialOpeningHour = initialOpeningHour,
             initialClosingHour = initialClosingHour,
-            initialSaveSlot = defaultSaveSlot
+            initialSaveSlot = EffectiveSaveSlot
         };
 
         TryRunOpeningPreflight(out lastPreflight, out _);
@@ -327,9 +329,9 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             error = "El sistema de guardado esta ocupado.";
             return false;
         }
-        if (!saveGameService.TrySaveSlot(defaultSaveSlot, state.restaurantName, out error)) return false;
+        if (!saveGameService.TrySaveSlot(EffectiveSaveSlot, state.restaurantName, out error)) return false;
         state.initialSaveRequested = true;
-        state.initialSaveSlot = defaultSaveSlot;
+        state.initialSaveSlot = EffectiveSaveSlot;
         state.revision++;
         StateChanged?.Invoke();
         return true;
@@ -343,7 +345,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             error = "No existe una partida guardada para continuar.";
             return false;
         }
-        return saveGameService.TryLoadSlot(defaultSaveSlot, out error);
+        return saveGameService.TryLoadSlot(EffectiveSaveSlot, out error);
     }
 
     public BistroBuilderNewGameStateSnapshot CreateSnapshot()
@@ -362,7 +364,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
 
     public bool TryResetForLegacyLoad(out string error)
     {
-        state = new BistroBuilderNewGameStateSnapshot { initialSaveSlot = defaultSaveSlot };
+        state = new BistroBuilderNewGameStateSnapshot { initialSaveSlot = EffectiveSaveSlot };
         lastPreflight = new BistroBuilderOpeningPreflightReport();
         error = string.Empty;
         StateChanged?.Invoke();
@@ -439,7 +441,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
 
     private void EnsureState()
     {
-        if (state == null) state = new BistroBuilderNewGameStateSnapshot { initialSaveSlot = defaultSaveSlot };
+        if (state == null) state = new BistroBuilderNewGameStateSnapshot { initialSaveSlot = EffectiveSaveSlot };
     }
 
     private void CacheDependencies()
