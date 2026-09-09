@@ -1,0 +1,256 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+/// <summary>
+/// Instala de forma idempotente el puente OperationalPressure → cocina 367D.
+/// Restaura la escena byte a byte ante cualquier fallo posterior.
+/// </summary>
+public static class BistroBuilderMarketingOperationalPressureInstaller
+{
+    [MenuItem(
+        "Tools/Bistro Builder/Marketing/OperationalPressure - Instalar + validar",
+        false,
+        7242)]
+    private static void InstallFromMenu()
+    {
+        if (!TryInstall(out string report))
+        {
+            Debug.LogError(report);
+            EditorUtility.DisplayDialog("Bistro Builder — Marketing", report, "Aceptar");
+            return;
+        }
+
+        Debug.Log(report);
+        EditorUtility.DisplayDialog("Bistro Builder — Marketing", report, "Aceptar");
+    }
+
+    public static void InstallFromCommandLine()
+    {
+        EditorSceneManager.OpenScene(
+            BistroBuilderMarketing7APaths.MainScene,
+            OpenSceneMode.Single);
+        if (!TryInstall(out string report))
+        {
+            Debug.LogError(report);
+            throw new InvalidOperationException(report);
+        }
+
+        Debug.Log(report);
+    }
+
+    public static bool TryInstall(out string report)
+    {
+        report = string.Empty;
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            report = "Sal de Play Mode antes de instalar OperationalPressure.";
+            return false;
+        }
+
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            string.IsNullOrWhiteSpace(scene.path) || scene.isDirty)
+        {
+            report = "Abre y guarda la escena principal antes de instalar.";
+            return false;
+        }
+
+        bool preOk = BistroBuilderMarketingOperationalPressureSelfTest.Run(
+            out int prePassed,
+            out int preFailed,
+            out string preReport);
+        Debug.Log(preReport);
+        if (!preOk)
+        {
+            report = "Gate OperationalPressure previo falló: " + prePassed +
+                     " OK / " + preFailed + " fallos.";
+            return false;
+        }
+
+        BistroBuilderMarketingAverageTicketValidationResult previous =
+            BistroBuilderMarketingAverageTicketValidator.ValidateCurrentScene();
+        if (previous.Errors > 0)
+        {
+            report = "OperationalPressure requiere AverageTicket válido.\n" +
+                     previous.BuildReport();
+            return false;
+        }
+
+        string absoluteScene = Path.GetFullPath(scene.path);
+        byte[] sceneBackup = File.ReadAllBytes(absoluteScene);
+
+        try
+        {
+            GameObject gameSystems = FindUniqueGameSystems(scene);
+            if (gameSystems == null)
+                throw new InvalidOperationException(
+                    "No existe exactamente un GameSystems canónico.");
+
+            BistroBuilderMarketingService marketing =
+                RequireUnique<BistroBuilderMarketingService>(scene);
+            BistroBuilderMenuPortfolioService portfolio =
+                RequireUnique<BistroBuilderMenuPortfolioService>(scene);
+            BistroBuilderGeneralGameStateService general =
+                RequireUnique<BistroBuilderGeneralGameStateService>(scene);
+            GameClock clock = RequireUnique<GameClock>(scene);
+            BistroBuilderOrderLineExecutionService execution =
+                RequireUnique<BistroBuilderOrderLineExecutionService>(scene);
+
+            if (execution.gameObject != gameSystems)
+                throw new InvalidOperationException(
+                    "OrderLineExecutionService no vive en GameSystems.");
+
+            BistroBuilderMarketingPreparationDurationAdjustmentProvider provider =
+                EnsureUniqueOnHost<
+                    BistroBuilderMarketingPreparationDurationAdjustmentProvider>(
+                        scene,
+                        gameSystems);
+
+            SerializedObject providerSerialized =
+                new SerializedObject(provider);
+            SetObject(providerSerialized, "marketingService", marketing);
+            SetObject(providerSerialized, "menuPortfolioService", portfolio);
+            SetObject(providerSerialized, "generalGameStateService", general);
+            SetObject(providerSerialized, "gameClock", clock);
+            providerSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            if (!provider.ValidateConfiguration(out string providerError))
+                throw new InvalidOperationException(providerError);
+            if (!execution.ValidateConfiguration(out string executionError))
+                throw new InvalidOperationException(executionError);
+            if (!marketing.ValidateConfiguration(out string marketingError))
+                throw new InvalidOperationException(marketingError);
+
+            EditorUtility.SetDirty(provider);
+            EditorSceneManager.MarkSceneDirty(scene);
+
+            if (!EditorSceneManager.SaveScene(scene))
+                throw new InvalidOperationException(
+                    "Unity no pudo guardar la instalación OperationalPressure.");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            BistroBuilderMarketingOperationalPressureValidationResult validation =
+                BistroBuilderMarketingOperationalPressureValidator
+                    .ValidateCurrentScene();
+            bool finalOk = BistroBuilderMarketingOperationalPressureSelfTest.Run(
+                out int passed,
+                out int failed,
+                out string selfReport);
+
+            Debug.Log(validation.BuildReport());
+            Debug.Log(selfReport);
+
+            if (validation.Errors > 0 || !finalOk)
+                throw new InvalidOperationException(
+                    "OperationalPressure no superó gates: " +
+                    validation.Errors + " errores / " + failed + " fallos.");
+
+            report =
+                "OperationalPressure instalado correctamente.\n" +
+                validation.BuildReport() + "\n" +
+                "Autotest: " + passed + " OK / " + failed + " fallos.";
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+            try
+            {
+                File.WriteAllBytes(absoluteScene, sceneBackup);
+                AssetDatabase.ImportAsset(
+                    scene.path,
+                    ImportAssetOptions.ForceSynchronousImport);
+                EditorSceneManager.OpenScene(scene.path, OpenSceneMode.Single);
+            }
+            catch (Exception rollbackError)
+            {
+                Debug.LogException(rollbackError);
+            }
+
+            report =
+                "La instalación OperationalPressure falló y la escena fue restaurada. " +
+                exception.Message;
+            return false;
+        }
+    }
+
+    private static void SetObject(
+        SerializedObject serialized,
+        string fieldName,
+        UnityEngine.Object value)
+    {
+        SerializedProperty property = serialized.FindProperty(fieldName);
+        if (property == null)
+            throw new InvalidOperationException(
+                serialized.targetObject.name + " no expone " + fieldName + ".");
+        property.objectReferenceValue = value;
+    }
+
+    private static GameObject FindUniqueGameSystems(Scene scene)
+    {
+        GameObject found = null;
+        int count = 0;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (transform != null && transform.name == "GameSystems")
+            {
+                found = transform.gameObject;
+                count++;
+            }
+        }
+        return count == 1 ? found : null;
+    }
+
+    private static T RequireUnique<T>(Scene scene) where T : Component
+    {
+        T[] matches = FindSceneComponents<T>(scene);
+        if (matches.Length != 1)
+            throw new InvalidOperationException(
+                "Se esperaba exactamente un " + typeof(T).Name +
+                "; hay " + matches.Length + ".");
+        return matches[0];
+    }
+
+    private static T EnsureUniqueOnHost<T>(
+        Scene scene,
+        GameObject host)
+        where T : Component
+    {
+        T[] matches = FindSceneComponents<T>(scene);
+        if (matches.Length > 1)
+            throw new InvalidOperationException(
+                "Hay varios " + typeof(T).Name + ".");
+
+        T component = matches.Length == 1
+            ? matches[0]
+            : Undo.AddComponent<T>(host);
+
+        if (component.gameObject != host)
+            throw new InvalidOperationException(
+                typeof(T).Name + " no vive en GameSystems.");
+        return component;
+    }
+
+    private static T[] FindSceneComponents<T>(Scene scene) where T : Component
+    {
+        var result = new List<T>();
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            T[] values = root.GetComponentsInChildren<T>(true);
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (values[index] != null)
+                    result.Add(values[index]);
+            }
+        }
+        return result.ToArray();
+    }
+}

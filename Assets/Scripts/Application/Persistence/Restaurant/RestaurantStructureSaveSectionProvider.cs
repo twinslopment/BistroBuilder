@@ -981,11 +981,27 @@ public sealed class RestaurantStructureSaveSectionProvider :
                     ? result.TechnicalMessage
                     : result.Status.ToString();
 
+        string conflict = string.Empty;
+        if (result.ConflictingFootprint != null)
+        {
+            RestaurantPlaceableObject other =
+                result.ConflictingFootprint.GetComponent<RestaurantPlaceableObject>();
+            conflict = " Conflicto con " +
+                (other != null && !string.IsNullOrWhiteSpace(other.InstanceId)
+                    ? other.InstanceId
+                    : result.ConflictingFootprint.name) + ".";
+        }
+        else if (result.ConflictingObstacle != null)
+        {
+            conflict = " Conflicto con obstáculo " +
+                result.ConflictingObstacle.name + ".";
+        }
+
         return "La posición guardada de " +
                placeable.DisplayName +
                " ya no es válida: " +
                diagnostic +
-               ".";
+               "." + conflict;
     }
 
     private static string BuildLoadedInstanceName(

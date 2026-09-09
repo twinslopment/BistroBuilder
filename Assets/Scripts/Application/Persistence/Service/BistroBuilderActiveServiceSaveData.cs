@@ -566,10 +566,16 @@ public sealed class BistroBuilderCustomerArrivalPlanSaveRecord
 {
     public int groupSize;
     public int serviceMode;
+    public float delayBeforeArrivalSeconds;
+    public BistroBuilderCustomerAcquisitionProfile acquisition =
+        BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
     public bool TryValidate(out string error)
     {
         if (groupSize < 1 ||
+            float.IsNaN(delayBeforeArrivalSeconds) ||
+            float.IsInfinity(delayBeforeArrivalSeconds) ||
+            delayBeforeArrivalSeconds < 0f || delayBeforeArrivalSeconds > 120f ||
             !BistroBuilderServiceModeUtility.IsDefined(
                 (BistroBuilderServiceMode)serviceMode
             ))
@@ -577,6 +583,10 @@ public sealed class BistroBuilderCustomerArrivalPlanSaveRecord
             error = "El plan contiene una llegada futura inválida.";
             return false;
         }
+
+        acquisition ??= BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
+        if (!acquisition.TryValidate(out error))
+            return false;
 
         error = string.Empty;
         return true;
@@ -597,10 +607,13 @@ public sealed class BistroBuilderCustomerGroupSaveRecord
     public List<string> occupiedBarSpotIds = new List<string>();
     public BistroBuilderSaveVector3 worldPosition;
     public BistroBuilderSaveQuaternion worldRotation;
+    public BistroBuilderCustomerAcquisitionProfile acquisition =
+        BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
     public bool TryValidate(out string error)
     {
         anchorBarSpotId = BistroBuilderOrderIdUtility.Normalize(anchorBarSpotId);
+        acquisition ??= BistroBuilderCustomerAcquisitionProfile.CreateBaseline();
 
         if (groupId < 1 || groupSize < 1 ||
             !Enum.IsDefined(typeof(CustomerGroupState), state) ||
@@ -657,6 +670,9 @@ public sealed class BistroBuilderCustomerGroupSaveRecord
             error = "La plaza ancla no pertenece a la ocupación del grupo.";
             return false;
         }
+
+        if (!acquisition.TryValidate(out error))
+            return false;
 
         error = string.Empty;
         return true;
@@ -729,6 +745,11 @@ public sealed class BistroBuilderWaiterRuntimeSaveRecord
     public int waiterId;
     public BistroBuilderSaveVector3 worldPosition;
     public BistroBuilderSaveQuaternion worldRotation;
+    public bool hasAdvancedWaiterProfile;
+    public string primaryZoneId = string.Empty;
+    public List<string> secondaryZoneIds = new List<string>();
+    public int simultaneousPlanCapacity;
+    public float serviceEfficiency;
 
     public bool TryValidate(out string error)
     {
@@ -737,6 +758,19 @@ public sealed class BistroBuilderWaiterRuntimeSaveRecord
         {
             error = "service.runtime contiene un camarero inválido.";
             return false;
+        }
+
+        if (hasAdvancedWaiterProfile)
+        {
+            primaryZoneId = BistroBuilderAdvancedWaiterProfile.NormalizeZone(primaryZoneId);
+            secondaryZoneIds ??= new List<string>();
+            if (simultaneousPlanCapacity < 2 || simultaneousPlanCapacity > 6 ||
+                float.IsNaN(serviceEfficiency) || float.IsInfinity(serviceEfficiency) ||
+                serviceEfficiency < 0.75f || serviceEfficiency > 1.25f)
+            {
+                error = "service.runtime contiene un perfil avanzado de camarero inválido.";
+                return false;
+            }
         }
 
         error = string.Empty;

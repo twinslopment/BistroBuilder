@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d543735f722f19a419fae9747d43a18d, type: 3}
+  m_Name: BB_Climate_Settings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderClimateSettings
+  baseSeed: 17391
+  deriveSeedFromGameId: 1
+  forecastDays: 5
+  weatherStepHours: 3
+  diurnalAmplitudeC: 4.5
+  dailyVariationC: 2.5
+  snowThresholdC: 1.5
+  monthlyMeanTemperatureC:
+  - 7
+  - 8
+  - 11
+  - 14
+  - 18
+  - 22
+  - 25
+  - 25
+  - 21
+  - 16
+  - 11
+  - 8
+  monthlyCloudChance:
+  - 0.58
+  - 0.55
+  - 0.5
+  - 0.46
+  - 0.4
+  - 0.34
+  - 0.3
+  - 0.31
+  - 0.38
+  - 0.47
+  - 0.55
+  - 0.59
+  monthlyPrecipitationChance:
+  - 0.2
+  - 0.18
+  - 0.17
+  - 0.16
+  - 0.14
+  - 0.11
+  - 0.08
+  - 0.09
+  - 0.13
+  - 0.17
+  - 0.2
+  - 0.21
+  monthlyWindChance:
+  - 0.2
+  - 0.2
+  - 0.18
+  - 0.17
+  - 0.15
+  - 0.13
+  - 0.12
+  - 0.12
+  - 0.15
+  - 0.18
+  - 0.2
+  - 0.21

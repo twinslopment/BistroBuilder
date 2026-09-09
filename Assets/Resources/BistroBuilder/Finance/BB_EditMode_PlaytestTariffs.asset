@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abd539732b3c72746b3d94972cef62d3, type: 3}
+  m_Name: BB_EditMode_PlaytestTariffs
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderEditFinanceTariffTable
+  sourceReference: Bistro Builder owner-authorized provisional playtest tariff set
+  tariffRevision: playtest-2026-09-08-r1
+  rates:
+  - definitionId: wall.default
+    addedSignedCentsPerUnit: 1500
+    modifiedSignedCentsPerUnit: 700
+    removedSignedCentsPerUnit: -300
+    unit: 2
+    pricedChanges: 7
+  - definitionId: door
+    addedSignedCentsPerUnit: 12000
+    modifiedSignedCentsPerUnit: 5000
+    removedSignedCentsPerUnit: -2500
+    unit: 1
+    pricedChanges: 7
+  - definitionId: window
+    addedSignedCentsPerUnit: 9000
+    modifiedSignedCentsPerUnit: 4000
+    removedSignedCentsPerUnit: -1800
+    unit: 1
+    pricedChanges: 7
+  - definitionId: finish.floor.default
+    addedSignedCentsPerUnit: 2200
+    modifiedSignedCentsPerUnit: 1100
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7
+  - definitionId: finish.wall.default
+    addedSignedCentsPerUnit: 1800
+    modifiedSignedCentsPerUnit: 900
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7
+  - definitionId: zone.dining
+    addedSignedCentsPerUnit: 150
+    modifiedSignedCentsPerUnit: 75
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7
+  - definitionId: zone.kitchen
+    addedSignedCentsPerUnit: 180
+    modifiedSignedCentsPerUnit: 90
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7
+  - definitionId: zone.bar
+    addedSignedCentsPerUnit: 180
+    modifiedSignedCentsPerUnit: 90
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7
+  - definitionId: zone.terrace
+    addedSignedCentsPerUnit: 120
+    modifiedSignedCentsPerUnit: 60
+    removedSignedCentsPerUnit: 0
+    unit: 3
+    pricedChanges: 7

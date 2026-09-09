@@ -35,6 +35,11 @@ public sealed class Waiter : MonoBehaviour
     private string assignedOrderLineId = string.Empty;
     private BistroBuilderDeliveryRun assignedDeliveryRun;
 
+    // 4D: elegibilidad puramente runtime. No se serializa ni convierte a
+    // Waiter en autoridad de Personal. Sin 4D permanece true y conserva el
+    // comportamiento histórico del agente operativo.
+    private bool staffServiceEligible = true;
+
     public event Action<Waiter, WaiterState> StateChanged;
 
     public int WaiterId => waiterId;
@@ -45,6 +50,7 @@ public sealed class Waiter : MonoBehaviour
     public RestaurantOrder AssignedOrder => assignedOrder;
     public string AssignedOrderLineId => assignedOrderLineId ?? string.Empty;
     public BistroBuilderDeliveryRun AssignedDeliveryRun => assignedDeliveryRun;
+    public bool IsStaffServiceEligible => staffServiceEligible;
 
     public BistroBuilderServiceDestinationKind AssignedDestinationKind =>
         assignedTable != null
@@ -73,12 +79,42 @@ public sealed class Waiter : MonoBehaviour
         BistroBuilderOrderIdUtility.IsValid(AssignedOrderLineId);
 
     public bool IsAvailable =>
+        staffServiceEligible &&
         currentState == WaiterState.Idle &&
         assignedTable == null &&
         assignedBarSpot == null &&
         assignedOrder == null &&
         string.IsNullOrEmpty(AssignedOrderLineId) &&
         assignedDeliveryRun == null;
+
+    /// <summary>
+    /// Activa o desactiva el agente para asignaciones operativas de una sesión
+    /// de Personal. Desactivar un camarero ocupado se rechaza para no romper
+    /// ninguna tarea ya validada.
+    /// </summary>
+    public bool TrySetStaffServiceEligibility(bool eligible)
+    {
+        if (staffServiceEligible == eligible)
+        {
+            return true;
+        }
+
+        bool hasNoOperationalAssignment =
+            currentState == WaiterState.Idle &&
+            assignedTable == null &&
+            assignedBarSpot == null &&
+            assignedOrder == null &&
+            string.IsNullOrEmpty(AssignedOrderLineId) &&
+            assignedDeliveryRun == null;
+
+        if (!eligible && !hasNoOperationalAssignment)
+        {
+            return false;
+        }
+
+        staffServiceEligible = eligible;
+        return true;
+    }
 
     public bool AssignTable(RestaurantTable table)
     {

@@ -1253,7 +1253,7 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
     /// <summary>
     /// Consume atómicamente todas las líneas servidas de una comanda.
     ///
-    /// Las líneas canceladas o ya consumidas se conservan. Cualquier línea
+    /// Las líneas canceladas, fallidas o ya consumidas se conservan. Cualquier línea
     /// todavía en cocina, reparto o pase rechaza la operación completa.
     /// </summary>
     public BistroBuilderCanonicalOrderOperationResult TryCompleteServedOrder(
@@ -1308,7 +1308,8 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
             }
 
             if (line.State == BistroBuilderCanonicalOrderLineState.Consumed ||
-                line.State == BistroBuilderCanonicalOrderLineState.Cancelled)
+                line.State == BistroBuilderCanonicalOrderLineState.Cancelled ||
+                line.State == BistroBuilderCanonicalOrderLineState.Failed)
             {
                 continue;
             }
@@ -1405,6 +1406,364 @@ public sealed class BistroBuilderCanonicalOrderService : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Resuelve un plato contra la misma carta/oferta usada por la comanda.
+    /// El bloque 11 lo utiliza antes de reservar stock para una revisión.
+    /// </summary>
+    public bool TryResolveOrderableDishForExistingOrder(
+        string orderId,
+        string dishId,
+        out BistroBuilderResolvedOrderDish resolvedDish,
+        out string error)
+    {
+        resolvedDish = default(BistroBuilderResolvedOrderDish);
+        if (!TryGetOrderSnapshot(orderId, out BistroBuilderCanonicalOrder order) ||
+            order == null)
+        {
+            error = "No existe la comanda indicada.";
+            return false;
+        }
+        var resolver = new MenuDishResolver(menuService, offerService, order.ServiceMode);
+        return resolver.TryResolveOrderableDish(
+            dishId, order.MealService, out resolvedDish, out error);
+    }
+
+    /// <summary>
+    /// Añade una nueva línea trazable a partir de otra línea de la comanda.
+    /// La operación canónica es atómica; inventario se coordina en la capa 11.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult TryAddAdvancedLineFromSource(
+        string orderId,
+        string sourceLineId,
+        string explicitLineId,
+        string dishId,
+        BistroBuilderAdvancedOrderLineOriginKind originKind,
+        BistroBuilderAdvancedOrderBillingMode billingMode,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string reason,
+        string actorReferenceId,
+        BistroBuilderCanonicalOrderLineState targetState,
+        out BistroBuilderCanonicalOrderLine createdLineSnapshot)
+    {
+        createdLineSnapshot = null;
+        if (!TryResolveOrder(
+                orderId, out BistroBuilderCanonicalOrder order,
+                out BistroBuilderCanonicalOrderOperationResult failure))
+            return failure;
+
+        string sourceId = BistroBuilderOrderIdUtility.Normalize(sourceLineId);
+        if (!order.TryGetLine(sourceId, out BistroBuilderCanonicalOrderLine source) ||
+            source == null)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                "No existe la línea origen de la revisión.",
+                order.OrderId, sourceId);
+        }
+
+        string newLineId = BistroBuilderOrderIdUtility.Normalize(explicitLineId);
+        if (!BistroBuilderOrderIdUtility.IsValid(newLineId))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidLineId,
+                "La nueva identidad de línea no es válida.",
+                order.OrderId, newLineId);
+        }
+        if (orderByLineId.ContainsKey(newLineId))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.DuplicateLineId,
+                "La nueva identidad de línea ya existe.",
+                order.OrderId, newLineId);
+        }
+
+        var resolver = new MenuDishResolver(menuService, offerService, order.ServiceMode);
+        if (!resolver.TryResolveOrderableDish(
+                dishId, order.MealService,
+                out BistroBuilderResolvedOrderDish dish, out string resolveError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.DishUnavailable,
+                resolveError, order.OrderId, sourceId);
+        }
+
+        var consumers = new List<string>(source.ConsumerCustomerIds.Count);
+        for (int index = 0; index < source.ConsumerCustomerIds.Count; index++)
+            consumers.Add(source.ConsumerCustomerIds[index]);
+
+        var newLine = new BistroBuilderCanonicalOrderLine(
+            newLineId,
+            dish,
+            source.PrimaryCustomerId,
+            consumers,
+            source.CourseIndex);
+        if (!newLine.TryApplyAdvancedMetadata(
+                originKind, billingMode, sourceId, incidentKind,
+                reason, actorReferenceId, out string metadataError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                metadataError, order.OrderId, sourceId);
+        }
+
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        if (!candidate.TryAddAdvancedLine(newLine, out string addError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                addError, order.OrderId, sourceId);
+        }
+
+        if (targetState == BistroBuilderCanonicalOrderLineState.Submitted ||
+            targetState == BistroBuilderCanonicalOrderLineState.Queued)
+        {
+            if (!candidate.TryTransitionLine(
+                    newLineId,
+                    BistroBuilderCanonicalOrderLineState.Submitted,
+                    actorReferenceId,
+                    out string submitError))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                    submitError, order.OrderId, newLineId);
+            }
+        }
+        if (targetState == BistroBuilderCanonicalOrderLineState.Queued)
+        {
+            if (!candidate.TryTransitionLine(
+                    newLineId,
+                    BistroBuilderCanonicalOrderLineState.Queued,
+                    actorReferenceId,
+                    out string queueError))
+            {
+                return Failure(
+                    BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                    queueError, order.OrderId, newLineId);
+            }
+        }
+        else if (targetState != BistroBuilderCanonicalOrderLineState.Draft &&
+                 targetState != BistroBuilderCanonicalOrderLineState.Submitted)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                "Una línea revisada solo puede incorporarse como Draft, Submitted o Queued.",
+                order.OrderId, newLineId);
+        }
+
+        if (!candidate.TryValidate(out string validationError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                validationError, order.OrderId, newLineId);
+        }
+        if (!TryCommitAdvancedCandidate(
+                order, candidate,
+                BistroBuilderCanonicalOrderChangeType.LineAdded,
+                newLineId,
+                "Línea avanzada añadida: " + originKind + ".",
+                out string commitError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                commitError, order.OrderId, newLineId);
+        }
+        candidate.TryGetLine(newLineId, out BistroBuilderCanonicalOrderLine stored);
+        createdLineSnapshot = stored != null ? stored.Clone() : null;
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Línea avanzada añadida.", candidate.OrderId, newLineId);
+    }
+
+    public BistroBuilderCanonicalOrderOperationResult TryRegisterAdvancedLineIncident(
+        string lineId,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string reason,
+        string actorReferenceId)
+    {
+        string normalizedLineId = BistroBuilderOrderIdUtility.Normalize(lineId);
+        if (!orderByLineId.TryGetValue(
+                normalizedLineId, out BistroBuilderCanonicalOrder order) || order == null)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                "No existe la línea indicada.", string.Empty, normalizedLineId);
+        }
+        if (order.IsTerminal)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.OrderAlreadyTerminal,
+                "La comanda ya está cerrada.", order.OrderId, normalizedLineId);
+        }
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        if (!candidate.TryRegisterAdvancedIncident(
+                normalizedLineId, incidentKind, reason, actorReferenceId,
+                out string incidentError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                incidentError, order.OrderId, normalizedLineId);
+        }
+        if (!TryCommitAdvancedCandidate(
+                order, candidate,
+                BistroBuilderCanonicalOrderChangeType.LineIncidentChanged,
+                normalizedLineId,
+                "Incidencia registrada en la línea.",
+                out string commitError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                commitError, order.OrderId, normalizedLineId);
+        }
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Incidencia registrada.", candidate.OrderId, normalizedLineId);
+    }
+    /// <summary>Cancelación parcial permitida únicamente antes de preparar.</summary>
+    public BistroBuilderCanonicalOrderOperationResult TryCancelAdvancedLine(
+        string lineId,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string reason,
+        string actorReferenceId)
+    {
+        string normalizedLineId = BistroBuilderOrderIdUtility.Normalize(lineId);
+        if (!orderByLineId.TryGetValue(
+                normalizedLineId, out BistroBuilderCanonicalOrder order) || order == null)
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                "No existe la línea indicada.", string.Empty, normalizedLineId);
+        }
+        if (!order.TryGetLine(normalizedLineId, out BistroBuilderCanonicalOrderLine source) ||
+            !BistroBuilderAdvancedOrderMutationPolicy.CanCancel(source.State))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.MutationRestricted,
+                source != null
+                    ? BistroBuilderAdvancedOrderMutationPolicy.ResolveRestrictionLabel(source.State)
+                    : "La línea no está disponible.",
+                order.OrderId, normalizedLineId);
+        }
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        if (incidentKind != BistroBuilderAdvancedOrderIncidentKind.None &&
+            !candidate.TryRegisterAdvancedIncident(
+                normalizedLineId, incidentKind, reason, actorReferenceId, out string incidentError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                incidentError, order.OrderId, normalizedLineId);
+        }
+        if (!candidate.TryTransitionLine(
+                normalizedLineId,
+                BistroBuilderCanonicalOrderLineState.Cancelled,
+                actorReferenceId,
+                out string cancelError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                cancelError, order.OrderId, normalizedLineId);
+        }
+        if (!TryCommitAdvancedCandidate(
+                order, candidate,
+                BistroBuilderCanonicalOrderChangeType.LineSuperseded,
+                normalizedLineId,
+                "Línea cancelada/revisada antes de preparación.",
+                out string commitError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                commitError, order.OrderId, normalizedLineId);
+        }
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Línea cancelada.", candidate.OrderId, normalizedLineId);
+    }
+
+    /// <summary>
+    /// Cierra como Failed una línea cuya preparación ya empezó. Inventario no
+    /// se repone: los ingredientes físicos consumidos siguen consumidos.
+    /// </summary>
+    public BistroBuilderCanonicalOrderOperationResult TryFailAdvancedLine(
+        string lineId,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string reason,
+        string actorReferenceId)
+    {
+        string normalizedLineId = BistroBuilderOrderIdUtility.Normalize(lineId);
+        if (!orderByLineId.TryGetValue(
+                normalizedLineId, out BistroBuilderCanonicalOrder order) || order == null ||
+            !order.TryGetLine(normalizedLineId, out BistroBuilderCanonicalOrderLine source))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.LineNotFound,
+                "No existe la línea indicada.", string.Empty, normalizedLineId);
+        }
+        if (!BistroBuilderAdvancedOrderMutationPolicy.CanReplaceAfterIncident(source.State))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.MutationRestricted,
+                BistroBuilderAdvancedOrderMutationPolicy.ResolveRestrictionLabel(source.State),
+                order.OrderId, normalizedLineId);
+        }
+        BistroBuilderCanonicalOrder candidate = order.Clone();
+        if (!candidate.TryRegisterAdvancedIncident(
+                normalizedLineId, incidentKind, reason, actorReferenceId,
+                out string incidentError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidRequest,
+                incidentError, order.OrderId, normalizedLineId);
+        }
+        if (!candidate.TryTransitionLine(
+                normalizedLineId,
+                BistroBuilderCanonicalOrderLineState.Failed,
+                actorReferenceId,
+                out string failError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidTransition,
+                failError, order.OrderId, normalizedLineId);
+        }
+        if (!TryCommitAdvancedCandidate(
+                order, candidate,
+                BistroBuilderCanonicalOrderChangeType.LineSuperseded,
+                normalizedLineId,
+                "Línea cerrada por incidencia tras iniciar preparación.",
+                out string commitError))
+        {
+            return Failure(
+                BistroBuilderCanonicalOrderFailureReason.InvalidSnapshot,
+                commitError, order.OrderId, normalizedLineId);
+        }
+        return BistroBuilderCanonicalOrderOperationResult.Success(
+            "Incidencia aplicada a la línea.", candidate.OrderId, normalizedLineId);
+    }
+
+    private bool TryCommitAdvancedCandidate(
+        BistroBuilderCanonicalOrder original,
+        BistroBuilderCanonicalOrder candidate,
+        BistroBuilderCanonicalOrderChangeType changeType,
+        string lineId,
+        string description,
+        out string error)
+    {
+        if (original == null || candidate == null)
+        {
+            error = "La mutación avanzada no contiene una comanda válida.";
+            return false;
+        }
+        if (!candidate.TryValidate(out error))
+            return false;
+        int orderIndex = orders.IndexOf(original);
+        if (orderIndex < 0)
+        {
+            error = "La comanda original ya no figura en el runtime.";
+            return false;
+        }
+        UnindexOrder(original);
+        orders[orderIndex] = candidate;
+        IndexOrder(candidate);
+        Revision++;
+        PublishChange(changeType, candidate.OrderId, lineId, description);
+        error = string.Empty;
+        return true;
+    }
     public BistroBuilderCanonicalOrderOperationResult TryCancelOrder(
         string orderId,
         string actorReferenceId

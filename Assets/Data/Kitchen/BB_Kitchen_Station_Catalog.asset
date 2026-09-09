@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f466723d43d094c47938551afe5ac0fb, type: 3}
+  m_Name: BB_Kitchen_Station_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderKitchenStationCatalog
+  stations:
+  - stationId: station.cold
+    displayName: "Preparaci\xF3n fr\xEDa"
+    kind: 0
+    baseCapacity: 2
+    speedBasisPoints: 10500
+    qualityModifierBasisPoints: 0
+    reliabilityBasisPoints: 9980
+    equipmentTier: 1
+  - stationId: station.range
+    displayName: Fuegos
+    kind: 1
+    baseCapacity: 2
+    speedBasisPoints: 10000
+    qualityModifierBasisPoints: 0
+    reliabilityBasisPoints: 9960
+    equipmentTier: 1
+  - stationId: station.grill
+    displayName: Plancha / parrilla
+    kind: 2
+    baseCapacity: 2
+    speedBasisPoints: 9800
+    qualityModifierBasisPoints: 100
+    reliabilityBasisPoints: 9950
+    equipmentTier: 1
+  - stationId: station.fryer
+    displayName: Freidora
+    kind: 6
+    baseCapacity: 2
+    speedBasisPoints: 10500
+    qualityModifierBasisPoints: -50
+    reliabilityBasisPoints: 9940
+    equipmentTier: 1
+  - stationId: station.oven
+    displayName: Horno
+    kind: 3
+    baseCapacity: 2
+    speedBasisPoints: 9500
+    qualityModifierBasisPoints: 150
+    reliabilityBasisPoints: 9960
+    equipmentTier: 1
+  - stationId: station.pastry
+    displayName: "Pasteler\xEDa"
+    kind: 4
+    baseCapacity: 1
+    speedBasisPoints: 9500
+    qualityModifierBasisPoints: 200
+    reliabilityBasisPoints: 9980
+    equipmentTier: 1
+  - stationId: station.plating
+    displayName: Emplatado
+    kind: 5
+    baseCapacity: 3
+    speedBasisPoints: 12000
+    qualityModifierBasisPoints: 100
+    reliabilityBasisPoints: 9990
+    equipmentTier: 1
+  - stationId: station.bar
+    displayName: Bebidas / pase de bar
+    kind: 7
+    baseCapacity: 2
+    speedBasisPoints: 11500
+    qualityModifierBasisPoints: 0
+    reliabilityBasisPoints: 9990
+    equipmentTier: 1
+  routes:
+  - dishId: dish_aceitunas_alinadas
+    stationIds:
+    - station.cold
+    - station.plating
+  - dishId: dish_agua_mineral
+    stationIds:
+    - station.bar
+  - dishId: dish_copa_vino
+    stationIds:
+    - station.bar
+  - dishId: dish_fabada_asturiana
+    stationIds:
+    - station.range
+    - station.plating
+  - dishId: dish_merluza_plancha
+    stationIds:
+    - station.grill
+    - station.plating
+  - dishId: dish_pincho_tortilla
+    stationIds:
+    - station.bar
+  - dishId: dish_refresco
+    stationIds:
+    - station.bar
+  - dishId: dish_tarta_queso
+    stationIds:
+    - station.pastry
+    - station.plating

@@ -159,6 +159,58 @@ public sealed class BistroBuilderCanonicalOrder
         return true;
     }
 
+    internal bool TryAddAdvancedLine(
+        BistroBuilderCanonicalOrderLine line,
+        out string error)
+    {
+        if (IsTerminal)
+        {
+            error = "La comanda ya está en un estado terminal.";
+            return false;
+        }
+        if (line == null)
+        {
+            error = "La nueva línea avanzada es nula.";
+            return false;
+        }
+        if (!line.TryValidate(out error))
+            return false;
+        if (TryGetLine(line.LineId, out _))
+        {
+            error = "La nueva línea avanzada ya existe en la comanda.";
+            return false;
+        }
+        lines.Add(line);
+        revision++;
+        RefreshDerivedState();
+        error = string.Empty;
+        return true;
+    }
+
+    internal bool TryRegisterAdvancedIncident(
+        string lineId,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string reason,
+        string actorReferenceId,
+        out string error)
+    {
+        if (IsTerminal)
+        {
+            error = "La comanda ya está en un estado terminal.";
+            return false;
+        }
+        if (!TryGetLine(lineId, out BistroBuilderCanonicalOrderLine line) || line == null)
+        {
+            error = "La línea indicada no pertenece a la comanda.";
+            return false;
+        }
+        if (!line.TryRegisterAdvancedIncident(
+                incidentKind, reason, actorReferenceId, out error))
+            return false;
+        revision++;
+        RefreshDerivedState();
+        return true;
+    }
     internal bool TryCancel(
         string actorReferenceId,
         out string error
@@ -202,9 +254,7 @@ public sealed class BistroBuilderCanonicalOrder
         {
             BistroBuilderCanonicalOrderLine line = lines[index];
 
-            if (line != null &&
-                line.State !=
-                    BistroBuilderCanonicalOrderLineState.Cancelled)
+            if (line != null && line.IsChargeable)
             {
                 total += line.PriceCentsAtOrder;
             }
@@ -433,18 +483,23 @@ public sealed class BistroBuilderCanonicalOrder
             return BistroBuilderCanonicalOrderState.Cancelled;
         }
 
-        if (failed > 0 && failed + cancelled + consumed == total)
+        // Una incidencia resuelta a nivel de línea no debe convertir toda la
+        // comanda en Failed si existe al menos una consumición válida. Las
+        // líneas Failed del bloque 11 se comportan como retiradas/no facturables
+        // para el agregado, pero una comanda compuesta solo por fallos sigue
+        // siendo Failed.
+        if (failed > 0 && failed + cancelled == total)
         {
             return BistroBuilderCanonicalOrderState.Failed;
         }
 
-        if (consumed + cancelled == total)
+        if (consumed > 0 && consumed + cancelled + failed == total)
         {
             return BistroBuilderCanonicalOrderState.Completed;
         }
 
         if (served > 0 &&
-            served + consumed + cancelled == total)
+            served + consumed + cancelled + failed == total)
         {
             return BistroBuilderCanonicalOrderState.Served;
         }
@@ -462,7 +517,7 @@ public sealed class BistroBuilderCanonicalOrder
         // ReadyForPickup podría provocar que sistemas futuros tratasen toda
         // la comanda como un único lote aún pendiente de recogida.
         if (ready > 0 &&
-            ready + cancelled == total)
+            ready + cancelled + failed == total)
         {
             return BistroBuilderCanonicalOrderState.ReadyForPickup;
         }
@@ -473,7 +528,7 @@ public sealed class BistroBuilderCanonicalOrder
             return BistroBuilderCanonicalOrderState.InProgress;
         }
 
-        if (submitted > 0 && submitted + cancelled == total)
+        if (submitted > 0 && submitted + cancelled + failed == total)
         {
             return BistroBuilderCanonicalOrderState.Submitted;
         }

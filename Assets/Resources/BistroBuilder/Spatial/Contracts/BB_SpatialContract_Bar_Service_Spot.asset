@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eea3de83387e0440a46d64b2cbcc632, type: 3}
+  m_Name: BB_SpatialContract_Bar_Service_Spot
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSpatialContractDefinition
+  contractId: spatial.contract.bar.service_spot
+  familyId: work.bar
+  contractVersion: 3
+  preferredProxyMode: 2
+  traitIds:
+  - bar.operational
+  - service.bar
+  - transfer.bar
+  - work.edge
+  ports:
+  - portId: customer
+    kind: 3
+    localPosition: {x: 0, y: 0, z: 0}
+    localForward: {x: 0, y: 0, z: 1}
+    radius: 0.26
+    conflictMode: 0
+  - portId: waiter.service
+    kind: 1
+    localPosition: {x: 0, y: 0, z: -0.55}
+    localForward: {x: 0, y: 0, z: 1}
+    radius: 0.3
+    conflictMode: 1
+  - portId: bar.transfer
+    kind: 4
+    localPosition: {x: 0, y: 0, z: -0.2}
+    localForward: {x: 0, y: 0, z: 1}
+    radius: 0.24
+    conflictMode: 2
+  workEdges:
+  - edgeId: edge.bar.service
+    localStart: {x: -0.35, y: 0, z: 0}
+    localEnd: {x: 0.35, y: 0, z: 0}
+    serviceDepth: 0.55
+    conflictMode: 1
+  gates: []
