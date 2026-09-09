@@ -62,7 +62,9 @@ public static class BistroBuilderEditBlock18SceneValidator
 
     // Scene-scoped validation can be reused by the installer and by real Play Mode tests.
     // Pending production tariffs are reported separately from broken scene wiring.
-    public static bool ValidateScene(Scene scene)
+    public static bool ValidateScene(Scene scene) => ValidateScene(scene, BistroBuilderEditBlock18Installer.ScenePath);
+
+    public static bool ValidateScene(Scene scene, string expectedScenePath)
     {
         LastPassed = 0;
         LastFailed = 0;
@@ -74,7 +76,7 @@ public static class BistroBuilderEditBlock18SceneValidator
         if (scene.isDirty && !Application.isPlaying)
             report.AppendLine("Validation uses the current in-memory scene, including unsaved changes.");
         Check(scene.IsValid() && scene.isLoaded &&
-            scene.path == BistroBuilderEditBlock18Installer.ScenePath,
+            scene.path == expectedScenePath,
             "Escena canónica cargada", report);
 
         var spatial = RequireUnique<BistroBuilderSpatialInteractionService>(scene, report);

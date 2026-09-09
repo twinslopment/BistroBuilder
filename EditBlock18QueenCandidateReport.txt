@@ -1,4 +1,4 @@
 === BISTRO BUILDER â€” BLOCK 18M QUEEN TEST ===
 [PASS] commit econÃ³mico, BBSIS, Navigation, Save/Load, servicio y rollback verificados.
-Scene: Assets/Scenes/Prototype_Restaurant.unity
+Scene: Assets/Scenes/__BB18M_RecoveryCandidate.unity
 Core architecture + Finance + BBSIS + Navigation + SaveGame + service-state integration.

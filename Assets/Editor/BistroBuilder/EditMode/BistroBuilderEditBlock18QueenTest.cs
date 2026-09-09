@@ -10,7 +10,10 @@ public static class BistroBuilderEditBlock18QueenTest
 {
     private const string ArmedKey = "BB.Edit18.Queen.Armed";
     private const string CliKey = "BB.Edit18.Queen.Cli";
-    private const string ReportPath = "EditBlock18QueenTestReport.txt";
+    private const string SceneKey = "BB.Edit18.Queen.Scene";
+    private static string ExpectedScene => SessionState.GetString(SceneKey, BistroBuilderEditBlock18Installer.ScenePath);
+    private static string ReportPath => ExpectedScene == BistroBuilderEditBlock18Installer.ScenePath
+        ? "EditBlock18QueenTestReport.txt" : "EditBlock18QueenCandidateReport.txt";
     private const double StartupTimeout = 40d;
 
     private enum Phase
@@ -66,8 +69,16 @@ public static class BistroBuilderEditBlock18QueenTest
         Begin(false);
     }
 
+    public static void RunCandidateFromCommandLine()
+    {
+        SessionState.SetString(SceneKey, BB18MCandidateVerification.Candidate);
+        EditorSceneManager.OpenScene(ExpectedScene, OpenSceneMode.Single);
+        Begin(true);
+    }
+
     public static void RunFromCommandLine()
     {
+        SessionState.SetString(SceneKey, BistroBuilderEditBlock18Installer.ScenePath);
         EditorSceneManager.OpenScene(
             BistroBuilderEditBlock18Installer.ScenePath,
             OpenSceneMode.Single);
@@ -163,7 +174,7 @@ public static class BistroBuilderEditBlock18QueenTest
             return;
         }
         if (!BistroBuilderEditBlock18SceneValidator.ValidateScene(
-                SceneManager.GetActiveScene()) ||
+                SceneManager.GetActiveScene(), ExpectedScene) ||
             BistroBuilderEditBlock18SceneValidator.LastFailed != 0 ||
             BistroBuilderEditBlock18SceneValidator.LastPending != 0)
         {
@@ -409,19 +420,13 @@ public static class BistroBuilderEditBlock18QueenTest
             Complete(false, "Servicio abierto no bloqueÃ³ ediciÃ³n como exige la autoridad Gameplay.");
             return;
         }
-        // 368EF permite Save/Load durante servicio con persistencia autoritativa completa.
-        if (!save.TryLoadSlot(rollbackSlot, out _))
-        {
-            Complete(false, "Servicio activo no permitiÃ³ carga segura pese a disponer de persistencia autoritativa 368EF.");
-            return;
-        }
-        {
-            Complete(false, "No se pudo cerrar servicio tras la comprobaciÃ³n 18M.");
-            return;
-        }
+        // 368EF permite Load durante servicio cuando la persistencia autoritativa está completa.
         phase = Phase.LoadingRollback;
         if (!save.TryLoadSlot(rollbackSlot, out string error))
-            Complete(false, "No se pudo cargar rollback 18M: " + error);
+        {
+            Complete(false, "Servicio activo no permitió carga segura 368EF: " + error);
+            return;
+        }
     }
     private static void ValidateRollbackAndDelete()
     {
@@ -521,7 +526,7 @@ public static class BistroBuilderEditBlock18QueenTest
         string report =
             "=== BISTRO BUILDER â€” BLOCK 18M QUEEN TEST ===\n" +
             (success ? "[PASS] " : "[FAIL] ") + message + "\n" +
-            "Core architecture + Finance + BBSIS + Navigation + SaveGame + service-state integration.\n";
+            "Scene: " + ExpectedScene + "\nCore architecture + Finance + BBSIS + Navigation + SaveGame + service-state integration.\n";
         File.WriteAllText(Path.GetFullPath(ReportPath), report);
         if (success) Debug.Log(report); else Debug.LogError(report);
         if (EditorApplication.isPlaying)

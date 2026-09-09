@@ -1,0 +1,22 @@
+BB EDIT MODE BLOCK 18 - RUNTIME LIFECYCLE SELF TEST
+OK - Facade rechaza BeginEdit sin coordinador
+OK - Facade rechaza Undo sin coordinador
+OK - Facade rechaza Redo sin coordinador
+OK - Facade rechaza Review sin coordinador
+OK - Facade rechaza Commit sin coordinador y conserva diagnóstico visible
+OK - Preparing bloquea nueva sesión con mensaje de autoridad Gameplay
+OK - Open bloquea nueva sesión
+OK - Closing bloquea nueva sesión
+OK - Closed permite Draft sin alterar entrada del editor existente
+OK - Servicio iniciado después de Review impide publicación y autorización Finance
+OK - Servicio conserva Draft y regla se evalúa aunque editor existente siga activo
+OK - Tras cerrar servicio se puede confirmar el mismo Draft una sola vez
+OK - Review mantiene habilitada confirmación de reforma pendiente
+OK - Commit finaliza sesión y deshabilita nueva confirmación
+OK - Load descarta workspace anterior sin permitir Undo sobre otra partida
+OK - Load de contenido diferente con igual revisión bloquea Draft obsoleto antes de Finance
+OK - Save/Load permitido sin workspace semántico activo
+OK - SaveGuard fixture abre sesión semántica
+OK - Save/Load bloqueado mientras existe sesión semántica activa
+OK - Save/Load vuelve a estar disponible tras cancelar la sesión
+Resultado: 20 OK / 0 fallos.

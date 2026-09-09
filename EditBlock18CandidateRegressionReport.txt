@@ -1,0 +1,246 @@
+BB18M candidate regression 2026-09-09T08:30:13.7226821Z
+BB EDIT MODE BLOCK 18 - CORE SELF TEST
+OK - 18A comando entra en Draft
+OK - 18A Baseline aislada del Draft
+OK - 18D WallId estable en Draft
+OK - 18D T-junction vÃ¡lida
+OK - 18D T-junction deriva spans sin partir WallId
+OK - 18D X-junction vÃ¡lida
+OK - 18D X-junction conserva ambos WallId
+OK - 18D solape colineal bloqueante
+OK - 18A CreateWall 1/4
+OK - 18A CreateWall 2/4
+OK - 18A CreateWall 3/4
+OK - 18A CreateWall 4/4
+OK - 18E recinto cerrado detecta una habitaciÃ³n
+OK - 18L Undo pared
+OK - 18E Undo abre recinto coherentemente
+OK - 18L Redo pared
+OK - 18E Redo restaura el mismo RoomId
+OK - 18D divisor interior creado
+OK - 18E split produce dos habitaciones
+OK - 18E split conserva un RoomId preexistente
+OK - 18L Undo split
+OK - 18E merge por Undo recupera habitaciÃ³n original
+OK - 18L Redo split
+OK - 18E Redo split recupera exactamente los mismos RoomIds
+OK - 18F opening ligado a WallId
+OK - 18H opening vÃ¡lido supera validaciÃ³n intrÃ­nseca
+OK - 18D pared host modificable en Draft
+OK - 18F opening fuera del host bloquea commit sin recolocaciÃ³n silenciosa
+OK - 18F DeleteWall compone cascade de openings
+OK - 18F host y opening desaparecen atÃ³micamente
+OK - 18L Undo cascade
+OK - 18F Undo restaura host/opening con mismos IDs
+OK - 18A commit vÃ¡lido
+OK - 18A commit publica N+1
+OK - 18A commit no muta Baseline original
+OK - 18A Cancel restaura Draft a Baseline
+OK - 18L JSON round-trip conserva Stable IDs
+OK - 18L fingerprint canÃ³nico estable tras persistencia
+OK - 18B catÃ¡logo universal elimina DefinitionId duplicados
+OK - 18B bÃºsqueda semÃ¡ntica/categorÃ­a determinista
+OK - 18J feedback desacoplado publica eventos sin decidir construcciÃ³n
+OK - 18I/18L CommitJournal identifica operaciÃ³n idempotente
+OK - 18I commit econÃ³mico publica documento N+1
+OK - 18I autorizaciÃ³n econÃ³mica Prepare/Finalize Ãºnica
+OK - 18L CommitJournal persiste estado Finalized
+OK - 18A baseline stale bloquea publicaciÃ³n
+OK - 18I fallo de publicaciÃ³n aborta autorizaciÃ³n y devuelve Draft a ediciÃ³n
+OK - 18E acabado de superficie entra como comando semÃ¡ntico
+OK - 18E/18L Undo de superficie
+OK - 18E/18L Redo de superficie recupera estado/fingerprint
+OK - 18G zona funcional separada de Room creada por comando
+OK - 18G/18L Undo de zona funcional
+OK - 18G/18L Redo de zona recupera estado/fingerprint
+OK - 18D/18F mesh de pared recorta opening sin partir WallId
+OK - 18D geometría derivada conserva dimensiones canónicas
+OK - 18E triangulación de habitación cóncava determinista
+OK - 18D/18E materialización runtime crea paredes y suelo derivados del documento
+OK - 18L runtime document acepta baseline cargada
+OK - 18A sesión nace desde revisión comprometida real
+OK - 18C capabilities arquitectónicas resueltas por Stable ID
+OK - 18L runtime store publica N+1
+OK - 18L publicación idempotente no duplica efectos
+OK - 18L SaveGame captura documento arquitectónico comprometido
+OK - 18L SaveGame restaura documento arquitectónico por provider real
+OK - 18E superficie económica entra en Draft
+OK - 18G zona económica entra en Draft
+OK - 18I propuesta económica incluye superficies y zonas con área
+OK - 18A coordinador runtime abre sesión real
+OK - 18K coordinador ejecuta comando semántico
+OK - 18I coordinador bloquea commit económico sin Finanzas
+OK - 18I/18L coordinador publica commit atómico con autoridad económica
+OK - 18I coordinador finaliza economía una sola vez
+OK - 18F puerta recorta obstáculo de circulación en dos segmentos
+OK - 17/18 Navigation recibe dos footprints estáticos fuera del hueco de puerta
+OK - BBSIS recibe Spatial Subjects válidos derivados de pared semántica
+OK - BBSIS bloquea pared y mantiene libre el hueco transitable de puerta
+OK - 17/18 Navigation reconstruye topología con arquitectura publicada
+OK - 18I Finanzas tarifa propuesta semántica sin mutar Draft
+OK - 18I Finanzas calcula débito/crédito determinista por longitud/área/unidad
+OK - 18I Finanzas bloquea definitionId sin tarifa en vez de construir gratis
+OK - 18H Navigation registra validación externa en la autoridad de sesión
+OK - 18H baseline de validación externa cargada
+OK - 18H Navigation bloquea Draft con paso físicamente insuficiente
+OK - 18H diagnóstico conserva autoridad de origen Navigation
+Resultado: 84 OK / 0 fallos.
+BB EDIT MODE BLOCK 18 - RUNTIME LIFECYCLE SELF TEST
+OK - Facade rechaza BeginEdit sin coordinador
+OK - Facade rechaza Undo sin coordinador
+OK - Facade rechaza Redo sin coordinador
+OK - Facade rechaza Review sin coordinador
+OK - Facade rechaza Commit sin coordinador y conserva diagnóstico visible
+OK - Preparing bloquea nueva sesión con mensaje de autoridad Gameplay
+OK - Open bloquea nueva sesión
+OK - Closing bloquea nueva sesión
+OK - Closed permite Draft sin alterar entrada del editor existente
+OK - Servicio iniciado después de Review impide publicación y autorización Finance
+OK - Servicio conserva Draft y regla se evalúa aunque editor existente siga activo
+OK - Tras cerrar servicio se puede confirmar el mismo Draft una sola vez
+OK - Review mantiene habilitada confirmación de reforma pendiente
+OK - Commit finaliza sesión y deshabilita nueva confirmación
+OK - Load descarta workspace anterior sin permitir Undo sobre otra partida
+OK - Load de contenido diferente con igual revisión bloquea Draft obsoleto antes de Finance
+OK - Save/Load permitido sin workspace semántico activo
+OK - SaveGuard fixture abre sesión semántica
+OK - Save/Load bloqueado mientras existe sesión semántica activa
+OK - Save/Load vuelve a estar disponible tras cancelar la sesión
+Resultado: 20 OK / 0 fallos.
+18M Finance tariff tests (explicit test fixtures only)
+[OK] Missing Finance authority stays blocked
+[OK] Empty table is not a free construction policy
+[OK] Explicit sourced, revisioned tariff is accepted
+[OK] Gateway binds the Finance-owned table
+[OK] An unchanged document needs no invented economic tariff
+[OK] Quantity tariff charges two doors independently of their width
+[OK] Prepared price keeps its source identity after caller mutation
+[OK] Unpriced operation is blocked instead of receiving an implicit zero price
+[OK] Length tariffs round half cents away from zero
+[OK] Missing second tariff clears every partial price and total
+[OK] NaN measurements fail closed
+[OK] Negative measurements fail closed
+[OK] Explicit length cannot silently fall back to quantity
+[OK] Unknown economic change kind cannot price at zero
+[OK] Area rate uses the authored unit
+[OK] An explicitly authored zero remains distinct from a missing tariff
+[OK] Published tariffs reject catch-all prices
+[OK] Published tariffs require an explicit unit
+[OK] Published tariffs require operation coverage
+[OK] Duplicate DefinitionIds cannot override one another
+18M Finance: 20 OK / 0 failures
+
+BBSIS FASE 3 - AUTOTEST
+OK - Autoridad BBSIS disponible
+OK - Assessment disponible
+OK - Lease semilla phase3.blocker.first
+OK - Lease semilla phase3.blocker.second
+OK - Dos blockers no solapados concedidos
+OK - Conflicto multiple elige blocker estable por secuencia
+OK - Rechazos quedan contabilizados
+OK - Episodios de reset creados
+OK - Reset libera leases mediante eventos
+OK - Reset libera leases en orden determinista
+OK - Reset cancela episodios de forma explicita
+OK - Contrato para prueba de orphan cargado
+OK - Lease ligado a subject temporal concedido
+OK - Rebuild purga leases de subjects desaparecidos
+OK - Lease semilla phase3.owner.bulk
+OK - Lease semilla phase3.owner.bulk
+OK - Liberacion masiva por owner completa
+OK - Liberacion masiva por owner es determinista
+OK - Stress denso 256 leases concedidos sin fugas
+OK - Stress denso 256 conflictos rechazados consistentemente
+OK - Stress denso libera el 100% de leases
+OK - Telemetria registra carga densa
+OK - Telemetria registra contention densa
+OK - Spatial Quality repetible
+OK - Bottleneck Ledger estable entre evaluaciones
+OK - Stress no altera subjects persistentes
+Resultado: 26 OK / 0 fallos.
+
+BB EDIT MODE BLOCK 18 - SCENE INTEGRATION
+Scene: Assets/Scenes/__BB18M_RecoveryCandidate.unity
+Mode: Editor
+OK - Escena canónica cargada
+OK - BistroBuilderSpatialInteractionService único en la escena (1)
+OK - BistroBuilderSpatialInteractionService habilitado y activo
+OK - BistroBuilderNavigationService único en la escena (1)
+OK - BistroBuilderNavigationService habilitado y activo
+OK - BistroBuilderOperationalSpatialCoordinator único en la escena (1)
+OK - BistroBuilderOperationalSpatialCoordinator habilitado y activo
+OK - BistroBuilderFinanceService único en la escena (1)
+OK - BistroBuilderFinanceService habilitado y activo
+OK - BistroBuilderDiscretionaryFinanceService único en la escena (1)
+OK - BistroBuilderDiscretionaryFinanceService habilitado y activo
+OK - BistroBuilderGeneralGameStateService único en la escena (1)
+OK - BistroBuilderGeneralGameStateService habilitado y activo
+OK - GameClock único en la escena (1)
+OK - GameClock habilitado y activo
+OK - BistroBuilderSaveGameService único en la escena (1)
+OK - BistroBuilderSaveGameService habilitado y activo
+OK - RestaurantEditModeService único en la escena (1)
+OK - RestaurantEditModeService habilitado y activo
+OK - RestaurantServiceEditModeAvailabilityRule único en la escena (1)
+OK - RestaurantServiceEditModeAvailabilityRule habilitado y activo
+OK - BistroBuilderEditDocumentRuntimeService único en la escena (1)
+OK - BistroBuilderEditDocumentRuntimeService habilitado y activo
+OK - BistroBuilderArchitectureRuntimeMaterializer único en la escena (1)
+OK - BistroBuilderArchitectureRuntimeMaterializer habilitado y activo
+OK - BistroBuilderEditDocumentMaterializationBridge único en la escena (1)
+OK - BistroBuilderEditDocumentMaterializationBridge habilitado y activo
+OK - BistroBuilderEditRuntimeCoordinator único en la escena (1)
+OK - BistroBuilderEditRuntimeCoordinator habilitado y activo
+OK - BistroBuilderEditPlayerFacade único en la escena (1)
+OK - BistroBuilderEditPlayerFacade habilitado y activo
+OK - BistroBuilderEditDocumentSaveSectionProvider único en la escena (1)
+OK - BistroBuilderEditDocumentSaveSectionProvider habilitado y activo
+OK - BistroBuilderEditFinanceGateway único en la escena (1)
+OK - BistroBuilderEditFinanceGateway habilitado y activo
+OK - BistroBuilderEditFinanceGatewayBinder único en la escena (1)
+OK - BistroBuilderEditFinanceGatewayBinder habilitado y activo
+OK - BistroBuilderEditNavigationValidationProvider único en la escena (1)
+OK - BistroBuilderEditNavigationValidationProvider habilitado y activo
+OK - BistroBuilderEditSessionSaveGuard único en la escena (1)
+OK - BistroBuilderEditSessionSaveGuard habilitado y activo
+OK - BistroBuilderEditDocumentMaterializationBridge.runtimeService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.materializer enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.spatialService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.operationalSpatialCoordinator enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.navigationService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.rebuildOnEnable activo
+OK - BistroBuilderEditRuntimeCoordinator.documentService enlazado
+OK - BistroBuilderEditRuntimeCoordinator.editModeService enlazado
+OK - BistroBuilderEditRuntimeCoordinator.availabilityRuleSource enlazado
+OK - BistroBuilderEditPlayerFacade.coordinator enlazado
+OK - BistroBuilderEditDocumentSaveSectionProvider.runtimeService enlazado
+OK - BistroBuilderEditDocumentSaveSectionProvider.materializer enlazado
+OK - BistroBuilderEditFinanceGateway.financeService enlazado
+OK - BistroBuilderEditFinanceGateway.discretionaryFinanceService enlazado
+OK - BistroBuilderEditFinanceGateway.generalGameStateService enlazado
+OK - BistroBuilderEditFinanceGateway.gameClock enlazado
+OK - BistroBuilderEditFinanceGatewayBinder.gateway enlazado
+OK - BistroBuilderEditFinanceGatewayBinder.editCoordinator enlazado
+OK - BistroBuilderEditNavigationValidationProvider.editDocumentService enlazado
+OK - BistroBuilderEditSessionSaveGuard.coordinator enlazado
+OK - BistroBuilderArchitectureRuntimeMaterializer.createNavigationFootprints activo
+OK - BistroBuilderArchitectureRuntimeMaterializer.createSpatialSubjects activo
+OK - BistroBuilderArchitectureRuntimeMaterializer.createMeshColliders activo
+OK - Materializer usa una raíz propia de geometría generada en la escena
+OK - Spatial Contract de arquitectura válido
+OK - Materializer enlaza un Spatial Contract de paredes válido
+OK - Materializer/Navigation coherentes: passableOpeningBottomTolerance / floorOpeningTolerance
+OK - Materializer/Navigation coherentes: passableOpeningMinimumHeight / minimumPassageHeight
+OK - Navigation conserva una anchura mínima de paso positiva
+OK - Save provider instalado en el host que descubre SaveGame
+OK - SaveGame registra restaurant.edit_architecture
+OK - Configuración real de SaveGame válida
+OK - Serializador JSON de arquitectura registrado
+OK - Contrato persistente de arquitectura conserva identidad y versión
+OK - Documento comprometido válido para Save/Load
+OK - Tarifas de reforma aprobadas por la autoridad de Finanzas
+Resultado estructural: 77 OK / 0 fallos.
+Pendientes de producción: 0.
+La validación estructural no sustituye la Queen Test de escena/Play Mode.
+
+[PASS] Targeted regression suite on recovery candidate. Canonical scene unchanged.
