@@ -47,6 +47,21 @@ public sealed class BistroBuilderCanonicalOrderLine
     [SerializeField]
     private string lastActorReferenceId;
 
+    [SerializeField]
+    private BistroBuilderAdvancedOrderLineOriginKind advancedOriginKind;
+
+    [SerializeField]
+    private BistroBuilderAdvancedOrderBillingMode advancedBillingMode;
+
+    [SerializeField]
+    private string advancedSourceLineId;
+
+    [SerializeField]
+    private BistroBuilderAdvancedOrderIncidentKind advancedIncidentKind;
+
+    [SerializeField]
+    private string advancedChangeReason;
+
     public string LineId => lineId ?? string.Empty;
     public string DishId => dishId ?? string.Empty;
     public int PriceCentsAtOrder => priceCentsAtOrder;
@@ -59,6 +74,15 @@ public sealed class BistroBuilderCanonicalOrderLine
     public BistroBuilderCanonicalOrderLineState State => state;
     public int Revision => revision;
     public string LastActorReferenceId => lastActorReferenceId ?? string.Empty;
+    public BistroBuilderAdvancedOrderLineOriginKind AdvancedOriginKind => advancedOriginKind;
+    public BistroBuilderAdvancedOrderBillingMode AdvancedBillingMode => advancedBillingMode;
+    public string AdvancedSourceLineId => advancedSourceLineId ?? string.Empty;
+    public BistroBuilderAdvancedOrderIncidentKind AdvancedIncidentKind => advancedIncidentKind;
+    public string AdvancedChangeReason => advancedChangeReason ?? string.Empty;
+    public bool IsChargeable =>
+        advancedBillingMode == BistroBuilderAdvancedOrderBillingMode.Standard &&
+        state != BistroBuilderCanonicalOrderLineState.Cancelled &&
+        state != BistroBuilderCanonicalOrderLineState.Failed;
     public bool IsTerminal =>
         BistroBuilderCanonicalOrderTransitionPolicy.IsTerminal(state);
     public bool IsShared => consumerCustomerIds != null &&
@@ -88,6 +112,11 @@ public sealed class BistroBuilderCanonicalOrderLine
         state = BistroBuilderCanonicalOrderLineState.Draft;
         revision = 0;
         lastActorReferenceId = string.Empty;
+        advancedOriginKind = BistroBuilderAdvancedOrderLineOriginKind.Original;
+        advancedBillingMode = BistroBuilderAdvancedOrderBillingMode.Standard;
+        advancedSourceLineId = string.Empty;
+        advancedIncidentKind = BistroBuilderAdvancedOrderIncidentKind.None;
+        advancedChangeReason = string.Empty;
     }
 
     private BistroBuilderCanonicalOrderLine()
@@ -138,6 +167,67 @@ public sealed class BistroBuilderCanonicalOrderLine
         return true;
     }
 
+    internal bool TryApplyAdvancedMetadata(
+        BistroBuilderAdvancedOrderLineOriginKind originKind,
+        BistroBuilderAdvancedOrderBillingMode billingMode,
+        string sourceLineId,
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string changeReason,
+        string actorReferenceId,
+        out string error)
+    {
+        string normalizedSource = BistroBuilderOrderIdUtility.Normalize(sourceLineId);
+        if (originKind != BistroBuilderAdvancedOrderLineOriginKind.Original &&
+            !BistroBuilderOrderIdUtility.IsValid(normalizedSource))
+        {
+            error = "Una línea revisada necesita SourceLineId válido.";
+            return false;
+        }
+        if (!Enum.IsDefined(typeof(BistroBuilderAdvancedOrderLineOriginKind), originKind) ||
+            !Enum.IsDefined(typeof(BistroBuilderAdvancedOrderBillingMode), billingMode) ||
+            !Enum.IsDefined(typeof(BistroBuilderAdvancedOrderIncidentKind), incidentKind))
+        {
+            error = "La metadata avanzada de comanda contiene un enum inválido.";
+            return false;
+        }
+        string reason = string.IsNullOrWhiteSpace(changeReason)
+            ? string.Empty : changeReason.Trim();
+        if (reason.Length > 180)
+        {
+            error = "El motivo de revisión supera 180 caracteres.";
+            return false;
+        }
+        advancedOriginKind = originKind;
+        advancedBillingMode = billingMode;
+        advancedSourceLineId = normalizedSource;
+        advancedIncidentKind = incidentKind;
+        advancedChangeReason = reason;
+        revision++;
+        lastActorReferenceId = BistroBuilderOrderIdUtility.Normalize(actorReferenceId);
+        error = string.Empty;
+        return true;
+    }
+
+    internal bool TryRegisterAdvancedIncident(
+        BistroBuilderAdvancedOrderIncidentKind incidentKind,
+        string changeReason,
+        string actorReferenceId,
+        out string error)
+    {
+        if (incidentKind == BistroBuilderAdvancedOrderIncidentKind.None)
+        {
+            error = "Debe indicarse una incidencia real.";
+            return false;
+        }
+        return TryApplyAdvancedMetadata(
+            advancedOriginKind,
+            advancedBillingMode,
+            advancedSourceLineId,
+            incidentKind,
+            changeReason,
+            actorReferenceId,
+            out error);
+    }
     public bool TryValidate(out string error)
     {
         if (!BistroBuilderOrderIdUtility.IsValid(LineId))
@@ -226,6 +316,25 @@ public sealed class BistroBuilderCanonicalOrderLine
             return false;
         }
 
+        if (!Enum.IsDefined(typeof(BistroBuilderAdvancedOrderLineOriginKind), advancedOriginKind) ||
+            !Enum.IsDefined(typeof(BistroBuilderAdvancedOrderBillingMode), advancedBillingMode) ||
+            !Enum.IsDefined(typeof(BistroBuilderAdvancedOrderIncidentKind), advancedIncidentKind))
+        {
+            error = "La línea " + LineId + " contiene metadata avanzada inválida.";
+            return false;
+        }
+        advancedSourceLineId = BistroBuilderOrderIdUtility.Normalize(advancedSourceLineId);
+        if (advancedOriginKind != BistroBuilderAdvancedOrderLineOriginKind.Original &&
+            !BistroBuilderOrderIdUtility.IsValid(advancedSourceLineId))
+        {
+            error = "La línea " + LineId + " no conserva el origen de su revisión.";
+            return false;
+        }
+        if ((advancedChangeReason ?? string.Empty).Length > 180)
+        {
+            error = "La línea " + LineId + " contiene un motivo demasiado largo.";
+            return false;
+        }
         error = string.Empty;
         return true;
     }
@@ -258,7 +367,12 @@ public sealed class BistroBuilderCanonicalOrderLine
             courseIndex = courseIndex,
             state = state,
             revision = revision,
-            lastActorReferenceId = LastActorReferenceId
+            lastActorReferenceId = LastActorReferenceId,
+            advancedOriginKind = advancedOriginKind,
+            advancedBillingMode = advancedBillingMode,
+            advancedSourceLineId = AdvancedSourceLineId,
+            advancedIncidentKind = advancedIncidentKind,
+            advancedChangeReason = AdvancedChangeReason
         };
     }
 }
