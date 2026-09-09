@@ -10166,7 +10166,9 @@ GameObject:
   - component: {fileID: 263645031}
   - component: {fileID: 263645030}
   - component: {fileID: 263645029}
-  - component: {fileID: 263645028}
+  - component: {fileID: 263645201}
+  - component: {fileID: 263645200}
+  - component: {fileID: 263645202}
   - component: {fileID: 263645027}
   - component: {fileID: 263645026}
   - component: {fileID: 263645025}
@@ -12609,21 +12611,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSpatialAssessmentService
   blockingPenalty: 0.22
   degradationPenalty: 0.04
---- !u!114 &263645028
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263644897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63ecf45c8b2b83444a86f167fc36b82f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderInteractionPresentationService
-  defaultMotionCatalog: {fileID: 11400000, guid: 105e18856bd28724280e064b9f1d5a48, type: 2}
-  defaultAlignDuration: 0.12
-  watchdogGraceSeconds: 1.5
 --- !u!114 &263645029
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82836,6 +82823,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b00c5dc73c147949d2680c1ab2ad8ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantTableSeatingConfiguration
+--- !u!114 &263645200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84048cb8c2bb1be4088dd01c0f8c8701, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderCharacterAnimationServiceV1
+  recipeCatalog: {fileID: 11400000, guid: 83278b8894999894798317e752fa38a3, type: 2}
+  budgeter: {fileID: 263645201}
+  defaultPerceptualImportance: 0.65
+  variantHistoryDepth: 3
+--- !u!114 &263645201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31a4d7479854604428da40aa2cf02fa2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderPerceptualAnimationBudgeter
+  profile: {fileID: 11400000, guid: a50127423910c7441bbef1258ae8d361, type: 2}
+  cpuPressure: 0
+  crowdPressure: 0
+--- !u!114 &263645202
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b019e547a98b4fc89e4f25179485f2da, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderAnimationRuntimeBootstrapV1
+  service: {fileID: 263645200}
+  scanIntervalSeconds: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

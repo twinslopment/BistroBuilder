@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -65,14 +65,14 @@ public static class BistroBuilderAnimation18StandaloneGate
         Transform approachPoint = new GameObject("CustomerApproachPoint").transform;
         approachPoint.SetParent(seatRoot.transform, false);
         approachPoint.localPosition = new Vector3(0f, 0f, -0.35f);
-
         RestaurantSeat testSeat = seatRoot.AddComponent<RestaurantSeat>();
-        testSeat.ConfigureForEditor(
-            seatProfile,
-            associationPoint,
-            motionRoot,
-            seatPoint,
-            approachPoint);
+        SerializedObject seatSerialized = new SerializedObject(testSeat);
+        seatSerialized.FindProperty("useProfile").objectReferenceValue = seatProfile;
+        seatSerialized.FindProperty("associationPoint").objectReferenceValue = associationPoint;
+        seatSerialized.FindProperty("operationalMotionRoot").objectReferenceValue = motionRoot;
+        seatSerialized.FindProperty("seatPoint").objectReferenceValue = seatPoint;
+        seatSerialized.FindProperty("customerApproachPoint").objectReferenceValue = approachPoint;
+        seatSerialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(testSeat);
 
         GameObject tableRoot = new GameObject("__BB18_TestTable__");
