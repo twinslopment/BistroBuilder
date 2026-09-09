@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 [Serializable]
@@ -20,6 +20,7 @@ public sealed class BistroBuilderReputationVisitRuntimeRecord
     public int ambienceScoreBasisPoints = 5000;
     public bool orderCompleted;
     public bool financeCaptured;
+    public bool finalized;
 
     public BistroBuilderReputationVisitRuntimeRecord DeepClone() =>
         (BistroBuilderReputationVisitRuntimeRecord)MemberwiseClone();

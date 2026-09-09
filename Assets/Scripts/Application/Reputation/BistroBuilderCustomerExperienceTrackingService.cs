@@ -18,6 +18,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     [SerializeField] private BistroBuilderDishCatalogService dishCatalogService;
     [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
     [SerializeField] private BistroBuilderUpgradeEffectsService upgradeEffectsService;
+    [SerializeField] private BistroBuilderAdvancedCustomerProfileService advancedCustomerProfileService;
 
     private readonly Dictionary<int, BistroBuilderReputationVisitRuntimeRecord> visitsByGroup =
         new Dictionary<int, BistroBuilderReputationVisitRuntimeRecord>();
@@ -28,9 +29,23 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     private readonly List<int> staleGroupIds = new List<int>(16);
 
     public event Action ExperienceRuntimeChanged;
-    public int ActiveVisitCount => visitsByGroup.Count;
+    public event Action<BistroBuilderAdvancedCustomerVisitOutcome>
+        AdvancedVisitOutcomeCompleted;
+    public int ActiveVisitCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (BistroBuilderReputationVisitRuntimeRecord visit in visitsByGroup.Values)
+                if (visit != null && !visit.finalized) count++;
+            return count;
+        }
+    }
     public int LastRecordedSatisfactionBasisPoints { get; private set; }
     public string LastRecordedExperienceId { get; private set; } = string.Empty;
+    public BistroBuilderAdvancedCustomerProfileService AdvancedCustomerProfileService =>
+        advancedCustomerProfileService;
+    public BistroBuilderAdvancedCustomerExperienceResult LastAdvancedExperience { get; private set; }
 
     private void Awake() => CacheDependencies();
 
@@ -62,7 +77,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         foreach (KeyValuePair<int, CustomerGroup> pair in groupsById)
         {
             if (pair.Value == null ||
-                !visitsByGroup.TryGetValue(pair.Key, out var visit))
+                !visitsByGroup.TryGetValue(pair.Key, out var visit) ||
+                visit == null || visit.finalized)
                 continue;
             AccumulateWait(visit, pair.Value.CurrentState, delta);
         }
@@ -75,7 +91,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             orderSystem == null || canonicalOrderService == null ||
             financeService == null || dishCatalogService == null ||
             generalGameStateService == null ||
-            upgradeEffectsService == null)
+            upgradeEffectsService == null ||
+            advancedCustomerProfileService == null)
         {
             error = "Experience Tracking necesita Reputación, clientes, comandas, Finanzas, catálogo y calendario.";
             return false;
@@ -86,7 +103,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             !financeService.ValidateConfiguration(out error) ||
             !dishCatalogService.ValidateConfiguration(out error) ||
             !generalGameStateService.ValidateConfiguration(out error) ||
-            !upgradeEffectsService.ValidateConfiguration(out error))
+            !upgradeEffectsService.ValidateConfiguration(out error) ||
+            !advancedCustomerProfileService.ValidateConfiguration(out error))
             return false;
         error = string.Empty;
         return true;
@@ -99,6 +117,23 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             snapshot.visits.Add(visit.DeepClone());
         snapshot.visits.Sort((a, b) => a.groupId.CompareTo(b.groupId));
         return snapshot;
+    }
+
+    /// <summary>
+    /// Expone una copia de solo lectura del runtime de una visita activa.
+    /// Permite a presentación/comportamiento reaccionar sin duplicar cronómetros.
+    /// </summary>
+    public bool TryGetRuntimeVisit(
+        int groupId,
+        out BistroBuilderReputationVisitRuntimeRecord visit)
+    {
+        visit = null;
+        if (groupId < 1 ||
+            !visitsByGroup.TryGetValue(groupId, out var stored) ||
+            stored == null || stored.finalized)
+            return false;
+        visit = stored.DeepClone();
+        return true;
     }
 
     public bool TryRestoreRuntimeSnapshot(
@@ -114,7 +149,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         {
             BistroBuilderReputationVisitRuntimeRecord visit = snapshot.visits[i].DeepClone();
             visitsByGroup.Add(visit.groupId, visit);
-            if (!string.IsNullOrWhiteSpace(visit.canonicalOrderId))
+            if (!visit.finalized &&
+                !string.IsNullOrWhiteSpace(visit.canonicalOrderId))
                 groupByOrderId[visit.canonicalOrderId] = visit.groupId;
         }
         SynchronizeGroups();
@@ -127,6 +163,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     {
         visitsByGroup.Clear();
         groupByOrderId.Clear();
+        LastAdvancedExperience = null;
         ExperienceRuntimeChanged?.Invoke();
         error = string.Empty;
         return true;
@@ -184,6 +221,12 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             if (groupsById.TryGetValue(id, out CustomerGroup group) && group != null)
                 group.StateChanged -= HandleGroupStateChanged;
             groupsById.Remove(id);
+            if (visitsByGroup.TryGetValue(id, out BistroBuilderReputationVisitRuntimeRecord visit))
+            {
+                if (visit != null && !string.IsNullOrWhiteSpace(visit.canonicalOrderId))
+                    groupByOrderId.Remove(visit.canonicalOrderId);
+                visitsByGroup.Remove(id);
+            }
         }
     }
 
@@ -224,6 +267,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         RegisterGroup(group);
         if (state == CustomerGroupState.Finished &&
             visitsByGroup.TryGetValue(group.GroupId, out var visit) &&
+            !visit.finalized &&
             string.IsNullOrWhiteSpace(visit.canonicalOrderId))
         {
             FinalizeVisit(visit, out _);
@@ -290,21 +334,56 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         out string error)
     {
         error = string.Empty;
-        if (visit == null) return true;
+        if (visit == null || visit.finalized) return true;
         if (!BistroBuilderCustomerExperienceEvaluator.TryEvaluate(
                 visit, generalGameStateService.DayIndex,
                 out BistroBuilderCustomerExperienceRecord experience,
                 out error))
             return false;
+
+        LastAdvancedExperience = null;
+        if (advancedCustomerProfileService.TryGetGroupProfile(
+                visit.groupId,
+                out BistroBuilderAdvancedCustomerGroupProfile groupProfile))
+        {
+            if (!BistroBuilderAdvancedCustomerExperienceEngine.TryEvaluate(
+                    visit, experience, groupProfile,
+                    out BistroBuilderAdvancedCustomerExperienceResult advanced,
+                    out error))
+                return false;
+            experience.serviceScoreBasisPoints = advanced.aggregateServiceBasisPoints;
+            experience.waitingScoreBasisPoints = advanced.aggregateWaitingBasisPoints;
+            experience.foodQualityScoreBasisPoints = advanced.aggregateFoodQualityBasisPoints;
+            experience.valueForMoneyScoreBasisPoints = advanced.aggregateValueBasisPoints;
+            experience.ambienceScoreBasisPoints = advanced.aggregateAmbienceBasisPoints;
+            experience.overallSatisfactionBasisPoints = advanced.aggregateSatisfactionBasisPoints;
+            LastAdvancedExperience = advanced.DeepClone();
+        }
+
         if (!reputationService.TryRecordExperience(
                 experience, out _, out error))
             return false;
 
-        LastRecordedSatisfactionBasisPoints = experience.overallSatisfactionBasisPoints;
-        LastRecordedExperienceId = experience.experienceId;
-        visitsByGroup.Remove(visit.groupId);
+        visit.finalized = true;
         if (!string.IsNullOrWhiteSpace(visit.canonicalOrderId))
             groupByOrderId.Remove(visit.canonicalOrderId);
+
+        var completedOutcome = new BistroBuilderAdvancedCustomerVisitOutcome
+        {
+            groupId = visit.groupId,
+            experienceId = experience.experienceId,
+            segmentId = experience.segmentId,
+            dayIndex = experience.dayIndex,
+            paidAmountCents = visit.paidAmountCents,
+            overallSatisfactionBasisPoints = experience.overallSatisfactionBasisPoints,
+            waitingScoreBasisPoints = experience.waitingScoreBasisPoints,
+            foodQualityScoreBasisPoints = experience.foodQualityScoreBasisPoints,
+            valueForMoneyScoreBasisPoints = experience.valueForMoneyScoreBasisPoints
+        };
+        AdvancedVisitOutcomeCompleted?.Invoke(completedOutcome);
+
+        LastRecordedSatisfactionBasisPoints = experience.overallSatisfactionBasisPoints;
+        LastRecordedExperienceId = experience.experienceId;
         ExperienceRuntimeChanged?.Invoke();
         return true;
     }
@@ -420,9 +499,10 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (canonicalOrderService == null) TryGetComponent(out canonicalOrderService);
         if (financeService == null) TryGetComponent(out financeService);
         if (dishCatalogService == null) TryGetComponent(out dishCatalogService);
-        if (generalGameStateService == null ||
-            upgradeEffectsService == null) TryGetComponent(out generalGameStateService);
+        if (generalGameStateService == null) TryGetComponent(out generalGameStateService);
         if (upgradeEffectsService == null) TryGetComponent(out upgradeEffectsService);
+        if (advancedCustomerProfileService == null)
+            TryGetComponent(out advancedCustomerProfileService);
     }
 
     private static bool ContainsReference(

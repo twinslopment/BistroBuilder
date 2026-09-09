@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -66,6 +67,9 @@ public sealed class TableAssignmentSystem :
 
     private readonly HashSet<RestaurantTable> reservedForPreferredAssignments =
         new HashSet<RestaurantTable>();
+
+    public event Action<CustomerGroup> CustomerGroupRegistered;
+    public event Action<CustomerGroup, RestaurantTable> TableAssigned;
 
     public IReadOnlyList<CustomerGroup>
         RegisteredGroups
@@ -220,6 +224,7 @@ public sealed class TableAssignmentSystem :
         registeredGroups.Add(
             customerGroup
         );
+        CustomerGroupRegistered?.Invoke(customerGroup);
 
         customerGroup.StateChanged +=
             HandleCustomerGroupStateChanged;
@@ -684,6 +689,7 @@ public sealed class TableAssignmentSystem :
             customerGroup.SetState(
                 CustomerGroupState.WalkingToTable
             );
+            TableAssigned?.Invoke(customerGroup, bestTable);
 
             Debug.Log(
                 "TableAssignmentSystem asignó la mesa " +

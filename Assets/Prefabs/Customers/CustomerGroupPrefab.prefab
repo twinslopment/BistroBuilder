@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 8351721598230276099}
   - component: {fileID: 7359950949516512855}
   - component: {fileID: 2279341501974889410}
+  - component: {fileID: 7089061501332219782}
   m_Layer: 0
   m_Name: CustomerGroupPrefab
   m_TagString: Untagged
@@ -135,8 +136,11 @@ MonoBehaviour:
   groupId: 1
   groupSize: 2
   currentState: 0
-  waitingMinutes: 0
+  requestedServiceMode: 0
+  currentServiceMode: 0
+  assignedBarSpot: {fileID: 0}
   assignedTable: {fileID: 0}
+  waitingTime: 0
 --- !u!114 &1077870339494098988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -166,7 +170,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomerDiningFlow
   customerGroup: {fileID: 0}
-  eatingDuration: 6
 --- !u!114 &8351721598230276099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -181,6 +184,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CustomerExitFlow
   customerGroup: {fileID: 0}
   customerMovementView: {fileID: 0}
+  destructionDelay: 0.5
 --- !u!114 &7359950949516512855
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,3 +213,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CustomerSeatingFlow
   customerGroup: {fileID: 0}
   customerMovementView: {fileID: 0}
+--- !u!114 &7089061501332219782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5489107912546603123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec38bff8fae8bbd43b296d1e9e1ad830, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderAdvancedCustomerMemberVisualGroup
+  customerGroup: {fileID: 6256115589085090044}
+  groupPlaceholderRenderer: {fileID: 5358082151093453806}
+  memberSpacing: 0.42
+  memberScale: {x: 0.32, y: 0.55, z: 0.32}

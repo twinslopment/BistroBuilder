@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,6 +22,9 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
         reservationAvailabilityService;
     [SerializeField] private BistroBuilderGuestRelationsService guestRelationsService;
     [SerializeField] private BistroBuilderReputationService reputationService;
+
+    // Proveedor opcional: solo ordena cohortes; nunca decide la cantidad de retornos.
+    private IBistroBuilderReturnCohortPriorityProvider returnCohortPriorityProvider;
 
     private readonly List<BistroBuilderGuestVisitCohortRecord> eligibleCohorts =
         new List<BistroBuilderGuestVisitCohortRecord>(32);
@@ -51,6 +54,7 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
     public int GeneratedReservationLeadsToday =>
         reservationLeadsGeneratedForDay;
     public int ReservationLeadDay => reservationLeadDay;
+    public bool HasReturnCohortPriorityProvider => returnCohortPriorityProvider != null;
 
     public bool TryCapturePersistenceState(
         out int leadDay,
@@ -533,6 +537,8 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
     private BistroBuilderGuestVisitCohortRecord FindNextEligibleCohort(
         BistroBuilderMarketingCustomerSegment requiredSegment)
     {
+        BistroBuilderGuestVisitCohortRecord best = null;
+        int bestPriority = int.MinValue;
         for (int index = 0; index < eligibleCohorts.Count; index++)
         {
             BistroBuilderGuestVisitCohortRecord cohort = eligibleCohorts[index];
@@ -542,9 +548,17 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             if (requiredSegment != BistroBuilderMarketingCustomerSegment.Any &&
                 !IsCohortSegment(cohort, requiredSegment))
                 continue;
-            return cohort;
+
+            int priority = returnCohortPriorityProvider != null
+                ? returnCohortPriorityProvider.GetReturnPriority(cohort.cohortId)
+                : 0;
+            if (best == null || priority > bestPriority)
+            {
+                best = cohort;
+                bestPriority = priority;
+            }
         }
-        return null;
+        return best;
     }
 
     private int FindReplacementSlot(
@@ -837,6 +851,18 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
             TryGetComponent(out guestRelationsService);
         if (reputationService == null)
             TryGetComponent(out reputationService);
+        if (returnCohortPriorityProvider == null)
+        {
+            MonoBehaviour[] priorityProviders = GetComponents<MonoBehaviour>();
+            for (int i = 0; i < priorityProviders.Length; i++)
+            {
+                if (priorityProviders[i] is IBistroBuilderReturnCohortPriorityProvider provider)
+                {
+                    returnCohortPriorityProvider = provider;
+                    break;
+                }
+            }
+        }
     }
 
 #if UNITY_EDITOR

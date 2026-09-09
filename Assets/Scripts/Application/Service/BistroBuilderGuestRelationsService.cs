@@ -27,6 +27,8 @@ public sealed class BistroBuilderGuestRelationsService : MonoBehaviour
 
     public event Action<long> RelationsChanged;
     public event Action RelationsRestored;
+    public event Action<BistroBuilderAdvancedCustomerCohortAssignment>
+        VisitCohortRecorded;
 
     public long Revision => state != null ? state.revision : 0L;
     public int ReputationPoints => reputationService != null
@@ -229,13 +231,25 @@ public sealed class BistroBuilderGuestRelationsService : MonoBehaviour
                 segmentId,
                 group.GroupSize,
                 returningReference,
-                out _,
+                out string cohortId,
                 out string error))
         {
             Debug.LogError(
                 "GuestRelations no pudo registrar una visita: " + error,
                 this);
+            return;
         }
+
+        VisitCohortRecorded?.Invoke(
+            new BistroBuilderAdvancedCustomerCohortAssignment
+            {
+                groupId = group.GroupId,
+                cohortId = cohortId,
+                segmentId = segmentId,
+                dayIndex = generalGameStateService != null
+                    ? generalGameStateService.DayIndex
+                    : 1
+            });
     }
 
     private static bool ContainsReference(
