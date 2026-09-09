@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c8a502e6bc2a944a81d27e1bba0f153, type: 3}
+  m_Name: BistroBuilderSpatialFamilyCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSpatialFamilyCatalog
+  families:
+  - familyId: generic
+    displayName: "Gen\xE9rico"
+    defaultTraitIds:
+    - spatial.generic
+  - familyId: seating.table
+    displayName: Mesa
+    defaultTraitIds:
+    - seating.table
+    - service.table
+  - familyId: seating.chair
+    displayName: Silla
+    defaultTraitIds:
+    - seating.chair
+    - dynamic.seat
+  - familyId: architecture.door
+    displayName: Puerta
+    defaultTraitIds:
+    - architecture.door
+    - dynamic.sweep
+  - familyId: work.kitchen
+    displayName: Cocina
+    defaultTraitIds:
+    - work.station
+    - service.kitchen
+  - familyId: work.bar
+    displayName: Barra
+    defaultTraitIds:
+    - work.edge
+    - service.bar
+  - familyId: work.pass
+    displayName: Pass
+    defaultTraitIds:
+    - work.edge
+    - transfer.pass
+  - familyId: logistics.cart
+    displayName: Carrito
+    defaultTraitIds:
+    - mobility.cart
+    - carry.envelope

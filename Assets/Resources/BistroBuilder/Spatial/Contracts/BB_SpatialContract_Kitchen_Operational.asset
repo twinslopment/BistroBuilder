@@ -1,0 +1,169 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0eea3de83387e0440a46d64b2cbcc632, type: 3}
+  m_Name: BB_SpatialContract_Kitchen_Operational
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSpatialContractDefinition
+  contractId: spatial.contract.kitchen.operational
+  familyId: work.kitchen
+  contractVersion: 3
+  preferredProxyMode: 2
+  traitIds:
+  - kitchen.operational
+  - work.station
+  - work.edge
+  - transfer.pass
+  - service.kitchen
+  ports:
+  - portId: pass.transfer
+    kind: 4
+    localPosition: {x: -0.5, y: 0.65, z: 7.02}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.36
+    conflictMode: 0
+  - portId: work.station.cold.0
+    kind: 2
+    localPosition: {x: -1.52, y: 0.65, z: 7.74}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.cold.1
+    kind: 2
+    localPosition: {x: -0.84000003, y: 0.65, z: 7.74}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.range.0
+    kind: 2
+    localPosition: {x: -0.16, y: 0.65, z: 7.74}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.range.1
+    kind: 2
+    localPosition: {x: 0.52, y: 0.65, z: 7.74}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.grill.0
+    kind: 2
+    localPosition: {x: -1.52, y: 0.65, z: 8.46}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.grill.1
+    kind: 2
+    localPosition: {x: -0.84000003, y: 0.65, z: 8.46}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.fryer.0
+    kind: 2
+    localPosition: {x: -0.16, y: 0.65, z: 8.46}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.fryer.1
+    kind: 2
+    localPosition: {x: 0.52, y: 0.65, z: 8.46}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.oven.0
+    kind: 2
+    localPosition: {x: -1.52, y: 0.65, z: 9.18}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.oven.1
+    kind: 2
+    localPosition: {x: -0.84000003, y: 0.65, z: 9.18}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.pastry.0
+    kind: 2
+    localPosition: {x: -0.16, y: 0.65, z: 9.18}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.plating.0
+    kind: 2
+    localPosition: {x: 0.52, y: 0.65, z: 9.18}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.plating.1
+    kind: 2
+    localPosition: {x: -1.52, y: 0.65, z: 9.9}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.plating.2
+    kind: 2
+    localPosition: {x: -0.84000003, y: 0.65, z: 9.9}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.bar.0
+    kind: 2
+    localPosition: {x: -0.16, y: 0.65, z: 9.9}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  - portId: work.station.bar.1
+    kind: 2
+    localPosition: {x: 0.52, y: 0.65, z: 9.9}
+    localForward: {x: 0, y: 0, z: -1}
+    radius: 0.28
+    conflictMode: 0
+  workEdges:
+  - edgeId: edge.station.cold
+    localStart: {x: -1.8199999, y: 0.65, z: 7.74}
+    localEnd: {x: -0.54, y: 0.65, z: 7.74}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.range
+    localStart: {x: -0.46, y: 0.65, z: 7.74}
+    localEnd: {x: 0.82, y: 0.65, z: 7.74}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.grill
+    localStart: {x: -1.8199999, y: 0.65, z: 8.46}
+    localEnd: {x: -0.54, y: 0.65, z: 8.46}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.fryer
+    localStart: {x: -0.46, y: 0.65, z: 8.46}
+    localEnd: {x: 0.82, y: 0.65, z: 8.46}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.oven
+    localStart: {x: -1.8199999, y: 0.65, z: 9.18}
+    localEnd: {x: -0.54, y: 0.65, z: 9.18}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.pastry
+    localStart: {x: -0.46, y: 0.65, z: 9.18}
+    localEnd: {x: 0.14000002, y: 0.65, z: 9.18}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.plating
+    localStart: {x: 0.21999997, y: 0.65, z: 9.18}
+    localEnd: {x: -0.54, y: 0.65, z: 9.9}
+    serviceDepth: 0.58
+    conflictMode: 1
+  - edgeId: edge.station.bar
+    localStart: {x: -0.46, y: 0.65, z: 9.9}
+    localEnd: {x: 0.82, y: 0.65, z: 9.9}
+    serviceDepth: 0.58
+    conflictMode: 1
+  gates: []
