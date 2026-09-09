@@ -23,8 +23,6 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
     [SerializeField]
     private BistroBuilderCanonicalOrderIntegrationService integrationService;
 
-<<<<<<< Updated upstream
-=======
     [SerializeField]
     private BistroBuilderDishCustodyCoordinator dishCustodyCoordinator;
 
@@ -34,7 +32,6 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
     private readonly HashSet<string> preparationDurationAdjustmentProviderIds =
         new HashSet<string>(StringComparer.Ordinal);
 
->>>>>>> Stashed changes
     [Header("Depuración")]
 
     [SerializeField]
@@ -45,6 +42,8 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
 
     public BistroBuilderCanonicalOrderIntegrationService IntegrationService =>
         integrationService;
+    public int LastPreparationDurationAdjustmentBasisPoints { get; private set; }
+    public string LastAdjustedPreparationLineId { get; private set; } = string.Empty;
 
     private void Awake()
     {
@@ -92,6 +91,11 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             error =
                 "La integración 367C no tiene activada la ejecución " +
                 "individual de líneas 367D.";
+            return false;
+        }
+
+        if (!TryCollectPreparationDurationAdjustmentProviders(out error))
+        {
             return false;
         }
 
@@ -171,11 +175,13 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
     )
     {
         durationSeconds = 0f;
+        LastPreparationDurationAdjustmentBasisPoints = 0;
+        LastAdjustedPreparationLineId = string.Empty;
 
         if (!TryGetLineSnapshot(
                 order,
                 orderLineId,
-                out _,
+                out BistroBuilderCanonicalOrder orderSnapshot,
                 out BistroBuilderCanonicalOrderLine line,
                 out error
             ))
@@ -183,9 +189,23 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
             return false;
         }
 
-        return TryResolveDishPreparationDurationSeconds(
-            line.DishId,
-            durationScale,
+        if (!TryResolveDishPreparationDurationSeconds(
+                line.DishId,
+                durationScale,
+                minimumDuration,
+                maximumDuration,
+                out float baseDurationSeconds,
+                out error
+            ))
+        {
+            return false;
+        }
+
+        return TryApplyPreparationDurationAdjustments(
+            order,
+            orderSnapshot,
+            line,
+            baseDurationSeconds,
             minimumDuration,
             maximumDuration,
             out durationSeconds,
@@ -1238,6 +1258,167 @@ public sealed class BistroBuilderOrderLineExecutionService : MonoBehaviour
         return hasActiveLine;
     }
 
+    private bool TryApplyPreparationDurationAdjustments(
+        RestaurantOrder order,
+        BistroBuilderCanonicalOrder orderSnapshot,
+        BistroBuilderCanonicalOrderLine line,
+        float baseDurationSeconds,
+        float minimumDuration,
+        float maximumDuration,
+        out float adjustedDurationSeconds,
+        out string error)
+    {
+        adjustedDurationSeconds = baseDurationSeconds;
+        if (!TryCollectPreparationDurationAdjustmentProviders(out error))
+            return false;
+
+        if (preparationDurationAdjustmentProviders.Count == 0)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        BistroBuilderPreparationDurationAdjustmentContext context =
+            BuildPreparationDurationAdjustmentContext(
+                order,
+                orderSnapshot,
+                line,
+                baseDurationSeconds,
+                minimumDuration,
+                maximumDuration);
+        long aggregate = 0L;
+
+        for (int index = 0;
+             index < preparationDurationAdjustmentProviders.Count;
+             index++)
+        {
+            if (!preparationDurationAdjustmentProviders[index]
+                    .TryGetAdjustmentBasisPoints(
+                        context,
+                        out int value,
+                        out error))
+                return false;
+
+            if (value < BistroBuilderPreparationDurationAdjustmentPolicy
+                            .MinimumAdjustmentBasisPoints ||
+                value > BistroBuilderPreparationDurationAdjustmentPolicy
+                            .MaximumAdjustmentBasisPoints)
+            {
+                error = "Un proveedor de duración devolvió un ajuste fuera de rango.";
+                return false;
+            }
+
+            aggregate += value;
+        }
+
+        if (aggregate < BistroBuilderPreparationDurationAdjustmentPolicy
+                            .MinimumAdjustmentBasisPoints ||
+            aggregate > BistroBuilderPreparationDurationAdjustmentPolicy
+                            .MaximumAdjustmentBasisPoints)
+        {
+            error = "La suma de ajustes de duración queda fuera de rango.";
+            return false;
+        }
+
+        int aggregateBasisPoints = (int)aggregate;
+        if (!BistroBuilderPreparationDurationAdjustmentPolicy.TryApply(
+                baseDurationSeconds,
+                minimumDuration,
+                maximumDuration,
+                aggregateBasisPoints,
+                out adjustedDurationSeconds,
+                out error))
+            return false;
+
+        LastPreparationDurationAdjustmentBasisPoints = aggregateBasisPoints;
+        LastAdjustedPreparationLineId = line.LineId;
+        return true;
+    }
+    private bool TryCollectPreparationDurationAdjustmentProviders(
+        out string error)
+    {
+        preparationDurationAdjustmentProviders.Clear();
+        preparationDurationAdjustmentProviderIds.Clear();
+
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        for (int index = 0; index < behaviours.Length; index++)
+        {
+            if (!(behaviours[index] is
+                    IBistroBuilderPreparationDurationAdjustmentProvider provider))
+                continue;
+
+            string providerId = NormalizeProviderId(provider.AdjustmentProviderId);
+            if (!IsSafeProviderId(providerId) ||
+                !preparationDurationAdjustmentProviderIds.Add(providerId))
+            {
+                error =
+                    "Existe un proveedor de duración inválido o duplicado.";
+                return false;
+            }
+
+            preparationDurationAdjustmentProviders.Add(provider);
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private BistroBuilderPreparationDurationAdjustmentContext
+        BuildPreparationDurationAdjustmentContext(
+            RestaurantOrder order,
+            BistroBuilderCanonicalOrder orderSnapshot,
+            BistroBuilderCanonicalOrderLine line,
+            float baseDurationSeconds,
+            float minimumDuration,
+            float maximumDuration)
+    {
+        string segmentId = "general";
+        if (order != null && order.CustomerGroup != null)
+        {
+            BistroBuilderCustomerAcquisitionTag tag =
+                order.CustomerGroup.GetComponent<BistroBuilderCustomerAcquisitionTag>();
+            if (tag != null && !string.IsNullOrWhiteSpace(tag.SegmentId))
+                segmentId = tag.SegmentId;
+        }
+
+        return new BistroBuilderPreparationDurationAdjustmentContext
+        {
+            canonicalOrderId = orderSnapshot.OrderId,
+            customerGroupReferenceId = orderSnapshot.CustomerGroupReferenceId,
+            acquisitionSegmentId = segmentId,
+            dishId = line.DishId,
+            serviceMode = orderSnapshot.ServiceMode,
+            mealService = orderSnapshot.MealService,
+            baseDurationSeconds = baseDurationSeconds,
+            minimumDurationSeconds = minimumDuration,
+            maximumDurationSeconds = maximumDuration
+        };
+    }
+    private static string NormalizeProviderId(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
+    }
+
+    private static bool IsSafeProviderId(string value)
+    {
+        if (string.IsNullOrEmpty(value) || value.Length > 96)
+            return false;
+
+        for (int index = 0; index < value.Length; index++)
+        {
+            char character = value[index];
+            bool allowed =
+                character >= 'a' && character <= 'z' ||
+                character >= '0' && character <= '9' ||
+                character == '_' || character == '-' || character == '.';
+            if (!allowed)
+                return false;
+        }
+
+        return true;
+    }
     private void LogTransition(
         RestaurantOrder order,
         string lineId,

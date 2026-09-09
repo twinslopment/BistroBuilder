@@ -1,0 +1,298 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8e97936ff004924997c675516751486, type: 3}
+  m_Name: BB_Upgrade_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderUpgradeCatalog
+  upgrades:
+  - upgradeId: dining.comfort_seating
+    displayName: "Asientos m\xE1s c\xF3modos"
+    description: "Mejora b\xE1sica de confort del comedor."
+    category: 0
+    costCents: 25000
+    requiredProgressionLevel: 1
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - facility.dining_room
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 125
+      barServiceOnly: 0
+  - upgradeId: dining.service_station
+    displayName: "Estaci\xF3n de apoyo de sala"
+    description: Organiza el apoyo de servicio sin cambiar la autoridad de Personal.
+    category: 0
+    costCents: 55000
+    requiredProgressionLevel: 2
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds:
+    - dining.comfort_seating
+    requiredCapabilityIds:
+    - facility.dining_room
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 160
+      barServiceOnly: 0
+  - upgradeId: dining.acoustic_treatment
+    displayName: "Tratamiento ac\xFAstico"
+    description: Mejora la calidad ambiental del comedor.
+    category: 0
+    costCents: 110000
+    requiredProgressionLevel: 3
+    requiredReputationBasisPoints: 5400
+    prerequisiteUpgradeIds:
+    - dining.service_station
+    requiredCapabilityIds:
+    - facility.dining_room
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 195
+      barServiceOnly: 0
+  - upgradeId: kitchen.prep_organization
+    displayName: "Organizaci\xF3n de preparaci\xF3n"
+    description: "Mejora funcional de la zona de preparaci\xF3n."
+    category: 1
+    costCents: 35000
+    requiredProgressionLevel: 1
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - facility.kitchen
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -250
+      barServiceOnly: 0
+  - upgradeId: kitchen.pass_optimization
+    displayName: "Optimizaci\xF3n del pase"
+    description: "Mejora el flujo f\xEDsico del pase de cocina."
+    category: 1
+    costCents: 85000
+    requiredProgressionLevel: 2
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds:
+    - kitchen.prep_organization
+    requiredCapabilityIds:
+    - facility.kitchen
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -320
+      barServiceOnly: 0
+  - upgradeId: kitchen.workflow_upgrade
+    displayName: Flujo de cocina avanzado
+    description: "Mejora avanzada de organizaci\xF3n operativa."
+    category: 1
+    costCents: 175000
+    requiredProgressionLevel: 4
+    requiredReputationBasisPoints: 5600
+    prerequisiteUpgradeIds:
+    - kitchen.pass_optimization
+    requiredCapabilityIds:
+    - facility.kitchen
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -460
+      barServiceOnly: 0
+  - upgradeId: terrace.basic_comfort
+    displayName: "Confort b\xE1sico de terraza"
+    description: Primera mejora para locales que realmente disponen de terraza.
+    category: 2
+    costCents: 45000
+    requiredProgressionLevel: 2
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - facility.terrace
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 150
+      barServiceOnly: 0
+  - upgradeId: terrace.weather_protection
+    displayName: "Protecci\xF3n clim\xE1tica"
+    description: Aumenta la utilidad de una terraza compatible.
+    category: 2
+    costCents: 120000
+    requiredProgressionLevel: 3
+    requiredReputationBasisPoints: 5200
+    prerequisiteUpgradeIds:
+    - terrace.basic_comfort
+    requiredCapabilityIds:
+    - facility.terrace
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 185
+      barServiceOnly: 0
+  - upgradeId: terrace.premium_comfort
+    displayName: Confort avanzado de terraza
+    description: "Mejora de alto nivel sin convertirla en obligaci\xF3n de progresi\xF3n."
+    category: 2
+    costCents: 210000
+    requiredProgressionLevel: 5
+    requiredReputationBasisPoints: 5900
+    prerequisiteUpgradeIds:
+    - terrace.weather_protection
+    requiredCapabilityIds:
+    - facility.terrace
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 255
+      barServiceOnly: 0
+  - upgradeId: bar.storage_upgrade
+    displayName: Almacenaje de barra
+    description: Mejora funcional para locales con barra operativa.
+    category: 3
+    costCents: 40000
+    requiredProgressionLevel: 1
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - facility.bar
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -195
+      barServiceOnly: 1
+  - upgradeId: bar.service_station
+    displayName: "Estaci\xF3n de servicio de barra"
+    description: "Ampl\xEDa la capacidad funcional de una barra existente."
+    category: 3
+    costCents: 90000
+    requiredProgressionLevel: 2
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds:
+    - bar.storage_upgrade
+    requiredCapabilityIds:
+    - facility.bar
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -250
+      barServiceOnly: 1
+  - upgradeId: bar.specialist_setup
+    displayName: Equipamiento especializado de barra
+    description: "Mejora avanzada para una identidad de barra m\xE1s desarrollada."
+    category: 3
+    costCents: 190000
+    requiredProgressionLevel: 4
+    requiredReputationBasisPoints: 5700
+    prerequisiteUpgradeIds:
+    - bar.service_station
+    requiredCapabilityIds:
+    - facility.bar
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 0
+      basisPoints: -360
+      barServiceOnly: 1
+  - upgradeId: infrastructure.storage_efficiency
+    displayName: Almacenaje eficiente
+    description: Mejora transversal del back-of-house.
+    category: 4
+    costCents: 50000
+    requiredProgressionLevel: 1
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 2
+      basisPoints: 85
+      barServiceOnly: 0
+  - upgradeId: infrastructure.energy_efficiency
+    displayName: "Eficiencia energ\xE9tica"
+    description: "Inversi\xF3n estructural para un local m\xE1s eficiente."
+    category: 4
+    costCents: 125000
+    requiredProgressionLevel: 3
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds:
+    - infrastructure.storage_efficiency
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 2
+      basisPoints: 135
+      barServiceOnly: 0
+  - upgradeId: infrastructure.back_of_house
+    displayName: Back-of-house avanzado
+    description: Mejora estructural de alto nivel dentro del techo natural del local.
+    category: 4
+    costCents: 240000
+    requiredProgressionLevel: 5
+    requiredReputationBasisPoints: 5600
+    prerequisiteUpgradeIds:
+    - infrastructure.energy_efficiency
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 2
+      basisPoints: 185
+      barServiceOnly: 0
+  - upgradeId: ambience.lighting_plan
+    displayName: "Plan de iluminaci\xF3n"
+    description: Refuerza ambiente e identidad sin imponer un estilo concreto.
+    category: 5
+    costCents: 30000
+    requiredProgressionLevel: 1
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds: []
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 185
+      barServiceOnly: 0
+  - upgradeId: ambience.identity_details
+    displayName: Detalles de identidad
+    description: Permite profundizar en la personalidad del restaurante.
+    category: 5
+    costCents: 65000
+    requiredProgressionLevel: 2
+    requiredReputationBasisPoints: 0
+    prerequisiteUpgradeIds:
+    - ambience.lighting_plan
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 230
+      barServiceOnly: 0
+  - upgradeId: ambience.signature_atmosphere
+    displayName: "Atm\xF3sfera de autor"
+    description: Mejora avanzada de identidad; opcional, no una meta universal de
+      lujo.
+    category: 5
+    costCents: 155000
+    requiredProgressionLevel: 4
+    requiredReputationBasisPoints: 5800
+    prerequisiteUpgradeIds:
+    - ambience.identity_details
+    requiredCapabilityIds:
+    - restaurant.base
+    incompatibleCapabilityIds: []
+    effects:
+    - kind: 1
+      basisPoints: 320
+      barServiceOnly: 0
