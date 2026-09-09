@@ -6924,6 +6924,238 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1998864402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &160821471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 160821483}
+  - component: {fileID: 160821482}
+  - component: {fileID: 160821481}
+  - component: {fileID: 160821480}
+  - component: {fileID: 160821479}
+  - component: {fileID: 160821478}
+  - component: {fileID: 160821477}
+  - component: {fileID: 160821476}
+  - component: {fileID: 160821475}
+  - component: {fileID: 160821474}
+  - component: {fileID: 160821473}
+  - component: {fileID: 160821472}
+  m_Layer: 0
+  m_Name: BBPLFS_V1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &160821472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b44a2b5007d53134d84f28a3bee18994, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSAutoFurnishService
+  premisesCaptureService: {fileID: 160821482}
+  assetCatalog: {fileID: 160821481}
+  furnishingSetCatalog: {fileID: 160821475}
+  generator: {fileID: 160821474}
+  candidateValidationService: {fileID: 160821473}
+  previewService: {fileID: 160821478}
+  materializationService: {fileID: 160821477}
+  selectedArea: {fileID: 1309290907}
+  spaceFunction: 1
+  goalProfile: 0
+  targetCapacity: 20
+  styleTags: []
+--- !u!114 &160821473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c238d79cfc5fad4c80c5e00ab07db02, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSCandidateValidationService
+  placementValidationService: {fileID: 0}
+  memberRegistry: {fileID: 0}
+  placementRegistry: {fileID: 0}
+  placeableRegistry: {fileID: 0}
+  tableRegistry: {fileID: 0}
+  seatRegistry: {fileID: 0}
+  spatialAssessmentService: {fileID: 0}
+  navigationService: {fileID: 0}
+--- !u!114 &160821474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d05dba7804ba654ea9e3f1d0f2b0227, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSAdvancedLayoutGenerator
+  maxUnitsPerCandidate: 48
+  maxAnchorsPerPattern: 320
+  interSetClearance: 0.35
+  maxReturnedCandidates: 5
+--- !u!114 &160821475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1629586b8123ca45bd43ddf3dcb75a6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSFurnishingSetCatalog
+  sets:
+  - {fileID: 11400000, guid: caed4b4f2411d6d4687f068bdbf2bcba, type: 2}
+  - {fileID: 11400000, guid: 9b48714a4c388a7428183d35743c3646, type: 2}
+  - {fileID: 11400000, guid: 6c86debf98a2ec34c8011c394ccce03e, type: 2}
+  - {fileID: 11400000, guid: 2650c4a806fb7cb48bd2c3096465785b, type: 2}
+  - {fileID: 11400000, guid: 60233399e6e9a7c499eb56b888009a71, type: 2}
+  - {fileID: 11400000, guid: f0fafaa221ce2524197f3408d909b346, type: 2}
+--- !u!114 &160821476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8de8fbc94cda1bc48854076812ee6df1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSVerticalSliceController
+  premisesCaptureService: {fileID: 160821482}
+  assetLayoutCatalog: {fileID: 160821481}
+  layoutGenerator: {fileID: 160821480}
+  validationHub: {fileID: 160821479}
+  previewService: {fileID: 160821478}
+  materializationService: {fileID: 160821477}
+  selectedArea: {fileID: 1309290907}
+  targetCapacity: 20
+  goalProfile: 0
+--- !u!114 &160821477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7c0a45d7496137418740044e5eb87ba, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSMaterializationService
+  editModeService: {fileID: 263644918}
+  placeableCatalogService: {fileID: 263644936}
+  creationService: {fileID: 263644932}
+  transactionService: {fileID: 263644935}
+  deletionService: {fileID: 263644937}
+--- !u!114 &160821478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ed5dcbfcaff7ac4882e3de1f1c75c62, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSPreviewService
+--- !u!114 &160821479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e68382794e7a60a4f9c8ed6fa8c25723, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSValidationHub
+  validatorSources: []
+--- !u!114 &160821480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 608611677ee52ff44b0ba60b1bfdd13e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSLayoutGenerator
+  maxDiningSets: 40
+  defaultClearance: 0.75
+--- !u!114 &160821481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c128356c655c2174387b90bcfdbf7800, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSAssetLayoutCatalog
+  profiles:
+  - {fileID: 11400000, guid: b98c9fb763f4d3643967263d1c5c286a, type: 2}
+  - {fileID: 11400000, guid: 98457a85a8cdfea4c84da941f1648b55, type: 2}
+  - {fileID: 11400000, guid: e07b76a474f2224439872d4a16a5adb8, type: 2}
+  - {fileID: 11400000, guid: 0950b02bc53bda74b91f19c563ef4078, type: 2}
+  - {fileID: 11400000, guid: fce8c30b2fb90f945b92f0b24b9d7c7a, type: 2}
+  - {fileID: 11400000, guid: 03125348d54b4c74b8feab3b20488d25, type: 2}
+  - {fileID: 11400000, guid: 973fc9a4ce3d76c448fa0b41bf1320f7, type: 2}
+  - {fileID: 11400000, guid: 332f9d0f6bb23fa47a7ddf77a2fdf405, type: 2}
+--- !u!114 &160821482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5136f6df4cf76e41b3811bd6772ae5f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSPremisesCaptureService
+  areaRegistry: {fileID: 0}
+--- !u!4 &160821483
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 160821471}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &172508124
 GameObject:
   m_ObjectHideFlags: 0
@@ -82913,3 +83145,4 @@ SceneRoots:
   - {fileID: 1140803527}
   - {fileID: 789096647}
   - {fileID: 2062489263}
+  - {fileID: 160821483}

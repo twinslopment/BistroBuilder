@@ -50,9 +50,12 @@ public sealed class BBPLFSMaterializationService : MonoBehaviour
                 return false;
             }
 
+            Vector3 surfaceAnchorPosition = BBPLFSPlacementPoseUtility.SurfaceAnchorForRootPose(
+                definition.Prefab, placement.WorldPosition, placement.WorldRotation);
+
             bool began = creationService.TryBeginCreation(
                 definition,
-                placement.WorldPosition,
+                surfaceAnchorPosition,
                 placement.WorldRotation,
                 targetArea.transform,
                 out RestaurantPlaceableObject placeable,

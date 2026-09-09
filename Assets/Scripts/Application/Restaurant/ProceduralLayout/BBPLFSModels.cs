@@ -30,26 +30,70 @@ public enum BBPLFSDesignScopeKind
     WholePremises = 4
 }
 [Serializable]
+public sealed class BBPLFSExistingObjectSnapshot
+{
+    [SerializeField] private string instanceId;
+    [SerializeField] private string itemId;
+    [SerializeField] private Vector3 worldPosition;
+    [SerializeField] private Quaternion worldRotation;
+    [SerializeField] private Vector2 footprintSize;
+    [SerializeField] private bool editingEnabled;
+    [SerializeField] private bool movable;
+
+    public string InstanceId => instanceId;
+    public string ItemId => itemId;
+    public Vector3 WorldPosition => worldPosition;
+    public Quaternion WorldRotation => worldRotation;
+    public Vector2 FootprintSize => footprintSize;
+    public bool EditingEnabled => editingEnabled;
+    public bool Movable => movable;
+    public bool Locked => !editingEnabled || !movable;
+
+    public BBPLFSExistingObjectSnapshot(RestaurantPlaceableObject placeable)
+    {
+        instanceId = placeable != null ? placeable.InstanceId : string.Empty;
+        itemId = placeable != null && placeable.ItemDefinition != null ? placeable.ItemDefinition.ItemId : string.Empty;
+        worldPosition = placeable != null ? placeable.transform.position : Vector3.zero;
+        worldRotation = placeable != null ? placeable.transform.rotation : Quaternion.identity;
+        footprintSize = placeable != null && placeable.TryGetComponent(out RestaurantPlacementFootprint fp) ? fp.Size : Vector2.zero;
+        if (placeable != null && placeable.TryGetComponent(out RestaurantEditableObject editable))
+        {
+            editingEnabled = editable.EditingEnabled;
+            movable = editable.CanMove;
+        }
+        else
+        {
+            editingEnabled = false;
+            movable = false;
+        }
+    }
+}
+
+[Serializable]
 public sealed class BBPLFSPremisesSpaceSnapshot
 {
     [SerializeField] private string spaceId;
     [SerializeField] private RestaurantArea sourceArea;
     [SerializeField] private Bounds worldBounds;
     [SerializeField] private float floorAreaSquareMeters;
+    [SerializeField] private List<BBPLFSExistingObjectSnapshot> existingObjects = new();
 
     public string SpaceId => spaceId;
     public RestaurantArea SourceArea => sourceArea;
     public Bounds WorldBounds => worldBounds;
     public float FloorAreaSquareMeters => floorAreaSquareMeters;
+    public IReadOnlyList<BBPLFSExistingObjectSnapshot> ExistingObjects => existingObjects;
 
     public BBPLFSPremisesSpaceSnapshot(
         RestaurantArea sourceArea,
-        Bounds worldBounds)
+        Bounds worldBounds,
+        List<BBPLFSExistingObjectSnapshot> existingObjects = null)
     {
         this.sourceArea = sourceArea;
         spaceId = sourceArea != null ? sourceArea.AreaId : string.Empty;
         this.worldBounds = worldBounds;
         floorAreaSquareMeters = Mathf.Max(0f, worldBounds.size.x * worldBounds.size.z);
+        this.existingObjects = existingObjects ?? new List<BBPLFSExistingObjectSnapshot>();
     }
 }
 

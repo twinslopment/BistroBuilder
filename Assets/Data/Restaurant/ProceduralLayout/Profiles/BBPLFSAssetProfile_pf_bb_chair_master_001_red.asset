@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f4b02f989ce9a64297832c95d89897a, type: 3}
+  m_Name: BBPLFSAssetProfile_pf_bb_chair_master_001_red
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSAssetLayoutProfile
+  itemDefinition: {fileID: 11400000, guid: c747c083c153b6c4caf38147bbe43efd, type: 2}
+  layoutRole: 2
+  layoutFamily: diningseat
+  fastFootprint: {x: 0.46472728, y: 0.4921}
+  functionalCapacity: 1
+  styleTags:
+  - restaurant
+  - seating

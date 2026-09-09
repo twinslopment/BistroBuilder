@@ -78,8 +78,25 @@ public sealed class BBPLFSPremisesCaptureService : MonoBehaviour
             return false;
         }
 
-        snapshot = new BBPLFSPremisesSpaceSnapshot(area, bounds);
+        snapshot = new BBPLFSPremisesSpaceSnapshot(area, bounds, CaptureExistingObjects(area));
         return true;
+    }
+
+    private static List<BBPLFSExistingObjectSnapshot> CaptureExistingObjects(RestaurantArea area)
+    {
+        var results = new List<BBPLFSExistingObjectSnapshot>();
+        RestaurantPlaceableObject[] placeables = FindObjectsByType<RestaurantPlaceableObject>(
+            FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+        for (int i = 0; i < placeables.Length; i++)
+        {
+            RestaurantPlaceableObject placeable = placeables[i];
+            if (placeable == null || !placeable.TryGetComponent(out RestaurantAreaMember member)) continue;
+            if (member.AssignedArea == area ||
+                (member.AssignedArea == null && area.ContainsPosition(member.ReferencePosition)))
+                results.Add(new BBPLFSExistingObjectSnapshot(placeable));
+        }
+        results.Sort((a, b) => string.CompareOrdinal(a.InstanceId, b.InstanceId));
+        return results;
     }
 
     private static string BuildRevision(
@@ -94,6 +111,14 @@ public sealed class BBPLFSPremisesCaptureService : MonoBehaviour
                 hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(space.SpaceId ?? string.Empty);
                 hash = (hash * 31) + space.WorldBounds.center.GetHashCode();
                 hash = (hash * 31) + space.WorldBounds.size.GetHashCode();
+                for (int objectIndex = 0; objectIndex < space.ExistingObjects.Count; objectIndex++)
+                {
+                    BBPLFSExistingObjectSnapshot item = space.ExistingObjects[objectIndex];
+                    hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(item.InstanceId ?? string.Empty);
+                    hash = (hash * 31) + item.WorldPosition.GetHashCode();
+                    hash = (hash * 31) + item.WorldRotation.GetHashCode();
+                    hash = (hash * 31) + (item.Locked ? 1 : 0);
+                }
             }
 
             return "premises_" + hash.ToString("X8");
