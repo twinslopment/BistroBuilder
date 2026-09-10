@@ -129,6 +129,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         authoringView;
 
     public bool VisualTreeBuilt => visualTreeBuilt;
+    public bool IsOpen => modalRoot != null && modalRoot.gameObject.activeSelf;
 
     private void Awake()
     {
@@ -960,6 +961,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private void HandleOpenClicked()
     {
         TryOpenFromInterface(out _);
+    }
+
+    public void RequestCloseFromInterface()
+    {
+        RequestClose();
     }
 
     private void RequestClose()
