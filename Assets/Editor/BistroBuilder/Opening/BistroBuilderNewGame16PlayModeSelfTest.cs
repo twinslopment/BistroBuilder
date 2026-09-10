@@ -13,10 +13,12 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
     private const string SuccessKey = "BB.NewGame16.Play.Success";
     private const string ReportPath = "NewGame16PlayModeReport.txt";
     private const int DiagnosticSlot = 99;
+    private const double PlayReadyDelaySeconds = 0.25d;
 
     private static BistroBuilderNewGameOpeningService service;
     private static BistroBuilderSaveGameService save;
     private static double stageStarted;
+    private static double playReadyAt;
 
     static BistroBuilderNewGame16PlayModeSelfTest()
     {
@@ -37,6 +39,7 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
         File.Delete(Path.GetFullPath(ReportPath));
         SessionState.SetBool(SuccessKey, false);
         SessionState.SetString(StageKey, cli ? "enter_cli" : "enter_menu");
+        playReadyAt = 0d;
         EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
         EditorApplication.EnterPlaymode();
     }
@@ -46,26 +49,38 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage)) return;
         if (state == PlayModeStateChange.EnteredPlayMode)
-            SessionState.SetString(StageKey, stage.EndsWith("cli", StringComparison.Ordinal) ? "setup_cli" : "setup_menu");
+        {
+            bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+            SessionState.SetString(StageKey, cli ? "setup_cli" : "setup_menu");
+            playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+            if (cli) EditorApplication.QueuePlayerLoopUpdate();
+        }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
             bool cli = stage.Contains("cli", StringComparison.Ordinal);
             bool ok = SessionState.GetBool(SuccessKey, false);
             SessionState.EraseString(StageKey);
+            playReadyAt = 0d;
             if (cli) EditorApplication.Exit(ok ? 0 : 1);
         }
     }
 
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying || Time.frameCount < 5) return;
+        if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage) || stage.StartsWith("exit_", StringComparison.Ordinal)) return;
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (cli) EditorApplication.QueuePlayerLoopUpdate();
+
         try
         {
             if (stage.StartsWith("setup_", StringComparison.Ordinal))
             {
+                if (playReadyAt <= 0d)
+                    playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+                if (EditorApplication.timeSinceStartup < playReadyAt) return;
+
                 service = UnityEngine.Object.FindFirstObjectByType<BistroBuilderNewGameOpeningService>();
                 save = UnityEngine.Object.FindFirstObjectByType<BistroBuilderSaveGameService>();
                 string config = string.Empty;
