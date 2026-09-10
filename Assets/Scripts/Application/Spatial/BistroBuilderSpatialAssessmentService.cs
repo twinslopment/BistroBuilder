@@ -20,6 +20,7 @@ public sealed class BistroBuilderSpatialAssessmentService : MonoBehaviour
         new BistroBuilderSpatialQualityResult();
     public BistroBuilderSpatialBottleneckLedger LastLedger { get; private set; } =
         new BistroBuilderSpatialBottleneckLedger();
+    public int EvaluationCount { get; private set; }
 
     private void Awake()
     {
@@ -46,6 +47,7 @@ public sealed class BistroBuilderSpatialAssessmentService : MonoBehaviour
 
     public BistroBuilderSpatialQualityResult EvaluateCurrentLayout()
     {
+        EvaluationCount++;
         if (spatialService == null)
             spatialService = FindFirstObjectByType<BistroBuilderSpatialInteractionService>();
         semanticVolumes.Clear();
