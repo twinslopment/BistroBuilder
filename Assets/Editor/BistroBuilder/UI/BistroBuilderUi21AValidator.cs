@@ -75,7 +75,7 @@ public static class BistroBuilderUi21AValidator
         {
             "BBNav_Actividad", "BBNav_Personal", "BBNav_Carta", "BBNav_Inventario",
             "BBNav_Proveedores", "BBNav_Reservas", "BBNav_Economia", "BBNav_Marketing",
-            "BBNav_Reputacion", "BBNav_Progreso", "BBNav_Edicion"
+            "BBNav_Reputacion", "BBNav_Progreso", "BBNav_Edicion", "BBNav_Cerrar"
         };
         for (int i = 0; i < requiredNav.Length; i++)
             Check(nav != null && nav.Find(requiredNav[i]) != null,

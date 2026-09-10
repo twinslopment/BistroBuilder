@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -43,6 +44,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     [SerializeField] private TMP_Text satisfactionText;
     [SerializeField] private TMP_Text kitchenText;
     [SerializeField] private TMP_Text waitingText;
+    [SerializeField] private Button closeManagementButton;
 
     private readonly Dictionary<string, Button> proxyButtons =
         new Dictionary<string, Button>(StringComparer.Ordinal);
@@ -87,7 +89,13 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
 
     private void Update()
     {
-        if (!Application.isPlaying || Time.unscaledTime < nextRefreshAt) return;
+        if (!Application.isPlaying) return;
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && IsAnyManagementScreenOpen())
+        {
+            CloseCurrentManagementScreen();
+            return;
+        }
+        if (Time.unscaledTime < nextRefreshAt) return;
         ResolveDependencies();
         BindRuntime();
         ReconcileNavigation();
@@ -182,11 +190,12 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         {
             NavSpec spec = Navigation[i];
             string key = "BBNav_" + Sanitize(spec.Label);
-            Button proxy = EnsureButton(navContent, key, spec.Label, 112f);
+            Button proxy = EnsureButton(navContent, key, spec.Label, 92f);
             proxyButtons[spec.Label] = proxy;
         }
         Button edit = EnsureButton(navContent, "BBNav_Edicion", "Edición", 112f);
         proxyButtons["Edición"] = edit;
+        closeManagementButton = EnsureButton(navContent, "BBNav_Cerrar", "Cerrar", 80f);
     }
 
     private void EnsureBrandLabel()
@@ -320,20 +329,24 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
                 continue;
             }
 
-            Button target = FindLegacyLauncher(spec.TargetNames);
-            if (target != null)
+            Button legacy = FindLegacyLauncher(spec.TargetNames);
+            if (legacy != null) SuppressLegacyLauncher(legacy);
+
+            string capturedLabel = spec.Label;
+            if (HasDirectNavigation(capturedLabel))
             {
-                proxy.interactable = target.interactable && target.gameObject.activeSelf;
-                SuppressLegacyLauncher(target);
-                Button captured = target;
+                proxy.interactable = true;
+                proxy.onClick.AddListener(() => OpenDirectNavigation(capturedLabel));
+            }
+            else if (legacy != null)
+            {
+                proxy.interactable = legacy.interactable;
+                Button captured = legacy;
                 proxy.onClick.AddListener(() => captured.onClick.Invoke());
             }
             else
             {
-                string capturedLabel = spec.Label;
-                proxy.interactable = HasDirectNavigation(capturedLabel);
-                if (proxy.interactable)
-                    proxy.onClick.AddListener(() => OpenDirectNavigation(capturedLabel));
+                proxy.interactable = false;
             }
         }
 
@@ -343,33 +356,48 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             editProxy.interactable = editController != null;
             editProxy.onClick.AddListener(HandleEditModeClicked);
         }
+
+        if (closeManagementButton != null)
+        {
+            closeManagementButton.onClick.RemoveAllListeners();
+            closeManagementButton.interactable = IsAnyManagementScreenOpen();
+            closeManagementButton.onClick.AddListener(CloseCurrentManagementScreen);
+        }
     }
 
     private static bool HasDirectNavigation(string label)
     {
         switch (label)
         {
+            case "Personal": return FindScene<BistroBuilderStaffPlayerScreen>() != null;
             case "Carta":
                 return FindScene<BistroBuilderMenuPortfolioRuntimeView>() != null ||
                     FindScene<BistroBuilderMenuEditorRuntimeView>() != null;
             case "Inventario":
                 return FindScene<BistroBuilderInventoryWarehouseRuntimeView>() != null ||
                     FindScene<BistroBuilderInventoryPlanningRuntimeView>() != null;
-            case "Proveedores":
-                return FindScene<BistroBuilderSupplierPlayerRuntimeView>() != null;
-            case "Economía":
-                return FindScene<BistroBuilderFinanceRuntimeView>() != null;
-            default:
-                return false;
+            case "Proveedores": return FindScene<BistroBuilderSupplierPlayerRuntimeView>() != null;
+            case "Reservas": return FindScene<BistroBuilderReservationPlayerScreen>() != null;
+            case "Economía": return FindScene<BistroBuilderFinanceRuntimeView>() != null;
+            case "Marketing": return FindScene<BistroBuilderMarketingPlayerScreen>() != null;
+            case "Reputación": return FindScene<BistroBuilderReputationPlayerScreen>() != null;
+            case "Progreso": return FindScene<BistroBuilderProgressionPlayerScreen>() != null;
+            default: return false;
         }
     }
 
     private void OpenDirectNavigation(string label)
     {
+        if (!TryCloseManagementScreensBeforeOpening(label)) return;
+
         string error = string.Empty;
         bool opened = false;
         switch (label)
         {
+            case "Personal":
+                var staff = FindScene<BistroBuilderStaffPlayerScreen>();
+                if (staff != null) { staff.Show(); opened = staff.IsVisible; }
+                break;
             case "Carta":
                 var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
                 opened = portfolio != null && portfolio.TryOpen(out error);
@@ -392,9 +420,25 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
                 var suppliers = FindScene<BistroBuilderSupplierPlayerRuntimeView>();
                 opened = suppliers != null && suppliers.TryOpenFromInterface(out error);
                 break;
+            case "Reservas":
+                var reservations = FindScene<BistroBuilderReservationPlayerScreen>();
+                if (reservations != null) { reservations.Show(); opened = reservations.IsVisible; }
+                break;
             case "Economía":
                 var financeView = FindScene<BistroBuilderFinanceRuntimeView>();
                 opened = financeView != null && financeView.TryOpenFromInterface(out error);
+                break;
+            case "Marketing":
+                var marketing = FindScene<BistroBuilderMarketingPlayerScreen>();
+                if (marketing != null) { marketing.Show(); opened = marketing.IsVisible; }
+                break;
+            case "Reputación":
+                var reputation = FindScene<BistroBuilderReputationPlayerScreen>();
+                if (reputation != null) { reputation.Show(); opened = reputation.IsVisible; }
+                break;
+            case "Progreso":
+                var progression = FindScene<BistroBuilderProgressionPlayerScreen>();
+                if (progression != null) { progression.Show(); opened = progression.IsVisible; }
                 break;
         }
 
@@ -406,6 +450,74 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         }
     }
 
+    private bool TryCloseManagementScreensBeforeOpening(string nextLabel)
+    {
+        var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
+        if (editor != null && editor.IsOpen && nextLabel != "Carta")
+        {
+            editor.RequestCloseFromInterface();
+            if (editor.IsOpen) return false;
+        }
+        CloseSimpleManagementScreens(nextLabel);
+        return true;
+    }
+
+    private void CloseSimpleManagementScreens(string exceptLabel = null)
+    {
+        var staff = FindScene<BistroBuilderStaffPlayerScreen>();
+        if (staff != null && staff.IsVisible && exceptLabel != "Personal") staff.Hide();
+        var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
+        if (portfolio != null && portfolio.IsOpen && exceptLabel != "Carta") portfolio.Close();
+        var warehouse = FindScene<BistroBuilderInventoryWarehouseRuntimeView>();
+        if (warehouse != null && warehouse.IsOpen && exceptLabel != "Inventario") warehouse.Close();
+        var planning = FindScene<BistroBuilderInventoryPlanningRuntimeView>();
+        if (planning != null && planning.IsOpen && exceptLabel != "Inventario") planning.Close();
+        var suppliers = FindScene<BistroBuilderSupplierPlayerRuntimeView>();
+        if (suppliers != null && suppliers.IsOpen && exceptLabel != "Proveedores") suppliers.Close();
+        var reservations = FindScene<BistroBuilderReservationPlayerScreen>();
+        if (reservations != null && reservations.IsVisible && exceptLabel != "Reservas") reservations.Hide();
+        var financeView = FindScene<BistroBuilderFinanceRuntimeView>();
+        if (financeView != null && financeView.IsOpen && exceptLabel != "Economía") financeView.Close();
+        var marketing = FindScene<BistroBuilderMarketingPlayerScreen>();
+        if (marketing != null && marketing.IsVisible && exceptLabel != "Marketing") marketing.Hide();
+        var reputation = FindScene<BistroBuilderReputationPlayerScreen>();
+        if (reputation != null && reputation.IsVisible && exceptLabel != "Reputación") reputation.Hide();
+        var progression = FindScene<BistroBuilderProgressionPlayerScreen>();
+        if (progression != null && progression.IsVisible && exceptLabel != "Progreso") progression.Hide();
+    }
+
+    private bool IsAnyManagementScreenOpen()
+    {
+        var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
+        if (editor != null && editor.IsOpen) return true;
+        var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
+        if (portfolio != null && portfolio.IsOpen) return true;
+        var warehouse = FindScene<BistroBuilderInventoryWarehouseRuntimeView>();
+        if (warehouse != null && warehouse.IsOpen) return true;
+        var planning = FindScene<BistroBuilderInventoryPlanningRuntimeView>();
+        if (planning != null && planning.IsOpen) return true;
+        var suppliers = FindScene<BistroBuilderSupplierPlayerRuntimeView>();
+        if (suppliers != null && suppliers.IsOpen) return true;
+        var financeView = FindScene<BistroBuilderFinanceRuntimeView>();
+        if (financeView != null && financeView.IsOpen) return true;
+        var staff = FindScene<BistroBuilderStaffPlayerScreen>();
+        if (staff != null && staff.IsVisible) return true;
+        var reservations = FindScene<BistroBuilderReservationPlayerScreen>();
+        if (reservations != null && reservations.IsVisible) return true;
+        var marketing = FindScene<BistroBuilderMarketingPlayerScreen>();
+        if (marketing != null && marketing.IsVisible) return true;
+        var reputation = FindScene<BistroBuilderReputationPlayerScreen>();
+        if (reputation != null && reputation.IsVisible) return true;
+        var progression = FindScene<BistroBuilderProgressionPlayerScreen>();
+        return progression != null && progression.IsVisible;
+    }
+
+    private void CloseCurrentManagementScreen()
+    {
+        var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
+        if (editor != null && editor.IsOpen) { editor.RequestCloseFromInterface(); return; }
+        CloseSimpleManagementScreens();
+    }
     private Button FindLegacyLauncher(string[] names)
     {
         Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
