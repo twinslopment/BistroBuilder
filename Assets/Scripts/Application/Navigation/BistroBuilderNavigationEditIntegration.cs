@@ -37,16 +37,23 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
     private void Update()
     {
         if (!rebuildPending || Time.unscaledTime < rebuildAt) return;
-        rebuildPending = false;
-        if (navigationService == null) return;
-        navigationService.RebuildNavigationTopology();
-        AutomaticTopologyRebuildCount++;
+        RebuildNow();
     }
 
     public void RequestRebuild()
     {
         rebuildPending = true;
         rebuildAt = Time.unscaledTime + rebuildDelaySeconds;
+    }
+
+    public void RebuildNow()
+    {
+        rebuildPending = false;
+        if (navigationService == null)
+            CacheDependencies();
+        if (navigationService == null) return;
+        navigationService.RebuildNavigationTopology();
+        AutomaticTopologyRebuildCount++;
     }
 
     private void HandlePlacementCommitted(
