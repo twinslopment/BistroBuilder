@@ -69,7 +69,7 @@ while ($null -eq $slotStream) {
             $waitLogged = $true
         }
         if ([DateTime]::UtcNow -ge $slotDeadline) {
-            Write-Error "BB_SAFE_BATCH|SLOT_TIMEOUT|$ExecuteMethod"
+            [Console]::Error.WriteLine("BB_SAFE_BATCH|SLOT_TIMEOUT|$ExecuteMethod")
             exit 125
         }
         Start-Sleep -Milliseconds 500
@@ -89,7 +89,7 @@ while ($true) {
     if ([DateTime]::UtcNow -ge $slotDeadline) {
         $slotStream.Dispose()
         Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
-        Write-Error "BB_SAFE_BATCH|PROJECT_BUSY_TIMEOUT|$ExecuteMethod"
+        [Console]::Error.WriteLine("BB_SAFE_BATCH|PROJECT_BUSY_TIMEOUT|$ExecuteMethod")
         exit 126
     }
     Start-Sleep -Milliseconds 500
@@ -165,7 +165,7 @@ while ($true) {
         Remove-Item -LiteralPath $cmdPath, $resultPath -Force -ErrorAction SilentlyContinue
         $slotStream.Dispose()
         Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
-        Write-Error (
+        [Console]::Error.WriteLine(
             "BB_SAFE_BATCH|TIMEOUT|" + $ExecuteMethod +
             "|LOG=" + $logPath)
         exit 124
@@ -176,7 +176,7 @@ while ($true) {
 $exitText = (Get-Content -LiteralPath $resultPath -Raw).Trim()
 $unityExit = 1
 if (-not [int]::TryParse($exitText, [ref]$unityExit)) {
-    Write-Error "BB_SAFE_BATCH|INVALID_EXIT|$exitText"
+    [Console]::Error.WriteLine("BB_SAFE_BATCH|INVALID_EXIT|$exitText")
     $unityExit = 1
 }
 
@@ -187,7 +187,7 @@ Remove-Item -LiteralPath $cmdPath, $resultPath -Force -ErrorAction SilentlyConti
 if ($postflightExit -ne 0) {
     $slotStream.Dispose()
     Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
-    Write-Error "BB_SAFE_BATCH|POSTFLIGHT_LOCKED|$ExecuteMethod"
+    [Console]::Error.WriteLine("BB_SAFE_BATCH|POSTFLIGHT_LOCKED|$ExecuteMethod")
     exit 4
 }
 
