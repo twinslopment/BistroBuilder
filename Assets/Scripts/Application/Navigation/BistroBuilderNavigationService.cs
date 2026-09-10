@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -50,6 +50,8 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         : 0;
     public int StaticObstacleCount => staticShapes.Count;
     public int DynamicEnvelopeCount => dynamicEnvelopes.Count;
+    public int TopologyRebuildCount { get; private set; }
+    public int CirculationHealthEvaluationCount { get; private set; }
 
     private void Awake()
     {
@@ -81,6 +83,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
     public void RebuildNavigationTopology()
     {
+        TopologyRebuildCount++;
         if (spatialService == null)
             spatialService = FindFirstObjectByType<BistroBuilderSpatialInteractionService>();
         areas.Clear();
@@ -364,6 +367,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
     public BistroBuilderCirculationHealthReport EvaluateCirculationHealth()
     {
+        CirculationHealthEvaluationCount++;
         var report = new BistroBuilderCirculationHealthReport { revision = Revision };
         GameObject entranceObject = GameObject.Find("RestaurantEntrancePoint");
         Transform entrance = entranceObject != null ? entranceObject.transform : null;
