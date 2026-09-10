@@ -112,12 +112,26 @@ public sealed class BistroBuilderSpatialSubject : MonoBehaviour
         BistroBuilderSpatialContractDefinition definition,
         BistroBuilderAdaptiveSpatialProxy spatialProxy)
     {
-        subjectId = stableSubjectId ?? string.Empty;
+        CacheReferences();
+        string nextSubjectId = stableSubjectId ?? string.Empty;
+        bool identityChanged = !string.Equals(
+            subjectId,
+            nextSubjectId,
+            StringComparison.Ordinal);
+        if (identityChanged && service != null && !string.IsNullOrWhiteSpace(subjectId))
+            service.UnregisterSubject(this);
+
+        subjectId = nextSubjectId;
         contract = definition;
         proxy = spatialProxy != null
             ? spatialProxy
             : GetComponent<BistroBuilderAdaptiveSpatialProxy>();
         CacheReferences();
+
+        // AddComponent ejecuta OnEnable antes de que el binder pueda asignar el
+        // subjectId. Registrar aquí evita un RebuildSubjects global posterior.
+        if (isActiveAndEnabled && service != null && !string.IsNullOrWhiteSpace(subjectId))
+            service.RegisterSubject(this);
     }
 #if UNITY_EDITOR
     public void ConfigureForEditor(

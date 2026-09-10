@@ -30,7 +30,10 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
 
     private bool refreshPending;
     private float refreshAt;
+    private int revisionWhenRefreshRequested;
     public int RefreshCount { get; private set; }
+    public int IncrementalRefreshCount { get; private set; }
+    public int FullRefreshCount { get; private set; }
     public int LastTopologyRevision { get; private set; }
     public bool LastLayoutViable { get; private set; } = true;
     public float LastSpatialQuality { get; private set; } = 1f;
@@ -60,7 +63,7 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
         if (!refreshPending ||
             Time.unscaledTime < refreshAt)
             return;
-        RefreshNow();
+        RefreshIncrementalNow();
     }
 
     public bool ValidateConfiguration(out string error)
@@ -85,11 +88,20 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
 
     public void RequestRefresh()
     {
+        ResolveDependencies();
+        if (!refreshPending)
+            revisionWhenRefreshRequested = spatialService != null
+                ? spatialService.Revision
+                : 0;
         refreshPending = true;
         refreshAt = Time.unscaledTime +
             Mathf.Max(0f, refreshDelaySeconds);
     }
 
+    /// <summary>
+    /// Reconstrucción completa reservada a instalación, validación y gates.
+    /// No se ejecuta automáticamente al mover o retirar mobiliario.
+    /// </summary>
     public void RefreshNow()
     {
         ResolveDependencies();
@@ -108,6 +120,26 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
             ? spatialService.Revision
             : 0;
         RefreshCount++;
+        FullRefreshCount++;
+        SpatialEditStateRebuilt?.Invoke(LastTopologyRevision);
+    }
+
+    /// <summary>
+    /// Hot path de edición: conserva registros incrementales y solo publica una
+    /// revisión si el propio ciclo de vida no la publicó ya.
+    /// </summary>
+    public void RefreshIncrementalNow()
+    {
+        ResolveDependencies();
+        refreshPending = false;
+        if (spatialService != null &&
+            spatialService.Revision == revisionWhenRefreshRequested)
+            spatialService.NotifyRegisteredGeometryChanged();
+        LastTopologyRevision = spatialService != null
+            ? spatialService.Revision
+            : 0;
+        RefreshCount++;
+        IncrementalRefreshCount++;
         SpatialEditStateRebuilt?.Invoke(LastTopologyRevision);
     }
 
@@ -115,8 +147,10 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
         RestaurantPlaceableObject placeable)
     {
         if (placeable != null)
+        {
             runtimeBinder?.TryBindPlaceable(placeable);
-        placementAssessment?.RefreshProviderCache();
+            placementAssessment?.RegisterProviders(placeable.gameObject);
+        }
     }
 
     private void HandlePlacementStarted(
@@ -126,8 +160,10 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
         if (member != null &&
             member.TryGetComponent(
                 out RestaurantPlaceableObject placeable))
+        {
             runtimeBinder?.TryBindPlaceable(placeable);
-        placementAssessment?.RefreshProviderCache();
+            placementAssessment?.RegisterProviders(placeable.gameObject);
+        }
     }
     private void HandlePlacementFinished(
         RestaurantAreaMember member,
