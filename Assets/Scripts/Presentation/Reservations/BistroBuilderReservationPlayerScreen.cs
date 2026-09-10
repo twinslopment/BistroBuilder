@@ -272,6 +272,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         cancelArmed = false;
         Refresh();
         ShowFeedback("Reserva guardada y mesa " + result.tableId + " asignada.");
+        BistroBuilderWorldUiFeedback.PulseReservedTable(result.tableId);
         return true;
     }
 
@@ -340,6 +341,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         partySize = Mathf.Max(BistroBuilderReservationEngine.MinimumPartySize, partySize - 1);
         cancelArmed = false;
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(partyValueText, -1);
     }
 
     private void HandlePartyPlus()
@@ -347,6 +349,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         partySize = Mathf.Min(BistroBuilderReservationEngine.MaximumPartySize, partySize + 1);
         cancelArmed = false;
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(partyValueText, 1);
     }
 
     private void HandleTimeMinus()
@@ -355,6 +358,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         cancelArmed = false;
         ClampDurationToDay();
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(timeValueText, -1);
     }
 
     private void HandleTimePlus()
@@ -363,6 +367,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         arrivalMinute = Mathf.Min(latest, arrivalMinute + 30);
         cancelArmed = false;
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(timeValueText, 1);
     }
 
     private void HandleDurationMinus()
@@ -372,6 +377,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
             durationMinutes - 30);
         cancelArmed = false;
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(durationValueText, -1);
     }
 
     private void HandleDurationPlus()
@@ -382,6 +388,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         durationMinutes = Mathf.Min(maximum, durationMinutes + 30);
         cancelArmed = false;
         UpdateFormLabels(null);
+        BistroBuilderUiValuePulse.Pulse(durationValueText, 1);
     }
 
     private void ClampDurationToDay()
