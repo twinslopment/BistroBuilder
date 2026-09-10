@@ -17,6 +17,38 @@ $logDir = Join-Path $projectRoot 'Logs'
 $tempDir = Join-Path $logDir '.batchstate'
 New-Item -ItemType Directory -Force -Path $logDir, $tempDir | Out-Null
 
+$projectPattern = [regex]::Escape($projectRoot)
+$methodPattern = [regex]::Escape($ExecuteMethod)
+
+function Get-BBTargetUnityProcesses {
+    return @(
+        Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.CommandLine -and
+            $_.CommandLine -match $projectPattern -and
+            $_.CommandLine -match $methodPattern
+        })
+}
+
+function Stop-BBTargetUnityProcesses {
+    $targets = @(Get-BBTargetUnityProcesses)
+    if ($targets.Count -eq 0) { return }
+
+    Write-Output (
+        "BB_SAFE_BATCH|TERMINATE_TIMEOUT_UNITY|PIDS=" +
+        (($targets.ProcessId) -join ','))
+
+    foreach ($target in $targets) {
+        Stop-Process -Id ([int]$target.ProcessId) -Force -ErrorAction SilentlyContinue
+    }
+
+    $killDeadline = [DateTime]::UtcNow.AddSeconds(10)
+    while ((@(Get-BBTargetUnityProcesses)).Count -gt 0 -and
+           [DateTime]::UtcNow -lt $killDeadline) {
+        Start-Sleep -Milliseconds 250
+    }
+}
+
 # Serializa todos los Unity batch del proyecto mediante un lock real de proceso.
 # Evita que dos chats/sistemas abran simultáneamente el mismo proyecto y corrompan gates.
 $slotPath = Join-Path $tempDir 'unity_project_slot.lock'
@@ -45,7 +77,6 @@ while ($null -eq $slotStream) {
 }
 
 # También respeta Unity externos que no hayan sido lanzados por este helper.
-$projectPattern = [regex]::Escape($projectRoot)
 while ($true) {
     $projectUnity = @(
         Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue |
@@ -57,6 +88,7 @@ while ($true) {
     }
     if ([DateTime]::UtcNow -ge $slotDeadline) {
         $slotStream.Dispose()
+        Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
         Write-Error "BB_SAFE_BATCH|PROJECT_BUSY_TIMEOUT|$ExecuteMethod"
         exit 126
     }
@@ -79,10 +111,11 @@ if (-not $recordedAlive) {
     if ($hadStale) { Write-Output "BB_SAFE_BATCH|STALE_PROJECT_LOCK_REPAIRED" }
 }
 
-
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $guard -RepairKnownResidual
 if ($LASTEXITCODE -ne 0) {
-    throw "BB Scene Lock Guard rechazÃƒÂ³ el preflight."
+    $slotStream.Dispose()
+    Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
+    throw "BB Scene Lock Guard rechazó el preflight."
 }
 
 $token = [Guid]::NewGuid().ToString('N')
@@ -126,6 +159,12 @@ while ($true) {
     }
     if ($ready) { break }
     if ([DateTime]::UtcNow -ge $deadline) {
+        Stop-BBTargetUnityProcesses
+        Start-Sleep -Milliseconds 500
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $guard -RepairKnownResidual
+        Remove-Item -LiteralPath $cmdPath, $resultPath -Force -ErrorAction SilentlyContinue
+        $slotStream.Dispose()
+        Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
         Write-Error (
             "BB_SAFE_BATCH|TIMEOUT|" + $ExecuteMethod +
             "|LOG=" + $logPath)
@@ -146,6 +185,8 @@ $postflightExit = $LASTEXITCODE
 
 Remove-Item -LiteralPath $cmdPath, $resultPath -Force -ErrorAction SilentlyContinue
 if ($postflightExit -ne 0) {
+    $slotStream.Dispose()
+    Remove-Item -LiteralPath $slotPath -Force -ErrorAction SilentlyContinue
     Write-Error "BB_SAFE_BATCH|POSTFLIGHT_LOCKED|$ExecuteMethod"
     exit 4
 }
