@@ -15,6 +15,8 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
     private bool rebuildPending;
     private float rebuildAt;
 
+    public int AutomaticTopologyRebuildCount { get; private set; }
+
     private void Awake()
     {
         CacheDependencies();
@@ -36,8 +38,9 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
     {
         if (!rebuildPending || Time.unscaledTime < rebuildAt) return;
         rebuildPending = false;
-        navigationService?.RebuildNavigationTopology();
-        navigationService?.EvaluateCirculationHealth();
+        if (navigationService == null) return;
+        navigationService.RebuildNavigationTopology();
+        AutomaticTopologyRebuildCount++;
     }
 
     public void RequestRebuild()
