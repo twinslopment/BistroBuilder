@@ -64,6 +64,8 @@ public static class BistroBuilderUi21AValidator
             "Franja operativa inferior creada", ref passed, ref failed, log);
         Check(root != null && root.Find(BistroBuilderUiShell.ActivityPanelName) != null,
             "Panel Actividad lateral creado", ref passed, ref failed, log);
+        Check(root != null && root.Find(BistroBuilderUiShell.ContextPanelName) != null,
+            "Panel contextual derecho creado", ref passed, ref failed, log);
 
         Transform top = root != null ? root.Find(BistroBuilderUiShell.TopBarName) : null;
         Transform nav = top != null ? top.Find("NavigationContent") : null;
@@ -83,6 +85,8 @@ public static class BistroBuilderUi21AValidator
 
         Transform bottom = root != null ? root.Find(BistroBuilderUiShell.BottomBarName) : null;
         Transform status = bottom != null ? bottom.Find("StatusContent") : null;
+        Check(bottom != null && bottom.Find(BistroBuilderUiShell.ServiceActionName) != null,
+            "Acci\u00F3n principal de servicio disponible", ref passed, ref failed, log);
         Check(status != null && status.Find("Cash/Label") != null, "Pill Caja disponible", ref passed, ref failed, log);
         Check(status != null && status.Find("Satisfaction/Label") != null, "Pill Satisfacción disponible", ref passed, ref failed, log);
         Check(status != null && status.Find("Kitchen/Label") != null, "Pill Cocina disponible", ref passed, ref failed, log);
