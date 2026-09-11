@@ -14,6 +14,7 @@ internal static class BistroBuilderBatchPlayModePump
 {
     internal const string DisabledSessionKey = "BB.BatchPlayModePump.Disabled";
     private const double StepIntervalSeconds = 1d / 50d;
+    private const int MaxCatchUpStepsPerTick = 8;
 
     private static double nextStepAt;
     private static bool stepping;
@@ -56,7 +57,6 @@ internal static class BistroBuilderBatchPlayModePump
             SessionState.GetBool(DisabledSessionKey, false))
             return;
 
-        EditorApplication.QueuePlayerLoopUpdate();
         double now = EditorApplication.timeSinceStartup;
         if (stepping || now < nextStepAt) return;
 
@@ -66,15 +66,28 @@ internal static class BistroBuilderBatchPlayModePump
             ownsPause = true;
         }
 
+        double elapsedDebt = Math.Max(0d, now - nextStepAt);
+        int stepCount = 1 + (int)Math.Floor(elapsedDebt / StepIntervalSeconds);
+        stepCount = Math.Min(MaxCatchUpStepsPerTick, stepCount);
+
         stepping = true;
         try
         {
-            EditorApplication.Step();
+            for (int i = 0; i < stepCount; i++)
+            {
+                EditorApplication.QueuePlayerLoopUpdate();
+                EditorApplication.Step();
+                nextStepAt += StepIntervalSeconds;
+            }
+
+            double after = EditorApplication.timeSinceStartup;
+            double maximumDebt = StepIntervalSeconds * MaxCatchUpStepsPerTick;
+            if (nextStepAt < after - maximumDebt)
+                nextStepAt = after - maximumDebt;
         }
         finally
         {
             stepping = false;
-            nextStepAt = EditorApplication.timeSinceStartup + StepIntervalSeconds;
         }
     }
 }
