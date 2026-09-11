@@ -22,7 +22,7 @@ public sealed class BistroBuilderStaffRoleDefinition
 }
 
 /// <summary>
-/// Catálogo de roles dirigido por datos. V1 instala solo Camarero/a, pero
+/// Catálogo de roles dirigido por datos. V1 garantiza Camarero/a y Cocinero/a;
 /// nuevos roles pueden añadirse como datos sin modificar el núcleo Employee.
 /// </summary>
 [CreateAssetMenu(
@@ -38,24 +38,38 @@ public sealed class BistroBuilderStaffRoleCatalog : ScriptableObject
 
     public void InitializeV1DefaultsIfEmpty()
     {
-        if (roles != null && roles.Count > 0)
-        {
-            return;
-        }
-
-        roles = new List<BistroBuilderStaffRoleDefinition>
-        {
-            new BistroBuilderStaffRoleDefinition
-            {
-                roleId = "waiter",
-                displayName = "Camarero/a",
-                active = true,
-                operationalAdapterId =
-                    BistroBuilderStaffOperationalAdapterIds.WaiterAgent
-            }
-        };
+        roles ??= new List<BistroBuilderStaffRoleDefinition>();
+        EnsureDefaultRole(
+            "waiter", "Camarero/a", BistroBuilderStaffOperationalAdapterIds.WaiterAgent);
+        EnsureDefaultRole(
+            "cook", "Cocinero/a", BistroBuilderStaffOperationalAdapterIds.CookAgent);
     }
 
+    private void EnsureDefaultRole(string roleId, string displayName, string adapterId)
+    {
+        string normalized = BistroBuilderStaffStableIdUtility.Normalize(roleId);
+        for (int index = 0; index < roles.Count; index++)
+        {
+            BistroBuilderStaffRoleDefinition current = roles[index];
+            if (current != null && string.Equals(
+                    BistroBuilderStaffStableIdUtility.Normalize(current.roleId),
+                    normalized, StringComparison.Ordinal))
+                return;
+        }
+        roles.Add(CreateDefaultRole(roleId, displayName, adapterId));
+    }
+
+    private static BistroBuilderStaffRoleDefinition CreateDefaultRole(
+        string roleId, string displayName, string adapterId)
+    {
+        return new BistroBuilderStaffRoleDefinition
+        {
+            roleId = roleId,
+            displayName = displayName,
+            active = true,
+            operationalAdapterId = adapterId
+        };
+    }
     public bool TryGetRole(
         string roleId,
         out BistroBuilderStaffRoleDefinition role)
