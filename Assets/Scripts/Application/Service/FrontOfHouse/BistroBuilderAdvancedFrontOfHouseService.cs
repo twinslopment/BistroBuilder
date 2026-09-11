@@ -52,7 +52,7 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
 
     public BistroBuilderFrontOfHouseOperationalState OperationalState { get; private set; } =
         BistroBuilderFrontOfHouseOperationalState.Fluid;
-    public int WaitingGroupCount => queueByGroup.Count;
+    public int WaitingGroupCount => CountCurrentWaitingGroups();
     public long Revision => revision;
 
     private void Awake() => CacheDependencies();
@@ -123,8 +123,8 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
         if (ReferenceEquals(left, right)) return 0;
         if (left == null) return 1;
         if (right == null) return -1;
-        BistroBuilderFrontOfHouseQueueEntry a = GetOrBuildEntry(left);
-        BistroBuilderFrontOfHouseQueueEntry b = GetOrBuildEntry(right);
+        BistroBuilderFrontOfHouseQueueEntry a = BuildEntry(left);
+        BistroBuilderFrontOfHouseQueueEntry b = BuildEntry(right);
         int byPriority = b.priorityScore.CompareTo(a.priorityScore);
         if (byPriority != 0) return byPriority;
         int byWait = b.waitingSeconds.CompareTo(a.waitingSeconds);
@@ -136,30 +136,80 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
     {
         if (destination == null) return;
         destination.Clear();
-        queueScratch.Clear();
-        foreach (CustomerGroup group in queueByGroup.Keys)
-            if (group != null) queueScratch.Add(group);
-        queueScratch.Sort(CompareWaitingGroups);
-        for (int i = 0; i < queueScratch.Count; i++)
+        CacheDependencies();
+        if (tableAssignmentSystem == null) return;
+
+        IReadOnlyList<CustomerGroup> groups = tableAssignmentSystem.RegisteredGroups;
+        for (int i = 0; i < groups.Count; i++)
         {
-            BistroBuilderFrontOfHouseQueueEntry entry = queueByGroup[queueScratch[i]].DeepClone();
-            entry.queuePosition = i + 1;
-            destination.Add(entry);
+            CustomerGroup group = groups[i];
+            if (!IsCurrentQueueCandidate(group)) continue;
+            destination.Add(BuildEntry(group));
         }
+
+        destination.Sort(CompareQueueEntries);
+        for (int i = 0; i < destination.Count; i++)
+            destination[i].queuePosition = i + 1;
     }
 
     public bool TryGetQueueEntry(int groupId, out BistroBuilderFrontOfHouseQueueEntry entry)
     {
         entry = null;
-        foreach (KeyValuePair<CustomerGroup, BistroBuilderFrontOfHouseQueueEntry> pair in queueByGroup)
+        CacheDependencies();
+        if (tableAssignmentSystem == null) return false;
+
+        IReadOnlyList<CustomerGroup> groups = tableAssignmentSystem.RegisteredGroups;
+        for (int i = 0; i < groups.Count; i++)
         {
-            if (pair.Key != null && pair.Key.GroupId == groupId)
+            CustomerGroup group = groups[i];
+            if (group == null || group.GroupId != groupId || !IsCurrentQueueCandidate(group))
+                continue;
+            entry = BuildEntry(group);
+            int position = 1;
+            for (int j = 0; j < groups.Count; j++)
             {
-                entry = pair.Value.DeepClone();
-                return true;
+                CustomerGroup other = groups[j];
+                if (other == null || ReferenceEquals(other, group) || !IsCurrentQueueCandidate(other))
+                    continue;
+                if (CompareQueueEntries(BuildEntry(other), entry) < 0) position++;
             }
+            entry.queuePosition = position;
+            return true;
         }
         return false;
+    }
+
+    private int CountCurrentWaitingGroups()
+    {
+        CacheDependencies();
+        if (tableAssignmentSystem == null) return 0;
+        IReadOnlyList<CustomerGroup> groups = tableAssignmentSystem.RegisteredGroups;
+        int count = 0;
+        for (int i = 0; i < groups.Count; i++)
+            if (IsCurrentQueueCandidate(groups[i])) count++;
+        return count;
+    }
+
+    private static bool IsCurrentQueueCandidate(CustomerGroup group)
+    {
+        return group != null &&
+               !group.HasAssignedTable &&
+               group.CurrentState == CustomerGroupState.WaitingForTable &&
+               group.RequestedServiceMode != BistroBuilderServiceMode.BarService;
+    }
+
+    private static int CompareQueueEntries(
+        BistroBuilderFrontOfHouseQueueEntry left,
+        BistroBuilderFrontOfHouseQueueEntry right)
+    {
+        if (ReferenceEquals(left, right)) return 0;
+        if (left == null) return 1;
+        if (right == null) return -1;
+        int byPriority = right.priorityScore.CompareTo(left.priorityScore);
+        if (byPriority != 0) return byPriority;
+        int byWait = right.waitingSeconds.CompareTo(left.waitingSeconds);
+        if (byWait != 0) return byWait;
+        return left.groupId.CompareTo(right.groupId);
     }
 
     public bool IsTableProtectedForGroup(RestaurantTable table, CustomerGroup group)
@@ -382,11 +432,6 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
         AlternativeZoneOffered?.Invoke(group.GroupId, ResolveAreaId(alternative));
     }
 
-    private BistroBuilderFrontOfHouseQueueEntry GetOrBuildEntry(CustomerGroup group)
-    {
-        if (group != null && queueByGroup.TryGetValue(group, out var entry)) return entry;
-        return BuildEntry(group);
-    }
 
     private BistroBuilderFrontOfHouseQueueEntry BuildEntry(CustomerGroup group)
     {
