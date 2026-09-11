@@ -57,12 +57,6 @@ MonoBehaviour:
     removedSignedCentsPerUnit: 0
     unit: 3
     pricedChanges: 7
-  - definitionId: zone.bathroom
-    addedSignedCentsPerUnit: 180
-    modifiedSignedCentsPerUnit: 90
-    removedSignedCentsPerUnit: 0
-    unit: 3
-    pricedChanges: 7
   - definitionId: zone.bar
     addedSignedCentsPerUnit: 180
     modifiedSignedCentsPerUnit: 90
