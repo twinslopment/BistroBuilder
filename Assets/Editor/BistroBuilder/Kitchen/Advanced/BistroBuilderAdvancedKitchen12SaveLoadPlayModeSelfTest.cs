@@ -22,6 +22,7 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
     private static FieldInfo phaseField;
     private static FieldInfo reportField;
     private static double startedAt;
+    private static double nextBatchSimulationStepAt;
 
     static BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest()
     {
@@ -94,6 +95,17 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
 
         if (!stage.StartsWith("monitor_", StringComparison.Ordinal)) return;
         bool commandLine = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (commandLine && window != null && phaseField != null)
+        {
+            string innerPhase = Convert.ToString(phaseField.GetValue(window));
+            double now = EditorApplication.timeSinceStartup;
+            if (string.Equals(innerPhase, "WaitingForPreparingOrder", StringComparison.Ordinal) && now >= nextBatchSimulationStepAt)
+            {
+                if (!EditorApplication.isPaused) EditorApplication.isPaused = true;
+                EditorApplication.Step();
+                nextBatchSimulationStepAt = now + 0.02d;
+            }
+        }
         if (EditorApplication.timeSinceStartup - startedAt > TimeoutSeconds)
         {
             Finish(false, "Timeout del Save/Load real 12.", commandLine);
