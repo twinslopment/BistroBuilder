@@ -59,6 +59,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
     private GameClock gameClock;
 
     private int diagnosticSlot;
+    private int diagnosticFirstGroupId;
     private string runToken = string.Empty;
 
     private int savedGroupId;
@@ -252,6 +253,23 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
 
     private void ConfigureRealServiceDiagnostic()
     {
+        BistroBuilderMarketingDemandIntegrationService marketingDemand =
+            FindFirstObjectByType<BistroBuilderMarketingDemandIntegrationService>();
+        if (marketingDemand != null)
+            marketingDemand.enabled = false;
+        System.Reflection.FieldInfo queuedDemandField =
+            typeof(CustomerGroupSpawner).GetField(
+                "queuedDemandPlan",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic
+            );
+        if (queuedDemandField == null)
+            throw new InvalidOperationException(
+                "No pudo aislarse el plan de demanda para el diagnóstico 368EF."
+            );
+        queuedDemandField.SetValue(spawner, null);
+        diagnosticFirstGroupId = spawner.NextGroupId;
+
         SerializedObject spawnerSerialized = new SerializedObject(spawner);
         RequireProperty(spawnerSerialized, "numberOfGroups").intValue = 2;
         RequireProperty(spawnerSerialized, "firstSpawnDelay").floatValue =
@@ -483,7 +501,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             FailAndCleanup(
                 "El checkpoint no conserva exactamente una llegada futura: " +
                 (string.IsNullOrWhiteSpace(error)
-                    ? "calendario inesperado."
+                    ? "calendario inesperado; initialized=" + (spawnState != null && spawnState.scheduleInitialized) + ", completed=" + (spawnState != null && spawnState.scheduleCompleted) + ", pending=" + (spawnState != null ? spawnState.pendingArrivals.Count : -1) + ", seconds=" + (spawnState != null ? spawnState.secondsUntilNextArrival : -1f) + "."
                     : error)
             );
             return;
@@ -982,6 +1000,7 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
         {
             CustomerGroup group = groups[index];
             if (group != null &&
+                group.GroupId >= diagnosticFirstGroupId &&
                 group.RequestedServiceMode ==
                     BistroBuilderServiceMode.WaitingAtBar)
             {
