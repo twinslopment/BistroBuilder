@@ -440,7 +440,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(
+        StartPersistenceRoutine(
             SaveRoutine(
                 slotIndex,
                 slotDisplayName ?? string.Empty
@@ -467,7 +467,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(LoadRoutine(slotIndex));
+        StartPersistenceRoutine(LoadRoutine(slotIndex));
         return true;
     }
 
@@ -489,9 +489,60 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(DeleteRoutine(slotIndex));
+        StartPersistenceRoutine(DeleteRoutine(slotIndex));
         return true;
     }
+
+    private void StartPersistenceRoutine(IEnumerator routine)
+    {
+#if UNITY_EDITOR
+        if (Application.isBatchMode)
+        {
+            EditorBatchCoroutinePump.Start(routine);
+            return;
+        }
+#endif
+        StartCoroutine(routine);
+    }
+
+#if UNITY_EDITOR
+    private static class EditorBatchCoroutinePump
+    {
+        private static readonly List<EditorRoutine> active = new List<EditorRoutine>();
+        public static void Start(IEnumerator routine)
+        {
+            if (routine == null) return;
+            active.Add(new EditorRoutine(routine));
+            UnityEditor.EditorApplication.update -= Tick;
+            UnityEditor.EditorApplication.update += Tick;
+        }
+        private static void Tick()
+        {
+            for (int i = active.Count - 1; i >= 0; i--)
+                if (!active[i].Step()) active.RemoveAt(i);
+            if (active.Count == 0) UnityEditor.EditorApplication.update -= Tick;
+        }
+        private sealed class EditorRoutine
+        {
+            private readonly Stack<IEnumerator> stack = new Stack<IEnumerator>();
+            public EditorRoutine(IEnumerator root) => stack.Push(root);
+            public bool Step()
+            {
+                while (stack.Count > 0)
+                {
+                    IEnumerator top = stack.Peek();
+                    bool next; object current = null;
+                    try { next = top.MoveNext(); if (next) current = top.Current; }
+                    catch (Exception exception) { Debug.LogException(exception); return false; }
+                    if (!next) { stack.Pop(); continue; }
+                    if (current is IEnumerator nested) { stack.Push(nested); continue; }
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+#endif
 
     public bool SlotExists(int slotIndex)
     {
