@@ -344,12 +344,12 @@ public static partial class BistroBuilderConstructionAuthoringSelfTest
     private static void DefinitionIds()
     {
         Check(definitions.ContainsZone("zone.dining") && definitions.ContainsZone("zone.kitchen") &&
-            definitions.ContainsZone("zone.bar") && definitions.ContainsZone("zone.terrace"),"published IDs");
+            definitions.ContainsZone("zone.bathroom") && definitions.ContainsZone("zone.bar") && definitions.ContainsZone("zone.terrace"),"published IDs");
         Check(!definitions.ContainsZone("dining") && !definitions.ContainsZone("kitchen") &&
             !definitions.ContainsZone("bathroom"),"no alias translation");
         var s=Session();var g=new ConstructionGesture();
         Check(g.BeginRectangle(s,Cache(s),Vector2.zero,Wall("t",0,0,1,0),definitions,
-            "zone.dining",1,out _),"published dining available");
+            "zone.bathroom",1,out _),"published bathroom available");
         g.Cancel();
     }
     private static void InvalidInputs()
