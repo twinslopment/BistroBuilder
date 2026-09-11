@@ -13,6 +13,8 @@ public static class BistroBuilderBBSISPhase2APlayModeSelfTest
     private const string StageKey = "BB.BBSIS.Phase2A.Play.Stage";
     private const string SuccessKey = "BB.BBSIS.Phase2A.Play.Success";
     private const string ReportPath = "BBSISPhase2APlayModeReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
 
     static BistroBuilderBBSISPhase2APlayModeSelfTest()
     {
@@ -45,6 +47,7 @@ public static class BistroBuilderBBSISPhase2APlayModeSelfTest
         {
             bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
             SessionState.SetString(StageKey, cli ? "run_cli" : "run_menu");
+            playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
@@ -56,10 +59,13 @@ public static class BistroBuilderBBSISPhase2APlayModeSelfTest
     }
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying || Time.frameCount < 8) return;
+        if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (!stage.StartsWith("run_", StringComparison.Ordinal)) return;
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (cli) EditorApplication.QueuePlayerLoopUpdate();
+        if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+        if (EditorApplication.timeSinceStartup < playReadyAt) return;
         try
         {
             RunRuntimeProbe();
