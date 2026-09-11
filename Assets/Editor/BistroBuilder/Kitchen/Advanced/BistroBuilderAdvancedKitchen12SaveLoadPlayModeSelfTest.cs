@@ -72,7 +72,12 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
         if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
         bool batchCli = stage.EndsWith("cli", StringComparison.Ordinal);
-        if (batchCli) EditorApplication.QueuePlayerLoopUpdate();
+        if (batchCli)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            if (!EditorApplication.isPaused) EditorApplication.isPaused = true;
+            EditorApplication.Step();
+        }
         if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
         if (EditorApplication.timeSinceStartup < playReadyAt) return;
         if (stage.StartsWith("run_", StringComparison.Ordinal))

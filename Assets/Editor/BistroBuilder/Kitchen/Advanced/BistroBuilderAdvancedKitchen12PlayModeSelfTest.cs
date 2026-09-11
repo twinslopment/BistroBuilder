@@ -85,7 +85,12 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage) || stage.StartsWith("exit_", StringComparison.Ordinal)) return;
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
-        if (cli) EditorApplication.QueuePlayerLoopUpdate();
+        if (cli)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            if (!EditorApplication.isPaused) EditorApplication.isPaused = true;
+            EditorApplication.Step();
+        }
         if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
         if (EditorApplication.timeSinceStartup < playReadyAt) return;
         try
