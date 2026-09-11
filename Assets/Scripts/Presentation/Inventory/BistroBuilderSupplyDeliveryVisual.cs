@@ -12,6 +12,8 @@ public sealed class BistroBuilderSupplyDeliveryVisual : MonoBehaviour
 {
     private readonly List<Material> runtimeMaterials = new List<Material>();
     private GameObject boxesRoot;
+    private BistroBuilderNavigationService navigationService;
+    private readonly List<Vector3> navigationRoute = new List<Vector3>(24);
 
     public bool HasBoxes => boxesRoot != null && boxesRoot.activeSelf;
 
@@ -38,34 +40,62 @@ public sealed class BistroBuilderSupplyDeliveryVisual : MonoBehaviour
     {
         float speed = Mathf.Max(0.1f, movementSpeed);
         float arrival = Mathf.Max(0.01f, arrivalDistance);
+        string owner = "delivery:" + GetInstanceID();
+        if (navigationService == null)
+            navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
 
-        while (this != null &&
-               Vector3.Distance(transform.position, destination) > arrival)
+        Vector3 reserved = destination;
+        if (navigationService != null)
         {
-            Vector3 direction = destination - transform.position;
-            Vector3 flatDirection = direction;
+            navigationService.TryReserveDestination(
+                owner, BistroBuilderNavigationAgentMask.Delivery,
+                destination, 0.34f, 25, out reserved);
+            navigationRoute.Clear();
+            navigationService.TryBuildRoute(
+                owner, BistroBuilderNavigationAgentMask.Delivery,
+                transform.position, reserved, navigationRoute,
+                out _, out _);
+        }
+        if (navigationRoute.Count == 0) navigationRoute.Add(reserved);
+        int routeIndex = 0;
+        while (this != null && routeIndex < navigationRoute.Count)
+        {
+            Vector3 target = navigationRoute[routeIndex];
+            if (Vector3.Distance(transform.position, target) <= arrival)
+            {
+                routeIndex++;
+                continue;
+            }
+            navigationService?.UpdateAgentPresence(
+                owner, BistroBuilderNavigationAgentMask.Delivery,
+                transform.position, 0.34f, 25);
+            Vector3 proposed = Vector3.MoveTowards(
+                transform.position, target, speed * Time.deltaTime);
+            if (navigationService != null &&
+                !navigationService.CanAdvance(
+                    owner, BistroBuilderNavigationAgentMask.Delivery,
+                    proposed, 0.34f, 25))
+            {
+                navigationService.RefreshDestination(owner);
+                yield return null;
+                continue;
+            }
+
+            Vector3 flatDirection = target - transform.position;
             flatDirection.y = 0f;
             if (flatDirection.sqrMagnitude > 0.0001f)
-            {
                 transform.rotation = Quaternion.Slerp(
                     transform.rotation,
                     Quaternion.LookRotation(flatDirection.normalized, Vector3.up),
-                    Mathf.Clamp01(Time.deltaTime * 10f)
-                );
-            }
-
-            transform.position = Vector3.MoveTowards(
-                transform.position,
-                destination,
-                speed * Time.deltaTime
-            );
+                    Mathf.Clamp01(Time.deltaTime * 10f));
+            transform.position = proposed;
+            navigationService?.RefreshDestination(owner);
             yield return null;
         }
 
-        if (this != null)
-        {
-            transform.position = destination;
-        }
+        if (this != null) transform.position = reserved;
+        navigationService?.ReleaseDestination(owner);
+        navigationService?.RemoveAgentPresence(owner);
     }
 
     public void SetBoxesVisible(bool visible)
