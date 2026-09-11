@@ -45,7 +45,7 @@ while ($null -eq $slotStream) {
 }
 
 # También respeta Unity externos que no hayan sido lanzados por este helper.
-$projectPattern = [regex]::Escape($projectRoot)
+$projectPattern = '(?i)-projectPath\s+"?' + [regex]::Escape($projectRoot) + '(?:"|\s|$)'
 while ($true) {
     $projectUnity = @(
         Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue |
@@ -104,6 +104,7 @@ $commandLine = '"' + $unity + '" ' +
     ($unityArguments -join ' ')
 $cmdLines = @(
     '@echo off',
+    ('cd /d "' + $projectRoot + '"'),
     $commandLine,
     'set BB_EXIT=%ERRORLEVEL%',
     ('echo %BB_EXIT% > "' + $resultPath + '"'),
