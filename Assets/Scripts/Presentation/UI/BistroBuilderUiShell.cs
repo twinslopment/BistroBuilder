@@ -13,11 +13,13 @@ using UnityEngine.UI;
 [AddComponentMenu("Bistro Builder/UI/Definitive HUD Shell")]
 public sealed class BistroBuilderUiShell : MonoBehaviour
 {
-    public const string RuntimeRevision = "21A-UIUX-SHELL-V1.0";
+    public const string RuntimeRevision = "21A-UIUX-SHELL-V2.0";
     public const string RootName = "BB_UIUX_Shell";
     public const string TopBarName = "BB_UIUX_TopNavigation";
     public const string BottomBarName = "BB_UIUX_BottomOperations";
     public const string ActivityPanelName = "BB_UIUX_ActivityPanel";
+    public const string ContextPanelName = "BB_UIUX_ContextPanel";
+    public const string ServiceActionName = "BB_UIUX_ServiceAction";
 
     private static readonly NavSpec[] Navigation =
     {
@@ -44,6 +46,11 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     [SerializeField] private TMP_Text satisfactionText;
     [SerializeField] private TMP_Text kitchenText;
     [SerializeField] private TMP_Text waitingText;
+    [SerializeField] private RectTransform contextPanel;
+    [SerializeField] private TMP_Text contextTitle;
+    [SerializeField] private TMP_Text contextBody;
+    [SerializeField] private Button serviceActionButton;
+    [SerializeField] private TMP_Text serviceActionLabel;
     [SerializeField] private Button closeManagementButton;
 
     private readonly Dictionary<string, Button> proxyButtons =
@@ -60,6 +67,12 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     private BistroBuilderAdvancedFrontOfHouseService frontOfHouse;
     private BistroBuilderCustomerExperienceTrackingService experience;
     private RestaurantEditInteractionController editController;
+    private RestaurantServiceStateService serviceState;
+    private BistroBuilderEndOfDayService endOfDay;
+    private RestaurantSeatRegistry seatRegistry;
+    private BistroBuilderEditRuntimeCoordinator editCoordinator;
+    private BistroBuilderEditFinanceTariffTable editTariffs;
+    private readonly List<BistroBuilderPricedEditEconomicLine> editPricingBuffer = new List<BistroBuilderPricedEditEconomicLine>(32);
     private float nextRefreshAt;
     private bool activityVisible = true;
     private bool subscribed;
@@ -108,7 +121,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         ResolveDependencies();
         EnsureShell();
         if (canvas == null || shellRoot == null || topNavigation == null ||
-            bottomOperations == null || activityPanel == null)
+            bottomOperations == null || activityPanel == null || contextPanel == null || serviceActionButton == null)
         {
             error = "El shell 21A no pudo resolver su Canvas o sus superficies principales.";
             return false;
@@ -137,7 +150,9 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         EnsureNavigationContent();
         EnsureBottomStatus();
         EnsureActivityPanel();
+        EnsureContextPanel();
         EnsureNavigationButtons();
+        EnsureServiceAction();
         ReconcileTimeDock();
 
         if (designSystem != null) designSystem.ApplyAllNow(true);
@@ -228,7 +243,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             GameObject go = NewUi("StatusContent", bottomOperations);
             bottomStatusContent = go.GetComponent<RectTransform>();
             HorizontalLayoutGroup layout = go.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(18, 360, 8, 8);
+            layout.padding = new RectOffset(18, 250, 8, 8);
             layout.spacing = 8f;
             layout.childAlignment = TextAnchor.MiddleLeft;
             layout.childControlWidth = false;
@@ -312,6 +327,87 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         activityPanel.gameObject.SetActive(activityVisible);
     }
 
+    private void EnsureContextPanel()
+    {
+        Transform found = shellRoot.Find(ContextPanelName);
+        contextPanel = found as RectTransform;
+        if (contextPanel == null)
+        {
+            GameObject panel = NewUi(ContextPanelName, shellRoot);
+            contextPanel = panel.GetComponent<RectTransform>();
+            Image image = panel.AddComponent<Image>();
+            image.color = new Color(0.09f, 0.13f, 0.12f, 0.90f);
+            image.raycastTarget = true;
+        }
+        contextPanel.anchorMin = new Vector2(1f, 0f);
+        contextPanel.anchorMax = new Vector2(1f, 1f);
+        contextPanel.pivot = new Vector2(1f, 0.5f);
+        contextPanel.anchoredPosition = new Vector2(-12f, 0f);
+        contextPanel.sizeDelta = new Vector2(304f, -152f);
+        Transform titleTransform = contextPanel.Find("Title");
+        contextTitle = titleTransform != null ? titleTransform.GetComponent<TMP_Text>() : null;
+        if (contextTitle == null)
+        {
+            GameObject title = NewUi("Title", contextPanel);
+            contextTitle = title.AddComponent<TextMeshProUGUI>();
+            RectTransform rect = contextTitle.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f); rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f); rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(-32f, 52f);
+        }
+        contextTitle.text = "CONTEXTO";
+        contextTitle.fontSize = 18f; contextTitle.fontStyle = FontStyles.Bold;
+        contextTitle.color = BistroBuilderUiTokens.ContentLight;
+        contextTitle.alignment = TextAlignmentOptions.MidlineLeft;
+        contextTitle.raycastTarget = false;
+
+        Transform bodyTransform = contextPanel.Find("Body");
+        contextBody = bodyTransform != null ? bodyTransform.GetComponent<TMP_Text>() : null;
+        if (contextBody == null)
+        {
+            GameObject body = NewUi("Body", contextPanel);
+            contextBody = body.AddComponent<TextMeshProUGUI>();
+            RectTransform rect = contextBody.rectTransform;
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(16f, 16f); rect.offsetMax = new Vector2(-16f, -58f);
+        }
+        contextBody.fontSize = 13.5f;
+        contextBody.color = BistroBuilderUiTokens.TextPrimary;
+        contextBody.alignment = TextAlignmentOptions.TopLeft;
+        contextBody.textWrappingMode = TextWrappingModes.Normal;
+        contextBody.raycastTarget = false;
+    }
+
+    private void EnsureServiceAction()
+    {
+        Transform found = bottomOperations.Find(ServiceActionName);
+        serviceActionButton = found != null ? found.GetComponent<Button>() : null;
+        if (serviceActionButton == null)
+        {
+            GameObject go = NewUi(ServiceActionName, bottomOperations);
+            Image image = go.AddComponent<Image>(); image.color = BistroBuilderUiTokens.Primary;
+            serviceActionButton = go.AddComponent<Button>();
+            serviceActionButton.colors = BistroBuilderUiTokens.ButtonColors(BistroBuilderUiTokens.Primary, BistroBuilderUiTokens.PrimaryHover, BistroBuilderUiTokens.PrimaryPressed);
+            RectTransform rect = go.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 0.5f); rect.anchorMax = new Vector2(1f, 0.5f);
+            rect.pivot = new Vector2(1f, 0.5f); rect.anchoredPosition = new Vector2(-14f, 0f);
+            rect.sizeDelta = new Vector2(220f, 44f);
+            GameObject labelGo = NewUi("Label", go.transform);
+            serviceActionLabel = labelGo.AddComponent<TextMeshProUGUI>();
+            Stretch(serviceActionLabel.rectTransform);
+            serviceActionLabel.fontSize = 14f; serviceActionLabel.fontStyle = FontStyles.Bold;
+            serviceActionLabel.alignment = TextAlignmentOptions.Center;
+            serviceActionLabel.color = BistroBuilderUiTokens.ContentLight;
+            serviceActionLabel.raycastTarget = false;
+        }
+        else
+        {
+            Transform label = serviceActionButton.transform.Find("Label");
+            serviceActionLabel = label != null ? label.GetComponent<TMP_Text>() : null;
+        }
+        serviceActionButton.onClick.RemoveAllListeners();
+        serviceActionButton.onClick.AddListener(HandleServiceActionClicked);
+    }
     private void ReconcileNavigation()
     {
         if (canvas == null || navContent == null) return;
@@ -330,7 +426,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             }
 
             Button legacy = FindLegacyLauncher(spec.TargetNames);
-            if (legacy != null) SuppressLegacyLauncher(legacy);
+            SuppressLegacyLaunchers(spec.TargetNames);
 
             string capturedLabel = spec.Label;
             if (HasDirectNavigation(capturedLabel))
@@ -533,6 +629,23 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         return null;
     }
 
+    private void SuppressLegacyLaunchers(string[] names)
+    {
+        if (canvas == null || names == null || names.Length == 0) return;
+        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button candidate = buttons[i];
+            if (candidate == null || candidate.transform.IsChildOf(shellRoot)) continue;
+            for (int n = 0; n < names.Length; n++)
+            {
+                if (!string.Equals(candidate.name, names[n], StringComparison.Ordinal)) continue;
+                SuppressLegacyLauncher(candidate);
+                break;
+            }
+        }
+    }
+
     private static void SuppressLegacyLauncher(Button target)
     {
         CanvasGroup group = target.GetComponent<CanvasGroup>();
@@ -561,39 +674,125 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
 
     private void RefreshReadModels()
     {
+        RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
+        bool editing = editMode != null && editMode.IsEditModeActive;
         if (cashText != null)
         {
             cashText.text = finance != null
-                ? "Caja  " + BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents)
-                : "Caja  —";
+                ? (editing ? "Presupuesto  " : "Caja  ") + BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents)
+                : (editing ? "Presupuesto  —" : "Caja  —");
         }
 
         if (satisfactionText != null)
         {
+            if (editing)
+            {
+                satisfactionText.text = ResolveEditCostText();
+            }
+            else
+            {
             int satisfaction = experience != null
                 ? experience.LastRecordedSatisfactionBasisPoints : 0;
             satisfactionText.text = satisfaction > 0
                 ? "Satisfacción  " + (satisfaction / 100f).ToString("0") + "%"
                 : "Satisfacción  —";
+            }
         }
 
         if (kitchenText != null)
         {
+            if (editing)
+            {
+                kitchenText.text = "Aforo  " + (seatRegistry != null ? seatRegistry.RegisteredSeatCount : 0);
+                kitchenText.color = BistroBuilderUiTokens.TextPrimary;
+            }
+            else
+            {
             kitchenText.text = "Cocina  " + KitchenLabel(kitchen != null
                 ? kitchen.LoadState : BistroBuilderKitchenLoadState.Fluid);
             kitchenText.color = KitchenColor(kitchen != null
                 ? kitchen.LoadState : BistroBuilderKitchenLoadState.Fluid);
+            }
         }
 
         if (waitingText != null)
         {
+            if (editing)
+            {
+                waitingText.text = "Edición  fuera de servicio";
+                waitingText.color = BistroBuilderUiTokens.TextPrimary;
+            }
+            else
+            {
             int waiting = ResolveWaitingClientCount();
             waitingText.text = "Espera: " + waiting + " clientes";
             waitingText.color = waiting > 0 ? BistroBuilderUiTokens.Attention : BistroBuilderUiTokens.TextPrimary;
+            }
         }
         RefreshActivityText();
+        RefreshContextAndServiceAction();
     }
 
+    private string ResolveEditCostText()
+    {
+        if (editCoordinator == null || !editCoordinator.HasSession || !editCoordinator.IsDirty)
+            return "Coste cambios  0";
+        if (editTariffs == null) return "Coste cambios  —";
+        BistroBuilderEditEconomicProposal proposal = BistroBuilderEditEconomicProposalBuilder.Build(editCoordinator.Session);
+        if (!BistroBuilderEditFinancePricingPolicy.TryPrice(proposal, editTariffs.Rates, editPricingBuffer,
+            out long creditCents, out long debitCents, out _)) return "Coste cambios  —";
+        long net = debitCents - creditCents;
+        return "Coste cambios  " + BistroBuilderFinanceUiFormat.Money(net);
+    }
+
+    private void RefreshContextAndServiceAction()
+    {
+        RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
+        bool editing = editMode != null && editMode.IsEditModeActive;
+        if (contextBody != null)
+        {
+            string modeLine = editMode != null && editMode.IsEditModeActive
+                ? "MODO EDICI\u00D3N\nConstrucci\u00F3n y mobiliario disponibles. El servicio permanece cerrado."
+                : "MODO SERVICIO\nSelecciona sistemas desde la barra superior. El restaurante sigue siendo la superficie principal.";
+            string serviceLine = serviceState != null ? "\n\nServicio: " + ServiceStateLabel(serviceState.CurrentState) : string.Empty;
+            string kitchenLine = kitchen != null ? "\nCocina: " + KitchenLabel(kitchen.LoadState) : string.Empty;
+            string waitingLine = "\nEspera: " + ResolveWaitingClientCount() + " clientes";
+            contextBody.text = modeLine + serviceLine + kitchenLine + waitingLine;
+        }
+
+        if (serviceActionButton == null || serviceActionLabel == null) return;
+        RestaurantServiceState state = serviceState != null ? serviceState.CurrentState : RestaurantServiceState.Closed;
+        serviceActionButton.interactable = state == RestaurantServiceState.Open && endOfDay != null;
+        serviceActionLabel.text = state == RestaurantServiceState.Open ? "FIN DE SERVICIO" :
+            state == RestaurantServiceState.Closing ? "CIERRE EN CURSO" :
+            state == RestaurantServiceState.Preparing ? "PREPARANDO SERVICIO" : "RESTAURANTE CERRADO";
+    }
+
+    private void HandleServiceActionClicked()
+    {
+        ResolveDependencies();
+        if (endOfDay == null)
+        {
+            AddActivity("Cierre \u00B7 sistema no disponible.");
+            return;
+        }
+        if (endOfDay.TryBeginEndOfService(out string error))
+            AddActivity("Cierre \u00B7 fin de servicio iniciado.");
+        else
+            AddActivity("Cierre \u00B7 " + (string.IsNullOrWhiteSpace(error) ? "no disponible ahora." : error));
+        RefreshReadModels();
+    }
+
+    private static string ServiceStateLabel(RestaurantServiceState state)
+    {
+        switch (state)
+        {
+            case RestaurantServiceState.Preparing: return "Preparaci\u00F3n";
+            case RestaurantServiceState.Open: return "Abierto";
+            case RestaurantServiceState.Closing: return "Cierre";
+            default: return "Cerrado";
+        }
+    }
     private void ResolveDependencies()
     {
         if (canvas == null) canvas = GetComponentInParent<Canvas>();
@@ -605,6 +804,11 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         if (frontOfHouse == null) frontOfHouse = FindScene<BistroBuilderAdvancedFrontOfHouseService>();
         if (experience == null) experience = FindScene<BistroBuilderCustomerExperienceTrackingService>();
         if (editController == null) editController = FindScene<RestaurantEditInteractionController>();
+        if (serviceState == null) serviceState = FindScene<RestaurantServiceStateService>();
+        if (endOfDay == null) endOfDay = FindScene<BistroBuilderEndOfDayService>();
+        if (seatRegistry == null) seatRegistry = FindScene<RestaurantSeatRegistry>();
+        if (editCoordinator == null) editCoordinator = FindScene<BistroBuilderEditRuntimeCoordinator>();
+        if (editTariffs == null) editTariffs = Resources.Load<BistroBuilderEditFinanceTariffTable>("BistroBuilder/Finance/BB_EditMode_PlaytestTariffs");
     }
 
     private void BindRuntime()
