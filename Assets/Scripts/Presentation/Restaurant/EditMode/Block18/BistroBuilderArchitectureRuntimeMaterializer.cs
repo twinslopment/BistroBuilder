@@ -33,23 +33,6 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     public BistroBuilderEditDocument LastDocument =>
         lastDocument != null ? lastDocument.DeepClone() : null;
 
-    public BistroBuilderArchitectureMaterializationSummary RebuildVisualPreview(
-        BistroBuilderEditDocument document)
-    {
-        bool navigation = createNavigationFootprints;
-        bool spatial = createSpatialSubjects;
-        createNavigationFootprints = false;
-        createSpatialSubjects = false;
-        try
-        {
-            return Rebuild(document);
-        }
-        finally
-        {
-            createNavigationFootprints = navigation;
-            createSpatialSubjects = spatial;
-        }
-    }
     public BistroBuilderArchitectureMaterializationSummary Rebuild(
         BistroBuilderEditDocument document)
     {

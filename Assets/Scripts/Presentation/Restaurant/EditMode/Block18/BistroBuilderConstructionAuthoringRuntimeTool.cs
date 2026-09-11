@@ -19,8 +19,6 @@ public enum BistroBuilderConstructionRuntimeMode
 public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviour
 {
     [SerializeField] private BistroBuilderEditRuntimeCoordinator coordinator;
-    [SerializeField] private BistroBuilderEditDocumentRuntimeService documentService;
-    [SerializeField] private BistroBuilderArchitectureRuntimeMaterializer materializer;
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private RestaurantEditInteractionController furnitureController;
     [SerializeField] private Camera interactionCamera;
@@ -47,10 +45,12 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private bool dragGesture;
     private bool furnitureControllerWasEnabled;
     private bool furnitureInputSuspended;
+    private bool observedEditModeActive;
     private SnapKind lastSnapKind;
     private Rect panelRect;
     private GameObject visualRoot;
     private LineRenderer[] previewLines = Array.Empty<LineRenderer>();
+    private LineRenderer[] draftLines = Array.Empty<LineRenderer>();
     private LineRenderer selectionLine;
     private LineRenderer snapMarker;
     private Material lineMaterial;
@@ -101,10 +101,14 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
         if (editModeService == null || !editModeService.IsEditModeActive)
         {
+            if (observedEditModeActive && coordinator != null && coordinator.HasSession)
+                TryCancelDraft(out _);
+            observedEditModeActive = false;
             if (mode != BistroBuilderConstructionRuntimeMode.Furniture)
                 SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
             return;
         }
+        observedEditModeActive = true;
 
         if (HandleHistoryShortcuts()) return;
         if (HandleEscapeOrDelete()) return;
@@ -239,6 +243,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             SetStatus(error); return false;
         }
         selection.Clear();
+        ClearDraftOverlay();
         SetStatus("Construcción aplicada y publicada.");
         RefreshVisuals();
         return true;
@@ -255,8 +260,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             return false;
         }
         selection.Clear();
-        if (materializer != null && documentService != null)
-            materializer.Rebuild(documentService.GetCommittedSnapshot());
+        ClearDraftOverlay();
         SetStatus("Construcción pendiente descartada.");
         RefreshVisuals();
         return true;
@@ -291,6 +295,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (coordinator.HasSession) return true;
         if (!coordinator.TryBeginSession(out error)) return false;
         RefreshQueries();
+        RefreshDraftOverlay();
         return true;
     }
 
@@ -630,6 +635,20 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         return line;
     }
 
+    private void EnsureDraftLineCount(int count)
+    {
+        if (draftLines.Length >= count) return;
+        int old = draftLines.Length;
+        Array.Resize(ref draftLines, count);
+        for (int i=old;i<count;i++) draftLines[i]=CreateLine("Draft_"+i.ToString("D2"));
+    }
+
+    private void ClearDraftOverlay()
+    {
+        for (int i=0;i<draftLines.Length;i++)
+            if (draftLines[i] != null) draftLines[i].enabled=false;
+    }
+
     private void EnsurePreviewLineCount(int count)
     {
         if (previewLines.Length >= count) return;
@@ -749,11 +768,35 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private void RefreshAfterDraftMutation(string message)
     {
         RefreshQueries();
-        if (materializer != null && coordinator != null && coordinator.Session != null)
-            materializer.RebuildVisualPreview(coordinator.Session.Draft);
+        RefreshDraftOverlay();
         if (!string.IsNullOrWhiteSpace(message)) SetStatus(message);
         RefreshVisuals();
     }
+    private void RefreshDraftOverlay()
+    {
+        EnsureVisuals();
+        if (coordinator == null || coordinator.Session == null)
+        {
+            ClearDraftOverlay();
+            return;
+        }
+        int count = queries.Walls.Count + queries.Openings.Count;
+        EnsureDraftLineCount(count);
+        int index = 0;
+        Color wallColor = new Color(0.2f, 0.82f, 0.95f, 0.65f);
+        foreach (BistroBuilderWallRecord wall in queries.Walls)
+            SetLine(draftLines[index++], wall.axisStart, wall.axisEnd, wallColor, 0.035f);
+        foreach (BistroBuilderOpeningRecord opening in queries.Openings)
+        {
+            BistroBuilderWallRecord host = queries.CaptureWall(opening.hostWallId);
+            if (host == null) continue;
+            Vector2 center = Vector2.Lerp(host.axisStart, host.axisEnd, opening.axisPosition01);
+            Vector2 half = (host.axisEnd-host.axisStart).normalized * (opening.width*0.5f);
+            SetLine(draftLines[index++], center-half, center+half, SelectionColor, 0.065f);
+        }
+        for (int i=index;i<draftLines.Length;i++) draftLines[i].enabled=false;
+    }
+
     private void SetStatus(string message)
     {
         status = string.IsNullOrWhiteSpace(message) ? string.Empty : message.Trim();
@@ -805,8 +848,6 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private void CacheDependencies()
     {
         if (coordinator == null) coordinator = FindFirstObjectByType<BistroBuilderEditRuntimeCoordinator>();
-        if (documentService == null) documentService = FindFirstObjectByType<BistroBuilderEditDocumentRuntimeService>();
-        if (materializer == null) materializer = FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>();
         if (editModeService == null) editModeService = FindFirstObjectByType<RestaurantEditModeService>();
         if (furnitureController == null) furnitureController = FindFirstObjectByType<RestaurantEditInteractionController>();
         if (interactionCamera == null)
@@ -911,11 +952,9 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("Zona:", labelStyle, GUILayout.Width(44f));
-        ZoneButton("Salón", "zone.dining");
-        ZoneButton("Cocina", "zone.kitchen");
-        ZoneButton("Baño", "zone.bathroom");
-        ZoneButton("Barra", "zone.bar");
-        ZoneButton("Terraza", "zone.terrace");
+        if (definitions != null)
+            foreach (string zoneId in definitions.ZoneIds)
+                ZoneButton(ZoneLabel(zoneId), zoneId);
         GUILayout.FlexibleSpace();
         GUI.enabled = CanUndo;
         if (GUILayout.Button("Deshacer", GUILayout.Width(88f))) TryUndo(out _);
