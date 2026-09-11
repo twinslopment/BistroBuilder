@@ -13,6 +13,8 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
     private const string StageKey = "BB.Kitchen12.Play.Stage";
     private const string SuccessKey = "BB.Kitchen12.Play.Success";
     private const string ReportPath = "AdvancedKitchen12PlayModeReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
 
     private static BistroBuilderAdvancedKitchenService advanced;
     private static KitchenSystem kitchen;
@@ -66,6 +68,7 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
         {
             bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
             SessionState.SetString(StageKey, cli ? "run_cli" : "run_menu");
+            playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
@@ -78,10 +81,13 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
 
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying || Time.frameCount < 5) return;
+        if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage) || stage.StartsWith("exit_", StringComparison.Ordinal)) return;
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (cli) EditorApplication.QueuePlayerLoopUpdate();
+        if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+        if (EditorApplication.timeSinceStartup < playReadyAt) return;
         try
         {
             if (stage.StartsWith("run_", StringComparison.Ordinal))
