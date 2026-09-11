@@ -17,6 +17,8 @@ public static class BistroBuilderBBSISPhase2BPlayModeSelfTest
         "BB.BBSIS.Phase2B.Play.Success";
     private const string ReportPath =
         "BBSISPhase2BPlayModeReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
 
     static BistroBuilderBBSISPhase2BPlayModeSelfTest()
     {
