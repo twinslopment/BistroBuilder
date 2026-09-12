@@ -267,6 +267,8 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     private static void DestroyGeneratedObject(GameObject go)
     {
         if (go == null) return;
+        // Unregister BBSIS/Navigation projections immediately; Destroy is deferred in PlayMode.
+        if (go.activeSelf) go.SetActive(false);
         MeshFilter[] filters = go.GetComponentsInChildren<MeshFilter>(true);
         for (int i = 0; i < filters.Length; i++)
         {
