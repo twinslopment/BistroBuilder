@@ -48,6 +48,12 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private bool observedEditModeActive;
     private SnapKind lastSnapKind;
     private Rect panelRect;
+    private Vector2 lastPointerScreen;
+    private bool hasLastPointerScreen;
+    private bool lastShiftState;
+    private bool lastAltState;
+    private float nextDependencyRefreshAt;
+    private const float PointerScreenEpsilonSqr = 0.25f;
     private GameObject visualRoot;
     private LineRenderer[] previewLines = Array.Empty<LineRenderer>();
     private LineRenderer[] draftLines = Array.Empty<LineRenderer>();
@@ -95,8 +101,15 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void Update()
     {
-        CacheDependencies();
-        if (Keyboard.current != null && Keyboard.current.f8Key.wasPressedThisFrame)
+        if ((coordinator == null || editModeService == null || interactionCamera == null) &&
+            Time.unscaledTime >= nextDependencyRefreshAt)
+        {
+            nextDependencyRefreshAt = Time.unscaledTime + 1f;
+            CacheDependencies();
+        }
+
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard != null && keyboard.f8Key.wasPressedThisFrame)
             showPlaytestPanel = !showPlaytestPanel;
 
         if (editModeService == null || !editModeService.IsEditModeActive)
@@ -104,6 +117,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             if (observedEditModeActive && coordinator != null && coordinator.HasSession)
                 TryCancelDraft(out _);
             observedEditModeActive = false;
+            hasLastPointerScreen = false;
             if (mode != BistroBuilderConstructionRuntimeMode.Furniture)
                 SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
             return;
@@ -113,20 +127,44 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (HandleHistoryShortcuts()) return;
         if (HandleEscapeOrDelete()) return;
 
-        if (mode == BistroBuilderConstructionRuntimeMode.Furniture || Mouse.current == null)
+        Mouse mouse = Mouse.current;
+        if (mode == BistroBuilderConstructionRuntimeMode.Furniture || mouse == null)
+        {
+            hasLastPointerScreen = false;
             return;
+        }
         if (!EnsureSession(out string sessionError))
         {
             SetStatus(sessionError);
             return;
         }
-        RefreshQueries();
-        if (!TryGetPlanPoint(out Vector2 rawPoint)) return;
+        if (!queries.Matches(coordinator.Session)) RefreshQueries();
+
+        Vector2 pointerScreen = mouse.position.ReadValue();
+        bool pressed = mouse.leftButton.wasPressedThisFrame;
+        bool released = mouse.leftButton.wasReleasedThisFrame;
+        bool shift = ShiftPressed();
+        bool alt = AltPressed();
+        bool pointerChanged = !hasLastPointerScreen ||
+            (pointerScreen - lastPointerScreen).sqrMagnitude > PointerScreenEpsilonSqr ||
+            shift != lastShiftState || alt != lastAltState || pressed || released || dragGesture;
+
+        lastPointerScreen = pointerScreen;
+        hasLastPointerScreen = true;
+        lastShiftState = shift;
+        lastAltState = alt;
+        if (!pointerChanged) return;
+        if (!TryGetPlanPoint(pointerScreen, out Vector2 rawPoint)) return;
+
+        if (pressed && PointerHitsUi(pointerScreen))
+        {
+            HideSnapMarker();
+            return;
+        }
+
         UpdateHoverOrGesture(rawPoint);
-        if (Mouse.current.leftButton.wasPressedThisFrame && !PointerHitsUi())
-            HandlePointerPressed(rawPoint);
-        if (Mouse.current.leftButton.wasReleasedThisFrame && dragGesture)
-            FinishDragGesture();
+        if (pressed) HandlePointerPressed(rawPoint);
+        if (released && dragGesture) FinishDragGesture();
     }
 
     private bool HandleEscapeOrDelete()
@@ -181,6 +219,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (mode == next && !IsGestureActive()) return;
         CancelGesture(string.Empty);
         mode = next;
+        hasLastPointerScreen = false;
         selection.Clear();
         if (mode == BistroBuilderConstructionRuntimeMode.Furniture)
         {
@@ -488,7 +527,6 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             RenderOpeningHover(point); return;
         }
         HideSnapMarker();
-        if (mode == BistroBuilderConstructionRuntimeMode.Select) RefreshVisuals();
     }
 
     private void RenderOpeningHover(Vector2 point)
@@ -576,7 +614,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         {
             BistroBuilderWallRecord wall = queries.CaptureWall(selection.Id);
             if (wall == null) { selectionLine.enabled = false; return; }
-            SetPolyline(selectionLine, new[] { wall.axisStart, wall.axisEnd }, SelectionColor, 0.075f, false);
+            SetLine(selectionLine, wall.axisStart, wall.axisEnd, SelectionColor, 0.075f);
             return;
         }
         if (selection.Kind == EntityKind.Opening)
@@ -586,7 +624,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             if (opening == null || host == null) { selectionLine.enabled = false; return; }
             Vector2 center = Vector2.Lerp(host.axisStart, host.axisEnd, opening.axisPosition01);
             Vector2 half = (host.axisEnd - host.axisStart).normalized * (opening.width * 0.5f);
-            SetPolyline(selectionLine, new[] { center - half, center + half }, SelectionColor, 0.09f, false);
+            SetLine(selectionLine, center - half, center + half, SelectionColor, 0.09f);
             return;
         }
         foreach (BistroBuilderRoomProjection room in queries.Rooms)
@@ -660,7 +698,14 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void SetLine(LineRenderer line, Vector2 a, Vector2 b, Color color, float width)
     {
-        SetPolyline(line, new[] { a, b }, color, width, false);
+        if (line == null) return;
+        line.enabled = true;
+        line.loop = false;
+        line.positionCount = 2;
+        line.startWidth = line.endWidth = width;
+        line.startColor = line.endColor = color;
+        line.SetPosition(0, new Vector3(a.x, 0.06f, a.y));
+        line.SetPosition(1, new Vector3(b.x, 0.06f, b.y));
     }
 
     private void SetPolyline(LineRenderer line, Vector2[] points, Color color, float width, bool loop)
@@ -704,12 +749,10 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     {
         if (snapMarker != null) snapMarker.enabled = false;
     }
-    private bool TryGetPlanPoint(out Vector2 point)
+    private bool TryGetPlanPoint(Vector2 pointer, out Vector2 point)
     {
         point = default;
-        CacheDependencies();
-        if (interactionCamera == null || Mouse.current == null) return false;
-        Vector2 pointer = Mouse.current.position.ReadValue();
+        if (interactionCamera == null) return false;
         Ray ray = interactionCamera.ScreenPointToRay(pointer);
         var plane = new Plane(Vector3.up, Vector3.zero);
         if (!plane.Raycast(ray, out float distance)) return false;
@@ -718,10 +761,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         return ConstructionGeometry.Finite(point);
     }
 
-    private bool PointerHitsUi()
+    private bool PointerHitsUi(Vector2 pointer)
     {
-        if (Mouse.current == null) return true;
-        Vector2 pointer = Mouse.current.position.ReadValue();
         Vector2 guiPoint = new Vector2(pointer.x, Screen.height - pointer.y);
         if (showPlaytestPanel && panelRect.Contains(guiPoint)) return true;
         if (BistroBuilderRuntimePointerUiGuard.IsPointerBlocked(pointer)) return true;
