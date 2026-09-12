@@ -153,12 +153,13 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             !endOfDayService.TryResetForLegacyLoad(out error))
             return false;
 
-        if (editDocumentService != null &&
-            !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
-            return false;
-        if (premisesProfile == BistroBuilderStartingPremisesProfile.Empty &&
-            !TryPrepareEmptyPremises(out error))
-            return false;
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.Empty)
+        {
+            if (editDocumentService != null &&
+                !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
+                return false;
+            if (!TryPrepareEmptyPremises(out error)) return false;
+        }
 
         state = new BistroBuilderNewGameStateSnapshot
         {
@@ -432,8 +433,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         {
             BistroBuilderEditDocument layout = editDocumentService != null
                 ? editDocumentService.GetCommittedSnapshot() : null;
-            if (!HasFunctionalZone(layout, "dining") || !HasFunctionalZone(layout, "kitchen") ||
-                !HasFunctionalZone(layout, "bathroom"))
+            if (!HasFunctionalZone(layout, "zone.dining") || !HasFunctionalZone(layout, "zone.kitchen") ||
+                !HasFunctionalZone(layout, "zone.bathroom"))
             {
                 error = "El local vacío necesita al menos un Salón, una Cocina y un Baño antes de validar.";
                 return false;
