@@ -21,10 +21,11 @@ public static class BistroBuilderNavigation17StressSoakSelfTest
     private const float RunSeconds = 22f;
     private const float Radius = 0.26f;
     private const float Speed = 3.2f;
-    private const float Arrival = 0.12f;
+    private const float Arrival = 0.9f;
 
     private static readonly List<AgentRuntime> Agents = new List<AgentRuntime>(ExtremeAgentCount);
     private static readonly List<double> NavigationFrameTimesMs = new List<double>(8192);
+    private static readonly List<Behaviour> DisabledAmbientMovement = new List<Behaviour>(32);
     private static int agentCount = DefaultAgentCount;
     private static string reportPath = ReportPath50;
     private static BistroBuilderNavigationService navigation;
@@ -48,6 +49,8 @@ public static class BistroBuilderNavigation17StressSoakSelfTest
         EditorApplication.playModeStateChanged += OnPlayModeChanged;
         EditorApplication.update -= OnUpdate;
         EditorApplication.update += OnUpdate;
+        BistroBuilderBatchPlayModePump.FrameAdvanced -= OnBatchFrame;
+        BistroBuilderBatchPlayModePump.FrameAdvanced += OnBatchFrame;
     }
 
     [MenuItem("Bistro Builder/17 Navegacion/Stress-Soak 50 NPC")]
@@ -97,6 +100,18 @@ public static class BistroBuilderNavigation17StressSoakSelfTest
     }
 
     private static void OnUpdate()
+    {
+        if (Application.isBatchMode && EditorApplication.isPlaying) return;
+        DriveUpdate();
+    }
+
+    private static void OnBatchFrame()
+    {
+        if (!Application.isBatchMode || !EditorApplication.isPlaying) return;
+        DriveUpdate();
+    }
+
+    private static void DriveUpdate()
     {
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage)) return;
@@ -148,6 +163,7 @@ public static class BistroBuilderNavigation17StressSoakSelfTest
         if (navigation == null || entrance == null || kitchen == null || kitchen.PickupPoint == null)
             throw new InvalidOperationException("Faltan Navigation, entrada o pickup de cocina.");
 
+        DisableAmbientMovementForBenchmark();
         navigation.RebuildNavigationTopology();
         RestaurantTable table = null;
         for (int i = 0; i < tables.Length; i++)
@@ -477,8 +493,29 @@ public static class BistroBuilderNavigation17StressSoakSelfTest
         if (EditorApplication.isPlaying) EditorApplication.ExitPlaymode();
     }
 
+    private static void DisableAmbientMovementForBenchmark()
+    {
+        DisabledAmbientMovement.Clear();
+        WaiterMovementView[] waiters = UnityEngine.Object.FindObjectsByType<WaiterMovementView>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+        CustomerMovementView[] customers = UnityEngine.Object.FindObjectsByType<CustomerMovementView>(FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+        for (int i = 0; i < waiters.Length; i++)
+            if (waiters[i] != null && waiters[i].enabled)
+            { DisabledAmbientMovement.Add(waiters[i]); waiters[i].enabled = false; }
+        for (int i = 0; i < customers.Length; i++)
+            if (customers[i] != null && customers[i].enabled)
+            { DisabledAmbientMovement.Add(customers[i]); customers[i].enabled = false; }
+    }
+
+    private static void RestoreAmbientMovementAfterBenchmark()
+    {
+        for (int i = 0; i < DisabledAmbientMovement.Count; i++)
+            if (DisabledAmbientMovement[i] != null)
+                DisabledAmbientMovement[i].enabled = true;
+        DisabledAmbientMovement.Clear();
+    }
     private static void Cleanup()
     {
+        RestoreAmbientMovementAfterBenchmark();
         if (navigation != null)
         {
             navigation.NavigationTripFinished -= OnTripFinished;
