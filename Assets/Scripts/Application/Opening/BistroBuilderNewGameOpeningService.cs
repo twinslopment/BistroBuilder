@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,6 +23,10 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     [SerializeField] private RestaurantTableRegistry tableRegistry;
     [SerializeField] private RestaurantPlacementValidationService placementValidationService;
     [SerializeField] private BistroBuilderSaveGameService saveGameService;
+    [SerializeField] private RestaurantEditModeService editModeService;
+    [SerializeField] private BistroBuilderEditDocumentRuntimeService editDocumentService;
+    [SerializeField] private RestaurantPlaceableRegistry placeableRegistry;
+    [SerializeField] private RestaurantPlaceableLifecycleService placeableLifecycleService;
 
     [Header("Nueva partida")]
     [SerializeField, Range(1, 999)] private int defaultSaveSlot = 1;
@@ -45,6 +49,16 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     public string RestaurantName => state != null ? state.restaurantName : string.Empty;
     public string Briefing => state != null ? state.lastBriefing : string.Empty;
     public BistroBuilderOpeningPreflightReport LastPreflight => lastPreflight?.DeepClone();
+    public bool IsInitialDesignPhase => Phase == BistroBuilderNewGamePhase.InitialSetup;
+    public bool IsInitialEditModeActive => IsInitialDesignPhase && editModeService != null && editModeService.IsEditModeActive;
+    public BistroBuilderStartingPremisesProfile PremisesProfile => state != null
+        ? state.premisesProfile : BistroBuilderStartingPremisesProfile.Balanced;
+    public bool IsSaveBusy => saveGameService != null && saveGameService.IsBusy;
+    public float SaveProgress => saveGameService != null ? saveGameService.CurrentProgress : 0f;
+    public string SaveStatusMessage => saveGameService != null
+        ? saveGameService.CurrentStatusMessage : string.Empty;
+    public BistroBuilderSaveOperationResult LastSaveResult => saveGameService != null
+        ? saveGameService.LastResult : null;
     private int EffectiveSaveSlot => Mathf.Clamp(defaultSaveSlot, 1, 999);
 
     private void Awake()
@@ -62,7 +76,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             recruitmentService == null || scheduleService == null || financeService == null ||
             reputationService == null || customerHistoryService == null || endOfDayService == null ||
             advancedKitchenService == null || tableRegistry == null ||
-            placementValidationService == null || saveGameService == null)
+            placementValidationService == null || saveGameService == null || editModeService == null)
         {
             error = "Bloque 16 necesita calendario, reloj, servicio, inventario, carta, personal, cocina, sala, finanzas y guardado.";
             return false;
@@ -99,6 +113,11 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             error = "La nueva partida solo puede configurarse con el restaurante cerrado.";
             return false;
         }
+        if (!editModeService.CanEnterEditMode(out _, out string editRejection))
+        {
+            error = "No puede iniciarse el diseno inicial: " + editRejection;
+            return false;
+        }
         string normalizedName = string.IsNullOrWhiteSpace(restaurantName)
             ? "Mi restaurante"
             : restaurantName.Trim();
@@ -128,20 +147,24 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         }
         if (!staffService.TryInitializeFresh(out error) ||
             !recruitmentService.EnsureMarketReady(out error) ||
-            !EnsureInitialEmployee("waiter", "Alex", "Sala", 8200, out error) ||
-            !EnsureInitialEmployee("cook", "Sam", "Cocina", 9000, out error) ||
             !scheduleService.TryResetForLegacyLoad(out error) ||
-            !scheduleService.TryAutoFillMinimumWaiters(
-                1, BistroBuilderMealServiceAvailability.Lunch, out error) ||
             !reputationService.TryResetForLegacyLoad(out error) ||
             !customerHistoryService.TryResetForLegacyLoad(out error) ||
             !endOfDayService.TryResetForLegacyLoad(out error))
             return false;
 
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.Empty)
+        {
+            if (editDocumentService != null &&
+                !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
+                return false;
+            if (!TryPrepareEmptyPremises(out error)) return false;
+        }
+
         state = new BistroBuilderNewGameStateSnapshot
         {
             revision = 1,
-            phase = BistroBuilderNewGamePhase.Briefing,
+            phase = BistroBuilderNewGamePhase.InitialSetup,
             setupCompleted = true,
             restaurantName = normalizedName,
             premisesProfile = premisesProfile,
@@ -150,12 +173,17 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             initialSaveSlot = EffectiveSaveSlot
         };
 
-        TryRunOpeningPreflight(out lastPreflight, out _);
-        state.lastBriefing = BistroBuilderNewGameEngine.BuildBriefing(
-            normalizedName, premisesProfile, lastPreflight, initialOpeningHour, initialClosingHour);
+        lastPreflight = new BistroBuilderOpeningPreflightReport();
+        state.lastBriefing = string.Empty;
         state.revision++;
         StateChanged?.Invoke();
         TryRequestInitialSave(out _);
+
+        if (!editModeService.TryEnterEditMode(out _, out string enterEditError))
+        {
+            error = "La partida se creo, pero no pudo abrirse el modo edicion: " + enterEditError;
+            return false;
+        }
         return true;
     }
 
@@ -254,6 +282,11 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             error = "Primero hay que crear y configurar la nueva partida.";
             return false;
         }
+        if (state.phase != BistroBuilderNewGamePhase.Briefing)
+        {
+            error = "Primero debes terminar el diseño inicial del restaurante.";
+            return false;
+        }
         if (!TryRunOpeningPreflight(out BistroBuilderOpeningPreflightReport report, out error)) return false;
         if (!report.CanOpen)
         {
@@ -270,7 +303,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     public bool TryOpenFirstService(out string error)
     {
         error = string.Empty;
-        if (!state.setupCompleted || !state.briefingAcknowledged)
+        if (!state.setupCompleted || !state.briefingAcknowledged ||
+            state.phase != BistroBuilderNewGamePhase.ReadyToOpen)
         {
             error = "El briefing inicial debe completarse antes de abrir.";
             return false;
@@ -304,7 +338,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     public bool TryTransitionToNormalPlay(out string error)
     {
         error = string.Empty;
-        if (!state.firstServiceStarted)
+        if (!state.firstServiceStarted || state.phase != BistroBuilderNewGamePhase.FirstService)
         {
             error = "El primer servicio todavia no ha comenzado.";
             return false;
@@ -346,6 +380,196 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             return false;
         }
         return saveGameService.TryLoadSlot(EffectiveSaveSlot, out error);
+    }
+
+    public bool TryEnterInitialEditMode(out string error)
+    {
+        error = string.Empty;
+        CacheDependencies();
+        EnsureState();
+        if (state.phase != BistroBuilderNewGamePhase.InitialSetup)
+        {
+            error = "La partida no esta en la fase de diseno inicial.";
+            return false;
+        }
+        if (editModeService == null)
+        {
+            error = "El modo edicion no esta disponible.";
+            return false;
+        }
+        if (editModeService.IsEditModeActive) return true;
+        if (!editModeService.TryEnterEditMode(out _, out string rejection))
+        {
+            error = string.IsNullOrWhiteSpace(rejection)
+                ? "No pudo activarse el modo edicion inicial."
+                : rejection;
+            return false;
+        }
+        return true;
+    }
+
+    public bool TryValidateInitialDesign(out string error)
+    {
+        error = string.Empty;
+        CacheDependencies();
+        EnsureState();
+        if (state.phase != BistroBuilderNewGamePhase.InitialSetup)
+        {
+            error = "La partida no esta en la fase de diseño inicial.";
+            return false;
+        }
+        if (!serviceStateService.IsClosed)
+        {
+            error = "El restaurante debe permanecer cerrado durante el diseño inicial.";
+            return false;
+        }
+        if (GameObject.Find("RestaurantEntrancePoint") == null)
+        {
+            error = "El diseño necesita una entrada operativa.";
+            return false;
+        }
+
+        if (state.premisesProfile == BistroBuilderStartingPremisesProfile.Empty)
+        {
+            BistroBuilderEditDocument layout = editDocumentService != null
+                ? editDocumentService.GetCommittedSnapshot() : null;
+            if (!HasFunctionalZone(layout, "zone.dining") || !HasFunctionalZone(layout, "zone.kitchen") ||
+                !HasFunctionalZone(layout, "zone.bathroom"))
+            {
+                error = "El local vacío necesita al menos un Salón, una Cocina y un Baño antes de validar.";
+                return false;
+            }
+        }
+
+        int seats = 0;
+        foreach (RestaurantTable table in tableRegistry.RegisteredTables)
+            if (table != null && table.Capacity > 0) seats += table.Capacity;
+        if (seats < minimumDiningSeats)
+        {
+            error = "Añade al menos " + minimumDiningSeats + " plazas de mesa antes de continuar.";
+            return false;
+        }
+
+        RestaurantPlacementValidationSummary placement =
+            placementValidationService.ValidateAllRegisteredPlacements(false);
+        if (!placement.IsValid)
+        {
+            int invalid = Mathf.Max(0, placement.TotalCount - placement.ValidCount);
+            error = "Corrige la distribución: " + invalid +
+                " elemento(s) tienen conflictos de colocación o espacio.";
+            return false;
+        }
+        return true;
+    }
+
+    public bool TryCompleteInitialDesign(out string error)
+    {
+        error = string.Empty;
+        CacheDependencies();
+        EnsureState();
+        if (!TryValidateInitialDesign(out error)) return false;
+        if (saveGameService.IsBusy)
+        {
+            error = "Espera a que termine el guardado actual antes de confirmar el diseño.";
+            return false;
+        }
+        if (!HasActiveStaffRole("waiter") || !HasActiveStaffRole("cook"))
+        {
+            error = "La preparación inicial necesita los roles activos de camarero y cocinero.";
+            return false;
+        }
+
+        if (!recruitmentService.EnsureMarketReady(out error) ||
+            !EnsureInitialEmployee("waiter", "Alex", "Sala", 8200, out error) ||
+            !EnsureInitialEmployee("cook", "Sam", "Cocina", 9000, out error) ||
+            !scheduleService.TryResetForLegacyLoad(out error) ||
+            !scheduleService.TryAutoFillMinimumWaiters(
+                1, BistroBuilderMealServiceAvailability.Lunch, out error))
+            return false;
+
+        if (!TryRunOpeningPreflight(out BistroBuilderOpeningPreflightReport report, out error))
+            return false;
+
+        if (editModeService.IsEditModeActive &&
+            !editModeService.TryExitEditMode(false, out RestaurantEditModeFailureReason exitReason))
+        {
+            error = exitReason == RestaurantEditModeFailureReason.PlacementOperationActive
+                ? "Confirma o cancela el objeto que estás colocando antes de finalizar el diseño."
+                : "No pudo cerrarse el modo edición: " + exitReason + ".";
+            return false;
+        }
+
+        state.lastBriefing = BistroBuilderNewGameEngine.BuildBriefing(
+            state.restaurantName, state.premisesProfile, report,
+            initialOpeningHour, initialClosingHour);
+        state.phase = BistroBuilderNewGamePhase.Briefing;
+        state.revision++;
+        StateChanged?.Invoke();
+
+        if (!TryRequestInitialSave(out string saveError))
+        {
+            state.phase = BistroBuilderNewGamePhase.InitialSetup;
+            state.revision++;
+            StateChanged?.Invoke();
+            editModeService.TryEnterEditMode(out _, out _);
+            error = "No pudo guardarse el diseño confirmado: " + saveError;
+            return false;
+        }
+        return true;
+    }
+
+    private bool TryPrepareEmptyPremises(out string error)
+    {
+        error = string.Empty;
+        CacheDependencies();
+        if (placeableRegistry == null || placeableLifecycleService == null)
+        {
+            error = "No está disponible el sistema de mobiliario para preparar el local vacío.";
+            return false;
+        }
+        var placed = new List<RestaurantPlaceableObject>(placeableRegistry.RegisteredPlaceables);
+        for (int i = 0; i < placed.Count; i++)
+        {
+            RestaurantPlaceableObject item = placed[i];
+            if (item == null || !item.gameObject.activeSelf) continue;
+            if (!placeableLifecycleService.TryDeactivateInstance(item, out _, out RestaurantPlaceableLifecycleResult deactivate))
+            {
+                error = "No pudo vaciarse el local: " + deactivate.Message;
+                return false;
+            }
+            if (!placeableLifecycleService.TryPermanentlyDestroyInstance(item, out RestaurantPlaceableLifecycleResult destroy))
+            {
+                error = "No pudo completarse el vaciado del local: " + destroy.Message;
+                return false;
+            }
+        }
+
+        // 367H instalaba una barra de demostración que no pertenece al catálogo de
+        // placeables. En un local Vacío también debe retirarse: conservarla hacía que
+        // barra y taburetes sobrevivieran aunque el mobiliario se hubiese eliminado.
+        BistroBuilder367HInstalledFixture[] fixtures =
+            UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+        for (int i = 0; i < fixtures.Length; i++)
+        {
+            BistroBuilder367HInstalledFixture fixture = fixtures[i];
+            if (fixture == null || fixture.GetComponent<RestaurantPlaceableObject>() != null) continue;
+            fixture.gameObject.SetActive(false);
+        }
+        Physics.SyncTransforms();
+        return true;
+    }
+
+    private static bool HasFunctionalZone(BistroBuilderEditDocument document, string zoneDefinitionId)
+    {
+        if (document == null || document.zones == null) return false;
+        for (int i = 0; i < document.zones.Count; i++)
+        {
+            BistroBuilderFunctionalZoneRecord zone = document.zones[i];
+            if (zone != null && string.Equals(zone.zoneDefinitionId, zoneDefinitionId, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     public BistroBuilderNewGameStateSnapshot CreateSnapshot()
@@ -415,6 +639,12 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         return staffService.TryCreateEmployee(request, out _, out error);
     }
 
+    private bool HasActiveStaffRole(string roleId)
+    {
+        return staffService != null &&
+               staffService.TryGetRoleDefinition(roleId, out BistroBuilderStaffRoleDefinition role) &&
+               role != null && role.active;
+    }
     private void AddObjectCheck(
         BistroBuilderOpeningPreflightReport report, string id, string label,
         string exactName, bool blocker, string success, string failure)
@@ -462,6 +692,10 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         if (tableRegistry == null) TryGetComponent(out tableRegistry);
         if (placementValidationService == null) TryGetComponent(out placementValidationService);
         if (saveGameService == null) TryGetComponent(out saveGameService);
+        if (editModeService == null) TryGetComponent(out editModeService);
+        if (editDocumentService == null) editDocumentService = FindFirstObjectByType<BistroBuilderEditDocumentRuntimeService>();
+        if (placeableRegistry == null) placeableRegistry = FindFirstObjectByType<RestaurantPlaceableRegistry>();
+        if (placeableLifecycleService == null) placeableLifecycleService = FindFirstObjectByType<RestaurantPlaceableLifecycleService>();
     }
 
 #if UNITY_EDITOR
