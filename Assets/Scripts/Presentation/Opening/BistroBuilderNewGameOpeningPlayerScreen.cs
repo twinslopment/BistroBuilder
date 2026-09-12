@@ -68,7 +68,8 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
                 initialEditEntryAttempted = true;
                 if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = string.Empty;
             }
-            DrawInitialDesignOverlay();
+            if (BistroBuilderConstructionPlayerPanel.Instance == null || !BistroBuilderConstructionPlayerPanel.Instance.IsReady)
+                DrawInitialDesignOverlay();
             return;
         }
         if (!IsVisible) return;

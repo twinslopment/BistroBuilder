@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -332,7 +332,11 @@ public sealed class RestaurantSeatingTopologyService :
         RestaurantPlacementValidationResult result
     )
     {
-        RequestRebuild();
+        if (member == null) return;
+        if (member.TryGetComponent<RestaurantSeat>(out _) ||
+            member.TryGetComponent<RestaurantTable>(out _) ||
+            member.TryGetComponent<RestaurantTableSeatingConfiguration>(out _))
+            RequestRebuild();
     }
 
     private void HandleUndoPerformed(RestaurantAreaMember member)

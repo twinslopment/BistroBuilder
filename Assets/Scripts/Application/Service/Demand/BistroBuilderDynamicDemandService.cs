@@ -35,6 +35,21 @@ public sealed class BistroBuilderDynamicDemandService : MonoBehaviour
     public BistroBuilderDynamicDemandSettings Settings =>
         settings != null ? settings.DeepClone() : null;
 
+    public bool HasOperationalCapacity
+    {
+        get
+        {
+            CacheDependencies();
+            if (tableRegistry != null)
+                foreach (RestaurantTable table in tableRegistry.RegisteredTables)
+                    if (table != null && table.isActiveAndEnabled && table.Capacity > 0) return true;
+            if (barRegistry != null)
+                foreach (BistroBuilderBarServiceSpot spot in barRegistry.RegisteredSpots)
+                    if (spot != null && spot.isActiveAndEnabled && spot.Capacity > 0) return true;
+            return false;
+        }
+    }
+
     private void Awake() => CacheDependencies();
 
     public bool ValidateConfiguration(out string error)
@@ -54,11 +69,8 @@ public sealed class BistroBuilderDynamicDemandService : MonoBehaviour
             !reputationService.ValidateConfiguration(out error) ||
             !reservationService.ValidateConfiguration(out error) ||
             !menuService.ValidateConfiguration(out error)) return false;
-        if (Application.isPlaying && tableRegistry.RegisteredTableCount < 1)
-        {
-            error = "La demanda dinámica necesita al menos una mesa operativa.";
-            return false;
-        }
+        // An empty restaurant is a valid saved design. Capacity is checked when
+        // building service demand, not when validating persistence dependencies.
         error = string.Empty;
         return true;
     }
@@ -108,11 +120,11 @@ public sealed class BistroBuilderDynamicDemandService : MonoBehaviour
         context = null;
         int tableSeats = 0;
         int tableCount = 0;
-        if (Application.isPlaying && tableRegistry.RegisteredTableCount > 0)
+        if (Application.isPlaying)
         {
             foreach (RestaurantTable table in tableRegistry.RegisteredTables)
             {
-                if (table == null) continue;
+                if (table == null || !table.isActiveAndEnabled) continue;
                 tableSeats += Math.Max(0, table.Capacity);
                 tableCount++;
             }
@@ -131,10 +143,10 @@ public sealed class BistroBuilderDynamicDemandService : MonoBehaviour
         }
 
         int barSeats = 0;
-        if (Application.isPlaying && barRegistry.RegisteredSpotCount > 0)
+        if (Application.isPlaying)
         {
             foreach (BistroBuilderBarServiceSpot spot in barRegistry.RegisteredSpots)
-                if (spot != null) barSeats += Math.Max(0, spot.Capacity);
+                if (spot != null && spot.isActiveAndEnabled) barSeats += Math.Max(0, spot.Capacity);
         }
         else
         {

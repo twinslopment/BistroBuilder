@@ -123,8 +123,10 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
         if (ReferenceEquals(left, right)) return 0;
         if (left == null) return 1;
         if (right == null) return -1;
-        BistroBuilderFrontOfHouseQueueEntry a = GetOrBuildEntry(left);
-        BistroBuilderFrontOfHouseQueueEntry b = GetOrBuildEntry(right);
+        // La prioridad depende del tiempo de espera vivo; no debe ordenar con
+        // una copia cacheada del último tick de evaluación de sala.
+        BistroBuilderFrontOfHouseQueueEntry a = BuildEntry(left);
+        BistroBuilderFrontOfHouseQueueEntry b = BuildEntry(right);
         int byPriority = b.priorityScore.CompareTo(a.priorityScore);
         if (byPriority != 0) return byPriority;
         int byWait = b.waitingSeconds.CompareTo(a.waitingSeconds);
@@ -142,7 +144,7 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
         queueScratch.Sort(CompareWaitingGroups);
         for (int i = 0; i < queueScratch.Count; i++)
         {
-            BistroBuilderFrontOfHouseQueueEntry entry = queueByGroup[queueScratch[i]].DeepClone();
+            BistroBuilderFrontOfHouseQueueEntry entry = BuildEntry(queueScratch[i]);
             entry.queuePosition = i + 1;
             destination.Add(entry);
         }
@@ -155,7 +157,8 @@ public sealed class BistroBuilderAdvancedFrontOfHouseService : MonoBehaviour
         {
             if (pair.Key != null && pair.Key.GroupId == groupId)
             {
-                entry = pair.Value.DeepClone();
+                entry = BuildEntry(pair.Key);
+                entry.queuePosition = pair.Value.queuePosition;
                 return true;
             }
         }

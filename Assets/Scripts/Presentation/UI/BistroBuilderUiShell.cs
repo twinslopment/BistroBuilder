@@ -20,6 +20,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     public const string ActivityPanelName = "BB_UIUX_ActivityPanel";
     public const string ContextPanelName = "BB_UIUX_ContextPanel";
     public const string ServiceActionName = "BB_UIUX_ServiceAction";
+    public bool HasManagementScreenOpen => IsAnyManagementScreenOpen();
 
     private static readonly NavSpec[] Navigation =
     {
@@ -34,6 +35,8 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         new NavSpec("Reputación", "OpenReputationButton"),
         new NavSpec("Progreso", "OpenProgressionButton")
     };
+    private static readonly string[] ServiceLaunchers =
+        { "OpenAdvancedOrdersButton", "OpenAdvancedKitchenButton" };
 
     [SerializeField] private RectTransform shellRoot;
     [SerializeField] private RectTransform topNavigation;
@@ -411,6 +414,18 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     private void ReconcileNavigation()
     {
         if (canvas == null || navContent == null) return;
+        bool editing = FindScene<RestaurantEditModeService>()?.IsEditModeActive == true;
+        Button[] sceneButtons = UnityEngine.Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Button candidate in sceneButtons)
+        {
+            if (candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
+            if (Array.IndexOf(ServiceLaunchers, candidate.name) < 0) continue;
+            CanvasGroup group = candidate.GetComponent<CanvasGroup>();
+            if (group == null) group = candidate.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = editing ? 0f : 1f;
+            group.interactable = !editing;
+            group.blocksRaycasts = !editing;
+        }
 
         for (int i = 0; i < Navigation.Length; i++)
         {
@@ -425,8 +440,8 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
                 continue;
             }
 
-            Button legacy = FindLegacyLauncher(spec.TargetNames);
-            SuppressLegacyLaunchers(spec.TargetNames);
+            Button legacy = FindLegacyLauncher(spec.TargetNames, sceneButtons);
+            SuppressLegacyLaunchers(spec.TargetNames, sceneButtons);
 
             string capturedLabel = spec.Label;
             if (HasDirectNavigation(capturedLabel))
@@ -614,29 +629,27 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         if (editor != null && editor.IsOpen) { editor.RequestCloseFromInterface(); return; }
         CloseSimpleManagementScreens();
     }
-    private Button FindLegacyLauncher(string[] names)
+    private Button FindLegacyLauncher(string[] names, Button[] buttons)
     {
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
         for (int n = 0; n < names.Length; n++)
         {
             for (int i = 0; i < buttons.Length; i++)
             {
                 Button candidate = buttons[i];
-                if (candidate == null || candidate.transform.IsChildOf(shellRoot)) continue;
+                if (candidate == null || candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
                 if (string.Equals(candidate.name, names[n], StringComparison.Ordinal)) return candidate;
             }
         }
         return null;
     }
 
-    private void SuppressLegacyLaunchers(string[] names)
+    private void SuppressLegacyLaunchers(string[] names, Button[] buttons)
     {
         if (canvas == null || names == null || names.Length == 0) return;
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
         for (int i = 0; i < buttons.Length; i++)
         {
             Button candidate = buttons[i];
-            if (candidate == null || candidate.transform.IsChildOf(shellRoot)) continue;
+            if (candidate == null || candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
             for (int n = 0; n < names.Length; n++)
             {
                 if (!string.Equals(candidate.name, names[n], StringComparison.Ordinal)) continue;
@@ -676,6 +689,8 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && activityVisible);
+        if (contextPanel != null) contextPanel.gameObject.SetActive(!editing);
         if (cashText != null)
         {
             cashText.text = finance != null
@@ -749,6 +764,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing);
         if (contextBody != null)
         {
             string modeLine = editMode != null && editMode.IsEditModeActive

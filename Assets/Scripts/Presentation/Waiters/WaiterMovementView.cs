@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -60,8 +60,9 @@ public sealed class WaiterMovementView : MonoBehaviour
     private bool hasReservedArrival;
     private float blockedSince = -1f;
     private int plannedNavigationRevision;
-    public BistroBuilderWaiterRouteKind CurrentRouteKind =>
-        routingService != null ? routingService.LastRouteKind : BistroBuilderWaiterRouteKind.DirectFallback;
+    private BistroBuilderWaiterRouteKind currentRouteKind =
+        BistroBuilderWaiterRouteKind.DirectFallback;
+    public BistroBuilderWaiterRouteKind CurrentRouteKind => currentRouteKind;
 
     /// <summary>
     /// Corrutina utilizada cuando el camarero ya está dentro
@@ -597,6 +598,7 @@ public sealed class WaiterMovementView : MonoBehaviour
                 {
                     routePoints.Clear();
                     routePoints.AddRange(rebuilt.points);
+                    currentRouteKind = MapNavigationRouteKind(rebuilt.kind);
                 }
             }
             else
@@ -618,7 +620,10 @@ public sealed class WaiterMovementView : MonoBehaviour
                         out BistroBuilderNavigationPlan plan,
                         out _) &&
                     plan != null && plan.route != null && plan.route.points != null)
+                {
                     routePoints.AddRange(plan.route.points);
+                    currentRouteKind = MapNavigationRouteKind(plan.route.kind);
+                }
             }
 
             plannedNavigationRevision = navigationService.Revision;
@@ -627,9 +632,28 @@ public sealed class WaiterMovementView : MonoBehaviour
 
         routePoints.Clear();
         if (routingService != null)
+        {
             routingService.TryBuildRoute(transform.position, target, routePoints, out _);
+            currentRouteKind = routingService.LastRouteKind;
+        }
         if (routePoints.Count == 0)
+        {
             routePoints.Add(target);
+            currentRouteKind = BistroBuilderWaiterRouteKind.DirectFallback;
+        }
+    }
+
+    private static BistroBuilderWaiterRouteKind MapNavigationRouteKind(
+        BistroBuilderNavigationRouteKind kind)
+    {
+        return kind switch
+        {
+            BistroBuilderNavigationRouteKind.NavMesh =>
+                BistroBuilderWaiterRouteKind.NavMeshOptimal,
+            BistroBuilderNavigationRouteKind.DirectDegraded =>
+                BistroBuilderWaiterRouteKind.DirectFallback,
+            _ => BistroBuilderWaiterRouteKind.ExternalProfessional
+        };
     }
 
     private bool EnsureScheduledRouteReady(string ownerId)

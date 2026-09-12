@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public static class BistroBuilderInteractionV1Validator
@@ -100,7 +101,14 @@ public static class BistroBuilderInteractionV1Validator
 
     public static void RunFromCommandLine()
     {
-        try { Run(); EditorApplication.Exit(0); }
+        try
+        {
+            EditorSceneManager.OpenScene(
+                "Assets/Scenes/Prototype_Restaurant.unity",
+                OpenSceneMode.Single);
+            Run();
+            EditorApplication.Exit(0);
+        }
         catch (Exception exception)
         {
             Debug.LogException(exception);

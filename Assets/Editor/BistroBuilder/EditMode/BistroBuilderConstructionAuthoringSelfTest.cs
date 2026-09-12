@@ -42,7 +42,7 @@ public static partial class BistroBuilderConstructionAuthoringSelfTest
 
             Case("rectangle one Undo, stable rooms and zones", RectangleHistory),
             Case("wall confirmation and preview isolation", WallGesture),
-            Case("rectangle failure leaves Draft and history intact", FailedRectangle),
+            Case("rectangle reuses existing wall with atomic history", SharedRectangle),
             Case("atomic child failure is isolated", AtomicFailure),
             Case("atomic Undo/Redo failure is isolated", AtomicInverseFailure),
             Case("new command clears Redo", BranchingHistory),
@@ -111,13 +111,14 @@ public static partial class BistroBuilderConstructionAuthoringSelfTest
         var id=s.Draft.walls[0].wallId;
         Check(s.TryUndo(out _) && s.TryRedo(out _) && s.Draft.walls[0].wallId==id,"wall ID preserved");
     }
-    private static void FailedRectangle()
+    private static void SharedRectangle()
     {
         var s=Session(Wall("existing",0,0,4,0)); var q=Cache(s); var g=new ConstructionGesture();
         var before=s.Draft.ComputeFingerprint();
         Check(g.BeginRectangle(s,q,Vector2.zero,Wall("t",0,0,1,0),definitions,"zone.dining",1,out _) && g.Update(new Vector2(4,3)),"preview");
-        Check(!g.Confirm(s.TryExecute,out var error) && error.Contains("OVERLAP"),"reject overlap");
-        Check(before==s.Draft.ComputeFingerprint() && !s.CanUndo && !s.CanRedo && s.DraftRevision==0,"atomic rejection");
+        Check(g.Confirm(s.TryExecute,out _),"reuse shared boundary");
+        Check(s.Draft.walls.Count==4 && s.Draft.FindWall(new BistroBuilderEditId("existing"))!=null,"existing wall identity preserved");
+        Check(s.TryUndo(out _) && before==s.Draft.ComputeFingerprint() && !s.CanUndo,"atomic undo preserves original wall");
     }
     private sealed class FailCommand : BistroBuilderEditCommandBase
     {

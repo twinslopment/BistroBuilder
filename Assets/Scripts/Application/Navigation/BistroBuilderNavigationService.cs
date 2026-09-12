@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
@@ -50,8 +50,12 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         : 0;
     public int StaticObstacleCount => staticShapes.Count;
     public int DynamicEnvelopeCount => dynamicEnvelopes.Count;
-    public int TopologyRebuildCount { get; private set; }
-    public int CirculationHealthEvaluationCount { get; private set; }
+    public int TopologyBuildCount { get; private set; }
+    public int HealthEvaluationCount { get; private set; }
+    public double LastTopologyBuildMilliseconds { get; private set; }
+    public double LastHealthEvaluationMilliseconds { get; private set; }
+    public int TopologyRebuildCount => TopologyBuildCount;
+    public int CirculationHealthEvaluationCount => HealthEvaluationCount;
 
     private void Awake()
     {
@@ -83,7 +87,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
     public void RebuildNavigationTopology()
     {
-        TopologyRebuildCount++;
+        var measurement = System.Diagnostics.Stopwatch.StartNew();
         if (spatialService == null)
             spatialService = FindFirstObjectByType<BistroBuilderSpatialInteractionService>();
         areas.Clear();
@@ -121,6 +125,8 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         dynamicEnvelopes.RemoveAll(item => item == null);
         BumpRevision();
         HandleTopologyRebuiltV1();
+        TopologyBuildCount++;
+        LastTopologyBuildMilliseconds = measurement.Elapsed.TotalMilliseconds;
     }
 
     public void RegisterDynamicEnvelope(BistroBuilderDynamicCirculationEnvelope envelope)
@@ -367,7 +373,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
     public BistroBuilderCirculationHealthReport EvaluateCirculationHealth()
     {
-        CirculationHealthEvaluationCount++;
+        var measurement = System.Diagnostics.Stopwatch.StartNew();
         var report = new BistroBuilderCirculationHealthReport { revision = Revision };
         GameObject entranceObject = GameObject.Find("RestaurantEntrancePoint");
         Transform entrance = entranceObject != null ? entranceObject.transform : null;
@@ -423,6 +429,8 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
                 "Acceso suministros -> almacen");
         }
         LastHealthReport = report;
+        HealthEvaluationCount++;
+        LastHealthEvaluationMilliseconds = measurement.Elapsed.TotalMilliseconds;
         return report;
     }
 
@@ -1020,3 +1028,4 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         }
     }
 }
+

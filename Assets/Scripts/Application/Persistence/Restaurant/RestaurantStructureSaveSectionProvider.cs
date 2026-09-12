@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -238,15 +238,10 @@ public sealed class RestaurantStructureSaveSectionProvider :
                     out RestaurantSeat seat
                 ))
             {
-                if (!seat.IsAssociated ||
-                    seat.AssociatedTable == null)
-                {
-                    context.Fail(
-                        placeable.DisplayName +
-                        " no está asociado a una plaza confirmada."
-                    );
-                    yield break;
-                }
+                // Una silla suelta es un estado de edición válido. Se persiste
+                // como colocable y solo se añade seatLink cuando existe asociación.
+                if (!seat.IsAssociated || seat.AssociatedTable == null)
+                    continue;
 
                 RestaurantPlaceableObject tablePlaceable =
                     seat.AssociatedTable.GetComponent<
@@ -508,14 +503,8 @@ public sealed class RestaurantStructureSaveSectionProvider :
             }
         }
 
-        if (linkedSeatIds.Count != seatIds.Count)
-        {
-            error =
-                "Todas las sillas deben conservar una relación " +
-                "mesa-plaza persistente.";
-            return false;
-        }
-
+        // Las sillas no enlazadas son válidas mientras se diseña el local.
+        // Simplemente no cuentan como plazas operativas hasta asociarse.
         return true;
     }
 

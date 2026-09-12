@@ -12,6 +12,8 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     [SerializeField] private Transform generatedRoot;
     [SerializeField] private Material wallMaterial;
     [SerializeField] private Material floorMaterial;
+    [SerializeField] private Color fallbackWallColor = new Color(0.72f, 0.68f, 0.60f, 1f);
+    [SerializeField] private Color fallbackFloorColor = new Color(0.34f, 0.29f, 0.23f, 1f);
     [SerializeField] private bool createMeshColliders = true;
     [SerializeField] private bool materializeDetectedRooms = true;
     [SerializeField] private float floorElevation;
@@ -29,6 +31,8 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     private readonly List<Vector2> blockedIntervals = new List<Vector2>(8);
     private readonly List<Vector2> passageIntervals = new List<Vector2>(8);
     private BistroBuilderEditDocument lastDocument;
+    private Material runtimeWallMaterial;
+    private Material runtimeFloorMaterial;
 
     public BistroBuilderEditDocument LastDocument =>
         lastDocument != null ? lastDocument.DeepClone() : null;
@@ -117,7 +121,8 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         var filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
-        if (wallMaterial != null) renderer.sharedMaterial = wallMaterial;
+        renderer.sharedMaterial = ResolveVisualMaterial(true);
+        BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, ResolveVisualMaterial(true));
         if (createMeshColliders)
         {
             var collider = go.AddComponent<MeshCollider>();
@@ -246,9 +251,57 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         var filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
-        if (floorMaterial != null) renderer.sharedMaterial = floorMaterial;
+        renderer.sharedMaterial = ResolveVisualMaterial(false);
     }
 
+    private Material ResolveVisualMaterial(bool wall)
+    {
+        Material explicitMaterial = wall ? wallMaterial : floorMaterial;
+        if (explicitMaterial == null)
+        {
+            var kit = BistroBuilderConstructionAssetKit.Load();
+            if (kit != null) explicitMaterial = wall ? kit.wallMaterial : kit.floorMaterial;
+        }
+        if (explicitMaterial != null && explicitMaterial.shader != null && explicitMaterial.shader.isSupported)
+            return explicitMaterial;
+
+        Material cached = wall ? runtimeWallMaterial : runtimeFloorMaterial;
+        if (cached != null) return cached;
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Simple Lit");
+        if (shader == null) shader = Shader.Find("Sprites/Default");
+        if (shader == null) return explicitMaterial;
+
+        cached = new Material(shader)
+        {
+            name = wall ? "BB_Runtime_Wall_Material" : "BB_Runtime_Floor_Material",
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        Color color = wall ? fallbackWallColor : fallbackFloorColor;
+        if (cached.HasProperty("_BaseColor")) cached.SetColor("_BaseColor", color);
+        else cached.color = color;
+        if (cached.HasProperty("_Smoothness")) cached.SetFloat("_Smoothness", wall ? 0.18f : 0.08f);
+
+        if (wall) runtimeWallMaterial = cached;
+        else runtimeFloorMaterial = cached;
+        return cached;
+    }
+
+    private void OnDestroy()
+    {
+        DestroyRuntimeMaterial(runtimeWallMaterial);
+        DestroyRuntimeMaterial(runtimeFloorMaterial);
+        runtimeWallMaterial = null;
+        runtimeFloorMaterial = null;
+    }
+
+    private static void DestroyRuntimeMaterial(Material material)
+    {
+        if (material == null) return;
+        if (Application.isPlaying) Destroy(material);
+        else DestroyImmediate(material);
+    }
     private void ResolveWallSpatialContract()
     {
         if (wallSpatialContract != null || !createSpatialSubjects) return;
@@ -267,12 +320,14 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     private static void DestroyGeneratedObject(GameObject go)
     {
         if (go == null) return;
+        go.SetActive(false);
         MeshFilter[] filters = go.GetComponentsInChildren<MeshFilter>(true);
         for (int i = 0; i < filters.Length; i++)
         {
             Mesh mesh = filters[i].sharedMesh;
             filters[i].sharedMesh = null;
-            if (mesh == null) continue;
+            // Child meshes belong to reusable opening prefabs or Unity primitives.
+            if (mesh == null || filters[i].transform != go.transform) continue;
             if (Application.isPlaying) Destroy(mesh);
             else DestroyImmediate(mesh);
         }
