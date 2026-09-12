@@ -16,6 +16,8 @@ internal static class BistroBuilderBatchPlayModePump
     private const double StepIntervalSeconds = 1d / 50d;
     private const int MaxCatchUpStepsPerTick = 8;
 
+    internal static event Action FrameAdvanced;
+
     private static double nextStepAt;
     private static bool stepping;
     private static bool ownsPause;
@@ -77,6 +79,7 @@ internal static class BistroBuilderBatchPlayModePump
             {
                 EditorApplication.QueuePlayerLoopUpdate();
                 EditorApplication.Step();
+                FrameAdvanced?.Invoke();
                 nextStepAt += StepIntervalSeconds;
             }
 
