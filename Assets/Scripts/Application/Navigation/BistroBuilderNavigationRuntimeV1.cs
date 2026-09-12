@@ -340,7 +340,10 @@ public sealed partial class BistroBuilderNavigationService
         float dt = Mathf.Max(0f, now - trip.lastObservedAt);
         trip.actualDistanceMeters += Vector3.Distance(trip.lastPosition, position);
 
-        if (routeProgressMeters > trip.lastProgressMeters + meaningfulProgressMeters)
+        float progressHysteresis = Mathf.Max(
+            meaningfulProgressMeters,
+            trip.request != null ? Mathf.Max(0.03f, trip.request.mobilityRadius * 0.35f) : 0.03f);
+        if (routeProgressMeters > trip.lastProgressMeters + progressHysteresis)
         {
             trip.lastProgressMeters = routeProgressMeters;
             trip.lastProgressAt = now;
@@ -626,40 +629,64 @@ public sealed partial class BistroBuilderNavigationService
         return !decision.shouldYield || decision.velocity.sqrMagnitude > 0.0001f;
     }
 
-    public bool TryReplanNavigation(
-        string ownerId,
-        Vector3 origin,
-        Vector3 destination,
-        BistroBuilderNavigationReplanLevel level,
-        out BistroBuilderNavigationRoute route)
+    private bool TryRepairCurrentCorridorV1(
+        string ownerId, NavigationTripRuntime trip, Vector3 origin,
+        Vector3 destination, out BistroBuilderNavigationRoute route)
     {
         route = null;
-        if (string.IsNullOrWhiteSpace(ownerId) ||
-            !v1Trips.TryGetValue(ownerId, out NavigationTripRuntime trip) ||
-            trip == null)
+        if (trip == null || trip.plan == null || !trip.plan.structurallyValid ||
+            trip.plan.route == null || trip.plan.route.points == null ||
+            trip.plan.route.points.Count == 0 || trip.plan.corridor == null ||
+            !trip.plan.corridor.IsUsable) return false;
+        BistroBuilderNavigationTopologySnapshot topology = CaptureTopologySnapshot();
+        if (!trip.plan.topology.MatchesStructuralState(topology) ||
+            (trip.request.destination - destination).sqrMagnitude > 0.01f ||
+            !v1CorridorBuilder.TryProject(trip.plan.corridor, origin, out _))
             return false;
 
-        if (!TryBuildRouteV1Cached(
-                ownerId,
-                trip.request.agentMask,
-                origin,
-                destination,
-                trip.request.mobilityRadius,
-                out BistroBuilderNavigationRoute rebuilt))
-            return false;
+        Vector3 oldOrigin = trip.request.origin;
+        List<Vector3> oldPoints = trip.plan.route.points;
+        float progress = ProjectProgressOnRoute(oldOrigin, oldPoints, origin);
+        var repaired = new BistroBuilderNavigationRoute
+        {
+            kind = trip.plan.route.kind,
+            navigationRevision = trip.plan.route.navigationRevision,
+            isComplete = trip.plan.route.isComplete,
+            congestionCost = trip.plan.route.congestionCost,
+            totalScore = trip.plan.route.totalScore
+        };
+        float cumulative = 0f;
+        Vector3 segmentStart = oldOrigin;
+        for (int i = 0; i < oldPoints.Count; i++)
+        {
+            Vector3 point = oldPoints[i];
+            float segmentLength = Vector3.Distance(segmentStart, point);
+            cumulative += segmentLength;
+            if (cumulative > progress + 0.05f)
+                repaired.points.Add(point);
+            segmentStart = point;
+        }
+        if (repaired.points.Count == 0 ||
+            (repaired.points[repaired.points.Count - 1] - destination).sqrMagnitude > 0.01f)
+            repaired.points.Add(destination);
+        float remaining = 0f;
+        Vector3 previous = origin;
+        for (int i = 0; i < repaired.points.Count; i++)
+        {
+            remaining += Vector3.Distance(previous, repaired.points[i]);
+            previous = repaired.points[i];
+        }
+        repaired.lengthMeters = remaining;
 
         float now = Time.unscaledTime;
         trip.request.origin = origin;
         trip.request.destination = destination;
-        trip.plan.route = rebuilt.DeepClone();
-        trip.plan.topology = CaptureTopologySnapshot();
-        trip.plan.corridor = BuildRouteCorridorV1(
-            ownerId, trip.request.agentMask, origin, destination,
-            trip.request.mobilityRadius, rebuilt, trip.plan.topology);
-        trip.plan.cost = BuildInitialCost(trip.request, rebuilt, trip.plan.topology);
+        trip.plan.route = repaired.DeepClone();
+        trip.plan.topology = topology;
+        trip.plan.cost = BuildInitialCost(trip.request, repaired, topology);
         trip.plan.structurallyValid = true;
-        trip.trace.topology = trip.plan.topology;
-        trip.trace.routeLengthMeters = rebuilt.lengthMeters;
+        trip.trace.topology = topology;
+        trip.trace.routeLengthMeters = remaining;
         trip.trace.routeProgressMeters = 0f;
         trip.trace.state = BistroBuilderNavigationTravelState.FollowingRoute;
         trip.trace.recoveryStage = BistroBuilderNavigationRecoveryStage.None;
@@ -667,31 +694,61 @@ public sealed partial class BistroBuilderNavigationService
         trip.trace.blockerId = string.Empty;
         trip.trace.yieldingTo = string.Empty;
         trip.trace.replanCount++;
-        trip.trace.lastDecision = "Route replanned at level " + level + ".";
+        trip.trace.secondsWithoutProgress = 0f;
+        trip.trace.lastDecision = "Corridor repair reused certified route suffix.";
         trip.lastObservedAt = now;
+        trip.lastProgressAt = now;
         trip.lastPosition = origin;
         trip.lastProgressMeters = 0f;
+        trip.corridorRepairsWithoutProgress++;
+        v1Metrics.corridorRepairCount++;
         v1BlockGraph?.ClearDependency(ownerId);
         v1Backoffs.Remove(ownerId);
         v1RecoveryManeuvers.Remove(ownerId);
         v1PhysicalQueues?.Remove(ownerId);
+        route = repaired.DeepClone();
+        return true;
+    }
 
+    public bool TryReplanNavigation(
+        string ownerId, Vector3 origin, Vector3 destination,
+        BistroBuilderNavigationReplanLevel level, out BistroBuilderNavigationRoute route)
+    {
+        route = null;
+        if (string.IsNullOrWhiteSpace(ownerId) ||
+            !v1Trips.TryGetValue(ownerId, out NavigationTripRuntime trip) || trip == null)
+            return false;
+        if (level == BistroBuilderNavigationReplanLevel.CorridorRepair &&
+            TryRepairCurrentCorridorV1(ownerId, trip, origin, destination, out route))
+            return true;
+        if (!TryBuildRouteV1Cached(ownerId, trip.request.agentMask, origin, destination,
+                trip.request.mobilityRadius, out BistroBuilderNavigationRoute rebuilt)) return false;
+        float now = Time.unscaledTime;
+        trip.request.origin = origin; trip.request.destination = destination;
+        trip.plan.route = rebuilt.DeepClone(); trip.plan.topology = CaptureTopologySnapshot();
+        trip.plan.corridor = BuildRouteCorridorV1(ownerId, trip.request.agentMask, origin, destination,
+            trip.request.mobilityRadius, rebuilt, trip.plan.topology);
+        trip.plan.cost = BuildInitialCost(trip.request, rebuilt, trip.plan.topology);
+        trip.plan.structurallyValid = true; trip.trace.topology = trip.plan.topology;
+        trip.trace.routeLengthMeters = rebuilt.lengthMeters; trip.trace.routeProgressMeters = 0f;
+        trip.trace.state = BistroBuilderNavigationTravelState.FollowingRoute;
+        trip.trace.recoveryStage = BistroBuilderNavigationRecoveryStage.None;
+        trip.trace.waitingReason = BistroBuilderNavigationWaitingReason.None;
+        trip.trace.blockerId = string.Empty; trip.trace.yieldingTo = string.Empty;
+        trip.trace.replanCount++; trip.trace.lastDecision = "Route replanned at level " + level + ".";
+        trip.lastObservedAt = now; trip.lastPosition = origin; trip.lastProgressMeters = 0f;
+        v1BlockGraph?.ClearDependency(ownerId); v1Backoffs.Remove(ownerId);
+        v1RecoveryManeuvers.Remove(ownerId); v1PhysicalQueues?.Remove(ownerId);
         switch (level)
         {
             case BistroBuilderNavigationReplanLevel.CorridorRepair:
-                trip.corridorRepairsWithoutProgress++;
-                v1Metrics.corridorRepairCount++;
-                break;
+                trip.corridorRepairsWithoutProgress++; v1Metrics.corridorRepairCount++; break;
             case BistroBuilderNavigationReplanLevel.RouteSuffixRepair:
-                v1Metrics.routeSuffixRepairCount++;
-                break;
+                v1Metrics.routeSuffixRepairCount++; break;
             case BistroBuilderNavigationReplanLevel.FullReplan:
-                trip.fullReplansWithoutProgress++;
-                v1Metrics.fullReplanCount++;
-                break;
+                trip.fullReplansWithoutProgress++; v1Metrics.fullReplanCount++; break;
         }
-        route = rebuilt.DeepClone();
-        return true;
+        route = rebuilt.DeepClone(); return true;
     }
 
     public void ReportNavigationPosition(
@@ -912,12 +969,18 @@ public sealed partial class BistroBuilderNavigationService
             trip != null && trip.request != null ? trip.request.origin : current;
         Vector3 structuralEnd =
             trip != null && trip.request != null ? trip.request.destination : target;
-        bool structuralStepClear =
+        bool certifiedCorridorValid =
+            trip != null && trip.plan != null && trip.plan.corridor != null &&
+            trip.plan.corridor.IsUsable &&
+            trip.plan.corridor.Matches(CaptureTopologySnapshot());
+        bool certifiedCorridorStep = certifiedCorridorValid &&
+            v1CorridorBuilder.Contains(trip.plan.corridor, proposed, ref trip.corridorSegmentHint, 0.01f);
+        bool structuralStepClear = certifiedCorridorStep ||
             SegmentAllowedForNavMesh(
                 current, proposed, effectiveRadius, agent, ownerId,
                 structuralStart, structuralEnd);
         bool hardStepClear = structuralStepClear &&
-            IsHardMovementStepClear(ownerId, agent, proposed, effectiveRadius);
+            IsHardMovementStepClear(ownerId, agent, proposed, effectiveRadius, certifiedCorridorStep);
         bool localStepClear = structuralStepClear && hardStepClear;
 
         if (!localStepClear)
@@ -1014,7 +1077,8 @@ public sealed partial class BistroBuilderNavigationService
         string ownerId,
         BistroBuilderNavigationAgentMask agent,
         Vector3 proposed,
-        float radius)
+        float radius,
+        bool skipStaticGeometry = false)
     {
         float r = Mathf.Max(0.05f, radius);
         bool nearTripEndpoint = false;
@@ -1031,7 +1095,7 @@ public sealed partial class BistroBuilderNavigationService
         // El planner permite aproximarse a endpoints certificados aunque estÃ©n
         // prÃ³ximos a la huella estÃ¡tica del objeto de interacciÃ³n. El solver
         // local debe respetar la misma semÃ¡ntica para no autobloquear el viaje.
-        if (!nearTripEndpoint)
+        if (!nearTripEndpoint && !skipStaticGeometry)
         {
             for (int i = 0; i < staticShapes.Count; i++)
                 if (PointInsideShape(proposed, staticShapes[i], r + staticClearance))
@@ -1826,6 +1890,7 @@ public sealed partial class BistroBuilderNavigationService
         public int corridorRepairsWithoutProgress;
         public int fullReplansWithoutProgress;
         public Vector3 lastPreferredDirection;
+        public int corridorSegmentHint;
     }
 
     private sealed class BackoffRuntime
