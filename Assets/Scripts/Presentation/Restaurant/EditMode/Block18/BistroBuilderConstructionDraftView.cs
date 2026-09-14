@@ -8,7 +8,7 @@ public sealed class BistroBuilderConstructionDraftView : MonoBehaviour
     private Material material;
     private readonly Dictionary<Renderer, bool> hidden = new Dictionary<Renderer, bool>();
 
-    public void Show(BistroBuilderEditDocument document)
+    public void Show(BistroBuilderEditDocument document, IReadOnlyList<BistroBuilderRoomProjection> roomProjections = null)
     {
         Clear();
         var committed = FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>();
@@ -35,14 +35,29 @@ public sealed class BistroBuilderConstructionDraftView : MonoBehaviour
             go.AddComponent<MeshRenderer>().sharedMaterial = material;
             BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
         }
-        var topology = new BistroBuilderWallTopologyBuilder().Build(document.walls,document.revision);
-        if (!topology.HasBlockingDiagnostics)
-        foreach (var face in new BistroBuilderRoomFaceDetector().Detect(topology))
+        if (roomProjections != null)
         {
-            var floor = new GameObject("DraftFloor"); floor.transform.SetParent(root.transform,false);
-            floor.AddComponent<MeshFilter>().sharedMesh = BistroBuilderPlanarGeometryBuilder.BuildHorizontalPolygon(face.boundary,0.012f);
-            var kit = BistroBuilderConstructionAssetKit.Load();
-            floor.AddComponent<MeshRenderer>().sharedMaterial = kit != null ? kit.floorMaterial : material;
+            for (int i = 0; i < roomProjections.Count; i++)
+            {
+                var room = roomProjections[i];
+                if (room == null || room.boundary.Count < 3) continue;
+                var floor = new GameObject("DraftFloor"); floor.transform.SetParent(root.transform,false);
+                floor.AddComponent<MeshFilter>().sharedMesh = BistroBuilderPlanarGeometryBuilder.BuildHorizontalPolygon(room.boundary,0.012f);
+                var kit = BistroBuilderConstructionAssetKit.Load();
+                floor.AddComponent<MeshRenderer>().sharedMaterial = kit != null ? kit.floorMaterial : material;
+            }
+        }
+        else
+        {
+            var topology = new BistroBuilderWallTopologyBuilder().Build(document.walls,document.revision);
+            if (!topology.HasBlockingDiagnostics)
+            foreach (var face in new BistroBuilderRoomFaceDetector().Detect(topology))
+            {
+                var floor = new GameObject("DraftFloor"); floor.transform.SetParent(root.transform,false);
+                floor.AddComponent<MeshFilter>().sharedMesh = BistroBuilderPlanarGeometryBuilder.BuildHorizontalPolygon(face.boundary,0.012f);
+                var kit = BistroBuilderConstructionAssetKit.Load();
+                floor.AddComponent<MeshRenderer>().sharedMaterial = kit != null ? kit.floorMaterial : material;
+            }
         }
     }
 
