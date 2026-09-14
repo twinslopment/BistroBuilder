@@ -13,7 +13,7 @@ using UnityEngine.UI;
 public sealed class BistroBuilderUiScrollRegion : MonoBehaviour,
     IScrollHandler, IBeginDragHandler, IEndDragHandler
 {
-    public const string RuntimeRevision = "21C-SCROLL-NAV-V1";
+    public const string RuntimeRevision = "21C-SCROLL-NAV-V2-UNIVERSAL";
 
     private ScrollRect scroll;
     private float targetNormalized = 1f;
@@ -22,6 +22,8 @@ public sealed class BistroBuilderUiScrollRegion : MonoBehaviour,
     private float nextHeaderScanAt;
     private GridLayoutGroup convertedGrid;
     private float convertedCellWidth;
+    private Scrollbar runtimeVerticalScrollbar;
+    private CanvasGroup runtimeScrollbarGroup;
 
     private void Awake()
     {
@@ -87,8 +89,10 @@ public sealed class BistroBuilderUiScrollRegion : MonoBehaviour,
         if (Time.unscaledTime >= nextHeaderScanAt)
         {
             EnsureFixedHeader();
+            EnsureVerticalScrollbar();
             nextHeaderScanAt = Time.unscaledTime + 0.5f;
         }
+        UpdateVerticalScrollbarVisibility();
 
         if (dragging || !wheelSmoothing) return;
 
@@ -122,9 +126,101 @@ public sealed class BistroBuilderUiScrollRegion : MonoBehaviour,
             scroll.horizontalScrollbar.gameObject.SetActive(false);
 
         EnsureViewportRaycast();
+        EnsureVerticalScrollbar();
         if (wasHorizontalOnly) ConvertHorizontalContentToVerticalGrid();
         EnsureFixedHeader();
         SyncTarget();
+    }
+
+    private void EnsureVerticalScrollbar()
+    {
+        if (scroll == null || scroll.viewport == null) return;
+
+        Scrollbar bar = scroll.verticalScrollbar;
+        if (bar == null)
+        {
+            Transform existing = transform.Find("BB_AutoVerticalScrollbar");
+            GameObject root = existing != null ? existing.gameObject :
+                new GameObject("BB_AutoVerticalScrollbar", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Scrollbar));
+            if (existing == null) root.transform.SetParent(transform, false);
+
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 0.5f);
+            rect.anchoredPosition = new Vector2(-3f, 0f);
+            rect.sizeDelta = new Vector2(10f, -8f);
+
+            Image track = root.GetComponent<Image>();
+            track.color = new Color(BistroBuilderUiTokens.Surface2.r, BistroBuilderUiTokens.Surface2.g, BistroBuilderUiTokens.Surface2.b, 0.72f);
+            track.raycastTarget = true;
+
+            Transform areaFound = root.transform.Find("Sliding Area");
+            RectTransform area;
+            if (areaFound == null)
+            {
+                GameObject areaGo = new GameObject("Sliding Area", typeof(RectTransform));
+                areaGo.transform.SetParent(root.transform, false);
+                area = areaGo.GetComponent<RectTransform>();
+            }
+            else area = areaFound as RectTransform;
+            area.anchorMin = Vector2.zero; area.anchorMax = Vector2.one;
+            area.offsetMin = new Vector2(2f, 2f); area.offsetMax = new Vector2(-2f, -2f);
+
+            Transform handleFound = area.Find("Handle");
+            RectTransform handle;
+            Image handleImage;
+            if (handleFound == null)
+            {
+                GameObject handleGo = new GameObject("Handle", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                handleGo.transform.SetParent(area, false);
+                handle = handleGo.GetComponent<RectTransform>();
+                handleImage = handleGo.GetComponent<Image>();
+            }
+            else
+            {
+                handle = handleFound as RectTransform;
+                handleImage = handle.GetComponent<Image>() ?? handle.gameObject.AddComponent<Image>();
+            }
+            handle.anchorMin = Vector2.zero; handle.anchorMax = Vector2.one;
+            handle.offsetMin = Vector2.zero; handle.offsetMax = Vector2.zero;
+            handleImage.color = BistroBuilderUiTokens.WarmAccent;
+            handleImage.raycastTarget = true;
+
+            bar = root.GetComponent<Scrollbar>();
+            bar.handleRect = handle;
+            bar.targetGraphic = handleImage;
+            bar.direction = Scrollbar.Direction.BottomToTop;
+            bar.numberOfSteps = 0;
+            bar.navigation = new Navigation { mode = Navigation.Mode.None };
+            bar.colors = BistroBuilderUiTokens.ButtonColors(
+                BistroBuilderUiTokens.WarmAccent,
+                Color.Lerp(BistroBuilderUiTokens.WarmAccent, Color.white, 0.16f),
+                Color.Lerp(BistroBuilderUiTokens.WarmAccent, Color.black, 0.16f));
+            scroll.verticalScrollbar = bar;
+            scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+            scroll.verticalScrollbarSpacing = 4f;
+        }
+
+        runtimeVerticalScrollbar = bar;
+        if (runtimeScrollbarGroup == null && runtimeVerticalScrollbar != null)
+            runtimeScrollbarGroup = runtimeVerticalScrollbar.GetComponent<CanvasGroup>() ??
+                runtimeVerticalScrollbar.gameObject.AddComponent<CanvasGroup>();
+        UpdateVerticalScrollbarVisibility();
+    }
+
+    private void UpdateVerticalScrollbarVisibility()
+    {
+        if (runtimeVerticalScrollbar == null) return;
+        bool visible = GetVerticalOverflow() > 0.5f;
+        if (runtimeVerticalScrollbar.gameObject.activeSelf != visible)
+            runtimeVerticalScrollbar.gameObject.SetActive(visible);
+        if (runtimeScrollbarGroup != null)
+        {
+            runtimeScrollbarGroup.alpha = visible ? 1f : 0f;
+            runtimeScrollbarGroup.interactable = visible;
+            runtimeScrollbarGroup.blocksRaycasts = visible;
+        }
     }
 
     private void EnsureViewportRaycast()
@@ -355,5 +451,36 @@ public sealed class BistroBuilderUiStickyTableHeader : MonoBehaviour
         Canvas parentCanvas = header.GetComponentInParent<Canvas>();
         liftCanvas.overrideSorting = true;
         liftCanvas.sortingOrder = parentCanvas != null ? parentCanvas.sortingOrder + 5 : 5;
+    }
+}
+
+/// <summary>
+/// Garantiza el contrato de scroll en cualquier pantalla, incluso si se crea
+/// din?micamente despu?s del arranque del HUD.
+/// </summary>
+[DefaultExecutionOrder(31850)]
+public sealed class BistroBuilderUiScrollRuntimeBootstrap : MonoBehaviour
+{
+    private static BistroBuilderUiScrollRuntimeBootstrap instance;
+    private float nextScanAt;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void Install()
+    {
+        if (instance != null) return;
+        GameObject go = new GameObject("BB_UI_ScrollRuntime");
+        DontDestroyOnLoad(go);
+        instance = go.AddComponent<BistroBuilderUiScrollRuntimeBootstrap>();
+    }
+
+    private void Update()
+    {
+        if (Time.unscaledTime < nextScanAt) return;
+        ScrollRect[] scrolls = UnityEngine.Object.FindObjectsByType<ScrollRect>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < scrolls.Length; i++)
+            if (scrolls[i] != null && scrolls[i].gameObject.activeInHierarchy)
+                BistroBuilderUiScrollRegion.Configure(scrolls[i]);
+        nextScanAt = Time.unscaledTime + 0.45f;
     }
 }

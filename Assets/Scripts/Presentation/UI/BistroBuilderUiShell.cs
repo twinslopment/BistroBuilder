@@ -309,6 +309,11 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             Stretch(label.GetComponent<RectTransform>());
         }        text.text = value;
         text.fontSize = 14f;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 10f;
+        text.fontSizeMax = 14f;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
         text.color = BistroBuilderUiTokens.TextPrimary;
         text.alignment = TextAlignmentOptions.Center;
         text.raycastTarget = false;
