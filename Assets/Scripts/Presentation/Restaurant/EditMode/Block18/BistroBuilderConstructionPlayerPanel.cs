@@ -111,6 +111,7 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         { float captured = length; Button(lengths, length + " m", () => tool.ConfigureModule(captured, tool.ModuleAngle)); }
         Button(moduleControls, "Girar módulo 90°", () => tool.ConfigureModule(tool.ModuleLength, tool.ModuleAngle + 90)).gameObject.AddComponent<BistroBuilderPointerHint>().Kind = BistroBuilderPointerKind.Rotate;
         Mode(catalogue, "Abrir mobiliario", BistroBuilderConstructionRuntimeMode.Furniture, "furniture");
+        Button(catalogue, "Carta y platos - probar scroll", OpenCarta, 42);
         summary = Text(catalogue, "", 14, 48);
 
         inspector = Panel("Inspector de construcción", root, new Vector2(1,1), new Vector2(-12,-82), new Vector2(274,420));
@@ -156,6 +157,18 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
     }
     private void Apply() { actionStatus = tool.TryCommitDraft(out var error) ? "Construcción aplicada." : error; }
     private void AdjustOpening(float delta) { tool.TryAdjustOpening(delta, false, out var error); actionStatus = error; }
+    private void OpenCarta()
+    {
+        Cache();
+        if (shell == null)
+        {
+            actionStatus = "No está disponible la navegación principal.";
+            return;
+        }
+        actionStatus = shell.TryOpenNavigationFromInterface("Carta", out string error)
+            ? "Carta abierta: prueba el scroll con la rueda del ratón."
+            : error;
+    }
     private void RequestExit() { if (!InterceptExit()) ExitNow(); }
     private void ExitNow()
     {

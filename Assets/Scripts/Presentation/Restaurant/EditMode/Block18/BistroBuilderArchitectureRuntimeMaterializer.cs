@@ -69,8 +69,13 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
 
         if (materializeDetectedRooms)
         {
+            var topologyWalls = new List<BistroBuilderWallRecord>(document.walls.Count + 4);
+            topologyWalls.AddRange(document.walls);
+            var boundaryWalls = new List<BistroBuilderWallRecord>(4);
+            if (BistroBuilderPremisesBoundaryRuntimeProvider.TryResolve(gameObject.scene, boundaryWalls))
+                topologyWalls.AddRange(boundaryWalls);
             var topology = new BistroBuilderWallTopologyBuilder().Build(
-                document.walls,
+                topologyWalls,
                 document.revision);
             if (!topology.HasBlockingDiagnostics)
             {

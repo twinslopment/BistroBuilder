@@ -28,10 +28,13 @@ public sealed class BistroBuilderEditDocumentRuntimeService : MonoBehaviour,
         var orchestrator = new BistroBuilderEditValidationOrchestrator();
         for (int i = 0; i < validationProviders.Count; i++)
             orchestrator.Register(validationProviders[i]);
+        var boundaryWalls = new List<BistroBuilderWallRecord>(4);
+        BistroBuilderPremisesBoundaryRuntimeProvider.TryResolve(gameObject.scene, boundaryWalls);
         return new BistroBuilderEditSession(
             GetCommittedSnapshot(),
             null,
-            orchestrator);
+            orchestrator,
+            boundaryWalls);
     }
 
     public bool RegisterValidationProvider(

@@ -181,7 +181,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool
     {
         if (draftView == null) draftView = gameObject.AddComponent<BistroBuilderConstructionDraftView>();
         if (coordinator != null && coordinator.HasSession && coordinator.IsDirty)
-            draftView.Show(coordinator.Session.Draft);
+            draftView.Show(coordinator.Session.Draft, coordinator.Session.RoomProjections);
         else draftView.Clear();
     }
 

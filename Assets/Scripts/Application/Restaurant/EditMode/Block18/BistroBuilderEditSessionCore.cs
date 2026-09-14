@@ -78,6 +78,8 @@ public sealed class BistroBuilderEditSession
     private readonly List<HistoryEntry> redo = new List<HistoryEntry>();
     private readonly HashSet<string> executedCommandIds = new HashSet<string>(StringComparer.Ordinal);
     private List<BistroBuilderRoomProjection> roomProjections = new List<BistroBuilderRoomProjection>();
+    private readonly List<BistroBuilderWallRecord> premisesBoundaryWalls = new List<BistroBuilderWallRecord>(4);
+    private readonly List<BistroBuilderWallRecord> topologyWalls = new List<BistroBuilderWallRecord>();
 
     public string SessionId { get; } = Guid.NewGuid().ToString("N");
     public long BaselineRevision { get; }
@@ -87,10 +89,12 @@ public sealed class BistroBuilderEditSession
     public BistroBuilderEditSessionState State { get; private set; }
     public bool CanUndo => State == BistroBuilderEditSessionState.ActiveDirty && undo.Count > 0;
     public bool CanRedo => (State == BistroBuilderEditSessionState.ActiveDirty || State == BistroBuilderEditSessionState.ActiveClean) && redo.Count > 0;
+    public IReadOnlyList<BistroBuilderWallRecord> PremisesBoundaryWalls => premisesBoundaryWalls;
 
     public BistroBuilderEditSession(BistroBuilderEditDocument committed,
         BistroBuilderArchitectureGeometryPolicy policy = null,
-        BistroBuilderEditValidationOrchestrator validation = null)
+        BistroBuilderEditValidationOrchestrator validation = null,
+        IReadOnlyList<BistroBuilderWallRecord> premisesBoundary = null)
     {
         if (committed == null) throw new ArgumentNullException(nameof(committed));
         this.policy = policy ?? BistroBuilderArchitectureGeometryPolicy.Default;
@@ -98,6 +102,9 @@ public sealed class BistroBuilderEditSession
         this.validation.Register(new BistroBuilderIntrinsicEditValidationProvider(this.policy));
         Baseline = committed.DeepClone(); BaselineRevision = committed.revision;
         Draft = committed.DeepClone(); DraftRevision = committed.revision;
+        if (premisesBoundary != null)
+            for (int i = 0; i < premisesBoundary.Count; i++)
+                if (premisesBoundary[i] != null) premisesBoundaryWalls.Add(premisesBoundary[i].DeepClone());
         State = BistroBuilderEditSessionState.ActiveClean;
         RebuildRooms();
     }
@@ -203,7 +210,12 @@ public sealed class BistroBuilderEditSession
 
     private void RebuildRooms()
     {
-        var topology = new BistroBuilderWallTopologyBuilder(policy).Build(Draft.walls, DraftRevision);
+        topologyWalls.Clear();
+        for (int i = 0; i < Draft.walls.Count; i++)
+            if (Draft.walls[i] != null) topologyWalls.Add(Draft.walls[i]);
+        for (int i = 0; i < premisesBoundaryWalls.Count; i++)
+            if (premisesBoundaryWalls[i] != null) topologyWalls.Add(premisesBoundaryWalls[i]);
+        var topology = new BistroBuilderWallTopologyBuilder(policy).Build(topologyWalls, DraftRevision);
         var faces = new BistroBuilderRoomFaceDetector(policy).Detect(topology);
         if (roomProjections.Count == 0 && Draft.rooms.Count > 0)
         {

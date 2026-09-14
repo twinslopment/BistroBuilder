@@ -134,6 +134,22 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         return true;
     }
 
+    public bool TryOpenNavigationFromInterface(string label, out string error)
+    {
+        ResolveDependencies();
+        EnsureShell();
+        ReconcileNavigation();
+        if (string.IsNullOrWhiteSpace(label) ||
+            !proxyButtons.TryGetValue(label, out Button proxy) || proxy == null || !proxy.interactable)
+        {
+            error = "La sección no está disponible en este momento.";
+            return false;
+        }
+        proxy.onClick.Invoke();
+        error = string.Empty;
+        return true;
+    }
+
     public void EnsureShell()
     {
         ResolveDependencies();
