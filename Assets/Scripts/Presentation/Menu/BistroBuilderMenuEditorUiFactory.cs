@@ -1,3 +1,4 @@
+using BistroBuilder.UI.Iconography;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -158,6 +159,7 @@ internal static class BistroBuilderMenuEditorUiFactory
             button.onClick.AddListener(callback);
         }
 
+        BBIconographyRuntime.TryDecorate(button);
         return button;
     }
 
