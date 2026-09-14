@@ -9,17 +9,17 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 /// <summary>
-/// Instala o repara el primer catálogo runtime de artículos.
+/// Instala o repara el primer catÃƒÆ’Ã‚Â¡logo runtime de artÃƒÆ’Ã‚Â­culos.
 ///
 /// Automatiza:
-/// - Creación y actualización del asset de catálogo.
-/// - Registro de todas las definiciones de artículos existentes.
-/// - Instalación del servicio en GameSystems.
-/// - Creación del Canvas y panel de catálogo.
-/// - Creación de plantillas de categorías y artículos.
-/// - Conexión de referencias.
+/// - CreaciÃƒÆ’Ã‚Â³n y actualizaciÃƒÆ’Ã‚Â³n del asset de catÃƒÆ’Ã‚Â¡logo.
+/// - Registro de todas las definiciones de artÃƒÆ’Ã‚Â­culos existentes.
+/// - InstalaciÃƒÆ’Ã‚Â³n del servicio en GameSystems.
+/// - CreaciÃƒÆ’Ã‚Â³n del Canvas y panel de catÃƒÆ’Ã‚Â¡logo.
+/// - CreaciÃƒÆ’Ã‚Â³n de plantillas de categorÃƒÆ’Ã‚Â­as y artÃƒÆ’Ã‚Â­culos.
+/// - ConexiÃƒÆ’Ã‚Â³n de referencias.
 ///
-/// La operación es idempotente y solo administra objetos con nombres
+/// La operaciÃƒÆ’Ã‚Â³n es idempotente y solo administra objetos con nombres
 /// reservados por Bistro Builder.
 /// </summary>
 public static class BistroBuilderPlaceableCatalogInstaller
@@ -66,7 +66,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Sal de Play antes de instalar el catálogo.",
+                "Sal de Play antes de instalar el catÃƒÆ’Ã‚Â¡logo.",
                 "Aceptar"
             );
 
@@ -80,7 +80,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
         {
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "No se encontró GameSystems en la escena activa.",
+                "No se encontrÃƒÆ’Ã‚Â³ GameSystems en la escena activa.",
                 "Aceptar"
             );
 
@@ -116,7 +116,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
             Undo.GetCurrentGroup();
 
         Undo.SetCurrentGroupName(
-            "Instalar catálogo de artículos"
+            "Instalar catÃƒÆ’Ã‚Â¡logo de artÃƒÆ’Ã‚Â­culos"
         );
 
         try
@@ -170,7 +170,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
             );
 
             Debug.Log(
-                "Catálogo runtime instalado. Artículos: " +
+                "CatÃƒÆ’Ã‚Â¡logo runtime instalado. ArtÃƒÆ’Ã‚Â­culos: " +
                 itemCount +
                 ". Servicio: GameSystems. UI: " +
                 CanvasObjectName +
@@ -179,8 +179,8 @@ public static class BistroBuilderPlaceableCatalogInstaller
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "Catálogo instalado correctamente.\n\n" +
-                "Artículos registrados: " + itemCount + "\n" +
+                "CatÃƒÆ’Ã‚Â¡logo instalado correctamente.\n\n" +
+                "ArtÃƒÆ’Ã‚Â­culos registrados: " + itemCount + "\n" +
                 "Servicio: GameSystems\n" +
                 "UI: " + CanvasObjectName + "\n\n" +
                 "En Play, pulsa F2 para mostrarlo.",
@@ -193,7 +193,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
 
             EditorUtility.DisplayDialog(
                 "Bistro Builder",
-                "La instalación no pudo completarse.\n\n" +
+                "La instalaciÃƒÆ’Ã‚Â³n no pudo completarse.\n\n" +
                 "Consulta el primer error rojo de Console.",
                 "Aceptar"
             );
@@ -306,7 +306,7 @@ public static class BistroBuilderPlaceableCatalogInstaller
 
             Undo.RegisterCreatedObjectUndo(
                 canvasObject,
-                "Crear Canvas de catálogo"
+                "Crear Canvas de catÃƒÆ’Ã‚Â¡logo"
             );
         }
 
@@ -759,16 +759,22 @@ public static class BistroBuilderPlaceableCatalogInstaller
             );
 
         scrollRect.horizontal =
-            true;
+            false;
 
         scrollRect.vertical =
-            false;
+            true;
 
         scrollRect.movementType =
             ScrollRect.MovementType.Clamped;
 
+        scrollRect.inertia =
+            true;
+
+        scrollRect.decelerationRate =
+            BistroBuilderUiTokens.ScrollDecelerationRate;
+
         scrollRect.scrollSensitivity =
-            35f;
+            0f;
 
         GameObject viewport =
             CreateUIObject(
@@ -806,13 +812,13 @@ public static class BistroBuilderPlaceableCatalogInstaller
             items.GetComponent<RectTransform>();
 
         itemsRect.anchorMin =
-            new Vector2(0f, 0f);
-
-        itemsRect.anchorMax =
             new Vector2(0f, 1f);
 
+        itemsRect.anchorMax =
+            new Vector2(1f, 1f);
+
         itemsRect.pivot =
-            new Vector2(0f, 0.5f);
+            new Vector2(0.5f, 1f);
 
         itemsRect.anchoredPosition =
             Vector2.zero;
@@ -820,31 +826,31 @@ public static class BistroBuilderPlaceableCatalogInstaller
         itemsRect.sizeDelta =
             new Vector2(0f, 0f);
 
-        HorizontalLayoutGroup itemsLayout =
-            Undo.AddComponent<HorizontalLayoutGroup>(
+        GridLayoutGroup itemsLayout =
+            Undo.AddComponent<GridLayoutGroup>(
                 items
             );
 
+        itemsLayout.cellSize =
+            new Vector2(190f, 142f);
+
         itemsLayout.spacing =
-            12f;
+            new Vector2(12f, 12f);
 
         itemsLayout.padding =
-            new RectOffset(0, 12, 0, 0);
+            new RectOffset(0, 12, 0, 12);
 
         itemsLayout.childAlignment =
-            TextAnchor.MiddleLeft;
+            TextAnchor.UpperLeft;
 
-        itemsLayout.childControlWidth =
-            false;
+        itemsLayout.startCorner =
+            GridLayoutGroup.Corner.UpperLeft;
 
-        itemsLayout.childControlHeight =
-            true;
+        itemsLayout.startAxis =
+            GridLayoutGroup.Axis.Horizontal;
 
-        itemsLayout.childForceExpandWidth =
-            false;
-
-        itemsLayout.childForceExpandHeight =
-            true;
+        itemsLayout.constraint =
+            GridLayoutGroup.Constraint.Flexible;
 
         ContentSizeFitter contentSizeFitter =
             Undo.AddComponent<ContentSizeFitter>(
@@ -852,16 +858,20 @@ public static class BistroBuilderPlaceableCatalogInstaller
             );
 
         contentSizeFitter.horizontalFit =
-            ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter.FitMode.Unconstrained;
 
         contentSizeFitter.verticalFit =
-            ContentSizeFitter.FitMode.Unconstrained;
+            ContentSizeFitter.FitMode.PreferredSize;
 
         scrollRect.viewport =
             viewport.GetComponent<RectTransform>();
 
         scrollRect.content =
             itemsRect;
+
+        Undo.AddComponent<BistroBuilderUiScrollRegion>(
+            scroll
+        );
 
         GameObject templates =
             CreateUIObject(
@@ -1388,9 +1398,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
         if (found == null)
         {
             throw new InvalidOperationException(
-                "No se encontró " +
+                "No se encontrÃƒÆ’Ã‚Â³ " +
                 relativePath +
-                " dentro del catálogo generado."
+                " dentro del catÃƒÆ’Ã‚Â¡logo generado."
             );
         }
 
@@ -1409,9 +1419,9 @@ public static class BistroBuilderPlaceableCatalogInstaller
         if (found == null)
         {
             throw new InvalidOperationException(
-                "No se encontró " +
+                "No se encontrÃƒÆ’Ã‚Â³ " +
                 relativePath +
-                " dentro del catálogo generado."
+                " dentro del catÃƒÆ’Ã‚Â¡logo generado."
             );
         }
 
