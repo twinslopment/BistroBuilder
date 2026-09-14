@@ -331,6 +331,19 @@ namespace BistroBuilder.Editor.UI.Iconography
 
         private static Sprite LoadSprite(string assetPath)
         {
+            var importer = AssetImporter.GetAtPath(assetPath) as Unity.VectorGraphics.Editor.SVGImporter;
+            if (importer != null && importer.SvgType != Unity.VectorGraphics.Editor.SVGType.VectorSprite)
+            {
+                var serializedImporter = new SerializedObject(importer);
+                var svgTypeProperty = serializedImporter.FindProperty("svgType");
+                if (svgTypeProperty != null)
+                {
+                    svgTypeProperty.intValue = (int)Unity.VectorGraphics.Editor.SVGType.VectorSprite;
+                    serializedImporter.ApplyModifiedPropertiesWithoutUndo();
+                    importer.SaveAndReimport();
+                }
+            }
+
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
             if (sprite != null)
                 return sprite;
