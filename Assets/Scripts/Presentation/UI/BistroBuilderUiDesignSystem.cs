@@ -6,13 +6,13 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 21A UI/UX definitiva: estilos centralizados y escalado responsive.
-/// Es Presentation pura; no decide ningún estado de negocio.
+/// Es Presentation pura; no decide ningÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºn estado de negocio.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/UI/Design System")]
 public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
 {
-    public const string RuntimeRevision = "21A-UIUX-V1.1";
+    public const string RuntimeRevision = "21A-UIUX-V1.2-SCROLL21C";
 
     [SerializeField] private BistroBuilderUiTheme theme;
     [SerializeField] private bool styleRuntimeContent = true;
@@ -54,7 +54,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         Resolve();
         if (canvas == null)
         {
-            error = "BB UI Design System debe vivir bajo el Canvas HUD canónico.";
+            error = "BB UI Design System debe vivir bajo el Canvas HUD canÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³nico.";
             return false;
         }
         if (canvas.GetComponent<GraphicRaycaster>() == null)
@@ -99,8 +99,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         for (int i = 0; i < dropdowns.Length; i++) StyleLegacyDropdown(dropdowns[i], force);
         Scrollbar[] scrollbars = canvas.GetComponentsInChildren<Scrollbar>(true);
         for (int i = 0; i < scrollbars.Length; i++) StyleScrollbar(scrollbars[i], force);
-        Image[] images = canvas.GetComponentsInChildren<Image>(true);
-        for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);
+        Image[] images = canvas.GetComponentsInChildren<Image>(true);`r`n        for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);`r`n        ScrollRect[] scrollRects = UnityEngine.Object.FindObjectsByType<ScrollRect>(`r`n            FindObjectsInactive.Include, FindObjectsSortMode.None);`r`n        for (int i = 0; i < scrollRects.Length; i++)`r`n            if (scrollRects[i] != null && scrollRects[i].gameObject.scene == canvas.gameObject.scene)`r`n                BistroBuilderUiScrollRegion.Configure(scrollRects[i]);
         TMP_Text[] tmpTexts = canvas.GetComponentsInChildren<TMP_Text>(true);
         for (int i = 0; i < tmpTexts.Length; i++) StyleTmpText(tmpTexts[i], force);
         Text[] legacyTexts = canvas.GetComponentsInChildren<Text>(true);
@@ -342,8 +341,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         if (ContainsAny(name, "summary", "caption", "hint", "help", "secondary", "empty"))
             return BistroBuilderUiStyleRole.Caption;
         if (ContainsAny(name, "kpi", "metric", "value", "amount", "money")) return BistroBuilderUiStyleRole.Kpi;
-        if (ContainsAny(key, "crítico", "critico", "bloquead", "error")) return BistroBuilderUiStyleRole.StatusCritical;
-        if (ContainsAny(key, "atención", "atencion", "saturad", "espera")) return BistroBuilderUiStyleRole.StatusAttention;
+        if (ContainsAny(key, "crÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tico", "critico", "bloquead", "error")) return BistroBuilderUiStyleRole.StatusCritical;
+        if (ContainsAny(key, "atenciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n", "atencion", "saturad", "espera")) return BistroBuilderUiStyleRole.StatusAttention;
         if (ContainsAny(key, "correcto", "fluida", "activo", "confirmad")) return BistroBuilderUiStyleRole.StatusSuccess;
         return BistroBuilderUiStyleRole.Body;
     }
