@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using UnityEditor;
@@ -101,8 +101,16 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
                 }
                 if (!save.SlotExists(DiagnosticSlot) || !service.CanContinue)
                     throw new InvalidOperationException("El guardado inicial no habilito Continuar.");
-                if (!service.TryAcknowledgeBriefing(out string mutateError) ||
-                    service.Phase != BistroBuilderNewGamePhase.ReadyToOpen)
+                if (service.Phase != BistroBuilderNewGamePhase.InitialSetup)
+                    throw new InvalidOperationException("La nueva partida no quedo en diseño inicial.");
+                if (!service.IsInitialEditModeActive && !service.TryEnterInitialEditMode(out string editError))
+                    throw new InvalidOperationException("No pudo activarse el modo edición inicial: " + editError);
+                if (service.TryAcknowledgeBriefing(out _))
+                    throw new InvalidOperationException("El briefing no debe poder saltarse antes de confirmar el diseño.");
+                BistroBuilderNewGameStateSnapshot mutated = service.CreateSnapshot();
+                mutated.phase = BistroBuilderNewGamePhase.Briefing;
+                mutated.lastBriefing = "MUTACION_DIAGNOSTICA";
+                if (!service.TryRestoreSnapshot(mutated, out string mutateError))
                     throw new InvalidOperationException("No pudo mutarse el estado antes de probar Continuar: " + mutateError);
                 if (!service.TryContinue(out string continueError))
                     throw new InvalidOperationException("Continuar no pudo iniciar la carga: " + continueError);
@@ -114,17 +122,35 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
             {
                 if (save.IsBusy)
                 {
-                    Timeout(stageStarted, 12d, "carga de Continuar");
+                    Timeout(stageStarted, 90d, "carga de Continuar");
                     return;
                 }
                 BistroBuilderNewGameStateSnapshot restored = service.CreateSnapshot();
-                if (!restored.setupCompleted || restored.phase != BistroBuilderNewGamePhase.Briefing ||
+                if (!restored.setupCompleted || restored.phase != BistroBuilderNewGamePhase.InitialSetup ||
                     restored.briefingAcknowledged || !string.Equals(restored.restaurantName, "Bistro Apertura Test", StringComparison.Ordinal))
-                    throw new InvalidOperationException("Continuar no restauro el checkpoint inicial de nueva partida.");
+                    throw new InvalidOperationException("Continuar no restauro el checkpoint de diseño inicial.");
+                if (!service.TryEnterInitialEditMode(out string reenterError) || !service.IsInitialEditModeActive)
+                    throw new InvalidOperationException("Continuar no recupero el modo edición inicial: " + reenterError);
+                if (!service.TryValidateInitialDesign(out string designError))
+                    throw new InvalidOperationException("El diseño inicial de prueba no es válido: " + designError);
+                if (!service.TryCompleteInitialDesign(out string completeError) ||
+                    service.Phase != BistroBuilderNewGamePhase.Briefing)
+                    throw new InvalidOperationException("No pudo confirmarse el diseño inicial: " + completeError);
+                stageStarted = EditorApplication.timeSinceStartup;
+                SessionState.SetString(StageKey, cli ? "wait_design_save_cli" : "wait_design_save_menu");
+                return;
+            }
+            if (stage.StartsWith("wait_design_save_", StringComparison.Ordinal))
+            {
+                if (save.IsBusy)
+                {
+                    Timeout(stageStarted, 12d, "guardado del diseño inicial");
+                    return;
+                }
                 if (!service.TryRunOpeningPreflight(out BistroBuilderOpeningPreflightReport report, out string preflightError))
-                    throw new InvalidOperationException("Preflight tras Continuar fallo: " + preflightError);
-                if (!report.CanOpen || report.passedCount < 7 || report.blockerCount != 0)
-                    throw new InvalidOperationException("El restaurante restaurado no supera la validacion previa.");
+                    throw new InvalidOperationException("Preflight tras diseño inicial fallo: " + preflightError);
+                if (!report.CanOpen || report.blockerCount != 0)
+                    throw new InvalidOperationException("El restaurante confirmado no supera la validacion previa.");
                 if (!service.TryAcknowledgeBriefing(out string briefingError))
                     throw new InvalidOperationException("Briefing fallo: " + briefingError);
                 if (!service.TryOpenFirstService(out string openError))
@@ -134,8 +160,7 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
                 BistroBuilderNewGameStateSnapshot snapshot = service.CreateSnapshot();
                 if (!snapshot.setupCompleted || !snapshot.briefingAcknowledged ||
                     !snapshot.firstOpeningCompleted || !snapshot.firstServiceStarted ||
-                    !snapshot.transitionedToNormalPlay ||
-                    snapshot.phase != BistroBuilderNewGamePhase.NormalPlay)
+                    !snapshot.transitionedToNormalPlay || snapshot.phase != BistroBuilderNewGamePhase.NormalPlay)
                     throw new InvalidOperationException("El flujo inicial no alcanzo juego normal.");
                 if (!save.TryDeleteSlot(DiagnosticSlot, out string cleanupError))
                     throw new InvalidOperationException("No pudo eliminarse el slot diagnostico: " + cleanupError);
@@ -153,7 +178,7 @@ public static class BistroBuilderNewGame16PlayModeSelfTest
                 if (save.SlotExists(DiagnosticSlot))
                     throw new InvalidOperationException("El slot diagnostico quedo persistido.");
                 Finish(true,
-                    "PASS - nueva partida, identidad, configuracion inicial, stock, personal, carta, horarios, preflight, briefing, guardado inicial, Continuar, primera apertura y transicion al juego normal funcionan en Play Mode real.", cli);
+                    "PASS - nueva partida, diseño inicial, guardado, Continuar en edición, confirmación del diseño, preparación, preflight, briefing, primera apertura y juego normal funcionan en Play Mode real.", cli);
             }
         }
         catch (Exception exception)

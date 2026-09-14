@@ -30,6 +30,7 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
 
     private bool refreshPending;
     private float refreshAt;
+    private BistroBuilderSaveGameService saveGameService;
     public int RefreshCount { get; private set; }
     public int LastTopologyRevision { get; private set; }
     public bool LastLayoutViable { get; private set; } = true;
@@ -60,6 +61,10 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
         if (!refreshPending ||
             Time.unscaledTime < refreshAt)
             return;
+        // Per-object events during load describe an incomplete layout. Explicit
+        // refreshes used by persistence remain available; coalesce background refreshes.
+        if (saveGameService != null && saveGameService.IsBusy &&
+            saveGameService.ActiveOperation == BistroBuilderSaveOperationKind.Load) return;
         RefreshNow();
     }
 
@@ -154,8 +159,19 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
         RequestRefresh();
     }
 
+    private void HandleSaveCompleted(BistroBuilderSaveOperationResult result)
+    {
+        if (result.OperationKind == BistroBuilderSaveOperationKind.Load && refreshPending)
+            RefreshNow();
+    }
+
     private void Subscribe()
     {
+        if (saveGameService != null)
+        {
+            saveGameService.OperationCompleted -= HandleSaveCompleted;
+            saveGameService.OperationCompleted += HandleSaveCompleted;
+        }
         if (lifecycle != null)
         {
             lifecycle.ProvisionalInstanceCreated -=
@@ -202,6 +218,8 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
 
     private void Unsubscribe()
     {
+        if (saveGameService != null)
+            saveGameService.OperationCompleted -= HandleSaveCompleted;
         if (lifecycle != null)
             lifecycle.ProvisionalInstanceCreated -=
                 HandleProvisionalCreated;
@@ -232,6 +250,8 @@ public sealed class BistroBuilderSpatialEditModeIntegration :
 
     private void ResolveDependencies()
     {
+        if (saveGameService == null)
+            saveGameService = FindFirstObjectByType<BistroBuilderSaveGameService>();
         if (spatialService == null)
             spatialService = FindFirstObjectByType<
                 BistroBuilderSpatialInteractionService>();

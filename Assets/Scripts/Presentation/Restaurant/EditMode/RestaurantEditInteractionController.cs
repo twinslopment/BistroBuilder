@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -328,6 +328,8 @@ public sealed class RestaurantEditInteractionController :
         }
     }
 
+    public float LastRotationFeedbackTime { get; private set; } = -1f;
+
     public bool HasActivePlacement
     {
         get
@@ -373,6 +375,8 @@ public sealed class RestaurantEditInteractionController :
 
     private void Update()
     {
+        if (BistroBuilderConstructionAuthoringRuntimeTool.InputConsumedFrame == Time.frameCount ||
+            (BistroBuilderConstructionPlayerPanel.Instance != null && BistroBuilderConstructionPlayerPanel.Instance.BlocksWorldInput)) return;
         if (!DependenciesAreAvailable())
         {
             return;
@@ -777,6 +781,7 @@ public sealed class RestaurantEditInteractionController :
         bool cancelActivePlacement
     )
     {
+        if (BistroBuilderConstructionPlayerPanel.InterceptExit()) return false;
         if (editModeService == null)
         {
             PublishMessage(
@@ -1576,6 +1581,8 @@ public sealed class RestaurantEditInteractionController :
         candidateRotation =
             yawRotation *
             candidateRotation;
+
+        LastRotationFeedbackTime = Time.unscaledTime;
 
         placementSnapService?.ReleaseCurrentCapture();
         hasPublishedPreviewPose = false;
@@ -2702,8 +2709,12 @@ public sealed class RestaurantEditInteractionController :
 
     private bool IsPointerOverUserInterface()
     {
-        return EventSystem.current != null &&
-               EventSystem.current.IsPointerOverGameObject();
+        bool eventSystemBlocked = EventSystem.current != null &&
+                                  EventSystem.current.IsPointerOverGameObject();
+        if (eventSystemBlocked) return true;
+        return Mouse.current != null &&
+               BistroBuilderRuntimePointerUiGuard.IsPointerBlocked(
+                   Mouse.current.position.ReadValue());
     }
 
     private bool DependenciesAreAvailable()

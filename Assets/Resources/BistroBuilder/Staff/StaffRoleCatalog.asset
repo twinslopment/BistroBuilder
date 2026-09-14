@@ -17,3 +17,7 @@ MonoBehaviour:
     displayName: Camarero/a
     active: 1
     operationalAdapterId: waiter.agent
+  - roleId: cook
+    displayName: Cocinero/a
+    active: 1
+    operationalAdapterId: cook.agent

@@ -51,6 +51,9 @@ public sealed class RestaurantPlaceableCatalogItemView :
         definition =
             itemDefinition;
 
+        var feedback = BistroBuilderInteractionSurface.Attach(button);
+        if (feedback != null) feedback.IsCard = true;
+
         selectionCallback =
             onSelected;
 

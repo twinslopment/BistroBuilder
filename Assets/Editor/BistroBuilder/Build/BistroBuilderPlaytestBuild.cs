@@ -7,7 +7,7 @@ using UnityEngine;
 public static class BistroBuilderPlaytestBuild
 {
     private const string ScenePath = "Assets/Scenes/Prototype_Restaurant.unity";
-    private const string RelativeOutput = "Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe";
+    private const string RelativeOutput = "Builds/Windows/BistroBuilder_Edicion/BistroBuilder.exe";
 
     [MenuItem("Tools/Bistro Builder/Build/Windows Playtest", false, 50000)]
     public static void BuildWindowsPlaytestFromMenu()
@@ -55,6 +55,11 @@ public static class BistroBuilderPlaytestBuild
             "Unity: " + Application.unityVersion + "\n" +
             "UTC: " + DateTime.UtcNow.ToString("O") + "\n" +
             "Size: " + summary.totalSize + " bytes\n");
+
+        // Explicit arguments override the resolution mode remembered by a windowed playtest.
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(output) ?? ".", "Jugar_Pantalla_Completa.cmd"),
+            "@echo off\r\n" +
+            "start \"Bistro Builder\" /D \"%~dp0\" \"%~dp0BistroBuilder.exe\" -screen-fullscreen 1 -window-mode borderless\r\n");
 
         Debug.Log(
             "BB_PLAYTEST_BUILD_PASS|" + output +

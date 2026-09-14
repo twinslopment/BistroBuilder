@@ -1,0 +1,85 @@
+BB EDIT MODE BLOCK 18 - SCENE INTEGRATION
+Scene: Assets/Scenes/Prototype_Restaurant.unity
+Mode: Play Mode
+OK - Escena canónica cargada
+OK - BistroBuilderSpatialInteractionService único en la escena (1)
+OK - BistroBuilderSpatialInteractionService habilitado y activo
+OK - BistroBuilderNavigationService único en la escena (1)
+OK - BistroBuilderNavigationService habilitado y activo
+OK - BistroBuilderOperationalSpatialCoordinator único en la escena (1)
+OK - BistroBuilderOperationalSpatialCoordinator habilitado y activo
+OK - BistroBuilderFinanceService único en la escena (1)
+OK - BistroBuilderFinanceService habilitado y activo
+OK - BistroBuilderDiscretionaryFinanceService único en la escena (1)
+OK - BistroBuilderDiscretionaryFinanceService habilitado y activo
+OK - BistroBuilderGeneralGameStateService único en la escena (1)
+OK - BistroBuilderGeneralGameStateService habilitado y activo
+OK - GameClock único en la escena (1)
+OK - GameClock habilitado y activo
+OK - BistroBuilderSaveGameService único en la escena (1)
+OK - BistroBuilderSaveGameService habilitado y activo
+OK - RestaurantEditModeService único en la escena (1)
+OK - RestaurantEditModeService habilitado y activo
+OK - RestaurantServiceEditModeAvailabilityRule único en la escena (1)
+OK - RestaurantServiceEditModeAvailabilityRule habilitado y activo
+OK - BistroBuilderEditDocumentRuntimeService único en la escena (1)
+OK - BistroBuilderEditDocumentRuntimeService habilitado y activo
+OK - BistroBuilderArchitectureRuntimeMaterializer único en la escena (1)
+OK - BistroBuilderArchitectureRuntimeMaterializer habilitado y activo
+OK - BistroBuilderEditDocumentMaterializationBridge único en la escena (1)
+OK - BistroBuilderEditDocumentMaterializationBridge habilitado y activo
+OK - BistroBuilderEditRuntimeCoordinator único en la escena (1)
+OK - BistroBuilderEditRuntimeCoordinator habilitado y activo
+OK - BistroBuilderEditPlayerFacade único en la escena (1)
+OK - BistroBuilderEditPlayerFacade habilitado y activo
+OK - BistroBuilderEditDocumentSaveSectionProvider único en la escena (1)
+OK - BistroBuilderEditDocumentSaveSectionProvider habilitado y activo
+OK - BistroBuilderEditFinanceGateway único en la escena (1)
+OK - BistroBuilderEditFinanceGateway habilitado y activo
+OK - BistroBuilderEditFinanceGatewayBinder único en la escena (1)
+OK - BistroBuilderEditFinanceGatewayBinder habilitado y activo
+OK - BistroBuilderEditNavigationValidationProvider único en la escena (1)
+OK - BistroBuilderEditNavigationValidationProvider habilitado y activo
+OK - BistroBuilderEditSessionSaveGuard único en la escena (1)
+OK - BistroBuilderEditSessionSaveGuard habilitado y activo
+OK - BistroBuilderEditDocumentMaterializationBridge.runtimeService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.materializer enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.spatialService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.operationalSpatialCoordinator enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.navigationService enlazado
+OK - BistroBuilderEditDocumentMaterializationBridge.rebuildOnEnable activo
+OK - BistroBuilderEditRuntimeCoordinator.documentService enlazado
+OK - BistroBuilderEditRuntimeCoordinator.editModeService enlazado
+OK - BistroBuilderEditRuntimeCoordinator.availabilityRuleSource enlazado
+OK - BistroBuilderEditPlayerFacade.coordinator enlazado
+OK - BistroBuilderEditDocumentSaveSectionProvider.runtimeService enlazado
+OK - BistroBuilderEditDocumentSaveSectionProvider.materializer enlazado
+OK - BistroBuilderEditFinanceGateway.financeService enlazado
+OK - BistroBuilderEditFinanceGateway.discretionaryFinanceService enlazado
+OK - BistroBuilderEditFinanceGateway.generalGameStateService enlazado
+OK - BistroBuilderEditFinanceGateway.gameClock enlazado
+OK - BistroBuilderEditFinanceGatewayBinder.gateway enlazado
+OK - BistroBuilderEditFinanceGatewayBinder.editCoordinator enlazado
+OK - BistroBuilderEditNavigationValidationProvider.editDocumentService enlazado
+OK - BistroBuilderEditSessionSaveGuard.coordinator enlazado
+OK - BistroBuilderArchitectureRuntimeMaterializer.createNavigationFootprints activo
+OK - BistroBuilderArchitectureRuntimeMaterializer.createSpatialSubjects activo
+OK - BistroBuilderArchitectureRuntimeMaterializer.createMeshColliders activo
+OK - Materializer usa una raíz propia de geometría generada en la escena
+OK - Spatial Contract de arquitectura válido
+OK - Materializer enlaza un Spatial Contract de paredes válido
+OK - Materializer/Navigation coherentes: passableOpeningBottomTolerance / floorOpeningTolerance
+OK - Materializer/Navigation coherentes: passableOpeningMinimumHeight / minimumPassageHeight
+OK - Navigation conserva una anchura mínima de paso positiva
+OK - Save provider instalado en el host que descubre SaveGame
+OK - SaveGame registra restaurant.edit_architecture
+OK - Configuración real de SaveGame válida
+OK - Serializador JSON de arquitectura registrado
+OK - Contrato persistente de arquitectura conserva identidad y versión
+OK - Documento comprometido válido para Save/Load
+OK - Finance enlazado al coordinador durante Play Mode
+OK - Navigation registrado en la autoridad documental durante Play Mode
+OK - Tarifas de reforma aprobadas por la autoridad de Finanzas
+Resultado estructural: 79 OK / 0 fallos.
+Pendientes de producción: 0.
+La validación estructural no sustituye la Queen Test de escena/Play Mode.

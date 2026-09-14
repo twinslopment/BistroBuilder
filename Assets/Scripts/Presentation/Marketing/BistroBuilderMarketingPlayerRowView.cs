@@ -71,6 +71,7 @@ public sealed class BistroBuilderMarketingPlayerRowView : MonoBehaviour
             : row.blockedReason;
         selectButton.interactable = true;
         backgroundImage.color = isSelected ? Selected : Normal;
+        BistroBuilderInteractionSurface.Attach(selectButton)?.SetSelected(isSelected);
     }
 
     public void BindActive(
@@ -92,6 +93,7 @@ public sealed class BistroBuilderMarketingPlayerRowView : MonoBehaviour
         statusText.text = row.daysRemaining + " día(s) restante(s)";
         selectButton.interactable = true;
         backgroundImage.color = isSelected ? Selected : Normal;
+        BistroBuilderInteractionSurface.Attach(selectButton)?.SetSelected(isSelected);
     }
 
     private void Clear()

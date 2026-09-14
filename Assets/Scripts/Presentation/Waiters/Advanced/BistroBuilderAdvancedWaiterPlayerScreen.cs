@@ -56,7 +56,7 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
         rootRect.anchoredPosition = new Vector2(-18f, -18f);
         rootRect.sizeDelta = new Vector2(340f, 380f);
 
-        GameObject buttonObject = new GameObject("Toggle", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject buttonObject = new GameObject("OpenWaiterOperations", typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(root.transform, false);
         RectTransform br = (RectTransform)buttonObject.transform;
         br.anchorMin = new Vector2(1f, 1f); br.anchorMax = new Vector2(1f, 1f);

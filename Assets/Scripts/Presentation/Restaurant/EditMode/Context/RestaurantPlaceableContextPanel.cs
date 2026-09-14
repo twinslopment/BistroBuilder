@@ -114,6 +114,8 @@ public sealed class RestaurantPlaceableContextPanel : MonoBehaviour
     {
         if (moveButton != null)
         {
+            var cursorHint = moveButton.GetComponent<BistroBuilderPointerHint>() ?? moveButton.gameObject.AddComponent<BistroBuilderPointerHint>();
+            cursorHint.Kind = BistroBuilderPointerKind.Drag;
             moveButton.onClick.RemoveListener(HandleMoveClicked);
             moveButton.onClick.AddListener(HandleMoveClicked);
         }
