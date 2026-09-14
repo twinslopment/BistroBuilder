@@ -31,6 +31,7 @@ namespace BistroBuilder.UI.Iconography
         [Header("State")]
         [SerializeField] private bool selected;
         [SerializeField] private bool interactable = true;
+        [SerializeField] private bool toggleSelectionOnClick;
 
         [Header("Surface colors")]
         [SerializeField] private Color normalBackground = new Color(0.035f, 0.114f, 0.137f, 1f);
@@ -108,6 +109,18 @@ namespace BistroBuilder.UI.Iconography
             RefreshState(true);
         }
 
+        public void ConfigureRuntime(BBIconId newIconId, Image runtimeIconImage, Button runtimeButton, bool semanticColor = false)
+        {
+            iconImage = runtimeIconImage;
+            interactable = runtimeButton == null || runtimeButton.interactable;
+            Configure(newIconId, semanticColor);
+        }
+
+        public void SetToggleSelectionOnClick(bool value)
+        {
+            toggleSelectionOnClick = value;
+        }
+
         public void SetSelected(bool value)
         {
             if (selected == value)
@@ -143,7 +156,7 @@ namespace BistroBuilder.UI.Iconography
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            if (!interactable || eventData.button != PointerEventData.InputButton.Left)
+            if (!interactable || !toggleSelectionOnClick || eventData.button != PointerEventData.InputButton.Left)
                 return;
 
             SetSelected(!selected);

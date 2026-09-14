@@ -196,6 +196,72 @@ namespace BistroBuilder.Editor.UI.Iconography
                 Debug.LogError("[BB Iconography 21B] VALIDATION FAIL\n - " + string.Join("\n - ", missing));
         }
 
+        public static bool IsCatalogReady()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BBIconCatalog>(CatalogPath);
+            if (catalog == null)
+                return false;
+
+            var seen = new HashSet<BBIconId>();
+            foreach (var entry in catalog.Entries)
+            {
+                if (entry.sprite == null || !seen.Add(entry.id))
+                    return false;
+            }
+
+            foreach (BBIconId id in Enum.GetValues(typeof(BBIconId)))
+            {
+                if (!seen.Contains(id))
+                    return false;
+            }
+
+            return seen.Count == Enum.GetValues(typeof(BBIconId)).Length;
+        }
+
+        [MenuItem("Bistro Builder/UI/IconografÃ­a/Reconstruir catÃ¡logo local", priority = 2102)]
+        public static void RebuildCatalogFromLocalOrThrow()
+        {
+            EnsureFolder(IconRoot);
+            EnsureFolder(ResourceRoot);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            var definitions = new List<BBIconDefinition>(Specs.Length);            var unresolved = new List<string>();
+            foreach (var spec in Specs)
+            {
+                var assetPath = $"{IconRoot}/{spec.Source}.svg";
+                var sprite = LoadSprite(assetPath);
+                if (sprite == null)
+                    unresolved.Add($"{spec.Id} -> {assetPath}");
+                definitions.Add(new BBIconDefinition(spec.Id, sprite, spec.Role, spec.Source));
+            }
+
+            if (unresolved.Count > 0)
+                throw new InvalidOperationException(
+                    "BB Iconography 21B: faltan sprites SVG importables.\n - " +
+                    string.Join("\n - ", unresolved));
+
+            var catalog = AssetDatabase.LoadAssetAtPath<BBIconCatalog>(CatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<BBIconCatalog>();
+                AssetDatabase.CreateAsset(catalog, CatalogPath);
+            }
+
+            catalog.EditorSetEntries(definitions);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+
+            if (!IsCatalogReady())
+                throw new InvalidOperationException("BB Iconography 21B: catÃ¡logo incompleto tras reconstrucciÃ³n.");
+
+            Debug.Log($"[BB Iconography 21B] LOCAL PASS â€” {definitions.Count} usos canÃ³nicos listos para build.");
+        }
+
+        public static void PrepareForBatch()
+        {
+            RebuildCatalogFromLocalOrThrow();
+        }
+
         private static async Task InstallInternal()
         {
             EnsureFolder(IconRoot);
