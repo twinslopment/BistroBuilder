@@ -27,18 +27,23 @@ public enum BistroBuilderUiStyleRole
     ProgressTrack = 27,
     ProgressSuccess = 28,
     ProgressAttention = 29,
-    ProgressInfo = 30,
-    Title = 40,
-    Heading = 41,
-    Body = 42,
-    Caption = 43,
-    Kpi = 44,
-    StatusSuccess = 50,
-    StatusAttention = 51,
-    StatusCritical = 52,
-    StatusInfo = 53,
-    BottomDock = 60,
-    Toast = 61
+
+    // Valores 30-34 preservados: existen tags serializados de 21A V1.
+    Title = 30,
+    Heading = 31,
+    Body = 32,
+    Caption = 33,
+    Kpi = 34,
+    ProgressInfo = 35,
+    ProgressCritical = 36,
+
+    // Valores 40-43 preservados por compatibilidad de escenas/prefabs V1.
+    StatusSuccess = 40,
+    StatusAttention = 41,
+    StatusCritical = 42,
+    StatusInfo = 43,
+    BottomDock = 50,
+    Toast = 51
 }
 
 [DisallowMultipleComponent]
