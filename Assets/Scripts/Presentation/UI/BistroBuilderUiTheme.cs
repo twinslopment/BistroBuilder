@@ -8,30 +8,44 @@ public enum BistroBuilderUiStyleRole
     Surface = 2,
     SurfaceElevated = 3,
     Overlay = 4,
+    Panel = 5,
+    Card = 6,
     PrimaryButton = 10,
     SecondaryButton = 11,
+    ContextualButton = 12,
     TertiaryButton = 12,
     DestructiveButton = 13,
     NavButton = 14,
     Tab = 15,
     Field = 20,
     Row = 21,
-    Title = 30,
-    Heading = 31,
-    Body = 32,
-    Caption = 33,
-    Kpi = 34,
-    StatusSuccess = 40,
-    StatusAttention = 41,
-    StatusCritical = 42,
-    StatusInfo = 43,
-    BottomDock = 50
+    BadgeNeutral = 22,
+    BadgeInfo = 23,
+    BadgeSuccess = 24,
+    BadgeAttention = 25,
+    BadgeCritical = 26,
+    ProgressTrack = 27,
+    ProgressSuccess = 28,
+    ProgressAttention = 29,
+    ProgressInfo = 30,
+    Title = 40,
+    Heading = 41,
+    Body = 42,
+    Caption = 43,
+    Kpi = 44,
+    StatusSuccess = 50,
+    StatusAttention = 51,
+    StatusCritical = 52,
+    StatusInfo = 53,
+    BottomDock = 60,
+    Toast = 61
 }
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/UI/Style Tag")]
 public sealed class BistroBuilderUiStyleTag : MonoBehaviour
-{    [SerializeField] private BistroBuilderUiStyleRole role = BistroBuilderUiStyleRole.Auto;
+{
+    [SerializeField] private BistroBuilderUiStyleRole role = BistroBuilderUiStyleRole.Auto;
     [SerializeField] private bool preserveGraphicColor;
     [SerializeField] private bool preserveFontSize;
     [SerializeField] private bool preserveFont;
@@ -55,41 +69,49 @@ public sealed class BistroBuilderUiStyleTag : MonoBehaviour
 }
 
 /// <summary>
-/// Tema intercambiable. Recoleta se inyectará aquí cuando exista el asset/licencia.
+/// Tema intercambiable. Los assets de fuente solo se asignan cuando existen y están licenciados.
+/// Si no hay fuente de títulos, el sistema usa la fuente de cuerpo sin crear dependencias ocultas.
 /// </summary>
 [CreateAssetMenu(fileName = "BistroBuilderUiTheme", menuName = "Bistro Builder/UI/Theme")]
 public sealed class BistroBuilderUiTheme : ScriptableObject
-{    [Header("Tipografía")]
+{
+    [Header("Tipografía")]
     [SerializeField] private TMP_FontAsset titleFont;
     [SerializeField] private TMP_FontAsset bodyFont;
 
     [Header("Paleta")]
-    [SerializeField] private Color background = new Color32(23, 34, 32, 255);
-    [SerializeField] private Color surface1 = new Color32(34, 48, 45, 248);
-    [SerializeField] private Color surface2 = new Color32(45, 59, 55, 248);
-    [SerializeField] private Color surfaceElevated = new Color32(56, 70, 64, 250);
-    [SerializeField] private Color textPrimary = new Color32(244, 240, 231, 255);
-    [SerializeField] private Color textSecondary = new Color32(189, 198, 194, 255);
-    [SerializeField] private Color textMuted = new Color32(127, 137, 133, 255);
-    [SerializeField] private Color primary = new Color32(23, 100, 71, 255);
-    [SerializeField] private Color warmAccent = new Color32(199, 148, 88, 255);
-    [SerializeField] private Color success = new Color32(63, 154, 105, 255);
-    [SerializeField] private Color attention = new Color32(224, 168, 68, 255);
-    [SerializeField] private Color critical = new Color32(201, 79, 72, 255);
-    [SerializeField] private Color info = new Color32(87, 144, 186, 255);
+    [SerializeField] private Color background = new Color32(30, 34, 38, 255);
+    [SerializeField] private Color surface1 = new Color32(42, 47, 53, 248);
+    [SerializeField] private Color surface2 = new Color32(58, 64, 71, 248);
+    [SerializeField] private Color surfaceElevated = new Color32(66, 73, 80, 252);
+    [SerializeField] private Color textPrimary = new Color32(230, 225, 214, 255);
+    [SerializeField] private Color textSecondary = new Color32(122, 125, 133, 255);
+    [SerializeField] private Color textMuted = new Color32(104, 110, 117, 255);
+    [SerializeField] private Color brand = new Color32(184, 149, 91, 255);
+    [SerializeField] private Color primary = new Color32(46, 125, 104, 255);
+    [SerializeField] private Color secondaryAction = new Color32(62, 71, 80, 255);
+    [SerializeField] private Color success = new Color32(61, 166, 101, 255);
+    [SerializeField] private Color attention = new Color32(240, 171, 58, 255);
+    [SerializeField] private Color critical = new Color32(217, 83, 79, 255);
+    [SerializeField] private Color info = new Color32(74, 144, 226, 255);
+    [SerializeField] private Color borderSubtle = new Color32(90, 98, 106, 105);
 
     public TMP_FontAsset TitleFont => titleFont;
     public TMP_FontAsset BodyFont => bodyFont;
     public Color Background => background;
     public Color Surface1 => surface1;
     public Color Surface2 => surface2;
-    public Color SurfaceElevated => surfaceElevated;    public Color TextPrimary => textPrimary;
+    public Color SurfaceElevated => surfaceElevated;
+    public Color TextPrimary => textPrimary;
     public Color TextSecondary => textSecondary;
     public Color TextMuted => textMuted;
+    public Color Brand => brand;
     public Color Primary => primary;
-    public Color WarmAccent => warmAccent;
+    public Color SecondaryAction => secondaryAction;
+    public Color WarmAccent => brand;
     public Color Success => success;
     public Color Attention => attention;
     public Color Critical => critical;
     public Color Info => info;
+    public Color BorderSubtle => borderSubtle;
 }
