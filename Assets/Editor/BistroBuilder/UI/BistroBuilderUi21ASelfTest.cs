@@ -40,9 +40,9 @@ public static class BistroBuilderUi21ASelfTest
             "Escala de spacing sigue base 4 px", ref passed, ref failed, log);
         Check(BistroBuilderUiTokens.PressScale > 0.95f && BistroBuilderUiTokens.PressScale < 1f,
             "Feedback de pulsación es sutil, no decorativo", ref passed, ref failed, log);
-        Check(BistroBuilderUiTokens.BorderSubtle.a < 0.5f,
+        Check(((Color)BistroBuilderUiTokens.BorderSubtle).a < 0.5f,
             "Bordes de panel permanecen sutiles", ref passed, ref failed, log);
-        Check(BistroBuilderUiTokens.Shadow.a < 0.25f,
+        Check(((Color)BistroBuilderUiTokens.Shadow).a < 0.25f,
             "Sombras se reservan para profundidad suave", ref passed, ref failed, log);
 
         log.AppendLine($"RESULTADO: {passed} OK / {failed} fallos");
