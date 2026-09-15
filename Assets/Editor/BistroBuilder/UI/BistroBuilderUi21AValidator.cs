@@ -67,6 +67,13 @@ public static class BistroBuilderUi21AValidator
         Check(root != null && root.Find(BistroBuilderUiShell.ContextPanelName) != null,
             "Panel contextual derecho creado", ref passed, ref failed, log);
 
+        Transform activity = root != null ? root.Find(BistroBuilderUiShell.ActivityPanelName) : null;
+        Transform context = root != null ? root.Find(BistroBuilderUiShell.ContextPanelName) : null;
+        Check(HasRole(activity, BistroBuilderUiStyleRole.Panel),
+            "Actividad usa la primitiva Panel canónica", ref passed, ref failed, log);
+        Check(HasRole(context, BistroBuilderUiStyleRole.Panel),
+            "Contexto usa la primitiva Panel canónica", ref passed, ref failed, log);
+
         Transform top = root != null ? root.Find(BistroBuilderUiShell.TopBarName) : null;
         Transform nav = top != null ? top.Find("NavigationContent") : null;
         Check(nav != null && nav.Find("BBNav_Actividad") != null,
@@ -80,13 +87,21 @@ public static class BistroBuilderUi21AValidator
             "BBNav_Reputacion", "BBNav_Progreso", "BBNav_Edicion", "BBNav_Cerrar"
         };
         for (int i = 0; i < requiredNav.Length; i++)
-            Check(nav != null && nav.Find(requiredNav[i]) != null,
+        {
+            Transform item = nav != null ? nav.Find(requiredNav[i]) : null;
+            Check(item != null,
                 "Acceso superior disponible: " + requiredNav[i], ref passed, ref failed, log);
+            Check(HasRole(item, BistroBuilderUiStyleRole.NavButton),
+                "Acceso superior usa NavButton: " + requiredNav[i], ref passed, ref failed, log);
+        }
 
         Transform bottom = root != null ? root.Find(BistroBuilderUiShell.BottomBarName) : null;
         Transform status = bottom != null ? bottom.Find("StatusContent") : null;
-        Check(bottom != null && bottom.Find(BistroBuilderUiShell.ServiceActionName) != null,
-            "Acci\u00F3n principal de servicio disponible", ref passed, ref failed, log);
+        Transform serviceAction = bottom != null ? bottom.Find(BistroBuilderUiShell.ServiceActionName) : null;
+        Check(serviceAction != null,
+            "Acción principal de servicio disponible", ref passed, ref failed, log);
+        Check(HasRole(serviceAction, BistroBuilderUiStyleRole.PrimaryButton),
+            "Acción de servicio usa la única jerarquía primaria", ref passed, ref failed, log);
         Check(status != null && status.Find("Cash/Label") != null, "Pill Caja disponible", ref passed, ref failed, log);
         Check(status != null && status.Find("Satisfaction/Label") != null, "Pill Satisfacción disponible", ref passed, ref failed, log);
         Check(status != null && status.Find("Kitchen/Label") != null, "Pill Cocina disponible", ref passed, ref failed, log);
@@ -103,6 +118,9 @@ public static class BistroBuilderUi21AValidator
         {
             Check(design.ValidateConfiguration(out _), "Design System valida configuración",
                 ref passed, ref failed, log);
+            Check(BistroBuilderUiDesignSystem.RuntimeRevision.Contains("PRIMITIVES"),
+                "Design System usa la librería de primitivas reutilizables",
+                ref passed, ref failed, log);
         }
         if (shell != null)
         {
@@ -115,6 +133,13 @@ public static class BistroBuilderUi21AValidator
         return failed == 0;
     }
 
+    private static bool HasRole(Transform target, BistroBuilderUiStyleRole role)
+    {
+        if (target == null) return false;
+        BistroBuilderUiStyleTag tag = target.GetComponent<BistroBuilderUiStyleTag>();
+        return tag != null && tag.Role == role;
+    }
+
     private static int CountNamedChildren(Transform parent, string name)
     {
         int count = 0;
@@ -122,6 +147,7 @@ public static class BistroBuilderUi21AValidator
             if (parent.GetChild(i).name == name) count++;
         return count;
     }
+
     private static Canvas FindCanonicalCanvas(Scene scene)
     {
         Canvas[] canvases = UnityEngine.Object.FindObjectsByType<Canvas>(
