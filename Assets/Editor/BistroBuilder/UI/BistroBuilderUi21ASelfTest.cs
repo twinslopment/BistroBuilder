@@ -44,6 +44,15 @@ public static class BistroBuilderUi21ASelfTest
             "Bordes de panel permanecen sutiles", ref passed, ref failed, log);
         Check(((Color)BistroBuilderUiTokens.Shadow).a < 0.25f,
             "Sombras se reservan para profundidad suave", ref passed, ref failed, log);
+        Check((int)BistroBuilderUiStyleRole.Title == 30 &&
+            (int)BistroBuilderUiStyleRole.Heading == 31 &&
+            (int)BistroBuilderUiStyleRole.Body == 32 &&
+            (int)BistroBuilderUiStyleRole.Caption == 33 &&
+            (int)BistroBuilderUiStyleRole.Kpi == 34 &&
+            (int)BistroBuilderUiStyleRole.StatusSuccess == 40 &&
+            (int)BistroBuilderUiStyleRole.StatusCritical == 42 &&
+            (int)BistroBuilderUiStyleRole.BottomDock == 50,
+            "IDs serializados 21A V1 preservan compatibilidad", ref passed, ref failed, log);
 
         log.AppendLine($"RESULTADO: {passed} OK / {failed} fallos");
         report = log.ToString();
