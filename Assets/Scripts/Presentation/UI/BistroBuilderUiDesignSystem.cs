@@ -127,6 +127,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
             case BistroBuilderUiStyleRole.ContextualButton: return new Color(Surface2.r, Surface2.g, Surface2.b, 0.28f);
             case BistroBuilderUiStyleRole.DestructiveButton:
             case BistroBuilderUiStyleRole.BadgeCritical:
+            case BistroBuilderUiStyleRole.ProgressCritical:
             case BistroBuilderUiStyleRole.StatusCritical: return Critical;
             case BistroBuilderUiStyleRole.NavButton:
             case BistroBuilderUiStyleRole.Tab:
@@ -411,12 +412,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         if (name.StartsWith("Open", StringComparison.OrdinalIgnoreCase) ||
             ContainsAny(name, "nav_", "bbnav_")) return BistroBuilderUiStyleRole.NavButton;
         if (ContainsAny(key, "tab")) return BistroBuilderUiStyleRole.Tab;
-        if (ContainsAny(key, "confirmar", "confirm", "guardar", "save", "aplicar cambios",
-            "accept", "crear", "contratar")) return BistroBuilderUiStyleRole.PrimaryButton;
         if (ContainsAny(key, "más opciones", "mas opciones", "detalles", "ver detalles", "ayuda",
             "información", "informacion")) return BistroBuilderUiStyleRole.ContextualButton;
-        if (ContainsAny(key, "close", "cerrar", "back", "volver", "previous", "next", "minus",
-            "plus", "refrescar", "cancel")) return BistroBuilderUiStyleRole.SecondaryButton;
         return BistroBuilderUiStyleRole.SecondaryButton;
     }
 
@@ -460,8 +457,10 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         BistroBuilderUiStyleTag tag = target.GetComponent<BistroBuilderUiStyleTag>();
         if (tag != null && (tag.Role == BistroBuilderUiStyleRole.ProgressSuccess ||
             tag.Role == BistroBuilderUiStyleRole.ProgressAttention ||
+            tag.Role == BistroBuilderUiStyleRole.ProgressCritical ||
             tag.Role == BistroBuilderUiStyleRole.ProgressInfo)) return tag.Role;
         string key = ((target.name ?? string.Empty) + " " + ReadLabel(target)).ToLowerInvariant();
+        if (ContainsAny(key, "crítico", "critico", "critical", "error")) return BistroBuilderUiStyleRole.ProgressCritical;
         if (ContainsAny(key, "satisf", "success", "éxito", "exito")) return BistroBuilderUiStyleRole.ProgressSuccess;
         if (ContainsAny(key, "cocina", "kitchen", "carga", "load", "warning", "atención", "atencion"))
             return BistroBuilderUiStyleRole.ProgressAttention;
