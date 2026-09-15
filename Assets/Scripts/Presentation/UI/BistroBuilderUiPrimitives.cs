@@ -27,6 +27,22 @@ public static class BistroBuilderUiPrimitives
     public static void Card(GameObject target) => TagAndRefresh(target, BistroBuilderUiStyleRole.Card);
     public static void Toast(GameObject target) => TagAndRefresh(target, BistroBuilderUiStyleRole.Toast);
 
+    public static void Separator(Image image)
+    {
+        if (image == null) return;
+        image.color = BistroBuilderUiTokens.BorderSubtle;
+        image.raycastTarget = false;
+    }
+
+    public static BistroBuilderUiSceneSelectionVisual SceneSelection(GameObject host, Transform target)
+    {
+        if (host == null || target == null) return null;
+        BistroBuilderUiSceneSelectionVisual visual = host.GetComponent<BistroBuilderUiSceneSelectionVisual>();
+        if (visual == null) visual = host.AddComponent<BistroBuilderUiSceneSelectionVisual>();
+        visual.Configure(target);
+        return visual;
+    }
+
     public static void Tab(Button button, bool selected)
     {
         if (button == null) return;
