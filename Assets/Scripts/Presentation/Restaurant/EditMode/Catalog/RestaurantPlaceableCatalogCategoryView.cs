@@ -69,6 +69,7 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
         bool selected
     )
     {
+        BistroBuilderInteractionSurface.Attach(button)?.SetSelected(selected);
         if (backgroundImage != null)
         {
             backgroundImage.color =

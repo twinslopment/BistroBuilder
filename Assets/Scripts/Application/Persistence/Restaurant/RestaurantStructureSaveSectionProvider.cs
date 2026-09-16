@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -238,15 +238,10 @@ public sealed class RestaurantStructureSaveSectionProvider :
                     out RestaurantSeat seat
                 ))
             {
-                if (!seat.IsAssociated ||
-                    seat.AssociatedTable == null)
-                {
-                    context.Fail(
-                        placeable.DisplayName +
-                        " no está asociado a una plaza confirmada."
-                    );
-                    yield break;
-                }
+                // Una silla suelta es un estado de edición válido. Se persiste
+                // como colocable y solo se añade seatLink cuando existe asociación.
+                if (!seat.IsAssociated || seat.AssociatedTable == null)
+                    continue;
 
                 RestaurantPlaceableObject tablePlaceable =
                     seat.AssociatedTable.GetComponent<
@@ -508,14 +503,8 @@ public sealed class RestaurantStructureSaveSectionProvider :
             }
         }
 
-        if (linkedSeatIds.Count != seatIds.Count)
-        {
-            error =
-                "Todas las sillas deben conservar una relación " +
-                "mesa-plaza persistente.";
-            return false;
-        }
-
+        // Las sillas no enlazadas son válidas mientras se diseña el local.
+        // Simplemente no cuentan como plazas operativas hasta asociarse.
         return true;
     }
 
@@ -542,6 +531,9 @@ public sealed class RestaurantStructureSaveSectionProvider :
             }
         }
 
+        // Bound work by elapsed time as well as object count: furniture cost varies
+        // with prefab complexity and linked registry/physics callbacks.
+        var removalBudget = System.Diagnostics.Stopwatch.StartNew();
         for (int index = 0;
              index < placeableBuffer.Count;
              index++)
@@ -576,9 +568,10 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 yield break;
             }
 
-            if ((index + 1) % context.ObjectsPerFrame == 0)
+            if ((index + 1) % context.ObjectsPerFrame == 0 || removalBudget.Elapsed.TotalMilliseconds >= 6d)
             {
                 yield return null;
+                removalBudget.Restart();
             }
         }
 
@@ -614,6 +607,7 @@ public sealed class RestaurantStructureSaveSectionProvider :
         loadOrderBuffer.Sort(CompareRecordsForLoad);
         loadedPlaceablesById.Clear();
 
+        var creationBudget = System.Diagnostics.Stopwatch.StartNew();
         for (int index = 0;
              index < loadOrderBuffer.Count;
              index++)
@@ -801,9 +795,10 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 );
             }
 
-            if ((index + 1) % context.ObjectsPerFrame == 0)
+            if ((index + 1) % context.ObjectsPerFrame == 0 || creationBudget.Elapsed.TotalMilliseconds >= 6d)
             {
                 yield return null;
+                creationBudget.Restart();
             }
         }
 

@@ -81,7 +81,7 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
         rr.anchoredPosition = new Vector2(18f, -18f);
         rr.sizeDelta = new Vector2(470f, 610f);
 
-        GameObject toggleGo = new GameObject("Toggle", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject toggleGo = new GameObject("OpenEndOfDayOperations", typeof(RectTransform), typeof(Image), typeof(Button));
         toggleGo.transform.SetParent(root.transform, false);
         RectTransform tr = (RectTransform)toggleGo.transform;
         tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0f, 1f);

@@ -67,7 +67,7 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         rr.anchoredPosition = new Vector2(18f, -18f);
         rr.sizeDelta = new Vector2(410f, 430f);
 
-        Button toggle = CreateButton(root.transform, "Toggle", "SALA", new Vector2(0f, 0f), new Vector2(124f, 34f));
+        Button toggle = CreateButton(root.transform, "OpenFrontOfHouseOperations", "SALA", new Vector2(0f, 0f), new Vector2(124f, 34f));
         toggle.onClick.AddListener(Toggle);
 
         panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));

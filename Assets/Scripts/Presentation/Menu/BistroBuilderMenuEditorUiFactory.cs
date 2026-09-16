@@ -3,9 +3,9 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
-/// Fábrica visual privada de 2.1E. Centraliza tipografía, colores y creación
-/// de controles para impedir que la vista duplique estilos o configuración
-/// de navegación.
+/// FÃ¡brica visual privada de 2.1E. Centraliza tipografÃ­a, colores y creaciÃ³n
+/// de controles para impedir que la vista duplique estilos o configuraciÃ³n
+/// de navegaciÃ³n.
 /// </summary>
 internal static class BistroBuilderMenuEditorUiFactory
 {
@@ -327,8 +327,8 @@ internal static class BistroBuilderMenuEditorUiFactory
         Image viewportImage = AddImage(viewport, Color.clear);
         viewportImage.raycastTarget = true;
 
-        // RectMask2D recorta por el rectángulo del viewport y no depende de
-        // la transparencia del Graphic. Un Mask clásico con Image totalmente
+        // RectMask2D recorta por el rectÃ¡ngulo del viewport y no depende de
+        // la transparencia del Graphic. Un Mask clÃ¡sico con Image totalmente
         // transparente puede ocultar todo el contenido en determinadas
         // versiones/configuraciones de uGUI.
         RectMask2D rectMask = viewport.gameObject.AddComponent<RectMask2D>();
@@ -363,6 +363,7 @@ internal static class BistroBuilderMenuEditorUiFactory
 
         scroll.viewport = viewport;
         scroll.content = content;
+        BistroBuilderUiScrollRegion.Configure(scroll);
         return scroll;
     }
 

@@ -35,6 +35,11 @@ public static class BistroBuilderUiRuntimeBootstrap
         shell.EnsureShell();
         BistroBuilderUiSemanticBootstrap.Apply(canvas);
         design.ApplyAllNow(true);
+        foreach (var screenCanvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (screenCanvas == canvas || screenCanvas.gameObject.scene != scene || !screenCanvas.isRootCanvas || screenCanvas.renderMode == RenderMode.WorldSpace) continue;
+            GetOrAdd<BistroBuilderUiDesignSystem>(screenCanvas.gameObject).ApplyAllNow(true);
+        }
         return true;
     }
 

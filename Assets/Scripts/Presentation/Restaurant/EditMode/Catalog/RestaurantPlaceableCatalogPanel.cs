@@ -231,14 +231,23 @@ public sealed class RestaurantPlaceableCatalogPanel :
         RebuildCatalogPresentation();
     }
 
+    private void LateUpdate() => RefreshVisibility();
+
     private void RefreshVisibility()
     {
         bool shouldBeVisible =
             editModeService != null &&
             editModeService.IsEditModeActive;
+        var construction = BistroBuilderConstructionPlayerPanel.Instance;
+        if (construction != null)
+        {
+            var tool = construction.GetComponent<BistroBuilderConstructionAuthoringRuntimeTool>();
+            shouldBeVisible &= tool != null && tool.Mode == BistroBuilderConstructionRuntimeMode.Furniture;
+        }
 
         if (contentRoot != null)
         {
+            if (contentRoot.activeSelf == shouldBeVisible) return;
             contentRoot.SetActive(
                 shouldBeVisible
             );

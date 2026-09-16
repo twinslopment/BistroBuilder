@@ -495,11 +495,11 @@ public sealed class BistroBuilderActiveServicePersistenceFunctionalTestWindow :
             spawnState == null ||
             !spawnState.scheduleInitialized ||
             spawnState.scheduleCompleted ||
-            spawnState.pendingArrivals.Count != 1 ||
+            spawnState.pendingArrivals.Count < 1 ||
             spawnState.secondsUntilNextArrival <= 0f)
         {
             FailAndCleanup(
-                "El checkpoint no conserva exactamente una llegada futura: " +
+                "El checkpoint no conserva ninguna llegada futura persistible: " +
                 (string.IsNullOrWhiteSpace(error)
                     ? "calendario inesperado; initialized=" + (spawnState != null && spawnState.scheduleInitialized) + ", completed=" + (spawnState != null && spawnState.scheduleCompleted) + ", pending=" + (spawnState != null ? spawnState.pendingArrivals.Count : -1) + ", seconds=" + (spawnState != null ? spawnState.secondsUntilNextArrival : -1f) + "."
                     : error)

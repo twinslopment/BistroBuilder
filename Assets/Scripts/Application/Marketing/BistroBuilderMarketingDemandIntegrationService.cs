@@ -181,10 +181,21 @@ public sealed class BistroBuilderMarketingDemandIntegrationService : MonoBehavio
     /// </summary>
     public bool TrySynchronizeAfterLoad(out string error)
     {
+        if (!ValidateConfiguration(out error)) return false;
         if (BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring)
         {
             error = "La carga de service.runtime todavía no ha finalizado.";
             return false;
+        }
+
+        if (serviceStateService.IsClosed && !dynamicDemandService.HasOperationalCapacity)
+        {
+            // A construction checkpoint can have no furniture yet. Recompute demand
+            // after furnishing; loading that checkpoint must not require an openable restaurant.
+            lastProjection = null;
+            DemandProjectionChanged?.Invoke();
+            error = string.Empty;
+            return true;
         }
 
         if (!serviceStateService.AcceptsNewCustomers)
