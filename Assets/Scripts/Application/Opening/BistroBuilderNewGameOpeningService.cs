@@ -153,6 +153,9 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             !endOfDayService.TryResetForLegacyLoad(out error))
             return false;
 
+        SetLegacyTestGeometryPresence(true);
+        SetWaiterScenePresence(true);
+        SetPremisesFloorVisual(true);
         if (editDocumentService != null &&
             !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
             return false;
@@ -313,6 +316,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             if (string.IsNullOrEmpty(error)) error = "La validacion previa impide abrir.";
             return false;
         }
+        SetWaiterScenePresence(true);
         if (serviceStateService.IsClosed && !serviceStateService.TryBeginPreparation())
         {
             error = "No pudo comenzar la preparacion del primer servicio.";
@@ -555,8 +559,44 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             if (fixture == null || fixture.GetComponent<RestaurantPlaceableObject>() != null) continue;
             fixture.gameObject.SetActive(false);
         }
+        SetLegacyTestGeometryPresence(false);
+        SetWaiterScenePresence(false);
+        SetPremisesFloorVisual(false);
         Physics.SyncTransforms();
         return true;
+    }
+
+    private static void SetLegacyTestGeometryPresence(bool visible)
+    {
+        string[] names = { "PlacementObstacle_Test", "Kitchen_Test" };
+        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < all.Length; i++)
+        {
+            GameObject go = all[i];
+            if (go == null) continue;
+            for (int n = 0; n < names.Length; n++)
+                if (string.Equals(go.name, names[n], StringComparison.Ordinal)) { go.SetActive(visible); break; }
+        }
+    }
+
+    private static void SetPremisesFloorVisual(bool visible)
+    {
+        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < all.Length; i++)
+        {
+            GameObject go = all[i];
+            if (go == null || !string.Equals(go.name, "Floor_Test", StringComparison.OrdinalIgnoreCase)) continue;
+            Renderer[] renderers = go.GetComponentsInChildren<Renderer>(true);
+            for (int r = 0; r < renderers.Length; r++) if (renderers[r] != null) renderers[r].enabled = visible;
+            break;
+        }
+    }
+
+    private static void SetWaiterScenePresence(bool visible)
+    {
+        Waiter[] waiters = UnityEngine.Object.FindObjectsByType<Waiter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < waiters.Length; i++)
+            if (waiters[i] != null) waiters[i].gameObject.SetActive(visible);
     }
 
     private static bool HasFunctionalZone(BistroBuilderEditDocument document, string zoneDefinitionId)
@@ -565,7 +605,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         for (int i = 0; i < document.zones.Count; i++)
         {
             BistroBuilderFunctionalZoneRecord zone = document.zones[i];
-            if (zone != null && string.Equals(zone.zoneDefinitionId, zoneDefinitionId, StringComparison.OrdinalIgnoreCase))
+            if (zone != null && (string.Equals(zone.zoneDefinitionId, zoneDefinitionId, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(zone.zoneDefinitionId, "zone." + zoneDefinitionId, StringComparison.OrdinalIgnoreCase)))
                 return true;
         }
         return false;

@@ -11,12 +11,13 @@ public enum BistroBuilderConstructionRuntimeMode
     Wall = 2,
     Room = 3,
     Door = 4,
-    Window = 5
+    Window = 5,
+    WallModule = 6
 }
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Restaurant/Edit Mode/18N Construction Authoring Runtime Tool")]
-public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviour
+public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviour
 {
     [SerializeField] private BistroBuilderEditRuntimeCoordinator coordinator;
     [SerializeField] private RestaurantEditModeService editModeService;
@@ -29,7 +30,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     [SerializeField, Min(0.25f)] private float minimumRoomSide = 1f;
     [SerializeField, Min(0.05f)] private float selectionRadius = 0.22f;
     [SerializeField, Min(0.05f)] private float handleRadius = 0.28f;
-    [SerializeField] private bool showPlaytestPanel = true;
+    [SerializeField] private bool showPlaytestPanel = false;
 
     private readonly ArchitectureQueryCache queries = new ArchitectureQueryCache();
     private readonly ArchitectureSnapService snapService = new ArchitectureSnapService();
@@ -60,7 +61,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private static readonly Color ValidColor = new Color(0.2f, 0.9f, 0.35f, 0.95f);
     private static readonly Color InvalidColor = new Color(0.95f, 0.25f, 0.2f, 0.95f);
-    private static readonly Color SelectionColor = new Color(1f, 0.78f, 0.15f, 1f);
+    private static readonly Color SelectionColor = new Color(0.46f, 0.66f, 0.30f, 1f);
     private static readonly Color SnapColor = new Color(0.2f, 0.8f, 1f, 1f);
 
     public BistroBuilderConstructionRuntimeMode Mode => mode;
@@ -68,10 +69,12 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     public EntityKind SelectedKind => selection.Kind;
     public BistroBuilderEditId SelectedId => selection.Id;
     public bool HasActiveGesture => IsGestureActive();
+    public bool IsPreviewBlocked { get; private set; }
     public bool HasDraftSession => coordinator != null && coordinator.HasSession;
     public bool HasDraftChanges => coordinator != null && coordinator.IsDirty;
     public bool CanUndo => coordinator != null && coordinator.CanUndo;
     public bool CanRedo => coordinator != null && coordinator.CanRedo;
+    public static int InputConsumedFrame { get; private set; } = -1;
 
     private void Awake()
     {
@@ -88,6 +91,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void OnDisable()
     {
+        if (draftView != null) draftView.Clear();
         CancelGesture(string.Empty);
         RestoreFurnitureInput();
         SetVisualsVisible(false);
@@ -109,7 +113,9 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             return;
         }
         observedEditModeActive = true;
+        if (BistroBuilderConstructionPlayerPanel.Instance != null && BistroBuilderConstructionPlayerPanel.Instance.BlocksWorldInput) return;
 
+        if (IsTextInputFocused()) return;
         if (HandleHistoryShortcuts()) return;
         if (HandleEscapeOrDelete()) return;
 
@@ -122,9 +128,24 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         }
         RefreshQueries();
         if (!TryGetPlanPoint(out Vector2 rawPoint)) return;
-        UpdateHoverOrGesture(rawPoint);
+        if (!PointerHitsUi()) UpdateHoverOrGesture(rawPoint);
         if (Mouse.current.leftButton.wasPressedThisFrame && !PointerHitsUi())
+        {
+            constructionPress = Mouse.current.position.ReadValue();
+            constructionPointerDown = true;
             HandlePointerPressed(rawPoint);
+        }
+        if (Mouse.current.leftButton.wasReleasedThisFrame && constructionPointerDown)
+        {
+            constructionPointerDown = false;
+            if (PointerHitsUi()) { CancelGesture("Gesto cancelado sobre la interfaz."); return; }
+            if (twoClickGesture && IsGestureActive() &&
+                Vector2.Distance(constructionPress, Mouse.current.position.ReadValue()) >= 6f)
+            {
+                ConfirmTwoClick(rawPoint);
+                ResetGestureState();
+            }
+        }
         if (Mouse.current.leftButton.wasReleasedThisFrame && dragGesture)
             FinishDragGesture();
     }
@@ -132,9 +153,10 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private bool HandleEscapeOrDelete()
     {
         Keyboard kb = Keyboard.current;
-        if (kb == null) return false;
+        if (kb == null || mode == BistroBuilderConstructionRuntimeMode.Furniture) return false;
         if (kb.escapeKey.wasPressedThisFrame)
         {
+            InputConsumedFrame = Time.frameCount;
             if (IsGestureActive()) CancelGesture("Operación cancelada. La herramienta sigue activa.");
             else if (selection.Kind != EntityKind.None) { selection.Clear(); RefreshVisuals(); }
             else SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
@@ -152,7 +174,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private bool HandleHistoryShortcuts()
     {
         Keyboard kb = Keyboard.current;
-        if (kb == null || coordinator == null || !coordinator.HasSession) return false;
+        if (kb == null || mode == BistroBuilderConstructionRuntimeMode.Furniture || coordinator == null || !coordinator.HasSession) return false;
         bool control = kb.leftCtrlKey.isPressed || kb.rightCtrlKey.isPressed;
         bool shift = kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed;
         if (control && (kb.yKey.wasPressedThisFrame || (shift && kb.zKey.wasPressedThisFrame)))
@@ -244,12 +266,14 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         }
         selection.Clear();
         ClearDraftOverlay();
+        if (draftView != null) draftView.Clear();
         SetStatus("Construcción aplicada y publicada.");
         RefreshVisuals();
         return true;
     }
     public bool TryCancelDraft(out string error)
     {
+        if (draftView != null) draftView.Clear();
         error = string.Empty;
         CancelGesture(string.Empty);
         if (coordinator == null || !coordinator.HasSession) return true;
@@ -319,6 +343,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             case BistroBuilderConstructionRuntimeMode.Select: BeginSelectionOrDrag(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.Wall: BeginWall(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.Room: BeginRoom(rawPoint); break;
+            case BistroBuilderConstructionRuntimeMode.WallModule: PlaceModule(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.Door:
             case BistroBuilderConstructionRuntimeMode.Window: PlaceOpening(rawPoint); break;
         }
@@ -332,7 +357,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         gestureAnchor = start;
         twoClickGesture = true;
         dragGesture = false;
-        SetStatus("Pared: mueve el ratón y haz clic para confirmar. Escape cancela.");
+        SetStatus("Pared: arrastra o marca el final con otro clic. Escape cancela.");
     }
 
     private void BeginRoom(Vector2 rawPoint)
@@ -345,7 +370,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         gestureAnchor = start;
         twoClickGesture = true;
         dragGesture = false;
-        SetStatus("Habitación: mueve el ratón y haz clic en la esquina opuesta.");
+        SetStatus("Habitación: arrastra hasta la esquina opuesta y suelta para crear.");
     }
 
     private BistroBuilderWallRecord CreateWallTemplate()
@@ -390,9 +415,6 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         BistroBuilderEditId excluded = gesture.Kind == ConstructionGestureKind.MoveWall ? selection.Id : default;
         Vector2? excludedPoint = gesture.Kind == ConstructionGestureKind.MoveJunction ? gestureAnchor : (Vector2?)null;
         Vector2 point = ResolvePoint(rawPoint, gestureAnchor, excluded, excludedPoint);
-        if (gesture.Kind == ConstructionGestureKind.Wall && ShiftPressed() &&
-            lastSnapKind != SnapKind.Endpoint && lastSnapKind != SnapKind.Intersection && lastSnapKind != SnapKind.Wall)
-            point = LockAngle45(gestureAnchor, point);
         gesture.Update(point);
         RenderGesture(point);
         if (gesture.State == ConstructionGestureState.Invalid && gesture.Diagnostic != "NO_CHANGE")
@@ -483,22 +505,26 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void UpdateHover(Vector2 point)
     {
+        IsPreviewBlocked = false;
+        HasHoverTarget = false;
+        if (mode == BistroBuilderConstructionRuntimeMode.WallModule) { RenderModule(point); return; }
         if (mode == BistroBuilderConstructionRuntimeMode.Door || mode == BistroBuilderConstructionRuntimeMode.Window)
         {
             RenderOpeningHover(point); return;
         }
         HideSnapMarker();
-        if (mode == BistroBuilderConstructionRuntimeMode.Select) RefreshVisuals();
+        if (mode == BistroBuilderConstructionRuntimeMode.Select) { RefreshVisuals(); RenderSelectionHover(point); }
     }
 
     private void RenderOpeningHover(Vector2 point)
     {
         ArchitectureHit wallHit = queries.PickWall(point, selectionRadius * 2f, "default");
-        if (!wallHit.IsValid) { ClearPreviewLines(); HideSnapMarker(); return; }
+        if (!wallHit.IsValid) { IsPreviewBlocked = true; ClearPreviewLines(); HideSnapMarker(); return; }
         BistroBuilderWallRecord host = queries.CaptureWall(wallHit.Id);
         BistroBuilderOpeningRecord template = CreateOpeningTemplate(mode);
         bool ok = ConstructionGeometry.TryOpening(host, point, template.width, template.bottomElevation,
             template.height, out _, out Vector2 center, out string error);
+        IsPreviewBlocked = !ok;
         Vector2 direction = (host.axisEnd - host.axisStart).normalized;
         Vector2 half = direction * (template.width * 0.5f);
         EnsurePreviewLineCount(1);
@@ -533,6 +559,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     }
     private void RenderGesture(Vector2 currentPoint)
     {
+        IsPreviewBlocked = gesture.State != ConstructionGestureState.Ready;
         Color color = gesture.State == ConstructionGestureState.Ready ? ValidColor : InvalidColor;
         int count = gesture.PreviewWalls.Count;
         if (count > 0)
@@ -711,7 +738,13 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (interactionCamera == null || Mouse.current == null) return false;
         Vector2 pointer = Mouse.current.position.ReadValue();
         Ray ray = interactionCamera.ScreenPointToRay(pointer);
-        var plane = new Plane(Vector3.up, Vector3.zero);
+        if (!IsGestureActive())
+        {
+            interactionPlaneHeight=0;
+            if ((mode==BistroBuilderConstructionRuntimeMode.Door || mode==BistroBuilderConstructionRuntimeMode.Window ||
+                mode==BistroBuilderConstructionRuntimeMode.Select) && TryPickWallSurface(ray,out point,out interactionPlaneHeight)) return true;
+        }
+        var plane = new Plane(Vector3.up, new Vector3(0,interactionPlaneHeight,0));
         if (!plane.Raycast(ray, out float distance)) return false;
         Vector3 world = ray.GetPoint(distance);
         point = new Vector2(world.x, world.z);
@@ -757,6 +790,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void ResetGestureState()
     {
+        IsPreviewBlocked = false;
+        constructionPointerDown = false;
         gesture = new ConstructionGesture();
         twoClickGesture = false;
         dragGesture = false;
@@ -769,6 +804,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     {
         RefreshQueries();
         RefreshDraftOverlay();
+        RefreshArchitecturePreview();
         if (!string.IsNullOrWhiteSpace(message)) SetStatus(message);
         RefreshVisuals();
     }
@@ -889,8 +925,9 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         switch (value)
         {
             case BistroBuilderConstructionRuntimeMode.Select: return "Seleccionar: clic en pared/espacio/abertura; arrastra paredes o esquinas.";
-            case BistroBuilderConstructionRuntimeMode.Wall: return "Pared: clic inicio, mueve, clic final. Continúa encadenando.";
-            case BistroBuilderConstructionRuntimeMode.Room: return "Espacio: clic en dos esquinas opuestas.";
+            case BistroBuilderConstructionRuntimeMode.Wall: return "Pared: arrastra o marca inicio y final. Puedes encadenar tramos.";
+            case BistroBuilderConstructionRuntimeMode.Room: return "Espacio: arrastra entre dos esquinas opuestas.";
+            case BistroBuilderConstructionRuntimeMode.WallModule: return "Módulo: elige longitud y giro, y haz clic para colocarlo.";
             case BistroBuilderConstructionRuntimeMode.Door: return "Puerta: haz clic sobre una pared.";
             case BistroBuilderConstructionRuntimeMode.Window: return "Ventana: haz clic sobre una pared.";
             default: return "Modo mobiliario activo.";
@@ -908,7 +945,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private void OnGUI()
     {
-        if (!Application.isPlaying || !showPlaytestPanel) return;
+        if (!Application.isPlaying || !showPlaytestPanel || editModeService == null || !editModeService.IsEditModeActive) return;
         EnsureGuiStyles();
         float width = Mathf.Min(980f, Screen.width - 24f);
         panelRect = new Rect((Screen.width - width) * 0.5f,
@@ -996,7 +1033,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     private string BuildDimensionText()
     {
-        if (!IsGestureActive()) return "Escala 0,25 m · Shift 45° · Alt libre";
+        if (!IsGestureActive()) return "Rejilla 0,25 m · Alt sin rejilla";
         ConstructionDimensions d = gesture.Dimensions;
         if (gesture.Kind == ConstructionGestureKind.Rectangle)
             return "Ancho " + d.Width.ToString("0.00") + " m · Fondo " + d.Depth.ToString("0.00") +

@@ -23,7 +23,7 @@ public static class BistroBuilderVisualLanguagePlayTest
         if(state==PlayModeStateChange.EnteredPlayMode){stage=0;failure=null;next=EditorApplication.timeSinceStartup+4;Application.runInBackground=true;EditorApplication.update+=Tick;Application.logMessageReceived+=Log;}
         if(state==PlayModeStateChange.EnteredEditMode){SessionState.SetBool(Key,false);EditorApplication.Exit(SessionState.GetBool(Key+".Pass",false)?0:1);}
     }
-    static void Log(string text,string stack,LogType type){if(type==LogType.Exception||type==LogType.Assert)failure=text;}
+    static void Log(string text,string stack,LogType type){if(type!=LogType.Exception&&type!=LogType.Assert)return;if(!string.IsNullOrEmpty(stack)&&stack.Contains("UnityEditor.Search.SearchDatabase"))return;failure=text;}
     static void Check(bool value,string text){if(!value)throw new Exception(text);}
     static Button Button(string name)=>GameObject.Find(name).GetComponent<Button>();
     static void Tick()

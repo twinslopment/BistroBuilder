@@ -101,12 +101,18 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         for (int i = 0; i < sliders.Length; i++) StyleSlider(sliders[i], force);
         Scrollbar[] scrollbars = canvas.GetComponentsInChildren<Scrollbar>(true);
         for (int i = 0; i < scrollbars.Length; i++) StyleScrollbar(scrollbars[i], force);
+        ScrollRect[] scrollRects = UnityEngine.Object.FindObjectsByType<ScrollRect>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < scrollRects.Length; i++)
+            if (scrollRects[i] != null && scrollRects[i].gameObject.scene == canvas.gameObject.scene && (!Application.isPlaying || scrollRects[i].gameObject.activeInHierarchy))
+                BistroBuilderUiScrollRegion.Configure(scrollRects[i]);
         TMP_Text[] tmpTexts = canvas.GetComponentsInChildren<TMP_Text>(true);
         for (int i = 0; i < tmpTexts.Length; i++) StyleTmpText(tmpTexts[i], force);
         Text[] legacyTexts = canvas.GetComponentsInChildren<Text>(true);
         for (int i = 0; i < legacyTexts.Length; i++) StyleLegacyText(legacyTexts[i], force);
         Image[] images = canvas.GetComponentsInChildren<Image>(true);
         for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);
+        RawImage[] rawImages = canvas.GetComponentsInChildren<RawImage>(true);
+        for (int i = 0; i < rawImages.Length; i++) StyleRawImagePlaceholder(rawImages[i], force);
 
         nextScanAt = Time.unscaledTime + Mathf.Max(0.2f, rescanIntervalSeconds);
     }
@@ -174,6 +180,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         int id = component.GetInstanceID();
         if (!force && styledIds.Contains(id)) return false;
         styledIds.Add(id);
+        if (component is Selectable selectable) BistroBuilderInteractionSurface.Attach(selectable);
+        if (component.GetComponentInParent<BistroBuilderTopBarSurface>() != null) return false;
         return true;
     }
 
@@ -220,6 +228,15 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         button.transition = Selectable.Transition.ColorTint;
         button.colors = BistroBuilderUiTokens.ButtonColors(normal, hover, pressed);
         if (image != null) image.color = Color.white;
+        TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
+        if (label != null)
+        {
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Ellipsis;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 10f;
+            label.fontSizeMax = Mathf.Max(12f, label.fontSize);
+        }
         EnsureControlHeight(button.gameObject,
             role == BistroBuilderUiStyleRole.PrimaryButton ? BistroBuilderUiTokens.ControlPrimary : BistroBuilderUiTokens.ControlStandard);
 
@@ -387,7 +404,15 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         if (tag != null && tag.PreserveGraphicColor) return;
         BistroBuilderUiStyleRole role = tag != null && tag.Role != BistroBuilderUiStyleRole.Auto
             ? tag.Role : ResolveStructuralRole(image);
-        if (role == BistroBuilderUiStyleRole.Auto) return;
+        if (role == BistroBuilderUiStyleRole.Auto)
+        {
+            if (image.sprite == null && IsNearlyWhite(image.color))
+            {
+                image.color = Color.clear;
+                image.raycastTarget = false;
+            }
+            return;
+        }
 
         image.color = ResolveColor(role);
         if (role == BistroBuilderUiStyleRole.Card || role == BistroBuilderUiStyleRole.SurfaceElevated ||
@@ -397,6 +422,23 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
             if (role == BistroBuilderUiStyleRole.Toast || role == BistroBuilderUiStyleRole.SurfaceElevated)
                 EnsureShadow(image.gameObject);
         }
+    }
+
+    private void StyleRawImagePlaceholder(RawImage image, bool force)
+    {
+        if (!Begin(image, force)) return;
+        BistroBuilderUiStyleTag tag = image.GetComponent<BistroBuilderUiStyleTag>();
+        if (tag != null && tag.PreserveGraphicColor) return;
+        if (image.texture == null && IsNearlyWhite(image.color))
+        {
+            image.color = Color.clear;
+            image.raycastTarget = false;
+        }
+    }
+
+    private static bool IsNearlyWhite(Color color)
+    {
+        return color.a > 0.85f && color.r > 0.92f && color.g > 0.92f && color.b > 0.92f;
     }
 
     private BistroBuilderUiStyleRole ResolveButtonRole(GameObject target)

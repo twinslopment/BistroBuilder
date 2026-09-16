@@ -78,13 +78,20 @@ public static class BistroBuilderUi21AValidator
         Transform nav = top != null ? top.Find("NavigationContent") : null;
         Check(nav != null && nav.Find("BBNav_Actividad") != null,
             "Actividad forma parte de la navegación superior", ref passed, ref failed, log);
-        Check(nav != null && nav.Find("BBNav_Edicion") != null,
-            "Edición queda separada como cambio de modo", ref passed, ref failed, log);
+        Transform popup = top != null ? top.Find("TopNavigationMenu") : null;
+        Check(top != null && top.Find("BBNav_Opciones") != null,
+            "Opciones queda disponible en la barra superior", ref passed, ref failed, log);
+        Check(popup != null && popup.Find("Menu_Ediciondellocal") != null,
+            "Edición queda separada como cambio de modo dentro de Opciones", ref passed, ref failed, log);
+        Check(popup != null && popup.Find("Menu_Progreso") != null,
+            "Progreso queda disponible dentro de Opciones", ref passed, ref failed, log);
+        Check(popup != null && popup.Find("Menu_Cerrarpaneles") != null,
+            "Cerrar paneles queda disponible dentro de Opciones", ref passed, ref failed, log);
         string[] requiredNav =
         {
             "BBNav_Actividad", "BBNav_Personal", "BBNav_Carta", "BBNav_Inventario",
             "BBNav_Proveedores", "BBNav_Reservas", "BBNav_Economia", "BBNav_Marketing",
-            "BBNav_Reputacion", "BBNav_Progreso", "BBNav_Edicion", "BBNav_Cerrar"
+            "BBNav_Reputacion"
         };
         for (int i = 0; i < requiredNav.Length; i++)
         {

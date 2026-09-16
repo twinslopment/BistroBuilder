@@ -52,6 +52,8 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
     public int DynamicEnvelopeCount => dynamicEnvelopes.Count;
     public int TopologyRebuildCount { get; private set; }
     public int CirculationHealthEvaluationCount { get; private set; }
+    public int TopologyBuildCount => TopologyRebuildCount;
+    public int HealthEvaluationCount => CirculationHealthEvaluationCount;
 
     private void Awake()
     {

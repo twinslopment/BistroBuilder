@@ -40,6 +40,10 @@ public static class BistroBuilderUiTokens
     public const float MotionDropdownSeconds = 0.16f;
     public const float MotionPanelSeconds = 0.18f;
     public const float MotionScreenSeconds = 0.20f;
+    public const float ScrollWheelStepPixels = 84f;
+    public const float ScrollSmoothingRate = 16f;
+    public const float ScrollDecelerationRate = 0.08f;
+    public const float ScrollMaximumNotchesPerEvent = 3f;
     public const float PressScale = 0.975f;
     public const float DropdownOffset = 6f;
     public const float ValuePulseOffset = 4f;

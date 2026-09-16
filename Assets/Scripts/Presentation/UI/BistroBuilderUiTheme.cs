@@ -36,12 +36,15 @@ public enum BistroBuilderUiStyleRole
     Kpi = 34,
     ProgressInfo = 35,
     ProgressCritical = 36,
+    Subheading = 37,
+    Label = 38,
 
     // Valores 40-43 preservados por compatibilidad de escenas/prefabs V1.
     StatusSuccess = 40,
     StatusAttention = 41,
     StatusCritical = 42,
     StatusInfo = 43,
+    StatusDisabled = 44,
     BottomDock = 50,
     Toast = 51
 }

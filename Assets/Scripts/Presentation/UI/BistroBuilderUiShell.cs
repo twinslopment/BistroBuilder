@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/UI/Definitive HUD Shell")]
-public sealed class BistroBuilderUiShell : MonoBehaviour
+public sealed partial class BistroBuilderUiShell : MonoBehaviour
 {
     public const string RuntimeRevision = "21A-UIUX-SHELL-V2.0";
     public const string RootName = "BB_UIUX_Shell";
@@ -20,6 +20,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     public const string ActivityPanelName = "BB_UIUX_ActivityPanel";
     public const string ContextPanelName = "BB_UIUX_ContextPanel";
     public const string ServiceActionName = "BB_UIUX_ServiceAction";
+    public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf);
 
     private static readonly NavSpec[] Navigation =
     {
@@ -31,9 +32,10 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         new NavSpec("Reservas", "OpenReservationsButton"),
         new NavSpec("Economía", "OpenFinance"),
         new NavSpec("Marketing", "OpenMarketingButton"),
-        new NavSpec("Reputación", "OpenReputationButton"),
-        new NavSpec("Progreso", "OpenProgressionButton")
+        new NavSpec("Reputación", "OpenReputationButton")
     };
+    private static readonly string[] ServiceLaunchers =
+        { "OpenAdvancedOrdersButton", "OpenAdvancedKitchenButton", "OpenProgressionButton", "OpenWaiterOperations", "OpenEndOfDayOperations", "OpenFrontOfHouseOperations" };
 
     [SerializeField] private RectTransform shellRoot;
     [SerializeField] private RectTransform topNavigation;
@@ -103,6 +105,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     private void Update()
     {
         if (!Application.isPlaying) return;
+        TickTopMenuInput();
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && IsAnyManagementScreenOpen())
         {
             CloseCurrentManagementScreen();
@@ -114,6 +117,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         ReconcileNavigation();
         RefreshReadModels();
         nextRefreshAt = Time.unscaledTime + 0.35f;
+        RefreshIconNavigation();
     }
 
     public bool ValidateConfiguration(out string error)
@@ -126,6 +130,21 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             error = "El shell 21A no pudo resolver su Canvas o sus superficies principales.";
             return false;
         }
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryOpenNavigationFromInterface(string label, out string error)
+    {
+        ResolveDependencies();
+        EnsureShell();
+        ReconcileNavigation();
+        if (string.IsNullOrWhiteSpace(label) || !proxyButtons.TryGetValue(label, out Button proxy) || proxy == null || !proxy.interactable)
+        {
+            error = "La sección no está disponible en este momento.";
+            return false;
+        }
+        proxy.onClick.Invoke();
         error = string.Empty;
         return true;
     }
@@ -147,13 +166,19 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
 
         topNavigation = EnsureBar(shellRoot, TopBarName, true);
         bottomOperations = EnsureBar(shellRoot, BottomBarName, false);
-        EnsureNavigationContent();
+        EnsureIconNavigationContent();
         EnsureBottomStatus();
         EnsureActivityPanel();
         EnsureContextPanel();
-        EnsureNavigationButtons();
+        EnsureIconNavigationButtons();
         EnsureServiceAction();
         ReconcileTimeDock();
+        foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
+        {
+            var image = panel.GetComponent<Image>();
+            image.color = panel == topNavigation ? BistroBuilderUiTokens.Background : BistroBuilderUiTokens.Surface1;
+            BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Panel, true);
+        }
 
         if (designSystem != null) designSystem.ApplyAllNow(true);
     }
@@ -283,6 +308,11 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             Stretch(label.GetComponent<RectTransform>());
         }        text.text = value;
         text.fontSize = 14f;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = 10f;
+        text.fontSizeMax = 14f;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+        text.overflowMode = TextOverflowModes.Ellipsis;
         text.color = BistroBuilderUiTokens.TextPrimary;
         text.alignment = TextAlignmentOptions.Center;
         text.raycastTarget = false;
@@ -411,6 +441,15 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     private void ReconcileNavigation()
     {
         if (canvas == null || navContent == null) return;
+        Button[] sceneButtons = UnityEngine.Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (Button candidate in sceneButtons)
+        {
+            if (candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
+            if (Array.IndexOf(ServiceLaunchers, candidate.name) < 0) continue;
+            CanvasGroup group = candidate.GetComponent<CanvasGroup>();
+            if (group == null) group = candidate.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f; group.interactable = false; group.blocksRaycasts = false;
+        }
 
         for (int i = 0; i < Navigation.Length; i++)
         {
@@ -421,12 +460,18 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
             if (spec.TargetNames == null || spec.TargetNames.Length == 0)
             {
                 proxy.interactable = true;
-                proxy.onClick.AddListener(ToggleActivityPanel);
+                proxy.onClick.AddListener(() =>
+                {
+                    if (!TryCloseManagementScreensBeforeOpening("Actividad")) return;
+                    selectedNavigation = "Actividad"; activityVisible = true;
+                    if (activityPanel != null) activityPanel.gameObject.SetActive(true);
+                    RefreshIconNavigation();
+                });
                 continue;
             }
 
-            Button legacy = FindLegacyLauncher(spec.TargetNames);
-            SuppressLegacyLaunchers(spec.TargetNames);
+            Button legacy = FindLegacyLauncher(spec.TargetNames, sceneButtons);
+            SuppressLegacyLaunchers(spec.TargetNames, sceneButtons);
 
             string capturedLabel = spec.Label;
             if (HasDirectNavigation(capturedLabel))
@@ -457,7 +502,11 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         {
             closeManagementButton.onClick.RemoveAllListeners();
             closeManagementButton.interactable = IsAnyManagementScreenOpen();
-            closeManagementButton.onClick.AddListener(CloseCurrentManagementScreen);
+            closeManagementButton.onClick.AddListener(() =>
+            {
+                if (topPopup != null) topPopup.gameObject.SetActive(false);
+                CloseCurrentManagementScreen();
+            });
         }
     }
 
@@ -538,6 +587,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
                 break;
         }
 
+        if (opened) { selectedNavigation = label; RefreshIconNavigation(); }
         if (!opened)
         {
             if (string.IsNullOrWhiteSpace(error)) error = "La pantalla todavía no está disponible.";
@@ -614,29 +664,27 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
         if (editor != null && editor.IsOpen) { editor.RequestCloseFromInterface(); return; }
         CloseSimpleManagementScreens();
     }
-    private Button FindLegacyLauncher(string[] names)
+    private Button FindLegacyLauncher(string[] names, Button[] buttons)
     {
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
         for (int n = 0; n < names.Length; n++)
         {
             for (int i = 0; i < buttons.Length; i++)
             {
                 Button candidate = buttons[i];
-                if (candidate == null || candidate.transform.IsChildOf(shellRoot)) continue;
+                if (candidate == null || candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
                 if (string.Equals(candidate.name, names[n], StringComparison.Ordinal)) return candidate;
             }
         }
         return null;
     }
 
-    private void SuppressLegacyLaunchers(string[] names)
+    private void SuppressLegacyLaunchers(string[] names, Button[] buttons)
     {
         if (canvas == null || names == null || names.Length == 0) return;
-        Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
         for (int i = 0; i < buttons.Length; i++)
         {
             Button candidate = buttons[i];
-            if (candidate == null || candidate.transform.IsChildOf(shellRoot)) continue;
+            if (candidate == null || candidate.gameObject.scene != gameObject.scene || candidate.transform.IsChildOf(shellRoot)) continue;
             for (int n = 0; n < names.Length; n++)
             {
                 if (!string.Equals(candidate.name, names[n], StringComparison.Ordinal)) continue;
@@ -676,6 +724,8 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && activityVisible);
+        if (contextPanel != null) contextPanel.gameObject.SetActive(!editing);
         if (cashText != null)
         {
             cashText.text = finance != null
@@ -749,6 +799,7 @@ public sealed class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing);
         if (contextBody != null)
         {
             string modeLine = editMode != null && editMode.IsEditModeActive
