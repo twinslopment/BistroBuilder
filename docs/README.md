@@ -23,3 +23,13 @@ Las decisiones que solo vivían en conversaciones están registradas en [`99_HIS
 
 ## Historia y auditoría
 Ver [`99_HISTORY/LEGACY_SOURCE_REGISTER.md`](99_HISTORY/LEGACY_SOURCE_REGISTER.md) y [`40_TESTING/DOCUMENTATION_MIGRATION_AUDIT_20260912.md`](40_TESTING/DOCUMENTATION_MIGRATION_AUDIT_20260912.md).
+## Ingesta global para agentes
+`PROJECT_KNOWLEDGE_BUNDLE.md` concatena todos los `.md` fuente versionados del proyecto en orden de precedencia y es el punto único de ingestión para Astra/Codex/agentes compatibles.
+
+`ALL_MARKDOWN_INDEX.md` mantiene el inventario y trazabilidad hacia cada archivo original, incluidos Markdown situados en la raíz o dentro de `Assets/`.
+
+Regenerar ambos con:
+
+`Tools/BistroBuilder/RefreshMarkdownKnowledge.ps1`
+
+Los archivos originales siguen siendo la fuente editable; el bundle es un artefacto derivado para contexto.
