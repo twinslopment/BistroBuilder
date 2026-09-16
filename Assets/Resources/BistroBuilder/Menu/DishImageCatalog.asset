@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 894079c126f231c488281c561726002b, type: 3}
+  m_Name: DishImageCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishImageCatalog
+  entries:
+  - dishId: boquerones
+    image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
+    sourceFileName: boquerones.jpg
+  - dishId: ensaladilla_rusa
+    image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
+    sourceFileName: ensaladilla_rusa.jpg
+  - dishId: gazpacho_andaluz
+    image: {fileID: 21300000, guid: bf2f46b9960955e479fe989d14c779be, type: 3}
+    sourceFileName: gazpacho_andaluz.jpg
+  - dishId: pan_con_tomate
+    image: {fileID: 21300000, guid: b548153c5aba4124ea6f4622bcc0e8b6, type: 3}
+    sourceFileName: pan_con_tomate.jpg
+  - dishId: patatas_bravas
+    image: {fileID: 21300000, guid: ab4466d8b0634b64bb6306f2c6668061, type: 3}
+    sourceFileName: patatas_bravas.jpg
+  - dishId: pimientos_padron
+    image: {fileID: 21300000, guid: 2fbd290f716518641bad888d7c44eff4, type: 3}
+    sourceFileName: pimientos_padron.jpg
+  - dishId: tabla_embutidos_ibericos
+    image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
+    sourceFileName: tabla_embutidos_ibericos.jpg
+  - dishId: tortilla_patatas
+    image: {fileID: 21300000, guid: 72d34134d296de24c8d7009c5b4bb3e9, type: 3}
+    sourceFileName: tortilla_patatas.jpg
