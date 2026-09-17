@@ -155,7 +155,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
 
         SetLegacyTestGeometryPresence(true);
         SetWaiterScenePresence(true);
-        SetPremisesFloorVisual(true);
+        SetPremisesFloorVisual(false);
         if (editDocumentService != null &&
             !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
             return false;

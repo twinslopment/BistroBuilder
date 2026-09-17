@@ -48,6 +48,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     [SerializeField] private TMP_Text satisfactionText;
     [SerializeField] private TMP_Text kitchenText;
     [SerializeField] private TMP_Text waitingText;
+    [SerializeField] private TMP_Text bottomDateTimeText;
     [SerializeField] private RectTransform contextPanel;
     [SerializeField] private TMP_Text contextTitle;
     [SerializeField] private TMP_Text contextBody;
@@ -169,6 +170,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         bottomOperations = EnsureBar(shellRoot, BottomBarName, false);
         EnsureIconNavigationContent();
         EnsureBottomStatus();
+        EnsureBottomDateTime();
         EnsureActivityPanel();
         EnsureContextPanel();
         EnsureIconNavigationButtons();
@@ -285,6 +287,22 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         waitingText = EnsureStatusPill("Waiting", "Espera: 0 clientes", 165f);
     }
 
+    private void EnsureBottomDateTime()
+    {
+        Transform found = bottomOperations.Find("BottomDateTime");
+        GameObject go = found != null ? found.gameObject : NewUi("BottomDateTime", bottomOperations);
+        bottomDateTimeText = go.GetComponent<TMP_Text>();
+        if (bottomDateTimeText == null) bottomDateTimeText = go.AddComponent<TextMeshProUGUI>();
+        RectTransform rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
+        rect.anchoredPosition = new Vector2(-356f, 0f);
+        rect.sizeDelta = new Vector2(220f, 44f);
+        bottomDateTimeText.fontSize = 13f;
+        bottomDateTimeText.color = BistroBuilderUiTokens.TextPrimary;
+        bottomDateTimeText.alignment = TextAlignmentOptions.MidlineRight;
+        bottomDateTimeText.raycastTarget = false;
+    }
+
     private TMP_Text EnsureStatusPill(string name, string value, float width)
     {
         Transform found = bottomStatusContent.Find(name);
@@ -333,11 +351,11 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             image.raycastTarget = true;
         }
 
-        activityPanel.anchorMin = new Vector2(0f, 0f);
+        activityPanel.anchorMin = new Vector2(0f, 1f);
         activityPanel.anchorMax = new Vector2(0f, 1f);
-        activityPanel.pivot = new Vector2(0f, 0.5f);
-        activityPanel.anchoredPosition = new Vector2(12f, 0f);
-        activityPanel.sizeDelta = new Vector2(284f, -152f);
+        activityPanel.pivot = new Vector2(0f, 1f);
+        activityPanel.anchoredPosition = new Vector2(12f, -76f);
+        activityPanel.sizeDelta = new Vector2(284f, 176f);
 
         var activityHeading = HeaderLabel(activityPanel, "ActivityHeading", "Actividad", 24);
         BistroBuilderTypography.Apply(activityHeading, BistroBuilderUiStyleRole.Heading);
@@ -472,7 +490,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 {
                     if (!TryCloseManagementScreensBeforeOpening("Actividad")) return;
                     selectedNavigation = "Actividad"; activityVisible = true;
-                    if (activityPanel != null) activityPanel.gameObject.SetActive(true);
+                    if (activityPanel != null) activityPanel.gameObject.SetActive(HasMeaningfulActivity());
                     RefreshIconNavigation();
                 });
                 continue;
@@ -714,7 +732,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void ToggleActivityPanel()
     {
         activityVisible = !activityVisible;
-        if (activityPanel != null) activityPanel.gameObject.SetActive(activityVisible);
+        if (activityPanel != null) activityPanel.gameObject.SetActive(activityVisible && HasMeaningfulActivity());
     }
 
     private void HandleEditModeClicked()
@@ -732,8 +750,10 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
-        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && activityVisible);
-        if (contextPanel != null) contextPanel.gameObject.SetActive(!editing);
+        bool hasActivity = HasMeaningfulActivity();
+        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && activityVisible && hasActivity);
+        if (contextPanel != null) contextPanel.gameObject.SetActive(false);
+        if (bottomStatusContent != null) bottomStatusContent.gameObject.SetActive(!editing);
         if (cashText != null)
         {
             cashText.text = finance != null
@@ -808,6 +828,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
         if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing);
+        if (contextPanel != null) contextPanel.gameObject.SetActive(false);
         if (contextBody != null)
         {
             string modeLine = editMode != null && editMode.IsEditModeActive
@@ -929,31 +950,51 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (recentActivity.Count > 6) recentActivity.RemoveAt(recentActivity.Count - 1);
     }
 
+    private bool HasMeaningfulActivity()
+    {
+        inventoryAlerts.Clear();
+        if (inventoryPlanning != null) inventoryPlanning.CopyActiveAlertsTo(inventoryAlerts);
+        return recentActivity.Count > 0 || inventoryAlerts.Count > 0;
+    }
+
     private void RefreshActivityText()
     {
         if (activityText == null) return;
         inventoryAlerts.Clear();
         if (inventoryPlanning != null) inventoryPlanning.CopyActiveAlertsTo(inventoryAlerts);
 
-        System.Text.StringBuilder builder = new System.Text.StringBuilder(256);
-        builder.AppendLine("<color=#D5CBBC>Lo importante del servicio, sin ruido.</color>");
-        builder.AppendLine();
-
-        if (recentActivity.Count == 0 && inventoryAlerts.Count == 0)
+        bool hasActivity = recentActivity.Count > 0 || inventoryAlerts.Count > 0;
+        if (!hasActivity)
         {
-            builder.AppendLine("<color=#3F9A69>●</color> Sin incidencias prioritarias");
+            activityText.text = string.Empty;
+            if (activityPanel != null) activityPanel.gameObject.SetActive(false);
+            return;
         }
-        else
+
+        System.Text.StringBuilder builder = new System.Text.StringBuilder(256);
+        int lineCount = 0;
+        for (int i = 0; i < recentActivity.Count; i++)
         {
-            for (int i = 0; i < recentActivity.Count; i++)
-                builder.AppendLine("• " + recentActivity[i]);
-            if (recentActivity.Count == 0)
+            builder.AppendLine("? " + recentActivity[i]);
+            lineCount++;
+        }
+        if (recentActivity.Count == 0)
+        {
+            int shown = Mathf.Min(5, inventoryAlerts.Count);
+            for (int i = 0; i < shown; i++)
             {
-                int shown = Mathf.Min(5, inventoryAlerts.Count);
-                for (int i = 0; i < shown; i++) builder.AppendLine("• " + inventoryAlerts[i].Message);
+                builder.AppendLine("? " + inventoryAlerts[i].Message);
+                lineCount++;
             }
         }
         activityText.text = builder.ToString();
+        if (activityPanel != null)
+        {
+            activityPanel.sizeDelta = new Vector2(284f, Mathf.Clamp(88f + lineCount * 28f, 120f, 300f));
+            RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
+            bool editing = editMode != null && editMode.IsEditModeActive;
+            activityPanel.gameObject.SetActive(!editing && activityVisible);
+        }
     }
 
     private int ResolveWaitingClientCount()
@@ -976,7 +1017,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         rect.anchorMin = new Vector2(1f, 0f);
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
-        rect.anchoredPosition = new Vector2(-16f, 10f);
+        rect.anchoredPosition = new Vector2(-16f, 9f);
         rect.sizeDelta = new Vector2(324f, 46f);
         rect.SetAsLastSibling();
     }

@@ -35,7 +35,7 @@ public sealed partial class BistroBuilderUiShell
         navContent = existing != null ? (RectTransform)existing : (RectTransform)NewUi("NavigationContent", topNavigation).transform;
         Stretch(navContent);
         navContent.offsetMin = new Vector2(310, 0);
-        navContent.offsetMax = new Vector2(-235, 0);
+        navContent.offsetMax = new Vector2(-102, 0);
         var layout = navContent.GetComponent<HorizontalLayoutGroup>();
         if (layout == null) layout = navContent.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.padding = new RectOffset(4, 4, 0, 0);
@@ -93,7 +93,7 @@ public sealed partial class BistroBuilderUiShell
         optionsButton = HeaderIconButton(topNavigation, "BBNav_Opciones", "Opciones", BBIconId.NavOptions);
         var optionRect = (RectTransform)optionsButton.transform;
         optionRect.anchorMin = optionRect.anchorMax = optionRect.pivot = new Vector2(1, 1);
-        optionRect.anchoredPosition = new Vector2(-144, 0);
+        optionRect.anchoredPosition = new Vector2(-8, 0);
         optionRect.sizeDelta = new Vector2(86, 64);
         optionsButton.onClick.RemoveAllListeners();
         optionsButton.onClick.AddListener(() => ToggleTopPopup(false));
@@ -103,8 +103,11 @@ public sealed partial class BistroBuilderUiShell
         divider.rectTransform.pivot = new Vector2(1, 1);
         divider.rectTransform.anchoredPosition = new Vector2(-138, -10);
         divider.rectTransform.sizeDelta = new Vector2(1, 44);
+        divider.gameObject.SetActive(false);
         calendarHeading = HeaderLabel(topNavigation, "Calendar", "", 13);
         timeHeading = HeaderLabel(topNavigation, "Clock", "", 16);
+        calendarHeading.gameObject.SetActive(false);
+        timeHeading.gameObject.SetActive(false);
         foreach (var label in new[] { calendarHeading, timeHeading })
         {
             var rect = (RectTransform)label.transform;
@@ -113,6 +116,7 @@ public sealed partial class BistroBuilderUiShell
             rect.sizeDelta = new Vector2(110, 22);
             label.alignment = TextAlignmentOptions.MidlineLeft;
         }
+        SuppressLegacyTopBarArtifacts();
         EnsureTopPopup();
         RefreshIconNavigation();
     }
@@ -255,6 +259,18 @@ public sealed partial class BistroBuilderUiShell
         dismissTopPopup = false;
         if (topPopup != null) topPopup.gameObject.SetActive(false);
     }
+    private void SuppressLegacyTopBarArtifacts()
+    {
+        Button[] buttons = UnityEngine.Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+            if (button == null || button.transform.IsChildOf(shellRoot)) continue;
+            if (string.Equals(button.gameObject.name, "OpenScheduleButton", StringComparison.Ordinal))
+                button.gameObject.SetActive(false);
+        }
+    }
+
     private void RefreshIconNavigation()
     {
         if (restaurantHeading == null) return;
@@ -264,13 +280,15 @@ public sealed partial class BistroBuilderUiShell
         bool editing = FindScene<RestaurantEditModeService>()?.IsEditModeActive == true;
         serviceHeading.text = editing ? "Diseño del local" : serviceState == null || serviceState.IsClosed ? "Preparación del servicio" :
             topClock != null && topClock.Hour >= 18 ? "Servicio de cena" : "Servicio de comidas";
+        string dateText = string.Empty;
         if (topGameState != null)
         {
             int year = Mathf.Clamp(topGameState.CalendarYear, 1, 9999), month = Mathf.Clamp(topGameState.CalendarMonth, 1, 12);
             var date = new DateTime(year, month, Mathf.Clamp(topGameState.CalendarDay, 1, DateTime.DaysInMonth(year, month)));
-            calendarHeading.text = date.ToString("ddd, d MMM", CultureInfo.GetCultureInfo("es-ES"));
+            dateText = date.ToString("ddd, d MMM", CultureInfo.GetCultureInfo("es-ES"));
         }
-        timeHeading.text = topClock != null ? $"{topClock.Hour:00}:{topClock.Minute:00}" : "—";
+        string clockText = topClock != null ? $"{topClock.Hour:00}:{topClock.Minute:00}" : "-";
+        if (bottomDateTimeText != null) bottomDateTimeText.text = string.IsNullOrEmpty(dateText) ? clockText : dateText + "  ?  " + clockText;
         if (!IsAnyManagementScreenOpen()) selectedNavigation = "Actividad";
         foreach (var pair in topPresenters)
         {
