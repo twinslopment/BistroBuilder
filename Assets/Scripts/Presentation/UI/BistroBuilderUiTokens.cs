@@ -71,6 +71,12 @@ public static class BistroBuilderUiTokens
     public static readonly Color32 Disabled = new Color32(145, 142, 136, 180);
     public static readonly Color32 Overlay = new Color32(8, 12, 11, 178);
 
+    // Medidos sobre la referencia visual aprobada de selección de mesa.
+    // Núcleo: mediana RGB aproximada 218/209/168 (#DAD1A8).
+    // Halo: mediana verde-oliva aproximada 183/197/140 (#B7C58C).
+    public static readonly Color32 TableSelectionCore = new Color32(218, 209, 168, 255);
+    public static readonly Color32 TableSelectionGlow = new Color32(183, 197, 140, 255);
+
     public static ColorBlock ButtonColors(Color normal, Color hover, Color pressed)
     {
         ColorBlock result = ColorBlock.defaultColorBlock;
