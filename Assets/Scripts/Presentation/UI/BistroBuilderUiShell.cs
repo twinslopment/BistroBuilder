@@ -377,7 +377,6 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         activityText.alignment = TextAlignmentOptions.TopLeft;
         activityText.textWrappingMode = TextWrappingModes.Normal;
         activityText.raycastTarget = false;
-        activityPanel.gameObject.SetActive(activityVisible);
     }
 
     private void EnsureContextPanel()
