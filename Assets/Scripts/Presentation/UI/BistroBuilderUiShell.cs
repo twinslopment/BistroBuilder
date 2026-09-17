@@ -822,7 +822,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
         RestaurantTable selected = !editing && tableSelection != null ? tableSelection.SelectedTable : null;
-        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen);
+        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen && selected == null);
 
         if (selected != null)
         {
