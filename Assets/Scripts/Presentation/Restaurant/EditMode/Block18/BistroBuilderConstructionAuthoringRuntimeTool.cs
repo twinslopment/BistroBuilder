@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using BistroBuilder.ConstructionAuthoring;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,6 +23,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private RestaurantEditInteractionController furnitureController;
     [SerializeField] private Camera interactionCamera;
+    [SerializeField] private BistroBuilderArchitectureRuntimeMaterializer architectureMaterializer;
+    [SerializeField] private RestaurantPlaceableCatalogPanel catalogPanel;
 
     [Header("Construction V1")]
     [SerializeField, Min(0.05f)] private float wallThickness = 0.12f;
@@ -55,6 +58,9 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private float nextDependencyRefreshAt;
     private const float PointerScreenEpsilonSqr = 0.25f;
     private GameObject visualRoot;
+    private Transform draftWallVisualRoot;
+    private readonly List<BistroBuilderEditId> hiddenCommittedWallIds = new List<BistroBuilderEditId>(16);
+    private readonly List<BistroBuilderOpeningRecord> draftHostedOpenings = new List<BistroBuilderOpeningRecord>(8);
     private LineRenderer[] previewLines = Array.Empty<LineRenderer>();
     private LineRenderer[] draftLines = Array.Empty<LineRenderer>();
     private LineRenderer selectionLine;
@@ -86,6 +92,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private GUIStyle titleStyle;
     private GUIStyle labelStyle;
     private GUIStyle statusStyle;
+    private GUIStyle panelStyle;
+    private GUIStyle smallLabelStyle;
 
     private static readonly Color ValidColor = new Color(0.2f, 0.9f, 0.35f, 0.95f);
     private static readonly Color InvalidColor = new Color(0.95f, 0.25f, 0.2f, 0.95f);
@@ -119,6 +127,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private void OnDisable()
     {
         CancelGesture(string.Empty);
+        ClearDraftOverlay();
         RestoreFurnitureInput();
         SetVisualsVisible(false);
     }
@@ -713,6 +722,9 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (visualRoot != null) return;
         visualRoot = new GameObject("BB18N_ConstructionAuthoringVisuals");
         visualRoot.transform.SetParent(transform, false);
+        var draft3d = new GameObject("DraftWallModules3D");
+        draft3d.transform.SetParent(visualRoot.transform, false);
+        draftWallVisualRoot = draft3d.transform;
         Shader shader = Shader.Find("Sprites/Default");
         if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
         if (shader != null)
@@ -750,6 +762,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     {
         for (int i=0;i<draftLines.Length;i++)
             if (draftLines[i] != null) draftLines[i].enabled=false;
+        ClearDraftWallVisuals();
+        RestoreCommittedWallVisuals();
     }
 
     private void EnsurePreviewLineCount(int count)
@@ -1137,6 +1151,132 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
             SetLine(draftLines[index++], center-half, center+half, SelectionColor, 0.065f);
         }
         for (int i=index;i<draftLines.Length;i++) draftLines[i].enabled=false;
+        RefreshDraftWallVisuals();
+    }
+
+    private void RefreshDraftWallVisuals()
+    {
+        CacheDependencies();
+        RestoreCommittedWallVisuals();
+        ClearDraftWallVisuals();
+        if (draftWallVisualRoot == null || architectureMaterializer == null || coordinator == null || coordinator.Session == null) return;
+        BistroBuilderEditDocument baseline = coordinator.Session.Baseline;
+        BistroBuilderEditDocument draft = coordinator.Session.Draft;
+        if (baseline == null || draft == null) return;
+        for (int i = 0; i < baseline.walls.Count; i++)
+        {
+            BistroBuilderWallRecord oldWall = baseline.walls[i];
+            if (oldWall == null || FindWall(draft, oldWall.wallId) != null) continue;
+            if (architectureMaterializer.SetWallVisualVisibility(oldWall.wallId, false)) hiddenCommittedWallIds.Add(oldWall.wallId);
+        }
+        for (int i = 0; i < draft.walls.Count; i++)
+        {
+            BistroBuilderWallRecord wall = draft.walls[i];
+            if (wall == null || !wall.wallId.IsValid || wall.Length <= 0.0001f) continue;
+            BistroBuilderWallRecord oldWall = FindWall(baseline, wall.wallId);
+            if (!WallRequiresDraftVisual(wall, oldWall, baseline, draft)) continue;
+            if (oldWall != null && architectureMaterializer.SetWallVisualVisibility(wall.wallId, false)) hiddenCommittedWallIds.Add(wall.wallId);
+            CreateDraftWallVisual(wall, draft);
+        }
+    }
+
+    private void CreateDraftWallVisual(BistroBuilderWallRecord wall, BistroBuilderEditDocument draft)
+    {
+        var host = new GameObject("DraftWall3D_" + wall.wallId.Value);
+        host.transform.SetParent(draftWallVisualRoot, false);
+        Vector2 axis = wall.axisEnd - wall.axisStart;
+        Vector3 direction = new Vector3(axis.x, 0f, axis.y).normalized;
+        host.transform.position = new Vector3(wall.axisStart.x, wall.baseElevation, wall.axisStart.y);
+        host.transform.rotation = Quaternion.FromToRotation(Vector3.right, direction);
+        draftHostedOpenings.Clear();
+        for (int i = 0; i < draft.openings.Count; i++)
+        {
+            BistroBuilderOpeningRecord opening = draft.openings[i];
+            if (opening != null && opening.hostWallId == wall.wallId) draftHostedOpenings.Add(opening);
+        }
+        if (!architectureMaterializer.TryCreateWallVisualPreview(host.transform, wall, draftHostedOpenings))
+        {
+            host.SetActive(false);
+            Destroy(host);
+        }
+    }
+
+    private void ClearDraftWallVisuals()
+    {
+        if (draftWallVisualRoot == null) return;
+        for (int i = draftWallVisualRoot.childCount - 1; i >= 0; i--)
+        {
+            GameObject go = draftWallVisualRoot.GetChild(i).gameObject;
+            go.SetActive(false);
+            if (Application.isPlaying) Destroy(go); else DestroyImmediate(go);
+        }
+    }
+
+    private void RestoreCommittedWallVisuals()
+    {
+        if (architectureMaterializer == null) { hiddenCommittedWallIds.Clear(); return; }
+        for (int i = 0; i < hiddenCommittedWallIds.Count; i++)
+            architectureMaterializer.SetWallVisualVisibility(hiddenCommittedWallIds[i], true);
+        hiddenCommittedWallIds.Clear();
+    }
+
+    private static BistroBuilderWallRecord FindWall(BistroBuilderEditDocument document, BistroBuilderEditId id)
+    {
+        if (document == null) return null;
+        for (int i = 0; i < document.walls.Count; i++)
+            if (document.walls[i] != null && document.walls[i].wallId == id) return document.walls[i];
+        return null;
+    }
+
+    private static bool WallRequiresDraftVisual(
+        BistroBuilderWallRecord draftWall, BistroBuilderWallRecord baselineWall,
+        BistroBuilderEditDocument baseline, BistroBuilderEditDocument draft)
+    {
+        if (baselineWall == null) return true;
+        if (!WallEquivalent(draftWall, baselineWall)) return true;
+        return !HostedOpeningsEqual(draftWall.wallId, baseline, draft);
+    }
+
+    private static bool WallEquivalent(BistroBuilderWallRecord a, BistroBuilderWallRecord b)
+    {
+        if (a == null || b == null) return false;
+        return (a.axisStart - b.axisStart).sqrMagnitude <= 0.000001f &&
+               (a.axisEnd - b.axisEnd).sqrMagnitude <= 0.000001f &&
+               Mathf.Abs(a.baseElevation - b.baseElevation) <= 0.0001f &&
+               Mathf.Abs(a.height - b.height) <= 0.0001f &&
+               Mathf.Abs(a.thickness - b.thickness) <= 0.0001f &&
+               string.Equals(a.wallDefinitionId, b.wallDefinitionId, System.StringComparison.Ordinal);
+    }
+
+    private static bool HostedOpeningsEqual(BistroBuilderEditId wallId, BistroBuilderEditDocument a, BistroBuilderEditDocument b)
+    {
+        int aCount = 0, bCount = 0;
+        for (int i = 0; i < a.openings.Count; i++) if (a.openings[i] != null && a.openings[i].hostWallId == wallId) aCount++;
+        for (int i = 0; i < b.openings.Count; i++) if (b.openings[i] != null && b.openings[i].hostWallId == wallId) bCount++;
+        if (aCount != bCount) return false;
+        for (int i = 0; i < a.openings.Count; i++)
+        {
+            BistroBuilderOpeningRecord left = a.openings[i];
+            if (left == null || left.hostWallId != wallId) continue;
+            BistroBuilderOpeningRecord right = null;
+            for (int j = 0; j < b.openings.Count; j++)
+                if (b.openings[j] != null && b.openings[j].openingId == left.openingId) { right = b.openings[j]; break; }
+            if (!OpeningEquivalent(left, right)) return false;
+        }
+        return true;
+    }
+
+    private static bool OpeningEquivalent(BistroBuilderOpeningRecord a, BistroBuilderOpeningRecord b)
+    {
+        if (a == null || b == null) return false;
+        return a.hostWallId == b.hostWallId &&
+               Mathf.Abs(a.axisPosition01 - b.axisPosition01) <= 0.0001f &&
+               Mathf.Abs(a.width - b.width) <= 0.0001f &&
+               Mathf.Abs(a.bottomElevation - b.bottomElevation) <= 0.0001f &&
+               Mathf.Abs(a.height - b.height) <= 0.0001f &&
+               a.flipped == b.flipped &&
+               string.Equals(a.openingType, b.openingType, System.StringComparison.Ordinal) &&
+               string.Equals(a.fillDefinitionId, b.fillDefinitionId, System.StringComparison.Ordinal);
     }
 
     private void SetStatus(string message)
@@ -1192,6 +1332,8 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         if (coordinator == null) coordinator = FindFirstObjectByType<BistroBuilderEditRuntimeCoordinator>();
         if (editModeService == null) editModeService = FindFirstObjectByType<RestaurantEditModeService>();
         if (furnitureController == null) furnitureController = FindFirstObjectByType<RestaurantEditInteractionController>();
+        if (architectureMaterializer == null) architectureMaterializer = FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>();
+        if (catalogPanel == null) catalogPanel = FindFirstObjectByType<RestaurantPlaceableCatalogPanel>();
         if (interactionCamera == null)
             interactionCamera = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
     }
@@ -1248,20 +1390,35 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         return id ?? string.Empty;
     }
 
+    private Rect CalculateDockRect()
+    {
+        float left = Mathf.Clamp(Screen.width * 0.155f, 188f, 260f);
+        float width = Mathf.Max(360f, Screen.width - left - 16f);
+        float height = editModeService != null && editModeService.IsEditModeActive ? 126f : 112f;
+        float catalogTop = Screen.height - 12f;
+        if (catalogPanel != null && catalogPanel.TryGetGuiRect(out Rect catalogRect))
+            catalogTop = catalogRect.y - 10f;
+        else if (editModeService != null && editModeService.IsEditModeActive)
+            catalogTop = Screen.height - Mathf.Clamp(Screen.height * 0.25f, 190f, 250f) - 10f;
+        float y = Mathf.Max(76f, catalogTop - height);
+        return new Rect(left, y, width, height);
+    }
+
     private void OnGUI()
     {
         if (!Application.isPlaying || !showPlaytestPanel) return;
         EnsureGuiStyles();
-        float width = Mathf.Min(980f, Screen.width - 24f);
-        panelRect = new Rect((Screen.width - width) * 0.5f,
-            Mathf.Max(12f, Screen.height - 178f), width, 166f);
+        CacheDependencies();
+        panelRect = CalculateDockRect();
         BistroBuilderRuntimePointerUiGuard.PublishBlockedGuiRect(panelRect);
-        GUI.Box(panelRect, GUIContent.none);
-        GUILayout.BeginArea(new Rect(panelRect.x + 12f, panelRect.y + 8f,
-            panelRect.width - 24f, panelRect.height - 16f));
-        GUILayout.Label("BISTRO BUILDER · CONSTRUCCIÓN", titleStyle);
-        if (editModeService == null || !editModeService.IsEditModeActive)
-            DrawEnterEditMode();
+        GUI.Box(panelRect, GUIContent.none, panelStyle);
+        GUILayout.BeginArea(new Rect(panelRect.x + 12f, panelRect.y + 7f, panelRect.width - 24f, panelRect.height - 14f));
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("CONSTRUCCIÓN", titleStyle, GUILayout.Width(128f));
+        GUILayout.Label(status, statusStyle, GUILayout.ExpandWidth(true));
+        GUILayout.Label("F8", smallLabelStyle, GUILayout.Width(26f));
+        GUILayout.EndHorizontal();
+        if (editModeService == null || !editModeService.IsEditModeActive) DrawEnterEditMode();
         else DrawConstructionPanel();
         GUILayout.EndArea();
     }
@@ -1290,41 +1447,48 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
         ToolButton("Espacio", BistroBuilderConstructionRuntimeMode.Room);
         ToolButton("Puerta", BistroBuilderConstructionRuntimeMode.Door);
         ToolButton("Ventana", BistroBuilderConstructionRuntimeMode.Window);
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("Zona:", labelStyle, GUILayout.Width(44f));
-        if (definitions != null)
-            foreach (string zoneId in definitions.ZoneIds)
-                ZoneButton(ZoneLabel(zoneId), zoneId);
         GUILayout.FlexibleSpace();
         GUI.enabled = CanUndo;
-        if (GUILayout.Button("Deshacer", GUILayout.Width(88f))) TryUndo(out _);
+        if (GUILayout.Button("Deshacer", GUILayout.Width(86f), GUILayout.Height(28f))) TryUndo(out _);
         GUI.enabled = CanRedo;
-        if (GUILayout.Button("Rehacer", GUILayout.Width(88f))) TryRedo(out _);
+        if (GUILayout.Button("Rehacer", GUILayout.Width(86f), GUILayout.Height(28f))) TryRedo(out _);
         GUI.enabled = true;
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        string selected = selection.Kind == EntityKind.None ? "Nada" : selection.Kind + " " + selection.Id.Value;
-        GUILayout.Label("Selección: " + selected, labelStyle, GUILayout.Width(300f));
-        GUILayout.Label(BuildDimensionText(), labelStyle, GUILayout.Width(360f));
-        GUILayout.Label("Snap: " + lastSnapKind, labelStyle);
+        if (mode == BistroBuilderConstructionRuntimeMode.Room)
+        {
+            GUILayout.Label("Zona", smallLabelStyle, GUILayout.Width(38f));
+            if (definitions != null) foreach (string zoneId in definitions.ZoneIds) ZoneButton(ZoneLabel(zoneId), zoneId);
+        }
+        else
+        {
+            GUILayout.Label(BuildDimensionText(), labelStyle, GUILayout.ExpandWidth(true));
+            GUILayout.Label("Snap: " + SnapLabel(lastSnapKind), smallLabelStyle, GUILayout.Width(105f));
+        }
+        GUILayout.FlexibleSpace();
+        Color previous = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(0.62f, 0.42f, 0.22f, 1f);
+        if (GUILayout.Button("Cancelar", GUILayout.Width(102f), GUILayout.Height(27f))) TryCancelDraft(out _);
+        GUI.backgroundColor = new Color(0.25f, 0.58f, 0.34f, 1f);
+        if (GUILayout.Button("APLICAR", GUILayout.Width(112f), GUILayout.Height(27f))) TryCommitDraft(out _);
+        GUI.backgroundColor = previous;
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label(status, statusStyle, GUILayout.ExpandWidth(true));
-        if (GUILayout.Button("Cancelar cambios", GUILayout.Width(145f), GUILayout.Height(28f)))
-            TryCancelDraft(out _);
-        if (GUILayout.Button("APLICAR CAMBIOS", GUILayout.Width(160f), GUILayout.Height(28f)))
-            TryCommitDraft(out _);
+        string selected = selection.Kind == EntityKind.None ? "Sin selección" : SelectionLabel(selection.Kind);
+        GUILayout.Label(selected, smallLabelStyle, GUILayout.Width(130f));
+        GUILayout.Label(ModeHelp(mode), smallLabelStyle, GUILayout.ExpandWidth(true));
         GUILayout.EndHorizontal();
     }
 
     private void ToolButton(string label, BistroBuilderConstructionRuntimeMode target)
     {
         bool active = mode == target;
-        bool pressed = GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Height(28f));
+        Color previous = GUI.backgroundColor;
+        if (active) GUI.backgroundColor = new Color(0.22f, 0.62f, 0.78f, 1f);
+        bool pressed = GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(96f), GUILayout.Height(28f));
+        GUI.backgroundColor = previous;
         if (pressed && !active) SetMode(target);
     }
 
@@ -1332,8 +1496,36 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     {
         if (definitions == null || !definitions.ContainsZone(id)) return;
         bool active = zoneDefinitionId == id;
-        bool pressed = GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(78f), GUILayout.Height(24f));
+        Color previous = GUI.backgroundColor;
+        if (active) GUI.backgroundColor = new Color(0.22f, 0.62f, 0.78f, 1f);
+        bool pressed = GUILayout.Toggle(active, label, GUI.skin.button, GUILayout.Width(72f), GUILayout.Height(24f));
+        GUI.backgroundColor = previous;
         if (pressed && !active) SetRoomZone(id);
+    }
+
+    private static string SnapLabel(SnapKind kind)
+    {
+        switch (kind)
+        {
+            case SnapKind.Endpoint: return "Extremo";
+            case SnapKind.Intersection: return "Cruce";
+            case SnapKind.Wall: return "Pared";
+            case SnapKind.Horizontal: return "Horizontal";
+            case SnapKind.Vertical: return "Vertical";
+            case SnapKind.Grid: return "Rejilla";
+            default: return "Libre";
+        }
+    }
+
+    private static string SelectionLabel(EntityKind kind)
+    {
+        switch (kind)
+        {
+            case EntityKind.Wall: return "Pared seleccionada";
+            case EntityKind.Room: return "Espacio seleccionado";
+            case EntityKind.Opening: return "Abertura seleccionada";
+            default: return "Sin selección";
+        }
     }
 
     private string BuildDimensionText()
@@ -1352,9 +1544,27 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
     private void EnsureGuiStyles()
     {
         if (titleStyle != null) return;
-        titleStyle = new GUIStyle(GUI.skin.label) { fontSize = 15, fontStyle = FontStyle.Bold };
-        labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 12 };
-        statusStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, wordWrap = true };
+        panelStyle = new GUIStyle(GUI.skin.box)
+        {
+            padding = new RectOffset(8, 8, 6, 6),
+            margin = new RectOffset(0, 0, 0, 0)
+        };
+        titleStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft
+        };
+        labelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 12, alignment = TextAnchor.MiddleLeft
+        };
+        smallLabelStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 10, alignment = TextAnchor.MiddleLeft, wordWrap = false
+        };
+        statusStyle = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 11, alignment = TextAnchor.MiddleLeft, clipping = TextClipping.Clip
+        };
     }
 
     private void OnDestroy()

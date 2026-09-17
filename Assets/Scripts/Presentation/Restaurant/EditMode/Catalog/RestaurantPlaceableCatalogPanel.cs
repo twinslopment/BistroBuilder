@@ -77,6 +77,27 @@ public sealed class RestaurantPlaceableCatalogPanel :
 
     private bool initialized;
 
+    public bool TryGetGuiRect(out Rect guiRect)
+    {
+        guiRect = default;
+        if (contentRoot == null || !contentRoot.activeInHierarchy) return false;
+        RectTransform rectTransform = contentRoot.transform as RectTransform;
+        if (rectTransform == null) return false;
+        Vector3[] corners = new Vector3[4];
+        rectTransform.GetWorldCorners(corners);
+        Canvas canvas = contentRoot.GetComponentInParent<Canvas>();
+        Camera uiCamera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+            ? canvas.worldCamera : null;
+        Vector2 bottomLeft = RectTransformUtility.WorldToScreenPoint(uiCamera, corners[0]);
+        Vector2 topRight = RectTransformUtility.WorldToScreenPoint(uiCamera, corners[2]);
+        float xMin = Mathf.Min(bottomLeft.x, topRight.x);
+        float xMax = Mathf.Max(bottomLeft.x, topRight.x);
+        float top = Screen.height - Mathf.Max(bottomLeft.y, topRight.y);
+        float bottom = Screen.height - Mathf.Min(bottomLeft.y, topRight.y);
+        guiRect = Rect.MinMaxRect(xMin, top, xMax, bottom);
+        return guiRect.width > 1f && guiRect.height > 1f;
+    }
+
     private void Awake()
     {
         CacheDependenciesIfNeeded();

@@ -87,6 +87,26 @@ public static class BistroBuilderWallModuleAssetSelfTest
             }
             Require(visualCount >= 5, "wall visual modules were not tiled across the wall");
             Require(!doorBlocked, "wall visual modules are covering the door opening");
+            Require(materializer.SetWallVisualVisibility(wall.wallId, false), "could not hide committed wall visuals");
+            Renderer[] hiddenRenderers = wallRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < hiddenRenderers.Length; i++)
+                Require(!hiddenRenderers[i].enabled, "hidden wall still has an enabled renderer");
+            Require(materializer.SetWallVisualVisibility(wall.wallId, true), "could not restore committed wall visuals");
+            Renderer rootRenderer = wallRoot.GetComponent<Renderer>();
+            Require(rootRenderer != null && !rootRenderer.enabled,
+                "restoring wall visuals incorrectly re-enabled the fallback wall mesh");
+            bool restoredModule = false;
+            for (int i = 0; i < hiddenRenderers.Length; i++)
+                if (hiddenRenderers[i].gameObject.name.StartsWith("WallVisualModule_") && hiddenRenderers[i].enabled)
+                    { restoredModule = true; break; }
+            Require(restoredModule, "wall modules were not restored after draft visibility handoff");
+
+            var previewHost = new GameObject("BB_Wall_Module_DraftPreviewProbe");
+            previewHost.transform.SetParent(host.transform, false);
+            Require(materializer.TryCreateWallVisualPreview(previewHost.transform, wall, document.openings),
+                "draft preview did not create the wall module");
+            Require(previewHost.GetComponentsInChildren<Renderer>(true).Length > 0,
+                "draft preview has no visible wall renderer");
 
             Debug.Log("BB_WALL_MODULE_SELFTEST|PASS|VERTICES=" + vertexCount +
                 "|BOUNDS=" + size.ToString("F4") + "|MODULES=" + visualCount);

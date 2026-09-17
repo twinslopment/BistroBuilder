@@ -165,7 +165,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
         BistroBuilderRuntimePointerUiGuard.PublishBlockedGuiRect(panel);
         GUI.Box(panel, GUIContent.none, boxStyle);
         GUILayout.BeginArea(new Rect(panel.x + 14f, panel.y + 10f, panel.width - 28f, panel.height - 20f));
-        GUILayout.Label("DISENO INICIAL", titleStyle);
+        GUILayout.Label("DISEÑO INICIAL", titleStyle);
         GUILayout.Label(openingService.RestaurantName + " - " + PremisesLabel(openingService.PremisesProfile), textStyle);
 
         if (!openingService.IsInitialEditModeActive)

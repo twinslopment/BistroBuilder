@@ -342,6 +342,36 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
 
     public bool HasWallVisualModule => wallVisualModulePrefab != null;
 
+    public bool TryCreateWallVisualPreview(
+        Transform parent,
+        BistroBuilderWallRecord wall,
+        IReadOnlyList<BistroBuilderOpeningRecord> openings)
+    {
+        if (parent == null || wall == null || !wall.wallId.IsValid) return false;
+        ResolveWallVisualModule();
+        return CreateWallVisualModules(parent, wall, openings);
+    }
+
+    public bool SetWallVisualVisibility(BistroBuilderEditId wallId, bool visible)
+    {
+        EnsureRoot();
+        Transform wallRoot = generatedRoot.Find("Wall_" + wallId.Value);
+        if (wallRoot == null) return false;
+        Renderer rootRenderer = wallRoot.GetComponent<Renderer>();
+        Renderer[] renderers = wallRoot.GetComponentsInChildren<Renderer>(true);
+        bool hasVisualModules = false;
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null && renderers[i].gameObject.name.StartsWith("WallVisualModule_"))
+                { hasVisualModules = true; break; }
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null) continue;
+            renderer.enabled = visible && (renderer != rootRenderer || !hasVisualModules);
+        }
+        return true;
+    }
+
     public void ConfigureSpatialProjectionRuntime(
         BistroBuilderSpatialContractDefinition contract,
         bool navigationFootprints = true,
