@@ -36,6 +36,11 @@ public static class BistroBuilderDishImageCatalogImporter
             { "tortillapatatas", "tortilla_patatas" },
             { "tortilladepatatas", "tortilla_patatas" },
             { "ensaladillarusa", "ensaladilla_rusa" },
+            { "cocido", "cocido_madrileno" },
+            { "fabada", "fabada_asturiana" },
+            { "lentejas", "lentejas_estofadas" },
+            { "marmitako_stew", "marmitako" },
+            { "pote", "pote_asturiano" },
             { "croquetasjamoniberico", "croquetas_jamon_iberico" },
             { "croquetasdejamoniberico", "croquetas_jamon_iberico" }
         };
@@ -77,6 +82,14 @@ public static class BistroBuilderDishImageCatalogImporter
             string path = imagePaths[i];
             string fileName = Path.GetFileName(path);
             string dishId = ResolveDishId(Path.GetFileNameWithoutExtension(path));
+            if (!dishNames.ContainsKey(dishId))
+            {
+                string prefixedDishId = "dish_" + dishId;
+                if (dishNames.ContainsKey(prefixedDishId))
+                {
+                    dishId = prefixedDishId;
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(dishId))
             {

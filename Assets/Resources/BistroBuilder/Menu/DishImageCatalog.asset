@@ -16,12 +16,24 @@ MonoBehaviour:
   - dishId: boquerones
     image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
     sourceFileName: boquerones.jpg
+  - dishId: cocido_madrileno
+    image: {fileID: 21300000, guid: bca3995a797ea0545a23cf7ecc004be5, type: 3}
+    sourceFileName: cocido_madrileno.jpg
+  - dishId: dish_fabada_asturiana
+    image: {fileID: 21300000, guid: 3c3bb632cb0efb84ca883c0545271411, type: 3}
+    sourceFileName: fabada_asturiana.jpg
   - dishId: ensaladilla_rusa
     image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
     sourceFileName: ensaladilla_rusa.jpg
   - dishId: gazpacho_andaluz
     image: {fileID: 21300000, guid: bf2f46b9960955e479fe989d14c779be, type: 3}
     sourceFileName: gazpacho_andaluz.jpg
+  - dishId: lentejas_estofadas
+    image: {fileID: 21300000, guid: 9c0e8bce0ad0ae1488db51e9cd97b132, type: 3}
+    sourceFileName: lentejas_estofadas.jpg
+  - dishId: marmitako
+    image: {fileID: 21300000, guid: 8046c0728b94d2649bef623fa9f71cab, type: 3}
+    sourceFileName: marmitako.jpg
   - dishId: pan_con_tomate
     image: {fileID: 21300000, guid: b548153c5aba4124ea6f4622bcc0e8b6, type: 3}
     sourceFileName: pan_con_tomate.jpg
@@ -31,6 +43,9 @@ MonoBehaviour:
   - dishId: pimientos_padron
     image: {fileID: 21300000, guid: 2fbd290f716518641bad888d7c44eff4, type: 3}
     sourceFileName: pimientos_padron.jpg
+  - dishId: pote_asturiano
+    image: {fileID: 21300000, guid: d69ad27604f2a624d89dc5d4a7dee983, type: 3}
+    sourceFileName: pote_asturiano.jpg
   - dishId: tabla_embutidos_ibericos
     image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
     sourceFileName: tabla_embutidos_ibericos.jpg
