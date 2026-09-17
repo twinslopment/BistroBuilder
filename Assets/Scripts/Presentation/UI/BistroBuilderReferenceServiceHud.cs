@@ -191,8 +191,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
     private void EnsurePresentation()
     {
         if (shell == null) return;
-        shell.EnsureShell();
         Transform shellRoot = transform.Find(BistroBuilderUiShell.RootName);
+        if (shellRoot == null)
+        {
+            shell.EnsureShell();
+            shellRoot = transform.Find(BistroBuilderUiShell.RootName);
+        }
         if (shellRoot == null) return;
 
         activityPanel = shellRoot.Find(BistroBuilderUiShell.ActivityPanelName) as RectTransform;
