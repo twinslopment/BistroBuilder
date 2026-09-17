@@ -9,14 +9,14 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     private const float MinorSpacing = 0.25f;
     private const float MajorSpacing = 1f;
     private const float DefaultExtent = 10f;
-    private const float SurfaceOffset = 0.012f;
+    private const float SurfaceOffset = 0f;
 
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private Renderer editableFloorRenderer;
-    [SerializeField] private Color minorColor = new Color(1f, 1f, 1f, 0.16f);
-    [SerializeField] private Color majorColor = new Color(0.78f, 0.9f, 1f, 0.34f);
-    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.008f;
-    [SerializeField, Min(0.002f)] private float majorLineWidth = 0.018f;
+    [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.20f);
+    [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.34f);
+    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.010f;
+    [SerializeField, Min(0.002f)] private float majorLineWidth = 0.016f;
 
     private GameObject gridRoot;
     private Mesh minorMesh;
@@ -134,7 +134,7 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
         float y = bounds.max.y + SurfaceOffset;
 
         ReplaceMesh(ref minorMesh, BuildGridMesh(bounds, y, MinorSpacing, minorLineWidth, false, out minorLineCount), "BB_EditGrid_Minor");
-        ReplaceMesh(ref majorMesh, BuildGridMesh(bounds, y + 0.001f, MajorSpacing, majorLineWidth, true, out majorLineCount), "BB_EditGrid_Major");
+        ReplaceMesh(ref majorMesh, BuildGridMesh(bounds, y, MajorSpacing, majorLineWidth, true, out majorLineCount), "BB_EditGrid_Major");
 
         ConfigureLayer("Minor", minorMesh, ref minorMaterial, minorColor, -5);
         ConfigureLayer("Major", majorMesh, ref majorMaterial, majorColor, -4);
