@@ -40,6 +40,10 @@ public static class BistroBuilderDishImageCatalogImporter
             { "arrozconleche", "arroz_con_leche" },
             { "champinonesajillo", "champinones_al_ajillo" },
             { "polloajillo", "pollo_al_ajillo" },
+            { "calamaresromana", "calamares_a_la_romana" },
+            { "huevosrotos", "huevos_rotos" },
+            { "pulpogallega", "pulpo_a_la_gallega" },
+            { "quesomanchego", "queso_manchego" },
             { "cocido", "cocido_madrileno" },
             { "fabada", "fabada_asturiana" },
             { "lentejas", "lentejas_estofadas" },
@@ -97,7 +101,7 @@ public static class BistroBuilderDishImageCatalogImporter
 
             if (string.IsNullOrWhiteSpace(dishId))
             {
-                warnings.Add(fileName + ": nombre no válido.");
+                warnings.Add(fileName + ": nombre no vÃ¡lido.");
                 continue;
             }
 

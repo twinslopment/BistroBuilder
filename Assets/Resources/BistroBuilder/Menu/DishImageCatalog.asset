@@ -22,6 +22,9 @@ MonoBehaviour:
   - dishId: boquerones
     image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
     sourceFileName: boquerones.jpg
+  - dishId: calamares_a_la_romana
+    image: {fileID: 21300000, guid: 9b58a03408a07584eb68d56a7c50ec67, type: 3}
+    sourceFileName: calamares_a_la_romana.jpg
   - dishId: champinones_al_ajillo
     image: {fileID: 21300000, guid: d50ef3c5fdf9bf547a37406301f52936, type: 3}
     sourceFileName: champinones_al_ajillo.jpg
@@ -43,6 +46,9 @@ MonoBehaviour:
   - dishId: gazpacho_andaluz
     image: {fileID: 21300000, guid: bf2f46b9960955e479fe989d14c779be, type: 3}
     sourceFileName: gazpacho_andaluz.jpg
+  - dishId: huevos_rotos
+    image: {fileID: 21300000, guid: 28a59fd5fbcea1f4da937c82f24b8141, type: 3}
+    sourceFileName: huevos_rotos.jpg
   - dishId: lentejas_estofadas
     image: {fileID: 21300000, guid: 9c0e8bce0ad0ae1488db51e9cd97b132, type: 3}
     sourceFileName: lentejas_estofadas.jpg
@@ -67,6 +73,12 @@ MonoBehaviour:
   - dishId: pote_asturiano
     image: {fileID: 21300000, guid: d69ad27604f2a624d89dc5d4a7dee983, type: 3}
     sourceFileName: pote_asturiano.jpg
+  - dishId: pulpo_a_la_gallega
+    image: {fileID: 21300000, guid: 243120fbe5ca3184ba67af6a5a261b5a, type: 3}
+    sourceFileName: pulpo_a_la_gallega.jpg
+  - dishId: queso_manchego
+    image: {fileID: 21300000, guid: 6262e773ffd37b84c80017fe71b447bc, type: 3}
+    sourceFileName: queso_manchego.jpg
   - dishId: tabla_embutidos_ibericos
     image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
     sourceFileName: tabla_embutidos_ibericos.jpg
