@@ -102,6 +102,11 @@ public static class BistroBuilderTableSelectionPlayTest
             "Table selection changed camera zoom");
     }
 
+    private static BistroBuilderReferenceServiceHud ReferenceHud()
+    {
+        return UnityEngine.Object.FindFirstObjectByType<BistroBuilderReferenceServiceHud>();
+    }
+
     private static BistroBuilderUiSceneSelectionVisual Visual()
     {
         GameObject host = GameObject.Find("BB_UIUX_TableSelectionVisual");
@@ -111,8 +116,9 @@ public static class BistroBuilderTableSelectionPlayTest
     private static void VerifyNormalAndCapture()
     {
         Check(selection.SelectedTable == table, "Selected table was lost");
-        Check(shell.CurrentContextTitle == "Mesa " + table.TableId, "Context title not bound to table");
-        Check(shell.CurrentContextBody.Contains("Libre"), "Free table context missing");
+        Check(ReferenceHud() != null && ReferenceHud().IsShowingSelectedTable, "Reference table panel not shown");
+        Check(ReferenceHud().SelectedTableTitle == "Mesa " + table.TableId, "Reference table title not bound");
+        Check(ReferenceHud().SelectedTableStatus == "Libre", "Free table status missing");
         Check(Visual() != null && Visual().State == BistroBuilderUiSceneSelectionState.Selected,
             "Normal selected visual missing");
         Capture("MesaSeleccionada_Normal.png");
@@ -121,7 +127,7 @@ public static class BistroBuilderTableSelectionPlayTest
 
     private static void VerifyAttentionAndCapture()
     {
-        Check(shell.CurrentContextBody.Contains("Esperando camarero"), "Attention context not refreshed");
+        Check(ReferenceHud().SelectedTableStatus == "Esperando", "Attention table status not refreshed");
         Check(Visual().State == BistroBuilderUiSceneSelectionState.Attention,
             "Attention visual not refreshed");
         Capture("MesaSeleccionada_Atencion.png");
@@ -130,7 +136,7 @@ public static class BistroBuilderTableSelectionPlayTest
 
     private static void VerifyCriticalAndCapture()
     {
-        Check(shell.CurrentContextBody.Contains("Pendiente de limpieza"), "Critical context not refreshed");
+        Check(ReferenceHud().SelectedTableStatus == "Por limpiar", "Critical table status not refreshed");
         Check(Visual().State == BistroBuilderUiSceneSelectionState.Critical,
             "Critical visual not refreshed");
         Capture("MesaSeleccionada_Critica.png");

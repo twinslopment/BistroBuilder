@@ -174,7 +174,7 @@ public sealed class BistroBuilderUiSceneSelectionVisual : MonoBehaviour
         TextMeshProUGUI text = textRect.gameObject.AddComponent<TextMeshProUGUI>();
         text.text = "Mesa";
         text.fontSize = 23f;
-        text.fontStyle = FontStyles.Medium;
+        text.fontStyle = FontStyles.Normal;
         text.color = BistroBuilderUiTokens.ContentLight;
         text.alignment = TextAlignmentOptions.Center;
         text.raycastTarget = false;
