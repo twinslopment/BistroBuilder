@@ -13,18 +13,33 @@ MonoBehaviour:
   m_Name: DishImageCatalog
   m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishImageCatalog
   entries:
+  - dishId: anchoas
+    image: {fileID: 21300000, guid: a6834623f932f0e49a8e10fb7d48c9e7, type: 3}
+    sourceFileName: anchoas.jpg
+  - dishId: arroz_con_leche
+    image: {fileID: 21300000, guid: a7545a50215bf4646bfab2fb55556aa1, type: 3}
+    sourceFileName: arroz_con_leche.jpg
   - dishId: boquerones
     image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
     sourceFileName: boquerones.jpg
+  - dishId: champinones_al_ajillo
+    image: {fileID: 21300000, guid: d50ef3c5fdf9bf547a37406301f52936, type: 3}
+    sourceFileName: champinones_al_ajillo.jpg
   - dishId: cocido_madrileno
     image: {fileID: 21300000, guid: bca3995a797ea0545a23cf7ecc004be5, type: 3}
     sourceFileName: cocido_madrileno.jpg
+  - dishId: dish_aceitunas_alinadas
+    image: {fileID: 21300000, guid: c1b7045f995a9bf4d83c46838aac0b22, type: 3}
+    sourceFileName: aceitunas_alinadas.jpg
   - dishId: dish_fabada_asturiana
     image: {fileID: 21300000, guid: 3c3bb632cb0efb84ca883c0545271411, type: 3}
     sourceFileName: fabada_asturiana.jpg
   - dishId: ensaladilla_rusa
     image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
     sourceFileName: ensaladilla_rusa.jpg
+  - dishId: flan
+    image: {fileID: 21300000, guid: 6e636560ddddeb04a8641b9526ad499e, type: 3}
+    sourceFileName: flan.jpg
   - dishId: gazpacho_andaluz
     image: {fileID: 21300000, guid: bf2f46b9960955e479fe989d14c779be, type: 3}
     sourceFileName: gazpacho_andaluz.jpg
@@ -34,6 +49,9 @@ MonoBehaviour:
   - dishId: marmitako
     image: {fileID: 21300000, guid: 8046c0728b94d2649bef623fa9f71cab, type: 3}
     sourceFileName: marmitako.jpg
+  - dishId: natillas
+    image: {fileID: 21300000, guid: 3ece75d5b2bd5354680e9c5fef0c43f6, type: 3}
+    sourceFileName: natillas.jpg
   - dishId: pan_con_tomate
     image: {fileID: 21300000, guid: b548153c5aba4124ea6f4622bcc0e8b6, type: 3}
     sourceFileName: pan_con_tomate.jpg
@@ -43,12 +61,18 @@ MonoBehaviour:
   - dishId: pimientos_padron
     image: {fileID: 21300000, guid: 2fbd290f716518641bad888d7c44eff4, type: 3}
     sourceFileName: pimientos_padron.jpg
+  - dishId: pollo_al_ajillo
+    image: {fileID: 21300000, guid: 22bcba944d2fdf84494315c6fa429e59, type: 3}
+    sourceFileName: pollo_al_ajillo.jpg
   - dishId: pote_asturiano
     image: {fileID: 21300000, guid: d69ad27604f2a624d89dc5d4a7dee983, type: 3}
     sourceFileName: pote_asturiano.jpg
   - dishId: tabla_embutidos_ibericos
     image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
     sourceFileName: tabla_embutidos_ibericos.jpg
+  - dishId: torrijas
+    image: {fileID: 21300000, guid: 3c07e323060f04a44abe83f7301c61ca, type: 3}
+    sourceFileName: torrijas.jpg
   - dishId: tortilla_patatas
     image: {fileID: 21300000, guid: 72d34134d296de24c8d7009c5b4bb3e9, type: 3}
     sourceFileName: tortilla_patatas.jpg
