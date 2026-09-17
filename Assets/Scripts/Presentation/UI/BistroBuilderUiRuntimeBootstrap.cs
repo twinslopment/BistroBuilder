@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// </summary>
 public static class BistroBuilderUiRuntimeBootstrap
 {
-    public const string RuntimeRevision = "21A-UIUX-BOOTSTRAP-V1.1";
+    public const string RuntimeRevision = "21A-UIUX-BOOTSTRAP-V1.0";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Register()
@@ -30,10 +30,10 @@ public static class BistroBuilderUiRuntimeBootstrap
 
         BistroBuilderUiDesignSystem design = GetOrAdd<BistroBuilderUiDesignSystem>(canvas.gameObject);
         BistroBuilderUiShell shell = GetOrAdd<BistroBuilderUiShell>(canvas.gameObject);
+        GetOrAdd<BistroBuilderTableSelectionController>(canvas.gameObject);
         GetOrAdd<BistroBuilderUnifiedUiInteractionService>(canvas.gameObject);
 
         shell.EnsureShell();
-        BistroBuilderUiSemanticBootstrap.Apply(canvas);
         design.ApplyAllNow(true);
         foreach (var screenCanvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {

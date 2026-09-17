@@ -28,7 +28,7 @@ public enum BistroBuilderUiStyleRole
     ProgressSuccess = 28,
     ProgressAttention = 29,
 
-    // Valores 30-34 preservados: existen tags serializados de 21A V1.
+    // 30-34 are serialized by the original 21A contract.
     Title = 30,
     Heading = 31,
     Body = 32,
@@ -39,7 +39,6 @@ public enum BistroBuilderUiStyleRole
     Subheading = 37,
     Label = 38,
 
-    // Valores 40-43 preservados por compatibilidad de escenas/prefabs V1.
     StatusSuccess = 40,
     StatusAttention = 41,
     StatusCritical = 42,
@@ -52,8 +51,7 @@ public enum BistroBuilderUiStyleRole
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/UI/Style Tag")]
 public sealed class BistroBuilderUiStyleTag : MonoBehaviour
-{
-    [SerializeField] private BistroBuilderUiStyleRole role = BistroBuilderUiStyleRole.Auto;
+{    [SerializeField] private BistroBuilderUiStyleRole role = BistroBuilderUiStyleRole.Auto;
     [SerializeField] private bool preserveGraphicColor;
     [SerializeField] private bool preserveFontSize;
     [SerializeField] private bool preserveFont;
@@ -77,49 +75,41 @@ public sealed class BistroBuilderUiStyleTag : MonoBehaviour
 }
 
 /// <summary>
-/// Tema intercambiable. Los assets de fuente solo se asignan cuando existen y están licenciados.
-/// Si no hay fuente de títulos, el sistema usa la fuente de cuerpo sin crear dependencias ocultas.
+/// Tema intercambiable. Recoleta se inyectará aquí cuando exista el asset/licencia.
 /// </summary>
 [CreateAssetMenu(fileName = "BistroBuilderUiTheme", menuName = "Bistro Builder/UI/Theme")]
 public sealed class BistroBuilderUiTheme : ScriptableObject
-{
-    [Header("Tipografía")]
+{    [Header("Tipografía")]
     [SerializeField] private TMP_FontAsset titleFont;
     [SerializeField] private TMP_FontAsset bodyFont;
 
     [Header("Paleta")]
-    [SerializeField] private Color background = new Color32(30, 34, 38, 255);
-    [SerializeField] private Color surface1 = new Color32(42, 47, 53, 248);
-    [SerializeField] private Color surface2 = new Color32(58, 64, 71, 248);
-    [SerializeField] private Color surfaceElevated = new Color32(66, 73, 80, 252);
-    [SerializeField] private Color textPrimary = new Color32(230, 225, 214, 255);
-    [SerializeField] private Color textSecondary = new Color32(122, 125, 133, 255);
-    [SerializeField] private Color textMuted = new Color32(104, 110, 117, 255);
-    [SerializeField] private Color brand = new Color32(184, 149, 91, 255);
-    [SerializeField] private Color primary = new Color32(46, 125, 104, 255);
-    [SerializeField] private Color secondaryAction = new Color32(62, 71, 80, 255);
-    [SerializeField] private Color success = new Color32(61, 166, 101, 255);
-    [SerializeField] private Color attention = new Color32(240, 171, 58, 255);
-    [SerializeField] private Color critical = new Color32(217, 83, 79, 255);
-    [SerializeField] private Color info = new Color32(74, 144, 226, 255);
-    [SerializeField] private Color borderSubtle = new Color32(90, 98, 106, 105);
+    [SerializeField] private Color background = BistroBuilderUiTokens.Background;
+    [SerializeField] private Color surface1 = BistroBuilderUiTokens.Surface1;
+    [SerializeField] private Color surface2 = BistroBuilderUiTokens.Surface2;
+    [SerializeField] private Color surfaceElevated = BistroBuilderUiTokens.SurfaceElevated;
+    [SerializeField] private Color textPrimary = BistroBuilderUiTokens.TextPrimary;
+    [SerializeField] private Color textSecondary = BistroBuilderUiTokens.TextSecondary;
+    [SerializeField] private Color textMuted = BistroBuilderUiTokens.TextMuted;
+    [SerializeField] private Color primary = BistroBuilderUiTokens.Primary;
+    [SerializeField] private Color warmAccent = BistroBuilderUiTokens.WarmAccent;
+    [SerializeField] private Color success = BistroBuilderUiTokens.Success;
+    [SerializeField] private Color attention = BistroBuilderUiTokens.Attention;
+    [SerializeField] private Color critical = BistroBuilderUiTokens.Critical;
+    [SerializeField] private Color info = BistroBuilderUiTokens.Info;
 
     public TMP_FontAsset TitleFont => titleFont;
     public TMP_FontAsset BodyFont => bodyFont;
     public Color Background => background;
     public Color Surface1 => surface1;
     public Color Surface2 => surface2;
-    public Color SurfaceElevated => surfaceElevated;
-    public Color TextPrimary => textPrimary;
+    public Color SurfaceElevated => surfaceElevated;    public Color TextPrimary => textPrimary;
     public Color TextSecondary => textSecondary;
     public Color TextMuted => textMuted;
-    public Color Brand => brand;
     public Color Primary => primary;
-    public Color SecondaryAction => secondaryAction;
-    public Color WarmAccent => brand;
+    public Color WarmAccent => warmAccent;
     public Color Success => success;
     public Color Attention => attention;
     public Color Critical => critical;
     public Color Info => info;
-    public Color BorderSubtle => borderSubtle;
 }

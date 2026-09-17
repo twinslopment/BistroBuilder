@@ -142,7 +142,20 @@ namespace BistroBuilder.Editor.UI.Iconography
             new Spec(BBIconId.SceneProblem, "circle-alert", BBIconSemanticRole.Critical),
             new Spec(BBIconId.SceneGroup, "users", BBIconSemanticRole.Information),
             new Spec(BBIconId.SceneReservation, "calendar-days"),
-            new Spec(BBIconId.SceneCleaning, "sparkles")
+            new Spec(BBIconId.SceneCleaning, "sparkles"),
+            new Spec(BBIconId.OptionsSave, "bb-options-save"),
+            new Spec(BBIconId.OptionsLoad, "bb-options-load"),
+            new Spec(BBIconId.OptionsAutosave, "bb-options-autosave"),
+            new Spec(BBIconId.OptionsHome, "bb-options-home"),
+            new Spec(BBIconId.OptionsExit, "bb-options-exit"),
+            new Spec(BBIconId.OptionsAudio, "bb-options-audio"),
+            new Spec(BBIconId.OptionsVideo, "bb-options-video"),
+            new Spec(BBIconId.OptionsGameplay, "settings"),
+            new Spec(BBIconId.OptionsInterface, "bb-options-interface"),
+            new Spec(BBIconId.OptionsControls, "bb-options-controls"),
+            new Spec(BBIconId.OptionsAccessibility, "bb-options-accessibility"),
+            new Spec(BBIconId.OptionsLanguage, "bb-options-language"),
+            new Spec(BBIconId.OptionsLegal, "bb-options-legal")
         };
 
         [MenuItem("Bistro Builder/UI/Iconografía/Instalar o actualizar", priority = 2100)]
@@ -279,6 +292,8 @@ namespace BistroBuilder.Editor.UI.Iconography
                 var index = 0;
                 foreach (var source in uniqueSources)
                 {
+                    // Original Bistro Builder artwork is maintained locally, outside Lucide.
+                    if (source.StartsWith("bb-options-", StringComparison.Ordinal)) continue;
                     index++;
                     EditorUtility.DisplayProgressBar(
                         "Bistro Builder — Iconografía",

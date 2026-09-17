@@ -149,7 +149,7 @@ public sealed class BistroBuilderUiSceneSelectionVisual : MonoBehaviour
             case BistroBuilderUiSceneSelectionState.Hover:
                 color = BistroBuilderUiTokens.Brand; color.a = 0.52f; return color;
             case BistroBuilderUiSceneSelectionState.Selected:
-                color = BistroBuilderUiTokens.Primary; color.a = 0.82f; return color;
+                color = BistroBuilderUiTokens.Brand; color.a = 0.86f; return color;
             case BistroBuilderUiSceneSelectionState.Attention:
                 color = BistroBuilderUiTokens.Attention; color.a = 0.82f; return color;
             case BistroBuilderUiSceneSelectionState.Critical:

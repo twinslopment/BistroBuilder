@@ -31,7 +31,7 @@ public static class BistroBuilderPointerPlayTest
         if(change==PlayModeStateChange.EnteredPlayMode){stage=0;failure=null;next=EditorApplication.timeSinceStartup+4;Application.runInBackground=true;EditorApplication.update+=Tick;Application.logMessageReceived+=Log;}
         if(change==PlayModeStateChange.EnteredEditMode){SessionState.SetBool(Key,false);EditorApplication.Exit(SessionState.GetBool(Key+".Pass",false)?0:1);}
     }
-    private static void Log(string message,string stack,LogType type){if(type!=LogType.Exception&&type!=LogType.Assert)return;if(!string.IsNullOrEmpty(stack)&&stack.Contains("UnityEditor.Search.SearchDatabase"))return;failure=message;}
+    private static void Log(string message,string stack,LogType type){if(type==LogType.Exception||type==LogType.Assert)failure=message;}
     private static void Check(bool result,string message){if(!result)throw new Exception(message);}
     private static void Tick()
     {

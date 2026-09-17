@@ -115,6 +115,15 @@ public sealed class RestaurantPlaceableCatalogItemView :
         {
             nameText.text =
                 displayName;
+            nameText.fontSize = 14;
+            nameText.resizeTextForBestFit = true;
+            nameText.resizeTextMinSize = 12;
+            nameText.resizeTextMaxSize = 14;
+            RectTransform nameRect = nameText.rectTransform;
+            if (nameRect != null)
+            {
+                nameRect.sizeDelta = new Vector2(-72f, 54f);
+            }
         }
 
         if (descriptionText != null)

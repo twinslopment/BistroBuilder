@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +16,8 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
     private TMP_Text body;
     private Button barButton;
     private bool open;
+
+    public bool IsOpen => open && panel != null && panel.activeSelf;
 
     private void Awake()
     {
@@ -93,6 +95,7 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         barButton = CreateButton(panel.transform, "SendFirstToBar", "1º -> BARRA",
             new Vector2(10f, 10f), new Vector2(150f, 36f));
         barButton.onClick.AddListener(SendFirstToBar);
+        BistroBuilderOperationalPanel.Install(panel, body, "Sala", Hide);
         panel.SetActive(false);
     }
 
@@ -118,11 +121,20 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         return button;
     }
 
+    public void Show()
+    {
+        open = true;
+        if (panel != null) panel.SetActive(true);
+        Refresh();
+    }
+    public void Hide()
+    {
+        open = false;
+        if (panel != null) panel.SetActive(false);
+    }
     private void Toggle()
     {
-        open = !open;
-        if (panel != null) panel.SetActive(open);
-        if (open) Refresh();
+        if (IsOpen) Hide(); else Show();
     }
 
     private void SendFirstToBar()

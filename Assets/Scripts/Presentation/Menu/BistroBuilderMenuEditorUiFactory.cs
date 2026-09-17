@@ -3,15 +3,15 @@ using UnityEngine.Events;
 using UnityEngine.UI;
 
 /// <summary>
-/// FÃ¡brica visual privada de 2.1E. Centraliza tipografÃ­a, colores y creaciÃ³n
-/// de controles para impedir que la vista duplique estilos o configuraciÃ³n
-/// de navegaciÃ³n.
+/// Fábrica visual privada de 2.1E. Centraliza tipografía, colores y creación
+/// de controles para impedir que la vista duplique estilos o configuración
+/// de navegación.
 /// </summary>
 internal static class BistroBuilderMenuEditorUiFactory
 {
     public static readonly Color Overlay = new Color(0.02f, 0.025f, 0.023f, 0.82f);
-    public static readonly Color Surface = new Color(0.085f, 0.095f, 0.09f, 0.985f);
-    public static readonly Color SurfaceRaised = new Color(0.12f, 0.135f, 0.125f, 1f);
+    public static readonly Color Surface = BistroBuilderUiTokens.Background;
+    public static readonly Color SurfaceRaised = BistroBuilderUiTokens.Surface2;
     public static readonly Color SurfaceSelected = new Color(0.20f, 0.28f, 0.23f, 1f);
     public static readonly Color Border = new Color(0.27f, 0.30f, 0.28f, 1f);
     public static readonly Color Accent = new Color(0.74f, 0.58f, 0.25f, 1f);
@@ -29,7 +29,7 @@ internal static class BistroBuilderMenuEditorUiFactory
         {
             if (cachedFont == null)
             {
-                cachedFont = Resources.GetBuiltinResource<Font>(
+                cachedFont = BistroBuilderTypography.LegacyBody ?? Resources.GetBuiltinResource<Font>(
                     "LegacyRuntime.ttf"
                 );
             }
@@ -148,7 +148,7 @@ internal static class BistroBuilderMenuEditorUiFactory
             fontSize,
             TextAnchor.MiddleCenter,
             TextPrimary,
-            FontStyle.Bold
+            FontStyle.Normal
         );
         text.rectTransform.offsetMin = new Vector2(8f, 4f);
         text.rectTransform.offsetMax = new Vector2(-8f, -4f);
@@ -309,7 +309,7 @@ internal static class BistroBuilderMenuEditorUiFactory
             Vector2.zero,
             Vector2.zero
         );
-        AddImage(root, new Color(0.04f, 0.045f, 0.042f, 0.45f));
+        AddImage(root, BistroBuilderUiTokens.Background);
         ScrollRect scroll = root.gameObject.AddComponent<ScrollRect>();
         scroll.horizontal = false;
         scroll.vertical = true;
@@ -327,8 +327,8 @@ internal static class BistroBuilderMenuEditorUiFactory
         Image viewportImage = AddImage(viewport, Color.clear);
         viewportImage.raycastTarget = true;
 
-        // RectMask2D recorta por el rectÃ¡ngulo del viewport y no depende de
-        // la transparencia del Graphic. Un Mask clÃ¡sico con Image totalmente
+        // RectMask2D recorta por el rectángulo del viewport y no depende de
+        // la transparencia del Graphic. Un Mask clásico con Image totalmente
         // transparente puede ocultar todo el contenido en determinadas
         // versiones/configuraciones de uGUI.
         RectMask2D rectMask = viewport.gameObject.AddComponent<RectMask2D>();
@@ -363,7 +363,6 @@ internal static class BistroBuilderMenuEditorUiFactory
 
         scroll.viewport = viewport;
         scroll.content = content;
-        BistroBuilderUiScrollRegion.Configure(scroll);
         return scroll;
     }
 

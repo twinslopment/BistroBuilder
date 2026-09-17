@@ -38,13 +38,7 @@ public static class BistroBuilderTopNavigationPlayTest
         }
     }
     private static void Log(string message, string stack, LogType type)
-    {
-        if (type != LogType.Exception && type != LogType.Assert) return;
-        // Unity Search can throw a transient editor-only indexing exception during batch startup.
-        // It is unrelated to the runtime HUD and must not invalidate this PlayMode acceptance test.
-        if (!string.IsNullOrEmpty(stack) && stack.Contains("UnityEditor.Search.SearchDatabase")) return;
-        failure = message;
-    }
+    { if (type == LogType.Exception || type == LogType.Assert) failure = message; }
     private static void Check(bool condition, string error) { if (!condition) throw new Exception(error); }
     private static Button Button(string name) => GameObject.Find(name).GetComponent<Button>();
     private static void Tick()
@@ -86,7 +80,7 @@ public static class BistroBuilderTopNavigationPlayTest
                     Check(!shell.HasManagementScreenOpen, "Activity restores restaurant");
                     Button("BBNav_Opciones").onClick.Invoke(); break;
                 case 5:
-                    Check(GameObject.Find("TopNavigationMenu") != null, "Options menu");
+                    Check(GameObject.Find("OptionsPanel") != null, "Options menu");
                     Check(shell.HasManagementScreenOpen, "Menu blocks construction input");
                     Button("BBNav_Opciones").onClick.Invoke();
                     Button("BBNav_Personal").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current)); break;

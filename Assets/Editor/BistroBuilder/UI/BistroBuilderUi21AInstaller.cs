@@ -39,7 +39,6 @@ public static class BistroBuilderUi21AInstaller
         Debug.Log(report);
         if (!validation || !selfTest) throw new InvalidOperationException(report);
     }
-
     public static bool InstallAndValidate(out string report)
     {
         report = string.Empty;
@@ -75,7 +74,6 @@ public static class BistroBuilderUi21AInstaller
                 GetOrAdd<BistroBuilderUnifiedUiInteractionService>(canvas.gameObject);
 
             shell.EnsureShell();
-            BistroBuilderUiSemanticBootstrap.Apply(canvas);
             design.ApplyAllNow(true);
             EditorUtility.SetDirty(canvas);
             EditorUtility.SetDirty(design);

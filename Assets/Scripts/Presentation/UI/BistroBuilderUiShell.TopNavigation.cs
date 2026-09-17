@@ -96,7 +96,12 @@ public sealed partial class BistroBuilderUiShell
         optionRect.anchoredPosition = new Vector2(-144, 0);
         optionRect.sizeDelta = new Vector2(86, 64);
         optionsButton.onClick.RemoveAllListeners();
-        optionsButton.onClick.AddListener(() => ToggleTopPopup(false));
+        optionsButton.onClick.AddListener(() => {
+            topPopup.gameObject.SetActive(false);
+            var options = GetComponent<BistroBuilderOptionsScreen>() ?? gameObject.AddComponent<BistroBuilderOptionsScreen>();
+            options.Toggle();
+            RefreshIconNavigation();
+        });
         var divider = HeaderImage(topNavigation, "ClockDivider");
         divider.color = new Color(0.25f, 0.30f, 0.31f, 0.7f);
         divider.rectTransform.anchorMin = divider.rectTransform.anchorMax = new Vector2(1, 1);
@@ -114,6 +119,7 @@ public sealed partial class BistroBuilderUiShell
             label.alignment = TextAlignmentOptions.MidlineLeft;
         }
         EnsureTopPopup();
+        if (GetComponent<BistroBuilderOptionsScreen>() == null) gameObject.AddComponent<BistroBuilderOptionsScreen>();
         RefreshIconNavigation();
     }
 
@@ -205,13 +211,24 @@ public sealed partial class BistroBuilderUiShell
         AddTopAction("Camareros", () => InvokeLegacyTop("OpenWaiterOperations"));
         AddTopAction("Sala", () => InvokeLegacyTop("OpenFrontOfHouseOperations"));
         AddTopAction("Cierre del día", () => InvokeLegacyTop("OpenEndOfDayOperations"));
-        AddTopAction("Pantalla completa / ventana", () => Screen.fullScreenMode = Screen.fullScreen ? FullScreenMode.Windowed : FullScreenMode.FullScreenWindow);
+        AddTopAction("Horarios", () => InvokeLegacyTop("OpenScheduleButton"));
         closeManagementButton = AddTopAction("Cerrar paneles", () => CloseCurrentManagementScreen());
         topPopup.gameObject.SetActive(false);
     }
     private Button AddTopAction(string title, Action action)
     {
         var button = EnsureButton(topPopup, "Menu_" + Sanitize(title), title, 236);
+        BBIconographyRuntime.Decorate(button, title switch {
+            "Edición del local" => BBIconId.NavEditMode,
+            "Progreso" => BBIconId.EconomyReport,
+            "Comandas" => BBIconId.ObjectDish,
+            "Cocina" => BBIconId.AreaKitchen,
+            "Camareros" => BBIconId.ObjectWaiter,
+            "Sala" => BBIconId.AreaDining,
+            "Cierre del día" => BBIconId.EconomyReport,
+            "Horarios" => BBIconId.NavReservations,
+            _ => BBIconId.ActionCancel
+        });
         button.GetComponent<LayoutElement>().preferredHeight = 38;
         button.GetComponent<LayoutElement>().minHeight = 38;
         button.GetComponent<Image>().color = Color.white;
@@ -224,11 +241,13 @@ public sealed partial class BistroBuilderUiShell
     }
     private void InvokeLegacyTop(string name)
     {
+        if (!TryCloseManagementScreensBeforeOpening(name)) return;
         var buttons = UnityEngine.Object.FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         FindLegacyLauncher(new[] { name }, buttons)?.onClick.Invoke();
     }
     private void ToggleTopPopup(bool left)
     {
+        GetComponent<BistroBuilderOptionsScreen>()?.Close();
         bool show = !topPopup.gameObject.activeSelf;
         topPopup.anchorMin = topPopup.anchorMax = new Vector2(left ? 0 : 1, 0);
         topPopup.pivot = new Vector2(left ? 0 : 1, 1);
@@ -277,6 +296,6 @@ public sealed partial class BistroBuilderUiShell
             pair.Value.SetSelected(pair.Key == selectedNavigation);
             pair.Value.SetInteractable(proxyButtons[pair.Key].interactable);
         }
-        optionsButton.GetComponent<BBIconButton>().SetSelected(topPopup != null && topPopup.gameObject.activeSelf);
+        optionsButton.GetComponent<BBIconButton>().SetSelected(GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true);
     }
 }

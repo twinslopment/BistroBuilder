@@ -79,7 +79,8 @@ namespace BistroBuilder.UI.Iconography
 
         private void Update()
         {
-            var t = 1f - Mathf.Exp(-BBIconDesignTokens.TransitionSpeed * Time.unscaledDeltaTime);
+            bool reduced = BistroBuilderOptionsScreen.ReducedMotion;
+            var t = reduced ? 1f : 1f - Mathf.Exp(-BBIconDesignTokens.TransitionSpeed * Time.unscaledDeltaTime);
 
             if (iconImage != null)
                 iconImage.color = Color.Lerp(iconImage.color, targetIconColor, t);
@@ -103,8 +104,8 @@ namespace BistroBuilder.UI.Iconography
 
             if (iconRect != null)
             {
-                iconRect.localScale = Vector3.Lerp(iconRect.localScale, targetScale, t);
-                iconRect.anchoredPosition = Vector2.Lerp(iconRect.anchoredPosition, targetAnchoredPosition, t);
+                iconRect.localScale = Vector3.Lerp(iconRect.localScale, reduced ? baseScale : targetScale, t);
+                iconRect.anchoredPosition = Vector2.Lerp(iconRect.anchoredPosition, reduced ? baseAnchoredPosition : targetAnchoredPosition, t);
             }
         }
 

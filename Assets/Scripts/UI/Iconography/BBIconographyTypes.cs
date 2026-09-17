@@ -129,7 +129,11 @@ namespace BistroBuilder.UI.Iconography
         SceneProblem,
         SceneGroup,
         SceneReservation,
-        SceneCleaning
+        SceneCleaning,
+
+        OptionsSave, OptionsLoad, OptionsAutosave, OptionsHome, OptionsExit,
+        OptionsAudio, OptionsVideo, OptionsGameplay, OptionsInterface,
+        OptionsControls, OptionsAccessibility, OptionsLanguage, OptionsLegal
     }
 
     public static class BBIconDesignTokens
