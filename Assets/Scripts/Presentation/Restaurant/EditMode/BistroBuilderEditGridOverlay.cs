@@ -9,10 +9,11 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     private const float MinorSpacing = 0.25f;
     private const float MajorSpacing = 1f;
     private const float DefaultExtent = 10f;
-    private const float SurfaceOffset = 0f;
+    private const float SurfaceOffset = 0.0015f;
 
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private Renderer editableFloorRenderer;
+    [SerializeField] private MeshFilter editableFloorMeshFilter;
     [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.20f);
     [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.34f);
     [SerializeField, Min(0.002f)] private float minorLineWidth = 0.010f;
@@ -75,10 +76,14 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     {
         if (editModeService == null) editModeService = GetComponent<RestaurantEditModeService>();
         if (editModeService == null) editModeService = FindFirstObjectByType<RestaurantEditModeService>();
-        if (editableFloorRenderer == null)
+        if (editableFloorRenderer == null || editableFloorMeshFilter == null)
         {
             GameObject floor = GameObject.Find("Floor_Test");
-            if (floor != null) editableFloorRenderer = floor.GetComponent<Renderer>();
+            if (floor != null)
+            {
+                if (editableFloorRenderer == null) editableFloorRenderer = floor.GetComponent<Renderer>();
+                if (editableFloorMeshFilter == null) editableFloorMeshFilter = floor.GetComponent<MeshFilter>();
+            }
         }
     }
 
@@ -130,11 +135,16 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     public void RebuildGrid()
     {
         EnsureRootOnly();
-        Bounds bounds = ResolveEditableBounds();
-        float y = bounds.max.y + SurfaceOffset;
+        Bounds bounds = ResolveEditableLocalBounds();
+        Vector3 lossyScale = editableFloorRenderer != null ? editableFloorRenderer.transform.lossyScale : Vector3.one;
+        float horizontalScale = Mathf.Max(0.0001f, (Mathf.Abs(lossyScale.x) + Mathf.Abs(lossyScale.z)) * 0.5f);
+        float verticalScale = Mathf.Max(0.0001f, Mathf.Abs(lossyScale.y));
+        float localMinorSpacing = MinorSpacing / horizontalScale;
+        float localMajorSpacing = MajorSpacing / horizontalScale;
+        float y = bounds.max.y + (SurfaceOffset / verticalScale);
 
-        ReplaceMesh(ref minorMesh, BuildGridMesh(bounds, y, MinorSpacing, minorLineWidth, false, out minorLineCount), "BB_EditGrid_Minor");
-        ReplaceMesh(ref majorMesh, BuildGridMesh(bounds, y, MajorSpacing, majorLineWidth, true, out majorLineCount), "BB_EditGrid_Major");
+        ReplaceMesh(ref minorMesh, BuildGridMesh(bounds, y, localMinorSpacing, minorLineWidth / horizontalScale, localMajorSpacing, false, out minorLineCount), "BB_EditGrid_Minor");
+        ReplaceMesh(ref majorMesh, BuildGridMesh(bounds, y + (0.0002f / verticalScale), localMajorSpacing, majorLineWidth / horizontalScale, localMajorSpacing, true, out majorLineCount), "BB_EditGrid_Major");
 
         ConfigureLayer("Minor", minorMesh, ref minorMaterial, minorColor, -5);
         ConfigureLayer("Major", majorMesh, ref majorMaterial, majorColor, -4);
@@ -143,38 +153,47 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
 
     private void EnsureRootOnly()
     {
-        if (gridRoot != null) return;
-        gridRoot = new GameObject("BB_EditModeGrid");
-        gridRoot.transform.SetParent(transform, false);
-        gridRoot.layer = 2;
+        Transform parent = editableFloorRenderer != null ? editableFloorRenderer.transform : transform;
+        if (gridRoot == null)
+        {
+            gridRoot = new GameObject("BB_EditModeGrid");
+            gridRoot.layer = 2;
+        }
+        if (gridRoot.transform.parent != parent) gridRoot.transform.SetParent(parent, false);
+        gridRoot.transform.localPosition = Vector3.zero;
+        gridRoot.transform.localRotation = Quaternion.identity;
+        gridRoot.transform.localScale = Vector3.one;
     }
 
-    private Bounds ResolveEditableBounds()
+    private Bounds ResolveEditableLocalBounds()
     {
-        if (editableFloorRenderer != null) return editableFloorRenderer.bounds;
-        return new Bounds(Vector3.zero, new Vector3(DefaultExtent * 2f, 0f, DefaultExtent * 2f));
+        if (editableFloorMeshFilter != null && editableFloorMeshFilter.sharedMesh != null)
+            return editableFloorMeshFilter.sharedMesh.bounds;
+        if (editableFloorRenderer != null) return editableFloorRenderer.localBounds;
+        return new Bounds(Vector3.zero, new Vector3(DefaultExtent * 2f, 0.1f, DefaultExtent * 2f));
     }
 
-    private Mesh BuildGridMesh(Bounds bounds, float y, float spacing, float width, bool includeOnlyMajor, out int lineCount)
+    private Mesh BuildGridMesh(Bounds bounds, float y, float spacing, float width, float majorSpacing, bool includeOnlyMajor, out int lineCount)
     {
         var vertices = new List<Vector3>(1024);
         var triangles = new List<int>(1536);
         lineCount = 0;
-        float xMin = Mathf.Ceil(bounds.min.x / spacing) * spacing;
-        float xMax = Mathf.Floor(bounds.max.x / spacing) * spacing;
-        float zMin = Mathf.Ceil(bounds.min.z / spacing) * spacing;
-        float zMax = Mathf.Floor(bounds.max.z / spacing) * spacing;
+        float inset = width * 0.5f;
+        float xMin = Mathf.Ceil((bounds.min.x + inset) / spacing) * spacing;
+        float xMax = Mathf.Floor((bounds.max.x - inset) / spacing) * spacing;
+        float zMin = Mathf.Ceil((bounds.min.z + inset) / spacing) * spacing;
+        float zMax = Mathf.Floor((bounds.max.z - inset) / spacing) * spacing;
 
         for (float x = xMin; x <= xMax + 0.0001f; x += spacing)
         {
-            if (!includeOnlyMajor && IsMajorCoordinate(x)) continue;
-            AddQuad(vertices, triangles, new Vector3(x, y, bounds.min.z), new Vector3(x, y, bounds.max.z), width);
+            if (!includeOnlyMajor && IsMajorCoordinate(x, majorSpacing)) continue;
+            AddQuad(vertices, triangles, new Vector3(x, y, zMin), new Vector3(x, y, zMax), width);
             lineCount++;
         }
         for (float z = zMin; z <= zMax + 0.0001f; z += spacing)
         {
-            if (!includeOnlyMajor && IsMajorCoordinate(z)) continue;
-            AddQuad(vertices, triangles, new Vector3(bounds.min.x, y, z), new Vector3(bounds.max.x, y, z), width);
+            if (!includeOnlyMajor && IsMajorCoordinate(z, majorSpacing)) continue;
+            AddQuad(vertices, triangles, new Vector3(xMin, y, z), new Vector3(xMax, y, z), width);
             lineCount++;
         }
 
@@ -186,9 +205,9 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
         return mesh;
     }
 
-    private static bool IsMajorCoordinate(float value)
+    private static bool IsMajorCoordinate(float value, float majorSpacing)
     {
-        float nearest = Mathf.Round(value / MajorSpacing) * MajorSpacing;
+        float nearest = Mathf.Round(value / majorSpacing) * majorSpacing;
         return Mathf.Abs(value - nearest) <= 0.001f;
     }
 
