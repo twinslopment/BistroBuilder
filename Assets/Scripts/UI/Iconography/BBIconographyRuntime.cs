@@ -36,7 +36,6 @@ namespace BistroBuilder.UI.Iconography
             new Rule("open menu portfolio", BBIconId.NavMenu),
             new Rule("editar carta", BBIconId.NavMenu),
             new Rule("carta", BBIconId.NavMenu),
-            new Rule("menu", BBIconId.NavMenu),
             new Rule("open inventory warehouse", BBIconId.NavInventory),
             new Rule("inventario", BBIconId.NavInventory),
             new Rule("almacen", BBIconId.NavInventory),
@@ -240,7 +239,8 @@ namespace BistroBuilder.UI.Iconography
                 return false;
 
             FindLabelTransform(button, out var label);
-            var haystack = Normalize(button.name + " " + label);
+            // Visible action wins over generic implementation names such as Menu_*.
+            var haystack = Normalize(string.IsNullOrWhiteSpace(label) ? button.name : label);
 
             if (string.IsNullOrWhiteSpace(haystack))
                 return false;

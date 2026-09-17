@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +16,8 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
     private TMP_Text feedback;
     private Button toggle;
     private bool open;
+
+    public bool IsOpen => open && panel != null && panel.activeSelf;
     private float refreshTimer;
 
     private void Awake()
@@ -141,11 +143,20 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
         return text;
     }
 
+    public void Show()
+    {
+        open = true;
+        if (panel != null) panel.SetActive(true);
+        Refresh();
+    }
+    public void Hide()
+    {
+        open = false;
+        if (panel != null) panel.SetActive(false);
+    }
     private void Toggle()
     {
-        open = !open;
-        if (panel != null) panel.SetActive(open);
-        if (open) Refresh();
+        if (IsOpen) Hide(); else Show();
     }
 
     private void BeginClose()

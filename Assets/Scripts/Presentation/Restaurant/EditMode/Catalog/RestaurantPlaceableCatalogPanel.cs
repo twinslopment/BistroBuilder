@@ -76,6 +76,7 @@ public sealed class RestaurantPlaceableCatalogPanel :
         AllCategoriesCode;
 
     private bool initialized;
+    private BistroBuilderUiShell uiShell;
 
     private void Awake()
     {
@@ -114,6 +115,9 @@ public sealed class RestaurantPlaceableCatalogPanel :
             titleText.text =
                 "Catálogo de artículos";
         }
+
+        if (categoryTemplate != null) categoryTemplate.gameObject.SetActive(false);
+        if (itemTemplate != null) itemTemplate.gameObject.SetActive(false);
 
         RebuildCatalogPresentation();
     }
@@ -197,6 +201,11 @@ public sealed class RestaurantPlaceableCatalogPanel :
                     RestaurantPlaceableCatalogService
                 >();
         }
+
+        if (uiShell == null)
+        {
+            uiShell = FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include);
+        }
     }
 
     private void HandleEditModeChanged()
@@ -235,9 +244,13 @@ public sealed class RestaurantPlaceableCatalogPanel :
 
     private void RefreshVisibility()
     {
+        if (uiShell == null)
+            uiShell = FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include);
+
         bool shouldBeVisible =
             editModeService != null &&
             editModeService.IsEditModeActive;
+        shouldBeVisible &= uiShell == null || !uiShell.HasManagementScreenOpen;
         var construction = BistroBuilderConstructionPlayerPanel.Instance;
         if (construction != null)
         {

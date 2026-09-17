@@ -361,3 +361,55 @@ MonoBehaviour:
     sprite: {fileID: 3286163911610860551, guid: 931b604ec040f8d4b8f6a8bbb4d83d84, type: 3}
     semanticRole: 0
     sourceName: sparkles
+  - id: 87
+    sprite: {fileID: 3286163911610860551, guid: fb7b194263456004191fc2da478b76b9, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-save
+  - id: 88
+    sprite: {fileID: 3286163911610860551, guid: d9bc5b59bcd56a041887dd07cddc4da1, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-load
+  - id: 89
+    sprite: {fileID: 3286163911610860551, guid: 57cde519649b8e9498ce1bcd48eb131b, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-autosave
+  - id: 90
+    sprite: {fileID: 3286163911610860551, guid: 22061d20e40963d40a6f50924c0c5af1, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-home
+  - id: 91
+    sprite: {fileID: 3286163911610860551, guid: 339a312292741bb459fb1248e4d67fac, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-exit
+  - id: 92
+    sprite: {fileID: 3286163911610860551, guid: 12522fd60c1ffd047809f8cc8d6508c4, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-audio
+  - id: 93
+    sprite: {fileID: 3286163911610860551, guid: af4e313852581984ba06d9604338b3de, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-video
+  - id: 94
+    sprite: {fileID: 3286163911610860551, guid: 616d09161f1a95e43bab0a53a2277b45, type: 3}
+    semanticRole: 0
+    sourceName: settings
+  - id: 95
+    sprite: {fileID: 3286163911610860551, guid: d6d2e54c7eaf6d94b83183091d4efa64, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-interface
+  - id: 96
+    sprite: {fileID: 3286163911610860551, guid: 6a1e178842751bc48a18a434a213608d, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-controls
+  - id: 97
+    sprite: {fileID: 3286163911610860551, guid: 729e5588c37a6b54eaca4971e92ae351, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-accessibility
+  - id: 98
+    sprite: {fileID: 3286163911610860551, guid: ecc9501a6dcae5946b57b730ead04e95, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-language
+  - id: 99
+    sprite: {fileID: 3286163911610860551, guid: e7be86777a7a5504c81b540620ec9de1, type: 3}
+    semanticRole: 0
+    sourceName: bb-options-legal

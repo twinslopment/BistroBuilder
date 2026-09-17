@@ -1456,7 +1456,9 @@ public sealed class BistroBuilderSupplierPlayerRuntimeView : MonoBehaviour
         if (marketService == null || !marketService.IsInitialized) error = "2.3C no está listo.";
         else if (commercialService == null || !commercialService.IsInitialized) error = "2.3D no está listo.";
         else if (orderService == null || !orderService.IsInitialized) error = "2.3E no está listo.";
-        else if (smartPurchaseService == null || !smartPurchaseService.IsInitialized) error = "2.3F no está listo.";
+        else if (smartPurchaseService == null) error = "2.3F no está disponible.";
+        else if (!smartPurchaseService.IsInitialized && !smartPurchaseService.TryInitialize())
+            error = "2.3F no está listo. " + (smartPurchaseService.LastInitializationError ?? string.Empty);
         else if (logisticsService == null || !logisticsService.IsInitialized) error = "2.3G no está listo.";
         else if (deliveryService == null || !deliveryService.IsInitialized) error = "2.3H no está listo.";
         else if (progressionService == null || !progressionService.IsInitialized) error = "2.3I no está listo.";

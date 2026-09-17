@@ -56,6 +56,7 @@ public static class BistroBuilderNavigation17SaveLoadSelfTest
             SessionState.SetString(StageKey, cli ? "prepare_cli" : "prepare_menu");
             playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
             stageStartedAt = EditorApplication.timeSinceStartup;
+            if (cli) EditorApplication.QueuePlayerLoopUpdate();
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
@@ -82,6 +83,8 @@ public static class BistroBuilderNavigation17SaveLoadSelfTest
         }
 
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (cli) EditorApplication.QueuePlayerLoopUpdate();
+
         if (stage.StartsWith("enter_", StringComparison.Ordinal))
         {
             stage = cli ? "prepare_cli" : "prepare_menu";
@@ -92,7 +95,18 @@ public static class BistroBuilderNavigation17SaveLoadSelfTest
 
         if (EditorApplication.timeSinceStartup - stageStartedAt > TimeoutSeconds)
         {
-            Finish(false, "Timeout del Save/Load especifico de Navigation 17.", cli);
+            BistroBuilderSaveGameService timedOutSave = FindSaveService();
+            string diagnostics = timedOutSave != null
+                ? " stage=" + stage +
+                  ", busy=" + timedOutSave.IsBusy +
+                  ", op=" + timedOutSave.ActiveOperation +
+                  ", phase=" + timedOutSave.CurrentPhase +
+                  ", progress=" + timedOutSave.CurrentProgress.ToString("F2") +
+                  ", status=" + timedOutSave.CurrentStatusMessage
+                : " stage=" + stage + ", SaveGameService ausente";
+            Finish(false,
+                "Timeout del Save/Load especifico de Navigation 17;" + diagnostics + ".",
+                cli);
             return;
         }
 
@@ -133,7 +147,7 @@ public static class BistroBuilderNavigation17SaveLoadSelfTest
 
         save.RefreshExtensions();
         navigation.RebuildNavigationTopology();
-        ValidateNavigationRuntime(navigation);
+        ValidateNavigationPersistencePreflight(navigation);
 
         int slot = FindFreeSlot(save);
         if (slot <= 0)
@@ -235,6 +249,22 @@ public static class BistroBuilderNavigation17SaveLoadSelfTest
         Finish(true,
             "PASS - Save/Load real conserva y reconstruye Navigation: topologia, Route Graph, rutas cliente/camarero, sillas y ausencia de deadlocks fantasma.",
             cli);
+    }
+
+    private static void ValidateNavigationPersistencePreflight(BistroBuilderNavigationService navigation)
+    {
+        if (navigation.RouteGraphNodeCount <= 0 || navigation.RouteGraphEdgeCount <= 0)
+            throw new InvalidOperationException("Route Graph no esta construido.");
+        if (navigation.ActiveDeadlockCount != 0)
+            throw new InvalidOperationException("Hay deadlocks fantasma antes de Save.");
+
+        RestaurantSeat[] seats = UnityEngine.Object.FindObjectsByType<RestaurantSeat>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        if (seats.Length == 0)
+            throw new InvalidOperationException("No se encontraron sillas operativas.");
+        for (int i = 0; i < seats.Length; i++)
+            if (seats[i] != null && seats[i].GetComponent<BistroBuilderSeatCirculationEnvelope>() == null)
+                throw new InvalidOperationException("Una silla perdio su envelope de circulacion.");
     }
 
     private static void ValidateNavigationRuntime(BistroBuilderNavigationService navigation)

@@ -56,7 +56,7 @@ public static class BistroBuilderVisualLanguagePlayTest
                     Capture(shell.GetComponentInParent<Canvas>(),"UITipografiaPersonal.png");Button("BBNav_Actividad").onClick.Invoke();
                     Button("BBNav_Opciones").onClick.Invoke();break;
                 case 4:
-                    var menu=GameObject.Find("TopNavigationMenu");Check(menu.GetComponent<BistroBuilderSurface>().Level==BistroBuilderSurfaceLevel.Floating,"Floating menu elevation");
+                    var menu=GameObject.Find("OptionsPanel");Check(menu.GetComponent<BistroBuilderSurface>().Level==BistroBuilderSurfaceLevel.Panel,"Options panel elevation");
                     Check(!menu.GetComponent<BistroBuilderSurface>().Hud,"Menu stays solid");
                     Button("BBNav_Opciones").onClick.Invoke();CreateGallery();break;
                 case 5:

@@ -8,27 +8,44 @@ public enum BistroBuilderUiStyleRole
     Surface = 2,
     SurfaceElevated = 3,
     Overlay = 4,
+    Panel = 5,
+    Card = 6,
     PrimaryButton = 10,
     SecondaryButton = 11,
+    ContextualButton = 12,
     TertiaryButton = 12,
     DestructiveButton = 13,
     NavButton = 14,
     Tab = 15,
     Field = 20,
     Row = 21,
+    BadgeNeutral = 22,
+    BadgeInfo = 23,
+    BadgeSuccess = 24,
+    BadgeAttention = 25,
+    BadgeCritical = 26,
+    ProgressTrack = 27,
+    ProgressSuccess = 28,
+    ProgressAttention = 29,
+
+    // 30-34 are serialized by the original 21A contract.
     Title = 30,
     Heading = 31,
     Body = 32,
     Caption = 33,
     Kpi = 34,
-    Subheading = 35,
-    Label = 36,
+    ProgressInfo = 35,
+    ProgressCritical = 36,
+    Subheading = 37,
+    Label = 38,
+
     StatusSuccess = 40,
     StatusAttention = 41,
     StatusCritical = 42,
     StatusInfo = 43,
     StatusDisabled = 44,
-    BottomDock = 50
+    BottomDock = 50,
+    Toast = 51
 }
 
 [DisallowMultipleComponent]

@@ -114,6 +114,9 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         BistroBuilderSpatialEditModeIntegration integration =
             UnityEngine.Object.FindFirstObjectByType<
                 BistroBuilderSpatialEditModeIntegration>();
+        BistroBuilderSpatialAssessmentService layoutAssessment =
+            UnityEngine.Object.FindFirstObjectByType<
+                BistroBuilderSpatialAssessmentService>();
         RestaurantPlacementValidationService validation =
             UnityEngine.Object.FindFirstObjectByType<
                 RestaurantPlacementValidationService>();
@@ -121,8 +124,8 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
             UnityEngine.Object.FindFirstObjectByType<
                 RestaurantPlacementHistoryService>();
         if (spatial == null || assessment == null ||
-            integration == null || validation == null ||
-            history == null)
+            integration == null || layoutAssessment == null ||
+            validation == null || history == null)
             throw new InvalidOperationException(
                 "Faltan servicios BBSIS 2C o de edición.");
 
@@ -136,6 +139,11 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
             integration,
             validation,
             history);
+        ValidateIncrementalHotPath(
+            spatial,
+            assessment,
+            layoutAssessment,
+            integration);
 
         int subjects = spatial.SubjectCount;
         int providers = assessment.CachedProviderCount;
@@ -148,6 +156,38 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         if (spatial.ActiveLeaseCount != 0)
             throw new InvalidOperationException(
                 "El Modo Edición dejó Spatial Leases huérfanos.");
+    }
+
+    private static void ValidateIncrementalHotPath(
+        BistroBuilderSpatialInteractionService spatial,
+        BistroBuilderSpatialPlacementAssessmentService assessment,
+        BistroBuilderSpatialAssessmentService layoutAssessment,
+        BistroBuilderSpatialEditModeIntegration integration)
+    {
+        int subjectsBefore = spatial.SubjectCount;
+        int providersBefore = assessment.CachedProviderCount;
+        int layoutEvaluationsBefore = layoutAssessment.EvaluationCount;
+        int fullBefore = integration.FullRefreshCount;
+        int incrementalBefore = integration.IncrementalRefreshCount;
+        int revisionBefore = spatial.Revision;
+
+        integration.RequestRefresh();
+        integration.RefreshIncrementalNow();
+
+        if (integration.IncrementalRefreshCount != incrementalBefore + 1 ||
+            integration.FullRefreshCount != fullBefore)
+            throw new InvalidOperationException(
+                "El hot path incremental ejecutó una reconstrucción completa.");
+        if (layoutAssessment.EvaluationCount != layoutEvaluationsBefore)
+            throw new InvalidOperationException(
+                "El hot path incremental recalculó Spatial Quality global.");
+        if (spatial.SubjectCount != subjectsBefore ||
+            assessment.CachedProviderCount != providersBefore)
+            throw new InvalidOperationException(
+                "El hot path incremental alteró registros espaciales.");
+        if (spatial.Revision <= revisionBefore)
+            throw new InvalidOperationException(
+                "El hot path incremental no publicó la revisión geométrica.");
     }
 
     private static void ValidateFunctionalPreflight(
@@ -230,7 +270,7 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         if (!history.TryUndo(out _, out _, out _))
             throw new InvalidOperationException(
                 "Undo real rechazado por BBSIS.");
-        integration.RefreshNow();
+        integration.RefreshIncrementalNow();
         if (Vector3.Distance(
                 member.transform.position,
                 originalPosition) > 0.0001f)
@@ -240,7 +280,7 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         if (!history.TryRedo(out _, out _, out _))
             throw new InvalidOperationException(
                 "Redo real rechazado por BBSIS.");
-        integration.RefreshNow();
+        integration.RefreshIncrementalNow();
         if (Vector3.Distance(
                 member.transform.position,
                 destination) > 0.0001f)
@@ -250,7 +290,7 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         if (!history.TryUndo(out _, out _, out _))
             throw new InvalidOperationException(
                 "Undo final no pudo restaurar el fixture.");
-        integration.RefreshNow();
+        integration.RefreshIncrementalNow();
         if (Vector3.Distance(
                 member.transform.position,
                 originalPosition) > 0.0001f ||

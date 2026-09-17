@@ -29,7 +29,8 @@ public sealed class BistroBuilderDepthGraphic : MaskableGraphic
             case BistroBuilderBorderState.Disabled:color=new Color(1,0.93f,0.83f,0.06f);break;
         }
         if(State==BistroBuilderBorderState.Disabled) Dashed(vh,rect,color);
-        else BistroBuilderStateGraphic.Ring(vh,rect,1,color);
+        // Preserve a complete physical pixel when the canvas scales down.
+        else BistroBuilderStateGraphic.Ring(vh,rect,Mathf.Max(1, 1.25f / (canvas != null ? Mathf.Max(.1f, canvas.scaleFactor) : 1)),color);
     }
     private static void Dashed(VertexHelper vh,Rect rect,Color color)
     {

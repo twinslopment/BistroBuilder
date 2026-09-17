@@ -130,6 +130,30 @@ public sealed class BistroBuilderNavigationRouteCorridorBuilder
     public bool Contains(
         BistroBuilderNavigationRouteCorridor corridor,
         Vector3 position,
+        ref int segmentHint,
+        float safetyMargin = 0f)
+    {
+        if (corridor == null || !corridor.IsUsable) return false;
+        int maxSegment = corridor.samples.Count - 2;
+        int center = Mathf.Clamp(segmentHint, 0, maxSegment);
+        int first = Mathf.Max(0, center - 2);
+        int last = Mathf.Min(maxSegment, center + 3);
+        float margin = Mathf.Max(0f, safetyMargin);
+        for (int i = first; i <= last; i++)
+        {
+            if (!TryProjectSegment(corridor, position, i, out var projection)) continue;
+            if (projection.signedLateral <= projection.rightClearance - margin &&
+                projection.signedLateral >= -projection.leftClearance + margin)
+            { segmentHint = i; return true; }
+        }
+        if (!TryProject(corridor, position, out var fallback)) return false;
+        return fallback.signedLateral <= fallback.rightClearance - margin &&
+               fallback.signedLateral >= -fallback.leftClearance + margin;
+    }
+
+    public bool Contains(
+        BistroBuilderNavigationRouteCorridor corridor,
+        Vector3 position,
         float safetyMargin = 0f)
     {
         if (!TryProject(corridor, position, out var projection))
@@ -137,6 +161,35 @@ public sealed class BistroBuilderNavigationRouteCorridorBuilder
         float margin = Mathf.Max(0f, safetyMargin);
         return projection.signedLateral <= projection.rightClearance - margin &&
                projection.signedLateral >= -projection.leftClearance + margin;
+    }
+
+    private static bool TryProjectSegment(
+        BistroBuilderNavigationRouteCorridor corridor, Vector3 position, int index,
+        out BistroBuilderNavigationCorridorProjection projection)
+    {
+        projection = default;
+        if (corridor == null || corridor.samples == null || index < 0 ||
+            index >= corridor.samples.Count - 1) return false;
+        var a = corridor.samples[index];
+        var b = corridor.samples[index + 1];
+        if (a == null || b == null) return false;
+        Vector3 ab = Horizontal(b.center - a.center);
+        float lengthSq = ab.sqrMagnitude;
+        if (lengthSq <= Epsilon) return false;
+        Vector3 ap = Horizontal(position - a.center);
+        float t = Mathf.Clamp01(Vector3.Dot(ap, ab) / lengthSq);
+        Vector3 center = Vector3.Lerp(a.center, b.center, t);
+        Vector3 tangent = ab / Mathf.Sqrt(lengthSq);
+        Vector3 right = Vector3.Cross(Vector3.up, tangent);
+        float signed = Vector3.Dot(Horizontal(position - center), right);
+        projection = new BistroBuilderNavigationCorridorProjection
+        {
+            center = center, tangent = tangent, right = right, signedLateral = signed,
+            leftClearance = Mathf.Lerp(a.leftClearance, b.leftClearance, t),
+            rightClearance = Mathf.Lerp(a.rightClearance, b.rightClearance, t),
+            progressMeters = Mathf.Lerp(a.cumulativeMeters, b.cumulativeMeters, t)
+        };
+        return true;
     }
 
     public bool TryFindBypass(

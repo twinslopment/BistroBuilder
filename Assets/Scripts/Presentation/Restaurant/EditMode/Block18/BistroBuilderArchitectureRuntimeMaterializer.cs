@@ -69,25 +69,34 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
 
         if (materializeDetectedRooms)
         {
-            var topologyWalls = new List<BistroBuilderWallRecord>(document.walls.Count + 4);
-            topologyWalls.AddRange(document.walls);
-            var boundaryWalls = new List<BistroBuilderWallRecord>(4);
-            if (BistroBuilderPremisesBoundaryRuntimeProvider.TryResolve(gameObject.scene, boundaryWalls))
-                topologyWalls.AddRange(boundaryWalls);
-            var topology = new BistroBuilderWallTopologyBuilder().Build(
-                topologyWalls,
-                document.revision);
-            if (!topology.HasBlockingDiagnostics)
+            var topologyBuilder = new BistroBuilderWallTopologyBuilder();
+            var detector = new BistroBuilderRoomFaceDetector();
+            var topology = topologyBuilder.Build(document.walls, document.revision);
+            List<BistroBuilderEnclosedFaceCandidate> faces = topology.HasBlockingDiagnostics
+                ? new List<BistroBuilderEnclosedFaceCandidate>()
+                : detector.Detect(topology);
+
+            // Premises boundaries only close an otherwise open architectural draft.
+            // A self-contained document must not inherit an unrelated scene boundary.
+            if (faces.Count == 0)
             {
-                List<BistroBuilderEnclosedFaceCandidate> faces =
-                    new BistroBuilderRoomFaceDetector().Detect(topology);
-                for (int i = 0; i < faces.Count; i++)
+                var boundaryWalls = new List<BistroBuilderWallRecord>(4);
+                if (BistroBuilderPremisesBoundaryRuntimeProvider.TryResolve(gameObject.scene, boundaryWalls) &&
+                    boundaryWalls.Count > 0)
                 {
-                    if (faces[i] == null || faces[i].boundary.Count < 3)
-                        continue;
-                    CreateFloorObject(faces[i], i);
-                    floorCount++;
+                    var topologyWalls = new List<BistroBuilderWallRecord>(document.walls.Count + boundaryWalls.Count);
+                    topologyWalls.AddRange(document.walls);
+                    topologyWalls.AddRange(boundaryWalls);
+                    topology = topologyBuilder.Build(topologyWalls, document.revision);
+                    if (!topology.HasBlockingDiagnostics) faces = detector.Detect(topology);
                 }
+            }
+
+            for (int i = 0; i < faces.Count; i++)
+            {
+                if (faces[i] == null || faces[i].boundary.Count < 3) continue;
+                CreateFloorObject(faces[i], i);
+                floorCount++;
             }
         }
 

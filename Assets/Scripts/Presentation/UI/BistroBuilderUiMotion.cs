@@ -40,6 +40,7 @@ public sealed class BistroBuilderUiSelectableMotion : MonoBehaviour,
 
     private void AnimateTo(Vector3 target, float duration)
     {
+        if (BistroBuilderOptionsScreen.ReducedMotion) { if (scaleRoutine != null) StopCoroutine(scaleRoutine); transform.localScale = restScale; return; }
         if (!isActiveAndEnabled)
         {
             transform.localScale = target;

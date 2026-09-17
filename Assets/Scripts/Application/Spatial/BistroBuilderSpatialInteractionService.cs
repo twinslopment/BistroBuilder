@@ -92,17 +92,26 @@ public sealed class BistroBuilderSpatialInteractionService : MonoBehaviour
     private bool RegisterSubject(BistroBuilderSpatialSubject subject, bool bump)
     {
         if (subject == null || string.IsNullOrWhiteSpace(subject.SubjectId)) return false;
-        if (subjects.TryGetValue(subject.SubjectId, out BistroBuilderSpatialSubject existing) &&
-            existing != null && existing != subject)
-            return false;
-        if (subjects.TryGetValue(
-                subject.SubjectId,
-                out BistroBuilderSpatialSubject stale) &&
-            stale == null)
+        if (subjects.TryGetValue(subject.SubjectId, out BistroBuilderSpatialSubject existing))
+        {
+            if (existing == subject)
+                return true;
+            if (existing != null)
+                return false;
             ReleaseSubjectLeases(subject.SubjectId);
+        }
         subjects[subject.SubjectId] = subject;
         if (bump) BumpRevision();
         return true;
+    }
+
+    /// <summary>
+    /// Notifica un cambio geométrico de subjects ya registrados sin volver a
+    /// escanear toda la escena. Se usa en el hot path del Modo Edición.
+    /// </summary>
+    public void NotifyRegisteredGeometryChanged()
+    {
+        BumpRevision();
     }
 
     public void UnregisterSubject(BistroBuilderSpatialSubject subject)

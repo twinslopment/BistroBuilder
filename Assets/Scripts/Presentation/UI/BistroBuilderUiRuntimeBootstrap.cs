@@ -30,6 +30,7 @@ public static class BistroBuilderUiRuntimeBootstrap
 
         BistroBuilderUiDesignSystem design = GetOrAdd<BistroBuilderUiDesignSystem>(canvas.gameObject);
         BistroBuilderUiShell shell = GetOrAdd<BistroBuilderUiShell>(canvas.gameObject);
+        GetOrAdd<BistroBuilderTableSelectionController>(canvas.gameObject);
         GetOrAdd<BistroBuilderUnifiedUiInteractionService>(canvas.gameObject);
 
         shell.EnsureShell();

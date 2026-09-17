@@ -14,7 +14,8 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private bool rebuildPending;
     private float rebuildAt;
-    private BistroBuilderSaveGameService saveGameService;
+
+    public int AutomaticTopologyRebuildCount { get; private set; }
 
     private void Awake()
     {
@@ -36,31 +37,23 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
     private void Update()
     {
         if (!rebuildPending || Time.unscaledTime < rebuildAt) return;
-        // Keep the pending rebuild until the complete layout (or rollback) is restored.
-        if (saveGameService != null && saveGameService.IsBusy &&
-            saveGameService.ActiveOperation == BistroBuilderSaveOperationKind.Load) return;
-        FlushPendingRebuild();
-    }
-
-    private void FlushPendingRebuild()
-    {
-        if (!rebuildPending) return;
-        rebuildPending = false;
-        navigationService?.RebuildNavigationTopology();
-        // Full circulation diagnostics solve routes to every table. They remain an
-        // explicit diagnostic query; editing only needs fresh geometry and route invalidation.
-    }
-
-    private void HandleSaveCompleted(BistroBuilderSaveOperationResult result)
-    {
-        if (result.OperationKind == BistroBuilderSaveOperationKind.Load)
-            FlushPendingRebuild();
+        RebuildNow();
     }
 
     public void RequestRebuild()
     {
         rebuildPending = true;
         rebuildAt = Time.unscaledTime + rebuildDelaySeconds;
+    }
+
+    public void RebuildNow()
+    {
+        rebuildPending = false;
+        if (navigationService == null)
+            CacheDependencies();
+        if (navigationService == null) return;
+        navigationService.RebuildNavigationTopology();
+        AutomaticTopologyRebuildCount++;
     }
 
     private void HandlePlacementCommitted(
@@ -82,11 +75,6 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private void Subscribe()
     {
-        if (saveGameService != null)
-        {
-            saveGameService.OperationCompleted -= HandleSaveCompleted;
-            saveGameService.OperationCompleted += HandleSaveCompleted;
-        }
         if (placementTransactions != null)
         {
             placementTransactions.PlacementCommitted -= HandlePlacementCommitted;
@@ -103,8 +91,6 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (saveGameService != null)
-            saveGameService.OperationCompleted -= HandleSaveCompleted;
         if (placementTransactions != null)
             placementTransactions.PlacementCommitted -= HandlePlacementCommitted;
         if (placeableRegistry != null)
@@ -116,8 +102,6 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private void CacheDependencies()
     {
-        if (saveGameService == null)
-            saveGameService = FindFirstObjectByType<BistroBuilderSaveGameService>();
         if (navigationService == null)
             navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
         if (placementTransactions == null)

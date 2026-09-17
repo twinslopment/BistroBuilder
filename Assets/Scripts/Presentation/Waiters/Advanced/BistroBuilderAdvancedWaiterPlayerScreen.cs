@@ -16,6 +16,8 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
     private Button toggle;
     private bool open;
 
+    public bool IsOpen => open && panel != null && panel.activeSelf;
+
     private void Awake()
     {
         if (service == null) service = GetComponent<BistroBuilderAdvancedWaiterService>();
@@ -89,11 +91,20 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
         return text;
     }
 
+    public void Show()
+    {
+        open = true;
+        if (panel != null) panel.SetActive(true);
+        Refresh();
+    }
+    public void Hide()
+    {
+        open = false;
+        if (panel != null) panel.SetActive(false);
+    }
     private void Toggle()
     {
-        open = !open;
-        if (panel != null) panel.SetActive(open);
-        if (open) Refresh();
+        if (IsOpen) Hide(); else Show();
     }
 
     private void Refresh()

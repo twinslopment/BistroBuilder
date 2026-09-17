@@ -101,6 +101,9 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
     private IBistroBuilderSaveSerializer metadataSerializer;
     private IBistroBuilderSaveStorage storage;
     private CancellationTokenSource operationCancellation;
+    private readonly Stack<IEnumerator> operationRoutineStack = new Stack<IEnumerator>(8);
+    private long operationRoutineGeneration;
+    private int activeSlotIndex;
 
     public event Action<BistroBuilderSaveOperationPhase, float, string>
         ProgressChanged;
@@ -236,9 +239,15 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
         RefreshExtensions();
     }
 
+    private void Update()
+    {
+        AdvanceOperationRoutine();
+    }
+
     private void OnDisable()
     {
         operationCancellation?.Cancel();
+        StopOperationRoutine();
 
         if (IsBusy)
         {
@@ -440,7 +449,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(
+        StartOperationRoutine(
             SaveRoutine(
                 slotIndex,
                 slotDisplayName ?? string.Empty
@@ -467,7 +476,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(LoadRoutine(slotIndex));
+        StartOperationRoutine(LoadRoutine(slotIndex));
         return true;
     }
 
@@ -489,8 +498,94 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
             return false;
         }
 
-        StartCoroutine(DeleteRoutine(slotIndex));
+        StartOperationRoutine(DeleteRoutine(slotIndex));
         return true;
+    }
+
+    private void StartOperationRoutine(IEnumerator routine)
+    {
+        if (routine == null)
+        {
+            FailOperationRoutine(new InvalidOperationException("La operación de persistencia no creó una rutina válida."));
+            return;
+        }
+
+        operationRoutineGeneration++;
+        operationRoutineStack.Clear();
+        operationRoutineStack.Push(routine);
+    }
+
+    private void StopOperationRoutine()
+    {
+        operationRoutineGeneration++;
+        operationRoutineStack.Clear();
+    }
+
+    private void AdvanceOperationRoutine()
+    {
+        if (operationRoutineStack.Count == 0) return;
+
+        long generation = operationRoutineGeneration;
+        while (operationRoutineStack.Count > 0)
+        {
+            IEnumerator routine = operationRoutineStack.Peek();
+            bool hasNext;
+            object current = null;
+
+            try
+            {
+                hasNext = routine.MoveNext();
+                if (hasNext) current = routine.Current;
+            }
+            catch (Exception exception)
+            {
+                FailOperationRoutine(exception);
+                return;
+            }
+
+            if (generation != operationRoutineGeneration) return;
+            if (!hasNext)
+            {
+                operationRoutineStack.Pop();
+                continue;
+            }
+
+            if (current is IEnumerator nested)
+            {
+                operationRoutineStack.Push(nested);
+                continue;
+            }
+
+            // Cualquier yield no anidado cede exactamente un frame.
+            return;
+        }
+
+        if (IsBusy && generation == operationRoutineGeneration)
+        {
+            FailOperationRoutine(new InvalidOperationException("La rutina de persistencia terminó sin publicar un resultado."));
+        }
+    }
+
+    private void FailOperationRoutine(Exception exception)
+    {
+        BistroBuilderSaveOperationKind operationKind = ActiveOperation;
+        int slotIndex = activeSlotIndex;
+        StopOperationRoutine();
+
+        if (!IsBusy)
+        {
+            Debug.LogException(exception, this);
+            return;
+        }
+
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        CompleteFailure(
+            operationKind,
+            slotIndex,
+            "La orquestación de persistencia falló: " + exception.Message,
+            stopwatch
+        );
+        Debug.LogException(exception, this);
     }
 
     public bool SlotExists(int slotIndex)
@@ -1774,6 +1869,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
 
         operationCancellation?.Dispose();
         operationCancellation = new CancellationTokenSource();
+        activeSlotIndex = slotIndex;
 
         IsBusy = true;
         LastResult = null;
@@ -2069,6 +2165,7 @@ public sealed class BistroBuilderSaveGameService : MonoBehaviour
 
         operationCancellation?.Dispose();
         operationCancellation = null;
+        activeSlotIndex = 0;
     }
 
     private static string FlattenTaskError(

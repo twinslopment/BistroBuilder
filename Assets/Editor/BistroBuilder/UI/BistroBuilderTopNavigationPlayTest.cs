@@ -80,7 +80,7 @@ public static class BistroBuilderTopNavigationPlayTest
                     Check(!shell.HasManagementScreenOpen, "Activity restores restaurant");
                     Button("BBNav_Opciones").onClick.Invoke(); break;
                 case 5:
-                    Check(GameObject.Find("TopNavigationMenu") != null, "Options menu");
+                    Check(GameObject.Find("OptionsPanel") != null, "Options menu");
                     Check(shell.HasManagementScreenOpen, "Menu blocks construction input");
                     Button("BBNav_Opciones").onClick.Invoke();
                     Button("BBNav_Personal").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current)); break;

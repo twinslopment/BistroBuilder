@@ -20,7 +20,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     public const string ActivityPanelName = "BB_UIUX_ActivityPanel";
     public const string ContextPanelName = "BB_UIUX_ContextPanel";
     public const string ServiceActionName = "BB_UIUX_ServiceAction";
-    public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf);
+    public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf) || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
 
     private static readonly NavSpec[] Navigation =
     {
@@ -35,7 +35,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         new NavSpec("Reputación", "OpenReputationButton"),
     };
     private static readonly string[] ServiceLaunchers =
-        { "OpenAdvancedOrdersButton", "OpenAdvancedKitchenButton", "OpenProgressionButton", "OpenWaiterOperations", "OpenEndOfDayOperations", "OpenFrontOfHouseOperations" };
+        { "OpenAdvancedOrdersButton", "OpenAdvancedKitchenButton", "OpenProgressionButton", "OpenWaiterOperations", "OpenEndOfDayOperations", "OpenFrontOfHouseOperations", "OpenScheduleButton" };
 
     [SerializeField] private RectTransform shellRoot;
     [SerializeField] private RectTransform topNavigation;
@@ -79,6 +79,11 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private float nextRefreshAt;
     private bool activityVisible = true;
     private bool subscribed;
+    private bool tableSelectionSubscribed;
+    private BistroBuilderTableSelectionController tableSelection;
+
+    public string CurrentContextTitle => contextTitle != null ? contextTitle.text : string.Empty;
+    public string CurrentContextBody => contextBody != null ? contextBody.text : string.Empty;
 
     private void Awake()
     {
@@ -327,11 +332,6 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             Stretch(label.GetComponent<RectTransform>());
         }        text.text = value;
         text.fontSize = 14f;
-        text.enableAutoSizing = true;
-        text.fontSizeMin = 10f;
-        text.fontSizeMax = 14f;
-        text.textWrappingMode = TextWrappingModes.NoWrap;
-        text.overflowMode = TextOverflowModes.Ellipsis;
         text.color = BistroBuilderUiTokens.TextPrimary;
         text.alignment = TextAlignmentOptions.Center;
         text.raycastTarget = false;
@@ -636,6 +636,13 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void CloseSimpleManagementScreens(string exceptLabel = null)
     {
+        BistroBuilderOperationalPanel.CloseAll();
+        FindScene<BistroBuilderAdvancedOrderPlayerScreen>()?.Hide();
+        FindScene<BistroBuilderAdvancedKitchenPlayerScreen>()?.Hide();
+        FindScene<BistroBuilderAdvancedWaiterPlayerScreen>()?.Hide();
+        FindScene<BistroBuilderAdvancedFrontOfHousePlayerScreen>()?.Hide();
+        FindScene<BistroBuilderEndOfDayPlayerScreen>()?.Hide();
+        FindScene<BistroBuilderStaffSchedulePlayerScreen>()?.Hide();
         var staff = FindScene<BistroBuilderStaffPlayerScreen>();
         if (staff != null && staff.IsVisible && exceptLabel != "Personal") staff.Hide();
         var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
@@ -660,6 +667,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private bool IsAnyManagementScreenOpen()
     {
+        if (BistroBuilderOperationalPanel.AnyOpen || FindScene<BistroBuilderAdvancedOrderPlayerScreen>()?.IsOpen == true ||
+            FindScene<BistroBuilderAdvancedKitchenPlayerScreen>()?.IsOpen == true ||
+            FindScene<BistroBuilderAdvancedWaiterPlayerScreen>()?.IsOpen == true ||
+            FindScene<BistroBuilderAdvancedFrontOfHousePlayerScreen>()?.IsOpen == true ||
+            FindScene<BistroBuilderEndOfDayPlayerScreen>()?.IsOpen == true ||
+            FindScene<BistroBuilderStaffSchedulePlayerScreen>()?.IsVisible == true) return true;
         var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
         if (editor != null && editor.IsOpen) return true;
         var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
@@ -750,10 +763,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+        bool managing = IsAnyManagementScreenOpen() || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
         bool hasActivity = HasMeaningfulActivity();
-        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && activityVisible && hasActivity);
-        if (contextPanel != null) contextPanel.gameObject.SetActive(false);
-        if (bottomStatusContent != null) bottomStatusContent.gameObject.SetActive(!editing);
+        if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && !managing && activityVisible && hasActivity);
+        RestaurantTable selectedTable = !editing && !managing && tableSelection != null ? tableSelection.SelectedTable : null;
+        if (contextPanel != null) contextPanel.gameObject.SetActive(selectedTable != null);
+        if (bottomStatusContent != null) bottomStatusContent.gameObject.SetActive(!editing && !managing);
         if (cashText != null)
         {
             cashText.text = finance != null
@@ -827,13 +842,30 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
-        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing);
-        if (contextPanel != null) contextPanel.gameObject.SetActive(false);
+        RestaurantTable selected = !editing && !HasManagementScreenOpen && tableSelection != null ? tableSelection.SelectedTable : null;
+        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen);
+        if (contextPanel != null) contextPanel.gameObject.SetActive(selected != null);
+
+        if (selected != null)
+        {
+            if (contextTitle != null) contextTitle.text = "Mesa " + selected.TableId;
+            if (contextBody != null) contextBody.text = BuildSelectedTableContext(selected);
+            if (serviceActionButton != null && serviceActionLabel != null)
+            {
+                bool hasGuests = selected.AssignedCustomerGroup != null;
+                serviceActionButton.interactable = hasGuests;
+                serviceActionLabel.text = hasGuests ? "ABRIR COMANDAS" :
+                    selected.CurrentState == TableState.Dirty ? "REQUIERE LIMPIEZA" : "MESA LIBRE";
+            }
+            return;
+        }
+
+        if (contextTitle != null) contextTitle.text = "Contexto";
         if (contextBody != null)
         {
-            string modeLine = editMode != null && editMode.IsEditModeActive
+            string modeLine = editing
                 ? "MODO EDICI\u00D3N\nConstrucci\u00F3n y mobiliario disponibles. El servicio permanece cerrado."
-                : "MODO SERVICIO\nSelecciona sistemas desde la barra superior. El restaurante sigue siendo la superficie principal.";
+                : "MODO SERVICIO\nSelecciona una mesa o abre un sistema desde la barra superior.";
             string serviceLine = serviceState != null ? "\n\nServicio: " + ServiceStateLabel(serviceState.CurrentState) : string.Empty;
             string kitchenLine = kitchen != null ? "\nCocina: " + KitchenLabel(kitchen.LoadState) : string.Empty;
             string waitingLine = "\nEspera: " + ResolveWaitingClientCount() + " clientes";
@@ -848,9 +880,56 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             state == RestaurantServiceState.Preparing ? "PREPARANDO SERVICIO" : "RESTAURANTE CERRADO";
     }
 
+    private string BuildSelectedTableContext(RestaurantTable table)
+    {
+        string state = TableStateLabel(table.CurrentState);
+        CustomerGroup group = table.AssignedCustomerGroup;
+        string occupancy = group != null
+            ? "Ocupaci\u00F3n: " + group.GroupSize + " / " + table.Capacity
+            : "Ocupaci\u00F3n: 0 / " + table.Capacity;
+        string guidance;
+        switch (table.CurrentState)
+        {
+            case TableState.Dirty: guidance = "Necesita limpieza antes de volver a estar disponible."; break;
+            case TableState.WaitingForWaiter: guidance = "El grupo espera atenci\u00F3n del camarero."; break;
+            case TableState.WaitingForFood: guidance = "La comanda est\u00E1 en curso. Doble clic para revisar comandas."; break;
+            case TableState.WaitingForBill: guidance = "La mesa espera la cuenta."; break;
+            case TableState.Free: guidance = "Mesa disponible para un nuevo grupo."; break;
+            default: guidance = group != null ? "Doble clic para abrir las comandas de servicio." : "Sin incidencias activas."; break;
+        }
+        return "ESTADO  " + state + "\n" + occupancy + "\n\n" + guidance +
+            "\n\n<color=#A59B8C>Esc o clic en espacio vac\u00EDo para deseleccionar.</color>";
+    }
+
+    private void HandleTableSelectionChanged(RestaurantTable table)
+    {
+        RefreshReadModels();
+    }
+
+    private void HandleTableActivated(RestaurantTable table)
+    {
+        if (table == null || table.AssignedCustomerGroup == null) return;
+        BistroBuilderAdvancedOrderPlayerScreen orders = FindScene<BistroBuilderAdvancedOrderPlayerScreen>();
+        if (orders == null)
+        {
+            AddActivity("Mesa " + table.TableId + " \u00B7 comandas no disponibles.");
+            RefreshActivityText();
+            return;
+        }
+        orders.Show();
+        AddActivity("Mesa " + table.TableId + " \u00B7 comandas abiertas.");
+        RefreshReadModels();
+    }
+
     private void HandleServiceActionClicked()
     {
         ResolveDependencies();
+        RestaurantTable selected = tableSelection != null ? tableSelection.SelectedTable : null;
+        if (selected != null && selected.AssignedCustomerGroup != null)
+        {
+            HandleTableActivated(selected);
+            return;
+        }
         if (endOfDay == null)
         {
             AddActivity("Cierre \u00B7 sistema no disponible.");
@@ -861,6 +940,21 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         else
             AddActivity("Cierre \u00B7 " + (string.IsNullOrWhiteSpace(error) ? "no disponible ahora." : error));
         RefreshReadModels();
+    }
+
+    private static string TableStateLabel(TableState state)
+    {
+        switch (state)
+        {
+            case TableState.WaitingForWaiter: return "Esperando camarero";
+            case TableState.TakingOrder: return "Tomando comanda";
+            case TableState.WaitingForFood: return "Esperando platos";
+            case TableState.Eating: return "Comiendo";
+            case TableState.WaitingForBill: return "Esperando cuenta";
+            case TableState.Paying: return "Pagando";
+            case TableState.Dirty: return "Pendiente de limpieza";
+            default: return "Libre";
+        }
     }
 
     private static string ServiceStateLabel(RestaurantServiceState state)
@@ -878,6 +972,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (canvas == null) canvas = GetComponentInParent<Canvas>();
         if (canvas == null) canvas = GetComponent<Canvas>();
         if (designSystem == null && canvas != null) designSystem = canvas.GetComponent<BistroBuilderUiDesignSystem>();
+        if (tableSelection == null && canvas != null) tableSelection = canvas.GetComponent<BistroBuilderTableSelectionController>();
         if (finance == null) finance = FindScene<BistroBuilderFinanceService>();
         if (inventoryPlanning == null) inventoryPlanning = FindScene<BistroBuilderInventoryPlanningService>();
         if (kitchen == null) kitchen = FindScene<BistroBuilderAdvancedKitchenService>();
@@ -893,28 +988,45 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void BindRuntime()
     {
-        if (!Application.isPlaying || subscribed) return;
-        if (inventoryPlanning != null)
+        if (!Application.isPlaying) return;
+        if (!subscribed)
         {
-            inventoryPlanning.AlertActivated += HandleInventoryAlertActivated;
-            inventoryPlanning.AlertCleared += HandleInventoryAlertCleared;
+            if (inventoryPlanning != null)
+            {
+                inventoryPlanning.AlertActivated += HandleInventoryAlertActivated;
+                inventoryPlanning.AlertCleared += HandleInventoryAlertCleared;
+            }
+            if (kitchen != null) kitchen.LoadStateChanged += HandleKitchenStateChanged;
+            if (frontOfHouse != null) frontOfHouse.QueueChanged += HandleQueueChanged;
+            subscribed = true;
         }
-        if (kitchen != null) kitchen.LoadStateChanged += HandleKitchenStateChanged;
-        if (frontOfHouse != null) frontOfHouse.QueueChanged += HandleQueueChanged;
-        subscribed = true;
+        if (!tableSelectionSubscribed && tableSelection != null)
+        {
+            tableSelection.SelectionChanged += HandleTableSelectionChanged;
+            tableSelection.TableActivated += HandleTableActivated;
+            tableSelectionSubscribed = true;
+        }
     }
 
     private void Unsubscribe()
     {
-        if (!subscribed) return;
-        if (inventoryPlanning != null)
+        if (subscribed)
         {
-            inventoryPlanning.AlertActivated -= HandleInventoryAlertActivated;
-            inventoryPlanning.AlertCleared -= HandleInventoryAlertCleared;
+            if (inventoryPlanning != null)
+            {
+                inventoryPlanning.AlertActivated -= HandleInventoryAlertActivated;
+                inventoryPlanning.AlertCleared -= HandleInventoryAlertCleared;
+            }
+            if (kitchen != null) kitchen.LoadStateChanged -= HandleKitchenStateChanged;
+            if (frontOfHouse != null) frontOfHouse.QueueChanged -= HandleQueueChanged;
+            subscribed = false;
         }
-        if (kitchen != null) kitchen.LoadStateChanged -= HandleKitchenStateChanged;
-        if (frontOfHouse != null) frontOfHouse.QueueChanged -= HandleQueueChanged;
-        subscribed = false;
+        if (tableSelectionSubscribed && tableSelection != null)
+        {
+            tableSelection.SelectionChanged -= HandleTableSelectionChanged;
+            tableSelection.TableActivated -= HandleTableActivated;
+        }
+        tableSelectionSubscribed = false;
     }
 
     private void HandleInventoryAlertActivated(BistroBuilderInventoryAlertSnapshot alert)

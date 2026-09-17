@@ -101,14 +101,39 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
             FindObjectsInactive.Exclude,
             FindObjectsSortMode.InstanceID);
         for (int i = 0; i < found.Length; i++)
-        {
-            MonoBehaviour behaviour = found[i];
-            if (behaviour != null &&
-                behaviour is IBistroBuilderSpatialSemanticProvider)
-                providers.Add(behaviour);
-        }
-
+            RegisterProvider(found[i], false);
         providers.Sort(CompareProviders);
+    }
+
+    public bool RegisterProvider(MonoBehaviour behaviour)
+    {
+        return RegisterProvider(behaviour, true);
+    }
+
+    public void RegisterProviders(GameObject owner)
+    {
+        if (owner == null) return;
+        MonoBehaviour[] found = owner.GetComponents<MonoBehaviour>();
+        bool changed = false;
+        for (int i = 0; i < found.Length; i++)
+            changed |= RegisterProvider(found[i], false);
+        if (changed) providers.Sort(CompareProviders);
+    }
+
+    public bool UnregisterProvider(MonoBehaviour behaviour)
+    {
+        return behaviour != null && providers.Remove(behaviour);
+    }
+
+    private bool RegisterProvider(MonoBehaviour behaviour, bool sort)
+    {
+        if (behaviour == null ||
+            !(behaviour is IBistroBuilderSpatialSemanticProvider) ||
+            providers.Contains(behaviour))
+            return false;
+        providers.Add(behaviour);
+        if (sort) providers.Sort(CompareProviders);
+        return true;
     }
 
     public BistroBuilderSpatialPlacementEvaluation EvaluateCandidate(

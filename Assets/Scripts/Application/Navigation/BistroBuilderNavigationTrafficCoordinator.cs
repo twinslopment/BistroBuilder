@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Solver local determinista de trÃƒÂ¡fico humano.
+/// Solver local determinista de tráfico humano.
 /// Mantiene encuentros bilaterales estables y calcula una velocidad cooperativa
 /// sin crear Claims, leases ni modificar Mobility/Carry Envelopes de BBSIS.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class BistroBuilderNavigationTrafficCoordinator
     private const float EncounterPreferenceMaxHoldSeconds = 2.25f;
     private const float EncounterPrioritySwitchMargin = 1.5f;
     private const float PresenceStaleSeconds = 1f;
-    private const float SpatialCellSize = 1.5f;
+    private const float SpatialCellSize = 2.25f;
     private const float NeighbourQueryDistance = 4.5f;
 
     private readonly Dictionary<string, AgentRecord> agents =
@@ -53,29 +53,30 @@ public sealed class BistroBuilderNavigationTrafficCoordinator
             return;
 
         long cellKey = BuildCellKey(position);
-        bool hadPrevious = agents.TryGetValue(ownerId, out AgentRecord previous) &&
-                           previous != null;
-        if (!hadPrevious || previous.cellKey != cellKey)
+        bool hadPrevious = agents.TryGetValue(ownerId, out AgentRecord record) &&
+                           record != null;
+        if (!hadPrevious)
         {
-            if (hadPrevious)
-                RemoveFromSpatialCell(previous.cellKey, ownerId);
+            record = new AgentRecord { ownerId = ownerId, cellKey = cellKey };
+            agents[ownerId] = record;
             AddToSpatialCell(cellKey, ownerId);
         }
-
-        agents[ownerId] = new AgentRecord
+        else if (record.cellKey != cellKey)
         {
-            ownerId = ownerId,
-            agentMask = agentMask,
-            position = position,
-            velocity = Horizontal(velocity),
-            radius = Mathf.Max(MinimumRadius, radius),
-            externalUrgency = externalUrgency,
-            waitingAgeSeconds = Mathf.Max(0f, waitingAgeSeconds),
-            recoveryDebt = Mathf.Max(0f, recoveryDebt),
-            commitment = Mathf.Clamp01(commitment),
-            seenAt = now,
-            cellKey = cellKey
-        };
+            RemoveFromSpatialCell(record.cellKey, ownerId);
+            AddToSpatialCell(cellKey, ownerId);
+            record.cellKey = cellKey;
+        }
+
+        record.agentMask = agentMask;
+        record.position = position;
+        record.velocity = Horizontal(velocity);
+        record.radius = Mathf.Max(MinimumRadius, radius);
+        record.externalUrgency = externalUrgency;
+        record.waitingAgeSeconds = Mathf.Max(0f, waitingAgeSeconds);
+        record.recoveryDebt = Mathf.Max(0f, recoveryDebt);
+        record.commitment = Mathf.Clamp01(commitment);
+        record.seenAt = now;
     }
 
     public void RemovePresence(string ownerId)
@@ -471,14 +472,16 @@ public sealed class BistroBuilderNavigationTrafficCoordinator
         out float closestSeparation)
     {
         Vector3 relativePosition = Horizontal(other.position - position);
-        float currentDistance = relativePosition.magnitude;
+        float currentDistanceSq = relativePosition.sqrMagnitude;
         float combinedRadius = radius + other.radius + SafetyMargin;
-        if (currentDistance > combinedRadius + 3.25f)
+        float broadPhase = combinedRadius + 3.25f;
+        if (currentDistanceSq > broadPhase * broadPhase)
         {
             timeToClosest = float.PositiveInfinity;
-            closestSeparation = currentDistance;
+            closestSeparation = float.PositiveInfinity;
             return false;
         }
+        float currentDistance = Mathf.Sqrt(currentDistanceSq);
 
         Vector3 relativeVelocity =
             Horizontal(preferredVelocity - other.velocity);
@@ -496,8 +499,14 @@ public sealed class BistroBuilderNavigationTrafficCoordinator
             EncounterLookAhead);
         Vector3 futureSeparation =
             relativePosition - relativeVelocity * timeToClosest;
-        closestSeparation = futureSeparation.magnitude;
-        return closestSeparation < combinedRadius;
+        float futureSeparationSq = futureSeparation.sqrMagnitude;
+        if (futureSeparationSq >= combinedRadius * combinedRadius)
+        {
+            closestSeparation = float.PositiveInfinity;
+            return false;
+        }
+        closestSeparation = Mathf.Sqrt(futureSeparationSq);
+        return true;
     }
 
     private static float CalculateEffectivePriority(AgentRecord record)

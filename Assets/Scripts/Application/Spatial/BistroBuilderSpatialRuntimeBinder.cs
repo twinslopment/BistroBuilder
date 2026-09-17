@@ -18,6 +18,7 @@ public sealed class BistroBuilderSpatialRuntimeBinder : MonoBehaviour
 {
     [SerializeField] private RestaurantPlaceableRegistry placeableRegistry;
     [SerializeField] private BistroBuilderSpatialInteractionService spatialService;
+    [SerializeField] private BistroBuilderSpatialPlacementAssessmentService placementAssessment;
     [SerializeField] private List<BistroBuilderSpatialContractBinding> seatContracts =
         new List<BistroBuilderSpatialContractBinding>();
     [SerializeField] private List<BistroBuilderSpatialContractBinding> tableContracts =
@@ -65,35 +66,40 @@ public sealed class BistroBuilderSpatialRuntimeBinder : MonoBehaviour
             ? existingSubject.SubjectId
             : "spatial.placeable." + placeable.InstanceId;
 
+        bool bound = false;
         RestaurantSeat seat = placeable.GetComponent<RestaurantSeat>();
         if (seat != null && seat.UseProfile != null)
         {
             BistroBuilderSpatialContractDefinition contract =
                 FindContract(seatContracts, seat.UseProfile.ProfileId);
-            return contract != null && BistroBuilderSpatialBindingUtility.BindSeat(
+            bound = contract != null && BistroBuilderSpatialBindingUtility.BindSeat(
                 seat,
                 contract,
                 subjectId);
         }
-
-        RestaurantTableSeatingConfiguration table =
-            placeable.GetComponent<RestaurantTableSeatingConfiguration>();
-        if (table != null && table.Definition != null)
+        else
         {
-            BistroBuilderSpatialContractDefinition contract =
-                FindContract(tableContracts, table.Definition.ConfigurationId);
-            return contract != null && BistroBuilderSpatialBindingUtility.BindTable(
-                table,
-                contract,
-                subjectId);
+            RestaurantTableSeatingConfiguration table =
+                placeable.GetComponent<RestaurantTableSeatingConfiguration>();
+            if (table != null && table.Definition != null)
+            {
+                BistroBuilderSpatialContractDefinition contract =
+                    FindContract(tableContracts, table.Definition.ConfigurationId);
+                bound = contract != null && BistroBuilderSpatialBindingUtility.BindTable(
+                    table,
+                    contract,
+                    subjectId);
+            }
         }
-        return false;
+
+        if (bound)
+            placementAssessment?.RegisterProviders(placeable.gameObject);
+        return bound;
     }
 
     private void HandlePlaceableRegistered(RestaurantPlaceableObject placeable)
     {
-        if (!TryBindPlaceable(placeable)) return;
-        spatialService?.RebuildSubjects();
+        TryBindPlaceable(placeable);
     }
 
     private void BindExistingPlaceables()
@@ -117,10 +123,11 @@ public sealed class BistroBuilderSpatialRuntimeBinder : MonoBehaviour
                 door.GetComponent<BistroBuilderSpatialSubject>();
             if (existing == null || string.IsNullOrWhiteSpace(existing.SubjectId))
                 continue;
-            BistroBuilderSpatialBindingUtility.BindDoor(
-                door,
-                doorContract,
-                existing.SubjectId);
+            if (BistroBuilderSpatialBindingUtility.BindDoor(
+                    door,
+                    doorContract,
+                    existing.SubjectId))
+                placementAssessment?.RegisterProviders(door.gameObject);
         }
     }
 
@@ -130,6 +137,9 @@ public sealed class BistroBuilderSpatialRuntimeBinder : MonoBehaviour
             placeableRegistry = FindFirstObjectByType<RestaurantPlaceableRegistry>();
         if (spatialService == null)
             spatialService = FindFirstObjectByType<BistroBuilderSpatialInteractionService>();
+        if (placementAssessment == null)
+            placementAssessment = FindFirstObjectByType<
+                BistroBuilderSpatialPlacementAssessmentService>();
     }
 
     private void Subscribe()

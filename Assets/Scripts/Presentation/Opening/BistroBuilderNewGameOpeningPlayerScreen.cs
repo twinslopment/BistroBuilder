@@ -58,7 +58,6 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
     private void OnGUI()
     {
         if (!Application.isPlaying || openingService == null) return;
-        BistroBuilderGuiTheme.Apply();
         if (openingService.Phase == BistroBuilderNewGamePhase.InitialSetup)
         {
             IsVisible = false;
@@ -69,8 +68,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
                 initialEditEntryAttempted = true;
                 if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = string.Empty;
             }
-            if (BistroBuilderConstructionPlayerPanel.Instance == null || !BistroBuilderConstructionPlayerPanel.Instance.IsReady)
-                DrawInitialDesignOverlay();
+            DrawInitialDesignOverlay();
             return;
         }
         if (!IsVisible) return;
@@ -392,9 +390,8 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
         if (titleStyle != null) return;
         titleStyle = new GUIStyle(GUI.skin.label)
         {
-            font = BistroBuilderTypography.LegacyTitle,
-            fontSize = 28,
-            fontStyle = FontStyle.Normal,
+            fontSize = 22,
+            fontStyle = FontStyle.Bold,
             wordWrap = true
         };
         textStyle = new GUIStyle(GUI.skin.label)

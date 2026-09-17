@@ -104,19 +104,33 @@ public static class BistroBuilderNavigation17PlayModeSelfTest
             UnityEngine.Object.FindFirstObjectByType<BistroBuilderNavigationService>();
         BistroBuilderWaiterRoutingService waiterRouting =
             UnityEngine.Object.FindFirstObjectByType<BistroBuilderWaiterRoutingService>();
+        BistroBuilderNavigationEditIntegration editIntegration =
+            UnityEngine.Object.FindFirstObjectByType<BistroBuilderNavigationEditIntegration>();
         GameObject entrance = GameObject.Find("RestaurantEntrancePoint");
         KitchenSystem kitchen = UnityEngine.Object.FindFirstObjectByType<KitchenSystem>();
         RestaurantTable[] tables = UnityEngine.Object.FindObjectsByType<RestaurantTable>(
             FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
 
-        if (navigation == null || waiterRouting == null || entrance == null ||
-            kitchen == null || kitchen.PickupPoint == null || tables.Length == 0)
+        if (navigation == null || waiterRouting == null || editIntegration == null ||
+            entrance == null || kitchen == null || kitchen.PickupPoint == null || tables.Length == 0)
             throw new InvalidOperationException("Faltan autoridades o puntos runtime del Bloque 17.");
 
         navigation.RebuildNavigationTopology();
         BistroBuilderCirculationHealthReport health = navigation.EvaluateCirculationHealth();
         if (health == null || !health.IsOperational || health.checkedConnections < 1)
             throw new InvalidOperationException("La salud de circulacion runtime no es operativa.");
+
+        int healthChecksBeforeEdit = navigation.CirculationHealthEvaluationCount;
+        int topologyBeforeEdit = navigation.TopologyRebuildCount;
+        int automaticBeforeEdit = editIntegration.AutomaticTopologyRebuildCount;
+        editIntegration.RequestRebuild();
+        editIntegration.RebuildNow();
+        if (navigation.TopologyRebuildCount != topologyBeforeEdit + 1 ||
+            editIntegration.AutomaticTopologyRebuildCount != automaticBeforeEdit + 1)
+            throw new InvalidOperationException("La edicion no reconstruyo la topologia de navegacion.");
+        if (navigation.CirculationHealthEvaluationCount != healthChecksBeforeEdit)
+            throw new InvalidOperationException(
+                "El hot path de edicion recalculo todas las rutas de salud de circulacion.");
 
         bool usedOperationalDock = false;
         bool checkedCustomerAccess = false;

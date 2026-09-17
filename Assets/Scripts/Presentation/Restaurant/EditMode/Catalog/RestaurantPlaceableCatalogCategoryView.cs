@@ -1,4 +1,5 @@
 using System;
+using BistroBuilder.UI.Iconography;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -60,6 +61,11 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
             );
         }
 
+        if (button != null)
+        {
+            BBIconographyRuntime.Decorate(button, ResolveIcon(newCategoryCode));
+        }
+
         SetSelected(
             selected
         );
@@ -90,6 +96,21 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
         }
     }
 
+    private static BBIconId ResolveIcon(int code)
+    {
+        if (code < 0) return BBIconId.NavEditMode;
+        switch ((RestaurantPlaceableItemCategory)code)
+        {
+            case RestaurantPlaceableItemCategory.Furniture: return BBIconId.ObjectTable;
+            case RestaurantPlaceableItemCategory.Seating: return BBIconId.ObjectChair;
+            case RestaurantPlaceableItemCategory.Lighting: return BBIconId.ObjectLighting;
+            case RestaurantPlaceableItemCategory.Decoration: return BBIconId.ObjectDecoration;
+            case RestaurantPlaceableItemCategory.KitchenEquipment: return BBIconId.AreaKitchen;
+            case RestaurantPlaceableItemCategory.ServiceEquipment: return BBIconId.ObjectEquipment;
+            case RestaurantPlaceableItemCategory.Structural: return BBIconId.NavEditMode;
+            default: return BBIconId.GeneralMore;
+        }
+    }
     private void OnDestroy()
     {
         if (button != null)

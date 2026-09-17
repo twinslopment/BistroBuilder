@@ -21,6 +21,13 @@ public static class BistroBuilderUiTokens
     public const float ControlStandard = 40f;
     public const float ControlPrimary = 46f;
     public const float TableRow = 42f;
+    public const float TabUnderline = 2f;
+
+    // Scroll contract retained for screens built before the typography/depth pass.
+    public const float ScrollWheelStepPixels = 84f;
+    public const float ScrollSmoothingRate = 16f;
+    public const float ScrollDecelerationRate = 0.08f;
+    public const float ScrollMaximumNotchesPerEvent = 3f;
 
     public const float FontH1 = 34f;
     public const float FontH2 = 24f;
@@ -34,10 +41,6 @@ public static class BistroBuilderUiTokens
     public const float MotionDropdownSeconds = 0.16f;
     public const float MotionPanelSeconds = 0.18f;
     public const float MotionScreenSeconds = 0.20f;
-    public const float ScrollWheelStepPixels = 84f;
-    public const float ScrollSmoothingRate = 16f;
-    public const float ScrollDecelerationRate = 0.08f;
-    public const float ScrollMaximumNotchesPerEvent = 3f;
     public const float PressScale = 0.975f;
     public const float DropdownOffset = 6f;
     public const float ValuePulseOffset = 4f;
@@ -57,6 +60,9 @@ public static class BistroBuilderUiTokens
     public static readonly Color32 PrimaryHover = new Color32(91, 118, 67, 255);
     public static readonly Color32 PrimaryPressed = new Color32(55, 77, 38, 255);
     public static readonly Color32 WarmAccent = new Color32(199, 148, 88, 255);     // #C79458
+    public static readonly Color32 Brand = WarmAccent;
+    public static readonly Color32 SecondaryAction = Surface2;
+    public static readonly Color32 BorderSubtle = new Color32(244, 240, 231, 20);   // 8% on dark surfaces
     public static readonly Color32 Terracotta = new Color32(185, 100, 79, 255);     // #B9644F
     public static readonly Color32 Success = new Color32(135, 178, 104, 255);
     public static readonly Color32 Attention = new Color32(235, 175, 46, 255);

@@ -286,7 +286,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         }
         if (state.phase != BistroBuilderNewGamePhase.Briefing)
         {
-            error = "Primero debes terminar el diseÃƒÂ±o inicial del restaurante.";
+            error = "Primero debes terminar el diseño inicial del restaurante.";
             return false;
         }
         if (!TryRunOpeningPreflight(out BistroBuilderOpeningPreflightReport report, out error)) return false;
@@ -418,17 +418,17 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         EnsureState();
         if (state.phase != BistroBuilderNewGamePhase.InitialSetup)
         {
-            error = "La partida no esta en la fase de diseÃƒÂ±o inicial.";
+            error = "La partida no esta en la fase de diseño inicial.";
             return false;
         }
         if (!serviceStateService.IsClosed)
         {
-            error = "El restaurante debe permanecer cerrado durante el diseÃƒÂ±o inicial.";
+            error = "El restaurante debe permanecer cerrado durante el diseño inicial.";
             return false;
         }
         if (GameObject.Find("RestaurantEntrancePoint") == null)
         {
-            error = "El diseÃƒÂ±o necesita una entrada operativa.";
+            error = "El diseño necesita una entrada operativa.";
             return false;
         }
 
@@ -439,7 +439,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             if (!HasFunctionalZone(layout, "dining") || !HasFunctionalZone(layout, "kitchen") ||
                 !HasFunctionalZone(layout, "bathroom"))
             {
-                error = "El local vacÃƒÂ­o necesita al menos un SalÃƒÂ³n, una Cocina y un BaÃƒÂ±o antes de validar.";
+                error = "El local vacío necesita al menos un Salón, una Cocina y un Baño antes de validar.";
                 return false;
             }
         }
@@ -449,7 +449,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             if (table != null && table.Capacity > 0) seats += table.Capacity;
         if (seats < minimumDiningSeats)
         {
-            error = "AÃƒÂ±ade al menos " + minimumDiningSeats + " plazas de mesa antes de continuar.";
+            error = "Añade al menos " + minimumDiningSeats + " plazas de mesa antes de continuar.";
             return false;
         }
 
@@ -458,8 +458,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         if (!placement.IsValid)
         {
             int invalid = Mathf.Max(0, placement.TotalCount - placement.ValidCount);
-            error = "Corrige la distribuciÃƒÂ³n: " + invalid +
-                " elemento(s) tienen conflictos de colocaciÃƒÂ³n o espacio.";
+            error = "Corrige la distribución: " + invalid +
+                " elemento(s) tienen conflictos de colocación o espacio.";
             return false;
         }
         return true;
@@ -473,12 +473,12 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         if (!TryValidateInitialDesign(out error)) return false;
         if (saveGameService.IsBusy)
         {
-            error = "Espera a que termine el guardado actual antes de confirmar el diseÃƒÂ±o.";
+            error = "Espera a que termine el guardado actual antes de confirmar el diseño.";
             return false;
         }
         if (!HasActiveStaffRole("waiter") || !HasActiveStaffRole("cook"))
         {
-            error = "La preparaciÃƒÂ³n inicial necesita los roles activos de camarero y cocinero.";
+            error = "La preparación inicial necesita los roles activos de camarero y cocinero.";
             return false;
         }
 
@@ -497,8 +497,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             !editModeService.TryExitEditMode(false, out RestaurantEditModeFailureReason exitReason))
         {
             error = exitReason == RestaurantEditModeFailureReason.PlacementOperationActive
-                ? "Confirma o cancela el objeto que estÃƒÂ¡s colocando antes de finalizar el diseÃƒÂ±o."
-                : "No pudo cerrarse el modo ediciÃƒÂ³n: " + exitReason + ".";
+                ? "Confirma o cancela el objeto que estás colocando antes de finalizar el diseño."
+                : "No pudo cerrarse el modo edición: " + exitReason + ".";
             return false;
         }
 
@@ -515,7 +515,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             state.revision++;
             StateChanged?.Invoke();
             editModeService.TryEnterEditMode(out _, out _);
-            error = "No pudo guardarse el diseÃƒÂ±o confirmado: " + saveError;
+            error = "No pudo guardarse el diseño confirmado: " + saveError;
             return false;
         }
         return true;
@@ -527,7 +527,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         CacheDependencies();
         if (placeableRegistry == null || placeableLifecycleService == null)
         {
-            error = "No estÃƒÂ¡ disponible el sistema de mobiliario para preparar el local vacÃƒÂ­o.";
+            error = "No está disponible el sistema de mobiliario para preparar el local vacío.";
             return false;
         }
         var placed = new List<RestaurantPlaceableObject>(placeableRegistry.RegisteredPlaceables);
@@ -546,12 +546,19 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
                 return false;
             }
         }
-        // Legacy demonstration counters and stools are not registered placeables.
-        var fixtures = UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
-            FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
-        foreach (var fixture in fixtures)
-            if (fixture != null && fixture.GetComponent<RestaurantPlaceableObject>() == null)
-                fixture.gameObject.SetActive(false);
+
+        // 367H instalaba una barra de demostración que no pertenece al catálogo de
+        // placeables. En un local Vacío también debe retirarse: conservarla hacía que
+        // barra y taburetes sobrevivieran aunque el mobiliario se hubiese eliminado.
+        BistroBuilder367HInstalledFixture[] fixtures =
+            UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID);
+        for (int i = 0; i < fixtures.Length; i++)
+        {
+            BistroBuilder367HInstalledFixture fixture = fixtures[i];
+            if (fixture == null || fixture.GetComponent<RestaurantPlaceableObject>() != null) continue;
+            fixture.gameObject.SetActive(false);
+        }
         SetLegacyTestGeometryPresence(false);
         SetWaiterScenePresence(false);
         SetPremisesFloorVisual(false);
@@ -562,40 +569,32 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
     private static void SetLegacyTestGeometryPresence(bool visible)
     {
         string[] names = { "PlacementObstacle_Test", "Kitchen_Test" };
-        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         for (int i = 0; i < all.Length; i++)
         {
             GameObject go = all[i];
             if (go == null) continue;
             for (int n = 0; n < names.Length; n++)
-                if (string.Equals(go.name, names[n], StringComparison.Ordinal))
-                {
-                    go.SetActive(visible);
-                    break;
-                }
+                if (string.Equals(go.name, names[n], StringComparison.Ordinal)) { go.SetActive(visible); break; }
         }
     }
 
     private static void SetPremisesFloorVisual(bool visible)
     {
-        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         for (int i = 0; i < all.Length; i++)
         {
             GameObject go = all[i];
             if (go == null || !string.Equals(go.name, "Floor_Test", StringComparison.OrdinalIgnoreCase)) continue;
             Renderer[] renderers = go.GetComponentsInChildren<Renderer>(true);
-            for (int r = 0; r < renderers.Length; r++)
-                if (renderers[r] != null) renderers[r].enabled = visible;
+            for (int r = 0; r < renderers.Length; r++) if (renderers[r] != null) renderers[r].enabled = visible;
             break;
         }
     }
 
     private static void SetWaiterScenePresence(bool visible)
     {
-        Waiter[] waiters = UnityEngine.Object.FindObjectsByType<Waiter>(
-            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Waiter[] waiters = UnityEngine.Object.FindObjectsByType<Waiter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         for (int i = 0; i < waiters.Length; i++)
             if (waiters[i] != null) waiters[i].gameObject.SetActive(visible);
     }
