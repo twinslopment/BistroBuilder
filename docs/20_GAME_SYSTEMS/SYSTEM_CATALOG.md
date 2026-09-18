@@ -21,6 +21,7 @@
 | 17 | Navegación V1 | CERRADO V1 | transversal Crowd Flow sigue hardening |
 | 18 | Modo Edición / Construcción | ACTIVO | 18M/18N + Construction Authoring |
 | 21A | UI/UX definitiva | ACTIVO | rama específica; cierre aún no ratificado |
+| Autoría | Acabados y Variantes de Mobiliario (BBFFVAS) | DISEÑO V1 CANÓNICO | herramienta interna; variantes visuales, biblioteca de acabados y Acabado Automático |
 
 ## Regla
 El estado V1 no autoriza a reescribir un bloque desde otro sistema. Correcciones posteriores deben preservar su autoridad pública y documentarse como hardening, integración o V2.

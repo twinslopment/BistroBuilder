@@ -23,6 +23,7 @@ Cada sistema tiene una autoridad explícita. Integrar significa consumir contrat
 - **Modo Edición/Construcción:** edición estructural del restaurante fuera de servicio.
 - **Climate & Weather:** condiciones globales simplificadas; interior confortable.
 - **UI Design System:** lenguaje visual común sin redefinir reglas de negocio.
+- **BBFFVAS — Acabados y Variantes de Mobiliario:** herramienta interna de autoría para definir, completar, validar y publicar acabados/variantes visuales sin duplicar geometría; no es UI de jugador.
 
 ## Regla de integración
 Un sistema puede proyectar datos derivados de otro, pero no poseer la fuente original. Finanzas recibe nómina calculada por Personal; Horarios filtra elegibilidad pero no crea empleados; Animation representa custody pero no la decide.
