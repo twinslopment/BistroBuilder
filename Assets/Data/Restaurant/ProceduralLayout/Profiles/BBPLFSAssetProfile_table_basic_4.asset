@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f4b02f989ce9a64297832c95d89897a, type: 3}
+  m_Name: BBPLFSAssetProfile_table_basic_4
+  m_EditorClassIdentifier: Assembly-CSharp::BBPLFSAssetLayoutProfile
+  itemDefinition: {fileID: 11400000, guid: 33a718e8ef0c5564b9b771681ec5ce97, type: 2}
+  layoutRole: 1
+  layoutFamily: dining_table_4
+  fastFootprint: {x: 1, y: 1}
+  functionalCapacity: 4
+  styleTags:
+  - restaurant
+  - furniture
