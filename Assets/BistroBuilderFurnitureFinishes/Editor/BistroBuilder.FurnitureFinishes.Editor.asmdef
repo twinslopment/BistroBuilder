@@ -1,0 +1,20 @@
+{
+  "name": "BistroBuilder.FurnitureFinishes.Editor",
+  "rootNamespace": "BistroBuilder.FurnitureFinishes.Editor",
+  "references": [
+    "BistroBuilder.FurnitureFinishes.Runtime",
+    "BistroBuilder.AssetStudioBB.Runtime",
+    "BistroBuilder.SmartAssets.Runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

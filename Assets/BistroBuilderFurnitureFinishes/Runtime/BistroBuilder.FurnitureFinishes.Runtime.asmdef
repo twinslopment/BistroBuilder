@@ -1,0 +1,14 @@
+{
+  "name": "BistroBuilder.FurnitureFinishes.Runtime",
+  "rootNamespace": "BistroBuilder.FurnitureFinishes",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
