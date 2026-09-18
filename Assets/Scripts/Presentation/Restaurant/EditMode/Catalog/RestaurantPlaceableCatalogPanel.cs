@@ -21,6 +21,15 @@ public sealed class RestaurantPlaceableCatalogPanel :
 {
     private const int AllCategoriesCode = -1;
 
+    private static readonly RestaurantPlaceableItemCategory[] ApprovedCategoryOrder =
+    {
+        RestaurantPlaceableItemCategory.Furniture,
+        RestaurantPlaceableItemCategory.Seating,
+        RestaurantPlaceableItemCategory.KitchenEquipment,
+        RestaurantPlaceableItemCategory.Decoration,
+        RestaurantPlaceableItemCategory.Lighting
+    };
+
     [Header("Dependencias")]
 
     [SerializeField]
@@ -102,6 +111,11 @@ public sealed class RestaurantPlaceableCatalogPanel :
     private void Awake()
     {
         CacheDependenciesIfNeeded();
+
+        if (GetComponent<RestaurantPlaceableCatalogApprovedSkin>() == null)
+        {
+            gameObject.AddComponent<RestaurantPlaceableCatalogApprovedSkin>();
+        }
     }
 
     private void Start()
@@ -335,27 +349,29 @@ public sealed class RestaurantPlaceableCatalogPanel :
             }
         }
 
-        if (selectedCategoryCode != AllCategoriesCode &&
-            !availableCategories.Contains(
-                (RestaurantPlaceableItemCategory)
-                    selectedCategoryCode
-            ))
-        {
-            selectedCategoryCode =
-                AllCategoriesCode;
-        }
-
         CreateCategoryView(
             AllCategoriesCode,
             "Todos"
         );
 
-        foreach (RestaurantPlaceableItemCategory category
-                 in Enum.GetValues(
-                     typeof(RestaurantPlaceableItemCategory)
-                 ))
+        for (int index = 0;
+             index < ApprovedCategoryOrder.Length;
+             index++)
         {
-            if (!availableCategories.Contains(category))
+            RestaurantPlaceableItemCategory category =
+                ApprovedCategoryOrder[index];
+
+            CreateCategoryView(
+                (int)category,
+                GetCategoryLabel(category)
+            );
+        }
+
+        foreach (RestaurantPlaceableItemCategory category
+                 in availableCategories)
+        {
+            if (Array.IndexOf(ApprovedCategoryOrder, category) >= 0 ||
+                category == RestaurantPlaceableItemCategory.Structural)
             {
                 continue;
             }
@@ -623,10 +639,10 @@ public sealed class RestaurantPlaceableCatalogPanel :
         switch (category)
         {
             case RestaurantPlaceableItemCategory.Furniture:
-                return "Mobiliario";
+                return "Mesas";
 
             case RestaurantPlaceableItemCategory.Seating:
-                return "Asientos";
+                return "Sillas";
 
             case RestaurantPlaceableItemCategory.Lighting:
                 return "Iluminación";

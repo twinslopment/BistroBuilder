@@ -21,11 +21,19 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
 
     [SerializeField]
     private Color normalBackground =
-        new Color(0.15f, 0.17f, 0.16f, 1f);
+        new Color32(243, 240, 233, 255);
 
     [SerializeField]
     private Color selectedBackground =
-        new Color(0.31f, 0.43f, 0.35f, 1f);
+        new Color32(113, 143, 77, 255);
+
+    [SerializeField]
+    private Color normalText =
+        new Color32(48, 52, 50, 255);
+
+    [SerializeField]
+    private Color selectedText =
+        Color.white;
 
     private int categoryCode;
 
@@ -82,6 +90,14 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
                 selected
                     ? selectedBackground
                     : normalBackground;
+        }
+
+        if (labelText != null)
+        {
+            labelText.color =
+                selected
+                    ? selectedText
+                    : normalText;
         }
     }
 

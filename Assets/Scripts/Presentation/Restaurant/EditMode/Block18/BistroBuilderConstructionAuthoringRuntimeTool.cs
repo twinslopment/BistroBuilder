@@ -1406,14 +1406,17 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private Rect CalculateDockRect()
     {
         float left = Mathf.Clamp(Screen.width * 0.155f, 188f, 260f);
-        float width = Mathf.Max(360f, Screen.width - left - 16f);
         float height = editModeService != null && editModeService.IsEditModeActive ? 126f : 112f;
-        float catalogTop = Screen.height - 12f;
-        if (catalogPanel != null && catalogPanel.TryGetGuiRect(out Rect catalogRect))
-            catalogTop = catalogRect.y - 10f;
-        else if (editModeService != null && editModeService.IsEditModeActive)
-            catalogTop = Screen.height - Mathf.Clamp(Screen.height * 0.25f, 190f, 250f) - 10f;
-        float y = Mathf.Max(76f, catalogTop - height);
+
+        if (catalogPanel != null &&
+            catalogPanel.TryGetGuiRect(out Rect catalogRect) &&
+            catalogRect.height > catalogRect.width)
+        {
+            left = Mathf.Clamp(catalogRect.xMax + 12f, 188f, Screen.width * 0.45f);
+        }
+
+        float width = Mathf.Max(360f, Screen.width - left - 16f);
+        float y = Mathf.Max(76f, Screen.height - height - 18f);
         return new Rect(left, y, width, height);
     }
 
