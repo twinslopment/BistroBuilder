@@ -24,6 +24,10 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
     private RestaurantPlaceableItemCategory category =
         RestaurantPlaceableItemCategory.Furniture;
 
+    [SerializeField]
+    private RestaurantPlaceableEnvironmentScope placementScope =
+        RestaurantPlaceableEnvironmentScope.InteriorAndExterior;
+
     [SerializeField, TextArea(2, 6)]
     private string description;
 
@@ -67,6 +71,7 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
             : displayName.Trim();
 
     public RestaurantPlaceableItemCategory Category => category;
+    public RestaurantPlaceableEnvironmentScope PlacementScope => placementScope;
     public string Description => description;
     public Sprite CatalogIcon => catalogIcon;
     public RestaurantPlaceableObject Prefab => prefab;
@@ -107,6 +112,13 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
             .Replace(" ", "_")
             .Replace("-", "_");
     }
+}
+
+public enum RestaurantPlaceableEnvironmentScope
+{
+    InteriorAndExterior = 0,
+    InteriorOnly = 1,
+    ExteriorOnly = 2
 }
 
 public enum RestaurantPlaceableItemCategory
