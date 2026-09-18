@@ -12,6 +12,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private static readonly Color32 TextPrimary = new Color32(24, 28, 29, 255);
     private static readonly Color32 TextMuted = new Color32(119, 123, 120, 255);
     private static readonly Color32 Olive = new Color32(113, 143, 77, 255);
+    private static readonly Color32 OliveSoft = new Color32(232, 238, 223, 255);
     private static readonly Color32 Gold = new Color32(237, 169, 34, 255);
 
     private Transform contentRoot;
@@ -25,6 +26,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private int categoryCount = -1;
     private int itemCount = -1;
     private bool chromeReady;
+    private string selectedScopeLabel = "Todos";
 
     private void Awake()
     {
@@ -59,7 +61,9 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 
         SyncDynamicText();
         SyncCategoryStates();
+        SyncScopeStates();
         SyncCardStates();
+        EnforcePreviewVisualAuthority();
     }
 
     private void LoadFonts()
@@ -133,6 +137,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         ApplyPlacementStrip();
         ApplyEmptyState();
         ApplyItemGrid();
+        ConfigureCanvasForCrispUi();
     }
 
     private void ApplyHeader()
@@ -378,6 +383,12 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 TextAlignmentOptions.Center);
             SetStretch(tmp.rectTransform, 0f);
             tmp.text = label;
+
+            string capturedLabel = label;
+            button.onClick.AddListener(() =>
+            {
+                selectedScopeLabel = capturedLabel;
+            });
         }
     }
 
@@ -570,6 +581,37 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             background.color = Card;
         }
 
+        Button cardButton = card.GetComponent<Button>();
+        if (cardButton != null)
+        {
+            cardButton.transition = Selectable.Transition.None;
+        }
+
+        BistroBuilderInteractionSurface interaction =
+            card.GetComponent<BistroBuilderInteractionSurface>();
+        if (interaction != null)
+        {
+            interaction.enabled = false;
+        }
+
+        Transform interactionState = card.Find("Interaction state");
+        if (interactionState != null)
+        {
+            interactionState.gameObject.SetActive(false);
+        }
+
+        Outline outline = card.GetComponent<Outline>() ??
+            card.gameObject.AddComponent<Outline>();
+        outline.effectColor = Olive;
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        outline.useGraphicAlpha = true;
+
+        Shadow shadow = card.GetComponent<Shadow>() ??
+            card.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.07f);
+        shadow.effectDistance = new Vector2(0f, -2f);
+        shadow.useGraphicAlpha = true;
+
         Text oldName = card.Find("Name")?.GetComponent<Text>();
         Text oldDescription = card.Find("Description")?.GetComponent<Text>();
         Text oldPrice = card.Find("Price")?.GetComponent<Text>();
@@ -699,7 +741,22 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 continue;
             }
 
-            bool selected = ColorDistance(background.color, Olive) < 0.20f;
+            RestaurantPlaceableCatalogCategoryView view =
+                child.GetComponent<RestaurantPlaceableCatalogCategoryView>();
+            bool selected = view != null && view.IsSelected;
+
+            background.color = selected
+                ? Olive
+                : new Color(1f, 1f, 1f, 0f);
+
+            Button button = child.GetComponent<Button>();
+            if (button != null)
+            {
+                button.transition = Selectable.Transition.None;
+            }
+
+            NeutralizeInteractionVisuals(child);
+
             Color target = selected ? Color.white : TextPrimary;
             if (label != null) label.color = target;
             if (icon != null) icon.color = selected ? Color.white : TextMuted;
@@ -752,6 +809,256 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                     star.color = active ? Color.white : TextMuted;
                 }
             }
+        }
+    }
+
+
+    private void SyncScopeStates()
+    {
+        Transform bar = contentRoot != null
+            ? contentRoot.Find("ApprovedScopeBar")
+            : null;
+        if (bar == null)
+        {
+            return;
+        }
+
+        foreach (Transform child in bar)
+        {
+            Button button = child.GetComponent<Button>();
+            Image image = child.GetComponent<Image>();
+            if (button == null || image == null)
+            {
+                continue;
+            }
+
+            Text legacy = child.GetComponentInChildren<Text>(true);
+            TextMeshProUGUI label =
+                child.Find("PreviewLabel")?.GetComponent<TextMeshProUGUI>();
+
+            string text = legacy != null
+                ? legacy.text
+                : label != null
+                    ? label.text
+                    : string.Empty;
+
+            button.transition = Selectable.Transition.None;
+            NeutralizeInteractionVisuals(child);
+
+            if (text == "≡")
+            {
+                bool open = contentRoot.Find("ApprovedFilters")?.gameObject.activeSelf == true;
+                image.color = open ? OliveSoft : Field;
+                RestaurantCatalogPreviewIconGraphic icon =
+                    child.Find("PreviewFilterIcon")?.GetComponent<RestaurantCatalogPreviewIconGraphic>();
+                if (icon != null) icon.color = TextPrimary;
+                continue;
+            }
+
+            bool selected = string.Equals(
+                text,
+                selectedScopeLabel,
+                StringComparison.OrdinalIgnoreCase);
+
+            image.color = selected ? Olive : Field;
+            if (label != null)
+            {
+                label.color = selected ? Color.white : TextPrimary;
+            }
+        }
+    }
+
+    private void EnforcePreviewVisualAuthority()
+    {
+        if (contentRoot == null)
+        {
+            return;
+        }
+
+        Image panelImage = contentRoot.GetComponent<Image>();
+        if (panelImage != null)
+        {
+            panelImage.color = Panel;
+        }
+
+        Transform header = contentRoot.Find("Header");
+        TextMeshProUGUI title =
+            header?.Find("PreviewTitle")?.GetComponent<TextMeshProUGUI>();
+        if (title != null)
+        {
+            title.color = TextPrimary;
+            title.font = semiBoldFont;
+            title.fontSize = 27f;
+            title.fontWeight = FontWeight.SemiBold;
+            title.extraPadding = true;
+            title.transform.SetAsLastSibling();
+        }
+
+        Transform close = header?.Find("ApprovedClose");
+        if (close != null)
+        {
+            Image closeImage = close.GetComponent<Image>();
+            if (closeImage != null)
+            {
+                closeImage.color = new Color(1f, 1f, 1f, 0f);
+            }
+
+            Button closeButton = close.GetComponent<Button>();
+            if (closeButton != null)
+            {
+                closeButton.transition = Selectable.Transition.None;
+            }
+
+            NeutralizeInteractionVisuals(close);
+        }
+
+        Transform search = contentRoot.Find("ApprovedSearch");
+        if (search != null)
+        {
+            Image searchImage = search.GetComponent<Image>();
+            if (searchImage != null)
+            {
+                searchImage.color = Card;
+            }
+
+            NeutralizeInteractionVisuals(search);
+        }
+
+        Transform filterPanel = contentRoot.Find("ApprovedFilters");
+        if (filterPanel != null)
+        {
+            Image image = filterPanel.GetComponent<Image>();
+            if (image != null) image.color = Field;
+        }
+
+        Transform placement = contentRoot.Find("ApprovedPlacement");
+        if (placement != null)
+        {
+            Image image = placement.GetComponent<Image>();
+            if (image != null) image.color = OliveSoft;
+        }
+
+        if (itemContainer != null)
+        {
+            foreach (Transform child in itemContainer)
+            {
+                RestaurantPlaceableCatalogItemView view =
+                    child.GetComponent<RestaurantPlaceableCatalogItemView>();
+                if (view == null || view.Definition == null)
+                {
+                    continue;
+                }
+
+                Image background = child.GetComponent<Image>();
+                if (background != null)
+                {
+                    background.color = Card;
+                }
+
+                Button button = child.GetComponent<Button>();
+                if (button != null)
+                {
+                    button.transition = Selectable.Transition.None;
+                }
+
+                NeutralizeInteractionVisuals(child);
+
+                Transform iconRoot = child.Find("IconRoot");
+                Image iconBackground = iconRoot?.GetComponent<Image>();
+                if (iconBackground != null)
+                {
+                    iconBackground.color = new Color32(247, 244, 237, 255);
+                }
+
+                Transform selectedMarker = child.Find("ApprovedSelected");
+                bool selected = selectedMarker != null &&
+                    selectedMarker.gameObject.activeSelf;
+
+                Outline outline = child.GetComponent<Outline>();
+                if (outline != null)
+                {
+                    outline.enabled = selected;
+                    outline.effectColor = Olive;
+                    outline.effectDistance = new Vector2(1.5f, -1.5f);
+                }
+
+                TextMeshProUGUI name =
+                    child.Find("PreviewName")?.GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI price =
+                    child.Find("PreviewPrice")?.GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI scope =
+                    child.Find("PreviewScope")?.GetComponent<TextMeshProUGUI>();
+
+                if (name != null)
+                {
+                    name.color = TextPrimary;
+                    name.font = semiBoldFont;
+                    name.fontWeight = FontWeight.SemiBold;
+                }
+
+                if (price != null)
+                {
+                    price.color = new Color32(62, 123, 48, 255);
+                    price.font = semiBoldFont;
+                    price.fontWeight = FontWeight.SemiBold;
+                }
+
+                if (scope != null)
+                {
+                    scope.color = TextMuted;
+                    scope.font = bodyFont;
+                }
+            }
+        }
+    }
+
+    private void ConfigureCanvasForCrispUi()
+    {
+        Canvas canvas = contentRoot != null
+            ? contentRoot.GetComponentInParent<Canvas>()
+            : null;
+        if (canvas != null)
+        {
+            canvas.pixelPerfect = true;
+        }
+
+        CanvasScaler scaler = contentRoot != null
+            ? contentRoot.GetComponentInParent<CanvasScaler>()
+            : null;
+        if (scaler != null)
+        {
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            scaler.referencePixelsPerUnit = 100f;
+        }
+    }
+
+    private static void NeutralizeInteractionVisuals(Transform root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        BistroBuilderInteractionSurface interaction =
+            root.GetComponent<BistroBuilderInteractionSurface>();
+        if (interaction != null)
+        {
+            interaction.enabled = false;
+        }
+
+        Transform state = root.Find("Interaction state");
+        if (state != null)
+        {
+            state.gameObject.SetActive(false);
+        }
+
+        Transform depth = root.Find("Surface depth");
+        if (depth != null)
+        {
+            depth.gameObject.SetActive(false);
         }
     }
 
@@ -845,6 +1152,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         tmp.font = font;
         tmp.fontSize = size;
         tmp.fontStyle = FontStyles.Normal;
+        tmp.fontWeight = FontWeight.Regular;
+        tmp.extraPadding = true;
         tmp.color = color;
         tmp.alignment = alignment;
         tmp.raycastTarget = false;
