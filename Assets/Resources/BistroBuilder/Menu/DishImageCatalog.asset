@@ -19,12 +19,18 @@ MonoBehaviour:
   - dishId: arroz_con_leche
     image: {fileID: 21300000, guid: a7545a50215bf4646bfab2fb55556aa1, type: 3}
     sourceFileName: arroz_con_leche.jpg
+  - dishId: atun_encebollado
+    image: {fileID: 21300000, guid: 1f263b8c05bec354a9db039994383bba, type: 3}
+    sourceFileName: atun_encebollado.jpg
   - dishId: boquerones
     image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
     sourceFileName: boquerones.jpg
   - dishId: calamares_a_la_romana
     image: {fileID: 21300000, guid: 9b58a03408a07584eb68d56a7c50ec67, type: 3}
     sourceFileName: calamares_a_la_romana.jpg
+  - dishId: cazon_en_adobo
+    image: {fileID: 21300000, guid: f200778d7d2b89f4695a6890715b055d, type: 3}
+    sourceFileName: cazon_en_adobo.jpg
   - dishId: champinones_al_ajillo
     image: {fileID: 21300000, guid: d50ef3c5fdf9bf547a37406301f52936, type: 3}
     sourceFileName: champinones_al_ajillo.jpg
@@ -37,6 +43,9 @@ MonoBehaviour:
   - dishId: dish_fabada_asturiana
     image: {fileID: 21300000, guid: 3c3bb632cb0efb84ca883c0545271411, type: 3}
     sourceFileName: fabada_asturiana.jpg
+  - dishId: dish_tarta_queso
+    image: {fileID: 21300000, guid: 312d7799da3e4904995e24983c10d691, type: 3}
+    sourceFileName: tarta_queso.jpg
   - dishId: ensaladilla_rusa
     image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
     sourceFileName: ensaladilla_rusa.jpg
@@ -49,6 +58,9 @@ MonoBehaviour:
   - dishId: huevos_rotos
     image: {fileID: 21300000, guid: 28a59fd5fbcea1f4da937c82f24b8141, type: 3}
     sourceFileName: huevos_rotos.jpg
+  - dishId: jamon_iberico
+    image: {fileID: 21300000, guid: 39254f63978a73047bc260ee744eac03, type: 3}
+    sourceFileName: jamon_iberico.jpg
   - dishId: lentejas_estofadas
     image: {fileID: 21300000, guid: 9c0e8bce0ad0ae1488db51e9cd97b132, type: 3}
     sourceFileName: lentejas_estofadas.jpg
