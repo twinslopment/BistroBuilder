@@ -28,7 +28,7 @@ public sealed class BistroBuilderConstructionAuthoringRuntimeTool : MonoBehaviou
 
     [Header("Construction V1")]
     [SerializeField, Min(0.05f)] private float wallThickness = 0.12f;
-    [SerializeField, Min(1f)] private float wallHeight = 2.8f;
+    [SerializeField, Min(1f)] private float wallHeight = 2.5f;
     [SerializeField, Min(0.25f)] private float minimumRoomSide = 1f;
     [SerializeField, Min(0.05f)] private float selectionRadius = 0.22f;
     [SerializeField, Min(0.05f)] private float handleRadius = 0.28f;

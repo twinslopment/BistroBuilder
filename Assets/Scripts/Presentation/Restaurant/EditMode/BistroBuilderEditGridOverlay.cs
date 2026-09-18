@@ -178,24 +178,28 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
         var vertices = new List<Vector3>(1024);
         var triangles = new List<int>(1536);
         lineCount = 0;
-        float inset = width * 0.5f;
-        float xMin = Mathf.Ceil((bounds.min.x + inset) / spacing) * spacing;
-        float xMax = Mathf.Floor((bounds.max.x - inset) / spacing) * spacing;
-        float zMin = Mathf.Ceil((bounds.min.z + inset) / spacing) * spacing;
-        float zMax = Mathf.Floor((bounds.max.z - inset) / spacing) * spacing;
+        float xMin = bounds.min.x;
+        float xMax = bounds.max.x;
+        float zMin = bounds.min.z;
+        float zMax = bounds.max.z;
+        float firstX = Mathf.Ceil(xMin / spacing) * spacing;
+        float firstZ = Mathf.Ceil(zMin / spacing) * spacing;
 
-        for (float x = xMin; x <= xMax + 0.0001f; x += spacing)
+        for (float x = firstX; x <= xMax + 0.0001f; x += spacing)
         {
             if (!includeOnlyMajor && IsMajorCoordinate(x, majorSpacing)) continue;
-            AddQuad(vertices, triangles, new Vector3(x, y, zMin), new Vector3(x, y, zMax), width);
+            AddClippedGridQuad(vertices, triangles, bounds, new Vector3(x, y, zMin), new Vector3(x, y, zMax), width);
             lineCount++;
         }
-        for (float z = zMin; z <= zMax + 0.0001f; z += spacing)
+
+        for (float z = firstZ; z <= zMax + 0.0001f; z += spacing)
         {
             if (!includeOnlyMajor && IsMajorCoordinate(z, majorSpacing)) continue;
-            AddQuad(vertices, triangles, new Vector3(xMin, y, z), new Vector3(xMax, y, z), width);
+            AddClippedGridQuad(vertices, triangles, bounds, new Vector3(xMin, y, z), new Vector3(xMax, y, z), width);
             lineCount++;
         }
+
+        AddBoundaryGridLines(vertices, triangles, bounds, y, width, spacing, includeOnlyMajor, ref lineCount);
 
         var mesh = new Mesh { name = includeOnlyMajor ? "BB_EditGridMajorMesh" : "BB_EditGridMinorMesh" };
         if (vertices.Count > 65535) mesh.indexFormat = IndexFormat.UInt32;
@@ -211,17 +215,87 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
         return Mathf.Abs(value - nearest) <= 0.001f;
     }
 
-    private static void AddQuad(List<Vector3> vertices, List<int> triangles, Vector3 a, Vector3 b, float width)
+    private static void AddBoundaryGridLines(
+        List<Vector3> vertices,
+        List<int> triangles,
+        Bounds bounds,
+        float y,
+        float width,
+        float spacing,
+        bool includeOnlyMajor,
+        ref int lineCount)
+    {
+        if (includeOnlyMajor) return;
+
+        if (!IsGridCoordinate(bounds.min.x, spacing))
+        {
+            AddClippedGridQuad(vertices, triangles, bounds,
+                new Vector3(bounds.min.x, y, bounds.min.z),
+                new Vector3(bounds.min.x, y, bounds.max.z), width);
+            lineCount++;
+        }
+
+        if (!IsGridCoordinate(bounds.max.x, spacing))
+        {
+            AddClippedGridQuad(vertices, triangles, bounds,
+                new Vector3(bounds.max.x, y, bounds.min.z),
+                new Vector3(bounds.max.x, y, bounds.max.z), width);
+            lineCount++;
+        }
+
+        if (!IsGridCoordinate(bounds.min.z, spacing))
+        {
+            AddClippedGridQuad(vertices, triangles, bounds,
+                new Vector3(bounds.min.x, y, bounds.min.z),
+                new Vector3(bounds.max.x, y, bounds.min.z), width);
+            lineCount++;
+        }
+
+        if (!IsGridCoordinate(bounds.max.z, spacing))
+        {
+            AddClippedGridQuad(vertices, triangles, bounds,
+                new Vector3(bounds.min.x, y, bounds.max.z),
+                new Vector3(bounds.max.x, y, bounds.max.z), width);
+            lineCount++;
+        }
+    }
+
+    private static bool IsGridCoordinate(float value, float spacing)
+    {
+        float nearest = Mathf.Round(value / spacing) * spacing;
+        return Mathf.Abs(value - nearest) <= 0.001f;
+    }
+
+    private static void AddClippedGridQuad(
+        List<Vector3> vertices,
+        List<int> triangles,
+        Bounds bounds,
+        Vector3 a,
+        Vector3 b,
+        float width)
     {
         Vector3 direction = (b - a).normalized;
         Vector3 side = new Vector3(-direction.z, 0f, direction.x) * (width * 0.5f);
+
+        Vector3 v0 = ClampToBounds(a - side, bounds);
+        Vector3 v1 = ClampToBounds(a + side, bounds);
+        Vector3 v2 = ClampToBounds(b + side, bounds);
+        Vector3 v3 = ClampToBounds(b - side, bounds);
+
         int start = vertices.Count;
-        vertices.Add(a - side);
-        vertices.Add(a + side);
-        vertices.Add(b + side);
-        vertices.Add(b - side);
+        vertices.Add(v0);
+        vertices.Add(v1);
+        vertices.Add(v2);
+        vertices.Add(v3);
         triangles.Add(start); triangles.Add(start + 1); triangles.Add(start + 2);
         triangles.Add(start); triangles.Add(start + 2); triangles.Add(start + 3);
+    }
+
+    private static Vector3 ClampToBounds(Vector3 point, Bounds bounds)
+    {
+        point.x = Mathf.Clamp(point.x, bounds.min.x, bounds.max.x);
+        point.z = Mathf.Clamp(point.z, bounds.min.z, bounds.max.z);
+        return point;
     }
 
     private void ConfigureLayer(string name, Mesh mesh, ref Material material, Color color, int sortingOrder)
