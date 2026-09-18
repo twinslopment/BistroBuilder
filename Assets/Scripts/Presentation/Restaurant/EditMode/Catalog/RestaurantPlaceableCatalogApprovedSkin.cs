@@ -39,6 +39,8 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
     private Button scopeAllButton;
     private Button scopeInteriorButton;
     private Button scopeExteriorButton;
+    private Button favoritesFilterButton;
+    private Button recentsFilterButton;
 
     private readonly HashSet<string> favorites = new HashSet<string>();
     private readonly List<string> recents = new List<string>(12);
@@ -267,23 +269,23 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         image.color = Field;
         BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base);
 
-        Button favoritesButton = CreateChip(filterPanel.transform,
+        favoritesFilterButton = CreateChip(filterPanel.transform,
             "★ Favoritos", 0.02f, 0.32f);
-        Button recentsButton = CreateChip(filterPanel.transform,
+        recentsFilterButton = CreateChip(filterPanel.transform,
             "↺ Recientes", 0.34f, 0.66f);
         Button sortButton = CreateChip(filterPanel.transform,
             "Orden: relevancia", 0.68f, 0.98f);
 
-        favoritesButton.onClick.AddListener(() =>
+        favoritesFilterButton.onClick.AddListener(() =>
         {
             favoritesOnly = !favoritesOnly;
-            SetChipSelected(favoritesButton, favoritesOnly);
+            SetChipSelected(favoritesFilterButton, favoritesOnly);
             ApplyFiltersAndOrdering();
         });
-        recentsButton.onClick.AddListener(() =>
+        recentsFilterButton.onClick.AddListener(() =>
         {
             recentsOnly = !recentsOnly;
-            SetChipSelected(recentsButton, recentsOnly);
+            SetChipSelected(recentsFilterButton, recentsOnly);
             ApplyFiltersAndOrdering();
         });
         sortButton.onClick.AddListener(() =>
@@ -722,6 +724,41 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         }
 
         RefreshDynamicViews(false);
+    }
+
+
+    public void NotifyCategoryChanged(bool resetAllFilters)
+    {
+        if (resetAllFilters)
+        {
+            scopeFilter =
+                RestaurantPlaceableEnvironmentScope.InteriorAndExterior;
+            favoritesOnly = false;
+            recentsOnly = false;
+
+            if (searchInput != null)
+            {
+                searchInput.SetTextWithoutNotify(string.Empty);
+            }
+
+            SetChipSelected(favoritesFilterButton, false);
+            SetChipSelected(recentsFilterButton, false);
+            RefreshScopeButtonColors();
+
+            if (scopeAllButton != null)
+            {
+                scopeAllButton.onClick.Invoke();
+            }
+        }
+
+        RefreshDynamicViews(true);
+
+        if (scrollRect != null)
+        {
+            Canvas.ForceUpdateCanvases();
+            scrollRect.verticalNormalizedPosition = 1f;
+            scrollRect.StopMovement();
+        }
     }
 
     private void ApplyFiltersAndOrdering()

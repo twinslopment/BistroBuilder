@@ -512,6 +512,15 @@ public sealed class RestaurantPlaceableCatalogPanel :
 
         RebuildItemViews();
 
+        RestaurantPlaceableCatalogApprovedSkin approvedSkin =
+            GetComponent<RestaurantPlaceableCatalogApprovedSkin>();
+        if (approvedSkin != null)
+        {
+            approvedSkin.NotifyCategoryChanged(
+                categoryCode == AllCategoriesCode
+            );
+        }
+
         if (statusText != null)
         {
             statusText.text =

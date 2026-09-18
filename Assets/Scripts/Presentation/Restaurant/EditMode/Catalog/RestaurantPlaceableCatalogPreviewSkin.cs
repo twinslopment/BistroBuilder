@@ -1184,11 +1184,23 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         RectTransform panelRect = contentRoot as RectTransform;
         if (panelRect != null)
         {
+            float topInset = Mathf.Max(
+                86f,
+                ResolveHorizontalBarInset(
+                    BistroBuilderUiShell.TopBarName,
+                    64f) + 12f);
+
+            float bottomInset = Mathf.Max(
+                150f,
+                ResolveHorizontalBarInset(
+                    BistroBuilderUiShell.BottomBarName,
+                    64f) + 12f);
+
             panelRect.anchorMin = new Vector2(0f, 0f);
             panelRect.anchorMax = new Vector2(0f, 1f);
             panelRect.pivot = new Vector2(0f, 0.5f);
-            panelRect.offsetMin = new Vector2(4f, 4f);
-            panelRect.offsetMax = new Vector2(431f, -4f);
+            panelRect.offsetMin = new Vector2(4f, bottomInset);
+            panelRect.offsetMax = new Vector2(431f, -topInset);
         }
 
         RectTransform header = contentRoot.Find("Header") as RectTransform;
@@ -1367,6 +1379,31 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         }
 
         scrollbar.transition = Selectable.Transition.None;
+    }
+
+
+    private static float ResolveHorizontalBarInset(
+        string objectName,
+        float fallbackHeight)
+    {
+        if (!string.IsNullOrWhiteSpace(objectName))
+        {
+            GameObject barObject = GameObject.Find(objectName);
+            RectTransform rect = barObject != null
+                ? barObject.GetComponent<RectTransform>()
+                : null;
+
+            if (rect != null)
+            {
+                float height = rect.rect.height;
+                if (height > 1f)
+                {
+                    return height;
+                }
+            }
+        }
+
+        return fallbackHeight;
     }
 
     private static void SetTopRect(
