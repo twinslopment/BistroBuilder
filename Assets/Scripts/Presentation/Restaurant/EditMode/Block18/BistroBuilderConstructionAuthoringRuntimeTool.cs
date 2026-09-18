@@ -1419,6 +1419,14 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private void OnGUI()
     {
         if (!Application.isPlaying || !showPlaytestPanel) return;
+
+        if (editModeService != null &&
+            editModeService.IsEditModeActive &&
+            FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include) != null)
+        {
+            return;
+        }
+
         EnsureGuiStyles();
         CacheDependencies();
         panelRect = CalculateDockRect();
