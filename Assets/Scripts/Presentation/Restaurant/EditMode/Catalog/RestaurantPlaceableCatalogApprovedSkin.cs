@@ -86,10 +86,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         }
 
         RefreshPlacementStrip();
-        ApplyCollapsedState();        if (itemContainer != null)
-        {
-            ApplyFiltersAndOrdering();
-        }
+        ApplyCollapsedState();
     }
 
     private void CacheDependencies()

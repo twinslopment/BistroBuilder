@@ -136,6 +136,11 @@ namespace BistroBuilder.UI.Iconography
             if (button == null)
                 return false;
 
+            // El catálogo de artículos usa su propia iconografía vectorial,
+            // definida por la dirección visual aprobada. Evita superponer 21B.
+            if (button.GetComponentInParent<RestaurantPlaceableCatalogPanel>() != null)
+                return false;
+
             var existing = button.GetComponent<BBIconButton>();
             if (existing != null)
             {

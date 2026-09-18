@@ -6,14 +6,15 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 {
-    private static readonly Color32 Panel = new Color32(251, 249, 244, 255);
-    private static readonly Color32 Card = new Color32(255, 253, 250, 255);
-    private static readonly Color32 Field = new Color32(243, 240, 233, 255);
-    private static readonly Color32 TextPrimary = new Color32(24, 28, 29, 255);
-    private static readonly Color32 TextMuted = new Color32(119, 123, 120, 255);
-    private static readonly Color32 Olive = new Color32(113, 143, 77, 255);
-    private static readonly Color32 OliveSoft = new Color32(232, 238, 223, 255);
-    private static readonly Color32 Gold = new Color32(237, 169, 34, 255);
+    private static readonly Color32 Panel = new Color32(247, 243, 237, 255);
+    private static readonly Color32 Card = new Color32(253, 249, 245, 255);
+    private static readonly Color32 Field = new Color32(240, 237, 230, 255);
+    private static readonly Color32 TextPrimary = new Color32(31, 35, 29, 255);
+    private static readonly Color32 TextMuted = new Color32(138, 138, 132, 255);
+    private static readonly Color32 Olive = new Color32(107, 128, 74, 255);
+    private static readonly Color32 OliveSoft = new Color32(235, 241, 226, 255);
+    private static readonly Color32 Gold = new Color32(240, 171, 34, 255);
+    private static readonly Color32 PriceGreen = new Color32(63, 122, 49, 255);
 
     private static Sprite rounded10;
     private static Sprite rounded14;
@@ -31,6 +32,11 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private int categoryCount = -1;
     private int itemCount = -1;
     private bool chromeReady;
+    private bool geometryDirty = true;
+    private int lastScreenWidth = -1;
+    private int lastScreenHeight = -1;
+    private bool lastPlacementVisible;
+    private bool lastFiltersVisible;
     private string selectedScopeLabel = "Todos";
 
     private void Awake()
@@ -49,12 +55,14 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         {
             ApplyChrome();
             chromeReady = true;
+            geometryDirty = true;
         }
 
         if (categoryBar != null && categoryBar.childCount != categoryCount)
         {
             ApplyCategories();
             categoryCount = categoryBar.childCount;
+            geometryDirty = true;
         }
 
         if (itemContainer != null && itemContainer.childCount != itemCount)
@@ -62,6 +70,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             ApplyItemGrid();
             ApplyCards();
             itemCount = itemContainer.childCount;
+            geometryDirty = true;
         }
 
         SyncDynamicText();
@@ -69,7 +78,29 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         SyncScopeStates();
         SyncCardStates();
         EnforcePreviewVisualAuthority();
-        ApplyPreviewGeometry();
+
+        bool placementVisible =
+            contentRoot.Find("ApprovedPlacement")?.gameObject.activeSelf == true;
+        bool filtersVisible =
+            contentRoot.Find("ApprovedFilters")?.gameObject.activeSelf == true;
+
+        if (placementVisible != lastPlacementVisible ||
+            filtersVisible != lastFiltersVisible ||
+            Screen.width != lastScreenWidth ||
+            Screen.height != lastScreenHeight)
+        {
+            lastPlacementVisible = placementVisible;
+            lastFiltersVisible = filtersVisible;
+            lastScreenWidth = Screen.width;
+            lastScreenHeight = Screen.height;
+            geometryDirty = true;
+        }
+
+        if (geometryDirty)
+        {
+            ApplyPreviewGeometry();
+            geometryDirty = false;
+        }
     }
 
     private void LoadFonts()
@@ -610,7 +641,12 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 
         if (scrollRect != null)
         {
-            scrollRect.scrollSensitivity = 28f;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            scrollRect.inertia = true;
+            scrollRect.decelerationRate = 0.12f;
+            scrollRect.scrollSensitivity = 24f;
         }
     }
 
@@ -706,7 +742,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             "PreviewPrice",
             semiBoldFont,
             17f,
-            new Color32(62, 123, 48, 255),
+            PriceGreen,
             TextAlignmentOptions.MidlineLeft);
         SetAnchors(
             price.rectTransform,
@@ -818,6 +854,12 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 
         foreach (Transform child in categoryBar)
         {
+            Transform legacyRuntimeIcon = child.Find("BB_Icon21B");
+            if (legacyRuntimeIcon != null)
+            {
+                Destroy(legacyRuntimeIcon.gameObject);
+            }
+
             Image background = child.GetComponent<Image>();
             TextMeshProUGUI label =
                 child.Find("PreviewLabel")?.GetComponent<TextMeshProUGUI>();
@@ -837,6 +879,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             background.color = selected
                 ? Olive
                 : new Color(1f, 1f, 1f, 0f);
+            ResetGraphicTint(background);
 
             Button button = child.GetComponent<Button>();
             if (button != null)
@@ -894,6 +937,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 Image image = favorite.GetComponent<Image>();
                 if (star != null && image != null)
                 {
+                    ResetGraphicTint(image);
                     bool active = ColorDistance(image.color, Gold) < 0.22f;
                     star.color = active ? Color.white : TextMuted;
                 }
@@ -939,6 +983,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             {
                 bool open = contentRoot.Find("ApprovedFilters")?.gameObject.activeSelf == true;
                 image.color = open ? OliveSoft : Field;
+                ResetGraphicTint(image);
                 RestaurantCatalogPreviewIconGraphic icon =
                     child.Find("PreviewFilterIcon")?.GetComponent<RestaurantCatalogPreviewIconGraphic>();
                 if (icon != null) icon.color = TextPrimary;
@@ -951,6 +996,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 StringComparison.OrdinalIgnoreCase);
 
             image.color = selected ? Olive : Field;
+            ResetGraphicTint(image);
             if (label != null)
             {
                 label.color = selected ? Color.white : TextPrimary;
@@ -970,6 +1016,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         {
             panelImage.color = Panel;
             ApplyRounded(panelImage, 24);
+            ResetGraphicTint(panelImage);
         }
 
         NeutralizeInteractionVisuals(contentRoot);
@@ -1019,6 +1066,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             {
                 searchImage.color = Card;
                 ApplyRounded(searchImage, 16);
+                ResetGraphicTint(searchImage);
             }
 
             Outline searchOutline = search.GetComponent<Outline>() ??
@@ -1061,6 +1109,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 {
                     background.color = Card;
                     ApplyRounded(background, 16);
+                    ResetGraphicTint(background);
                 }
 
                 Button button = child.GetComponent<Button>();
@@ -1075,7 +1124,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 Image iconBackground = iconRoot?.GetComponent<Image>();
                 if (iconBackground != null)
                 {
-                    iconBackground.color = new Color32(247, 244, 237, 255);
+                    iconBackground.color = Card;
+                    ResetGraphicTint(iconBackground);
                 }
 
                 Transform selectedMarker = child.Find("ApprovedSelected");
@@ -1110,7 +1160,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 
                 if (price != null)
                 {
-                    price.color = new Color32(62, 123, 48, 255);
+                    price.color = PriceGreen;
                     price.font = semiBoldFont;
                     price.fontWeight = FontWeight.SemiBold;
                 }
@@ -1368,6 +1418,19 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             scaler.matchWidthOrHeight = 0.5f;
             scaler.referencePixelsPerUnit = 100f;
         }
+    }
+
+
+    private static void ResetGraphicTint(Graphic graphic)
+    {
+        if (graphic == null || graphic.canvasRenderer == null)
+        {
+            return;
+        }
+
+        // Selectable usa un multiplicador interno en CanvasRenderer. Al pasar
+        // a Transition.None puede quedar el tinte disabled/pressed anterior.
+        graphic.canvasRenderer.SetColor(Color.white);
     }
 
     private static void NeutralizeInteractionVisuals(Transform root)
