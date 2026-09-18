@@ -14,6 +14,7 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private bool rebuildPending;
     private float rebuildAt;
+    private BistroBuilderSaveGameService saveGameService;
 
     public int AutomaticTopologyRebuildCount { get; private set; }
 
@@ -37,6 +38,15 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
     private void Update()
     {
         if (!rebuildPending || Time.unscaledTime < rebuildAt) return;
+
+        // Durante Load pueden llegar altas/bajas parciales de placeables.
+        // Esperar evita reconstruir una topología intermedia que será sustituida
+        // unos frames después por el estado completo restaurado.
+        if (saveGameService != null &&
+            saveGameService.IsBusy &&
+            saveGameService.ActiveOperation == BistroBuilderSaveOperationKind.Load)
+            return;
+
         RebuildNow();
     }
 
@@ -73,8 +83,23 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
         RequestRebuild();
     }
 
+    private void HandleSaveCompleted(BistroBuilderSaveOperationResult result)
+    {
+        if (result != null &&
+            result.OperationKind == BistroBuilderSaveOperationKind.Load &&
+            rebuildPending)
+        {
+            RebuildNow();
+        }
+    }
+
     private void Subscribe()
     {
+        if (saveGameService != null)
+        {
+            saveGameService.OperationCompleted -= HandleSaveCompleted;
+            saveGameService.OperationCompleted += HandleSaveCompleted;
+        }
         if (placementTransactions != null)
         {
             placementTransactions.PlacementCommitted -= HandlePlacementCommitted;
@@ -91,6 +116,8 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private void Unsubscribe()
     {
+        if (saveGameService != null)
+            saveGameService.OperationCompleted -= HandleSaveCompleted;
         if (placementTransactions != null)
             placementTransactions.PlacementCommitted -= HandlePlacementCommitted;
         if (placeableRegistry != null)
@@ -102,6 +129,8 @@ public sealed class BistroBuilderNavigationEditIntegration : MonoBehaviour
 
     private void CacheDependencies()
     {
+        if (saveGameService == null)
+            saveGameService = FindFirstObjectByType<BistroBuilderSaveGameService>();
         if (navigationService == null)
             navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
         if (placementTransactions == null)
