@@ -595,6 +595,18 @@ public sealed class RestaurantPlaceableCatalogPanel :
         }
     }
 
+    public void SelectAllFromInterface()
+    {
+        HandleCategorySelected(AllCategoriesCode);
+    }
+
+    public void SelectCategoryFromInterface(
+        RestaurantPlaceableItemCategory category
+    )
+    {
+        HandleCategorySelected((int)category);
+    }
+
     private bool MatchesSelectedCategory(
         RestaurantPlaceableItemDefinition item
     )

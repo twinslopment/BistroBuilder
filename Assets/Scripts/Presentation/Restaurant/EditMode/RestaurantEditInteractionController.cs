@@ -1548,6 +1548,11 @@ public sealed class RestaurantEditInteractionController :
         );
     }
 
+    public void RotateActiveCandidateFromInterface()
+    {
+        RotateCandidateClockwise();
+    }
+
     /// <summary>
     /// Rota el objeto cuando su definición lo permite.
     /// </summary>

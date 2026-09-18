@@ -180,6 +180,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         EnsureContextPanel();
         EnsureIconNavigationButtons();
         EnsureServiceAction();
+        EnsureEditModeChrome();
         ReconcileTimeDock();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
         {
@@ -763,6 +764,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
         bool managing = IsAnyManagementScreenOpen() || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
+        RefreshEditModeChrome(editing, managing);
         bool hasActivity = HasMeaningfulActivity();
         if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && !managing && activityVisible && hasActivity);
         RestaurantTable selectedTable = !editing && !managing && tableSelection != null ? tableSelection.SelectedTable : null;
