@@ -18,7 +18,7 @@ $tempDir = Join-Path $logDir '.batchstate'
 New-Item -ItemType Directory -Force -Path $logDir, $tempDir | Out-Null
 
 # Serializa todos los Unity batch del proyecto mediante un lock real de proceso.
-# Evita que dos chats/sistemas abran simultáneamente el mismo proyecto y corrompan gates.
+# Evita que dos chats/sistemas abran simultÃ¡neamente el mismo proyecto y corrompan gates.
 $slotPath = Join-Path $tempDir 'unity_project_slot.lock'
 $slotDeadline = [DateTime]::UtcNow.AddSeconds([Math]::Max(30, $TimeoutSeconds))
 $slotStream = $null
@@ -44,8 +44,8 @@ while ($null -eq $slotStream) {
     }
 }
 
-# También respeta Unity externos que no hayan sido lanzados por este helper.
-$projectPattern = [regex]::Escape($projectRoot)
+# TambiÃ©n respeta Unity externos que no hayan sido lanzados por este helper.
+$projectPattern = '(?i)-projectPath\s+"?' + [regex]::Escape($projectRoot) + '(?:"|\s|$)'
 while ($true) {
     $projectUnity = @(
         Get-CimInstance Win32_Process -Filter "Name='Unity.exe'" -ErrorAction SilentlyContinue |
@@ -63,7 +63,7 @@ while ($true) {
     Start-Sleep -Milliseconds 500
 }
 
-# Repara únicamente locks de Unity huérfanos; nunca toca un proceso vivo.
+# Repara Ãºnicamente locks de Unity huÃ©rfanos; nunca toca un proceso vivo.
 $editorInstance = Join-Path $projectRoot 'Library\EditorInstance.json'
 $unityLock = Join-Path $projectRoot 'Temp\UnityLockfile'
 $recordedAlive = $false
@@ -82,7 +82,7 @@ if (-not $recordedAlive) {
 
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $guard -RepairKnownResidual
 if ($LASTEXITCODE -ne 0) {
-    throw "BB Scene Lock Guard rechazÃƒÂ³ el preflight."
+    throw "BB Scene Lock Guard rechazÃƒÆ’Ã‚Â³ el preflight."
 }
 
 $token = [Guid]::NewGuid().ToString('N')
@@ -104,6 +104,7 @@ $commandLine = '"' + $unity + '" ' +
     ($unityArguments -join ' ')
 $cmdLines = @(
     '@echo off',
+    ('cd /d "' + $projectRoot + '"'),
     $commandLine,
     'set BB_EXIT=%ERRORLEVEL%',
     ('echo %BB_EXIT% > "' + $resultPath + '"'),

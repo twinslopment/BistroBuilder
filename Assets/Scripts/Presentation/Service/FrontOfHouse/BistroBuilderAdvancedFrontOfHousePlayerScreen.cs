@@ -16,6 +16,8 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
     private TMP_Text body;
     private Button barButton;
     private bool open;
+    public bool IsOpen => open && panel != null && panel.activeInHierarchy;
+    public void Close() { open = false; if (panel != null) panel.SetActive(false); }
 
     private void Awake()
     {
@@ -67,7 +69,7 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         rr.anchoredPosition = new Vector2(18f, -18f);
         rr.sizeDelta = new Vector2(410f, 430f);
 
-        Button toggle = CreateButton(root.transform, "Toggle", "SALA", new Vector2(0f, 0f), new Vector2(124f, 34f));
+        Button toggle = CreateButton(root.transform, "OpenFrontOfHouseOperations", "SALA", new Vector2(0f, 0f), new Vector2(124f, 34f));
         toggle.onClick.AddListener(Toggle);
 
         panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
@@ -93,6 +95,7 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         barButton = CreateButton(panel.transform, "SendFirstToBar", "1º -> BARRA",
             new Vector2(10f, 10f), new Vector2(150f, 36f));
         barButton.onClick.AddListener(SendFirstToBar);
+        BistroBuilderOperationalPanel.Install(panel, body, "Entrada, sala y barra", Close);
         panel.SetActive(false);
     }
 
@@ -142,7 +145,6 @@ public sealed class BistroBuilderAdvancedFrontOfHousePlayerScreen : MonoBehaviou
         service.CopyQueueSnapshot(queue);
         var lines = new List<string>(queue.Count + 4)
         {
-            "ENTRADA / SALA / BARRA",
             "Estado: " + service.OperationalState,
             "Cola: " + queue.Count
         };

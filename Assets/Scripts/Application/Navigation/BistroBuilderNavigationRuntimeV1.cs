@@ -633,11 +633,36 @@ public sealed partial class BistroBuilderNavigationService
         BistroBuilderNavigationReplanLevel level,
         out BistroBuilderNavigationRoute route)
     {
+        InitializeV1();
         route = null;
         if (string.IsNullOrWhiteSpace(ownerId) ||
             !v1Trips.TryGetValue(ownerId, out NavigationTripRuntime trip) ||
-            trip == null)
+            trip == null || trip.request == null || trip.trace == null)
             return false;
+
+        // Un viaje puede seguir en RequestingRoute mientras el scheduler resuelve
+        // su primer corredor. Un cambio de destino durante esa ventana no debe
+        // dereferenciar un plan aún inexistente: actualiza la petición y fusiona
+        // una nueva consulta priorizada; el consumidor seguirá esperando el plan.
+        if (trip.plan == null)
+        {
+            trip.request.origin = origin;
+            trip.request.destination = destination;
+            trip.trace.topology = CaptureTopologySnapshot();
+            trip.trace.state = BistroBuilderNavigationTravelState.RequestingRoute;
+            trip.trace.waitingReason = BistroBuilderNavigationWaitingReason.AwaitingCorridor;
+            trip.trace.lastDecision = "Pending route updated before initial resolution.";
+            trip.lastPosition = origin;
+            trip.lastObservedAt = Time.unscaledTime;
+            v1PathScheduler.Enqueue(
+                ownerId,
+                level == BistroBuilderNavigationReplanLevel.Steering
+                    ? BistroBuilderNavigationQueryPriority.InvalidatedRoute
+                    : BistroBuilderNavigationQueryPriority.Recovery,
+                trip.request.externalUrgency);
+            SyncPathSchedulerMetricsV1();
+            return false;
+        }
 
         if (!TryBuildRouteV1Cached(
                 ownerId,

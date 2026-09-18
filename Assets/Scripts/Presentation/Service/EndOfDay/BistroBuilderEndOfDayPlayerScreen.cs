@@ -17,6 +17,8 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
     private Button toggle;
     private bool open;
     private float refreshTimer;
+    public bool IsOpen => open && panel != null && panel.activeInHierarchy;
+    public void Close() { open = false; if (panel != null) panel.SetActive(false); }
 
     private void Awake()
     {
@@ -81,7 +83,7 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
         rr.anchoredPosition = new Vector2(18f, -18f);
         rr.sizeDelta = new Vector2(470f, 610f);
 
-        GameObject toggleGo = new GameObject("Toggle", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject toggleGo = new GameObject("OpenEndOfDayOperations", typeof(RectTransform), typeof(Image), typeof(Button));
         toggleGo.transform.SetParent(root.transform, false);
         RectTransform tr = (RectTransform)toggleGo.transform;
         tr.anchorMin = tr.anchorMax = tr.pivot = new Vector2(0f, 1f);
@@ -115,6 +117,7 @@ public sealed class BistroBuilderEndOfDayPlayerScreen : MonoBehaviour
         fr.offsetMin = Vector2.zero; fr.offsetMax = Vector2.zero;
         feedback.alignment = TextAlignmentOptions.Center;
 
+        BistroBuilderOperationalPanel.Install(panel, body, "Cierre del día", Close);
         panel.SetActive(false);
     }
 

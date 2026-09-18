@@ -109,6 +109,25 @@ public sealed class RestaurantPlaceableCatalogPanel :
         initialized =
             true;
 
+        if (contentRoot != null)
+        {
+            var rect = (RectTransform)contentRoot.transform;
+            rect.offsetMin = new Vector2(12, 76);
+            rect.offsetMax = new Vector2(-12, 418);
+            var categories = categoryContainer.GetComponent<HorizontalLayoutGroup>();
+            if (categories != null) { categories.childControlWidth = true; categories.spacing = 10; }
+            categoryContainer.offsetMin = new Vector2(20, -98);
+            categoryContainer.offsetMax = new Vector2(-20, -54);
+            var scroll = itemContainer.GetComponentInParent<ScrollRect>();
+            if (scroll != null)
+            {
+                ((RectTransform)scroll.transform).offsetMax = new Vector2(-20, -110);
+                scroll.scrollSensitivity = 32;
+            }
+            var itemsLayout = itemContainer.GetComponent<HorizontalLayoutGroup>();
+            if (itemsLayout != null) { itemsLayout.padding = new RectOffset(6, 6, 6, 6); itemsLayout.spacing = 14; }
+        }
+
         if (titleText != null)
         {
             titleText.text =
@@ -231,14 +250,24 @@ public sealed class RestaurantPlaceableCatalogPanel :
         RebuildCatalogPresentation();
     }
 
+    private void LateUpdate() => RefreshVisibility();
+
     private void RefreshVisibility()
     {
         bool shouldBeVisible =
             editModeService != null &&
             editModeService.IsEditModeActive;
+        var construction = BistroBuilderConstructionPlayerPanel.Instance;
+        if (construction != null)
+        {
+            var tool = construction.GetComponent<BistroBuilderConstructionAuthoringRuntimeTool>();
+            shouldBeVisible &= tool != null && tool.Mode == BistroBuilderConstructionRuntimeMode.Furniture;
+            shouldBeVisible &= !construction.BlocksWorldInput;
+        }
 
         if (contentRoot != null)
         {
+            if (contentRoot.activeSelf == shouldBeVisible) return;
             contentRoot.SetActive(
                 shouldBeVisible
             );

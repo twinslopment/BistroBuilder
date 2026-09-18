@@ -396,14 +396,16 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             modalRoot,
             BistroBuilderMenuEditorUiFactory.Overlay
         );
+        modalRoot.offsetMin = new Vector2(0, 76);
+        modalRoot.offsetMax = new Vector2(0, -76);
 
         RectTransform panel = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Panel",
             modalRoot,
             Vector2.zero,
             Vector2.one,
-            new Vector2(34f, 28f),
-            new Vector2(-34f, -28f)
+            new Vector2(18f, 12f),
+            new Vector2(-18f, -12f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             panel,

@@ -99,12 +99,12 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         for (int i = 0; i < dropdowns.Length; i++) StyleLegacyDropdown(dropdowns[i], force);
         Scrollbar[] scrollbars = canvas.GetComponentsInChildren<Scrollbar>(true);
         for (int i = 0; i < scrollbars.Length; i++) StyleScrollbar(scrollbars[i], force);
+        Image[] images = canvas.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);
         TMP_Text[] tmpTexts = canvas.GetComponentsInChildren<TMP_Text>(true);
         for (int i = 0; i < tmpTexts.Length; i++) StyleTmpText(tmpTexts[i], force);
         Text[] legacyTexts = canvas.GetComponentsInChildren<Text>(true);
         for (int i = 0; i < legacyTexts.Length; i++) StyleLegacyText(legacyTexts[i], force);
-        Image[] images = canvas.GetComponentsInChildren<Image>(true);
-        for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);
 
         nextScanAt = Time.unscaledTime + Mathf.Max(0.2f, rescanIntervalSeconds);
     }
@@ -158,6 +158,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         int id = component.GetInstanceID();
         if (!force && styledIds.Contains(id)) return false;
         styledIds.Add(id);
+        if (component is Selectable selectable) BistroBuilderInteractionSurface.Attach(selectable);
+        if (component.GetComponentInParent<BistroBuilderTopBarSurface>() != null) return false;
         return true;
     }
 
@@ -180,6 +182,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         }
         if (button.GetComponent<BistroBuilderUiSelectableMotion>() == null)
             button.gameObject.AddComponent<BistroBuilderUiSelectableMotion>();
+        var depth = BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base);
+        if (role == BistroBuilderUiStyleRole.DestructiveButton) depth?.SetBorder(BistroBuilderBorderState.Critical);
     }
 
     private void StyleToggle(Toggle toggle, bool force)
@@ -189,12 +193,13 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
             Surface2, Color.Lerp(Surface2, Color.white, 0.08f), Color.Lerp(Surface2, Color.black, 0.12f));
         if (toggle.GetComponent<BistroBuilderUiSelectableMotion>() == null)
             toggle.gameObject.AddComponent<BistroBuilderUiSelectableMotion>();
+        BistroBuilderSurface.Apply(toggle.targetGraphic as Image, BistroBuilderSurfaceLevel.Base);
     }
 
     private void StyleTmpInput(TMP_InputField input, bool force)
     {
         if (!Begin(input, force)) return;
-        if (input.targetGraphic is Image image) image.color = Surface2;
+        if (input.targetGraphic is Image image) { image.color = Surface2; BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base); }
         if (input.textComponent != null)
         {
             input.textComponent.color = TextPrimary;
@@ -210,7 +215,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
     private void StyleLegacyInput(InputField input, bool force)
     {
         if (!Begin(input, force)) return;
-        if (input.targetGraphic is Image image) image.color = Surface2;
+        if (input.targetGraphic is Image image) { image.color = Surface2; BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base); }
         if (input.textComponent != null) input.textComponent.color = TextPrimary;
         if (input.placeholder is Text placeholder) placeholder.color = TextMuted;
     }
@@ -218,7 +223,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
     private void StyleTmpDropdown(TMP_Dropdown dropdown, bool force)
     {
         if (!Begin(dropdown, force)) return;
-        if (dropdown.targetGraphic is Image image) image.color = Surface2;
+        if (dropdown.targetGraphic is Image image) { image.color = Surface2; BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base); }
         dropdown.colors = BistroBuilderUiTokens.ButtonColors(
             Surface2, Color.Lerp(Surface2, Color.white, 0.08f), Color.Lerp(Surface2, Color.black, 0.12f));
         if (dropdown.captionText != null)
@@ -233,7 +238,7 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
     private void StyleLegacyDropdown(Dropdown dropdown, bool force)
     {
         if (!Begin(dropdown, force)) return;
-        if (dropdown.targetGraphic is Image image) image.color = Surface2;
+        if (dropdown.targetGraphic is Image image) { image.color = Surface2; BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Base); }
         dropdown.colors = BistroBuilderUiTokens.ButtonColors(
             Surface2, Color.Lerp(Surface2, Color.white, 0.08f), Color.Lerp(Surface2, Color.black, 0.12f));
         if (dropdown.captionText != null) dropdown.captionText.color = TextPrimary;
@@ -259,20 +264,27 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
 
         if (tag == null || !tag.PreserveFont)
         {
+            BistroBuilderTypography.Apply(text, role, true);
             if ((role == BistroBuilderUiStyleRole.Title || role == BistroBuilderUiStyleRole.Heading) &&
                 theme != null && theme.TitleFont != null)
                 text.font = theme.TitleFont;
-            else ApplyBodyFont(text);
+            else if (role != BistroBuilderUiStyleRole.Title && role != BistroBuilderUiStyleRole.Heading && role != BistroBuilderUiStyleRole.Label && role != BistroBuilderUiStyleRole.Subheading && role != BistroBuilderUiStyleRole.Kpi) ApplyBodyFont(text);
         }
 
         text.color = ResolveTextColor(role);
+        if (role != BistroBuilderUiStyleRole.StatusCritical && role != BistroBuilderUiStyleRole.StatusAttention && role != BistroBuilderUiStyleRole.StatusSuccess && role != BistroBuilderUiStyleRole.StatusInfo && IsOnLightSurface(text.transform)) text.color = BistroBuilderUiTokens.TextOnLight;
         if (tag == null || !tag.PreserveFontSize) ApplyTextSizePolicy(text, role);
     }
 
     private void StyleLegacyText(Text text, bool force)
     {
         if (!Begin(text, force)) return;
+        if (BistroBuilderTypography.LegacyBody != null) text.font = BistroBuilderTypography.LegacyBody;
+        var role = ResolveTextRole(text.gameObject, text.text);
+        if ((role == BistroBuilderUiStyleRole.Title || role == BistroBuilderUiStyleRole.Heading) && BistroBuilderTypography.LegacyTitle != null)
+        { text.font = BistroBuilderTypography.LegacyTitle; text.fontStyle = FontStyle.Normal; }
         text.color = ResolveTextColor(ResolveTextRole(text.gameObject, text.text));
+        if (IsOnLightSurface(text.transform)) text.color = BistroBuilderUiTokens.TextOnLight;
     }
 
     private void StyleStructuralImage(Image image, bool force)
@@ -283,9 +295,20 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
 
         BistroBuilderUiStyleTag tag = image.GetComponent<BistroBuilderUiStyleTag>();
         if (tag != null && tag.PreserveGraphicColor) return;
+        if (image.color.a < 0.01f && tag == null) return;
         BistroBuilderUiStyleRole role = tag != null && tag.Role != BistroBuilderUiStyleRole.Auto
             ? tag.Role : ResolveStructuralRole(image);
-        if (role != BistroBuilderUiStyleRole.Auto) image.color = ResolveColor(role);
+        if (role != BistroBuilderUiStyleRole.Auto)
+        {
+            image.color = ResolveColor(role);
+            if (role != BistroBuilderUiStyleRole.Overlay)
+            {
+                var existing = image.GetComponent<BistroBuilderSurface>();
+                bool hud = existing != null && existing.Hud;
+                var level = role == BistroBuilderUiStyleRole.SurfaceElevated ? BistroBuilderSurfaceLevel.Floating : role == BistroBuilderUiStyleRole.Row ? BistroBuilderSurfaceLevel.Card : role == BistroBuilderUiStyleRole.Background ? BistroBuilderSurfaceLevel.Base : BistroBuilderSurfaceLevel.Panel;
+                BistroBuilderSurface.Apply(image, level, hud);
+            }
+        }
     }
 
     private BistroBuilderUiStyleRole ResolveButtonRole(GameObject target)
@@ -312,6 +335,10 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         if (tag != null && tag.Role != BistroBuilderUiStyleRole.Auto) return tag.Role;
         string name = (target.name ?? string.Empty).ToLowerInvariant();
         string key = (name + " " + (value ?? string.Empty)).ToLowerInvariant();
+
+        if (target.GetComponentInParent<Selectable>() != null) return BistroBuilderUiStyleRole.Label;
+        if (ContainsAny(name, "subheading", "subtitle")) return BistroBuilderUiStyleRole.Subheading;
+        if (ContainsAny(name, "column", "fieldlabel", "tableheader")) return BistroBuilderUiStyleRole.Label;
 
         if (ContainsAny(name, "title", "screenname", "maintitle")) return BistroBuilderUiStyleRole.Title;
         if (ContainsAny(name, "header", "heading", "sectiontitle")) return BistroBuilderUiStyleRole.Heading;
@@ -345,30 +372,37 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
             case BistroBuilderUiStyleRole.StatusAttention: return Attention;
             case BistroBuilderUiStyleRole.StatusCritical: return Critical;
             case BistroBuilderUiStyleRole.StatusInfo: return Info;
+            case BistroBuilderUiStyleRole.StatusDisabled: return BistroBuilderUiTokens.Disabled;
             default: return TextPrimary;
         }
     }
 
     private void ApplyTextSizePolicy(TMP_Text text, BistroBuilderUiStyleRole role)
     {
-        switch (role)
-        {
-            case BistroBuilderUiStyleRole.Title:
-                text.fontSize = Mathf.Max(text.fontSize, BistroBuilderUiTokens.FontH1); break;
-            case BistroBuilderUiStyleRole.Heading:
-                text.fontSize = Mathf.Max(text.fontSize, BistroBuilderUiTokens.FontH3); break;
-            case BistroBuilderUiStyleRole.Caption:
-                text.fontSize = Mathf.Clamp(text.fontSize, 11f, 14f); break;
-            case BistroBuilderUiStyleRole.Kpi:
-                text.fontSize = Mathf.Max(text.fontSize, BistroBuilderUiTokens.FontKpi); break;
-            default:
-                text.fontSize = Mathf.Max(text.fontSize, 13f); break;
-        }
+        text.enableAutoSizing = true;
+        text.fontSize = text.fontSizeMax = BistroBuilderTypography.Size(role);
+        text.fontSizeMin = role == BistroBuilderUiStyleRole.Title ? 22 : role == BistroBuilderUiStyleRole.Heading ? 18 : 12;
     }
-
     private void ApplyBodyFont(TMP_Text text)
     {
-        if (theme != null && theme.BodyFont != null) text.font = theme.BodyFont;
+        var font = theme != null && theme.BodyFont != null ? theme.BodyFont : BistroBuilderTypography.Body;
+        if (font != null) text.font = font;
+    }
+
+    private static bool IsOnLightSurface(Transform target)
+    {
+        for (var p = target.parent; p != null; p = p.parent)
+        {
+            var selectable = p.GetComponent<Selectable>();
+            if (selectable != null && selectable.transition == Selectable.Transition.ColorTint)
+            {
+                var c = selectable.colors.normalColor;
+                if (c.r < 0.8f || c.g < 0.8f || c.b < 0.8f) return c.grayscale > 0.6f;
+            }
+            var surface = p.GetComponent<BistroBuilderSurface>();
+            if (surface != null) return surface.Level == BistroBuilderSurfaceLevel.Floating;
+        }
+        return false;
     }
 
     private static string ReadLabel(GameObject target)

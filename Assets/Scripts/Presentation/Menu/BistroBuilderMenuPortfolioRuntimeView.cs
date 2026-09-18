@@ -251,20 +251,23 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             modalRoot,
             BistroBuilderMenuEditorUiFactory.Overlay
         );
+        modalRoot.offsetMin = new Vector2(0, 76);
+        modalRoot.offsetMax = new Vector2(0, -76);
 
         RectTransform panel = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Panel",
             modalRoot,
             Vector2.zero,
             Vector2.one,
-            new Vector2(28f, 24f),
-            new Vector2(-28f, -24f)
+            new Vector2(18f, 12f),
+            new Vector2(-18f, -12f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             panel,
             BistroBuilderMenuEditorUiFactory.Surface
         );
 
+        BistroBuilderManagementViewport.Install(modalRoot, panel, 760);
         BuildHeader(panel);
         BuildMenusPanel(panel);
         BuildRulesPanel(panel);
@@ -314,7 +317,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             new Vector2(0f, 0f), new Vector2(0.30f, 1f),
             new Vector2(16f, 78f), new Vector2(-6f, -78f)
         );
-        AddTitle(root, "CARTAS INDEPENDIENTES", 0.92f, 1f);
+        AddTitle(root, "Mis cartas", 0.92f, 1f);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "MenuList", root, out menuContent
@@ -344,7 +347,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             new Vector2(0.30f, 0f), new Vector2(0.58f, 1f),
             new Vector2(6f, 78f), new Vector2(-6f, -78f)
         );
-        AddTitle(root, "REGLAS DE ACTIVACIÓN", 0.92f, 1f);
+        AddTitle(root, "Reglas de activación", 0.92f, 1f);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "RuleList", root, out ruleContent
@@ -358,14 +361,14 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         SetRect(signalText.rectTransform, 0.04f, 0.26f, 0.96f, 0.33f, 0f);
 
         eventIdInput = BistroBuilderMenuEditorUiFactory.CreateInputField(
-            "EventId", root, "event_id", null, null
+            "EventId", root, "Nombre del evento", null, null
         );
         SetRect(eventIdInput.GetComponent<RectTransform>(), 0.03f, 0.19f, 0.55f, 0.25f, 0f);
         MakeButton(root, "+ Evento", ActivateEvent, 0.57f, 0.19f, 0.76f, 0.25f, true);
         MakeButton(root, "−", DeactivateEvent, 0.78f, 0.19f, 0.97f, 0.25f, false);
 
         promotionIdInput = BistroBuilderMenuEditorUiFactory.CreateInputField(
-            "PromotionId", root, "promotion_id", null, null
+            "PromotionId", root, "Nombre de la promoción", null, null
         );
         SetRect(promotionIdInput.GetComponent<RectTransform>(), 0.03f, 0.11f, 0.55f, 0.17f, 0f);
         MakeButton(root, "+ Promo", ActivatePromotion, 0.57f, 0.11f, 0.76f, 0.17f, true);
@@ -382,7 +385,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             new Vector2(0.58f, 0f), Vector2.one,
             new Vector2(6f, 78f), new Vector2(-16f, -78f)
         );
-        AddTitle(root, "DETALLE DE REGLA", 0.92f, 1f);
+        AddTitle(root, "Detalle de la regla", 0.92f, 1f);
 
         ruleNameInput = CreateField(root, "RuleName", "Nombre de la regla", 0.03f, 0.84f, 0.68f, 0.90f);
         priorityInput = CreateField(root, "Priority", "Prioridad (-1000..1000)", 0.71f, 0.84f, 0.97f, 0.90f);
@@ -417,15 +420,15 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         }
 
         AddMiniLabel(root, "Condiciones opcionales", 0.03f, 0.32f, 0.97f, 0.36f);
-        InputField requiredEvent = CreateField(root, "RequiredEvent", "EventId requerido", 0.03f, 0.26f, 0.48f, 0.31f);
-        InputField requiredPromotion = CreateField(root, "RequiredPromotion", "PromotionId requerido", 0.52f, 0.26f, 0.97f, 0.31f);
+        InputField requiredEvent = CreateField(root, "RequiredEvent", "Evento requerido", 0.03f, 0.26f, 0.48f, 0.31f);
+        InputField requiredPromotion = CreateField(root, "RequiredPromotion", "Promoción requerida", 0.52f, 0.26f, 0.97f, 0.31f);
         // Reutilizamos referencias exclusivas para la regla mediante campos privados auxiliares.
         ruleEventInput = requiredEvent;
         rulePromotionInput = requiredPromotion;
 
         AddMiniLabel(
             root,
-            "Desempate: prioridad → especificidad → RuleId estable.",
+            "Se aplica primero la regla de mayor prioridad.",
             0.03f, 0.19f, 0.97f, 0.24f
         );
         MakeButton(root, "Guardar regla", SaveRule, 0.03f, 0.10f, 0.97f, 0.17f, true);
@@ -1007,13 +1010,14 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     private static RectTransform CreateCard(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
     {
         RectTransform rect = BistroBuilderMenuEditorUiFactory.CreateRect(name, parent, anchorMin, anchorMax, offsetMin, offsetMax);
-        BistroBuilderMenuEditorUiFactory.AddImage(rect, new Color(0.07f, 0.078f, 0.073f, 1f));
+        var image = BistroBuilderMenuEditorUiFactory.AddImage(rect, BistroBuilderUiTokens.Surface1);
+        BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Panel);
         return rect;
     }
 
     private static void AddTitle(Transform parent, string text, float minY, float maxY)
     {
-        Text label = BistroBuilderMenuEditorUiFactory.CreateText("Title", parent, text, 14, TextAnchor.MiddleLeft, BistroBuilderMenuEditorUiFactory.Accent, FontStyle.Bold);
+        Text label = BistroBuilderMenuEditorUiFactory.CreateText("Subheading", parent, text, 18, TextAnchor.MiddleLeft, BistroBuilderMenuEditorUiFactory.TextPrimary, FontStyle.Normal);
         SetRect(label.rectTransform, 0.04f, minY, 0.96f, maxY, 0f);
     }
 

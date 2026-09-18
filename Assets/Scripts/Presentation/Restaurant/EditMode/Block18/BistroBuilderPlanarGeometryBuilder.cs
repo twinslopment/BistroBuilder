@@ -21,6 +21,10 @@ public static class BistroBuilderPlanarGeometryBuilder
         if (points.Count < 3) throw new ArgumentException("El polígono está degenerado.", nameof(boundary));
 
         var triangles = Triangulate(points);
+        // Counter-clockwise XY polygons point down after mapping Y to world Z.
+        // Reverse their winding so the floor is visible from above with backface culling.
+        for (int i = 0; i < triangles.Count; i += 3)
+        { int swap = triangles[i + 1]; triangles[i + 1] = triangles[i + 2]; triangles[i + 2] = swap; }
         var vertices = new List<Vector3>(points.Count);
         var normals = new List<Vector3>(points.Count);
         var uv = new List<Vector2>(points.Count);

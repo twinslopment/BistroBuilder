@@ -99,7 +99,8 @@ public static class BistroBuilderAdvancedWaiters13PlayModeSelfTest
                     throw new InvalidOperationException("La ruta termino fuera del destino operativo.");
 
                 if (movement.CurrentRouteKind != BistroBuilderWaiterRouteKind.NavMeshOptimal &&
-                    movement.CurrentRouteKind != BistroBuilderWaiterRouteKind.DirectFallback)
+                    movement.CurrentRouteKind != BistroBuilderWaiterRouteKind.DirectFallback &&
+                    movement.CurrentRouteKind != BistroBuilderWaiterRouteKind.ExternalProfessional)
                     throw new InvalidOperationException("El movimiento no uso un proveedor de ruta valido.");
 
                 Finish(true,

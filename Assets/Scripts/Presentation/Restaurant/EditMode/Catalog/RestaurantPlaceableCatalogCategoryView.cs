@@ -1,4 +1,5 @@
 using System;
+using BistroBuilder.UI.Iconography;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -51,6 +52,17 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
 
         if (button != null)
         {
+            BBIconographyRuntime.Decorate(button, IconForCategory(newCategoryCode));
+            var layout = GetComponent<LayoutElement>() ?? gameObject.AddComponent<LayoutElement>();
+            layout.minWidth = layout.preferredWidth = 158;
+            ((RectTransform)transform).SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 158);
+            labelText.font = BistroBuilderTypography.LegacyBody;
+            labelText.fontStyle = FontStyle.Normal;
+            labelText.fontSize = 14;
+            labelText.alignment = TextAnchor.MiddleLeft;
+            labelText.rectTransform.offsetMin = new Vector2(40, 4);
+            labelText.rectTransform.offsetMax = new Vector2(-10, -4);
+            BistroBuilderSurface.Apply(backgroundImage, BistroBuilderSurfaceLevel.Card);
             button.onClick.RemoveListener(
                 HandleButtonClicked
             );
@@ -69,6 +81,7 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
         bool selected
     )
     {
+        BistroBuilderInteractionSurface.Attach(button)?.SetSelected(selected);
         if (backgroundImage != null)
         {
             backgroundImage.color =
@@ -77,6 +90,18 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
                     : normalBackground;
         }
     }
+
+    public static BBIconId IconForCategory(int code) => code < 0 ? BBIconId.NavActivity : (RestaurantPlaceableItemCategory)code switch
+    {
+        RestaurantPlaceableItemCategory.Furniture => BBIconId.ObjectTable,
+        RestaurantPlaceableItemCategory.Seating => BBIconId.ObjectChair,
+        RestaurantPlaceableItemCategory.Lighting => BBIconId.ObjectLighting,
+        RestaurantPlaceableItemCategory.Decoration => BBIconId.ObjectDecoration,
+        RestaurantPlaceableItemCategory.KitchenEquipment => BBIconId.ObjectEquipment,
+        RestaurantPlaceableItemCategory.ServiceEquipment => BBIconId.ObjectWaiter,
+        RestaurantPlaceableItemCategory.Structural => BBIconId.NavEditMode,
+        _ => BBIconId.NavInventory
+    };
 
     public void SetInteractable(
         bool interactable

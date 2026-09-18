@@ -15,7 +15,8 @@ public enum BistroBuilderStartingPremisesProfile
 {
     Compact = 0,
     Balanced = 1,
-    Spacious = 2
+    Spacious = 2,
+    Empty = 3
 }
 
 public enum BistroBuilderOpeningCheckLevel
@@ -103,7 +104,7 @@ public static class BistroBuilderNewGameEngine
             snapshot.revision < 0L ||
             !Enum.IsDefined(typeof(BistroBuilderNewGamePhase), snapshot.phase) ||
             !Enum.IsDefined(typeof(BistroBuilderStartingPremisesProfile), snapshot.premisesProfile) ||
-            snapshot.initialSaveSlot < 0 || snapshot.initialSaveSlot > 99 ||
+            snapshot.initialSaveSlot < 0 || snapshot.initialSaveSlot > 999 ||
             snapshot.initialOpeningHour < 0 || snapshot.initialOpeningHour > 23 ||
             snapshot.initialClosingHour < 0 || snapshot.initialClosingHour > 23 ||
             snapshot.initialOpeningHour == snapshot.initialClosingHour ||

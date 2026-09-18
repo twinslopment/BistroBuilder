@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -122,6 +122,7 @@ public static class BistroBuilderEditBlock18Installer
         RequireAtMostOne<BistroBuilderEditDocumentMaterializationBridge>(scene);
         RequireAtMostOne<BistroBuilderEditRuntimeCoordinator>(scene);
         RequireAtMostOne<BistroBuilderEditPlayerFacade>(scene);
+        RequireAtMostOne<BistroBuilderArchitecturePlayerTool>(scene);
         RequireAtMostOne<BistroBuilderEditDocumentSaveSectionProvider>(scene);
         RequireAtMostOne<BistroBuilderEditFinanceGateway>(scene);
         RequireAtMostOne<BistroBuilderEditFinanceGatewayBinder>(scene);
@@ -138,6 +139,7 @@ public static class BistroBuilderEditBlock18Installer
         var projection = EnsureComponent<BistroBuilderEditDocumentMaterializationBridge>(scene, document.gameObject);
         var coordinator = EnsureComponent<BistroBuilderEditRuntimeCoordinator>(scene, document.gameObject);
         var facade = EnsureComponent<BistroBuilderEditPlayerFacade>(scene, document.gameObject);
+        EnsureComponent<BistroBuilderArchitecturePlayerTool>(scene, document.gameObject);
         var saveProvider = EnsureComponent<BistroBuilderEditDocumentSaveSectionProvider>(scene, save.gameObject);
         var gateway = EnsureComponent<BistroBuilderEditFinanceGateway>(scene, finance.gameObject);
         var binder = EnsureComponent<BistroBuilderEditFinanceGatewayBinder>(scene, gateway.gameObject);

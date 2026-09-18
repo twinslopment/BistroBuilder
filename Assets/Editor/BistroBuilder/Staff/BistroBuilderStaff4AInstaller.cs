@@ -90,13 +90,17 @@ public static class BistroBuilderStaff4AInstaller
                 AssetDatabase.CreateAsset(roleCatalog, RoleCatalogAssetPath);
                 createdCatalog = true;
             }
-            else if (!roleCatalog.TryValidate(out string catalogError))
+            else
             {
-                throw new InvalidOperationException(
-                    "El catálogo existente de Personal es inválido y no se " +
-                    "modificará automáticamente. " + catalogError);
+                // Migra catálogos V1 antiguos que solo tenían camarero sin
+                // sobrescribir roles personalizados ni decisiones del jugador.
+                roleCatalog.InitializeV1DefaultsIfEmpty();
+                if (!roleCatalog.TryValidate(out string catalogError))
+                {
+                    throw new InvalidOperationException(
+                        "El catálogo existente de Personal es inválido. " + catalogError);
+                }
             }
-
             BistroBuilderStaffService[] existing =
                 FindSceneComponents<BistroBuilderStaffService>(scene);
             if (existing.Length > 1)

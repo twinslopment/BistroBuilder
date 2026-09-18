@@ -21,10 +21,13 @@ public enum BistroBuilderUiStyleRole
     Body = 32,
     Caption = 33,
     Kpi = 34,
+    Subheading = 35,
+    Label = 36,
     StatusSuccess = 40,
     StatusAttention = 41,
     StatusCritical = 42,
     StatusInfo = 43,
+    StatusDisabled = 44,
     BottomDock = 50
 }
 
@@ -64,19 +67,19 @@ public sealed class BistroBuilderUiTheme : ScriptableObject
     [SerializeField] private TMP_FontAsset bodyFont;
 
     [Header("Paleta")]
-    [SerializeField] private Color background = new Color32(23, 34, 32, 255);
-    [SerializeField] private Color surface1 = new Color32(34, 48, 45, 248);
-    [SerializeField] private Color surface2 = new Color32(45, 59, 55, 248);
-    [SerializeField] private Color surfaceElevated = new Color32(56, 70, 64, 250);
-    [SerializeField] private Color textPrimary = new Color32(244, 240, 231, 255);
-    [SerializeField] private Color textSecondary = new Color32(189, 198, 194, 255);
-    [SerializeField] private Color textMuted = new Color32(127, 137, 133, 255);
-    [SerializeField] private Color primary = new Color32(23, 100, 71, 255);
-    [SerializeField] private Color warmAccent = new Color32(199, 148, 88, 255);
-    [SerializeField] private Color success = new Color32(63, 154, 105, 255);
-    [SerializeField] private Color attention = new Color32(224, 168, 68, 255);
-    [SerializeField] private Color critical = new Color32(201, 79, 72, 255);
-    [SerializeField] private Color info = new Color32(87, 144, 186, 255);
+    [SerializeField] private Color background = BistroBuilderUiTokens.Background;
+    [SerializeField] private Color surface1 = BistroBuilderUiTokens.Surface1;
+    [SerializeField] private Color surface2 = BistroBuilderUiTokens.Surface2;
+    [SerializeField] private Color surfaceElevated = BistroBuilderUiTokens.SurfaceElevated;
+    [SerializeField] private Color textPrimary = BistroBuilderUiTokens.TextPrimary;
+    [SerializeField] private Color textSecondary = BistroBuilderUiTokens.TextSecondary;
+    [SerializeField] private Color textMuted = BistroBuilderUiTokens.TextMuted;
+    [SerializeField] private Color primary = BistroBuilderUiTokens.Primary;
+    [SerializeField] private Color warmAccent = BistroBuilderUiTokens.WarmAccent;
+    [SerializeField] private Color success = BistroBuilderUiTokens.Success;
+    [SerializeField] private Color attention = BistroBuilderUiTokens.Attention;
+    [SerializeField] private Color critical = BistroBuilderUiTokens.Critical;
+    [SerializeField] private Color info = BistroBuilderUiTokens.Info;
 
     public TMP_FontAsset TitleFont => titleFont;
     public TMP_FontAsset BodyFont => bodyFont;

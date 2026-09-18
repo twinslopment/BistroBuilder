@@ -56,7 +56,7 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
         rootRect.anchoredPosition = new Vector2(-18f, -18f);
         rootRect.sizeDelta = new Vector2(340f, 380f);
 
-        GameObject buttonObject = new GameObject("Toggle", typeof(RectTransform), typeof(Image), typeof(Button));
+        GameObject buttonObject = new GameObject("OpenWaiterOperations", typeof(RectTransform), typeof(Image), typeof(Button));
         buttonObject.transform.SetParent(root.transform, false);
         RectTransform br = (RectTransform)buttonObject.transform;
         br.anchorMin = new Vector2(1f, 1f); br.anchorMax = new Vector2(1f, 1f);
@@ -74,6 +74,7 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
         body = CreateText(panel.transform, string.Empty, 13);
         body.alignment = TextAlignmentOptions.TopLeft;
         body.textWrappingMode = TextWrappingModes.Normal;
+        BistroBuilderOperationalPanel.Install(panel, body, "Camareros", Close);
         panel.SetActive(false);
     }
 
@@ -95,6 +96,9 @@ public sealed class BistroBuilderAdvancedWaiterPlayerScreen : MonoBehaviour
         if (panel != null) panel.SetActive(open);
         if (open) Refresh();
     }
+
+    public bool IsOpen => open && panel != null && panel.activeInHierarchy;
+    public void Close() { open = false; if (panel != null) panel.SetActive(false); }
 
     private void Refresh()
     {

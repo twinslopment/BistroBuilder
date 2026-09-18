@@ -51,6 +51,9 @@ public sealed class RestaurantPlaceableCatalogItemView :
         definition =
             itemDefinition;
 
+        var feedback = BistroBuilderInteractionSurface.Attach(button);
+        if (feedback != null) feedback.IsCard = true;
+
         selectionCallback =
             onSelected;
 
@@ -66,6 +69,36 @@ public sealed class RestaurantPlaceableCatalogItemView :
         }
 
         RefreshPresentation();
+        ApplyReadableLayout();
+    }
+
+    private void ApplyReadableLayout()
+    {
+        var rect = (RectTransform)transform;
+        rect.sizeDelta = new Vector2(264, 202);
+        var layout = GetComponent<LayoutElement>() ?? gameObject.AddComponent<LayoutElement>();
+        layout.minWidth = layout.preferredWidth = 264;
+        layout.minHeight = layout.preferredHeight = 202;
+        BistroBuilderSurface.Apply(button.GetComponent<Image>(), BistroBuilderSurfaceLevel.Card);
+        foreach (var text in new[] { nameText, descriptionText, priceText })
+        {
+            if (text == null) continue;
+            text.font = BistroBuilderTypography.LegacyBody; text.fontStyle = FontStyle.Normal;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        }
+        if (nameText != null)
+        {
+            nameText.fontSize = 16; nameText.resizeTextForBestFit = false;
+            nameText.rectTransform.offsetMin = new Vector2(74, -82);
+            nameText.rectTransform.offsetMax = new Vector2(-12, -12);
+        }
+        if (descriptionText != null)
+        {
+            descriptionText.fontSize = 13;
+            descriptionText.rectTransform.offsetMin = new Vector2(12, 38);
+            descriptionText.rectTransform.offsetMax = new Vector2(-12, -90);
+        }
+        if (priceText != null) priceText.fontSize = 15;
     }
 
     public void SetInteractable(
