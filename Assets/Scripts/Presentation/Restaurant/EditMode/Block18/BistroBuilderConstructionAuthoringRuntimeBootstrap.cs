@@ -22,5 +22,6 @@ public static class BistroBuilderConstructionAuthoringRuntimeBootstrap
 
         var host = new GameObject("BB18N_ConstructionAuthoringRuntime");
         host.AddComponent<BistroBuilderConstructionAuthoringRuntimeTool>();
+        host.AddComponent<BistroBuilderConstructionPlayerPanel>();
     }
 }
