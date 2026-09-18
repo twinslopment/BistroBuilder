@@ -1,5 +1,4 @@
 using System;
-using BistroBuilder.UI.Iconography;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -39,6 +38,9 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
 
     private Action<int> selectionCallback;
 
+    public int CategoryCode => categoryCode;
+    public bool IsSelected { get; private set; }
+
     public void Bind(
         int newCategoryCode,
         string label,
@@ -69,9 +71,10 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
             );
         }
 
-        if (button != null)
+        Transform oldRuntimeIcon = transform.Find("BB_Icon21B");
+        if (oldRuntimeIcon != null)
         {
-            BBIconographyRuntime.Decorate(button, ResolveIcon(newCategoryCode));
+            Destroy(oldRuntimeIcon.gameObject);
         }
 
         SetSelected(
@@ -83,7 +86,15 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
         bool selected
     )
     {
-        BistroBuilderInteractionSurface.Attach(button)?.SetSelected(selected);
+        IsSelected = selected;
+
+        BistroBuilderInteractionSurface feedback =
+            GetComponent<BistroBuilderInteractionSurface>();
+        if (feedback != null)
+        {
+            feedback.enabled = false;
+        }
+
         if (backgroundImage != null)
         {
             backgroundImage.color =
@@ -112,21 +123,6 @@ public sealed class RestaurantPlaceableCatalogCategoryView :
         }
     }
 
-    private static BBIconId ResolveIcon(int code)
-    {
-        if (code < 0) return BBIconId.NavEditMode;
-        switch ((RestaurantPlaceableItemCategory)code)
-        {
-            case RestaurantPlaceableItemCategory.Furniture: return BBIconId.ObjectTable;
-            case RestaurantPlaceableItemCategory.Seating: return BBIconId.ObjectChair;
-            case RestaurantPlaceableItemCategory.Lighting: return BBIconId.ObjectLighting;
-            case RestaurantPlaceableItemCategory.Decoration: return BBIconId.ObjectDecoration;
-            case RestaurantPlaceableItemCategory.KitchenEquipment: return BBIconId.AreaKitchen;
-            case RestaurantPlaceableItemCategory.ServiceEquipment: return BBIconId.ObjectEquipment;
-            case RestaurantPlaceableItemCategory.Structural: return BBIconId.NavEditMode;
-            default: return BBIconId.GeneralMore;
-        }
-    }
     private void OnDestroy()
     {
         if (button != null)
