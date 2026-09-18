@@ -12,7 +12,8 @@ public enum RestaurantCatalogPreviewIcon
     Search,
     Filter,
     Close,
-    Check
+    Check,
+    Cursor
 }
 
 [DisallowMultipleComponent]
@@ -80,6 +81,9 @@ public sealed class RestaurantCatalogPreviewIconGraphic : MaskableGraphic
                 break;
             case RestaurantCatalogPreviewIcon.Check:
                 DrawCheck(vh);
+                break;
+            case RestaurantCatalogPreviewIcon.Cursor:
+                DrawCursor(vh);
                 break;
         }
     }
@@ -221,5 +225,14 @@ public sealed class RestaurantCatalogPreviewIconGraphic : MaskableGraphic
     {
         Line(vh, P(.20f, .50f), P(.42f, .28f));
         Line(vh, P(.42f, .28f), P(.80f, .72f));
+    }
+
+    private void DrawCursor(VertexHelper vh)
+    {
+        Line(vh, P(.22f, .82f), P(.44f, .18f));
+        Line(vh, P(.44f, .18f), P(.56f, .42f));
+        Line(vh, P(.56f, .42f), P(.80f, .34f));
+        Line(vh, P(.80f, .34f), P(.22f, .82f));
+        Line(vh, P(.53f, .42f), P(.70f, .66f));
     }
 }

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
   itemId: chair_bistro_01
   displayName: "Silla bistr\xF3 de madera"
-  category: 0
+  category: 1
   description: "Silla de comedor de madera, resistente y de estilo bistr\xF3 cl\xE1sico"
   catalogIcon: {fileID: 21300000, guid: 73806aa92d6c5f5499014c281d00042c, type: 3}
   prefab: {fileID: 6217160869183040038, guid: c82385332a707944282ebaa7762a3a2d, type: 3}

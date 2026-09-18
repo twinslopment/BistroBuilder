@@ -15,6 +15,11 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private static readonly Color32 OliveSoft = new Color32(232, 238, 223, 255);
     private static readonly Color32 Gold = new Color32(237, 169, 34, 255);
 
+    private static Sprite rounded10;
+    private static Sprite rounded14;
+    private static Sprite rounded16;
+    private static Sprite rounded24;
+
     private Transform contentRoot;
     private RectTransform categoryBar;
     private RectTransform itemContainer;
@@ -64,6 +69,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         SyncScopeStates();
         SyncCardStates();
         EnforcePreviewVisualAuthority();
+        ApplyPreviewGeometry();
     }
 
     private void LoadFonts()
@@ -161,6 +167,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             27f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
+        title.fontWeight = FontWeight.Bold;
 
         SetAnchors(
             title.rectTransform,
@@ -226,13 +233,29 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         icon.LineWidth = 1.75f;
         icon.raycastTarget = false;
 
+        RectTransform trailingIconRect =
+            CreateChildRect(inputRoot, "PreviewSearchIconTrailing");
+        SetAnchors(
+            trailingIconRect,
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(-39f, 11f),
+            new Vector2(-13f, -11f));
+        RestaurantCatalogPreviewIconGraphic trailingIcon =
+            trailingIconRect.gameObject.GetComponent<RestaurantCatalogPreviewIconGraphic>() ??
+            trailingIconRect.gameObject.AddComponent<RestaurantCatalogPreviewIconGraphic>();
+        trailingIcon.Icon = RestaurantCatalogPreviewIcon.Search;
+        trailingIcon.color = TextMuted;
+        trailingIcon.LineWidth = 1.75f;
+        trailingIcon.raycastTarget = false;
+
         RectTransform area = CreateChildRect(inputRoot, "PreviewTextArea");
         SetAnchors(
             area,
             new Vector2(0f, 0f),
             new Vector2(1f, 1f),
             new Vector2(44f, 4f),
-            new Vector2(-14f, -4f));
+            new Vector2(-44f, -4f));
 
         TextMeshProUGUI inputText = GetOrCreateTmp(
             area,
@@ -307,7 +330,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             TextMeshProUGUI tmp = GetOrCreateTmp(
                 child,
                 "PreviewLabel",
-                semiBoldFont,
+                bodyFont,
                 10.5f,
                 TextPrimary,
                 TextAlignmentOptions.Bottom);
@@ -326,8 +349,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 iconRect,
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0.5f),
-                new Vector2(-12f, -21f),
-                new Vector2(12f, 3f));
+                new Vector2(-10.5f, -19f),
+                new Vector2(10.5f, 2f));
 
             RestaurantCatalogPreviewIconGraphic icon =
                 iconRect.gameObject.GetComponent<RestaurantCatalogPreviewIconGraphic>() ??
@@ -377,7 +400,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             TextMeshProUGUI tmp = GetOrCreateTmp(
                 child,
                 "PreviewLabel",
-                semiBoldFont,
+                bodyFont,
                 12.5f,
                 TextPrimary,
                 TextAlignmentOptions.Center);
@@ -468,10 +491,52 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             new Color32(52, 68, 43, 255),
             TextAlignmentOptions.MidlineLeft);
 
+        Transform iconRoot = strip.Find("IconRoot");
+        if (iconRoot != null)
+        {
+            Text legacyIcon = iconRoot.GetComponentInChildren<Text>(true);
+            if (legacyIcon != null)
+            {
+                legacyIcon.enabled = false;
+            }
+
+            Image iconBackground = iconRoot.GetComponent<Image>();
+            if (iconBackground != null)
+            {
+                iconBackground.color = Olive;
+                BistroBuilderSurface.Apply(
+                    iconBackground,
+                    BistroBuilderSurfaceLevel.Base);
+                NeutralizeInteractionVisuals(iconRoot);
+            }
+
+            AddVectorIcon(
+                iconRoot,
+                "PreviewCursor",
+                RestaurantCatalogPreviewIcon.Cursor,
+                Color.white,
+                1.7f,
+                8f);
+        }
+
         Transform cancel = strip.Find("Cancel");
         if (cancel != null)
         {
             HideLegacyTexts(cancel);
+            Image cancelImage = cancel.GetComponent<Image>();
+            if (cancelImage != null)
+            {
+                cancelImage.color = Card;
+                ApplyRounded(cancelImage, 10);
+            }
+
+            Button cancelButton = cancel.GetComponent<Button>();
+            if (cancelButton != null)
+            {
+                cancelButton.transition = Selectable.Transition.None;
+            }
+
+            NeutralizeInteractionVisuals(cancel);
             AddVectorIcon(
                 cancel,
                 "PreviewClose",
@@ -537,8 +602,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         {
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = 2;
-            grid.cellSize = new Vector2(181f, 246f);
-            grid.spacing = new Vector2(10f, 10f);
+            grid.cellSize = new Vector2(178.5f, 245f);
+            grid.spacing = new Vector2(11f, 12f);
             grid.padding = new RectOffset(0, 0, 0, 12);
             grid.childAlignment = TextAnchor.UpperLeft;
         }
@@ -651,25 +716,42 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             new Vector2(-2f, 34f));
         price.text = definition.PurchasePrice.ToString("N0") + " €";
 
+        RectTransform scopePill =
+            CreateChildRect(card, "PreviewScopePill");
+        SetAnchoredRect(
+            scopePill,
+            new Vector2(1f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(-52f, 17f),
+            new Vector2(82f, 19f));
+
+        Image scopeBackground = scopePill.GetComponent<Image>() ??
+            scopePill.gameObject.AddComponent<Image>();
+        scopeBackground.color = Field;
+        ApplyRounded(scopeBackground, 10);
+        NeutralizeInteractionVisuals(scopePill);
+
         TextMeshProUGUI scope = GetOrCreateTmp(
-            card,
+            scopePill,
             "PreviewScope",
             bodyFont,
-            9f,
+            8.5f,
             TextMuted,
-            TextAlignmentOptions.Right);
-        SetAnchors(
-            scope.rectTransform,
-            new Vector2(0.50f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(2f, 6f),
-            new Vector2(-10f, 34f));
+            TextAlignmentOptions.Center);
+        SetStretch(scope.rectTransform, 5f);
         scope.text = ScopeText(definition.PlacementScope);
 
         Transform favorite = card.Find("ApprovedFavorite");
         if (favorite != null)
         {
             HideLegacyTexts(favorite);
+            Image favoriteImage = favorite.GetComponent<Image>();
+            if (favoriteImage != null)
+            {
+                ApplyRounded(favoriteImage, 16);
+            }
+            NeutralizeInteractionVisuals(favorite);
+
             TextMeshProUGUI star = GetOrCreateTmp(
                 favorite,
                 "PreviewStar",
@@ -685,6 +767,13 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (selected != null)
         {
             HideLegacyTexts(selected);
+            Image selectedImage = selected.GetComponent<Image>();
+            if (selectedImage != null)
+            {
+                ApplyRounded(selectedImage, 16);
+            }
+            NeutralizeInteractionVisuals(selected);
+
             AddVectorIcon(
                 selected,
                 "PreviewCheck",
@@ -784,7 +873,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             TextMeshProUGUI price =
                 child.Find("PreviewPrice")?.GetComponent<TextMeshProUGUI>();
             TextMeshProUGUI scope =
-                child.Find("PreviewScope")?.GetComponent<TextMeshProUGUI>();
+                child.Find("PreviewScopePill/PreviewScope")?.GetComponent<TextMeshProUGUI>();
 
             if (name != null) name.text = view.Definition.DisplayName;
             if (price != null)
@@ -843,6 +932,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                     : string.Empty;
 
             button.transition = Selectable.Transition.None;
+            ApplyRounded(image, 14);
             NeutralizeInteractionVisuals(child);
 
             if (text == "≡")
@@ -879,7 +969,16 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (panelImage != null)
         {
             panelImage.color = Panel;
+            ApplyRounded(panelImage, 24);
         }
+
+        NeutralizeInteractionVisuals(contentRoot);
+
+        Shadow panelShadow = contentRoot.GetComponent<Shadow>() ??
+            contentRoot.gameObject.AddComponent<Shadow>();
+        panelShadow.effectColor = new Color(0f, 0f, 0f, 0.08f);
+        panelShadow.effectDistance = new Vector2(0f, -2f);
+        panelShadow.useGraphicAlpha = true;
 
         Transform header = contentRoot.Find("Header");
         TextMeshProUGUI title =
@@ -889,7 +988,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             title.color = TextPrimary;
             title.font = semiBoldFont;
             title.fontSize = 27f;
-            title.fontWeight = FontWeight.SemiBold;
+            title.fontWeight = FontWeight.Bold;
             title.extraPadding = true;
             title.transform.SetAsLastSibling();
         }
@@ -919,7 +1018,15 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             if (searchImage != null)
             {
                 searchImage.color = Card;
+                ApplyRounded(searchImage, 16);
             }
+
+            Outline searchOutline = search.GetComponent<Outline>() ??
+                search.gameObject.AddComponent<Outline>();
+            searchOutline.enabled = true;
+            searchOutline.effectColor = new Color32(215, 209, 199, 255);
+            searchOutline.effectDistance = new Vector2(0.75f, -0.75f);
+            searchOutline.useGraphicAlpha = true;
 
             NeutralizeInteractionVisuals(search);
         }
@@ -953,6 +1060,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 if (background != null)
                 {
                     background.color = Card;
+                    ApplyRounded(background, 16);
                 }
 
                 Button button = child.GetComponent<Button>();
@@ -977,9 +1085,13 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 Outline outline = child.GetComponent<Outline>();
                 if (outline != null)
                 {
-                    outline.enabled = selected;
-                    outline.effectColor = Olive;
-                    outline.effectDistance = new Vector2(1.5f, -1.5f);
+                    outline.enabled = true;
+                    outline.effectColor = selected
+                        ? Olive
+                        : new Color32(226, 220, 211, 255);
+                    outline.effectDistance = selected
+                        ? new Vector2(1.5f, -1.5f)
+                        : new Vector2(0.75f, -0.75f);
                 }
 
                 TextMeshProUGUI name =
@@ -987,7 +1099,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 TextMeshProUGUI price =
                     child.Find("PreviewPrice")?.GetComponent<TextMeshProUGUI>();
                 TextMeshProUGUI scope =
-                    child.Find("PreviewScope")?.GetComponent<TextMeshProUGUI>();
+                    child.Find("PreviewScopePill/PreviewScope")?.GetComponent<TextMeshProUGUI>();
 
                 if (name != null)
                 {
@@ -1010,6 +1122,229 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void ApplyPreviewGeometry()
+    {
+        if (contentRoot == null)
+        {
+            return;
+        }
+
+        RectTransform panelRect = contentRoot as RectTransform;
+        if (panelRect != null)
+        {
+            panelRect.anchorMin = new Vector2(0f, 0f);
+            panelRect.anchorMax = new Vector2(0f, 1f);
+            panelRect.pivot = new Vector2(0f, 0.5f);
+            panelRect.offsetMin = new Vector2(4f, 4f);
+            panelRect.offsetMax = new Vector2(431f, -4f);
+        }
+
+        RectTransform header = contentRoot.Find("Header") as RectTransform;
+        if (header != null)
+        {
+            SetTopRect(header, 20f, 20f, 18f, 40f);
+
+            Transform close = header.Find("ApprovedClose");
+            if (close is RectTransform closeRect)
+            {
+                SetAnchoredRect(
+                    closeRect,
+                    new Vector2(1f, 0.5f),
+                    new Vector2(1f, 0.5f),
+                    new Vector2(-19f, 0f),
+                    new Vector2(32f, 32f));
+            }
+        }
+
+        RectTransform search = contentRoot.Find("ApprovedSearch") as RectTransform;
+        if (search != null)
+        {
+            SetTopRect(search, 21f, 28f, 70f, 50f);
+            BistroBuilderSurface surface = search.GetComponent<BistroBuilderSurface>();
+            if (surface != null)
+            {
+                surface.SetBorder(BistroBuilderBorderState.Normal);
+            }
+        }
+
+        if (categoryBar != null)
+        {
+            SetTopRect(categoryBar, 12f, 12f, 133f, 73f);
+
+            HorizontalLayoutGroup layout =
+                categoryBar.GetComponent<HorizontalLayoutGroup>();
+            if (layout != null)
+            {
+                layout.spacing = 4f;
+                layout.padding = new RectOffset(0, 0, 0, 0);
+                layout.childAlignment = TextAnchor.MiddleLeft;
+                layout.childControlWidth = true;
+                layout.childForceExpandWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandHeight = true;
+            }
+
+            foreach (Transform child in categoryBar)
+            {
+                LayoutElement element = child.GetComponent<LayoutElement>();
+                if (element != null)
+                {
+                    element.minWidth = 58f;
+                    element.preferredWidth = 62f;
+                    element.flexibleWidth = 1f;
+                    element.minHeight = 72f;
+                    element.preferredHeight = 72f;
+                }
+
+                Image image = child.GetComponent<Image>();
+                if (image != null)
+                {
+                    ApplyRounded(image, 14);
+                    NeutralizeInteractionVisuals(child);
+                }
+            }
+        }
+
+        EnsureSectionDivider();
+
+        RectTransform scopeBar =
+            contentRoot.Find("ApprovedScopeBar") as RectTransform;
+        if (scopeBar != null)
+        {
+            SetTopRect(scopeBar, 21f, 20f, 230f, 37f);
+        }
+
+        RectTransform summary =
+            contentRoot.Find("ApprovedSummary") as RectTransform;
+        if (summary != null)
+        {
+            SetTopRect(summary, 21f, 28f, 274f, 16f);
+        }
+
+        RectTransform filters =
+            contentRoot.Find("ApprovedFilters") as RectTransform;
+        if (filters != null)
+        {
+            SetTopRect(filters, 21f, 20f, 294f, 72f);
+        }
+
+        RectTransform placement =
+            contentRoot.Find("ApprovedPlacement") as RectTransform;
+        bool placementActive =
+            placement != null && placement.gameObject.activeSelf;
+        bool filtersActive =
+            filters != null && filters.gameObject.activeSelf;
+
+        if (placement != null)
+        {
+            float top = filtersActive ? 373f : 296f;
+            SetTopRect(placement, 21f, 28f, top, 50f);
+        }
+
+        if (scrollRect != null)
+        {
+            RectTransform scroll = scrollRect.transform as RectTransform;
+            float scrollTop;
+
+            if (filtersActive && placementActive)
+                scrollTop = 432f;
+            else if (filtersActive)
+                scrollTop = 373f;
+            else if (placementActive)
+                scrollTop = 354f;
+            else
+                scrollTop = 296f;
+
+            scroll.anchorMin = Vector2.zero;
+            scroll.anchorMax = Vector2.one;
+            scroll.offsetMin = new Vector2(21f, 18f);
+            scroll.offsetMax = new Vector2(-20f, -scrollTop);
+            scrollRect.scrollSensitivity = 28f;
+
+            StyleScrollbar();
+        }
+
+        ApplyItemGrid();
+    }
+
+    private void EnsureSectionDivider()
+    {
+        RectTransform divider =
+            CreateChildRect(contentRoot, "PreviewDivider");
+        divider.anchorMin = new Vector2(0f, 1f);
+        divider.anchorMax = new Vector2(1f, 1f);
+        divider.pivot = new Vector2(0.5f, 1f);
+        divider.offsetMin = new Vector2(0f, -218f);
+        divider.offsetMax = new Vector2(0f, -217f);
+
+        Image image = divider.GetComponent<Image>() ??
+            divider.gameObject.AddComponent<Image>();
+        image.color = new Color32(232, 227, 219, 255);
+        image.raycastTarget = false;
+        divider.SetAsLastSibling();
+    }
+
+    private void StyleScrollbar()
+    {
+        if (scrollRect == null || scrollRect.verticalScrollbar == null)
+        {
+            return;
+        }
+
+        Scrollbar scrollbar = scrollRect.verticalScrollbar;
+        RectTransform rect = scrollbar.transform as RectTransform;
+        if (rect != null)
+        {
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 0.5f);
+            rect.sizeDelta = new Vector2(5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 0f);
+        }
+
+        Image background = scrollbar.GetComponent<Image>();
+        if (background != null)
+        {
+            background.color = new Color(1f, 1f, 1f, 0f);
+        }
+
+        Graphic target = scrollbar.targetGraphic;
+        if (target != null)
+        {
+            target.color = new Color32(183, 178, 169, 230);
+        }
+
+        scrollbar.transition = Selectable.Transition.None;
+    }
+
+    private static void SetTopRect(
+        RectTransform rect,
+        float left,
+        float right,
+        float top,
+        float height)
+    {
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.offsetMin = new Vector2(left, -top - height);
+        rect.offsetMax = new Vector2(-right, -top);
+    }
+
+    private static void SetAnchoredRect(
+        RectTransform rect,
+        Vector2 anchorMin,
+        Vector2 anchorMax,
+        Vector2 position,
+        Vector2 size)
+    {
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.pivot = (anchorMin + anchorMax) * 0.5f;
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
     }
 
     private void ConfigureCanvasForCrispUi()
@@ -1246,6 +1581,87 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         return Mathf.Abs(a.r - b.r) +
             Mathf.Abs(a.g - b.g) +
             Mathf.Abs(a.b - b.b);
+    }
+
+
+    private static void ApplyRounded(Image image, int radius)
+    {
+        if (image == null)
+        {
+            return;
+        }
+
+        image.sprite = GetRoundedSprite(radius);
+        image.type = Image.Type.Sliced;
+    }
+
+    private static Sprite GetRoundedSprite(int radius)
+    {
+        if (radius <= 10 && rounded10 != null) return rounded10;
+        if (radius <= 14 && radius > 10 && rounded14 != null) return rounded14;
+        if (radius <= 16 && radius > 14 && rounded16 != null) return rounded16;
+        if (radius > 16 && rounded24 != null) return rounded24;
+
+        int actualRadius = radius <= 10
+            ? 10
+            : radius <= 14
+                ? 14
+                : radius <= 16
+                    ? 16
+                    : 24;
+
+        const int size = 64;
+        Texture2D texture = new Texture2D(
+            size,
+            size,
+            TextureFormat.RGBA32,
+            false)
+        {
+            name = "BB Catalog rounded " + actualRadius,
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+
+        Color32[] pixels = new Color32[size * size];
+        float left = actualRadius - 0.5f;
+        float right = size - actualRadius - 0.5f;
+        float bottom = actualRadius - 0.5f;
+        float top = size - actualRadius - 0.5f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float cx = Mathf.Clamp(x, left, right);
+                float cy = Mathf.Clamp(y, bottom, top);
+                float dx = x - cx;
+                float dy = y - cy;
+                float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                float alpha = Mathf.Clamp01(actualRadius + 0.5f - distance);
+                pixels[y * size + x] =
+                    new Color(1f, 1f, 1f, alpha);
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+
+        float border = actualRadius + 2f;
+        Sprite sprite = Sprite.Create(
+            texture,
+            new Rect(0f, 0f, size, size),
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0,
+            SpriteMeshType.FullRect,
+            new Vector4(border, border, border, border));
+
+        if (actualRadius == 10) rounded10 = sprite;
+        else if (actualRadius == 14) rounded14 = sprite;
+        else if (actualRadius == 16) rounded16 = sprite;
+        else rounded24 = sprite;
+
+        return sprite;
     }
 
     private static void SetStretch(
