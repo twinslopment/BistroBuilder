@@ -22,8 +22,6 @@ namespace BistroBuilder.ConstructionAuthoring
     public sealed class ArchitectureQueryCache
     {
         internal readonly List<BistroBuilderWallRecord> Walls = new List<BistroBuilderWallRecord>();
-        internal readonly List<BistroBuilderWallRecord> BoundaryWalls = new List<BistroBuilderWallRecord>(4);
-        private readonly List<BistroBuilderWallRecord> topologyWalls = new List<BistroBuilderWallRecord>();
         internal readonly List<BistroBuilderOpeningRecord> Openings = new List<BistroBuilderOpeningRecord>();
         internal readonly List<BistroBuilderRoomProjection> Rooms = new List<BistroBuilderRoomProjection>();
         private readonly Dictionary<BistroBuilderEditId, BistroBuilderWallRecord> wallById = new Dictionary<BistroBuilderEditId, BistroBuilderWallRecord>();
@@ -36,12 +34,11 @@ namespace BistroBuilder.ConstructionAuthoring
         {
             if (session == null) throw new ArgumentNullException(nameof(session));
             if (session.State == BistroBuilderEditSessionState.Cancelled || session.State == BistroBuilderEditSessionState.Committed)
-            { Walls.Clear(); BoundaryWalls.Clear(); Openings.Clear(); Rooms.Clear(); wallById.Clear(); topologyWalls.Clear(); Topology = null; SessionId = null; Revision = -1; return true; }
+            { Walls.Clear(); Openings.Clear(); Rooms.Clear(); wallById.Clear(); Topology = null; SessionId = null; Revision = -1; return true; }
             if (SessionId == session.SessionId && Revision == session.DraftRevision) return false;
-            Walls.Clear(); BoundaryWalls.Clear(); Openings.Clear(); Rooms.Clear(); wallById.Clear(); topologyWalls.Clear();
+            Walls.Clear(); Openings.Clear(); Rooms.Clear(); wallById.Clear();
             foreach (var wall in session.Draft.walls) { var copy = wall.DeepClone(); Walls.Add(copy); wallById.Add(copy.wallId, copy); }
             foreach (var opening in session.Draft.openings) Openings.Add(opening.DeepClone());
-            foreach (var boundary in session.PremisesBoundaryWalls) if (boundary != null) BoundaryWalls.Add(boundary.DeepClone());
             Walls.Sort((a,b) => a.wallId.CompareTo(b.wallId));
             Openings.Sort((a,b) => a.openingId.CompareTo(b.openingId));
             foreach (var room in session.RoomProjections)
@@ -50,8 +47,7 @@ namespace BistroBuilder.ConstructionAuthoring
                 copy.boundary.AddRange(room.boundary); Rooms.Add(copy);
             }
             Rooms.Sort((a,b) => a.room.roomId.CompareTo(b.room.roomId));
-            topologyWalls.AddRange(Walls); topologyWalls.AddRange(BoundaryWalls);
-            Topology = new BistroBuilderWallTopologyBuilder().Build(topologyWalls, session.DraftRevision);
+            Topology = new BistroBuilderWallTopologyBuilder().Build(Walls, session.DraftRevision);
             SessionId = session.SessionId; Revision = session.DraftRevision; RebuildCount++;
             return true;
         }

@@ -7,7 +7,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
 {
     [SerializeField] private BistroBuilderNewGameOpeningService openingService;
     [SerializeField] private bool visibleOnStart = true;
-    [SerializeField] private BistroBuilderArchitecturePlayerTool architectureTool;
+    [SerializeField] private BistroBuilderConstructionAuthoringRuntimeTool constructionTool;
 
     private string restaurantName = "Mi restaurante";
     private BistroBuilderStartingPremisesProfile premises = BistroBuilderStartingPremisesProfile.Balanced;
@@ -25,7 +25,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
     private void Awake()
     {
         if (openingService == null) TryGetComponent(out openingService);
-        if (architectureTool == null) architectureTool = FindFirstObjectByType<BistroBuilderArchitecturePlayerTool>();
+        if (constructionTool == null) constructionTool = FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
         IsVisible = visibleOnStart;
     }
 
@@ -81,6 +81,11 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
         }
 
         EnsureStyles();
+        if (openingService.Phase == BistroBuilderNewGamePhase.StartMenu)
+        {
+            GUI.depth = -1000;
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.blackTexture, ScaleMode.StretchToFill);
+        }
         float width = Mathf.Min(640f, Screen.width - 40f);
         float height = Mathf.Min(720f, Screen.height - 40f);
         Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
@@ -151,92 +156,58 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
 
     private void DrawInitialDesignOverlay()
     {
-        if (architectureTool == null) architectureTool = FindFirstObjectByType<BistroBuilderArchitecturePlayerTool>();
-        float width = Mathf.Min(620f, Screen.width - 32f);
-        float height = Mathf.Min(590f, Screen.height - 32f);
-        Rect panel = new Rect(16f, 16f, width, height);
+        if (constructionTool == null)
+            constructionTool = FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
+
+        float width = Mathf.Min(420f, Screen.width - 24f);
+        float height = 176f;
+        Rect panel = new Rect(Screen.width - width - 12f, 88f, width, height);
         BistroBuilderRuntimePointerUiGuard.PublishBlockedGuiRect(panel);
         GUI.Box(panel, GUIContent.none, boxStyle);
-        GUILayout.BeginArea(new Rect(panel.x + 18f, panel.y + 12f, panel.width - 36f, panel.height - 24f));
-        GUILayout.Label("MODO CONSTRUCCIÓN · DISEÑO INICIAL", titleStyle);
-        GUILayout.Label(openingService.RestaurantName + " · " + PremisesLabel(openingService.PremisesProfile) +
-            " · Restaurante cerrado", textStyle);
-        GUILayout.Space(5f);
-        GUILayout.Label("Construye o amuebla, valida y confirma. Guardar crea un punto de recuperación; no cierra el diseño.", textStyle);
-        GUILayout.Space(6f);
+        GUILayout.BeginArea(new Rect(panel.x + 14f, panel.y + 10f, panel.width - 28f, panel.height - 20f));
+        GUILayout.Label("DISEÑO INICIAL", titleStyle);
+        GUILayout.Label(openingService.RestaurantName + " - " + PremisesLabel(openingService.PremisesProfile), textStyle);
 
         if (!openingService.IsInitialEditModeActive)
         {
-            GUILayout.Label(string.IsNullOrWhiteSpace(statusMessage) ? "Activando modo edición..." : statusMessage, textStyle);
-            if (GUILayout.Button("ACTIVAR MODO EDICIÓN", GUILayout.Height(34f)))
+            if (GUILayout.Button("ACTIVAR MODO EDICION", GUILayout.Height(32f)))
             {
                 initialEditEntryAttempted = false;
-                if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = "Modo edición activo.";
+                if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = string.Empty;
             }
-            GUILayout.EndArea();
-            return;
         }
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("MOBILIARIO / SELECCIONAR", GUILayout.Height(34f)))
-            architectureTool?.SetMode(BistroBuilderArchitecturePlayerToolMode.None);
-        if (GUILayout.Button("PARED", GUILayout.Height(34f)))
-            architectureTool?.SetMode(BistroBuilderArchitecturePlayerToolMode.Wall);
-        GUILayout.EndHorizontal();
-        GUILayout.Label("Crear espacio", textStyle);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("SALÓN", GUILayout.Height(34f))) architectureTool?.SetRoomMode(BistroBuilderArchitectureRoomPurpose.Dining);
-        if (GUILayout.Button("COCINA", GUILayout.Height(34f))) architectureTool?.SetRoomMode(BistroBuilderArchitectureRoomPurpose.Kitchen);
-        if (GUILayout.Button("BAÑO", GUILayout.Height(34f))) architectureTool?.SetRoomMode(BistroBuilderArchitectureRoomPurpose.Bathroom);
-        GUILayout.EndHorizontal();
-        GUILayout.Label(BuildToolHelp(), textStyle);
-
-        if (architectureTool != null && architectureTool.HasDraftSession)
+        else
         {
+            string liveStatus = ResolveLiveStatus();
+            if (!string.IsNullOrWhiteSpace(liveStatus)) GUILayout.Label(liveStatus, textStyle);
             GUILayout.BeginHorizontal();
-            GUI.enabled = architectureTool.CanUndo;
-            if (GUILayout.Button("Deshacer", GUILayout.Height(28f))) architectureTool.TryUndo(out _);
-            GUI.enabled = architectureTool.CanRedo;
-            if (GUILayout.Button("Rehacer", GUILayout.Height(28f))) architectureTool.TryRedo(out _);
-            GUI.enabled = true;
-            if (GUILayout.Button("APLICAR CONSTRUCCIÓN", GUILayout.Height(28f)))
-                statusMessage = architectureTool.TryCommitDraft(out string e) ? "Construcción aplicada." : e;
-            if (GUILayout.Button("Descartar", GUILayout.Height(28f))) architectureTool.TryCancelDraft(out _);
-            GUILayout.EndHorizontal();
-        }
-
-        string liveStatus = ResolveLiveStatus();
-        if (!string.IsNullOrWhiteSpace(liveStatus))
-            GUILayout.Label("ESTADO: " + liveStatus, textStyle);
-
-        GUILayout.Space(4f);
-        GUI.enabled = !openingService.IsSaveBusy;
-        if (GUILayout.Button(openingService.IsSaveBusy ? "GUARDANDO..." : "GUARDAR PUNTO DE RECUPERACIÓN", GUILayout.Height(34f)))
-        {
-            if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO · " + e;
-            else statusMessage = openingService.TryRequestInitialSave(out e) ? "Guardado iniciado..." : "ERROR AL GUARDAR · " + e;
-        }
-        GUI.enabled = true;
-        GUILayout.Space(6f);
-        if (GUILayout.Button("VALIDAR RESTAURANTE Y CONTINUAR", GUILayout.Height(46f)))
-        {
-            if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO · " + e;
-            else if (TryValidateAndEnterGame(out e))
+            GUI.enabled = !openingService.IsSaveBusy;
+            if (GUILayout.Button("GUARDAR", GUILayout.Height(34f)))
             {
-                architectureTool?.SetMode(BistroBuilderArchitecturePlayerToolMode.None);
-                statusMessage = string.Empty;
-                Hide();
+                if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO - " + e;
+                else statusMessage = openingService.TryRequestInitialSave(out e) ? "Guardado iniciado..." : "ERROR - " + e;
             }
-            else statusMessage = "BLOQUEO · " + e;
+            GUI.enabled = true;
+            if (GUILayout.Button("VALIDAR Y CONTINUAR", GUILayout.Height(34f)))
+            {
+                if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO - " + e;
+                else if (TryValidateAndEnterGame(out e))
+                {
+                    constructionTool?.SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
+                    statusMessage = string.Empty;
+                    Hide();
+                }
+                else statusMessage = "BLOQUEO - " + e;
+            }
+            GUILayout.EndHorizontal();
         }
         GUILayout.EndArea();
     }
-
     private bool TryCommitArchitectureBeforeTransition(out string error)
     {
         error = string.Empty;
-        if (architectureTool == null || !architectureTool.HasDraftSession) return true;
-        return architectureTool.TryCommitDraft(out error);
+        if (constructionTool == null || !constructionTool.HasDraftSession) return true;
+        return constructionTool.TryCommitDraft(out error);
     }
 
     private bool TryValidateAndEnterGame(out string error)
@@ -249,29 +220,24 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
 
     private string BuildToolHelp()
     {
-        if (architectureTool == null)
-            return "Mobiliario: usa el catálogo del modo edición. Construcción arquitectónica no disponible.";
-        switch (architectureTool.Mode)
+        if (constructionTool == null)
+            return "Mobiliario: usa el catalogo del modo edicion.";
+        switch (constructionTool.Mode)
         {
-            case BistroBuilderArchitecturePlayerToolMode.Wall:
-                return "PARED activa · clic inicio → clic final · sigue encadenando paredes · Escape cancela el punto.";
-            case BistroBuilderArchitecturePlayerToolMode.RoomRectangle:
-                return architectureTool.RoomPurpose == BistroBuilderArchitectureRoomPurpose.Kitchen
-                    ? "COCINA activa · clic en dos esquinas opuestas."
-                    : architectureTool.RoomPurpose == BistroBuilderArchitectureRoomPurpose.Bathroom
-                        ? "BAÑO activo · clic en dos esquinas opuestas."
-                        : "SALÓN activo · clic en dos esquinas opuestas.";
+            case BistroBuilderConstructionRuntimeMode.Wall:
+                return "PARED activa: clic inicio, clic final; Escape cancela el punto.";
+            case BistroBuilderConstructionRuntimeMode.Room:
+                return "ESPACIO activo: marca dos esquinas opuestas para crear la habitacion.";
             default:
-                return "MOBILIARIO activo · usa el catálogo para colocar objetos; selecciona uno para moverlo o retirarlo.";
+                return "MOBILIARIO activo: usa el catalogo para colocar, mover o retirar objetos.";
         }
     }
-
     private string ResolveLiveStatus()
     {
         if (openingService.IsSaveBusy)
             return "Guardando " + Mathf.RoundToInt(openingService.SaveProgress * 100f) + "% · " + openingService.SaveStatusMessage;
-        if (architectureTool != null && architectureTool.Mode != BistroBuilderArchitecturePlayerToolMode.None)
-            return architectureTool.StatusMessage;
+        if (constructionTool != null && constructionTool.Mode != BistroBuilderConstructionRuntimeMode.Furniture)
+            return constructionTool.StatusMessage;
         if (!string.IsNullOrWhiteSpace(statusMessage)) return statusMessage;
         BistroBuilderSaveOperationResult result = openingService.LastSaveResult;
         if (result != null && result.OperationKind == BistroBuilderSaveOperationKind.Save)

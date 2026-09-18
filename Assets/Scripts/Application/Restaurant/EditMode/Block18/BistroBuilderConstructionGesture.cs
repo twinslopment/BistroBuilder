@@ -180,7 +180,7 @@ namespace BistroBuilder.ConstructionAuthoring
                 {
                     var wall = wallTemplate.DeepClone(); wall.wallId = BistroBuilderEditId.NewId();
                     wall.axisStart = pose.Start; wall.axisEnd = pose.End;
-                    ConstructionWallCoverage.AppendUncovered(queries, wall, commands);
+                    commands.Add(new BistroBuilderCreateWallCommand(wall));
                 }
                 if (Kind == ConstructionGestureKind.Rectangle)
                 {

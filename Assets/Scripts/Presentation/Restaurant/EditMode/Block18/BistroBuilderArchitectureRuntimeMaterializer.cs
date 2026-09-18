@@ -12,8 +12,6 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     [SerializeField] private Transform generatedRoot;
     [SerializeField] private Material wallMaterial;
     [SerializeField] private Material floorMaterial;
-    [SerializeField] private Color fallbackWallColor = new Color(0.72f, 0.68f, 0.60f, 1f);
-    [SerializeField] private Color fallbackFloorColor = new Color(0.34f, 0.29f, 0.23f, 1f);
     [SerializeField] private bool createMeshColliders = true;
     [SerializeField] private bool materializeDetectedRooms = true;
     [SerializeField] private float floorElevation;
@@ -26,13 +24,24 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     [SerializeField, Min(0.5f)] private float passableOpeningMinimumHeight = 1.8f;
     [SerializeField, Min(0.01f)] private float minimumObstacleSegmentLength = 0.03f;
 
+    [Header("Wall visual module")]
+    [SerializeField] private bool useWallVisualModule = true;
+    [SerializeField] private string wallVisualModuleResource =
+        "BistroBuilder/Architecture/BB_Wall_Module_Master_001";
+    [SerializeField, Min(0.05f)] private float wallVisualModuleWidth = 0.49141f;
+    [SerializeField, Min(0.05f)] private float wallVisualModuleHeight = 1.89958f;
+    [SerializeField, Min(0.005f)] private float wallVisualModuleThickness = 0.03436f;
+
     private readonly List<BistroBuilderOpeningRecord> hostedOpenings =
         new List<BistroBuilderOpeningRecord>(8);
     private readonly List<Vector2> blockedIntervals = new List<Vector2>(8);
     private readonly List<Vector2> passageIntervals = new List<Vector2>(8);
+    private readonly List<float> visualXBreaks = new List<float>(16);
+    private readonly List<Vector2> visualYIntervals = new List<Vector2>(8);
+    private readonly List<Vector2> visualOpeningIntervals = new List<Vector2>(8);
+    private GameObject wallVisualModulePrefab;
+    private Material fallbackWallMaterial;
     private BistroBuilderEditDocument lastDocument;
-    private Material runtimeWallMaterial;
-    private Material runtimeFloorMaterial;
 
     public BistroBuilderEditDocument LastDocument =>
         lastDocument != null ? lastDocument.DeepClone() : null;
@@ -45,6 +54,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         ClearGenerated();
         lastDocument = document.DeepClone();
         ResolveWallSpatialContract();
+        ResolveWallVisualModule();
 
         int wallCount = 0;
         int floorCount = 0;
@@ -69,34 +79,20 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
 
         if (materializeDetectedRooms)
         {
-            var topologyBuilder = new BistroBuilderWallTopologyBuilder();
-            var detector = new BistroBuilderRoomFaceDetector();
-            var topology = topologyBuilder.Build(document.walls, document.revision);
-            List<BistroBuilderEnclosedFaceCandidate> faces = topology.HasBlockingDiagnostics
-                ? new List<BistroBuilderEnclosedFaceCandidate>()
-                : detector.Detect(topology);
-
-            // Premises boundaries only close an otherwise open architectural draft.
-            // A self-contained document must not inherit an unrelated scene boundary.
-            if (faces.Count == 0)
+            var topology = new BistroBuilderWallTopologyBuilder().Build(
+                document.walls,
+                document.revision);
+            if (!topology.HasBlockingDiagnostics)
             {
-                var boundaryWalls = new List<BistroBuilderWallRecord>(4);
-                if (BistroBuilderPremisesBoundaryRuntimeProvider.TryResolve(gameObject.scene, boundaryWalls) &&
-                    boundaryWalls.Count > 0)
+                List<BistroBuilderEnclosedFaceCandidate> faces =
+                    new BistroBuilderRoomFaceDetector().Detect(topology);
+                for (int i = 0; i < faces.Count; i++)
                 {
-                    var topologyWalls = new List<BistroBuilderWallRecord>(document.walls.Count + boundaryWalls.Count);
-                    topologyWalls.AddRange(document.walls);
-                    topologyWalls.AddRange(boundaryWalls);
-                    topology = topologyBuilder.Build(topologyWalls, document.revision);
-                    if (!topology.HasBlockingDiagnostics) faces = detector.Detect(topology);
+                    if (faces[i] == null || faces[i].boundary.Count < 3)
+                        continue;
+                    CreateFloorObject(faces[i], i);
+                    floorCount++;
                 }
-            }
-
-            for (int i = 0; i < faces.Count; i++)
-            {
-                if (faces[i] == null || faces[i].boundary.Count < 3) continue;
-                CreateFloorObject(faces[i], i);
-                floorCount++;
             }
         }
 
@@ -135,13 +131,15 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         var filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = ResolveVisualMaterial(true);
-        BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, ResolveVisualMaterial(true));
+        if (wallMaterial != null) renderer.sharedMaterial = wallMaterial;
         if (createMeshColliders)
         {
             var collider = go.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
+
+        if (CreateWallVisualModules(go.transform, wall, openings))
+            renderer.enabled = false;
 
         BuildBlockedFloorIntervals(wall, openings, blockedIntervals);
         for (int i = 0; i < blockedIntervals.Count; i++)
@@ -200,6 +198,178 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
                 wallSpatialContract,
                 proxy);
         }
+    }
+
+    private bool CreateWallVisualModules(
+        Transform wallRoot,
+        BistroBuilderWallRecord wall,
+        IReadOnlyList<BistroBuilderOpeningRecord> openings)
+    {
+        if (!useWallVisualModule || wallVisualModulePrefab == null || wallRoot == null) return false;
+        float length = wall.Length;
+        float height = Mathf.Max(0.05f, wall.height);
+        if (length <= 0.0001f) return false;
+
+        visualXBreaks.Clear();
+        visualXBreaks.Add(0f);
+        visualXBreaks.Add(length);
+        if (openings != null)
+        {
+            for (int i = 0; i < openings.Count; i++)
+            {
+                BistroBuilderOpeningRecord opening = openings[i];
+                if (opening == null || opening.width <= 0f || opening.height <= 0f) continue;
+                float center = Mathf.Clamp01(opening.axisPosition01) * length;
+                float half = opening.width * 0.5f;
+                visualXBreaks.Add(Mathf.Clamp(center - half, 0f, length));
+                visualXBreaks.Add(Mathf.Clamp(center + half, 0f, length));
+            }
+        }
+        SortUniqueVisualBreaks();
+
+        int created = 0;
+        for (int i = 0; i < visualXBreaks.Count - 1; i++)
+        {
+            float x0 = visualXBreaks[i];
+            float x1 = visualXBreaks[i + 1];
+            if (x1 - x0 <= 0.002f) continue;
+            BuildSolidVisualYIntervals((x0 + x1) * 0.5f, length, height, openings);
+            for (int y = 0; y < visualYIntervals.Count; y++)
+                created += CreateWallVisualStrip(wallRoot, x0, x1, visualYIntervals[y].x,
+                    visualYIntervals[y].y, Mathf.Max(0.005f, wall.thickness), created);
+        }
+        return created > 0;
+    }
+
+    private void SortUniqueVisualBreaks()
+    {
+        visualXBreaks.Sort();
+        for (int i = visualXBreaks.Count - 1; i > 0; i--)
+            if (Mathf.Abs(visualXBreaks[i] - visualXBreaks[i - 1]) <= 0.0001f)
+                visualXBreaks.RemoveAt(i);
+    }
+
+    private void BuildSolidVisualYIntervals(
+        float xMid,
+        float wallLength,
+        float wallHeight,
+        IReadOnlyList<BistroBuilderOpeningRecord> openings)
+    {
+        visualYIntervals.Clear();
+        visualOpeningIntervals.Clear();
+        if (openings != null)
+        {
+            for (int i = 0; i < openings.Count; i++)
+            {
+                BistroBuilderOpeningRecord opening = openings[i];
+                if (opening == null || opening.width <= 0f || opening.height <= 0f) continue;
+                float center = Mathf.Clamp01(opening.axisPosition01) * wallLength;
+                float x0 = Mathf.Clamp(center - opening.width * 0.5f, 0f, wallLength);
+                float x1 = Mathf.Clamp(center + opening.width * 0.5f, 0f, wallLength);
+                if (xMid <= x0 + 0.0001f || xMid >= x1 - 0.0001f) continue;
+                float y0 = Mathf.Clamp(opening.bottomElevation, 0f, wallHeight);
+                float y1 = Mathf.Clamp(opening.bottomElevation + opening.height, 0f, wallHeight);
+                if (y1 - y0 > 0.002f) visualOpeningIntervals.Add(new Vector2(y0, y1));
+            }
+        }
+        visualOpeningIntervals.Sort((a, b) => a.x.CompareTo(b.x));
+        float cursor = 0f;
+        for (int i = 0; i < visualOpeningIntervals.Count; i++)
+        {
+            Vector2 opening = visualOpeningIntervals[i];
+            if (opening.x - cursor > 0.002f) visualYIntervals.Add(new Vector2(cursor, opening.x));
+            cursor = Mathf.Max(cursor, opening.y);
+        }
+        if (wallHeight - cursor > 0.002f) visualYIntervals.Add(new Vector2(cursor, wallHeight));
+    }
+
+    private int CreateWallVisualStrip(
+        Transform wallRoot, float x0, float x1, float y0, float y1,
+        float thickness, int startIndex)
+    {
+        float width = x1 - x0;
+        float height = y1 - y0;
+        if (width <= 0.002f || height <= 0.002f) return 0;
+        int tiles = Mathf.Max(1, Mathf.CeilToInt(width / Mathf.Max(0.05f, wallVisualModuleWidth)));
+        float tileWidth = width / tiles;
+        Material visualMaterial = ResolveWallVisualMaterial();
+        for (int i = 0; i < tiles; i++)
+        {
+            GameObject visual = Instantiate(wallVisualModulePrefab, wallRoot, false);
+            visual.name = "WallVisualModule_" + (startIndex + i).ToString("D3");
+            visual.transform.localPosition = new Vector3(
+                x0 + tileWidth * (i + 0.5f),
+                y0 + height * 0.5f,
+                0f);
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = new Vector3(
+                tileWidth / Mathf.Max(0.05f, wallVisualModuleWidth),
+                height / Mathf.Max(0.05f, wallVisualModuleHeight),
+                thickness / Mathf.Max(0.005f, wallVisualModuleThickness));
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            for (int r = 0; r < renderers.Length; r++)
+                renderers[r].sharedMaterial = visualMaterial;
+        }
+        return tiles;
+    }
+
+    private Material ResolveWallVisualMaterial()
+    {
+        if (wallMaterial != null) return wallMaterial;
+        if (fallbackWallMaterial != null) return fallbackWallMaterial;
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader == null) shader = Shader.Find("Standard");
+        if (shader == null) shader = Shader.Find("Unlit/Color");
+        if (shader == null) return null;
+        fallbackWallMaterial = new Material(shader)
+        {
+            name = "BB_Wall_Module_RuntimeMaterial",
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        Color neutral = new Color(0.72f, 0.68f, 0.62f, 1f);
+        if (fallbackWallMaterial.HasProperty("_BaseColor")) fallbackWallMaterial.SetColor("_BaseColor", neutral);
+        if (fallbackWallMaterial.HasProperty("_Color")) fallbackWallMaterial.SetColor("_Color", neutral);
+        if (fallbackWallMaterial.HasProperty("_Smoothness")) fallbackWallMaterial.SetFloat("_Smoothness", 0.28f);
+        return fallbackWallMaterial;
+    }
+
+    private void ResolveWallVisualModule()
+    {
+        if (!useWallVisualModule) { wallVisualModulePrefab = null; return; }
+        if (wallVisualModulePrefab == null && !string.IsNullOrWhiteSpace(wallVisualModuleResource))
+            wallVisualModulePrefab = Resources.Load<GameObject>(wallVisualModuleResource);
+    }
+
+    public bool HasWallVisualModule => wallVisualModulePrefab != null;
+
+    public bool TryCreateWallVisualPreview(
+        Transform parent,
+        BistroBuilderWallRecord wall,
+        IReadOnlyList<BistroBuilderOpeningRecord> openings)
+    {
+        if (parent == null || wall == null || !wall.wallId.IsValid) return false;
+        ResolveWallVisualModule();
+        return CreateWallVisualModules(parent, wall, openings);
+    }
+
+    public bool SetWallVisualVisibility(BistroBuilderEditId wallId, bool visible)
+    {
+        EnsureRoot();
+        Transform wallRoot = generatedRoot.Find("Wall_" + wallId.Value);
+        if (wallRoot == null) return false;
+        Renderer rootRenderer = wallRoot.GetComponent<Renderer>();
+        Renderer[] renderers = wallRoot.GetComponentsInChildren<Renderer>(true);
+        bool hasVisualModules = false;
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null && renderers[i].gameObject.name.StartsWith("WallVisualModule_"))
+                { hasVisualModules = true; break; }
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer renderer = renderers[i];
+            if (renderer == null) continue;
+            renderer.enabled = visible && (renderer != rootRenderer || !hasVisualModules);
+        }
+        return true;
     }
 
     public void ConfigureSpatialProjectionRuntime(
@@ -265,62 +435,22 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         var filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
-        renderer.sharedMaterial = ResolveVisualMaterial(false);
+        if (floorMaterial != null) renderer.sharedMaterial = floorMaterial;
     }
 
-    private Material ResolveVisualMaterial(bool wall)
-    {
-        Material explicitMaterial = wall ? wallMaterial : floorMaterial;
-        if (explicitMaterial == null)
-        {
-            var kit = BistroBuilderConstructionAssetKit.Load();
-            if (kit != null) explicitMaterial = wall ? kit.wallMaterial : kit.floorMaterial;
-        }
-        if (explicitMaterial != null && explicitMaterial.shader != null && explicitMaterial.shader.isSupported)
-            return explicitMaterial;
-
-        Material cached = wall ? runtimeWallMaterial : runtimeFloorMaterial;
-        if (cached != null) return cached;
-
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Simple Lit");
-        if (shader == null) shader = Shader.Find("Sprites/Default");
-        if (shader == null) return explicitMaterial;
-
-        cached = new Material(shader)
-        {
-            name = wall ? "BB_Runtime_Wall_Material" : "BB_Runtime_Floor_Material",
-            hideFlags = HideFlags.HideAndDontSave
-        };
-        Color color = wall ? fallbackWallColor : fallbackFloorColor;
-        if (cached.HasProperty("_BaseColor")) cached.SetColor("_BaseColor", color);
-        else cached.color = color;
-        if (cached.HasProperty("_Smoothness")) cached.SetFloat("_Smoothness", wall ? 0.18f : 0.08f);
-
-        if (wall) runtimeWallMaterial = cached;
-        else runtimeFloorMaterial = cached;
-        return cached;
-    }
-
-    private void OnDestroy()
-    {
-        DestroyRuntimeMaterial(runtimeWallMaterial);
-        DestroyRuntimeMaterial(runtimeFloorMaterial);
-        runtimeWallMaterial = null;
-        runtimeFloorMaterial = null;
-    }
-
-    private static void DestroyRuntimeMaterial(Material material)
-    {
-        if (material == null) return;
-        if (Application.isPlaying) Destroy(material);
-        else DestroyImmediate(material);
-    }
     private void ResolveWallSpatialContract()
     {
         if (wallSpatialContract != null || !createSpatialSubjects) return;
         wallSpatialContract = Resources.Load<BistroBuilderSpatialContractDefinition>(
             DefaultWallContractResource);
+    }
+
+    private void OnDestroy()
+    {
+        if (fallbackWallMaterial == null) return;
+        if (Application.isPlaying) Destroy(fallbackWallMaterial);
+        else DestroyImmediate(fallbackWallMaterial);
+        fallbackWallMaterial = null;
     }
 
     private void EnsureRoot()
@@ -331,17 +461,23 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         generatedRoot.SetParent(transform, false);
     }
 
+    private static bool IsRuntimeGeneratedMesh(Mesh mesh)
+    {
+        if (mesh == null || string.IsNullOrEmpty(mesh.name)) return false;
+        return mesh.name.StartsWith("BB_WallMesh_") || mesh.name == "BB_PlanarPolygon";
+    }
+
     private static void DestroyGeneratedObject(GameObject go)
     {
         if (go == null) return;
-        go.SetActive(false);
+        // Unregister BBSIS/Navigation projections immediately; Destroy is deferred in PlayMode.
+        if (go.activeSelf) go.SetActive(false);
         MeshFilter[] filters = go.GetComponentsInChildren<MeshFilter>(true);
         for (int i = 0; i < filters.Length; i++)
         {
             Mesh mesh = filters[i].sharedMesh;
             filters[i].sharedMesh = null;
-            // Child meshes belong to reusable opening prefabs or Unity primitives.
-            if (mesh == null || filters[i].transform != go.transform) continue;
+            if (!IsRuntimeGeneratedMesh(mesh)) continue;
             if (Application.isPlaying) Destroy(mesh);
             else DestroyImmediate(mesh);
         }

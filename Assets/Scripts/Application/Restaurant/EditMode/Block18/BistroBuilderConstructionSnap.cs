@@ -75,16 +75,6 @@ namespace BistroBuilder.ConstructionAuthoring
                 var projected = ConstructionGeometry.Project(cursor, wall.axisStart, wall.axisEnd, out _);
                 Add(SnapKind.Wall, wall.wallId, 0, projected, cursor, max, settings);
             }
-            foreach (var wall in cache.BoundaryWalls)
-            {
-                if (wall == null || wall.buildPlaneId != plane) continue;
-                if (!NearExcluded(wall.axisStart, excludedPoint))
-                    Add(SnapKind.Endpoint, wall.wallId, 0, wall.axisStart, cursor, max, settings);
-                if (!NearExcluded(wall.axisEnd, excludedPoint))
-                    Add(SnapKind.Endpoint, wall.wallId, 1, wall.axisEnd, cursor, max, settings);
-                var projected = ConstructionGeometry.Project(cursor, wall.axisStart, wall.axisEnd, out _);
-                Add(SnapKind.Wall, wall.wallId, 0, projected, cursor, max, settings);
-            }
             if (cache.Topology != null)
                 foreach (var vertex in cache.Topology.vertices)
                 {
