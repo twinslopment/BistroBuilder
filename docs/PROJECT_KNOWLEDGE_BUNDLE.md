@@ -172,7 +172,7 @@ Category: CANONICAL
 - **Navigation & Crowd Flow:** contratos de autoridad fijados; implementación/hardening activo sin duplicar BBSIS ni Animation.
 - **BBPLFS:** desarrollo activo en `feature/bbplfs-v1`.
 - **Climate & Weather:** implementación V1 existente; cierre final pendiente de validación/ratificación.
-- **BB Furniture Finishes & Variants Authoring System (BBFFVAS):** DISEÑO V1 CANÓNICO; implementación pendiente. Herramienta interna para variantes visuales, biblioteca de acabados y Acabado Automático limitado a zonas/canales missing.
+- **BB Furniture Finishes & Variants Authoring System (BBFFVAS):** IMPLEMENTACIÓN TÉCNICA V1 ACTIVA; núcleo, autoría, Acabado Automático, miniaturas, publicación, runtime binding e importación Smart Assets/Asset Studio BB validados en Unity 6000.3.19f1. Integración en producción pendiente.
 
 ## Integración actual
 `playtest/all-current-20260912` contiene trabajo posterior a `integration/chat-final-20260911` y, al crear esta documentación, tenía conflictos de merge sin resolver. Esta rama documental se aisló deliberadamente para no tocar esa integración.
@@ -596,7 +596,7 @@ Category: CANONICAL
 
 **Nombre técnico:** BB Furniture Finishes & Variants Authoring System (BBFFVAS)
 
-**Estado:** DISEÑO V1 CANÓNICO — listo para implementación técnica
+**Estado:** IMPLEMENTACIÓN TÉCNICA V1 — núcleo validado en Unity 6000.3.19f1; integración en producción pendiente
 
 **Ámbito:** herramienta interna de autoría para el creador; no es una mecánica ni una interfaz destinada al jugador.
 
@@ -1077,7 +1077,7 @@ Category: CANONICAL
 | 17 | Navegación V1 | CERRADO V1 | transversal Crowd Flow sigue hardening |
 | 18 | Modo Edición / Construcción | ACTIVO | 18M/18N + Construction Authoring |
 | 21A | UI/UX definitiva | ACTIVO | rama específica; cierre aún no ratificado |
-| Autoría | Acabados y Variantes de Mobiliario (BBFFVAS) | DISEÑO V1 CANÓNICO | herramienta interna; variantes visuales, biblioteca de acabados y Acabado Automático |
+| Autoría | Acabados y Variantes de Mobiliario (BBFFVAS) | IMPLEMENTACIÓN TÉCNICA V1 VALIDADA | herramienta interna; variantes visuales, biblioteca, Acabado Automático, miniaturas, publicación e importación de pipelines existentes |
 
 ## Regla
 El estado V1 no autoriza a reescribir un bloque desde otro sistema. Correcciones posteriores deben preservar su autoridad pública y documentarse como hardening, integración o V2.

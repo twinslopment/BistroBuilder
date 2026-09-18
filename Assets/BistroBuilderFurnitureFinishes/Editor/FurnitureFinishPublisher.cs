@@ -15,6 +15,8 @@ namespace BistroBuilder.FurnitureFinishes.Editor
             if (FurnitureFinishValidator.HasErrors(validation))
                 throw new InvalidOperationException("La publicación está bloqueada por errores de validación.");
 
+            EnsureMissingThumbnails(profile);
+
             var folder = $"{PublishedRoot}/{profile.FurnitureId}";
             FurnitureFinishAssetUtility.EnsureFolder(folder);
             var path = $"{folder}/{profile.FurnitureId}_FurnitureFinishSet.asset";
@@ -63,6 +65,7 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                 variants.Add(new FurnitureFinishPublishedSet.PublishedVariant(
                     variant.Id,
                     variant.DisplayName,
+                    variant.Thumbnail,
                     bindings.ToArray()));
             }
 
@@ -75,9 +78,82 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                 defaultId,
                 variants.ToArray());
             EditorUtility.SetDirty(published);
+            UpdateRegistry(profile.FurnitureId, published);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             return published;
+        }
+
+        private static void EnsureMissingThumbnails(FurnitureFinishProfile profile)
+        {
+            if (profile == null)
+                return;
+
+            var dirty = false;
+            foreach (var variant in profile.Variants)
+            {
+                if (variant == null || variant.Thumbnail != null)
+                    continue;
+                variant.EditorSetThumbnail(
+                    FurnitureFinishThumbnailGenerator.Generate(profile, variant));
+                dirty = true;
+            }
+
+            if (dirty)
+                EditorUtility.SetDirty(profile);
+        }
+
+        private static void UpdateRegistry(
+            string furnitureId,
+            FurnitureFinishPublishedSet published)
+        {
+            const string registryFolder = "Assets/Generated/FurnitureFinishes";
+            const string registryPath =
+                registryFolder + "/FurnitureFinishRegistry.asset";
+
+            FurnitureFinishAssetUtility.EnsureFolder(registryFolder);
+            var registry = AssetDatabase.LoadAssetAtPath<FurnitureFinishRegistry>(
+                registryPath);
+            if (registry == null)
+            {
+                registry = ScriptableObject.CreateInstance<FurnitureFinishRegistry>();
+                registry.EditorConfigure(
+                    Array.Empty<FurnitureFinishRegistry.Entry>());
+                AssetDatabase.CreateAsset(registry, registryPath);
+            }
+
+            var entries = new List<FurnitureFinishRegistry.Entry>();
+            var replaced = false;
+            foreach (var entry in registry.Entries)
+            {
+                if (entry != null
+                    && string.Equals(
+                        entry.FurnitureId,
+                        furnitureId,
+                        StringComparison.Ordinal))
+                {
+                    entries.Add(
+                        new FurnitureFinishRegistry.Entry(
+                            furnitureId,
+                            published));
+                    replaced = true;
+                }
+                else if (entry != null)
+                {
+                    entries.Add(entry);
+                }
+            }
+
+            if (!replaced)
+            {
+                entries.Add(
+                    new FurnitureFinishRegistry.Entry(
+                        furnitureId,
+                        published));
+            }
+
+            registry.EditorConfigure(entries.ToArray());
+            EditorUtility.SetDirty(registry);
         }
     }
 }

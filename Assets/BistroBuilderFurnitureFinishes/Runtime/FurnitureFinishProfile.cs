@@ -140,6 +140,18 @@ namespace BistroBuilder.FurnitureFinishes
                 slots = slotBindings ?? Array.Empty<SlotBinding>();
             }
 
+#if UNITY_EDITOR
+            public void EditorClassify(
+                FurnitureSurfaceFamily primaryFamily,
+                FurnitureSurfaceFamily[] allowedFamilies)
+            {
+                family = primaryFamily;
+                compatibleFamilies = allowedFamilies ?? Array.Empty<FurnitureSurfaceFamily>();
+                classificationConfirmed = primaryFamily != FurnitureSurfaceFamily.Unknown
+                    || compatibleFamilies.Length > 0;
+            }
+#endif
+
             public bool Allows(FurnitureSurfaceFamily candidate)
             {
                 if (candidate == FurnitureSurfaceFamily.Unknown)
@@ -178,10 +190,12 @@ namespace BistroBuilder.FurnitureFinishes
         {
             [SerializeField] private string id = string.Empty;
             [SerializeField] private string displayName = string.Empty;
+            [SerializeField] private Texture2D thumbnail;
             [SerializeField] private ZoneFinishBinding[] bindings = Array.Empty<ZoneFinishBinding>();
 
             public string Id => id;
             public string DisplayName => displayName;
+            public Texture2D Thumbnail => thumbnail;
             public IReadOnlyList<ZoneFinishBinding> Bindings => bindings;
 
             public VariantDefinition(string variantId, string visibleName, ZoneFinishBinding[] zoneBindings)
@@ -190,6 +204,13 @@ namespace BistroBuilder.FurnitureFinishes
                 displayName = visibleName ?? string.Empty;
                 bindings = zoneBindings ?? Array.Empty<ZoneFinishBinding>();
             }
+
+#if UNITY_EDITOR
+            public void EditorSetThumbnail(Texture2D value)
+            {
+                thumbnail = value;
+            }
+#endif
 
             public FurnitureFinishDefinition FindFinish(string zoneId)
             {

@@ -2,7 +2,7 @@
 
 **Nombre técnico:** BB Furniture Finishes & Variants Authoring System (BBFFVAS)
 
-**Estado:** DISEÑO V1 CANÓNICO — listo para implementación técnica
+**Estado:** IMPLEMENTACIÓN TÉCNICA V1 — núcleo validado en Unity 6000.3.19f1; integración en producción pendiente
 
 **Ámbito:** herramienta interna de autoría para el creador; no es una mecánica ni una interfaz destinada al jugador.
 

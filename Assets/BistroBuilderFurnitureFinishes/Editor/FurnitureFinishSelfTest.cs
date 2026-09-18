@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using BistroBuilder.AssetStudioBB;
+using BistroBuilder.SmartAssets;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,6 +16,8 @@ namespace BistroBuilder.FurnitureFinishes.Editor
             "Assets/Generated/FurnitureFinishes/GeneratedDrafts/bbffvas_draft_selftest";
         private const string AutoDraftTestRoot =
             "Assets/Generated/FurnitureFinishes/AutoDrafts/bbffvas_draft_selftest";
+        private static readonly HashSet<string> AdditionalCleanupAssets =
+            new HashSet<string>(StringComparer.Ordinal);
 
         [MenuItem("Tools/Bistro Builder/Acabados y Variantes/Run Self-Test")]
         public static void RunFromMenu()
@@ -170,8 +174,14 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                 RunDraftFallbackTest(shader);
                 RunMultiFamilyTest(shader);
                 RunRuntimeBindingTest(published, sourcePrefab, donorMaterial);
+                RunPublishedRegistryTest(published);
+                RunSmartAssetsImportTest(shader);
+                RunAssetStudioImportTest(shader);
 
-                Debug.Log("[BBFFVAS] SELF-TEST PASS · core + draft fallback + multi-family + runtime binding");
+                Debug.Log(
+                    "[BBFFVAS] SELF-TEST PASS · core + thumbnails + registry + " +
+                    "draft fallback + multi-family + runtime binding + Smart Assets import + " +
+                    "Asset Studio BB import");
             }
             finally
             {
@@ -374,6 +384,259 @@ namespace BistroBuilder.FurnitureFinishes.Editor
             }
         }
 
+        private static void RunPublishedRegistryTest(
+            FurnitureFinishPublishedSet published)
+        {
+            const string registryPath =
+                "Assets/Generated/FurnitureFinishes/FurnitureFinishRegistry.asset";
+            var registry = AssetDatabase.LoadAssetAtPath<FurnitureFinishRegistry>(
+                registryPath);
+            Assert(registry != null, "La publicación no creó el registro canónico.");
+            Assert(
+                registry.TryGet("bbffvas_selftest", out var registered),
+                "El registro no encuentra el Furniture ID publicado.");
+            Assert(
+                registered == published,
+                "El registro apunta a un Published Set incorrecto.");
+
+            var defaultVariant = published.GetDefaultVariant();
+            Assert(defaultVariant != null, "No existe variante predeterminada publicada.");
+            Assert(
+                defaultVariant.Thumbnail != null,
+                "La publicación no generó miniatura automáticamente.");
+        }
+
+        private static void RunSmartAssetsImportTest(Shader shader)
+        {
+            var sourceObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sourceObject.name = "BBFFVAS_Import_Source";
+            foreach (var collider in sourceObject.GetComponentsInChildren<Collider>(true))
+                UnityEngine.Object.DestroyImmediate(collider);
+
+            var sourcePrefab = PrefabUtility.SaveAsPrefabAsset(
+                sourceObject,
+                TestRoot + "/ImportSource.prefab");
+            UnityEngine.Object.DestroyImmediate(sourceObject);
+            Assert(sourcePrefab != null, "No se creó el prefab para importación.");
+
+            var oak = new Material(shader) { name = "oak_test_material" };
+            var paint = new Material(shader) { name = "paint_black_test_material" };
+            AssetDatabase.CreateAsset(oak, TestRoot + "/ImportOak.mat");
+            AssetDatabase.CreateAsset(paint, TestRoot + "/ImportPaint.mat");
+
+            var set = ScriptableObject.CreateInstance<BistroBuilderSmartAssetVariantSet>();
+            set.EditorConfigure(
+                "bbffvas_import_selftest",
+                "oak",
+                sourcePrefab,
+                new[]
+                {
+                    new BistroBuilderSmartAssetVariantSet.VariantEntry(
+                        "oak",
+                        "Roble",
+                        Color.white,
+                        oak,
+                        sourcePrefab,
+                        1f),
+                    new BistroBuilderSmartAssetVariantSet.VariantEntry(
+                        "paint_black",
+                        "Pintura negra",
+                        Color.black,
+                        paint,
+                        sourcePrefab,
+                        1.05f)
+                });
+            AssetDatabase.CreateAsset(
+                set,
+                TestRoot + "/SmartVariantSet.asset");
+
+            var library = ScriptableObject.CreateInstance<FurnitureFinishLibrary>();
+            library.EditorConfigure(Array.Empty<FurnitureFinishDefinition>());
+            AssetDatabase.CreateAsset(
+                library,
+                TestRoot + "/ImportLibrary.asset");
+            AssetDatabase.SaveAssets();
+
+            var profile = FurnitureFinishExistingPipelineImporter.Import(
+                set,
+                library);
+            Assert(profile != null, "La importación Smart Assets no creó perfil.");
+            Assert(profile.Variants.Count == 2, "No se importaron las dos variantes.");
+            Assert(profile.Zones.Count == 1, "Smart Assets debía producir una zona.");
+            Assert(
+                profile.Zones[0].Allows(FurnitureSurfaceFamily.Wood),
+                "La zona importada no admite Wood.");
+            Assert(
+                profile.Zones[0].Allows(FurnitureSurfaceFamily.Paint),
+                "La zona importada no admite Paint.");
+            Assert(
+                profile.DefaultVariantId == "oak",
+                "No se conservó la variante predeterminada.");
+            Assert(
+                library.Finishes.Count == 2,
+                "La biblioteca importada no deduplicó/registró los acabados esperados.");
+        }
+
+        private static void RunAssetStudioImportTest(Shader shader)
+        {
+            var before = SnapshotFinishAssets();
+
+            var materialA = new Material(shader)
+            {
+                name = "MAT_bbffvas_assetstudio_selftest_v1_wood",
+                color = new Color(0.62f, 0.42f, 0.22f, 1f)
+            };
+            var materialB = new Material(shader)
+            {
+                name = "MAT_bbffvas_assetstudio_selftest_v2_wood",
+                color = new Color(0.28f, 0.16f, 0.08f, 1f)
+            };
+            AssetDatabase.CreateAsset(
+                materialA,
+                TestRoot + "/MAT_bbffvas_assetstudio_selftest_v1_wood.mat");
+            AssetDatabase.CreateAsset(
+                materialB,
+                TestRoot + "/MAT_bbffvas_assetstudio_selftest_v2_wood.mat");
+
+            var prefabA = CreateVariantPrefab(
+                "BBFFVAS_AssetStudio_V1",
+                materialA,
+                TestRoot + "/AssetStudioV1.prefab");
+            var prefabB = CreateVariantPrefab(
+                "BBFFVAS_AssetStudio_V2",
+                materialB,
+                TestRoot + "/AssetStudioV2.prefab");
+
+            var set = ScriptableObject.CreateInstance<AssetStudioBBVariantSet>();
+            set.EditorConfigure(
+                "bbffvas_assetstudio_selftest",
+                "Asset Studio Import Self-Test",
+                "DINING",
+                "TABLE",
+                "TEST",
+                Vector3.one,
+                "v1",
+                new[]
+                {
+                    new AssetStudioBBVariantSet.VariantEntry(
+                        "v1",
+                        "Roble claro",
+                        1f,
+                        prefabA),
+                    new AssetStudioBBVariantSet.VariantEntry(
+                        "v2",
+                        "Nogal oscuro",
+                        1.1f,
+                        prefabB)
+                });
+            AssetDatabase.CreateAsset(
+                set,
+                TestRoot + "/AssetStudioVariantSet.asset");
+
+            var library = ScriptableObject.CreateInstance<FurnitureFinishLibrary>();
+            library.EditorConfigure(Array.Empty<FurnitureFinishDefinition>());
+            AssetDatabase.CreateAsset(
+                library,
+                TestRoot + "/AssetStudioLibrary.asset");
+            AssetDatabase.SaveAssets();
+
+            var profile = FurnitureFinishExistingPipelineImporter.Import(
+                set,
+                library);
+            TrackNewFinishAssets(before);
+
+            Assert(profile != null, "Asset Studio BB no creó perfil.");
+            Assert(profile.Variants.Count == 2, "Asset Studio BB perdió variantes.");
+            Assert(profile.Zones.Count == 1, "Asset Studio BB debía producir una zona.");
+            Assert(profile.Zones[0].Id == "wood", "No se preservó el rol semántico wood.");
+            Assert(
+                profile.Zones[0].Allows(FurnitureSurfaceFamily.Wood),
+                "La zona Asset Studio no admite Wood.");
+            Assert(
+                profile.DefaultVariantId == "v1",
+                "Asset Studio BB no conservó la variante predeterminada.");
+            Assert(
+                library.Finishes.Count == 2,
+                "Asset Studio BB no registró dos acabados distintos.");
+
+            AdditionalCleanupAssets.Add(
+                "Assets/Data/FurnitureFinishes/Profiles/" +
+                "bbffvas_assetstudio_selftest_FurnitureFinishProfile.asset");
+        }
+
+        private static GameObject CreateVariantPrefab(
+            string name,
+            Material material,
+            string path)
+        {
+            var instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            instance.name = name;
+            foreach (var collider in instance.GetComponentsInChildren<Collider>(true))
+                UnityEngine.Object.DestroyImmediate(collider);
+            instance.GetComponent<Renderer>().sharedMaterial = material;
+            var prefab = PrefabUtility.SaveAsPrefabAsset(instance, path);
+            UnityEngine.Object.DestroyImmediate(instance);
+            Assert(prefab != null, $"No se pudo crear '{name}'.");
+            return prefab;
+        }
+
+        private static HashSet<string> SnapshotFinishAssets()
+        {
+            var result = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var guid in AssetDatabase.FindAssets(
+                "t:FurnitureFinishDefinition",
+                new[] { "Assets/Data/FurnitureFinishes/Library" }))
+            {
+                result.Add(AssetDatabase.GUIDToAssetPath(guid));
+            }
+            return result;
+        }
+
+        private static void TrackNewFinishAssets(HashSet<string> before)
+        {
+            foreach (var guid in AssetDatabase.FindAssets(
+                "t:FurnitureFinishDefinition",
+                new[] { "Assets/Data/FurnitureFinishes/Library" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!before.Contains(path))
+                    AdditionalCleanupAssets.Add(path);
+            }
+        }
+
+        private static void CleanupRegistryEntry()
+        {
+            const string registryPath =
+                "Assets/Generated/FurnitureFinishes/FurnitureFinishRegistry.asset";
+            var registry = AssetDatabase.LoadAssetAtPath<FurnitureFinishRegistry>(
+                registryPath);
+            if (registry == null)
+                return;
+
+            var remaining = new List<FurnitureFinishRegistry.Entry>();
+            foreach (var entry in registry.Entries)
+            {
+                if (entry != null
+                    && !string.Equals(
+                        entry.FurnitureId,
+                        "bbffvas_selftest",
+                        StringComparison.Ordinal))
+                {
+                    remaining.Add(entry);
+                }
+            }
+
+            if (remaining.Count == 0)
+            {
+                AssetDatabase.DeleteAsset(registryPath);
+            }
+            else
+            {
+                registry.EditorConfigure(remaining.ToArray());
+                EditorUtility.SetDirty(registry);
+            }
+        }
+
         private static bool ContainsIssue(
             System.Collections.Generic.IReadOnlyList<FurnitureFinishIssue> issues,
             FurnitureFinishIssueKind kind)
@@ -394,10 +657,29 @@ namespace BistroBuilder.FurnitureFinishes.Editor
 
         private static void Cleanup()
         {
+            CleanupRegistryEntry();
             AssetDatabase.DeleteAsset(TestRoot);
             AssetDatabase.DeleteAsset(PublishedTestRoot);
             AssetDatabase.DeleteAsset(DraftTestRoot);
             AssetDatabase.DeleteAsset(AutoDraftTestRoot);
+            AssetDatabase.DeleteAsset(
+                "Assets/Generated/FurnitureFinishes/Thumbnails/bbffvas_selftest");
+            AssetDatabase.DeleteAsset(
+                "Assets/Data/FurnitureFinishes/Profiles/" +
+                "bbffvas_import_selftest_FurnitureFinishProfile.asset");
+            AssetDatabase.DeleteAsset(
+                "Assets/Data/FurnitureFinishes/Library/wood_oak.asset");
+            AssetDatabase.DeleteAsset(
+                "Assets/Data/FurnitureFinishes/Library/paint_paint_black.asset");
+
+            foreach (var path in AdditionalCleanupAssets)
+            {
+                if (!string.IsNullOrWhiteSpace(path))
+                    AssetDatabase.DeleteAsset(path);
+            }
+            AdditionalCleanupAssets.Clear();
+
+            AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
     }

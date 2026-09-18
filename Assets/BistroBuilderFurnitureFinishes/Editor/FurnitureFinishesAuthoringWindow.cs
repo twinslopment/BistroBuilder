@@ -32,6 +32,20 @@ namespace BistroBuilder.FurnitureFinishes.Editor
         private bool showZoneEditor;
         private bool showAdvancedVariants;
 
+        private static readonly FurnitureSurfaceFamily[] QuickFamilies =
+        {
+            FurnitureSurfaceFamily.Wood,
+            FurnitureSurfaceFamily.Fabric,
+            FurnitureSurfaceFamily.Leather,
+            FurnitureSurfaceFamily.Metal,
+            FurnitureSurfaceFamily.Stone,
+            FurnitureSurfaceFamily.Glass,
+            FurnitureSurfaceFamily.Paint,
+            FurnitureSurfaceFamily.Plastic,
+            FurnitureSurfaceFamily.Ceramic,
+            FurnitureSurfaceFamily.Other
+        };
+
         [MenuItem("Tools/Bistro Builder/Acabados y Variantes de Mobiliario")]
         private static void Open()
         {
@@ -219,6 +233,9 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                 RefreshAnalysis();
             EditorGUILayout.EndHorizontal();
 
+            if (DrawUnclassifiedSurfaceActions())
+                return;
+
             if (issues.Count == 0)
             {
                 EditorGUILayout.HelpBox(
@@ -236,6 +253,77 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                         : issue.Severity == FurnitureFinishIssueSeverity.Warning
                             ? MessageType.Warning
                             : MessageType.Info);
+            }
+        }
+
+        private bool DrawUnclassifiedSurfaceActions()
+        {
+            foreach (var zone in profile.Zones)
+            {
+                if (zone == null || (zone.ClassificationConfirmed && HasCompatibleFamily(zone)))
+                    continue;
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField(
+                    $"Clasificar · {zone.DisplayName}",
+                    EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(
+                    "El sistema no aplicará Acabado Automático hasta que confirmes el tipo de superficie.",
+                    EditorStyles.wordWrappedMiniLabel);
+
+                for (var start = 0; start < QuickFamilies.Length; start += 5)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    var end = Mathf.Min(start + 5, QuickFamilies.Length);
+                    for (var index = start; index < end; index++)
+                    {
+                        var family = QuickFamilies[index];
+                        if (GUILayout.Button(FamilyLabel(family)))
+                        {
+                            Undo.RecordObject(profile, "Clasificar superficie");
+                            zone.EditorClassify(family, new[] { family });
+                            EditorUtility.SetDirty(profile);
+                            AssetDatabase.SaveAssets();
+                            RefreshAnalysis();
+                            EditorGUILayout.EndHorizontal();
+                            EditorGUILayout.EndVertical();
+                            return true;
+                        }
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                EditorGUILayout.EndVertical();
+            }
+
+            return false;
+        }
+
+        private static bool HasCompatibleFamily(
+            FurnitureFinishProfile.ZoneDefinition zone)
+        {
+            foreach (var family in zone.CompatibleFamilies)
+            {
+                if (family != FurnitureSurfaceFamily.Unknown)
+                    return true;
+            }
+            return zone.Family != FurnitureSurfaceFamily.Unknown;
+        }
+
+        private static string FamilyLabel(FurnitureSurfaceFamily family)
+        {
+            switch (family)
+            {
+                case FurnitureSurfaceFamily.Wood: return "Madera";
+                case FurnitureSurfaceFamily.Fabric: return "Tela";
+                case FurnitureSurfaceFamily.Leather: return "Cuero";
+                case FurnitureSurfaceFamily.Metal: return "Metal";
+                case FurnitureSurfaceFamily.Stone: return "Piedra";
+                case FurnitureSurfaceFamily.Glass: return "Vidrio";
+                case FurnitureSurfaceFamily.Paint: return "Pintura";
+                case FurnitureSurfaceFamily.Plastic: return "Plástico";
+                case FurnitureSurfaceFamily.Ceramic: return "Cerámica";
+                default: return "Otro";
             }
         }
 
@@ -359,8 +447,28 @@ namespace BistroBuilder.FurnitureFinishes.Editor
                 }
             }
 
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Generar miniaturas"))
+            {
+                try
+                {
+                    var count = FurnitureFinishThumbnailGenerator.GenerateAll(profile);
+                    ShowNotification(new GUIContent(
+                        $"Miniaturas generadas: {count}"));
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                    EditorUtility.DisplayDialog(
+                        "Miniaturas",
+                        exception.Message,
+                        "Cerrar");
+                }
+            }
+
             if (GUILayout.Button("Validar publicación"))
                 validation = FurnitureFinishValidator.ValidateForPublish(profile);
+            EditorGUILayout.EndHorizontal();
 
             foreach (var message in validation)
             {

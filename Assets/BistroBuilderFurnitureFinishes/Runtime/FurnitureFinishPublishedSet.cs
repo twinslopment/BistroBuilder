@@ -80,16 +80,23 @@ namespace BistroBuilder.FurnitureFinishes
         {
             [SerializeField] private string id = string.Empty;
             [SerializeField] private string displayName = string.Empty;
+            [SerializeField] private Texture2D thumbnail;
             [SerializeField] private PublishedBinding[] bindings = Array.Empty<PublishedBinding>();
 
             public string Id => id;
             public string DisplayName => displayName;
+            public Texture2D Thumbnail => thumbnail;
             public IReadOnlyList<PublishedBinding> Bindings => bindings;
 
-            public PublishedVariant(string variantId, string visibleName, PublishedBinding[] entries)
+            public PublishedVariant(
+                string variantId,
+                string visibleName,
+                Texture2D variantThumbnail,
+                PublishedBinding[] entries)
             {
                 id = variantId ?? string.Empty;
                 displayName = visibleName ?? string.Empty;
+                thumbnail = variantThumbnail;
                 bindings = entries ?? Array.Empty<PublishedBinding>();
             }
         }
