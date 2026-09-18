@@ -181,25 +181,25 @@ public sealed class RestaurantCatalogPreviewIconGraphic : MaskableGraphic
 
     private void DrawDecoration(VertexHelper vh)
     {
-        Circle(vh, P(.50f, .63f), .10f, 16);
-        Circle(vh, P(.38f, .59f), .09f, 16);
-        Circle(vh, P(.62f, .59f), .09f, 16);
-        Line(vh, P(.50f, .53f), P(.50f, .18f));
-        Line(vh, P(.50f, .36f), P(.34f, .28f));
-        Line(vh, P(.50f, .31f), P(.66f, .23f));
-        Line(vh, P(.34f, .28f), P(.28f, .18f));
-        Line(vh, P(.66f, .23f), P(.72f, .14f));
+        Circle(vh, P(.50f, .67f), .13f, 18);
+        Circle(vh, P(.34f, .61f), .12f, 18);
+        Circle(vh, P(.66f, .61f), .12f, 18);
+        Line(vh, P(.50f, .54f), P(.50f, .12f));
+        Line(vh, P(.50f, .38f), P(.28f, .26f));
+        Line(vh, P(.50f, .32f), P(.72f, .20f));
+        Line(vh, P(.28f, .26f), P(.20f, .12f));
+        Line(vh, P(.72f, .20f), P(.80f, .08f));
     }
 
     private void DrawLighting(VertexHelper vh)
     {
-        Line(vh, P(.50f, .82f), P(.50f, .66f));
-        Line(vh, P(.34f, .66f), P(.66f, .66f));
-        Line(vh, P(.34f, .66f), P(.24f, .42f));
-        Line(vh, P(.66f, .66f), P(.76f, .42f));
-        Line(vh, P(.24f, .42f), P(.76f, .42f));
-        Line(vh, P(.50f, .42f), P(.50f, .17f));
-        Line(vh, P(.36f, .17f), P(.64f, .17f));
+        Line(vh, P(.50f, .90f), P(.50f, .70f));
+        Line(vh, P(.28f, .70f), P(.72f, .70f));
+        Line(vh, P(.28f, .70f), P(.16f, .40f));
+        Line(vh, P(.72f, .70f), P(.84f, .40f));
+        Line(vh, P(.16f, .40f), P(.84f, .40f));
+        Line(vh, P(.50f, .40f), P(.50f, .10f));
+        Line(vh, P(.30f, .10f), P(.70f, .10f));
     }
 
     private void DrawSearch(VertexHelper vh)

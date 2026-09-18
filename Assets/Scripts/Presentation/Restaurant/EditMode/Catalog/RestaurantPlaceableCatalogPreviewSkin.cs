@@ -374,6 +374,11 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 new Vector2(-2f, -2f));
             tmp.text = label;
             tmp.enableWordWrapping = false;
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMin = 8.6f;
+            tmp.fontSizeMax = 10.5f;
+            tmp.overflowMode = TextOverflowModes.Overflow;
+            tmp.margin = new Vector4(0f, 0f, 0f, 0f);
 
             RectTransform iconRect = CreateChildRect(child, "PreviewIcon");
             SetAnchors(
@@ -1185,16 +1190,16 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (panelRect != null)
         {
             float topInset = Mathf.Max(
-                86f,
+                84f,
                 ResolveHorizontalBarInset(
-                    BistroBuilderUiShell.TopBarName,
-                    64f) + 12f);
+                    BistroBuilderUiShell.EditModeTopBarName,
+                    58f) + 26f);
 
             float bottomInset = Mathf.Max(
-                150f,
+                92f,
                 ResolveHorizontalBarInset(
-                    BistroBuilderUiShell.BottomBarName,
-                    64f) + 12f);
+                    BistroBuilderUiShell.EditModeBottomBarName,
+                    68f) + 24f);
 
             panelRect.anchorMin = new Vector2(0f, 0f);
             panelRect.anchorMax = new Vector2(0f, 1f);
