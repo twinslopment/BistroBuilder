@@ -247,6 +247,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     }
     public void SetMode(BistroBuilderConstructionRuntimeMode next)
     {
+        // Selection is contextual; there is no dedicated Select mode in the player UI.
+        if (next == BistroBuilderConstructionRuntimeMode.Select) next = BistroBuilderConstructionRuntimeMode.Furniture;
         CacheDependencies();
         if (next != BistroBuilderConstructionRuntimeMode.Furniture &&
             (editModeService == null || !editModeService.IsEditModeActive))
@@ -393,7 +395,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         if (IsGestureActive() && twoClickGesture) { ConfirmTwoClick(rawPoint); return; }
         switch (mode)
         {
-            case BistroBuilderConstructionRuntimeMode.Select: BeginSelectionOrDrag(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.Wall: BeginWall(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.Room: BeginRoom(rawPoint); break;
             case BistroBuilderConstructionRuntimeMode.WallModule: PlaceModule(rawPoint); break;
@@ -607,7 +608,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
             RenderOpeningHover(point); return;
         }
         HideSnapMarker();
-        if (mode == BistroBuilderConstructionRuntimeMode.Select) { RefreshVisuals(); RenderSelectionHover(point); }
     }
 
     private void RenderOpeningHover(Vector2 point)
@@ -1385,7 +1385,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     {
         switch (value)
         {
-            case BistroBuilderConstructionRuntimeMode.Select: return "Seleccionar: clic en pared/espacio/abertura; arrastra paredes o esquinas.";
             case BistroBuilderConstructionRuntimeMode.Wall: return "Pared: clic inicio, mueve, clic final. Continúa encadenando.";
             case BistroBuilderConstructionRuntimeMode.Room: return "Espacio: clic en dos esquinas opuestas.";
             case BistroBuilderConstructionRuntimeMode.Door: return "Puerta: haz clic sobre una pared.";
@@ -1455,7 +1454,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     {
         GUILayout.BeginHorizontal();
         ToolButton("Mobiliario", BistroBuilderConstructionRuntimeMode.Furniture);
-        ToolButton("Seleccionar", BistroBuilderConstructionRuntimeMode.Select);
         ToolButton("Pared", BistroBuilderConstructionRuntimeMode.Wall);
         ToolButton("Espacio", BistroBuilderConstructionRuntimeMode.Room);
         ToolButton("Puerta", BistroBuilderConstructionRuntimeMode.Door);

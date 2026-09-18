@@ -92,7 +92,6 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         var catalogue = Panel("CatÃ¡logo de construcciÃ³n", root, new Vector2(0,1), new Vector2(12,-82), new Vector2(252,760));
         Text(catalogue, "DiseÃ±a tu local", 25, 40);
         Text(catalogue, "HERRAMIENTAS", 12, 24);
-        Mode(catalogue, "Seleccionar", BistroBuilderConstructionRuntimeMode.Select, "select");
         Mode(catalogue, "Pared continua", BistroBuilderConstructionRuntimeMode.Wall, "wall");
         Mode(catalogue, "MÃ³dulo de pared", BistroBuilderConstructionRuntimeMode.WallModule, "module");
         Mode(catalogue, "HabitaciÃ³n por arrastre", BistroBuilderConstructionRuntimeMode.Room, "room");

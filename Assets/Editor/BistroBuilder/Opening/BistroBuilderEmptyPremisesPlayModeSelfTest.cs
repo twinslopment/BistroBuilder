@@ -108,6 +108,10 @@ public static class BistroBuilderEmptyPremisesPlayModeSelfTest
                 if (layout == null || layout.walls.Count != 0 || layout.openings.Count != 0 ||
                     layout.rooms.Count != 0 || layout.surfaces.Count != 0 || layout.zones.Count != 0)
                     throw new InvalidOperationException("Empty premises retained authored architecture.");
+                GameObject floor = GameObject.Find("Floor_Test");
+                Renderer floorRenderer = floor != null ? floor.GetComponent<Renderer>() : null;
+                if (floorRenderer == null || !floorRenderer.enabled)
+                    throw new InvalidOperationException("Empty premises floor plan is not visible in initial design.");
                 if (GameObject.Find("RestaurantEntrancePoint") == null)
                     throw new InvalidOperationException("Empty premises removed the technical entrance authority.");
 
@@ -126,7 +130,7 @@ public static class BistroBuilderEmptyPremisesPlayModeSelfTest
             {
                 if (save.IsBusy) { Timeout(8d, "final cleanup"); return; }
                 if (save.SlotExists(DiagnosticSlot)) throw new InvalidOperationException("Diagnostic slot remained on disk.");
-                Finish(true, "PASS - Empty removes all active placeables, fixed demo fixtures and authored architecture while preserving the technical entrance and canonical cook role.", cli);
+                Finish(true, "PASS - Empty keeps the premises floor visible, removes active placeables, fixed demo fixtures and authored architecture, and preserves the technical entrance and canonical cook role.", cli);
             }
         }
         catch (Exception exception)

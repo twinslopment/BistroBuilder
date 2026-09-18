@@ -132,8 +132,6 @@ public sealed class BistroBuilderPointerFeedback : MonoBehaviour
                 kind = BistroBuilderPointerKind.Blocked;
             else if (construction != null && construction.Mode != BistroBuilderConstructionRuntimeMode.Furniture && construction.LastRotationFeedbackTime > 0 && Time.unscaledTime - construction.LastRotationFeedbackTime < 0.45f)
                 kind = BistroBuilderPointerKind.Rotate;
-            else if (construction != null && construction.Mode == BistroBuilderConstructionRuntimeMode.Select && construction.HasHoverTarget)
-                kind = BistroBuilderPointerKind.Hover;
             else if (worldCamera != null && Physics.Raycast(worldCamera.ScreenPointToRay(position), out var hit, 1000f, ~0, QueryTriggerInteraction.Ignore))
             {
                 hovered = hit.collider.GetComponentInParent<RestaurantEditableObject>();

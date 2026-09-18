@@ -155,7 +155,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
 
         SetLegacyTestGeometryPresence(true);
         SetWaiterScenePresence(true);
-        SetPremisesFloorVisual(false);
+        SetPremisesFloorVisual(true);
         if (editDocumentService != null &&
             !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
             return false;
@@ -561,7 +561,7 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         }
         SetLegacyTestGeometryPresence(false);
         SetWaiterScenePresence(false);
-        SetPremisesFloorVisual(false);
+        SetPremisesFloorVisual(true);
         Physics.SyncTransforms();
         return true;
     }
