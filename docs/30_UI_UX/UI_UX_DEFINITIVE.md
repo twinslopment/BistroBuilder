@@ -24,5 +24,20 @@ HUD operativo por estados **Normal / Atención / Crítico / Resolución**. Verde
 ## Tipografía y tono
 Recoleta para títulos/encabezados cuando encaje con la identidad visual; sans limpia tipo Inter para interfaz. Estética elegante, sobria y legible; evitar barroquismo y ornamentación que compita con el restaurante.
 
+## Modo Edición — composición visual
+Durante Modo Edición, `Actividad` deja temporalmente su lateral al **Catálogo de artículos**. La dirección visual aprobada es la **Propuesta C revisada**:
+
+- catálogo claro y vertical a la izquierda;
+- restaurante/viewport como área dominante;
+- inspector contextual claro a la derecha;
+- herramientas y acciones en una franja inferior;
+- superficies marfil/crema, tipografía carbón, acentos verde oliva y sombras suaves;
+- tarjetas de artículo en dos columnas cuando haya ancho suficiente;
+- ghost y validez en verde sin tapar la lectura del suelo;
+- inspector con preview, variantes, dimensiones, **Reglas de colocación** y estado final explicado;
+- la barra inferior no duplica el catálogo y separa navegación de edición de operaciones sobre el objeto.
+
+La propuesta B no define el estilo general; solo se incorpora de ella el patrón de checklist de `Reglas de colocación` dentro del inspector claro de la propuesta C.
+
 ## Principios
 UI contextual y progresiva, PC como referencia. Presentation lee snapshots y emite comandos: no duplica lógica ni se convierte en autoridad de dominio. La cámara ayuda a comprender el restaurante y nunca se convierte en protagonista de la experiencia.

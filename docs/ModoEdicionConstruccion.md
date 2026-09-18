@@ -15,6 +15,21 @@ Implementación en Unity 6000.3.19f1 basada en las decisiones de «Diseñar UI U
 - Los cambios pendientes se aplican, descartan o conservan al intentar salir.
 - El tema usa los tokens visuales existentes; la fuente de títulos sigue siendo inyectable mediante el tema del proyecto.
 
+## Referencia gráfica aprobada · Propuesta C revisada
+
+La composición aprobada para implementación toma la **Propuesta C revisada** como referencia visual principal:
+
+- Panel izquierdo claro, vertical y redondeado para `Catálogo de artículos`, con búsqueda, categorías por icono/texto, filtros y tarjetas en dos columnas.
+- Paleta del editor: marfil/crema como superficie, carbón para texto, verde oliva para selección/validez y acentos cálidos discretos para favoritos; sombras suaves y profundidad moderada.
+- Tarjeta seleccionada con contorno verde y check discreto; favoritos con estrella; artículos bloqueados desaturados con candado y requisito.
+- Viewport central prioritario, cuadrícula visualmente integrada con el suelo y ghost translúcido con huella/contorno verde cuando la posición es válida.
+- Inspector derecho claro con preview grande, título, descripción, precio, ámbito interior/exterior, variantes de color y dimensiones.
+- El inspector incorpora una sección **Reglas de colocación** antes del estado final. Para una silla estándar de suelo, la representación de referencia muestra: `Se puede colocar en suelos`, `Requiere espacio libre` y `Apto para interior y exterior`, siempre derivados de metadatos reales.
+- Debajo de las reglas, caja de estado contextual: `Listo para colocar` + explicación breve cuando sea válido; en error mantiene la misma estructura y comunica el motivo.
+- Barra inferior clara: contextos/herramientas de edición separados de acciones sobre el objeto (`Eliminar`, `Rotar`, `Duplicar` cuando proceda). No alberga un segundo catálogo.
+- Barra superior conserva la identidad general de Bistro Builder y muestra de forma inequívoca que se está en `Modo Edición`.
+- La interfaz no replica el estilo oscuro de la propuesta B; de B se adopta únicamente el patrón funcional de `Reglas de colocación` dentro del inspector de la propuesta C.
+
 ## Uso
 
 1. Fuera del servicio, pulsa **Edición** en la barra superior.
@@ -35,7 +50,7 @@ Carpeta: `Assets/Resources/BistroBuilder/Construction/`.
 | Tipo | Contenido |
 |---|---|
 | Kit | `ConstructionAssetKit.asset`, referencias usadas en runtime |
-| Paredes | Prefabs de 0,5 / 1 / 2 / 4 m, altura 2,8 m, grosor 0,12 m; meshes propios |
+| Paredes | Prefabs de 0,5 / 1 / 2 / 4 m, altura objetivo 2,5 m, grosor 0,12 m; meshes propios |
 | Puerta | Marco de roble, hoja abierta y tirador; paso libre de colliders |
 | Ventana | Marco grafito, montante, alféizar y cristal transparente |
 | Materiales URP | Enlucido cálido, caliza, roble, grafito y vidrio azulado |
