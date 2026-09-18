@@ -116,6 +116,11 @@ public sealed class RestaurantPlaceableCatalogPanel :
         {
             gameObject.AddComponent<RestaurantPlaceableCatalogApprovedSkin>();
         }
+
+        if (GetComponent<RestaurantPlaceableCatalogPreviewSkin>() == null)
+        {
+            gameObject.AddComponent<RestaurantPlaceableCatalogPreviewSkin>();
+        }
     }
 
     private void Start()
