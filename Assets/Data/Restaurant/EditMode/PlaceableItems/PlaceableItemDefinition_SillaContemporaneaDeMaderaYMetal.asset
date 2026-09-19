@@ -15,9 +15,18 @@ MonoBehaviour:
   itemId: bb_chair_master_002
   displayName: "Silla contempor\xE1nea de madera y metal"
   category: 1
+  placementScope: 0
   description: "Silla contempor\xE1nea de restaurante con asiento y respaldo de madera
     clara y estructura met\xE1lica negra."
   catalogIcon: {fileID: 21300000, guid: f5aa65f44273b0c42b713a8ab6adc6bd, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: f5aa65f44273b0c42b713a8ab6adc6bd, type: 3}
+  dimensionsCentimeters: {x: 49.7, y: 86, z: 55}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
   prefab: {fileID: 878901513199349812, guid: c29e755e080b87f4db1d7dd9127a287e, type: 3}
   editableDefinition: {fileID: 11400000, guid: 459759af79b246649aee7f368b5ad989, type: 2}
   purchasePrice: 60
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

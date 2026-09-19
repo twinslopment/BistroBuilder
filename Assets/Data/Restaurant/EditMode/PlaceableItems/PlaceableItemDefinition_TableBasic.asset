@@ -15,8 +15,17 @@ MonoBehaviour:
   itemId: table_basic
   displayName: "Mesa b\xE1sica"
   category: 0
+  placementScope: 0
   description: "Mesa b\xE1sica para dos clientes."
   catalogIcon: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
+  dimensionsCentimeters: {x: 200, y: 100, z: 100}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
   prefab: {fileID: 1936515173020237737, guid: ffcd75c2c96d7a0489baabc876f54e4b, type: 3}
   editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
   purchasePrice: 0
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

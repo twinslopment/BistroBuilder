@@ -15,8 +15,17 @@ MonoBehaviour:
   itemId: factory_test_plant
   displayName: Planta decorativa de prueba
   category: 3
+  placementScope: 0
   description: 'Elemento decorativo: Factory Test Plant.'
   catalogIcon: {fileID: 21300000, guid: 76687008be44e1b4485d43d654f95568, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 76687008be44e1b4485d43d654f95568, type: 3}
+  dimensionsCentimeters: {x: 105, y: 177.5, z: 105}
+  finishProfile: {fileID: 0}
+  inspectorRules: 2
   prefab: {fileID: 5269749945171665054, guid: 20826ff825e135f4b86adcef17ce492e, type: 3}
   editableDefinition: {fileID: 11400000, guid: 2286efe883b0a004faea63bac054716e, type: 2}
   purchasePrice: 30
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

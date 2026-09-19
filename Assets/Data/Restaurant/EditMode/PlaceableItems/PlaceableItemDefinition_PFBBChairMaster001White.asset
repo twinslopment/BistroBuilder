@@ -15,9 +15,18 @@ MonoBehaviour:
   itemId: pf_bb_chair_master_001_white
   displayName: "Silla contempor\xE1nea \u2014 Blanca"
   category: 1
+  placementScope: 0
   description: "Silla contempor\xE1nea de restaurante con estructura de madera y
     tapizado blanco roto."
   catalogIcon: {fileID: 21300000, guid: eb6881d18286f214cb8b25ae81a710d3, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: eb6881d18286f214cb8b25ae81a710d3, type: 3}
+  dimensionsCentimeters: {x: 48.5, y: 92, z: 51.1}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
   prefab: {fileID: 6217160869183040038, guid: 724508c36b8036b49be6d100f888b239, type: 3}
   editableDefinition: {fileID: 11400000, guid: bd594e319ec4f95409f95dcac0db635f, type: 2}
   purchasePrice: 10
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

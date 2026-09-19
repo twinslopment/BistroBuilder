@@ -15,9 +15,18 @@ MonoBehaviour:
   itemId: pf_bb_chair_master_001_red
   displayName: "Silla contempor\xE1nea \u2014 Roja"
   category: 1
+  placementScope: 0
   description: "Silla contempor\xE1nea de restaurante con estructura de madera y
     tapizado rojo."
   catalogIcon: {fileID: 21300000, guid: 73806aa92d6c5f5499014c281d00042c, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 73806aa92d6c5f5499014c281d00042c, type: 3}
+  dimensionsCentimeters: {x: 48.5, y: 92, z: 51.1}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
   prefab: {fileID: 6217160869183040038, guid: 81fcc22b700b6ea4c8682b80c8de5fa7, type: 3}
   editableDefinition: {fileID: 11400000, guid: 9e746ab2de45bca44bc045747abc0e64, type: 2}
   purchasePrice: 10
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500
