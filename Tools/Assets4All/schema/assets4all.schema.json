@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://assets4all.local/schema/assets4all.schema.json",
+  "title": "Assets4All Asset Manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "identity",
+    "source",
+    "session",
+    "profile",
+    "orientation",
+    "dimensions",
+    "geometry",
+    "grounding",
+    "regions",
+    "viability",
+    "quality"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "0.1"
+    },
+    "identity": {
+      "type": "object",
+      "required": ["assetId", "displayName"],
+      "properties": {
+        "assetId": {"type": "string", "minLength": 1},
+        "displayName": {"type": "string", "minLength": 1},
+        "functionalCategory": {"type": "string"},
+        "subtype": {"type": "string"},
+        "visualFamily": {"type": "string"},
+        "collection": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "provider": {"type": "string"},
+        "format": {"type": "string"},
+        "mode": {"type": "string"},
+        "sourceHash": {"type": "string"},
+        "sourcePath": {"type": "string"},
+        "sourceObjectIds": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "session": {
+      "type": "object",
+      "required": ["sessionId", "revision", "state"],
+      "properties": {
+        "sessionId": {"type": "string", "minLength": 1},
+        "revision": {"type": "integer", "minimum": 0},
+        "state": {
+          "type": "string",
+          "enum": ["SOURCE", "ANALYSED", "WORK", "REVIEW", "APPROVED", "EXPORTED"]
+        },
+        "workObjectIds": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "manualOverrides": {
+          "type": "array",
+          "items": {"type": "object"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "profile": {
+      "type": "object",
+      "required": ["profileId", "placementMode"],
+      "properties": {
+        "profileId": {"type": "string"},
+        "placementMode": {
+          "type": "string",
+          "enum": ["FLOOR", "WALL", "CEILING", "SURFACE", "FREE", "SNAP_ONLY"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "orientation": {
+      "type": "object",
+      "properties": {
+        "blenderFront": {"type": "string"},
+        "targetFront": {"type": "string"},
+        "groundAxis": {"type": "string"},
+        "originStrategy": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "dimensions": {
+      "type": "object",
+      "properties": {
+        "detected": {"$ref": "#/$defs/dimensions3"},
+        "target": {"$ref": "#/$defs/dimensions3"},
+        "final": {"$ref": "#/$defs/dimensions3"},
+        "toleranceMm": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "functionalMeasurements": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "geometry": {
+      "type": "object",
+      "properties": {
+        "sourceMeshCount": {"type": "integer", "minimum": 0},
+        "sourceTriangleCount": {"type": "integer", "minimum": 0},
+        "finalMeshCount": {"type": "integer", "minimum": 0},
+        "finalTriangleCount": {"type": "integer", "minimum": 0},
+        "geometryHash": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "grounding": {
+      "type": "object",
+      "properties": {
+        "gate": {"$ref": "#/$defs/gateState"},
+        "absoluteMinZ": {"type": "number"},
+        "robustSupportZ": {"type": "number"},
+        "appliedTranslationZ": {"type": "number"},
+        "penetrationToleranceM": {"type": "number", "minimum": 0},
+        "floatToleranceM": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "regions": {
+      "type": "object",
+      "properties": {
+        "engine": {"type": "string"},
+        "regionCount": {"type": "integer", "minimum": 0},
+        "unresolvedRegionCount": {"type": "integer", "minimum": 0},
+        "estimatedReviewSeconds": {"type": "number", "minimum": 0},
+        "items": {
+          "type": "array",
+          "items": {"type": "object"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "semanticRoles": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "materials": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "variants": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "optimization": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "lod": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "collision": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "placement": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "viability": {
+      "type": "object",
+      "required": ["processingViabilityScore", "conversionSuccessEstimate", "decision"],
+      "properties": {
+        "processingViabilityScore": {"type": "number", "minimum": 0, "maximum": 100},
+        "conversionSuccessEstimate": {"type": "number", "minimum": 0, "maximum": 100},
+        "disagreement": {"type": "number", "minimum": 0, "maximum": 100},
+        "decision": {
+          "type": "string",
+          "enum": ["AUTO", "REVIEW", "REGENERATE"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "quality": {
+      "type": "object",
+      "properties": {
+        "gates": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/gateState"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "processing": {
+      "type": "object",
+      "properties": {
+        "assets4AllVersion": {"type": "string"},
+        "blenderVersion": {"type": "string"},
+        "automaticDurationSeconds": {"type": "number", "minimum": 0},
+        "humanReviewDurationSeconds": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": true
+    },
+    "exports": {
+      "type": "array",
+      "items": {"type": "object"}
+    }
+  },
+  "$defs": {
+    "dimensions3": {
+      "type": "object",
+      "properties": {
+        "widthM": {"type": "number", "minimum": 0},
+        "depthM": {"type": "number", "minimum": 0},
+        "heightM": {"type": "number", "minimum": 0}
+      },
+      "required": ["widthM", "depthM", "heightM"]
+    },
+    "gateState": {
+      "type": "string",
+      "enum": ["PASS", "REVIEW", "FAIL", "N/A"]
+    }
+  },
+  "additionalProperties": true
+}
