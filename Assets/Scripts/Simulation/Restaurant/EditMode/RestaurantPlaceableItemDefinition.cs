@@ -1,3 +1,5 @@
+using System;
+using BistroBuilder.FurnitureFinishes;
 using UnityEngine;
 
 /// <summary>
@@ -33,6 +35,25 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
 
     [SerializeField]
     private Sprite catalogIcon;
+
+    [Header("Inspector contextual")]
+
+    [Tooltip("Preview grande del inspector derecho. Si queda vacío se usa CatalogIcon.")]
+    [SerializeField]
+    private Sprite inspectorPreview;
+
+    [Tooltip("Dimensiones físicas autoradas en centímetros: X=ancho, Y=alto, Z=fondo.")]
+    [SerializeField]
+    private Vector3 dimensionsCentimeters;
+
+    [Tooltip("Perfil canónico de acabados/variantes. Opcional en artículos sin variantes.")]
+    [SerializeField]
+    private FurnitureFinishProfile finishProfile;
+
+    [Tooltip("Reglas descriptivas que el inspector puede exponer. La validación runtime sigue siendo autoridad.")]
+    [SerializeField]
+    private RestaurantPlaceableInspectorRuleFlags inspectorRules =
+        RestaurantPlaceableInspectorRuleFlags.None;
 
     [Header("Creación")]
     [SerializeField]
@@ -74,6 +95,13 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
     public RestaurantPlaceableEnvironmentScope PlacementScope => placementScope;
     public string Description => description;
     public Sprite CatalogIcon => catalogIcon;
+    public Sprite InspectorPreview => inspectorPreview != null ? inspectorPreview : catalogIcon;
+    public Vector3 DimensionsCentimeters => dimensionsCentimeters;
+    public float WidthCentimeters => Mathf.Max(0f, dimensionsCentimeters.x);
+    public float HeightCentimeters => Mathf.Max(0f, dimensionsCentimeters.y);
+    public float DepthCentimeters => Mathf.Max(0f, dimensionsCentimeters.z);
+    public FurnitureFinishProfile FinishProfile => finishProfile;
+    public RestaurantPlaceableInspectorRuleFlags InspectorRules => inspectorRules;
     public RestaurantPlaceableObject Prefab => prefab;
     public RestaurantEditableObjectDefinition EditableDefinition => editableDefinition;
     public int PurchasePrice => Mathf.Max(0, purchasePrice);
@@ -97,7 +125,58 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
         resaleBasisPoints = Mathf.Clamp(resaleBasisPoints, 0, 10000);
         removalCost = Mathf.Max(0, removalCost);
         demolitionBasisPoints = Mathf.Clamp(demolitionBasisPoints, 0, 10000);
+        dimensionsCentimeters = new Vector3(
+            Mathf.Max(0f, dimensionsCentimeters.x),
+            Mathf.Max(0f, dimensionsCentimeters.y),
+            Mathf.Max(0f, dimensionsCentimeters.z));
     }
+
+#if UNITY_EDITOR
+    public bool EditorApplyInspectorMetadata(
+        Sprite preview,
+        Vector3 dimensionsCm,
+        FurnitureFinishProfile profile,
+        RestaurantPlaceableInspectorRuleFlags rules,
+        bool preserveManualValues = true)
+    {
+        bool changed = false;
+
+        if ((!preserveManualValues || inspectorPreview == null) &&
+            preview != inspectorPreview)
+        {
+            inspectorPreview = preview;
+            changed = true;
+        }
+
+        Vector3 sanitized = new Vector3(
+            Mathf.Max(0f, dimensionsCm.x),
+            Mathf.Max(0f, dimensionsCm.y),
+            Mathf.Max(0f, dimensionsCm.z));
+
+        if ((!preserveManualValues || dimensionsCentimeters.sqrMagnitude <= 0.0001f) &&
+            (dimensionsCentimeters - sanitized).sqrMagnitude > 0.0001f)
+        {
+            dimensionsCentimeters = sanitized;
+            changed = true;
+        }
+
+        if ((!preserveManualValues || finishProfile == null) &&
+            profile != finishProfile)
+        {
+            finishProfile = profile;
+            changed = true;
+        }
+
+        if ((!preserveManualValues || inspectorRules == RestaurantPlaceableInspectorRuleFlags.None) &&
+            rules != inspectorRules)
+        {
+            inspectorRules = rules;
+            changed = true;
+        }
+
+        return changed;
+    }
+#endif
 
     private static string NormalizeIdentifier(string rawIdentifier)
     {
@@ -112,6 +191,14 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
             .Replace(" ", "_")
             .Replace("-", "_");
     }
+}
+
+[Flags]
+public enum RestaurantPlaceableInspectorRuleFlags
+{
+    None = 0,
+    FloorSurface = 1 << 0,
+    RequiresClearance = 1 << 1
 }
 
 public enum RestaurantPlaceableEnvironmentScope

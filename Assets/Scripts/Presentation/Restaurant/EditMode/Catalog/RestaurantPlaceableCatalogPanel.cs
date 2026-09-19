@@ -87,6 +87,8 @@ public sealed class RestaurantPlaceableCatalogPanel :
     private bool initialized;
     private BistroBuilderUiShell uiShell;
 
+    public event Action<RestaurantPlaceableItemDefinition> ItemSelected;
+
     public bool TryGetGuiRect(out Rect guiRect)
     {
         guiRect = default;
@@ -120,6 +122,11 @@ public sealed class RestaurantPlaceableCatalogPanel :
         if (GetComponent<RestaurantPlaceableCatalogPreviewSkin>() == null)
         {
             gameObject.AddComponent<RestaurantPlaceableCatalogPreviewSkin>();
+        }
+
+        if (GetComponent<RestaurantPlaceableInspectorPanel>() == null)
+        {
+            gameObject.AddComponent<RestaurantPlaceableInspectorPanel>();
         }
     }
 
@@ -532,8 +539,14 @@ public sealed class RestaurantPlaceableCatalogPanel :
         RestaurantPlaceableItemDefinition definition
     )
     {
-        if (definition == null ||
-            interactionController == null)
+        if (definition == null)
+        {
+            return;
+        }
+
+        ItemSelected?.Invoke(definition);
+
+        if (interactionController == null)
         {
             return;
         }
