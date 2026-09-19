@@ -595,6 +595,8 @@ public sealed class RestaurantPlaceableCatalogPanel :
         }
     }
 
+    public int SelectedCategoryCode => selectedCategoryCode;
+
     public void SelectAllFromInterface()
     {
         HandleCategorySelected(AllCategoriesCode);

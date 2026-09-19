@@ -133,7 +133,7 @@ namespace BistroBuilder.UI.Iconography
 
         public static bool TryDecorate(Button button)
         {
-            if (button == null)
+            if (button == null || button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null)
                 return false;
 
             // El catálogo de artículos usa su propia iconografía vectorial,
@@ -160,7 +160,7 @@ namespace BistroBuilder.UI.Iconography
             bool semanticColor = false,
             bool iconOnly = false)
         {
-            if (button == null || !EnsureCatalog())
+            if (button == null || button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null || !EnsureCatalog())
                 return false;
 
             var sprite = catalog.GetSprite(id);
@@ -240,7 +240,7 @@ namespace BistroBuilder.UI.Iconography
         {
             id = default;
             semantic = false;
-            if (button == null)
+            if (button == null || button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null)
                 return false;
 
             FindLabelTransform(button, out var label);
@@ -273,7 +273,7 @@ namespace BistroBuilder.UI.Iconography
         private static RectTransform FindLabelTransform(Button button, out string label)
         {
             label = string.Empty;
-            if (button == null)
+            if (button == null || button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null)
                 return null;
 
             var legacyTexts = button.GetComponentsInChildren<Text>(true);
