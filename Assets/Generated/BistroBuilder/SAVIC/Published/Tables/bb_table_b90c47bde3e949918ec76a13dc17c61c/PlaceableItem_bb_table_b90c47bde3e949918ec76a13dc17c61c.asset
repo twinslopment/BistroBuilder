@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_table_b90c47bde3e949918ec76a13dc17c61c
+  displayName: Wooden Bistro Table
+  category: 0
+  placementScope: 0
+  description: "Mesa integrada autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 7120dfdcdf3610949b8e02589ed56ab0, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: d577b1a7430680d4f9d1ecb41553672e, type: 3}
+  dimensionsCentimeters: {x: 110.55215, y: 75, z: 67.58825}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 6589548360807490624, guid: 9063187630d931d48b85bc09bc45d4ed, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
+  purchasePrice: 120
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

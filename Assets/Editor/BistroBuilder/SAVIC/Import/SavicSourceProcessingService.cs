@@ -34,6 +34,7 @@ namespace BistroBuilder.Editor.Savic
         private const string MaterialValidationId = "Materials.ReferenceIntegrity";
 
         private readonly SavicManifestRepository manifests;
+        private readonly SavicTablePublisher tablePublisher;
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
@@ -46,6 +47,11 @@ namespace BistroBuilder.Editor.Savic
 
             this.manifests =
                 manifests ?? throw new ArgumentNullException(nameof(manifests));
+
+            tablePublisher =
+                new SavicTablePublisher(
+                    layout,
+                    this.manifests);
 
             adapters.Add(
                 new SavicUnityModelSourceImportAdapter(layout));
@@ -128,14 +134,14 @@ namespace BistroBuilder.Editor.Savic
                     manifest);
             }
 
-            UpsertArtifact(
+            SavicManifestMutations.UpsertArtifact(
                 manifest,
                 SourceMirrorRole,
                 import.AssetPath,
                 SavicUnityModelSourceImportAdapter.BuilderId,
                 SavicUnityModelSourceImportAdapter.BuilderVersion);
 
-            UpsertValidation(
+            SavicManifestMutations.UpsertValidation(
                 manifest,
                 ArchiveValidationId,
                 "PASS",
@@ -143,7 +149,7 @@ namespace BistroBuilder.Editor.Savic
                 "Archived source passed SHA-256 integrity validation.",
                 SavicUnityModelSourceImportAdapter.BuilderVersion);
 
-            UpsertValidation(
+            SavicManifestMutations.UpsertValidation(
                 manifest,
                 ImportValidationId,
                 "PASS",
@@ -177,7 +183,7 @@ namespace BistroBuilder.Editor.Savic
                     analysis.uniqueMeshCount > 0 &&
                     analysis.vertexCount > 0;
 
-                UpsertValidation(
+                SavicManifestMutations.UpsertValidation(
                     manifest,
                     BoundsValidationId,
                     analysis.hasUsableBounds ? "PASS" : "FAIL",
@@ -187,7 +193,7 @@ namespace BistroBuilder.Editor.Savic
                         : "Model bounds are missing, degenerate or non-finite.",
                     SavicModelAnalyzer.Version);
 
-                UpsertValidation(
+                SavicManifestMutations.UpsertValidation(
                     manifest,
                     MeshValidationId,
                     meshValid ? "PASS" : "FAIL",
@@ -197,7 +203,7 @@ namespace BistroBuilder.Editor.Savic
                         : "Model contains no usable mesh geometry.",
                     SavicModelAnalyzer.Version);
 
-                UpsertValidation(
+                SavicManifestMutations.UpsertValidation(
                     manifest,
                     MaterialValidationId,
                     analysis.missingMaterialSlots == 0
@@ -216,33 +222,123 @@ namespace BistroBuilder.Editor.Savic
                     analysis.hasUsableBounds &&
                     meshValid;
 
-                manifest.status =
-                    analysisValid
-                        ? "ANALYZED"
-                        : "NEEDS_REVIEW";
+                if (!analysisValid)
+                {
+                    manifest.status = "NEEDS_REVIEW";
+                    manifests.Save(manifest);
+
+                    return new SavicSourceProcessingOutcome(
+                        false,
+                        manifest.status,
+                        "Model imported but geometry requires review.",
+                        manifest);
+                }
+
+                SavicClassificationRecord classification =
+                    SavicContentClassifier.Classify(manifest);
+
+                manifest.classification = classification;
+                manifest.family = classification.family;
+                manifest.type = classification.type;
+                manifest.category = classification.category;
+
+                SavicManifestMutations.UpsertDecision(
+                    manifest,
+                    "content.type",
+                    classification.type,
+                    classification.confidence,
+                    classification.evidence,
+                    "content.classification.v1");
+
+                bool classifiedAsTable =
+                    string.Equals(
+                        classification.type,
+                        "Table",
+                        StringComparison.Ordinal);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Classification.ContentType",
+                    classifiedAsTable ? "PASS" : "REVIEW",
+                    classifiedAsTable ? "INFO" : "WARNING",
+                    classifiedAsTable
+                        ? "Model classified as Table with sufficient confidence."
+                        : "Automatic classification is not strong enough for publication.",
+                    SavicContentClassifier.Version);
+
+                if (!classifiedAsTable)
+                {
+                    manifest.status = "NEEDS_REVIEW";
+                    manifests.Save(manifest);
+
+                    return new SavicSourceProcessingOutcome(
+                        false,
+                        manifest.status,
+                        "Model analyzed but content type requires review.",
+                        manifest);
+                }
+
+                if (!SavicTableAuthoringPlanner.TryPlan(
+                        manifest,
+                        out SavicTableAuthoringRecord plan,
+                        out string planRejection))
+                {
+                    manifest.tableAuthoring = plan;
+                    manifest.status = "NEEDS_REVIEW";
+
+                    SavicManifestMutations.UpsertValidation(
+                        manifest,
+                        "Authoring.TablePlan",
+                        "REVIEW",
+                        "WARNING",
+                        planRejection,
+                        SavicTableAuthoringPlanner.Version);
+
+                    manifests.Save(manifest);
+
+                    return new SavicSourceProcessingOutcome(
+                        false,
+                        manifest.status,
+                        planRejection,
+                        manifest);
+                }
+
+                manifest.tableAuthoring = plan;
+                manifest.status = "PLANNED";
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Authoring.TablePlan",
+                    "PASS",
+                    "INFO",
+                    plan.planReason,
+                    SavicTableAuthoringPlanner.Version);
 
                 manifests.Save(manifest);
 
+                SavicTablePublicationOutcome publication =
+                    tablePublisher.Publish(
+                        manifest,
+                        root);
+
                 return new SavicSourceProcessingOutcome(
-                    analysisValid,
+                    publication.Succeeded,
                     manifest.status,
-                    analysisValid
-                        ? "Model imported and analyzed."
-                        : "Model imported but requires review.",
+                    publication.Message,
                     manifest);
             }
             catch (Exception exception)
             {
                 RecordFailure(
                     manifest,
-                    "Geometry.Analysis",
+                    "Pipeline.Model3D",
                     "ERROR",
-                    "Model analysis failed: " + exception.Message);
+                    "Model processing failed: " + exception.Message);
 
                 return new SavicSourceProcessingOutcome(
                     false,
                     manifest.status,
-                    "Model analysis failed: " + exception.Message,
+                    "Model processing failed: " + exception.Message,
                     manifest);
             }
         }
@@ -266,7 +362,7 @@ namespace BistroBuilder.Editor.Savic
             string severity,
             string message)
         {
-            UpsertValidation(
+            SavicManifestMutations.UpsertValidation(
                 manifest,
                 validationId,
                 "FAIL",
@@ -278,100 +374,5 @@ namespace BistroBuilder.Editor.Savic
             manifests.Save(manifest);
         }
 
-        private static void UpsertArtifact(
-            SavicManifest manifest,
-            string role,
-            string projectRelativePath,
-            string builderId,
-            string builderVersion)
-        {
-            manifest.artifacts ??=
-                new List<SavicArtifactRecord>();
-
-            SavicArtifactRecord record = null;
-
-            for (int index = 0;
-                 index < manifest.artifacts.Count;
-                 index++)
-            {
-                SavicArtifactRecord candidate =
-                    manifest.artifacts[index];
-
-                if (candidate != null &&
-                    string.Equals(
-                        candidate.role,
-                        role,
-                        StringComparison.Ordinal))
-                {
-                    record = candidate;
-                    break;
-                }
-            }
-
-            if (record == null)
-            {
-                record = new SavicArtifactRecord
-                {
-                    role = role
-                };
-
-                manifest.artifacts.Add(record);
-            }
-
-            record.projectRelativePath =
-                projectRelativePath ?? string.Empty;
-            record.builderId =
-                builderId ?? string.Empty;
-            record.builderVersion =
-                builderVersion ?? string.Empty;
-        }
-
-        private static void UpsertValidation(
-            SavicManifest manifest,
-            string validationId,
-            string result,
-            string severity,
-            string message,
-            string validatorVersion)
-        {
-            manifest.validations ??=
-                new List<SavicValidationRecord>();
-
-            SavicValidationRecord record = null;
-
-            for (int index = 0;
-                 index < manifest.validations.Count;
-                 index++)
-            {
-                SavicValidationRecord candidate =
-                    manifest.validations[index];
-
-                if (candidate != null &&
-                    string.Equals(
-                        candidate.validationId,
-                        validationId,
-                        StringComparison.Ordinal))
-                {
-                    record = candidate;
-                    break;
-                }
-            }
-
-            if (record == null)
-            {
-                record = new SavicValidationRecord
-                {
-                    validationId = validationId
-                };
-
-                manifest.validations.Add(record);
-            }
-
-            record.result = result ?? string.Empty;
-            record.severity = severity ?? string.Empty;
-            record.message = message ?? string.Empty;
-            record.validatorVersion =
-                validatorVersion ?? string.Empty;
-        }
     }
 }

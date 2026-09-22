@@ -77,5 +77,15 @@ crashlytics-build.properties
 # SAVIC transient inbox payloads (the empty inbox folder itself is kept)
 /ContentInbox/DropHere/*
 !/ContentInbox/DropHere/.gitkeep
-# SAVIC generated Unity source mirrors are deterministic and rebuildable.
-/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/
+# SAVIC source-mirror payloads are deterministic and rebuildable from ContentSource.
+# Their .meta files stay versioned so published prefabs retain stable Unity GUIDs.
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.glb
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.gltf
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.fbx
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.obj
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.png
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.jpg
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.jpeg
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.webp
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.tga
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/**/*.psd

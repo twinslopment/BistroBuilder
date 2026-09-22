@@ -1,0 +1,200 @@
+{
+    "schemaVersion": 1,
+    "savicVersion": "0.1.0",
+    "pipelineVersion": "intake-v1",
+    "savicId": "b90c47bde3e949918ec76a13dc17c61c",
+    "canonicalContentId": "bb_table_b90c47bde3e949918ec76a13dc17c61c",
+    "status": "PUBLISHED",
+    "family": "Furniture",
+    "type": "Table",
+    "category": "Furniture",
+    "createdUtc": "2026-09-22T10:03:00.5329493Z",
+    "updatedUtc": "2026-09-22T11:46:24.8115855Z",
+    "source": {
+        "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
+        "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
+        "extension": ".glb",
+        "sourceKind": "Model3D",
+        "archivedRelativePath": "ContentSource/SHA256/b2/b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b/Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
+        "byteLength": 2517508,
+        "originalLastWriteUtcTicks": 639253167869491107,
+        "ingestedUtc": "2026-09-22T10:03:00.5329493Z"
+    },
+    "model3D": {
+        "analyzed": true,
+        "analyzerVersion": "1.0.0",
+        "hasUsableBounds": true,
+        "boundsCenterX": 0.0005875825881958008,
+        "boundsCenterY": 0.0026035308837890627,
+        "boundsCenterZ": -0.0005391240119934082,
+        "widthMeters": 1.9023914337158204,
+        "heightMeters": 1.2906068563461304,
+        "depthMeters": 1.16306471824646,
+        "rendererCount": 1,
+        "meshInstanceCount": 1,
+        "uniqueMeshCount": 1,
+        "vertexCount": 62559,
+        "triangleCount": 84588,
+        "materialSlotCount": 1,
+        "uniqueMaterialCount": 1,
+        "missingMaterialSlots": 0,
+        "hasSkinnedMeshes": false,
+        "hasNegativeScale": false,
+        "analyzedUtc": "2026-09-22T11:46:24.4436119Z"
+    },
+    "classification": {
+        "classified": true,
+        "classifierVersion": "1.0.0",
+        "family": "Furniture",
+        "type": "Table",
+        "category": "Furniture",
+        "confidence": "HIGH",
+        "score": 0.9599999785423279,
+        "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table",
+        "classifiedUtc": "2026-09-22T11:46:24.4489523Z"
+    },
+    "tableAuthoring": {
+        "planned": true,
+        "plannerVersion": "1.0.0",
+        "uniformScale": 0.5811219811439514,
+        "visualYawDegrees": 0.0,
+        "finalWidthMeters": 1.1055214405059815,
+        "finalHeightMeters": 0.75,
+        "finalDepthMeters": 0.6758824586868286,
+        "capacity": 2,
+        "suggestedPurchasePriceEuro": 120,
+        "scaleCorrectionApplied": true,
+        "templatePrefabAssetPath": "Assets/Prefabs/Restaurant/Furniture/Table_Basic.prefab",
+        "seatingDefinitionAssetPath": "Assets/Data/Restaurant/Seating/TableConfigurations/TableSeatingConfiguration_TableBasic2.asset",
+        "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
+        "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
+        "planReason": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
+        "plannedUtc": "2026-09-22T11:46:24.4509516Z"
+    },
+    "decisions": [
+        {
+            "key": "content.type",
+            "value": "Table",
+            "confidence": "HIGH",
+            "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table",
+            "ruleId": "content.classification.v1"
+        },
+        {
+            "key": "table.capacity",
+            "value": "2",
+            "confidence": "HIGH",
+            "evidence": "Capacity selected from normalized dimensions and canonical seating constraints.",
+            "ruleId": "table.authoring.capacity.v1"
+        },
+        {
+            "key": "table.uniformScale",
+            "value": "0.581122",
+            "confidence": "HIGH",
+            "evidence": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
+            "ruleId": "table.authoring.scale.v1"
+        }
+    ],
+    "artifacts": [
+        {
+            "role": "unity.source_mirror",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/SourceMirror/b2/b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b/Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
+            "builderId": "savic.source-import.unity-model",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": ""
+        },
+        {
+            "role": "published.table.prefab",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
+            "builderId": "savic.table-publisher",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": "2870a1fbdf32dcecc8b6c3818b77de8ea11877cd13fd97af8f9cdc0c6f146a3d"
+        },
+        {
+            "role": "catalog.item_definition",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
+            "builderId": "savic.table-publisher",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": "2870a1fbdf32dcecc8b6c3818b77de8ea11877cd13fd97af8f9cdc0c6f146a3d"
+        },
+        {
+            "role": "preview.large",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Preview_Large.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": "d4cc8021607223b23139df3ff78fdc87972dac0ff7e2dcef5c082932c79b7b0c"
+        },
+        {
+            "role": "preview.catalog",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Preview_Catalog.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": "d4cc8021607223b23139df3ff78fdc87972dac0ff7e2dcef5c082932c79b7b0c"
+        }
+    ],
+    "validations": [
+        {
+            "validationId": "Source.ArchiveIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Archived source passed SHA-256 integrity validation.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Source.UnityImport",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Unity source mirror materialized and imported.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Geometry.ValidBounds",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model bounds are finite and usable.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Geometry.MeshData",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model contains usable mesh geometry.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Materials.ReferenceIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "All renderer material slots have references.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Classification.ContentType",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model classified as Table with sufficient confidence.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Authoring.TablePlan",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Publication.TablePrefab",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Table prefab, catalog item and canonical integrations validated.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Presentation.Previews",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Reused unchanged validated SAVIC previews.",
+            "validatorVersion": "1.0.0"
+        }
+    ],
+    "developerOverrides": []
+}

@@ -37,6 +37,10 @@ namespace BistroBuilder.Editor.Savic
         public string updatedUtc = string.Empty;
         public SavicSourceRecord source = new SavicSourceRecord();
         public SavicModelAnalysisRecord model3D = new SavicModelAnalysisRecord();
+        public SavicClassificationRecord classification =
+            new SavicClassificationRecord();
+        public SavicTableAuthoringRecord tableAuthoring =
+            new SavicTableAuthoringRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -82,6 +86,41 @@ namespace BistroBuilder.Editor.Savic
     }
 
     [Serializable]
+    internal sealed class SavicClassificationRecord
+    {
+        public bool classified;
+        public string classifierVersion = string.Empty;
+        public string family = "Unknown";
+        public string type = "Unknown";
+        public string category = "Unknown";
+        public string confidence = "UNKNOWN";
+        public float score;
+        public string evidence = string.Empty;
+        public string classifiedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicTableAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public float uniformScale = 1f;
+        public float visualYawDegrees;
+        public float finalWidthMeters;
+        public float finalHeightMeters;
+        public float finalDepthMeters;
+        public int capacity;
+        public int suggestedPurchasePriceEuro;
+        public bool scaleCorrectionApplied;
+        public string templatePrefabAssetPath = string.Empty;
+        public string seatingDefinitionAssetPath = string.Empty;
+        public string prefabAssetPath = string.Empty;
+        public string itemDefinitionAssetPath = string.Empty;
+        public string planReason = string.Empty;
+        public string plannedUtc = string.Empty;
+    }
+
+    [Serializable]
     internal sealed class SavicDecisionRecord
     {
         public string key = string.Empty;
@@ -98,6 +137,7 @@ namespace BistroBuilder.Editor.Savic
         public string projectRelativePath = string.Empty;
         public string builderId = string.Empty;
         public string builderVersion = string.Empty;
+        public string inputFingerprint = string.Empty;
     }
 
     [Serializable]

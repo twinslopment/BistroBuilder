@@ -32,6 +32,33 @@ namespace BistroBuilder.Editor.Savic
             return builder.ToString();
         }
 
+        internal static string ComputeSha256Text(string value)
+        {
+            byte[] bytes =
+                Encoding.UTF8.GetBytes(
+                    value ?? string.Empty);
+
+            using SHA256 sha =
+                SHA256.Create();
+
+            byte[] hash =
+                sha.ComputeHash(bytes);
+
+            StringBuilder builder =
+                new StringBuilder(
+                    hash.Length * 2);
+
+            for (int index = 0;
+                 index < hash.Length;
+                 index++)
+            {
+                builder.Append(
+                    hash[index].ToString("x2"));
+            }
+
+            return builder.ToString();
+        }
+
         internal static bool CanAcquireExclusiveRead(string path)
         {
             try
