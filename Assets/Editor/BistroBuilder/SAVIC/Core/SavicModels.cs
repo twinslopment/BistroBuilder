@@ -51,6 +51,16 @@ namespace BistroBuilder.Editor.Savic
             new SavicTableNavigationReadinessRecord();
         public SavicTablePersistenceReadinessRecord tablePersistence =
             new SavicTablePersistenceReadinessRecord();
+        public SavicChairAuthoringRecord chairAuthoring =
+            new SavicChairAuthoringRecord();
+        public SavicChairColliderAuthoringRecord chairColliders =
+            new SavicChairColliderAuthoringRecord();
+        public SavicChairSpatialReadinessRecord chairSpatial =
+            new SavicChairSpatialReadinessRecord();
+        public SavicChairNavigationReadinessRecord chairNavigation =
+            new SavicChairNavigationReadinessRecord();
+        public SavicChairPersistenceReadinessRecord chairPersistence =
+            new SavicChairPersistenceReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -315,6 +325,99 @@ namespace BistroBuilder.Editor.Savic
         public bool catalogResolvable;
         public bool prefabResolvable;
         public bool functionalTableIdValid;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public float uniformScale = 1f;
+        public float visualYawDegrees;
+        public float finalWidthMeters;
+        public float finalHeightMeters;
+        public float finalDepthMeters;
+        public float finalSeatHeightMeters;
+        public float sourceFrontLocalX;
+        public float sourceFrontLocalZ;
+        public float canonicalFrontLocalX;
+        public float canonicalFrontLocalZ = 1f;
+        public int suggestedPurchasePriceEuro;
+        public bool scaleCorrectionApplied;
+        public string templatePrefabAssetPath = string.Empty;
+        public string seatUseProfileAssetPath = string.Empty;
+        public string editableDefinitionAssetPath = string.Empty;
+        public string prefabAssetPath = string.Empty;
+        public string itemDefinitionAssetPath = string.Empty;
+        public string planReason = string.Empty;
+        public string plannedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairColliderAuthoringRecord
+    {
+        public bool generated;
+        public string builderVersion = string.Empty;
+        public string strategy = "UNSET";
+        public int colliderCount;
+        public int seatColliderCount;
+        public int backColliderCount;
+        public int supportColliderCount;
+        public int armColliderCount;
+        public bool semanticBacked;
+        public string evidence = string.Empty;
+        public string generatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairSpatialReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public string contractAssetPath = string.Empty;
+        public string contractId = string.Empty;
+        public string familyId = string.Empty;
+        public string configurationId = string.Empty;
+        public bool runtimeBindingValidated;
+        public int staticVolumeCount;
+        public int operationalVolumeCount;
+        public int dynamicVolumeCount;
+        public int semanticVolumeCount;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairNavigationReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public bool footprintBlocksNavigation;
+        public float footprintWidthMeters;
+        public float footprintDepthMeters;
+        public float seatHeightMeters;
+        public float approachDistanceMeters;
+        public float approachRadiusMeters;
+        public int solidColliderCount;
+        public bool canonicalFrontPositiveZ;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairPersistenceReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public string sourceCatalogAssetPath = string.Empty;
+        public string canonicalContentId = string.Empty;
+        public string itemDefinitionAssetPath = string.Empty;
+        public string prefabAssetPath = string.Empty;
+        public bool catalogResolvable;
+        public bool prefabResolvable;
+        public bool seatComponentValid;
         public string evidence = string.Empty;
         public string validatedUtc = string.Empty;
     }
