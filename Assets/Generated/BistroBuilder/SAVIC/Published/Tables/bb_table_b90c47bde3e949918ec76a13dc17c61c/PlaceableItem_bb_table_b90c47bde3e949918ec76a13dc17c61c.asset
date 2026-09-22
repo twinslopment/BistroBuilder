@@ -22,7 +22,7 @@ MonoBehaviour:
   dimensionsCentimeters: {x: 110.55215, y: 75, z: 67.58825}
   finishProfile: {fileID: 0}
   inspectorRules: 3
-  prefab: {fileID: 6589548360807490624, guid: 9063187630d931d48b85bc09bc45d4ed, type: 3}
+  prefab: {fileID: 1583635479700128768, guid: 9063187630d931d48b85bc09bc45d4ed, type: 3}
   editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
   purchasePrice: 120
   disposalMode: 0

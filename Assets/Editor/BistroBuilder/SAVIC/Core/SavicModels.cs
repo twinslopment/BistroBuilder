@@ -43,6 +43,8 @@ namespace BistroBuilder.Editor.Savic
             new SavicMaterialSemanticResolutionRecord();
         public SavicTableAuthoringRecord tableAuthoring =
             new SavicTableAuthoringRecord();
+        public SavicTableColliderAuthoringRecord tableColliders =
+            new SavicTableColliderAuthoringRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -200,7 +202,35 @@ namespace BistroBuilder.Editor.Savic
         public float supportPolygonAreaRatio;
         public bool centerSupported;
         public float broadBaseAreaRatio;
+        public List<SavicSupportZoneRecord> zones =
+            new List<SavicSupportZoneRecord>();
         public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicSupportZoneRecord
+    {
+        public string zoneId = string.Empty;
+        public int pointCount;
+        public float normalizedCenterX;
+        public float normalizedCenterZ;
+        public float normalizedSizeX;
+        public float normalizedSizeZ;
+        public float confidenceScore;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicTableColliderAuthoringRecord
+    {
+        public bool generated;
+        public string builderVersion = string.Empty;
+        public string strategy = "UNSET";
+        public int colliderCount;
+        public int supportColliderCount;
+        public bool semanticBacked;
+        public string evidence = string.Empty;
+        public string generatedUtc = string.Empty;
     }
 
     [Serializable]

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -31,10 +32,10 @@ namespace BistroBuilder.Editor.Savic
 
     internal sealed class SavicTablePublisher
     {
-        internal const string Version = "1.1.0";
-        private const string LegacyCompatibleVersion = "1.0.0";
+        internal const string Version = "1.2.0";
+        private const string LegacyCompatibleVersion = "1.1.0";
         private const string PublicationFingerprintSchema =
-            "table-publication-input-v2";
+            "table-publication-input-v3";
 
         private const string GeneratedTablesRoot =
             "Assets/Generated/BistroBuilder/SAVIC/Published/Tables";
@@ -484,7 +485,9 @@ namespace BistroBuilder.Editor.Savic
                         plan.seatingDefinitionAssetPath ?? string.Empty,
                         seatingHash,
                         TableEditableDefinitionPath,
-                        editableHash
+                        editableHash,
+                        SavicSemanticPartAnalyzer.Version,
+                        SavicTableColliderBuilder.Version
                     });
 
             return SavicHashService.ComputeSha256Text(
@@ -562,6 +565,7 @@ namespace BistroBuilder.Editor.Savic
             // geometry plan and canonical runtime contract are unchanged.
             return ExistingPrefabMatchesPlan(
                        prefabPath,
+                       manifest,
                        manifest.tableAuthoring) &&
                    ExistingPrefabUsesCurrentSource(
                        manifest,
@@ -664,6 +668,7 @@ namespace BistroBuilder.Editor.Savic
 
         private static bool ExistingPrefabMatchesPlan(
             string prefabPath,
+            SavicManifest manifest,
             SavicTableAuthoringRecord plan)
         {
             if (plan == null ||
@@ -692,9 +697,6 @@ namespace BistroBuilder.Editor.Savic
                 prefab.GetComponent
                     <RestaurantTableSeatingConfiguration>();
 
-            BoxCollider collider =
-                prefab.GetComponent<BoxCollider>();
-
             Renderer[] renderers =
                 prefab.GetComponentsInChildren
                     <Renderer>(true);
@@ -703,33 +705,30 @@ namespace BistroBuilder.Editor.Savic
                 footprint == null ||
                 placeable == null ||
                 seating == null ||
-                collider == null ||
                 renderers.Length == 0 ||
                 table.Capacity != plan.capacity)
             {
                 return false;
             }
 
-            return Approximately(
-                       footprint.Size.x,
-                       plan.finalWidthMeters,
-                       0.002f) &&
-                   Approximately(
-                       footprint.Size.y,
-                       plan.finalDepthMeters,
-                       0.002f) &&
-                   Approximately(
-                       collider.size.x,
-                       plan.finalWidthMeters,
-                       0.002f) &&
-                   Approximately(
-                       collider.size.y,
-                       plan.finalHeightMeters,
-                       0.002f) &&
-                   Approximately(
-                       collider.size.z,
-                       plan.finalDepthMeters,
-                       0.002f);
+            if (!Approximately(
+                    footprint.Size.x,
+                    plan.finalWidthMeters,
+                    0.002f) ||
+                !Approximately(
+                    footprint.Size.y,
+                    plan.finalDepthMeters,
+                    0.002f))
+            {
+                return false;
+            }
+
+            return SavicTableColliderBuilder.Validate(
+                prefab,
+                manifest,
+                plan,
+                manifest.tableColliders,
+                out _);
         }
 
         private static bool ExistingPrefabUsesCurrentSource(
@@ -825,35 +824,141 @@ namespace BistroBuilder.Editor.Savic
         {
             savedSuccessfully = false;
 
-            GameObject saved =
-                PrefabUtility.SaveAsPrefabAsset(
-                    workingRoot,
-                    prefabPath,
-                    out bool firstAttemptSaved);
+            string absoluteTarget =
+                ToAbsoluteProjectPath(
+                    prefabPath);
 
-            if (firstAttemptSaved &&
-                saved != null)
+            if (!File.Exists(
+                    absoluteTarget))
             {
-                savedSuccessfully = true;
-                return saved;
+                GameObject created =
+                    PrefabUtility.SaveAsPrefabAsset(
+                        workingRoot,
+                        prefabPath,
+                        out bool createdSuccessfully);
+
+                savedSuccessfully =
+                    createdSuccessfully &&
+                    created != null;
+
+                return
+                    savedSuccessfully
+                        ? created
+                        : null;
             }
 
-            AssetDatabase.ReleaseCachedFileHandles();
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh(
-                ImportAssetOptions.ForceSynchronousImport);
+            // Updating an existing prefab through Unity's direct temp-file move
+            // can fail on Windows while the old asset has a transient read
+            // handle. Generate a complete prefab at a unique staging path first,
+            // then replace only the YAML payload. The target .meta is untouched,
+            // so its stable GUID is preserved.
+            string directory =
+                Path.GetDirectoryName(
+                    prefabPath)
+                ?.Replace('\\', '/')
+                ?? throw new InvalidOperationException(
+                    "Prefab directory could not be resolved.");
 
-            saved =
-                PrefabUtility.SaveAsPrefabAsset(
-                    workingRoot,
+            string stagingPath =
+                directory +
+                "/SAVIC_STAGE_" +
+                Guid.NewGuid().ToString("N") +
+                ".prefab";
+
+            try
+            {
+                GameObject staged =
+                    PrefabUtility.SaveAsPrefabAsset(
+                        workingRoot,
+                        stagingPath,
+                        out bool stagingSaved);
+
+                if (!stagingSaved ||
+                    staged == null)
+                {
+                    return null;
+                }
+
+                AssetDatabase.SaveAssets();
+
+                string absoluteStaging =
+                    ToAbsoluteProjectPath(
+                        stagingPath);
+
+                if (!File.Exists(
+                        absoluteStaging))
+                {
+                    return null;
+                }
+
+                const int MaximumReplacementAttempts = 3;
+
+                for (int attempt = 1;
+                     attempt <= MaximumReplacementAttempts;
+                     attempt++)
+                {
+                    try
+                    {
+                        File.Copy(
+                            absoluteStaging,
+                            absoluteTarget,
+                            true);
+
+                        savedSuccessfully =
+                            true;
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        if (attempt >=
+                            MaximumReplacementAttempts)
+                        {
+                            throw;
+                        }
+
+                        AssetDatabase.ReleaseCachedFileHandles();
+
+                        Thread.Sleep(
+                            attempt == 1
+                                ? 120
+                                : 240);
+                    }
+                }
+
+                if (!savedSuccessfully)
+                    return null;
+
+                AssetDatabase.ImportAsset(
                     prefabPath,
-                    out bool secondAttemptSaved);
+                    ImportAssetOptions.ForceSynchronousImport |
+                    ImportAssetOptions.ForceUpdate);
 
-            savedSuccessfully =
-                secondAttemptSaved &&
-                saved != null;
+                return
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        prefabPath);
+            }
+            finally
+            {
+                AssetDatabase.DeleteAsset(
+                    stagingPath);
+            }
+        }
 
-            return saved;
+        private static string ToAbsoluteProjectPath(
+            string assetPath)
+        {
+            string projectRoot =
+                Directory.GetParent(
+                    Application.dataPath)?.FullName
+                ?? throw new InvalidOperationException(
+                    "Unity project root could not be resolved.");
+
+            return Path.GetFullPath(
+                Path.Combine(
+                    projectRoot,
+                    assetPath.Replace(
+                        '/',
+                        Path.DirectorySeparatorChar)));
         }
 
         private static void ClearItemPrefabReference(
@@ -1111,24 +1216,11 @@ namespace BistroBuilder.Editor.Savic
                     "Imported table source contains no renderer.");
             }
 
-            BoxCollider collider =
-                root.GetComponent<BoxCollider>();
-
-            if (collider == null)
-                collider = root.AddComponent<BoxCollider>();
-
-            collider.isTrigger = false;
-            collider.center =
-                new Vector3(
-                    0f,
-                    plan.finalHeightMeters * 0.5f,
-                    0f);
-
-            collider.size =
-                new Vector3(
-                    plan.finalWidthMeters,
-                    plan.finalHeightMeters,
-                    plan.finalDepthMeters);
+            manifest.tableColliders =
+                SavicTableColliderBuilder.Build(
+                    root,
+                    manifest,
+                    plan);
 
             RestaurantPlacementFootprint footprint =
                 RequireComponent
@@ -1550,9 +1642,6 @@ namespace BistroBuilder.Editor.Savic
                 prefab.GetComponent
                     <RestaurantTableSeatingConfiguration>();
 
-            BoxCollider collider =
-                prefab.GetComponent<BoxCollider>();
-
             Renderer[] renderers =
                 prefab.GetComponentsInChildren
                     <Renderer>(true);
@@ -1561,7 +1650,6 @@ namespace BistroBuilder.Editor.Savic
                 table == null ||
                 footprint == null ||
                 seating == null ||
-                collider == null ||
                 renderers.Length == 0)
             {
                 throw new InvalidOperationException(
@@ -1610,21 +1698,16 @@ namespace BistroBuilder.Editor.Savic
                     "Published placement footprint does not match normalized dimensions.");
             }
 
-            if (!Approximately(
-                    collider.size.x,
-                    plan.finalWidthMeters,
-                    0.002f) ||
-                !Approximately(
-                    collider.size.y,
-                    plan.finalHeightMeters,
-                    0.002f) ||
-                !Approximately(
-                    collider.size.z,
-                    plan.finalDepthMeters,
-                    0.002f))
+            if (!SavicTableColliderBuilder.Validate(
+                    prefab,
+                    manifest,
+                    plan,
+                    manifest.tableColliders,
+                    out string colliderError))
             {
                 throw new InvalidOperationException(
-                    "Published collider does not match normalized dimensions.");
+                    "Published semantic collider validation failed: " +
+                    colliderError);
             }
 
             if (!ReferenceEquals(

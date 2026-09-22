@@ -1205,6 +1205,18 @@ namespace BistroBuilder.Editor.Savic
                 new List<Vector2>(
                     clusters.Count);
 
+            List<SavicSupportZoneRecord> supportZones =
+                new List<SavicSupportZoneRecord>(
+                    clusters.Count);
+
+            float modelMinX =
+                model.boundsCenterX -
+                width * 0.5f;
+
+            float modelMinZ =
+                model.boundsCenterZ -
+                depth * 0.5f;
+
             float maxClusterAreaRatio =
                 0f;
 
@@ -1253,16 +1265,109 @@ namespace BistroBuilder.Editor.Savic
 
                 centroids.Add(center);
 
+                float clusterWidth =
+                    Math.Max(
+                        0f,
+                        clusterMaxX - clusterMinX);
+
+                float clusterDepth =
+                    Math.Max(
+                        0f,
+                        clusterMaxZ - clusterMinZ);
+
                 float clusterAreaRatio =
-                    ((clusterMaxX - clusterMinX) /
+                    (clusterWidth /
                      width) *
-                    ((clusterMaxZ - clusterMinZ) /
+                    (clusterDepth /
                      depth);
 
                 maxClusterAreaRatio =
                     Math.Max(
                         maxClusterAreaRatio,
                         clusterAreaRatio);
+
+                float normalizedCenterX =
+                    Mathf.Clamp01(
+                        (center.x - modelMinX) /
+                        width);
+
+                float normalizedCenterZ =
+                    Mathf.Clamp01(
+                        (center.y - modelMinZ) /
+                        depth);
+
+                float normalizedSizeX =
+                    Mathf.Clamp01(
+                        clusterWidth /
+                        width);
+
+                float normalizedSizeZ =
+                    Mathf.Clamp01(
+                        clusterDepth /
+                        depth);
+
+                float zoneConfidence =
+                    Mathf.Clamp01(
+                        0.55f +
+                        Math.Min(
+                            0.35f,
+                            cluster.Count * 0.045f) +
+                        Math.Min(
+                            0.10f,
+                            (normalizedSizeX +
+                             normalizedSizeZ) *
+                            0.25f));
+
+                supportZones.Add(
+                    new SavicSupportZoneRecord
+                    {
+                        pointCount =
+                            cluster.Count,
+                        normalizedCenterX =
+                            normalizedCenterX,
+                        normalizedCenterZ =
+                            normalizedCenterZ,
+                        normalizedSizeX =
+                            normalizedSizeX,
+                        normalizedSizeZ =
+                            normalizedSizeZ,
+                        confidenceScore =
+                            zoneConfidence,
+                        evidence =
+                            "Ground-contact cluster with " +
+                            cluster.Count +
+                            " unique point(s)."
+                    });
+            }
+
+            supportZones.Sort(
+                (left, right) =>
+                {
+                    int xOrder =
+                        left.normalizedCenterX.CompareTo(
+                            right.normalizedCenterX);
+
+                    return xOrder != 0
+                        ? xOrder
+                        : left.normalizedCenterZ.CompareTo(
+                            right.normalizedCenterZ);
+                });
+
+            result.zones.Clear();
+
+            for (int zoneIndex = 0;
+                 zoneIndex < supportZones.Count;
+                 zoneIndex++)
+            {
+                SavicSupportZoneRecord zone =
+                    supportZones[zoneIndex];
+
+                zone.zoneId =
+                    "support.zone." +
+                    zoneIndex.ToString(
+                        CultureInfo.InvariantCulture);
+
+                result.zones.Add(zone);
             }
 
             List<Vector2> hull =
