@@ -9,7 +9,7 @@
     "type": "Table",
     "category": "Furniture",
     "createdUtc": "2026-09-22T10:03:00.5329493Z",
-    "updatedUtc": "2026-09-22T15:51:35.6518241Z",
+    "updatedUtc": "2026-09-22T17:01:58.1334340Z",
     "source": {
         "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
         "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
@@ -66,6 +66,106 @@
             "lowerHorizontalProjectedCoverage": 0.11461266130208969,
             "evidence": "upward area 0.364; upper-band area 0.8; lower-band area 0.179; surface centroid height 0.811; upper projected coverage 0.997."
         },
+        "semanticParts": {
+            "analyzed": true,
+            "analyzerVersion": "1.3.0",
+            "automationReady": true,
+            "rawRegionCount": 1,
+            "regionDetailMode": "FULL",
+            "rawRegionDetailTruncated": false,
+            "semanticPartCount": 2,
+            "semanticCoverage": 1.0,
+            "unresolvedAreaRatio": 0.0,
+            "supportPattern": {
+                "analyzed": true,
+                "mode": "MULTI_CONTACT",
+                "confidence": "HIGH",
+                "confidenceScore": 0.9569758176803589,
+                "zoneCount": 4,
+                "supportSpanXRatio": 0.9263114929199219,
+                "supportSpanZRatio": 0.792108952999115,
+                "supportPolygonAreaRatio": 0.586374044418335,
+                "centerSupported": true,
+                "broadBaseAreaRatio": 0.7337396144866943,
+                "evidence": "MULTI_CONTACT: 4 support zone(s), span X/Z 0.926/0.792, support polygon 0.586, confidence 0.957."
+            },
+            "parts": [
+                {
+                    "partId": "table.top",
+                    "role": "Tabletop",
+                    "confidence": "HIGH",
+                    "confidenceScore": 0.8274807929992676,
+                    "syntheticZone": true,
+                    "movableCandidate": false,
+                    "sourceRegionCount": 1,
+                    "sourceRegionKeys": "RG1-5160bda742164286",
+                    "triangleCount": 18542,
+                    "areaFraction": 0.7970227599143982,
+                    "centerX": 0.00044956430792808533,
+                    "centerY": 0.6005807518959045,
+                    "centerZ": -0.00047143863048404455,
+                    "sizeX": 1.9023915529251099,
+                    "sizeY": 0.5588527917861939,
+                    "sizeZ": 1.16306471824646,
+                    "normalizedCenterX": 0.49992743134498598,
+                    "normalizedCenterY": 0.9633302688598633,
+                    "normalizedCenterZ": 0.5000582337379456,
+                    "normalizedSizeX": 1.0000001192092896,
+                    "normalizedSizeY": 0.43301552534103396,
+                    "normalizedSizeZ": 1.0,
+                    "meanAbsoluteNormalX": 0.06482241302728653,
+                    "meanAbsoluteNormalY": 0.8599770069122315,
+                    "meanAbsoluteNormalZ": 0.11260256171226502,
+                    "evidence": "Upper structural zone: footprint 1, height 1, thinness 0.213, horizontal-normal evidence 0.86."
+                },
+                {
+                    "partId": "table.support",
+                    "role": "LegSet",
+                    "confidence": "HIGH",
+                    "confidenceScore": 0.8691049218177795,
+                    "syntheticZone": true,
+                    "movableCandidate": false,
+                    "sourceRegionCount": 1,
+                    "sourceRegionKeys": "RG1-5160bda742164286",
+                    "triangleCount": 66046,
+                    "areaFraction": 0.202977254986763,
+                    "centerX": 0.000790477090049535,
+                    "centerY": -0.3674365282058716,
+                    "centerZ": -0.0005224639899097383,
+                    "sizeX": 1.7624003887176514,
+                    "sizeY": 0.8872601389884949,
+                    "sizeZ": 0.9216513633728027,
+                    "normalizedCenterX": 0.5001066327095032,
+                    "normalizedCenterY": 0.21328212320804597,
+                    "normalizedCenterZ": 0.5000143647193909,
+                    "normalizedSizeX": 0.9264131188392639,
+                    "normalizedSizeY": 0.6874751448631287,
+                    "normalizedSizeZ": 0.7924334406852722,
+                    "meanAbsoluteNormalX": 0.422122985124588,
+                    "meanAbsoluteNormalY": 0.3958238363265991,
+                    "meanAbsoluteNormalZ": 0.5290502905845642,
+                    "evidence": "Lower structural zone: height 0.982, ground contact 1, vertical-normal evidence 0.604, support-pattern MULTI_CONTACT 0.957."
+                }
+            ],
+            "relations": [
+                {
+                    "sourcePartId": "table.support",
+                    "targetPartId": "table.top",
+                    "relation": "SUPPORTS",
+                    "confidence": 0.8274807929992676,
+                    "evidence": "Lower structural zone reaches the support plane beneath the upper work surface."
+                },
+                {
+                    "sourcePartId": "table.top",
+                    "targetPartId": "table.support",
+                    "relation": "SUPPORTED_BY",
+                    "confidence": 0.8274807929992676,
+                    "evidence": "Upper work surface is spatially carried by the lower structural zone."
+                }
+            ],
+            "evidence": "raw regions 1 (FULL); semantic parts 2; coverage 1; tabletop HIGH 0.827; support HIGH 0.869; support pattern MULTI_CONTACT 0.957.",
+            "analyzedUtc": "2026-09-22T17:01:57.1872778Z"
+        },
         "dominantMaterialSemantic": "Unknown",
         "dominantMaterialConfidence": "UNKNOWN",
         "materials": [
@@ -87,7 +187,7 @@
                 "evidence": "No conservative material semantic evidence."
             }
         ],
-        "analyzedUtc": "2026-09-22T15:51:35.1379825Z"
+        "analyzedUtc": "2026-09-22T17:01:57.0982664Z"
     },
     "classification": {
         "classified": true,
@@ -101,7 +201,7 @@
         "nameBacked": true,
         "geometryBacked": true,
         "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table; mesh surface distribution strongly matches a tabletop-over-support structure",
-        "classifiedUtc": "2026-09-22T15:51:35.2228195Z"
+        "classifiedUtc": "2026-09-22T17:01:57.1872778Z"
     },
     "materialSemantic": {
         "resolved": true,
@@ -111,7 +211,7 @@
         "score": 0.7200000286102295,
         "source": "SOURCE_METADATA_FALLBACK",
         "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
-        "resolvedUtc": "2026-09-22T15:51:35.2253442Z"
+        "resolvedUtc": "2026-09-22T17:01:57.8190453Z"
     },
     "tableAuthoring": {
         "planned": true,
@@ -129,7 +229,7 @@
         "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
         "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
         "planReason": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
-        "plannedUtc": "2026-09-22T15:51:35.2253442Z"
+        "plannedUtc": "2026-09-22T17:01:57.8190453Z"
     },
     "decisions": [
         {
@@ -166,6 +266,27 @@
             "confidence": "MEDIUM",
             "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
             "ruleId": "material.semantic.resolve.v1"
+        },
+        {
+            "key": "semantic.part.table.top",
+            "value": "Tabletop",
+            "confidence": "HIGH",
+            "evidence": "Upper structural zone: footprint 1, height 1, thinness 0.213, horizontal-normal evidence 0.86.",
+            "ruleId": "semantic.parts.v1"
+        },
+        {
+            "key": "semantic.part.table.support",
+            "value": "LegSet",
+            "confidence": "HIGH",
+            "evidence": "Lower structural zone: height 0.982, ground contact 1, vertical-normal evidence 0.604, support-pattern MULTI_CONTACT 0.957.",
+            "ruleId": "semantic.parts.v1"
+        },
+        {
+            "key": "semantic.support.pattern",
+            "value": "MULTI_CONTACT",
+            "confidence": "HIGH",
+            "evidence": "MULTI_CONTACT: 4 support zone(s), span X/Z 0.926/0.792, support polygon 0.586, confidence 0.957.",
+            "ruleId": "semantic.parts.v1"
         }
     ],
     "artifacts": [
@@ -217,7 +338,7 @@
             "validationId": "Source.UnityImport",
             "result": "PASS",
             "severity": "INFO",
-            "message": "Unity source mirror materialized and imported.",
+            "message": "Existing Unity source mirror validated and imported.",
             "validatorVersion": "1.0.0"
         },
         {
@@ -289,6 +410,13 @@
             "severity": "WARNING",
             "message": "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
             "validatorVersion": "2.0.0"
+        },
+        {
+            "validationId": "Geometry.SemanticParts",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "raw regions 1 (FULL); semantic parts 2; coverage 1; tabletop HIGH 0.827; support HIGH 0.869; support pattern MULTI_CONTACT 0.957.",
+            "validatorVersion": "1.3.0"
         }
     ],
     "developerOverrides": []

@@ -33,6 +33,8 @@ namespace BistroBuilder.Editor.Savic
         private const string MeshValidationId = "Geometry.MeshData";
         private const string GeometryProfileValidationId =
             "Geometry.StructuralProfile";
+        private const string SemanticPartsValidationId =
+            "Geometry.SemanticParts";
         private const string MaterialValidationId = "Materials.ReferenceIntegrity";
         private const string MaterialAppearanceValidationId =
             "Materials.AppearanceData";
@@ -296,6 +298,33 @@ namespace BistroBuilder.Editor.Savic
                 manifest.type = classification.type;
                 manifest.category = classification.category;
 
+                SavicSemanticPartAnalysisRecord semanticParts =
+                    SavicSemanticPartAnalyzer.Analyze(
+                        root,
+                        analysis,
+                        classification);
+
+                analysis.semanticParts =
+                    semanticParts;
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    SemanticPartsValidationId,
+                    semanticParts.automationReady
+                        ? "PASS"
+                        : semanticParts.analyzed
+                            ? "REVIEW"
+                            : "WARNING",
+                    semanticParts.automationReady
+                        ? "INFO"
+                        : "WARNING",
+                    semanticParts.evidence,
+                    SavicSemanticPartAnalyzer.Version);
+
+                RecordSemanticPartDecisions(
+                    manifest,
+                    semanticParts);
+
                 SavicManifestMutations.UpsertDecision(
                     manifest,
                     "content.type",
@@ -385,6 +414,18 @@ namespace BistroBuilder.Editor.Savic
                         "Model analyzed but content type requires review.");
                 }
 
+                if (semanticParts == null ||
+                    !semanticParts.automationReady)
+                {
+                    manifest.status = "NEEDS_REVIEW";
+                    manifests.Save(manifest);
+
+                    return ReturnFailure(
+                        previousPublishedSnapshot,
+                        manifest,
+                        "Table classification passed, but semantic part structure requires review.");
+                }
+
                 if (!SavicTableAuthoringPlanner.TryPlan(
                         manifest,
                         out SavicTableAuthoringRecord plan,
@@ -453,6 +494,58 @@ namespace BistroBuilder.Editor.Savic
                     previousPublishedSnapshot,
                     manifest,
                     "Model processing failed: " + exception.Message);
+            }
+        }
+
+        private static void RecordSemanticPartDecisions(
+            SavicManifest manifest,
+            SavicSemanticPartAnalysisRecord semanticParts)
+        {
+            if (manifest == null ||
+                semanticParts == null)
+            {
+                return;
+            }
+
+            if (semanticParts.parts != null)
+            {
+                for (int index = 0;
+                     index < semanticParts.parts.Count;
+                     index++)
+                {
+                    SavicSemanticPartRecord part =
+                        semanticParts.parts[index];
+
+                    if (part == null ||
+                        string.IsNullOrWhiteSpace(part.partId))
+                    {
+                        continue;
+                    }
+
+                    SavicManifestMutations.UpsertDecision(
+                        manifest,
+                        "semantic.part." +
+                        part.partId,
+                        part.role,
+                        part.confidence,
+                        part.evidence,
+                        "semantic.parts.v1");
+                }
+            }
+
+            SavicSupportPatternRecord support =
+                semanticParts.supportPattern;
+
+            if (support != null &&
+                support.analyzed)
+            {
+                SavicManifestMutations.UpsertDecision(
+                    manifest,
+                    "semantic.support.pattern",
+                    support.mode,
+                    support.confidence,
+                    support.evidence,
+                    "semantic.parts.v1");
             }
         }
 

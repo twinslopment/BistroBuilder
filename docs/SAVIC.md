@@ -489,6 +489,29 @@ Si no es evidente, se revisa solo esa decisión.
 
 La geometría residual o flotante no se elimina automáticamente salvo evidencia muy alta.
 
+### Estado de implementación V1 — Mesas
+
+[V1 IMPLEMENTADO] SAVIC separa **región física de origen** y **pieza semántica**. Una única malla conectada puede aportar varias zonas funcionales y varias meshes independientes pueden agruparse en una sola pieza conceptual.
+
+[V1 IMPLEMENTADO] Para mesas se obtienen actualmente:
+
+- `table.top` / `Tabletop`;
+- `table.support` / `LegSet`, `PedestalBase` o `SupportStructure`;
+- patrón de apoyo `MULTI_CONTACT`, `BROAD_BASE` o revisión;
+- relaciones `SUPPORTS` y `SUPPORTED_BY`;
+- membership trazable hacia las regiones físicas fuente;
+- confianza independiente por pieza y evidencia auditable.
+
+[V1 IMPLEMENTADO] La publicación automática exige señales críticas independientes: superficie superior suficientemente horizontal, estructura de soporte fiable, cobertura semántica suficiente y patrón de apoyo coherente. Evidencias fuertes de una zona no pueden ocultar una señal crítica débil de otra.
+
+[V1 IMPLEMENTADO] El análisis de topología física tiene presupuesto explícito. En geometrías patológicas o extremadamente grandes pasa a `BOUNDED_COARSE`: conserva el análisis semántico y de apoyo, limita el detalle físico almacenado y deja registrada la reducción de detalle en el manifest, en lugar de consumir memoria sin límite.
+
+[V1 VALIDADO] La mesa real de Meshy produce `Tabletop` + `LegSet`, cuatro zonas de apoyo y cobertura semántica completa. Una prueba sintética demuestra además que cuatro meshes de patas independientes se agrupan en un único `LegSet`.
+
+[V1 VALIDADO] El agrupado topológico tolera costuras con vértices prácticamente coincidentes incluso cuando caen en celdas distintas de cuantización. Esto evita fragmentar artificialmente una misma pieza física por pequeñas diferencias numéricas de exportación.
+
+[V1 VALIDADO] La calibración actual rechaza como mesa automática las sillas canónicas y la decoración de prueba. Los antiguos `table_basic` de geometría cúbica se consideran placeholders de legado y no son referencias geométricas válidas para calibrar inteligencia semántica de producción.
+
 ## 17. Colliders
 
 Objetivo: suficientemente precisos para gameplay y baratos para Unity.

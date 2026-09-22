@@ -91,6 +91,8 @@ namespace BistroBuilder.Editor.Savic
         public bool hasNegativeScale;
         public SavicGeometryProfileRecord geometry =
             new SavicGeometryProfileRecord();
+        public SavicSemanticPartAnalysisRecord semanticParts =
+            new SavicSemanticPartAnalysisRecord();
         public string dominantMaterialSemantic = "Unknown";
         public string dominantMaterialConfidence = "UNKNOWN";
         public List<SavicMaterialAnalysisRecord> materials =
@@ -119,6 +121,85 @@ namespace BistroBuilder.Editor.Savic
         public float surfaceAreaCentroidHeight01;
         public float upperUpwardProjectedCoverage;
         public float lowerHorizontalProjectedCoverage;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicSemanticPartAnalysisRecord
+    {
+        public bool analyzed;
+        public string analyzerVersion = string.Empty;
+        public bool automationReady;
+        public int rawRegionCount;
+        public string regionDetailMode = "FULL";
+        public bool rawRegionDetailTruncated;
+        public int semanticPartCount;
+        public float semanticCoverage;
+        public float unresolvedAreaRatio;
+        public SavicSupportPatternRecord supportPattern =
+            new SavicSupportPatternRecord();
+        public List<SavicSemanticPartRecord> parts =
+            new List<SavicSemanticPartRecord>();
+        public List<SavicPartRelationRecord> relations =
+            new List<SavicPartRelationRecord>();
+        public string evidence = string.Empty;
+        public string analyzedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicSemanticPartRecord
+    {
+        public string partId = string.Empty;
+        public string role = "Unresolved";
+        public string confidence = "UNKNOWN";
+        public float confidenceScore;
+        public bool syntheticZone;
+        public bool movableCandidate;
+        public int sourceRegionCount;
+        public string sourceRegionKeys = string.Empty;
+        public long triangleCount;
+        public float areaFraction;
+        public float centerX;
+        public float centerY;
+        public float centerZ;
+        public float sizeX;
+        public float sizeY;
+        public float sizeZ;
+        public float normalizedCenterX;
+        public float normalizedCenterY;
+        public float normalizedCenterZ;
+        public float normalizedSizeX;
+        public float normalizedSizeY;
+        public float normalizedSizeZ;
+        public float meanAbsoluteNormalX;
+        public float meanAbsoluteNormalY;
+        public float meanAbsoluteNormalZ;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicPartRelationRecord
+    {
+        public string sourcePartId = string.Empty;
+        public string targetPartId = string.Empty;
+        public string relation = string.Empty;
+        public float confidence;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicSupportPatternRecord
+    {
+        public bool analyzed;
+        public string mode = "UNASSESSED";
+        public string confidence = "UNKNOWN";
+        public float confidenceScore;
+        public int zoneCount;
+        public float supportSpanXRatio;
+        public float supportSpanZRatio;
+        public float supportPolygonAreaRatio;
+        public bool centerSupported;
+        public float broadBaseAreaRatio;
         public string evidence = string.Empty;
     }
 
