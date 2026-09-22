@@ -10,7 +10,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicSemanticPartAnalyzer
     {
-        internal const string Version = "1.3.0";
+        internal const string Version = "2.0.0";
 
         private const float MinimumTriangleArea = 0.00000001f;
         private const float TableVerticalSplit01 = 0.62f;
@@ -46,6 +46,18 @@ namespace BistroBuilder.Editor.Savic
                 return result;
             }
 
+            if (classification != null &&
+                string.Equals(
+                    classification.type,
+                    "Chair",
+                    StringComparison.Ordinal))
+            {
+                return SavicChairSemanticPartAnalyzer.Analyze(
+                    root,
+                    model,
+                    classification);
+            }
+
             if (classification == null ||
                 !string.Equals(
                     classification.type,
@@ -53,7 +65,7 @@ namespace BistroBuilder.Editor.Savic
                     StringComparison.Ordinal))
             {
                 result.evidence =
-                    "Semantic part analysis V1 currently interprets only Table content.";
+                    "Semantic part analysis supports Table and Chair content in V1.";
                 return result;
             }
 
