@@ -314,6 +314,12 @@ namespace BistroBuilder.Editor.Savic
 
                 AssetDatabase.SaveAssets();
 
+                manifest.tableSpatial =
+                    SavicTableSpatialReadinessValidator.Validate(
+                        manifest,
+                        plan,
+                        prefabPath);
+
                 ValidatePublishedTable(
                     reloadedPrefab,
                     item,

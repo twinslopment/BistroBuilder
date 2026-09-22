@@ -45,6 +45,8 @@ namespace BistroBuilder.Editor.Savic
             new SavicTableAuthoringRecord();
         public SavicTableColliderAuthoringRecord tableColliders =
             new SavicTableColliderAuthoringRecord();
+        public SavicTableSpatialReadinessRecord tableSpatial =
+            new SavicTableSpatialReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -231,6 +233,22 @@ namespace BistroBuilder.Editor.Savic
         public bool semanticBacked;
         public string evidence = string.Empty;
         public string generatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicTableSpatialReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public string contractAssetPath = string.Empty;
+        public string contractId = string.Empty;
+        public string familyId = string.Empty;
+        public string configurationId = string.Empty;
+        public int seatBayPortCount;
+        public int emittedSeatBayCount;
+        public bool runtimeBindingValidated;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
     }
 
     [Serializable]

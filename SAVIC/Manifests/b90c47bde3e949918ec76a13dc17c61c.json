@@ -9,7 +9,7 @@
     "type": "Table",
     "category": "Furniture",
     "createdUtc": "2026-09-22T10:03:00.5329493Z",
-    "updatedUtc": "2026-09-22T17:32:12.1073802Z",
+    "updatedUtc": "2026-09-22T17:41:45.6409382Z",
     "source": {
         "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
         "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
@@ -206,7 +206,7 @@
                 }
             ],
             "evidence": "raw regions 1 (FULL); semantic parts 2; coverage 1; tabletop HIGH 0.827; support HIGH 0.869; support pattern MULTI_CONTACT 0.957.",
-            "analyzedUtc": "2026-09-22T17:32:11.7916121Z"
+            "analyzedUtc": "2026-09-22T17:41:45.3129403Z"
         },
         "dominantMaterialSemantic": "Unknown",
         "dominantMaterialConfidence": "UNKNOWN",
@@ -229,7 +229,7 @@
                 "evidence": "No conservative material semantic evidence."
             }
         ],
-        "analyzedUtc": "2026-09-22T17:32:11.7671064Z"
+        "analyzedUtc": "2026-09-22T17:41:45.2780094Z"
     },
     "classification": {
         "classified": true,
@@ -243,7 +243,7 @@
         "nameBacked": true,
         "geometryBacked": true,
         "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table; mesh surface distribution strongly matches a tabletop-over-support structure",
-        "classifiedUtc": "2026-09-22T17:32:11.7916121Z"
+        "classifiedUtc": "2026-09-22T17:41:45.3119589Z"
     },
     "materialSemantic": {
         "resolved": true,
@@ -253,7 +253,7 @@
         "score": 0.7200000286102295,
         "source": "SOURCE_METADATA_FALLBACK",
         "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
-        "resolvedUtc": "2026-09-22T17:32:11.9689511Z"
+        "resolvedUtc": "2026-09-22T17:41:45.5097545Z"
     },
     "tableAuthoring": {
         "planned": true,
@@ -271,7 +271,7 @@
         "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
         "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
         "planReason": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
-        "plannedUtc": "2026-09-22T17:32:11.9689511Z"
+        "plannedUtc": "2026-09-22T17:41:45.5097545Z"
     },
     "tableColliders": {
         "generated": true,
@@ -282,6 +282,19 @@
         "semanticBacked": true,
         "evidence": "Generated from SAVIC semantic parts 1.3.0 with support mode MULTI_CONTACT.",
         "generatedUtc": "2026-09-22T17:31:37.7314918Z"
+    },
+    "tableSpatial": {
+        "validated": true,
+        "validatorVersion": "1.0.0",
+        "contractAssetPath": "Assets/Resources/BistroBuilder/Spatial/Contracts/BB_SpatialContract_Table_table_basic_2_rectangular.asset",
+        "contractId": "spatial.contract.table.table_basic_2_rectangular",
+        "familyId": "seating.table",
+        "configurationId": "table_basic_2_rectangular",
+        "seatBayPortCount": 2,
+        "emittedSeatBayCount": 2,
+        "runtimeBindingValidated": true,
+        "evidence": "Canonical seating configuration maps to a valid seating.table contract; runtime BindTable generated a valid subject/proxy and 2 SeatBay semantic volume(s).",
+        "validatedUtc": "2026-09-22T17:41:45.6409382Z"
     },
     "decisions": [
         {
