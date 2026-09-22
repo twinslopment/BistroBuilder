@@ -15,6 +15,8 @@ namespace BistroBuilder.Editor.Savic
             Intake = new SavicIntakeService(Layout, Manifests, Jobs);
             SourceProcessing =
                 new SavicSourceProcessingService(Layout, Manifests);
+            ProjectInventory =
+                new SavicProjectInventoryService(Layout, Manifests);
         }
 
         internal static SavicEditorContext Instance =>
@@ -25,6 +27,7 @@ namespace BistroBuilder.Editor.Savic
         internal SavicJobStore Jobs { get; }
         internal SavicIntakeService Intake { get; }
         internal SavicSourceProcessingService SourceProcessing { get; }
+        internal SavicProjectInventoryService ProjectInventory { get; }
 
         internal static void ResetForDomainDiagnostics()
         {
