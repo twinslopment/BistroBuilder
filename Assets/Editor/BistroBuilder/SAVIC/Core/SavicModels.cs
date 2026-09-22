@@ -49,6 +49,8 @@ namespace BistroBuilder.Editor.Savic
             new SavicTableSpatialReadinessRecord();
         public SavicTableNavigationReadinessRecord tableNavigation =
             new SavicTableNavigationReadinessRecord();
+        public SavicTablePersistenceReadinessRecord tablePersistence =
+            new SavicTablePersistenceReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -267,6 +269,22 @@ namespace BistroBuilder.Editor.Savic
         public float waiterEndpointClearanceMeters;
         public int solidColliderCount;
         public bool usesCanonicalFootprintTopology;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicTablePersistenceReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public string sourceCatalogAssetPath = string.Empty;
+        public string canonicalContentId = string.Empty;
+        public string itemDefinitionAssetPath = string.Empty;
+        public string prefabAssetPath = string.Empty;
+        public bool catalogResolvable;
+        public bool prefabResolvable;
+        public bool functionalTableIdValid;
         public string evidence = string.Empty;
         public string validatedUtc = string.Empty;
     }

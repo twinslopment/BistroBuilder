@@ -326,6 +326,11 @@ namespace BistroBuilder.Editor.Savic
                         plan,
                         prefabPath);
 
+                manifest.tablePersistence =
+                    SavicTablePersistenceReadinessValidator.Validate(
+                        manifest,
+                        prefabPath);
+
                 ValidatePublishedTable(
                     reloadedPrefab,
                     item,
@@ -385,6 +390,14 @@ namespace BistroBuilder.Editor.Savic
                     "INFO",
                     manifest.tableNavigation.evidence,
                     SavicTableNavigationReadinessValidator.Version);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "SaveLoad.TableCatalogReadiness",
+                    "PASS",
+                    "INFO",
+                    manifest.tablePersistence.evidence,
+                    SavicTablePersistenceReadinessValidator.Version);
 
                 SavicManifestMutations.UpsertValidation(
                     manifest,

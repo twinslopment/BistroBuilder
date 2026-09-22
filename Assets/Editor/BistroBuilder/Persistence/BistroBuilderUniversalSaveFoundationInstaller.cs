@@ -19,6 +19,10 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
         "Tools/Bistro Builder/Persistence/" +
         "Install or Repair Save Foundation";
 
+    private const string MainPlaceableCatalogPath =
+        "Assets/Data/Restaurant/EditMode/Catalog/" +
+        "RestaurantPlaceableCatalog_Main.asset";
+
     [MenuItem(MenuPath, false, 100)]
     private static void InstallOrRepair()
     {
@@ -264,6 +268,18 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
             )
         );
 
+        RestaurantPlaceableCatalogDefinition mainCatalog =
+            AssetDatabase.LoadAssetAtPath
+                <RestaurantPlaceableCatalogDefinition>(
+                    MainPlaceableCatalogPath);
+
+        if (mainCatalog == null)
+        {
+            throw new InvalidOperationException(
+                "No existe el catálogo colocable canónico: " +
+                MainPlaceableCatalogPath);
+        }
+
         SerializedObject serialized = new SerializedObject(catalog);
         SerializedProperty list =
             serialized.FindProperty("definitions");
@@ -275,6 +291,14 @@ public static class BistroBuilderUniversalSaveFoundationInstaller
             list.GetArrayElementAtIndex(index).objectReferenceValue =
                 definitions[index];
         }
+
+        SerializedProperty sourceCatalogs =
+            serialized.FindProperty("sourceCatalogs");
+
+        sourceCatalogs.arraySize = 1;
+        sourceCatalogs
+            .GetArrayElementAtIndex(0)
+            .objectReferenceValue = mainCatalog;
 
         serialized.ApplyModifiedPropertiesWithoutUndo();
         catalog.RebuildIndex();
