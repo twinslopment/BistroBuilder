@@ -73,3 +73,9 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# SAVIC transient inbox payloads (the empty inbox folder itself is kept)
+/ContentInbox/DropHere/*
+!/ContentInbox/DropHere/.gitkeep
+# SAVIC generated Unity source mirrors are deterministic and rebuildable.
+/Assets/Generated/BistroBuilder/SAVIC/SourceMirror/

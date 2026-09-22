@@ -1,2 +1,14 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# SAVIC immutable source archive: large binary sources are versioned through Git LFS.
+/ContentSource/**/*.glb filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.gltf filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.obj filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.png filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.webp filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.tga filter=lfs diff=lfs merge=lfs -text
+/ContentSource/**/*.psd filter=lfs diff=lfs merge=lfs -text
