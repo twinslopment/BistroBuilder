@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicModelAnalyzer
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "2.1.0";
         private const float MinimumDimension = 0.0001f;
 
         internal static SavicModelAnalysisRecord Analyze(GameObject root)
@@ -167,6 +167,11 @@ namespace BistroBuilder.Editor.Savic
 
             result.geometry =
                 SavicGeometryProfileAnalyzer.Analyze(
+                    root,
+                    result);
+
+            result.chairGeometry =
+                SavicChairGeometryAnalyzer.Analyze(
                     root,
                     result);
 

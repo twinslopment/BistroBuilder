@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using UnityEngine;
 
 namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "3.0.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -17,6 +18,56 @@ namespace BistroBuilder.Editor.Savic
                     "tables",
                     "mesa",
                     "mesas"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ChairTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "chair",
+                    "chairs",
+                    "silla",
+                    "sillas",
+                    "armchair",
+                    "armchairs"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ChairContextTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "bistro",
+                    "dining",
+                    "restaurant",
+                    "wooden",
+                    "wood",
+                    "metal",
+                    "upholstered",
+                    "contemporary",
+                    "nordic"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ChairConflictingTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "table",
+                    "tables",
+                    "mesa",
+                    "mesas",
+                    "stool",
+                    "stools",
+                    "taburete",
+                    "taburetes",
+                    "bench",
+                    "benches",
+                    "banco",
+                    "bancos",
+                    "sofa",
+                    "sofas"
                 },
                 StringComparer.OrdinalIgnoreCase);
 
@@ -98,6 +149,14 @@ namespace BistroBuilder.Editor.Savic
 
             HashSet<string> tokens =
                 Tokenize(sourceName);
+
+            if (TryClassifyChair(
+                    tokens,
+                    analysis,
+                    result))
+            {
+                return result;
+            }
 
             float score = 0f;
             List<string> evidence =
@@ -238,6 +297,248 @@ namespace BistroBuilder.Editor.Savic
                     : "No positive classification evidence.";
 
             return result;
+        }
+
+        private static bool TryClassifyChair(
+            ISet<string> tokens,
+            SavicModelAnalysisRecord analysis,
+            SavicClassificationRecord result)
+        {
+            bool explicitChairToken =
+                ContainsAny(
+                    tokens,
+                    ChairTokens);
+
+            bool conflictingToken =
+                ContainsAny(
+                    tokens,
+                    ChairConflictingTokens);
+
+            float score = 0f;
+
+            List<string> evidence =
+                new List<string>(8);
+
+            if (explicitChairToken)
+            {
+                score += 0.40f;
+                evidence.Add(
+                    "name contains an explicit chair token");
+            }
+
+            int contextMatches =
+                CountMatches(
+                    tokens,
+                    ChairContextTokens);
+
+            if (contextMatches > 0)
+            {
+                float contextScore =
+                    Math.Min(
+                        0.08f,
+                        contextMatches *
+                        0.03f);
+
+                score +=
+                    contextScore;
+
+                evidence.Add(
+                    contextMatches +
+                    " supporting furniture/chair context token(s)");
+            }
+
+            bool plausibleFurnitureDimensions =
+                HasPlausibleFurnitureDimensions(
+                    analysis);
+
+            if (plausibleFurnitureDimensions)
+            {
+                score += 0.08f;
+                evidence.Add(
+                    "bounds are plausible for furniture");
+            }
+
+            bool plausibleChairProportions =
+                HasPlausibleChairProportions(
+                    analysis);
+
+            if (plausibleChairProportions)
+            {
+                score += 0.16f;
+                evidence.Add(
+                    "proportions are compatible with a dining chair");
+            }
+
+            SavicChairGeometryProfileRecord chairGeometry =
+                analysis.chairGeometry;
+
+            bool strongChairGeometry =
+                chairGeometry != null &&
+                chairGeometry.analyzed &&
+                chairGeometry.usable &&
+                chairGeometry.confidenceScore >= 0.78f &&
+                chairGeometry.backEdgeBias >= 0.20f;
+
+            bool moderateChairGeometry =
+                !strongChairGeometry &&
+                chairGeometry != null &&
+                chairGeometry.analyzed &&
+                chairGeometry.usable &&
+                chairGeometry.confidenceScore >= 0.58f;
+
+            if (strongChairGeometry)
+            {
+                score +=
+                    0.58f *
+                    Mathf.Clamp01(
+                        chairGeometry.confidenceScore);
+
+                evidence.Add(
+                    "mesh geometry strongly matches seat + backrest + lower-support chair structure");
+
+                evidence.Add(
+                    chairGeometry.evidence);
+            }
+            else if (moderateChairGeometry)
+            {
+                score +=
+                    0.24f *
+                    Mathf.Clamp01(
+                        chairGeometry.confidenceScore);
+
+                evidence.Add(
+                    "mesh geometry moderately supports a chair profile");
+
+                evidence.Add(
+                    chairGeometry.evidence);
+            }
+
+            if (analysis.hasSkinnedMeshes)
+            {
+                score -= 0.15f;
+                evidence.Add(
+                    "skinned meshes reduce chair confidence");
+            }
+
+            if (conflictingToken)
+            {
+                score -= 0.65f;
+                evidence.Add(
+                    "name contains a conflicting furniture token");
+            }
+
+            score =
+                Clamp01(score);
+
+            bool nameBackedChair =
+                explicitChairToken &&
+                plausibleChairProportions &&
+                score >= 0.62f;
+
+            bool geometryBackedChair =
+                strongChairGeometry &&
+                plausibleFurnitureDimensions &&
+                plausibleChairProportions &&
+                score >= 0.74f;
+
+            if (conflictingToken ||
+                (!nameBackedChair &&
+                 !geometryBackedChair))
+            {
+                return false;
+            }
+
+            result.family =
+                "Furniture";
+
+            result.type =
+                "Chair";
+
+            result.category =
+                "Seating";
+
+            result.score =
+                score;
+
+            result.explicitTypeToken =
+                explicitChairToken;
+
+            result.nameBacked =
+                nameBackedChair;
+
+            result.geometryBacked =
+                geometryBackedChair;
+
+            result.confidence =
+                geometryBackedChair &&
+                score >= 0.86f
+                    ? "HIGH"
+                    : score >= 0.74f
+                        ? "HIGH"
+                        : "MEDIUM";
+
+            result.evidence =
+                evidence.Count > 0
+                    ? string.Join(
+                        "; ",
+                        evidence)
+                    : "No positive chair classification evidence.";
+
+            return true;
+        }
+
+        private static bool HasPlausibleChairProportions(
+            SavicModelAnalysisRecord analysis)
+        {
+            if (analysis == null)
+                return false;
+
+            float width =
+                analysis.widthMeters;
+
+            float height =
+                analysis.heightMeters;
+
+            float depth =
+                analysis.depthMeters;
+
+            if (width <= 0.0001f ||
+                height <= 0.0001f ||
+                depth <= 0.0001f)
+            {
+                return false;
+            }
+
+            float widthToHeight =
+                width /
+                height;
+
+            float depthToHeight =
+                depth /
+                height;
+
+            float horizontalAspect =
+                Math.Max(
+                    width,
+                    depth) /
+                Math.Max(
+                    0.0001f,
+                    Math.Min(
+                        width,
+                        depth));
+
+            return
+                height >= 0.55f &&
+                height <= 1.35f &&
+                width >= 0.28f &&
+                width <= 1.05f &&
+                depth >= 0.28f &&
+                depth <= 1.05f &&
+                widthToHeight >= 0.28f &&
+                widthToHeight <= 0.95f &&
+                depthToHeight >= 0.28f &&
+                depthToHeight <= 1.00f &&
+                horizontalAspect <= 1.90f;
         }
 
         private static bool HasPlausibleFurnitureDimensions(

@@ -99,6 +99,8 @@ namespace BistroBuilder.Editor.Savic
         public bool hasNegativeScale;
         public SavicGeometryProfileRecord geometry =
             new SavicGeometryProfileRecord();
+        public SavicChairGeometryProfileRecord chairGeometry =
+            new SavicChairGeometryProfileRecord();
         public SavicSemanticPartAnalysisRecord semanticParts =
             new SavicSemanticPartAnalysisRecord();
         public string dominantMaterialSemantic = "Unknown";
@@ -129,6 +131,34 @@ namespace BistroBuilder.Editor.Savic
         public float surfaceAreaCentroidHeight01;
         public float upperUpwardProjectedCoverage;
         public float lowerHorizontalProjectedCoverage;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicChairGeometryProfileRecord
+    {
+        public bool analyzed;
+        public string analyzerVersion = string.Empty;
+        public bool usable;
+        public long sourceTriangleCount;
+        public long sampledTriangleCount;
+        public long invalidTriangleCount;
+        public long degenerateTriangleCount;
+        public int maximumSamplingStride = 1;
+        public float seatHeight01;
+        public float seatHeightMeters;
+        public float seatUpwardAreaRatio;
+        public float seatProjectedCoverage;
+        public float upperVerticalAreaRatio;
+        public float upperVerticalCentroidX01 = 0.5f;
+        public float upperVerticalCentroidZ01 = 0.5f;
+        public string backAxis = "UNKNOWN";
+        public string backSide = "UNKNOWN";
+        public float backEdgeBias;
+        public float frontDirectionLocalX;
+        public float frontDirectionLocalZ;
+        public float lowerSupportAreaRatio;
+        public float confidenceScore;
         public string evidence = string.Empty;
     }
 

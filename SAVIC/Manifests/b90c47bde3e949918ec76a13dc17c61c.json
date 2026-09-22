@@ -9,7 +9,7 @@
     "type": "Table",
     "category": "Furniture",
     "createdUtc": "2026-09-22T10:03:00.5329493Z",
-    "updatedUtc": "2026-09-22T19:28:45.0315015Z",
+    "updatedUtc": "2026-09-22T19:52:40.5688610Z",
     "source": {
         "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
         "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
@@ -22,7 +22,7 @@
     },
     "model3D": {
         "analyzed": true,
-        "analyzerVersion": "2.0.0",
+        "analyzerVersion": "2.1.0",
         "hasUsableBounds": true,
         "boundsCenterX": 0.0005875825881958008,
         "boundsCenterY": 0.0026035308837890627,
@@ -65,6 +65,31 @@
             "upperUpwardProjectedCoverage": 0.9970706701278687,
             "lowerHorizontalProjectedCoverage": 0.11461266130208969,
             "evidence": "upward area 0.364; upper-band area 0.8; lower-band area 0.179; surface centroid height 0.811; upper projected coverage 0.997."
+        },
+        "chairGeometry": {
+            "analyzed": true,
+            "analyzerVersion": "1.0.0",
+            "usable": false,
+            "sourceTriangleCount": 84588,
+            "sampledTriangleCount": 84588,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 0,
+            "maximumSamplingStride": 1,
+            "seatHeight01": 0.26508358120918276,
+            "seatHeightMeters": 0.34211868047714236,
+            "seatUpwardAreaRatio": 0.005643443204462528,
+            "seatProjectedCoverage": 0.015796557068824769,
+            "upperVerticalAreaRatio": 0.1633293479681015,
+            "upperVerticalCentroidX01": 0.5000193119049072,
+            "upperVerticalCentroidZ01": 0.5006818771362305,
+            "backAxis": "Z",
+            "backSide": "POSITIVE",
+            "backEdgeBias": 0.0013637542724609376,
+            "frontDirectionLocalX": 0.0,
+            "frontDirectionLocalZ": -1.0,
+            "lowerSupportAreaRatio": 0.11898890137672425,
+            "confidenceScore": 0.16214993596076966,
+            "evidence": "seat height 0.265; seat projected coverage 0.016; seat upward area 0.006; upper vertical area 0.163; inferred back Z/POSITIVE bias 0.001; lower support area 0.119; confidence 0.162."
         },
         "semanticParts": {
             "analyzed": true,
@@ -206,7 +231,7 @@
                 }
             ],
             "evidence": "raw regions 1 (FULL); semantic parts 2; coverage 1; tabletop HIGH 0.827; support HIGH 0.869; support pattern MULTI_CONTACT 0.957.",
-            "analyzedUtc": "2026-09-22T19:28:44.2443175Z"
+            "analyzedUtc": "2026-09-22T19:52:40.2191093Z"
         },
         "dominantMaterialSemantic": "Unknown",
         "dominantMaterialConfidence": "UNKNOWN",
@@ -229,11 +254,11 @@
                 "evidence": "No conservative material semantic evidence."
             }
         ],
-        "analyzedUtc": "2026-09-22T19:28:44.1551036Z"
+        "analyzedUtc": "2026-09-22T19:52:40.1730480Z"
     },
     "classification": {
         "classified": true,
-        "classifierVersion": "2.0.0",
+        "classifierVersion": "3.0.0",
         "family": "Furniture",
         "type": "Table",
         "category": "Furniture",
@@ -243,7 +268,7 @@
         "nameBacked": true,
         "geometryBacked": true,
         "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table; mesh surface distribution strongly matches a tabletop-over-support structure",
-        "classifiedUtc": "2026-09-22T19:28:44.2437615Z"
+        "classifiedUtc": "2026-09-22T19:52:40.2191093Z"
     },
     "materialSemantic": {
         "resolved": true,
@@ -253,7 +278,7 @@
         "score": 0.7200000286102295,
         "source": "SOURCE_METADATA_FALLBACK",
         "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
-        "resolvedUtc": "2026-09-22T19:28:44.7587626Z"
+        "resolvedUtc": "2026-09-22T19:52:40.4317654Z"
     },
     "tableAuthoring": {
         "planned": true,
@@ -271,7 +296,7 @@
         "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
         "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
         "planReason": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
-        "plannedUtc": "2026-09-22T19:28:44.7587626Z"
+        "plannedUtc": "2026-09-22T19:52:40.4317654Z"
     },
     "tableColliders": {
         "generated": true,
@@ -294,7 +319,7 @@
         "emittedSeatBayCount": 2,
         "runtimeBindingValidated": true,
         "evidence": "Canonical seating configuration maps to a valid seating.table contract; runtime BindTable generated a valid subject/proxy and 2 SeatBay semantic volume(s).",
-        "validatedUtc": "2026-09-22T19:28:45.0309400Z"
+        "validatedUtc": "2026-09-22T19:52:40.5688610Z"
     },
     "tableNavigation": {
         "validated": true,
@@ -309,7 +334,7 @@
         "solidColliderCount": 5,
         "usesCanonicalFootprintTopology": true,
         "evidence": "Navigation consumes the canonical RestaurantPlacementFootprint; customer/waiter endpoints remain outside the obstacle with default-agent clearance; semantic compound colliders are coherent with the published manifest.",
-        "validatedUtc": "2026-09-22T19:28:45.0309400Z"
+        "validatedUtc": "2026-09-22T19:52:40.5688610Z"
     },
     "tablePersistence": {
         "validated": true,
@@ -322,7 +347,7 @@
         "prefabResolvable": true,
         "functionalTableIdValid": true,
         "evidence": "Canonical placeable catalog resolves the SAVIC table; BistroBuilderSaveDefinitionCatalog consumes the canonical catalog without duplicating definitions; prefab and functional table identity are loadable.",
-        "validatedUtc": "2026-09-22T19:28:45.0315015Z"
+        "validatedUtc": "2026-09-22T19:52:40.5688610Z"
     },
     "decisions": [
         {
@@ -439,28 +464,28 @@
             "result": "PASS",
             "severity": "INFO",
             "message": "Model bounds are finite and usable.",
-            "validatorVersion": "2.0.0"
+            "validatorVersion": "2.1.0"
         },
         {
             "validationId": "Geometry.MeshData",
             "result": "PASS",
             "severity": "INFO",
             "message": "Model contains usable mesh geometry.",
-            "validatorVersion": "2.0.0"
+            "validatorVersion": "2.1.0"
         },
         {
             "validationId": "Materials.ReferenceIntegrity",
             "result": "PASS",
             "severity": "INFO",
             "message": "All renderer material slots have references.",
-            "validatorVersion": "2.0.0"
+            "validatorVersion": "2.1.0"
         },
         {
             "validationId": "Classification.ContentType",
             "result": "PASS",
             "severity": "INFO",
             "message": "Model classified as Table with sufficient confidence.",
-            "validatorVersion": "2.0.0"
+            "validatorVersion": "3.0.0"
         },
         {
             "validationId": "Authoring.TablePlan",
@@ -502,7 +527,7 @@
             "result": "WARNING",
             "severity": "WARNING",
             "message": "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
-            "validatorVersion": "2.0.0"
+            "validatorVersion": "2.1.0"
         },
         {
             "validationId": "Geometry.SemanticParts",
