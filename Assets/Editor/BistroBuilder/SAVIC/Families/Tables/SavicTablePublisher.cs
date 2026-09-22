@@ -31,7 +31,10 @@ namespace BistroBuilder.Editor.Savic
 
     internal sealed class SavicTablePublisher
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
+        private const string LegacyCompatibleVersion = "1.0.0";
+        private const string PublicationFingerprintSchema =
+            "table-publication-input-v2";
 
         private const string GeneratedTablesRoot =
             "Assets/Generated/BistroBuilder/SAVIC/Published/Tables";
@@ -43,6 +46,9 @@ namespace BistroBuilder.Editor.Savic
         private const string TableEditableDefinitionPath =
             "Assets/Data/Restaurant/EditMode/EditableDefinitions/" +
             "EditableObjectDefinition_Table.asset";
+
+        private const string SourceMirrorArtifactRole =
+            "unity.source_mirror";
 
         private const string PrefabArtifactRole =
             "published.table.prefab";
@@ -212,7 +218,7 @@ namespace BistroBuilder.Editor.Savic
                             plan);
 
                     savedPrefab =
-                        PrefabUtility.SaveAsPrefabAsset(
+                        SavePrefabWithBoundedRetry(
                             workingRoot,
                             prefabPath,
                             out bool prefabSaved);
@@ -463,10 +469,9 @@ namespace BistroBuilder.Editor.Savic
                     new[]
                     {
                         "savic.table.publication",
+                        PublicationFingerprintSchema,
                         Version,
                         manifest.source.sourceHash ?? string.Empty,
-                        manifest.model3D?.analyzerVersion ?? string.Empty,
-                        manifest.classification?.classifierVersion ?? string.Empty,
                         plan.plannerVersion ?? string.Empty,
                         plan.uniformScale.ToString("R", CultureInfo.InvariantCulture),
                         plan.visualYawDegrees.ToString("R", CultureInfo.InvariantCulture),
@@ -520,16 +525,31 @@ namespace BistroBuilder.Editor.Savic
                 !string.Equals(
                     artifact.builderId,
                     "savic.table-publisher",
-                    StringComparison.Ordinal) ||
-                !string.Equals(
-                    artifact.builderVersion,
-                    Version,
                     StringComparison.Ordinal))
             {
                 return false;
             }
 
-            if (string.Equals(
+            bool currentBuilder =
+                string.Equals(
+                    artifact.builderVersion,
+                    Version,
+                    StringComparison.Ordinal);
+
+            bool legacyCompatibleBuilder =
+                string.Equals(
+                    artifact.builderVersion,
+                    LegacyCompatibleVersion,
+                    StringComparison.Ordinal);
+
+            if (!currentBuilder &&
+                !legacyCompatibleBuilder)
+            {
+                return false;
+            }
+
+            if (currentBuilder &&
+                string.Equals(
                     artifact.inputFingerprint,
                     expectedFingerprint,
                     StringComparison.Ordinal))
@@ -537,14 +557,15 @@ namespace BistroBuilder.Editor.Savic
                 return true;
             }
 
-            // One-time migration path for V1 manifests written before
-            // input fingerprints existed. Reuse is allowed only when the
-            // existing prefab independently matches the current authoring plan.
-            return string.IsNullOrWhiteSpace(
-                       artifact.inputFingerprint) &&
-                   ExistingPrefabMatchesPlan(
+            // Safe migration/revalidation path: analyzer/classifier upgrades
+            // must not force a prefab rebuild when the actual visual source,
+            // geometry plan and canonical runtime contract are unchanged.
+            return ExistingPrefabMatchesPlan(
                        prefabPath,
-                       manifest.tableAuthoring);
+                       manifest.tableAuthoring) &&
+                   ExistingPrefabUsesCurrentSource(
+                       manifest,
+                       prefabPath);
         }
 
         private static bool CanReuseManagedPreviews(
@@ -709,6 +730,130 @@ namespace BistroBuilder.Editor.Savic
                        collider.size.z,
                        plan.finalDepthMeters,
                        0.002f);
+        }
+
+        private static bool ExistingPrefabUsesCurrentSource(
+            SavicManifest manifest,
+            string prefabPath)
+        {
+            SavicArtifactRecord sourceArtifact =
+                FindArtifact(
+                    manifest,
+                    SourceMirrorArtifactRole);
+
+            if (sourceArtifact == null ||
+                string.IsNullOrWhiteSpace(
+                    sourceArtifact.projectRelativePath))
+            {
+                return false;
+            }
+
+            string expectedSourcePath =
+                sourceArtifact.projectRelativePath
+                    .Replace('\\', '/');
+
+            GameObject prefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    prefabPath);
+
+            if (prefab == null)
+                return false;
+
+            MeshFilter[] filters =
+                prefab.GetComponentsInChildren
+                    <MeshFilter>(true);
+
+            for (int index = 0;
+                 index < filters.Length;
+                 index++)
+            {
+                Mesh mesh =
+                    filters[index].sharedMesh;
+
+                if (mesh == null)
+                    continue;
+
+                string meshPath =
+                    AssetDatabase.GetAssetPath(
+                        mesh)
+                    .Replace('\\', '/');
+
+                if (string.Equals(
+                        meshPath,
+                        expectedSourcePath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            SkinnedMeshRenderer[] skinned =
+                prefab.GetComponentsInChildren
+                    <SkinnedMeshRenderer>(true);
+
+            for (int index = 0;
+                 index < skinned.Length;
+                 index++)
+            {
+                Mesh mesh =
+                    skinned[index].sharedMesh;
+
+                if (mesh == null)
+                    continue;
+
+                string meshPath =
+                    AssetDatabase.GetAssetPath(
+                        mesh)
+                    .Replace('\\', '/');
+
+                if (string.Equals(
+                        meshPath,
+                        expectedSourcePath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static GameObject SavePrefabWithBoundedRetry(
+            GameObject workingRoot,
+            string prefabPath,
+            out bool savedSuccessfully)
+        {
+            savedSuccessfully = false;
+
+            GameObject saved =
+                PrefabUtility.SaveAsPrefabAsset(
+                    workingRoot,
+                    prefabPath,
+                    out bool firstAttemptSaved);
+
+            if (firstAttemptSaved &&
+                saved != null)
+            {
+                savedSuccessfully = true;
+                return saved;
+            }
+
+            AssetDatabase.ReleaseCachedFileHandles();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(
+                ImportAssetOptions.ForceSynchronousImport);
+
+            saved =
+                PrefabUtility.SaveAsPrefabAsset(
+                    workingRoot,
+                    prefabPath,
+                    out bool secondAttemptSaved);
+
+            savedSuccessfully =
+                secondAttemptSaved &&
+                saved != null;
+
+            return saved;
         }
 
         private static void ClearItemPrefabReference(

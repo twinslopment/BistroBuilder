@@ -31,7 +31,13 @@ namespace BistroBuilder.Editor.Savic
         private const string ArchiveValidationId = "Source.ArchiveIntegrity";
         private const string BoundsValidationId = "Geometry.ValidBounds";
         private const string MeshValidationId = "Geometry.MeshData";
+        private const string GeometryProfileValidationId =
+            "Geometry.StructuralProfile";
         private const string MaterialValidationId = "Materials.ReferenceIntegrity";
+        private const string MaterialAppearanceValidationId =
+            "Materials.AppearanceData";
+        private const string MaterialSemanticValidationId =
+            "Materials.SemanticProfile";
 
         private readonly SavicManifestRepository manifests;
         private readonly SavicTablePublisher tablePublisher;
@@ -86,6 +92,12 @@ namespace BistroBuilder.Editor.Savic
                     manifest);
             }
 
+            SavicManifest previousPublishedSnapshot =
+                IsPublished(
+                    manifest)
+                    ? CloneManifest(manifest)
+                    : null;
+
             if (!string.Equals(
                     manifest.source.sourceKind,
                     SavicSourceKind.Model3D.ToString(),
@@ -109,11 +121,10 @@ namespace BistroBuilder.Editor.Savic
                     "ERROR",
                     "No compatible source import adapter is available.");
 
-                return new SavicSourceProcessingOutcome(
-                    false,
-                    manifest.status,
-                    "No compatible source import adapter is available.",
-                    manifest);
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    "No compatible source import adapter is available.");
             }
 
             SavicSourceImportResult import =
@@ -127,11 +138,10 @@ namespace BistroBuilder.Editor.Savic
                     "ERROR",
                     import.Message);
 
-                return new SavicSourceProcessingOutcome(
-                    false,
-                    manifest.status,
-                    import.Message,
-                    manifest);
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    import.Message);
             }
 
             SavicManifestMutations.UpsertArtifact(
@@ -165,11 +175,10 @@ namespace BistroBuilder.Editor.Savic
                     "ERROR",
                     "Imported model main object is not a GameObject.");
 
-                return new SavicSourceProcessingOutcome(
-                    false,
-                    manifest.status,
-                    "Imported model main object is not a GameObject.",
-                    manifest);
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    "Imported model main object is not a GameObject.");
             }
 
             try
@@ -218,6 +227,52 @@ namespace BistroBuilder.Editor.Savic
                           " renderer material slot(s) are missing a material.",
                     SavicModelAnalyzer.Version);
 
+                bool geometryProfileUsable =
+                    analysis.geometry != null &&
+                    analysis.geometry.analyzed &&
+                    analysis.geometry.usable;
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    GeometryProfileValidationId,
+                    geometryProfileUsable
+                        ? "PASS"
+                        : "WARNING",
+                    geometryProfileUsable
+                        ? "INFO"
+                        : "WARNING",
+                    geometryProfileUsable
+                        ? "Mesh surface distribution analyzed successfully: " +
+                          analysis.geometry.evidence
+                        : "Mesh is usable but no reliable structural surface profile could be derived.",
+                    SavicGeometryProfileAnalyzer.Version);
+
+                bool appearanceDataPresent =
+                    !string.Equals(
+                        analysis.appearanceDataCompleteness,
+                        "NONE",
+                        StringComparison.Ordinal) &&
+                    !string.Equals(
+                        analysis.appearanceDataCompleteness,
+                        "UNKNOWN",
+                        StringComparison.Ordinal);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    MaterialAppearanceValidationId,
+                    appearanceDataPresent
+                        ? "PASS"
+                        : "WARNING",
+                    appearanceDataPresent
+                        ? "INFO"
+                        : "WARNING",
+                    appearanceDataPresent
+                        ? "Source appearance data detected: " +
+                          analysis.appearanceDataCompleteness +
+                          "."
+                        : "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
+                    SavicModelAnalyzer.Version);
+
                 bool analysisValid =
                     analysis.hasUsableBounds &&
                     meshValid;
@@ -227,11 +282,10 @@ namespace BistroBuilder.Editor.Savic
                     manifest.status = "NEEDS_REVIEW";
                     manifests.Save(manifest);
 
-                    return new SavicSourceProcessingOutcome(
-                        false,
-                        manifest.status,
-                        "Model imported but geometry requires review.",
-                        manifest);
+                    return ReturnFailure(
+                        previousPublishedSnapshot,
+                        manifest,
+                        "Model imported but geometry requires review.");
                 }
 
                 SavicClassificationRecord classification =
@@ -248,7 +302,61 @@ namespace BistroBuilder.Editor.Savic
                     classification.type,
                     classification.confidence,
                     classification.evidence,
-                    "content.classification.v1");
+                    "content.classification.v2");
+
+                SavicResolvedMaterialSemantic resolvedMaterial =
+                    SavicMaterialSemanticResolver.Resolve(
+                        manifest);
+
+                manifest.materialSemantic =
+                    new SavicMaterialSemanticResolutionRecord
+                    {
+                        resolved =
+                            resolvedMaterial.IsKnown,
+                        resolverVersion =
+                            SavicMaterialSemanticResolver.Version,
+                        semantic =
+                            resolvedMaterial.Semantic,
+                        confidence =
+                            resolvedMaterial.Confidence,
+                        score =
+                            resolvedMaterial.Score,
+                        source =
+                            resolvedMaterial.Source,
+                        evidence =
+                            resolvedMaterial.Evidence,
+                        resolvedUtc =
+                            DateTime.UtcNow.ToString("O")
+                    };
+
+                SavicManifestMutations.UpsertDecision(
+                    manifest,
+                    "material.semantic",
+                    resolvedMaterial.Semantic,
+                    resolvedMaterial.Confidence,
+                    resolvedMaterial.Evidence,
+                    "material.semantic.resolve.v1");
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    MaterialSemanticValidationId,
+                    resolvedMaterial.IsKnown
+                        ? "PASS"
+                        : "WARNING",
+                    resolvedMaterial.IsKnown
+                        ? "INFO"
+                        : "WARNING",
+                    resolvedMaterial.IsKnown
+                        ? "Material semantic resolved as " +
+                          resolvedMaterial.Semantic +
+                          " from " +
+                          resolvedMaterial.Source +
+                          " with " +
+                          resolvedMaterial.Confidence +
+                          " confidence."
+                        : "Material semantic remains Unknown: " +
+                          resolvedMaterial.Evidence,
+                    SavicMaterialSemanticResolver.Version);
 
                 bool classifiedAsTable =
                     string.Equals(
@@ -271,11 +379,10 @@ namespace BistroBuilder.Editor.Savic
                     manifest.status = "NEEDS_REVIEW";
                     manifests.Save(manifest);
 
-                    return new SavicSourceProcessingOutcome(
-                        false,
-                        manifest.status,
-                        "Model analyzed but content type requires review.",
-                        manifest);
+                    return ReturnFailure(
+                        previousPublishedSnapshot,
+                        manifest,
+                        "Model analyzed but content type requires review.");
                 }
 
                 if (!SavicTableAuthoringPlanner.TryPlan(
@@ -296,11 +403,10 @@ namespace BistroBuilder.Editor.Savic
 
                     manifests.Save(manifest);
 
-                    return new SavicSourceProcessingOutcome(
-                        false,
-                        manifest.status,
-                        planRejection,
-                        manifest);
+                    return ReturnFailure(
+                        previousPublishedSnapshot,
+                        manifest,
+                        planRejection);
                 }
 
                 manifest.tableAuthoring = plan;
@@ -321,8 +427,16 @@ namespace BistroBuilder.Editor.Savic
                         manifest,
                         root);
 
+                if (!publication.Succeeded)
+                {
+                    return ReturnFailure(
+                        previousPublishedSnapshot,
+                        manifest,
+                        publication.Message);
+                }
+
                 return new SavicSourceProcessingOutcome(
-                    publication.Succeeded,
+                    true,
                     manifest.status,
                     publication.Message,
                     manifest);
@@ -335,12 +449,78 @@ namespace BistroBuilder.Editor.Savic
                     "ERROR",
                     "Model processing failed: " + exception.Message);
 
-                return new SavicSourceProcessingOutcome(
-                    false,
-                    manifest.status,
-                    "Model processing failed: " + exception.Message,
-                    manifest);
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    "Model processing failed: " + exception.Message);
             }
+        }
+
+        private SavicSourceProcessingOutcome ReturnFailure(
+            SavicManifest previousPublishedSnapshot,
+            SavicManifest currentManifest,
+            string message)
+        {
+            if (previousPublishedSnapshot != null)
+            {
+                try
+                {
+                    manifests.Save(
+                        previousPublishedSnapshot);
+
+                    Debug.LogWarning(
+                        "[SAVIC] Reprocessing failed safely; previous " +
+                        "published version was preserved. " +
+                        message);
+
+                    return new SavicSourceProcessingOutcome(
+                        false,
+                        "PUBLISHED",
+                        message +
+                        " Previous published version preserved.",
+                        previousPublishedSnapshot);
+                }
+                catch (Exception restoreException)
+                {
+                    Debug.LogError(
+                        "[SAVIC] Failed to restore previous published " +
+                        "manifest after reprocessing failure: " +
+                        restoreException);
+                }
+            }
+
+            return new SavicSourceProcessingOutcome(
+                false,
+                currentManifest?.status ?? "FAILED_PROCESSING",
+                message,
+                currentManifest);
+        }
+
+        private static bool IsPublished(
+            SavicManifest manifest)
+        {
+            return manifest != null &&
+                   string.Equals(
+                       manifest.status,
+                       "PUBLISHED",
+                       StringComparison.Ordinal) &&
+                   !string.IsNullOrWhiteSpace(
+                       manifest.canonicalContentId);
+        }
+
+        private static SavicManifest CloneManifest(
+            SavicManifest manifest)
+        {
+            if (manifest == null)
+                return null;
+
+            string json =
+                JsonUtility.ToJson(
+                    manifest,
+                    false);
+
+            return JsonUtility.FromJson<SavicManifest>(
+                json);
         }
 
         private ISavicSourceImportAdapter ResolveAdapter(

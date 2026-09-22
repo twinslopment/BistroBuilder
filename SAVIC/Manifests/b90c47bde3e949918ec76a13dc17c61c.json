@@ -9,7 +9,7 @@
     "type": "Table",
     "category": "Furniture",
     "createdUtc": "2026-09-22T10:03:00.5329493Z",
-    "updatedUtc": "2026-09-22T11:46:24.8115855Z",
+    "updatedUtc": "2026-09-22T15:51:35.6518241Z",
     "source": {
         "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
         "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
@@ -22,7 +22,7 @@
     },
     "model3D": {
         "analyzed": true,
-        "analyzerVersion": "1.0.0",
+        "analyzerVersion": "2.0.0",
         "hasUsableBounds": true,
         "boundsCenterX": 0.0005875825881958008,
         "boundsCenterY": 0.0026035308837890627,
@@ -38,20 +38,80 @@
         "materialSlotCount": 1,
         "uniqueMaterialCount": 1,
         "missingMaterialSlots": 0,
+        "texturedMaterialCount": 0,
+        "hasVertexColors": false,
+        "hasUv0": false,
+        "hasNonDefaultBaseColor": false,
+        "appearanceDataCompleteness": "NONE",
         "hasSkinnedMeshes": false,
         "hasNegativeScale": false,
-        "analyzedUtc": "2026-09-22T11:46:24.4436119Z"
+        "geometry": {
+            "analyzed": true,
+            "analyzerVersion": "1.1.0",
+            "usable": true,
+            "meshInstanceCount": 1,
+            "sourceTriangleCount": 84588,
+            "sampledTriangleCount": 84588,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 0,
+            "maximumSamplingStride": 1,
+            "estimatedSurfaceAreaSquareMeters": 6.426126480102539,
+            "upwardFacingAreaRatio": 0.36428484320640566,
+            "horizontalAreaRatio": 0.7300757765769959,
+            "verticalAreaRatio": 0.2546447515487671,
+            "upperBandAreaRatio": 0.7998753786087036,
+            "lowerBandAreaRatio": 0.17882663011550904,
+            "surfaceAreaCentroidHeight01": 0.8110870122909546,
+            "upperUpwardProjectedCoverage": 0.9970706701278687,
+            "lowerHorizontalProjectedCoverage": 0.11461266130208969,
+            "evidence": "upward area 0.364; upper-band area 0.8; lower-band area 0.179; surface centroid height 0.811; upper projected coverage 0.997."
+        },
+        "dominantMaterialSemantic": "Unknown",
+        "dominantMaterialConfidence": "UNKNOWN",
+        "materials": [
+            {
+                "materialName": "material",
+                "shaderName": "Shader Graphs/glTF-pbrMetallicRoughness",
+                "semantic": "Unknown",
+                "semanticConfidence": "UNKNOWN",
+                "semanticScore": 0.0,
+                "metallic": 0.0,
+                "smoothness": 0.0,
+                "baseColorR": 1.0,
+                "baseColorG": 1.0,
+                "baseColorB": 1.0,
+                "baseColorA": 1.0,
+                "transparent": false,
+                "textureCount": 0,
+                "textureNames": "",
+                "evidence": "No conservative material semantic evidence."
+            }
+        ],
+        "analyzedUtc": "2026-09-22T15:51:35.1379825Z"
     },
     "classification": {
         "classified": true,
-        "classifierVersion": "1.0.0",
+        "classifierVersion": "2.0.0",
         "family": "Furniture",
         "type": "Table",
         "category": "Furniture",
         "confidence": "HIGH",
-        "score": 0.9599999785423279,
-        "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table",
-        "classifiedUtc": "2026-09-22T11:46:24.4489523Z"
+        "score": 1.0,
+        "explicitTypeToken": true,
+        "nameBacked": true,
+        "geometryBacked": true,
+        "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table; mesh surface distribution strongly matches a tabletop-over-support structure",
+        "classifiedUtc": "2026-09-22T15:51:35.2228195Z"
+    },
+    "materialSemantic": {
+        "resolved": true,
+        "resolverVersion": "1.0.0",
+        "semantic": "Wood",
+        "confidence": "MEDIUM",
+        "score": 0.7200000286102295,
+        "source": "SOURCE_METADATA_FALLBACK",
+        "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
+        "resolvedUtc": "2026-09-22T15:51:35.2253442Z"
     },
     "tableAuthoring": {
         "planned": true,
@@ -69,15 +129,15 @@
         "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
         "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
         "planReason": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
-        "plannedUtc": "2026-09-22T11:46:24.4509516Z"
+        "plannedUtc": "2026-09-22T15:51:35.2253442Z"
     },
     "decisions": [
         {
             "key": "content.type",
             "value": "Table",
             "confidence": "HIGH",
-            "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table",
-            "ruleId": "content.classification.v1"
+            "evidence": "name contains an explicit table token; 2 supporting furniture/table context token(s); bounds are plausible for furniture; proportions are compatible with a table; mesh surface distribution strongly matches a tabletop-over-support structure",
+            "ruleId": "content.classification.v2"
         },
         {
             "key": "table.capacity",
@@ -92,6 +152,20 @@
             "confidence": "HIGH",
             "evidence": "uniform height normalization applied; source horizontal orientation accepted; canonical capacity 2.",
             "ruleId": "table.authoring.scale.v1"
+        },
+        {
+            "key": "material.dominantSemantic",
+            "value": "Unknown",
+            "confidence": "UNKNOWN",
+            "evidence": "No conservative material semantic evidence.",
+            "ruleId": "material.semantic.v1"
+        },
+        {
+            "key": "material.semantic",
+            "value": "Wood",
+            "confidence": "MEDIUM",
+            "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
+            "ruleId": "material.semantic.resolve.v1"
         }
     ],
     "artifacts": [
@@ -106,15 +180,15 @@
             "role": "published.table.prefab",
             "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Table_bb_table_b90c47bde3e949918ec76a13dc17c61c.prefab",
             "builderId": "savic.table-publisher",
-            "builderVersion": "1.0.0",
-            "inputFingerprint": "2870a1fbdf32dcecc8b6c3818b77de8ea11877cd13fd97af8f9cdc0c6f146a3d"
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "ae0d2fbe1215411be1528f6f7b1bb6d29e84014d2c38822ccc17af5f66799867"
         },
         {
             "role": "catalog.item_definition",
             "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/PlaceableItem_bb_table_b90c47bde3e949918ec76a13dc17c61c.asset",
             "builderId": "savic.table-publisher",
-            "builderVersion": "1.0.0",
-            "inputFingerprint": "2870a1fbdf32dcecc8b6c3818b77de8ea11877cd13fd97af8f9cdc0c6f146a3d"
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "ae0d2fbe1215411be1528f6f7b1bb6d29e84014d2c38822ccc17af5f66799867"
         },
         {
             "role": "preview.large",
@@ -151,28 +225,28 @@
             "result": "PASS",
             "severity": "INFO",
             "message": "Model bounds are finite and usable.",
-            "validatorVersion": "1.0.0"
+            "validatorVersion": "2.0.0"
         },
         {
             "validationId": "Geometry.MeshData",
             "result": "PASS",
             "severity": "INFO",
             "message": "Model contains usable mesh geometry.",
-            "validatorVersion": "1.0.0"
+            "validatorVersion": "2.0.0"
         },
         {
             "validationId": "Materials.ReferenceIntegrity",
             "result": "PASS",
             "severity": "INFO",
             "message": "All renderer material slots have references.",
-            "validatorVersion": "1.0.0"
+            "validatorVersion": "2.0.0"
         },
         {
             "validationId": "Classification.ContentType",
             "result": "PASS",
             "severity": "INFO",
             "message": "Model classified as Table with sufficient confidence.",
-            "validatorVersion": "1.0.0"
+            "validatorVersion": "2.0.0"
         },
         {
             "validationId": "Authoring.TablePlan",
@@ -186,7 +260,7 @@
             "result": "PASS",
             "severity": "INFO",
             "message": "Table prefab, catalog item and canonical integrations validated.",
-            "validatorVersion": "1.0.0"
+            "validatorVersion": "1.1.0"
         },
         {
             "validationId": "Presentation.Previews",
@@ -194,6 +268,27 @@
             "severity": "INFO",
             "message": "Reused unchanged validated SAVIC previews.",
             "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Geometry.StructuralProfile",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Mesh surface distribution analyzed successfully: upward area 0.364; upper-band area 0.8; lower-band area 0.179; surface centroid height 0.811; upper projected coverage 0.997.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Materials.SemanticProfile",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Material semantic resolved as Wood from SOURCE_METADATA_FALLBACK with MEDIUM confidence.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Materials.AppearanceData",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
+            "validatorVersion": "2.0.0"
         }
     ],
     "developerOverrides": []

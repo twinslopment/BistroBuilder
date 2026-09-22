@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicModelAnalyzer
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
         private const float MinimumDimension = 0.0001f;
 
         internal static SavicModelAnalysisRecord Analyze(GameObject root)
@@ -30,6 +31,8 @@ namespace BistroBuilder.Editor.Savic
             int materialSlotCount = 0;
             int missingMaterialSlots = 0;
             bool hasNegativeScale = false;
+            bool hasVertexColors = false;
+            bool hasUv0 = false;
 
             BoundsAccumulator bounds =
                 new BoundsAccumulator(root.transform);
@@ -48,6 +51,14 @@ namespace BistroBuilder.Editor.Savic
                 {
                     vertexCount += Math.Max(0, mesh.vertexCount);
                     triangleCount += CountTriangles(mesh);
+
+                    hasVertexColors |=
+                        mesh.HasVertexAttribute(
+                            VertexAttribute.Color);
+
+                    hasUv0 |=
+                        mesh.HasVertexAttribute(
+                            VertexAttribute.TexCoord0);
                 }
             }
 
@@ -65,6 +76,14 @@ namespace BistroBuilder.Editor.Savic
                 {
                     vertexCount += Math.Max(0, mesh.vertexCount);
                     triangleCount += CountTriangles(mesh);
+
+                    hasVertexColors |=
+                        mesh.HasVertexAttribute(
+                            VertexAttribute.Color);
+
+                    hasUv0 |=
+                        mesh.HasVertexAttribute(
+                            VertexAttribute.TexCoord0);
                 }
             }
 
@@ -119,29 +138,116 @@ namespace BistroBuilder.Editor.Savic
                 size.y >= MinimumDimension &&
                 size.z >= MinimumDimension;
 
-            return new SavicModelAnalysisRecord
+            SavicModelAnalysisRecord result =
+                new SavicModelAnalysisRecord
+                {
+                    analyzed = true,
+                    analyzerVersion = Version,
+                    hasUsableBounds = hasUsableBounds,
+                    boundsCenterX = center.x,
+                    boundsCenterY = center.y,
+                    boundsCenterZ = center.z,
+                    widthMeters = size.x,
+                    heightMeters = size.y,
+                    depthMeters = size.z,
+                    rendererCount = renderers.Length,
+                    meshInstanceCount = meshInstanceCount,
+                    uniqueMeshCount = uniqueMeshes.Count,
+                    vertexCount = vertexCount,
+                    triangleCount = triangleCount,
+                    materialSlotCount = materialSlotCount,
+                    uniqueMaterialCount = uniqueMaterials.Count,
+                    missingMaterialSlots = missingMaterialSlots,
+                    hasVertexColors = hasVertexColors,
+                    hasUv0 = hasUv0,
+                    hasSkinnedMeshes = skinnedRenderers.Length > 0,
+                    hasNegativeScale = hasNegativeScale,
+                    analyzedUtc = DateTime.UtcNow.ToString("O")
+                };
+
+            result.geometry =
+                SavicGeometryProfileAnalyzer.Analyze(
+                    root,
+                    result);
+
+            result.materials =
+                SavicMaterialSemanticAnalyzer.Analyze(
+                    root,
+                    out string dominantMaterialSemantic,
+                    out string dominantMaterialConfidence);
+
+            result.dominantMaterialSemantic =
+                dominantMaterialSemantic;
+
+            result.dominantMaterialConfidence =
+                dominantMaterialConfidence;
+
+            PopulateAppearanceCompleteness(
+                result);
+
+            return result;
+        }
+
+        private static void PopulateAppearanceCompleteness(
+            SavicModelAnalysisRecord analysis)
+        {
+            int texturedMaterialCount =
+                0;
+
+            bool hasNonDefaultBaseColor =
+                false;
+
+            if (analysis.materials != null)
             {
-                analyzed = true,
-                analyzerVersion = Version,
-                hasUsableBounds = hasUsableBounds,
-                boundsCenterX = center.x,
-                boundsCenterY = center.y,
-                boundsCenterZ = center.z,
-                widthMeters = size.x,
-                heightMeters = size.y,
-                depthMeters = size.z,
-                rendererCount = renderers.Length,
-                meshInstanceCount = meshInstanceCount,
-                uniqueMeshCount = uniqueMeshes.Count,
-                vertexCount = vertexCount,
-                triangleCount = triangleCount,
-                materialSlotCount = materialSlotCount,
-                uniqueMaterialCount = uniqueMaterials.Count,
-                missingMaterialSlots = missingMaterialSlots,
-                hasSkinnedMeshes = skinnedRenderers.Length > 0,
-                hasNegativeScale = hasNegativeScale,
-                analyzedUtc = DateTime.UtcNow.ToString("O")
-            };
+                for (int index = 0;
+                     index < analysis.materials.Count;
+                     index++)
+                {
+                    SavicMaterialAnalysisRecord material =
+                        analysis.materials[index];
+
+                    if (material == null)
+                        continue;
+
+                    if (material.textureCount > 0)
+                        texturedMaterialCount++;
+
+                    if (Math.Abs(material.baseColorR - 1f) > 0.03f ||
+                        Math.Abs(material.baseColorG - 1f) > 0.03f ||
+                        Math.Abs(material.baseColorB - 1f) > 0.03f ||
+                        material.baseColorA < 0.98f)
+                    {
+                        hasNonDefaultBaseColor = true;
+                    }
+                }
+            }
+
+            analysis.texturedMaterialCount =
+                texturedMaterialCount;
+
+            analysis.hasNonDefaultBaseColor =
+                hasNonDefaultBaseColor;
+
+            if (texturedMaterialCount > 0)
+            {
+                analysis.appearanceDataCompleteness =
+                    "TEXTURED";
+            }
+            else if (analysis.hasVertexColors)
+            {
+                analysis.appearanceDataCompleteness =
+                    "VERTEX_COLOR";
+            }
+            else if (hasNonDefaultBaseColor)
+            {
+                analysis.appearanceDataCompleteness =
+                    "FLAT_COLOR";
+            }
+            else
+            {
+                analysis.appearanceDataCompleteness =
+                    "NONE";
+            }
         }
 
         private static long CountTriangles(Mesh mesh)

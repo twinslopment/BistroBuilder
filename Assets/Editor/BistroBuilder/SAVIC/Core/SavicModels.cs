@@ -39,6 +39,8 @@ namespace BistroBuilder.Editor.Savic
         public SavicModelAnalysisRecord model3D = new SavicModelAnalysisRecord();
         public SavicClassificationRecord classification =
             new SavicClassificationRecord();
+        public SavicMaterialSemanticResolutionRecord materialSemantic =
+            new SavicMaterialSemanticResolutionRecord();
         public SavicTableAuthoringRecord tableAuthoring =
             new SavicTableAuthoringRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
@@ -80,9 +82,64 @@ namespace BistroBuilder.Editor.Savic
         public int materialSlotCount;
         public int uniqueMaterialCount;
         public int missingMaterialSlots;
+        public int texturedMaterialCount;
+        public bool hasVertexColors;
+        public bool hasUv0;
+        public bool hasNonDefaultBaseColor;
+        public string appearanceDataCompleteness = "UNKNOWN";
         public bool hasSkinnedMeshes;
         public bool hasNegativeScale;
+        public SavicGeometryProfileRecord geometry =
+            new SavicGeometryProfileRecord();
+        public string dominantMaterialSemantic = "Unknown";
+        public string dominantMaterialConfidence = "UNKNOWN";
+        public List<SavicMaterialAnalysisRecord> materials =
+            new List<SavicMaterialAnalysisRecord>();
         public string analyzedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicGeometryProfileRecord
+    {
+        public bool analyzed;
+        public string analyzerVersion = string.Empty;
+        public bool usable;
+        public int meshInstanceCount;
+        public long sourceTriangleCount;
+        public long sampledTriangleCount;
+        public long invalidTriangleCount;
+        public long degenerateTriangleCount;
+        public int maximumSamplingStride = 1;
+        public float estimatedSurfaceAreaSquareMeters;
+        public float upwardFacingAreaRatio;
+        public float horizontalAreaRatio;
+        public float verticalAreaRatio;
+        public float upperBandAreaRatio;
+        public float lowerBandAreaRatio;
+        public float surfaceAreaCentroidHeight01;
+        public float upperUpwardProjectedCoverage;
+        public float lowerHorizontalProjectedCoverage;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicMaterialAnalysisRecord
+    {
+        public string materialName = string.Empty;
+        public string shaderName = string.Empty;
+        public string semantic = "Unknown";
+        public string semanticConfidence = "UNKNOWN";
+        public float semanticScore;
+        public float metallic;
+        public float smoothness;
+        public float baseColorR = 1f;
+        public float baseColorG = 1f;
+        public float baseColorB = 1f;
+        public float baseColorA = 1f;
+        public bool transparent;
+        public int textureCount;
+        public string textureNames = string.Empty;
+        public string evidence = string.Empty;
     }
 
     [Serializable]
@@ -95,8 +152,24 @@ namespace BistroBuilder.Editor.Savic
         public string category = "Unknown";
         public string confidence = "UNKNOWN";
         public float score;
+        public bool explicitTypeToken;
+        public bool nameBacked;
+        public bool geometryBacked;
         public string evidence = string.Empty;
         public string classifiedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicMaterialSemanticResolutionRecord
+    {
+        public bool resolved;
+        public string resolverVersion = string.Empty;
+        public string semantic = "Unknown";
+        public string confidence = "UNKNOWN";
+        public float score;
+        public string source = "NONE";
+        public string evidence = string.Empty;
+        public string resolvedUtc = string.Empty;
     }
 
     [Serializable]

@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -111,7 +111,7 @@ namespace BistroBuilder.Editor.Savic
 
             if (explicitTableToken)
             {
-                score += 0.62f;
+                score += 0.40f;
                 evidence.Add("name contains an explicit table token");
             }
 
@@ -121,7 +121,7 @@ namespace BistroBuilder.Editor.Savic
             if (contextMatches > 0)
             {
                 float contextScore =
-                    Math.Min(0.12f, contextMatches * 0.04f);
+                    Math.Min(0.08f, contextMatches * 0.03f);
 
                 score += contextScore;
                 evidence.Add(
@@ -129,16 +129,44 @@ namespace BistroBuilder.Editor.Savic
                     " supporting furniture/table context token(s)");
             }
 
-            if (HasPlausibleFurnitureDimensions(analysis))
+            bool plausibleFurnitureDimensions =
+                HasPlausibleFurnitureDimensions(analysis);
+
+            if (plausibleFurnitureDimensions)
             {
-                score += 0.14f;
+                score += 0.10f;
                 evidence.Add("bounds are plausible for furniture");
             }
 
-            if (HasPlausibleTableProportions(analysis))
+            bool plausibleTableProportions =
+                HasPlausibleTableProportions(analysis);
+
+            if (plausibleTableProportions)
             {
-                score += 0.12f;
+                score += 0.14f;
                 evidence.Add("proportions are compatible with a table");
+            }
+
+            bool strongGeometry =
+                HasStrongTableGeometry(
+                    analysis.geometry);
+
+            bool moderateGeometry =
+                !strongGeometry &&
+                HasModerateTableGeometry(
+                    analysis.geometry);
+
+            if (strongGeometry)
+            {
+                score += 0.55f;
+                evidence.Add(
+                    "mesh surface distribution strongly matches a tabletop-over-support structure");
+            }
+            else if (moderateGeometry)
+            {
+                score += 0.22f;
+                evidence.Add(
+                    "mesh surface distribution moderately supports a table profile");
             }
 
             if (analysis.hasSkinnedMeshes)
@@ -156,17 +184,42 @@ namespace BistroBuilder.Editor.Savic
             score = Clamp01(score);
             result.score = score;
 
-            if (explicitTableToken &&
-                !conflictingToken &&
-                score >= 0.78f)
+            bool nameBackedTable =
+                explicitTableToken &&
+                plausibleTableProportions &&
+                score >= 0.62f;
+
+            bool geometryBackedTable =
+                strongGeometry &&
+                plausibleFurnitureDimensions &&
+                plausibleTableProportions &&
+                score >= 0.76f;
+
+            result.explicitTypeToken =
+                explicitTableToken;
+
+            result.nameBacked =
+                nameBackedTable &&
+                !conflictingToken;
+
+            result.geometryBacked =
+                geometryBackedTable &&
+                !conflictingToken;
+
+            if (!conflictingToken &&
+                (nameBackedTable ||
+                 geometryBackedTable))
             {
                 result.family = "Furniture";
                 result.type = "Table";
                 result.category = "Furniture";
                 result.confidence =
-                    score >= 0.92f
+                    geometryBackedTable &&
+                    score >= 0.90f
                         ? "HIGH"
-                        : "MEDIUM";
+                        : score >= 0.78f
+                            ? "HIGH"
+                            : "MEDIUM";
             }
             else
             {
@@ -237,6 +290,42 @@ namespace BistroBuilder.Editor.Savic
                    normalizedMax <= 2.50f &&
                    normalizedMin >= 0.40f &&
                    normalizedMin <= 1.80f;
+        }
+
+        private static bool HasStrongTableGeometry(
+            SavicGeometryProfileRecord geometry)
+        {
+            if (geometry == null ||
+                !geometry.analyzed ||
+                !geometry.usable)
+            {
+                return false;
+            }
+
+            return geometry.upwardFacingAreaRatio >= 0.23f &&
+                   geometry.upperBandAreaRatio >= 0.58f &&
+                   geometry.lowerBandAreaRatio >= 0.05f &&
+                   geometry.lowerBandAreaRatio <= 0.38f &&
+                   geometry.surfaceAreaCentroidHeight01 >= 0.62f &&
+                   geometry.upperUpwardProjectedCoverage >= 0.55f &&
+                   geometry.verticalAreaRatio <= 0.55f;
+        }
+
+        private static bool HasModerateTableGeometry(
+            SavicGeometryProfileRecord geometry)
+        {
+            if (geometry == null ||
+                !geometry.analyzed ||
+                !geometry.usable)
+            {
+                return false;
+            }
+
+            return geometry.upwardFacingAreaRatio >= 0.16f &&
+                   geometry.upperBandAreaRatio >= 0.45f &&
+                   geometry.lowerBandAreaRatio <= 0.48f &&
+                   geometry.surfaceAreaCentroidHeight01 >= 0.55f &&
+                   geometry.upperUpwardProjectedCoverage >= 0.35f;
         }
 
         private static HashSet<string> Tokenize(string raw)
