@@ -82,9 +82,9 @@ public static class BistroBuilderWindowModuleInstaller
     {
         var material = GetOrCreateMaterial(GlassMaterialPath);
         material.name = "BB_MAT_Glass_Clear";
-        SetColor(material, new Color(0.72f, 0.86f, 0.90f, 0.22f));
+        SetColor(material, new Color(0.78f, 0.88f, 0.92f, 0.18f));
         if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0f);
-        if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.92f);
+        if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.955f);
         if (material.HasProperty("_Surface")) material.SetFloat("_Surface", 1f);
         if (material.HasProperty("_Blend")) material.SetFloat("_Blend", 0f);
         if (material.HasProperty("_Cull")) material.SetFloat("_Cull", (float)CullMode.Off);
@@ -168,6 +168,9 @@ public static class BistroBuilderWindowModuleInstaller
             throw new InvalidOperationException("Cristal no configurado a doble cara.");
         if (Vector3.Distance(collider.size, new Vector3(1.20f, 2.50f, 0.10f)) > 0.001f)
             throw new InvalidOperationException("Collider fuera de medida.");
-        Debug.Log("BB_WINDOW_UNITY_PASS|ASSET=" + AssetName + "|SIZE=1.20x2.50x0.10|GLASS_ALPHA=0.22|DOUBLE_SIDED=1");
+        var alpha = glassMaterial.HasProperty("_BaseColor") ? glassMaterial.GetColor("_BaseColor").a : 0f;
+        if (Mathf.Abs(alpha - 0.18f) > 0.001f)
+            throw new InvalidOperationException("Alpha de cristal inesperado: " + alpha);
+        Debug.Log("BB_WINDOW_UNITY_PASS|ASSET=" + AssetName + "|SIZE=1.20x2.50x0.10|GLASS_ALPHA=0.18|DOUBLE_SIDED=1");
     }
 }

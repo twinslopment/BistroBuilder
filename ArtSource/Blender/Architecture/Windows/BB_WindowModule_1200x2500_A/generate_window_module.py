@@ -77,14 +77,14 @@ def make_materials():
     principled_input(frame, "Roughness", 0.22)
     glass = bpy.data.materials.new("BB_MAT_Glass_Clear")
     glass.use_nodes = True
-    principled_input(glass, "Base Color", (0.72,0.86,0.90,1.0))
-    principled_input(glass, "Roughness", 0.08)
+    principled_input(glass, "Base Color", (0.78,0.88,0.92,1.0))
+    principled_input(glass, "Roughness", 0.045)
     principled_input(glass, "IOR", 1.45)
-    principled_input(glass, "Alpha", 0.22)
-    principled_input(glass, "Transmission Weight", 0.90)
-    glass.diffuse_color = (0.72,0.86,0.90,0.22)
+    principled_input(glass, "Alpha", 0.18)
+    principled_input(glass, "Transmission Weight", 1.0)
+    glass.diffuse_color = (0.78,0.88,0.92,0.18)
     try:
-        glass.surface_render_method = 'DITHERED'
+        glass.surface_render_method = 'BLENDED'
     except Exception:
         pass
     return frame, glass
@@ -119,6 +119,10 @@ def create_asset():
     ]
     frame = add_box_parts("Frame", boxes)
     glass = add_glass("Glass")
+    bevel = frame.modifiers.new(name="EdgeSoftening", type='BEVEL')
+    bevel.width = 0.004
+    bevel.segments = 2
+    bevel.limit_method = 'ANGLE'
     frame.data.materials.append(frame_mat)
     glass.data.materials.append(glass_mat)
     generate_uv(frame)
@@ -170,44 +174,66 @@ def create_asset():
 
 def render_preview(root, frame, glass):
     floor_mat = bpy.data.materials.new("PreviewFloor")
-    floor_mat.diffuse_color = (0.16,0.17,0.18,1)
+    floor_mat.use_nodes = True
+    principled_input(floor_mat, "Base Color", (0.10,0.11,0.12,1.0))
+    principled_input(floor_mat, "Roughness", 0.72)
     bpy.ops.mesh.primitive_plane_add(size=8, location=(0,0,0))
     floor = bpy.context.object
     floor.name = "_PreviewFloor"
     floor.data.materials.append(floor_mat)
 
-    bpy.ops.object.light_add(type='AREA', location=(2.0,-2.4,3.3))
+    back_mat = bpy.data.materials.new("PreviewBackdrop")
+    back_mat.use_nodes = True
+    principled_input(back_mat, "Base Color", (0.18,0.20,0.22,1.0))
+    principled_input(back_mat, "Roughness", 0.86)
+    bpy.ops.mesh.primitive_plane_add(size=7, location=(0,1.6,2.0), rotation=(math.radians(90),0,0))
+    backdrop = bpy.context.object
+    backdrop.name = "_PreviewBackdrop"
+    backdrop.data.materials.append(back_mat)
+
+    bpy.ops.object.light_add(type='AREA', location=(2.4,-2.8,3.5))
     key = bpy.context.object
-    key.data.energy = 900
-    key.data.shape = 'DISK'
-    key.data.size = 2.2
-    look_at(key, (0,0,1.2))
-    bpy.ops.object.light_add(type='AREA', location=(-2.0,1.2,2.4))
+    key.data.energy = 1100
+    key.data.shape = 'RECTANGLE'
+    key.data.size = 2.6
+    key.data.size_y = 3.0
+    look_at(key, (0,0,1.25))
+
+    bpy.ops.object.light_add(type='AREA', location=(-2.2,-0.8,2.6))
     fill = bpy.context.object
     fill.data.energy = 500
-    fill.data.size = 2.0
-    look_at(fill, (0,0,1.3))
+    fill.data.size = 2.5
+    look_at(fill, (0,0,1.35))
 
-    bpy.ops.object.camera_add(location=(2.2,-3.2,1.65))
+    bpy.ops.object.light_add(type='AREA', location=(0,1.1,2.9))
+    rim = bpy.context.object
+    rim.data.energy = 650
+    rim.data.size = 1.6
+    look_at(rim, (0,0,1.45))
+
+    bpy.ops.object.camera_add(location=(1.65,-4.2,1.65))
     cam = bpy.context.object
+    cam.data.lens = 58
     look_at(cam, (0,0,1.25))
     bpy.context.scene.camera = cam
+
     scene = bpy.context.scene
     scene.render.engine = 'BLENDER_EEVEE'
-    scene.render.resolution_x = 900
-    scene.render.resolution_y = 1100
+    scene.render.resolution_x = 1000
+    scene.render.resolution_y = 1250
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = 'PNG'
     scene.render.filepath = str(PREVIEW_PATH)
     scene.render.film_transparent = False
-    scene.world.color = (0.055,0.065,0.075)
+    scene.render.image_settings.color_mode = 'RGBA'
+    scene.world.color = (0.035,0.04,0.05)
+    scene.view_settings.look = 'AgX - Medium High Contrast'
     bpy.ops.render.render(write_still=True)
 
-    bpy.data.objects.remove(floor, do_unlink=True)
-    bpy.data.objects.remove(key, do_unlink=True)
-    bpy.data.objects.remove(fill, do_unlink=True)
-    bpy.data.objects.remove(cam, do_unlink=True)
+    for obj in (floor, backdrop, key, fill, rim, cam):
+        bpy.data.objects.remove(obj, do_unlink=True)
     bpy.data.materials.remove(floor_mat, do_unlink=True)
+    bpy.data.materials.remove(back_mat, do_unlink=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND_PATH))
 
 
