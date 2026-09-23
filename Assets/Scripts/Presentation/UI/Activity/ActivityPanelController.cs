@@ -29,8 +29,8 @@ public sealed class ActivityPanelController : MonoBehaviour
     private RectTransform contentRoot;
     private TMP_Text emptyText;
     private TMP_Text footerText;
-    private TMP_FontAsset inheritedFont;
     private ScrollRect scrollRect;
+    private bool usingReferencePresentation;
 
     private readonly List<ActivityDisplayEntry> displayEntries =
         new List<ActivityDisplayEntry>(128);
@@ -162,6 +162,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             activityPanel = nextPanel;
             runtimeRoot = null;
             contentRoot = null;
+            usingReferencePresentation = false;
             filterButtons.Clear();
             dirty = true;
         }
@@ -175,13 +176,16 @@ public sealed class ActivityPanelController : MonoBehaviour
             activityPanel.Find("ActivityHeading")?.GetComponent<TMP_Text>();
         if (heading != null)
         {
-            inheritedFont = heading.font;
             heading.text = "Actividad";
+            ApplyTypographyRole(heading, BistroBuilderUiStyleRole.Heading);
         }
 
         Transform referenceRoot = activityPanel.Find("BB_ReferenceActivity");
         if (referenceRoot != null)
-            referenceRoot.gameObject.SetActive(false);
+        {
+            BindReferencePresentation(referenceRoot);
+            return;
+        }
 
         if (runtimeRoot != null)
             return;
@@ -190,11 +194,35 @@ public sealed class ActivityPanelController : MonoBehaviour
         if (existing != null)
         {
             runtimeRoot = existing as RectTransform;
+            usingReferencePresentation = false;
             CachePresentationReferences();
             return;
         }
 
+        usingReferencePresentation = false;
         BuildPresentation();
+    }
+
+    private void BindReferencePresentation(Transform referenceRoot)
+    {
+        RectTransform referenceRect = referenceRoot as RectTransform;
+        RectTransform rows = referenceRoot.Find("Rows") as RectTransform;
+        if (referenceRect == null || rows == null)
+            return;
+
+        if (usingReferencePresentation &&
+            ReferenceEquals(runtimeRoot, referenceRect) &&
+            ReferenceEquals(contentRoot, rows))
+            return;
+
+        runtimeRoot = referenceRect;
+        contentRoot = rows;
+        emptyText = referenceRoot.Find("Empty")?.GetComponent<TMP_Text>();
+        footerText = null;
+        scrollRect = null;
+        usingReferencePresentation = true;
+        filterButtons.Clear();
+        dirty = true;
     }
 
     private void BuildPresentation()
@@ -264,6 +292,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             13f,
             BistroBuilderUiTokens.TextMuted,
             TextAlignmentOptions.Center);
+        ApplyTypographyRole(emptyText, BistroBuilderUiStyleRole.Caption);
         emptyText.rectTransform.anchorMin = new Vector2(0f, 0f);
         emptyText.rectTransform.anchorMax = new Vector2(1f, 1f);
         emptyText.rectTransform.offsetMin = new Vector2(0f, 55f);
@@ -276,6 +305,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             10.5f,
             BistroBuilderUiTokens.TextMuted,
             TextAlignmentOptions.MidlineRight);
+        ApplyTypographyRole(footerText, BistroBuilderUiStyleRole.Caption);
         footerText.rectTransform.anchorMin = new Vector2(0f, 0f);
         footerText.rectTransform.anchorMax = new Vector2(1f, 0f);
         footerText.rectTransform.pivot = new Vector2(0.5f, 0f);
@@ -349,6 +379,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             11f,
             BistroBuilderUiTokens.TextSecondary,
             TextAlignmentOptions.Center);
+        ApplyTypographyRole(text, BistroBuilderUiStyleRole.Label);
         Stretch(text.rectTransform);
     }
 
@@ -392,76 +423,91 @@ public sealed class ActivityPanelController : MonoBehaviour
             CreateRow(contentRoot);
 
         for (int i = 0; i < contentRoot.childCount; i++)
-            contentRoot.GetChild(i).gameObject.SetActive(i < count);
+        {
+            Transform row = contentRoot.GetChild(i);
+            bool visible = i < count;
+            if (visible)
+                EnsureRowStructure(row);
+            row.gameObject.SetActive(visible);
+        }
     }
 
-    private void CreateRow(RectTransform parent)
+    private void EnsureRowStructure(Transform row)
     {
-        RectTransform row = NewRect("ActivityRow", parent);
-        LayoutElement element = row.gameObject.AddComponent<LayoutElement>();
+        if (row == null)
+            return;
+
+        LayoutElement element = row.GetComponent<LayoutElement>();
+        if (element == null)
+            element = row.gameObject.AddComponent<LayoutElement>();
         element.minHeight = RowHeight;
         element.preferredHeight = RowHeight;
 
-        Image background = row.gameObject.AddComponent<Image>();
-        background.color = new Color32(42, 40, 34, 242);
+        Image background = row.GetComponent<Image>();
+        if (background == null)
+        {
+            background = row.gameObject.AddComponent<Image>();
+            background.color = new Color32(42, 40, 34, 242);
+        }
 
-        Button button = row.gameObject.AddComponent<Button>();
+        Button button = row.GetComponent<Button>();
+        if (button == null)
+            button = row.gameObject.AddComponent<Button>();
         button.targetGraphic = background;
         button.colors = BistroBuilderUiTokens.ButtonColors(
             background.color,
             new Color32(55, 52, 44, 248),
             new Color32(61, 58, 49, 255));
 
-        TMP_Text marker = CreateText(
-            row,
-            "Marker",
-            "●",
-            17f,
-            BistroBuilderUiTokens.TextMuted,
-            TextAlignmentOptions.Center);
+        TMP_Text marker = row.Find("Marker")?.GetComponent<TMP_Text>();
+        if (marker == null)
+            marker = CreateText(row, "Marker", "●", 17f,
+                BistroBuilderUiTokens.TextMuted, TextAlignmentOptions.Center);
+        ApplyTypographyRole(marker, BistroBuilderUiStyleRole.Caption);
         Place(marker.rectTransform, 6f, -8f, 32f, 40f);
 
-        Image icon = NewRect("Icon", row).gameObject.AddComponent<Image>();
-        icon.preserveAspect = true;
-        icon.enabled = false;
+        Image icon = row.Find("Icon")?.GetComponent<Image>();
+        if (icon == null)
+        {
+            icon = NewRect("Icon", row).gameObject.AddComponent<Image>();
+            icon.preserveAspect = true;
+            icon.enabled = false;
+        }
         Place(icon.rectTransform, 40f, -10f, 28f, 28f);
 
-        TMP_Text title = CreateText(
-            row,
-            "Title",
-            "Actividad",
-            13.2f,
-            BistroBuilderUiTokens.ContentLight,
-            TextAlignmentOptions.MidlineLeft);
-        title.fontStyle = FontStyles.Bold;
+        TMP_Text title = row.Find("Title")?.GetComponent<TMP_Text>();
+        if (title == null)
+            title = CreateText(row, "Title", "Actividad", 13.2f,
+                BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+        ApplyTypographyRole(title, BistroBuilderUiStyleRole.Label);
         Place(title.rectTransform, 74f, -6f, 190f, 24f);
 
-        TMP_Text subtitle = CreateText(
-            row,
-            "Subtitle",
-            string.Empty,
-            11f,
-            BistroBuilderUiTokens.TextSecondary,
-            TextAlignmentOptions.MidlineLeft);
+        TMP_Text subtitle = row.Find("Subtitle")?.GetComponent<TMP_Text>();
+        if (subtitle == null)
+            subtitle = CreateText(row, "Subtitle", string.Empty, 11f,
+                BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
+        ApplyTypographyRole(subtitle, BistroBuilderUiStyleRole.Caption);
         Place(subtitle.rectTransform, 74f, -29f, 218f, 21f);
 
-        TMP_Text time = CreateText(
-            row,
-            "Time",
-            "--:--",
-            10.5f,
-            BistroBuilderUiTokens.TextSecondary,
-            TextAlignmentOptions.MidlineRight);
+        TMP_Text time = row.Find("Time")?.GetComponent<TMP_Text>();
+        if (time == null)
+            time = CreateText(row, "Time", "--:--", 10.5f,
+                BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineRight);
+        ApplyTypographyRole(time, BistroBuilderUiStyleRole.Caption);
         Place(time.rectTransform, 262f, -6f, 48f, 24f);
 
-        TMP_Text state = CreateText(
-            row,
-            "State",
-            string.Empty,
-            10f,
-            BistroBuilderUiTokens.TextMuted,
-            TextAlignmentOptions.MidlineRight);
+        TMP_Text state = row.Find("State")?.GetComponent<TMP_Text>();
+        if (state == null)
+            state = CreateText(row, "State", string.Empty, 10f,
+                BistroBuilderUiTokens.TextMuted, TextAlignmentOptions.MidlineRight);
+        ApplyTypographyRole(state, BistroBuilderUiStyleRole.Caption);
         Place(state.rectTransform, 286f, -31f, 24f, 18f);
+    }
+
+    private void CreateRow(RectTransform parent)
+    {
+        RectTransform row = NewRect("ActivityRow", parent);
+        EnsureRowStructure(row);
     }
 
     private void BindRow(Transform row, ActivityDisplayEntry entry)
@@ -556,9 +602,22 @@ public sealed class ActivityPanelController : MonoBehaviour
         text.raycastTarget = false;
         text.enableWordWrapping = false;
         text.overflowMode = TextOverflowModes.Ellipsis;
-        if (inheritedFont != null)
-            text.font = inheritedFont;
+        ApplyTypographyRole(text, BistroBuilderUiStyleRole.Body);
         return text;
+    }
+
+    private static void ApplyTypographyRole(
+        TMP_Text text,
+        BistroBuilderUiStyleRole role)
+    {
+        if (text == null)
+            return;
+
+        BistroBuilderTypography.Apply(text, role, true);
+        BistroBuilderUiStyleTag tag = text.GetComponent<BistroBuilderUiStyleTag>();
+        if (tag == null)
+            tag = text.gameObject.AddComponent<BistroBuilderUiStyleTag>();
+        tag.Configure(role, keepFontSize: true);
     }
 
     private static string FilterObjectName(ActivityFilter filter)
