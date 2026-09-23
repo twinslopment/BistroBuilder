@@ -71,3 +71,16 @@ Al pulsar una entrada:
 ## Regla canónica
 
 Este documento es la referencia funcional vigente del panel ACTIVIDAD. No rediseñar su estructura, contenido o jerarquía sin aprobación explícita.
+
+## Referencia visual aprobada
+
+Referencia visual canónica aprobada el 2026-09-23:
+- ChatGPT Library: `/BistroBuilder/UI/Referencias/Servicio/PanelActividad/BB_PanelActividad_APROBADO_2026-09-23.png`
+- Library file id: `libfile_d809ca05da508191976815d3a0c7c410`
+
+Elementos visuales fijados:
+- Icono de ACTIVIDAD: portapapeles con gráfica ascendente roja.
+- Título `ACTIVIDAD` con la tipografía aprobada para encabezados.
+- Selector `Hoy` en cabecera.
+- Fondo crema/beige, marco dorado y tarjetas internas claras.
+- Mantener esta composición como referencia visual vigente salvo aprobación explícita de un cambio.
