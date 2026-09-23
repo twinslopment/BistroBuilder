@@ -27,6 +27,10 @@ namespace BistroBuilder.Editor.Savic
         internal string CacheRoot => Path.Combine(RuntimeRoot, "Cache");
         internal string StagingRoot => Path.Combine(RuntimeRoot, "Staging");
         internal string QueueSnapshotPath => Path.Combine(JobsRoot, "queue.json");
+        internal string ProjectInventorySnapshotPath => Path.Combine(
+            CacheRoot,
+            "Inventory",
+            "project-inventory.json");
         internal string UnitySourceMirrorRoot => Path.Combine(
             ProjectRoot,
             "Assets",

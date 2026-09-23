@@ -30,6 +30,7 @@
 - **BBPLFS:** desarrollo activo en `feature/bbplfs-v1`.
 - **Climate & Weather:** implementación V1 existente; cierre final pendiente de validación/ratificación.
 - **BB Furniture Finishes & Variants Authoring System (BBFFVAS):** IMPLEMENTACIÓN TÉCNICA V1 ACTIVA; núcleo, autoría, Acabado Automático, miniaturas, publicación, runtime binding e importación Smart Assets/Asset Studio BB validados en Unity 6000.3.19f1. Integración en producción pendiente.
+- **SAVIC:** IMPLEMENTACIÓN V1 ACTIVA en `feature/savic-v1`; verticales completas de Mesa y Silla implementadas y cubiertas por probes, Centro de Control Editor implementado con validación en Unity pendiente, y bloque de batch/recovery/rendimiento todavía abierto.
 
 ## Integración actual
 `playtest/all-current-20260912` contiene trabajo posterior a `integration/chat-final-20260911` y, al crear esta documentación, tenía conflictos de merge sin resolver. Esta rama documental se aisló deliberadamente para no tocar esa integración.

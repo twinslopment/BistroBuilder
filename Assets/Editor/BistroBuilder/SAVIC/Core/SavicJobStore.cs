@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEngine;
 
 namespace BistroBuilder.Editor.Savic
 {
@@ -15,6 +16,8 @@ namespace BistroBuilder.Editor.Savic
         {
             this.layout = layout ?? throw new ArgumentNullException(nameof(layout));
         }
+
+        internal event Action Changed;
 
         internal IReadOnlyList<SavicJobRecord> Jobs
         {
@@ -36,12 +39,14 @@ namespace BistroBuilder.Editor.Savic
             if (manifest?.source == null)
                 throw new ArgumentNullException(nameof(manifest));
 
+            SavicJobRecord record;
+
             lock (sync)
             {
                 EnsureLoaded();
                 string now = DateTime.UtcNow.ToString("O");
 
-                SavicJobRecord record = new SavicJobRecord
+                record = new SavicJobRecord
                 {
                     jobId = Guid.NewGuid().ToString("N"),
                     state = (duplicateExact
@@ -60,8 +65,10 @@ namespace BistroBuilder.Editor.Savic
                 snapshot.jobs.Add(record);
                 TrimHistory();
                 Save();
-                return record;
             }
+
+            NotifyChanged();
+            return record;
         }
 
         internal SavicJobRecord RecordFailure(
@@ -72,12 +79,14 @@ namespace BistroBuilder.Editor.Savic
             int attempts,
             string message)
         {
+            SavicJobRecord record;
+
             lock (sync)
             {
                 EnsureLoaded();
                 string now = DateTime.UtcNow.ToString("O");
 
-                SavicJobRecord record = new SavicJobRecord
+                record = new SavicJobRecord
                 {
                     jobId = Guid.NewGuid().ToString("N"),
                     state = state.ToString(),
@@ -93,8 +102,10 @@ namespace BistroBuilder.Editor.Savic
                 snapshot.jobs.Add(record);
                 TrimHistory();
                 Save();
-                return record;
             }
+
+            NotifyChanged();
+            return record;
         }
 
         internal int CountByState(SavicJobState state)
@@ -114,6 +125,22 @@ namespace BistroBuilder.Editor.Savic
             {
                 snapshot = null;
                 EnsureLoaded();
+            }
+
+            NotifyChanged();
+        }
+
+        private void NotifyChanged()
+        {
+            try
+            {
+                Changed?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[SAVIC] Job change listener failed safely: " +
+                    exception);
             }
         }
 

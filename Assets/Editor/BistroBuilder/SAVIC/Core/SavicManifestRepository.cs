@@ -24,6 +24,8 @@ namespace BistroBuilder.Editor.Savic
             this.layout = layout ?? throw new ArgumentNullException(nameof(layout));
         }
 
+        internal event Action Changed;
+
         internal int Count
         {
             get
@@ -64,6 +66,16 @@ namespace BistroBuilder.Editor.Savic
                         StringComparison.Ordinal));
 
             return manifests;
+        }
+
+        internal bool TryGetManifestPath(
+            string savicId,
+            out string manifestPath)
+        {
+            EnsureLoaded();
+            return pathBySavicId.TryGetValue(
+                savicId ?? string.Empty,
+                out manifestPath);
         }
 
         internal SavicManifest CreateIngested(
@@ -147,6 +159,7 @@ namespace BistroBuilder.Editor.Savic
             bySourceHash[manifest.source.sourceHash] = manifest;
             bySavicId[manifest.savicId] = manifest;
             pathBySavicId[manifest.savicId] = path;
+            NotifyChanged();
         }
 
         internal void Reload()
@@ -156,6 +169,21 @@ namespace BistroBuilder.Editor.Savic
             bySavicId.Clear();
             pathBySavicId.Clear();
             EnsureLoaded();
+            NotifyChanged();
+        }
+
+        private void NotifyChanged()
+        {
+            try
+            {
+                Changed?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[SAVIC] Manifest change listener failed safely: " +
+                    exception);
+            }
         }
 
         private void EnsureLoaded()

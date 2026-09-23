@@ -28,6 +28,8 @@ namespace BistroBuilder.Editor.Savic
                 manifests ?? throw new ArgumentNullException(nameof(manifests));
         }
 
+        internal event Action Changed;
+
         internal SavicProjectInventorySnapshot ScanAndPersist()
         {
             RestaurantPlaceableCatalogDefinition catalog =
@@ -161,7 +163,52 @@ namespace BistroBuilder.Editor.Savic
                 snapshot.issues.Count;
 
             Persist(snapshot);
+            NotifyChanged();
             return snapshot;
+        }
+
+        internal bool TryLoadPersisted(
+            out SavicProjectInventorySnapshot snapshot)
+        {
+            try
+            {
+                snapshot = SavicAtomicFile.ReadJson
+                    <SavicProjectInventorySnapshot>(
+                        layout.ProjectInventorySnapshotPath);
+            }
+            catch (Exception exception)
+            {
+                snapshot = null;
+                Debug.LogWarning(
+                    "[SAVIC] Persisted inventory could not be read safely: " +
+                    exception.Message);
+                return false;
+            }
+
+            if (snapshot == null)
+                return false;
+
+            snapshot.items ??=
+                new List<SavicProjectInventoryItemRecord>();
+
+            snapshot.issues ??=
+                new List<SavicProjectInventoryIssueRecord>();
+
+            return true;
+        }
+
+        private void NotifyChanged()
+        {
+            try
+            {
+                Changed?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[SAVIC] Inventory change listener failed safely: " +
+                    exception);
+            }
         }
 
         private Dictionary<string, string> BuildSavicIdentityMap()
@@ -436,20 +483,14 @@ namespace BistroBuilder.Editor.Savic
             SavicProjectInventorySnapshot snapshot)
         {
             string directory =
-                Path.Combine(
-                    layout.CacheRoot,
-                    "Inventory");
+                Path.GetDirectoryName(
+                    layout.ProjectInventorySnapshotPath);
 
             Directory.CreateDirectory(
                 directory);
 
-            string path =
-                Path.Combine(
-                    directory,
-                    "project-inventory.json");
-
             SavicAtomicFile.WriteJson(
-                path,
+                layout.ProjectInventorySnapshotPath,
                 snapshot);
         }
     }
