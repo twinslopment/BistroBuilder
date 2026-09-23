@@ -7,8 +7,8 @@
 - Navegación de secciones **horizontal en la parte superior**: Actividad, Economía, Personal y demás secciones globales.
 - `Actividad` funciona como feed compacto a la izquierda.
 - Panel contextual a la derecha, compacto y expandible según selección.
-- Franja operativa inferior para acciones del contexto actual.
-- Velocidad, `Caja` y demás indicadores globales operativos se integran en la zona superior; no crear un menú lateral permanente.
+- Barra horizontal inferior operativa para el modo normal/servicio: integra de forma permanente **Velocidad**, `Caja` y **Climatología**, además de las acciones del contexto actual cuando procedan.
+- La zona superior queda reservada a la navegación global y a los elementos superiores ya definidos; **Velocidad, `Caja` y Climatología no se ubican en la barra superior** ni en un menú lateral permanente.
 
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.
