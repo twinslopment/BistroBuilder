@@ -251,6 +251,62 @@ public sealed class WaiterTaskCoordinator : MonoBehaviour
         lineExecutionService;
 
     /// <summary>
+    /// Consulta una tarea activa de mesa sin exponer la cola interna.
+    /// WaiterTaskCoordinator mantiene la autoridad operativa.
+    /// </summary>
+    public bool TryGetActiveTableTask(
+        WaiterTaskType type,
+        RestaurantTable table,
+        out WaiterTask task)
+    {
+        task = null;
+
+        if (table == null || type == WaiterTaskType.DeliverFood)
+            return false;
+
+        EnsureTaskQueueCreated();
+
+        return taskQueue.TryGetActiveTask(
+            type,
+            table,
+            null,
+            out task
+        );
+    }
+
+    /// <summary>
+    /// Eleva o reduce la prioridad de una tarea de mesa solo mientras sigue
+    /// pendiente. La mutación pasa por la cola autoritativa y solicita un
+    /// nuevo reparto al cambiar.
+    /// </summary>
+    public bool TryChangePendingTableTaskPriority(
+        WaiterTaskType type,
+        RestaurantTable table,
+        WaiterTaskPriority newPriority,
+        out WaiterTaskPriority previousPriority)
+    {
+        previousPriority = WaiterTaskPriority.Normal;
+
+        if (!TryGetActiveTableTask(type, table, out WaiterTask task) ||
+            task == null ||
+            !task.IsPending)
+        {
+            return false;
+        }
+
+        previousPriority = task.Priority;
+
+        if (previousPriority == newPriority)
+            return true;
+
+        if (!taskQueue.TryChangePriority(task, newPriority))
+            return false;
+
+        RequestDispatch();
+        return true;
+    }
+
+    /// <summary>
     /// Cálculo puro utilizado por runtime y autotest. Devuelve los segundos
     /// no escalados que aún faltan para que una línea ancla pueda salir.
     /// </summary>

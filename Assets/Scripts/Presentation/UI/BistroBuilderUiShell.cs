@@ -69,6 +69,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private BistroBuilderAdvancedKitchenService kitchen;
     private BistroBuilderAdvancedFrontOfHouseService frontOfHouse;
     private BistroBuilderCustomerExperienceTrackingService experience;
+    private BistroBuilderTableContextActionService tableContextActions;
     private RestaurantEditInteractionController editController;
     private RestaurantServiceStateService serviceState;
     private BistroBuilderEndOfDayService endOfDay;
@@ -844,22 +845,37 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
         RestaurantTable selected = !editing && !HasManagementScreenOpen && tableSelection != null ? tableSelection.SelectedTable : null;
-        if (serviceActionButton != null) serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen && selected == null);
         if (contextPanel != null) contextPanel.gameObject.SetActive(selected != null);
 
         if (selected != null)
         {
+            BistroBuilderBillContextActionSnapshot billSnapshot = default;
+            bool hasBillSnapshot = tableContextActions != null &&
+                tableContextActions.TryGetBillSnapshot(selected, out billSnapshot);
+
             if (contextTitle != null) contextTitle.text = "Mesa " + selected.TableId;
-            if (contextBody != null) contextBody.text = BuildSelectedTableContext(selected);
+            if (contextBody != null) contextBody.text = BuildSelectedTableContext(selected, hasBillSnapshot, billSnapshot);
+
             if (serviceActionButton != null && serviceActionLabel != null)
             {
-                bool hasGuests = selected.AssignedCustomerGroup != null;
-                serviceActionButton.interactable = hasGuests;
-                serviceActionLabel.text = hasGuests ? "ABRIR COMANDAS" :
-                    selected.CurrentState == TableState.Dirty ? "REQUIERE LIMPIEZA" : "MESA LIBRE";
+                bool showAccelerate = hasBillSnapshot && billSnapshot.CanAccelerate;
+                serviceActionButton.gameObject.SetActive(showAccelerate);
+                serviceActionButton.interactable = showAccelerate;
+                serviceActionLabel.text = "AGILIZAR CUENTA";
+
+                Image actionImage = serviceActionButton.targetGraphic as Image;
+                if (actionImage != null)
+                {
+                    actionImage.color = billSnapshot.TimingState == BistroBuilderServiceTimingState.Attention
+                        ? BistroBuilderUiTokens.Primary
+                        : BistroBuilderUiTokens.Attention;
+                }
             }
             return;
         }
+
+        if (serviceActionButton != null)
+            serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen);
 
         if (contextTitle != null) contextTitle.text = "Contexto";
         if (contextBody != null)
@@ -874,6 +890,9 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         }
 
         if (serviceActionButton == null || serviceActionLabel == null) return;
+        Image defaultActionImage = serviceActionButton.targetGraphic as Image;
+        if (defaultActionImage != null)
+            defaultActionImage.color = BistroBuilderUiTokens.Primary;
         RestaurantServiceState state = serviceState != null ? serviceState.CurrentState : RestaurantServiceState.Closed;
         serviceActionButton.interactable = state == RestaurantServiceState.Open && endOfDay != null;
         serviceActionLabel.text = state == RestaurantServiceState.Open ? "FIN DE SERVICIO" :
@@ -881,7 +900,10 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             state == RestaurantServiceState.Preparing ? "PREPARANDO SERVICIO" : "RESTAURANTE CERRADO";
     }
 
-    private string BuildSelectedTableContext(RestaurantTable table)
+    private string BuildSelectedTableContext(
+        RestaurantTable table,
+        bool hasBillSnapshot,
+        BistroBuilderBillContextActionSnapshot billSnapshot)
     {
         string state = TableStateLabel(table.CurrentState);
         CustomerGroup group = table.AssignedCustomerGroup;
@@ -894,11 +916,30 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             case TableState.Dirty: guidance = "Necesita limpieza antes de volver a estar disponible."; break;
             case TableState.WaitingForWaiter: guidance = "El grupo espera atenci\u00F3n del camarero."; break;
             case TableState.WaitingForFood: guidance = "La comanda est\u00E1 en curso. Doble clic para revisar comandas."; break;
-            case TableState.WaitingForBill: guidance = "La mesa espera la cuenta."; break;
+            case TableState.WaitingForBill:
+                if (!hasBillSnapshot)
+                    guidance = "La mesa espera la cuenta.";
+                else if (billSnapshot.IsBeingHandled)
+                    guidance = "Cuenta en camino.";
+                else if (billSnapshot.IsAlreadyAccelerated)
+                    guidance = "Cuenta priorizada. Se atenderá en cuanto haya un camarero disponible.";
+                else if (billSnapshot.CanAccelerate)
+                    guidance = "La espera requiere atención. Puedes agilizar la cuenta.";
+                else
+                    guidance = "La cuenta está dentro del tiempo normal de servicio.";
+                break;
             case TableState.Free: guidance = "Mesa disponible para un nuevo grupo."; break;
             default: guidance = group != null ? "Doble clic para abrir las comandas de servicio." : "Sin incidencias activas."; break;
         }
-        return "ESTADO  " + state + "\n" + occupancy + "\n\n" + guidance +
+        string timingLine = string.Empty;
+        if (hasBillSnapshot && table.CurrentState == TableState.WaitingForBill)
+        {
+            int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(billSnapshot.WaitSeconds));
+            timingLine = "\nEspera cuenta: " + (totalSeconds / 60).ToString("0") + ":" +
+                (totalSeconds % 60).ToString("00") + " · " + TimingStateLabel(billSnapshot.TimingState);
+        }
+
+        return "ESTADO  " + state + "\n" + occupancy + timingLine + "\n\n" + guidance +
             "\n\n<color=#A59B8C>Esc o clic en espacio vac\u00EDo para deseleccionar.</color>";
     }
 
@@ -926,9 +967,19 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         ResolveDependencies();
         RestaurantTable selected = tableSelection != null ? tableSelection.SelectedTable : null;
-        if (selected != null && selected.AssignedCustomerGroup != null)
+        if (selected != null)
         {
-            HandleTableActivated(selected);
+            string actionError = string.Empty;
+            if (tableContextActions != null &&
+                tableContextActions.TryAccelerateBill(selected, out actionError))
+            {
+                AddActivity("Mesa " + selected.TableId + " · cuenta priorizada.");
+            }
+            else if (!string.IsNullOrWhiteSpace(actionError))
+            {
+                AddActivity("Mesa " + selected.TableId + " · " + actionError);
+            }
+            RefreshReadModels();
             return;
         }
         if (endOfDay == null)
@@ -958,6 +1009,19 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         }
     }
 
+    private static string TimingStateLabel(BistroBuilderServiceTimingState state)
+    {
+        switch (state)
+        {
+            case BistroBuilderServiceTimingState.Attention: return "Atención";
+            case BistroBuilderServiceTimingState.Delay: return "Demora";
+            case BistroBuilderServiceTimingState.Incident: return "Incidencia";
+            case BistroBuilderServiceTimingState.Critical: return "Crítico";
+            case BistroBuilderServiceTimingState.Resolution: return "Resolución";
+            default: return "Normal";
+        }
+    }
+
     private static string ServiceStateLabel(RestaurantServiceState state)
     {
         switch (state)
@@ -979,6 +1043,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (kitchen == null) kitchen = FindScene<BistroBuilderAdvancedKitchenService>();
         if (frontOfHouse == null) frontOfHouse = FindScene<BistroBuilderAdvancedFrontOfHouseService>();
         if (experience == null) experience = FindScene<BistroBuilderCustomerExperienceTrackingService>();
+        if (tableContextActions == null) tableContextActions = FindScene<BistroBuilderTableContextActionService>();
         if (editController == null) editController = FindScene<RestaurantEditInteractionController>();
         if (serviceState == null) serviceState = FindScene<RestaurantServiceStateService>();
         if (endOfDay == null) endOfDay = FindScene<BistroBuilderEndOfDayService>();

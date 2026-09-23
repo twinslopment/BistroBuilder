@@ -88,6 +88,26 @@ Comportamiento esperado:
 - **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
 - Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
 
+#### Primera vertical implementable: espera de cuenta
+
+La primera integración runtime se limita deliberadamente a **espera de cuenta + `Agilizar cuenta`**. No modifica todavía el sistema avanzado de camareros ni introduce tiempos de platos.
+
+Tuning provisional de prueba para `BillDelivery`:
+
+| Referencia | Tiempo |
+|---|---:|
+| Objetivo | 90 s |
+| **Atención** | 120 s |
+| **Demora** | 210 s |
+| **Incidencia** | 300 s |
+| **Crítico** | 420 s |
+
+Estos valores son **datos provisionales de balance**, no cifras definitivas de diseño. Deben permanecer configurables en `ServiceTimingCatalog` y ajustarse mediante playtests.
+
+La espera canónica se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
+
+Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.
+
 ### Acciones pendientes de ratificación
 
 Estas acciones son propuestas y **no se consideran todavía cerradas**:

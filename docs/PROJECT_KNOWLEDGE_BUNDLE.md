@@ -1205,7 +1205,7 @@ Category: CANONICAL
 ## Clientes y mesas
 El servicio debe mantener grupos/clientes, seating, consumo individual y compartido, cuenta y limpieza. La ficha contextual del cliente/mesa expone información básica y acciones operativas como `Disculpa`, `Explicar demora` o `Agilizar cuenta` cuando proceda.
 
-Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción.
+Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo.
 
 ## Comandas
 La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.
@@ -1391,6 +1391,26 @@ Comportamiento esperado:
 - Cuando un camarero ya ha asumido efectivamente la tarea de cuenta, la acción deja de estar disponible y la UI puede mostrar un estado informativo como `Cuenta en camino`.
 - **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
 - Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
+
+#### Primera vertical implementable: espera de cuenta
+
+La primera integración runtime se limita deliberadamente a **espera de cuenta + `Agilizar cuenta`**. No modifica todavía el sistema avanzado de camareros ni introduce tiempos de platos.
+
+Tuning provisional de prueba para `BillDelivery`:
+
+| Referencia | Tiempo |
+|---|---:|
+| Objetivo | 90 s |
+| **Atención** | 120 s |
+| **Demora** | 210 s |
+| **Incidencia** | 300 s |
+| **Crítico** | 420 s |
+
+Estos valores son **datos provisionales de balance**, no cifras definitivas de diseño. Deben permanecer configurables en `ServiceTimingCatalog` y ajustarse mediante playtests.
+
+La espera canónica se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
+
+Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.
 
 ### Acciones pendientes de ratificación
 
