@@ -143,12 +143,12 @@ public static class ActivityEventCatalog
         Add(ActivityEventId.FohStateSlowed, "Ritmo reducido", "Entrada controlada", ActivitySeverity.Attention, "activity.flow.slowed", ActivityTargetType.Entrance, isStateEvent: true);
         Add(ActivityEventId.FohStateRecovered, "Entrada fluida", "Ritmo recuperado", ActivitySeverity.Positive, "activity.flow.recovered", ActivityTargetType.Entrance, isStateEvent: true);
         Add(ActivityEventId.WaitlistGroupAdded, "Nuevo grupo en espera", "{guests} personas", ActivitySeverity.Info, "activity.wait.group", ActivityTargetType.WaitTicket);
-        Add(ActivityEventId.WaitlistLongWait, "Espera elevada", "{minutes} min", ActivitySeverity.Critical, "activity.wait.alert", ActivityTargetType.WaitTicket);
+        Add(ActivityEventId.WaitlistLongWait, "Espera elevada", "{minutes} min", ActivitySeverity.Critical, "activity.wait.alert", ActivityTargetType.WaitTicket, isStateEvent: true);
         Add(ActivityEventId.WaitlistTableAvailable, "Mesa disponible", "Grupo en espera puede sentarse", ActivitySeverity.Opportunity, "activity.table.available", ActivityTargetType.WaitTicket);
         Add(ActivityEventId.WaitlistSentToBar, "Espera en barra", "{guests} personas", ActivitySeverity.Info, "activity.bar.wait", ActivityTargetType.WaitTicket);
         Add(ActivityEventId.WaitlistGroupLeft, "Grupo perdido", "Abandona la espera", ActivitySeverity.Attention, "activity.wait.left", ActivityTargetType.WaitTicket);
-        Add(ActivityEventId.BarSaturated, "Barra saturada", "No absorbe más espera", ActivitySeverity.Critical, "activity.bar.saturated", ActivityTargetType.Bar);
-        Add(ActivityEventId.ZoneStaffShortage, "Falta personal", "{zone}", ActivitySeverity.Critical, "activity.staff.shortage", ActivityTargetType.Zone, aggregation: ActivityAggregationRule.StaffShortageSimultaneous);
+        Add(ActivityEventId.BarSaturated, "Barra saturada", "No absorbe más espera", ActivitySeverity.Critical, "activity.bar.saturated", ActivityTargetType.Bar, isStateEvent: true);
+        Add(ActivityEventId.ZoneStaffShortage, "Falta personal", "{zone}", ActivitySeverity.Critical, "activity.staff.shortage", ActivityTargetType.Zone, aggregation: ActivityAggregationRule.StaffShortageSimultaneous, isStateEvent: true);
         Add(ActivityEventId.TableNeedsReset, "Mesa pendiente", "Limpieza/preparación", ActivitySeverity.Attention, "activity.table.reset", ActivityTargetType.Table);
         Add(ActivityEventId.TableReady, "Mesa preparada", "Disponible de nuevo", ActivitySeverity.Positive, "activity.table.available", ActivityTargetType.Table);
 
@@ -166,8 +166,8 @@ public static class ActivityEventCatalog
         Add(ActivityEventId.SupplierDeliveryReceived, "Entrega recibida", "{supplier}", ActivitySeverity.Positive, "activity.supplier.delivery", ActivityTargetType.Supplier, featureGate: "suppliers");
         Add(ActivityEventId.SupplierIssue, "Problema de suministro", "{supplier}", ActivitySeverity.Attention, "activity.supplier.issue", ActivityTargetType.Supplier, featureGate: "suppliers");
 
-        Add(ActivityEventId.StaffOverloaded, "Empleado saturado", "{employee}", ActivitySeverity.Attention, "activity.staff.overloaded", ActivityTargetType.Employee, featureGate: "staff");
-        Add(ActivityEventId.StaffZoneUncovered, "Zona sin cobertura", "{zone}", ActivitySeverity.Critical, "activity.staff.shortage", ActivityTargetType.Zone, featureGate: "staff");
+        Add(ActivityEventId.StaffOverloaded, "Empleado saturado", "{employee}", ActivitySeverity.Attention, "activity.staff.overloaded", ActivityTargetType.Employee, featureGate: "staff", isStateEvent: true);
+        Add(ActivityEventId.StaffZoneUncovered, "Zona sin cobertura", "{zone}", ActivitySeverity.Critical, "activity.staff.shortage", ActivityTargetType.Zone, featureGate: "staff", isStateEvent: true);
         Add(ActivityEventId.StaffSupportNeeded, "Apoyo requerido", "{zone}", ActivitySeverity.Attention, "activity.staff.support", ActivityTargetType.Zone, featureGate: "staff");
         Add(ActivityEventId.StaffUpsellOpportunity, "Venta sugerida", "Mesa {table}", ActivitySeverity.Opportunity, "activity.opportunity.upsell", ActivityTargetType.Table, featureGate: "staff", aggregation: ActivityAggregationRule.UpsellByZone);
 

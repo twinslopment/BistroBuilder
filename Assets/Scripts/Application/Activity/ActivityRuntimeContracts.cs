@@ -331,6 +331,7 @@ public sealed class ActivityEventInstance
     public string eventId = string.Empty;
     public ActivityTargetRef target = new ActivityTargetRef();
     public ActivityEventPayload payload = new ActivityEventPayload();
+    public string stateFamily = string.Empty;
     public int dayIndex = 1;
     public double minuteOfDay;
     public bool resolved;
@@ -348,6 +349,7 @@ public sealed class ActivityEventInstance
             eventId = eventId ?? string.Empty,
             target = target != null ? target.DeepClone() : new ActivityTargetRef(),
             payload = payload != null ? payload.DeepClone() : new ActivityEventPayload(),
+            stateFamily = stateFamily ?? string.Empty,
             dayIndex = dayIndex,
             minuteOfDay = minuteOfDay,
             resolved = resolved,

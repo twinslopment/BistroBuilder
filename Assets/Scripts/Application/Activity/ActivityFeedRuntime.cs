@@ -445,6 +445,11 @@ public sealed class ActivityFeedService : MonoBehaviour, IActivityEventPublisher
         if (current != null && !current.resolved)
             ResolveInternal(current, false);
 
+        // Una transición real (incluida salir y volver a entrar) debe poder
+        // emitirse aunque ocurra dentro de la ventana de deduplicación.
+        latestByDedupKey.Remove(
+            BuildDedupKey(eventId.Value, normalizedTarget));
+
         ActivityPublishResult result = PublishAt(
             eventId,
             payload,
@@ -453,7 +458,11 @@ public sealed class ActivityFeedService : MonoBehaviour, IActivityEventPublisher
             CurrentMinuteOfDay());
 
         if (result.Event != null)
+        {
+            result.Event.stateFamily =
+                (stateFamily ?? string.Empty).Trim().ToLowerInvariant();
             activeStateByKey[stateKey] = result.Event;
+        }
 
         if (current != null || result.Accepted)
             Changed?.Invoke();
@@ -468,6 +477,8 @@ public sealed class ActivityFeedService : MonoBehaviour, IActivityEventPublisher
             return false;
 
         activeStateByKey.Remove(key);
+        latestByDedupKey.Remove(
+            BuildDedupKey(current.eventId, current.target));
         bool changed = ResolveInternal(current, false);
         if (changed)
             Changed?.Invoke();
@@ -618,9 +629,9 @@ public sealed class ActivityFeedService : MonoBehaviour, IActivityEventPublisher
             ActivityEventInstance item = restored[i];
             events.Add(item);
             nextSequence = Math.Max(nextSequence, item.sequence + 1);
-            latestByDedupKey[BuildDedupKey(item.eventId, item.target)] = item;
         }
 
+        RebuildIndexes();
         Changed?.Invoke();
         return true;
     }
@@ -701,6 +712,13 @@ public sealed class ActivityFeedService : MonoBehaviour, IActivityEventPublisher
             if (item == null)
                 continue;
             latestByDedupKey[BuildDedupKey(item.eventId, item.target)] = item;
+
+            if (!item.resolved && !string.IsNullOrWhiteSpace(item.stateFamily))
+            {
+                activeStateByKey[
+                    BuildStateKey(item.stateFamily, item.target)
+                ] = item;
+            }
         }
     }
 
