@@ -1205,6 +1205,8 @@ Category: CANONICAL
 ## Clientes y mesas
 El servicio debe mantener grupos/clientes, seating, consumo individual y compartido, cuenta y limpieza. La ficha contextual del cliente/mesa expone información básica y acciones operativas como `Disculpa`, `Explicar demora` o `Agilizar cuenta` cuando proceda.
 
+Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción.
+
 ## Comandas
 La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.
 
@@ -1296,6 +1298,139 @@ El input de cámara solo debe actuar cuando procede del Game View y respetar UI 
 
 ---
 
+## SOURCE: docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md
+
+Category: CANONICAL
+
+# Bistro Builder — Catálogo canónico de acciones contextuales
+
+**Estado:** diseño vinculante en construcción. Este documento fija el contrato de UI y gameplay de las acciones contextuales del modo normal/servicio. Las acciones concretas se ampliarán por contexto sin duplicar lógica de dominio.
+
+## Principio de la barra inferior
+
+En modo normal/servicio, la barra horizontal inferior contiene de forma permanente **Velocidad**, `Caja` y **Climatología**. A continuación dispone de una zona de **acciones contextuales**.
+
+La zona contextual no es un menú fijo ni debe llenarse por defecto. Solo muestra acciones que tengan sentido para el elemento seleccionado y para su estado actual. Como regla de diseño, se priorizan aproximadamente **3–4 acciones visibles simultáneamente**. Si no existe una intervención útil, la zona puede permanecer vacía.
+
+Las acciones contextuales no saltan por encima de los sistemas de gameplay. La UI emite intención/comandos; camareros, cocina, comandas, satisfacción, finanzas u otras autoridades siguen resolviendo el resultado.
+
+## Estados canónicos de espera/servicio
+
+Las esperas se interpretan mediante estados semánticos comunes:
+
+| Estado | Significado | Consecuencia de UI |
+|---|---|---|
+| **Normal** | La fase está dentro del tiempo razonable esperado. | No se ofrece una intervención por demora. |
+| **Atención** | La fase se acerca al límite razonable. | Puede ofrecerse una acción preventiva si existe una decisión útil. |
+| **Demora** | Se ha superado el tiempo esperado de la fase. | Se habilitan acciones de gestión de la demora. |
+| **Incidencia** | La demora ya es grave o se ha producido un fallo explícito. | Se habilitan acciones de recuperación y consecuencias de satisfacción. |
+| **Crítico** | Problema grave, repetido o muy deteriorado. | Alta prioridad visual/operativa y recuperación urgente. |
+| **Resolución** | La causa ha sido resuelta y el sistema está cerrando la incidencia. | Las acciones dejan de ofrecerse cuando ya no tienen objeto. |
+
+Una **incidencia** puede originarse de dos formas:
+
+1. **Por tiempo:** una tarea supera de forma suficiente su margen razonable.
+2. **Por evento:** ocurre un fallo real aunque no haya transcurrido un tiempo largo, por ejemplo un plato incorrecto o una atención fallida.
+
+Los contadores empiezan cuando existe realmente la necesidad: una mesa está lista para pedir, una petición de camarero ha sido emitida, una cuenta ha sido solicitada, etc. No se cronometra una fase antes de que exista su obligación operativa.
+
+## Fuente única de tiempos
+
+No se deben hardcodear umbrales independientes en cada pantalla, acción o sistema. La intención es disponer de una fuente canónica configurable, conceptualmente **ServiceTimingCatalog**, consultada por UI y gameplay.
+
+Para fases generales del servicio puede definir:
+
+- atención/recepción inicial;
+- toma de comanda;
+- entrega de bebida;
+- petición de camarero;
+- retirada/atención posterior;
+- entrega de cuenta;
+- cobro;
+- otras fases equivalentes que se ratifiquen.
+
+Cada entrada podrá expresar al menos un objetivo y umbrales para **Atención**, **Demora** e **Incidencia**. Los valores concretos son datos de balance y no se consideran cerrados hasta probarlos en juego.
+
+## Cocina y carta incompleta
+
+No es requisito disponer ahora de un tiempo definitivo para cada plato. El sistema debe separar infraestructura de contenido de balance.
+
+La resolución de tiempo esperado de un plato seguirá esta jerarquía:
+
+`tiempo específico del plato -> perfil de preparación -> valor global por defecto`
+
+Se prevé un concepto **DishPreparationProfile** para agrupar platos por comportamiento de preparación. Ejemplos de categorías como Rápido/Estándar/Lento son perfiles de diseño, no valores definitivos todavía.
+
+Reglas:
+
+- No inventar tiempos individuales para platos que aún no están diseñados.
+- Todo plato debe poder funcionar aunque solo herede el perfil/default.
+- Más adelante un plato puede sobrescribir su tiempo cuando exista una razón de diseño.
+- Los umbrales de Atención/Demora/Incidencia se derivan del tiempo esperado; no se duplican manualmente dentro de cada plato.
+- La estimación puede incorporar la carga/cola real de Cocina cuando exista una previsión fiable.
+- El balance final se valida jugando; no se cierra únicamente sobre números teóricos.
+
+## Contexto Mesa / Cliente
+
+### Acciones ya ratificadas
+
+| Acción | Condición semántica de aparición | Efecto de diseño |
+|---|---|---|
+| **Disculpa** | Existe una **Incidencia** o un evento negativo concreto que admite recuperación. | Intervención de recuperación de satisfacción. No elimina la causa del problema. |
+| **Explicar demora** | Existe una **Demora** activa sobre una necesidad relevante de la mesa. | Gestiona la expectativa/impacto de la espera mientras la causa persiste. No acelera físicamente el servicio. |
+| **Agilizar cuenta** | La mesa ha solicitado la cuenta y existe una tarea real de cuenta/cobro pendiente. | Eleva la prioridad operativa de las tareas relacionadas con preparar/entregar/cobrar la cuenta. |
+
+Comportamiento esperado:
+
+- Una mesa recién sentada y atendida dentro de tiempos normales no muestra estas acciones.
+- **Explicar demora** puede aparecer antes que **Disculpa**: es una intervención preventiva cuando ya existe demora pero todavía no una incidencia grave.
+- **Disculpa** aparece cuando el problema ya ha producido una incidencia o existe un fallo explícito.
+- **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
+- Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
+
+### Acciones pendientes de ratificación
+
+Estas acciones son propuestas y **no se consideran todavía cerradas**:
+
+- **Ver comanda**: navegación directa al detalle de la comanda activa de la mesa.
+- **Priorizar atención**: elevar temporalmente la prioridad de una tarea de camarero pendiente sin asignar ni teletransportar manualmente a un camarero.
+
+No incorporar todavía como acciones canónicas sin diseño adicional:
+
+- Cobrar ahora.
+- Servir ahora.
+- Limpiar mesa.
+- Cambiar de mesa.
+- Llamar refuerzos.
+- Ofrecer compensación económica.
+
+Estas opciones podrían saltarse autoridades existentes o requieren reglas económicas/espaciales adicionales.
+
+## Contexto Cocina
+
+Acciones ya aprobadas por el sistema de servicio:
+
+- **Reducir entrada**.
+- **Pausar nuevas comandas** por plato.
+- **Priorizar comanda**, con un máximo de 3 prioridades simultáneas.
+
+Su aparición exacta en la barra contextual deberá derivarse del estado y selección de Cocina/Comanda, sin duplicar las reglas de la autoridad de cocina.
+
+## Regla de implementación incremental
+
+No implementar de una vez carta completa, incidentes, satisfacción, tiempos, prioridades y UI. El orden acordado es:
+
+1. Cerrar el catálogo de acciones y sus **condiciones semánticas**.
+2. Implementar el contrato/configuración de tiempos generales de servicio.
+3. Preparar **DishPreparationProfile** y el fallback global, sin completar todavía toda la carta.
+4. Asignar perfiles/tiempos a los platos a medida que la carta se diseña.
+5. Ajustar umbrales y tiempos mediante pruebas de juego.
+6. Integrar las acciones con sus sistemas reales, sin crear lógica paralela en Presentation.
+
+La ausencia temporal de tiempos específicos por plato no debe bloquear el desarrollo ni obligar a introducir datos ficticios.
+
+---
+
 ## SOURCE: docs/30_UI_UX/UI_UX_DEFINITIVE.md
 
 Category: CANONICAL
@@ -1309,7 +1444,7 @@ Category: CANONICAL
 - Navegación de secciones **horizontal en la parte superior**: Actividad, Economía, Personal y demás secciones globales.
 - `Actividad` funciona como feed compacto a la izquierda.
 - Panel contextual a la derecha, compacto y expandible según selección.
-- Barra horizontal inferior operativa para el modo normal/servicio: integra de forma permanente **Velocidad**, `Caja` y **Climatología**, además de las acciones del contexto actual cuando procedan.
+- Barra horizontal inferior operativa para el modo normal/servicio: integra de forma permanente **Velocidad**, `Caja` y **Climatología**, además de las acciones del contexto actual cuando procedan. El catálogo canónico de estas acciones vive en `CONTEXTUAL_ACTION_CATALOG.md`.
 - La zona superior queda reservada a la navegación global y a los elementos superiores ya definidos; **Velocidad, `Caja` y Climatología no se ubican en la barra superior** ni en un menú lateral permanente.
 
 ## Interacción
@@ -1321,7 +1456,7 @@ Category: CANONICAL
 - Cambiar selección debe transicionar el contexto sin reconstruir visualmente toda la interfaz.
 
 ## Estados visuales
-HUD operativo por estados **Normal / Atención / Crítico / Resolución**. Verde = correcto; ámbar = atención; rojo solo para crítico; azul/gris = neutro. Notificaciones agrupadas, sin spam ni modales rutinarios. `Actividad` muestra aproximadamente 5–8 eventos útiles.
+HUD operativo por estados **Normal / Atención / Demora / Incidencia / Crítico / Resolución**. Verde = correcto; ámbar = atención/demora; rojo se reserva para incidencia/crítico; azul/gris = neutro. Las condiciones semánticas y las acciones asociadas se detallan en `CONTEXTUAL_ACTION_CATALOG.md`. Notificaciones agrupadas, sin spam ni modales rutinarios. `Actividad` muestra aproximadamente 5–8 eventos útiles.
 
 ## Tipografía y tono
 Recoleta para títulos/encabezados cuando encaje con la identidad visual; sans limpia tipo Inter para interfaz. Estética elegante, sobria y legible; evitar barroquismo y ornamentación que compita con el restaurante.
@@ -1461,6 +1596,8 @@ Category: CANONICAL
 | D-031 | VIGENTE | Toda propuesta automática requiere preview y aplicación explícita; reutilizar acabados canónicos tiene prioridad sobre generar nuevos. |
 | D-032 | VIGENTE | Si la semántica de una superficie es incierta, el sistema solicita clasificación y no asigna materiales a ciegas. |
 | D-033 | VIGENTE | En modo normal/servicio, la barra horizontal inferior integra **Velocidad**, `Caja` y **Climatología**, además de las acciones contextuales que correspondan. Estos tres elementos no se colocan en la barra superior. |
+| D-034 | VIGENTE | Los tiempos y estados de espera del servicio se definen desde configuración canónica compartida; no se hardcodean por pantalla/acción. Cocina admite `tiempo específico -> perfil de preparación -> default global`, por lo que la carta puede completarse progresivamente sin inventar tiempos de platos aún no diseñados. |
+| D-035 | VIGENTE | Las acciones contextuales aparecen solo cuando existe una condición semántica válida del objeto seleccionado; no forman un menú fijo. `Disculpa`, `Explicar demora` y `Agilizar cuenta` están ratificadas para Mesa/Cliente; nuevas acciones permanecen como propuestas hasta decisión explícita. |
 
 ---
 
