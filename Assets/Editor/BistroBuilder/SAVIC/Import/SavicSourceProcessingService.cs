@@ -42,8 +42,7 @@ namespace BistroBuilder.Editor.Savic
             "Materials.SemanticProfile";
 
         private readonly SavicManifestRepository manifests;
-        private readonly SavicTablePublisher tablePublisher;
-        private readonly SavicChairPublisher chairPublisher;
+        private readonly SavicModelFamilyRegistry familyRegistry;
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
@@ -57,15 +56,14 @@ namespace BistroBuilder.Editor.Savic
             this.manifests =
                 manifests ?? throw new ArgumentNullException(nameof(manifests));
 
-            tablePublisher =
-                new SavicTablePublisher(
-                    layout,
-                    this.manifests);
-
-            chairPublisher =
-                new SavicChairPublisher(
-                    layout,
-                    this.manifests);
+            familyRegistry =
+                new SavicModelFamilyRegistry(
+                    new SavicTableFamilyModule(
+                        layout,
+                        this.manifests),
+                    new SavicChairFamilyModule(
+                        layout,
+                        this.manifests));
 
             adapters.Add(
                 new SavicUnityModelSourceImportAdapter(layout));
@@ -393,21 +391,10 @@ namespace BistroBuilder.Editor.Savic
                           resolvedMaterial.Evidence,
                     SavicMaterialSemanticResolver.Version);
 
-                bool classifiedAsTable =
-                    string.Equals(
-                        classification.type,
-                        "Table",
-                        StringComparison.Ordinal);
-
-                bool classifiedAsChair =
-                    string.Equals(
-                        classification.type,
-                        "Chair",
-                        StringComparison.Ordinal);
-
                 bool supportedForAutomaticPublication =
-                    classifiedAsTable ||
-                    classifiedAsChair;
+                    familyRegistry.TryResolve(
+                        classification.type,
+                        out ISavicModelFamilyModule familyModule);
 
                 SavicManifestMutations.UpsertValidation(
                     manifest,
@@ -418,166 +405,44 @@ namespace BistroBuilder.Editor.Savic
                     supportedForAutomaticPublication
                         ? "INFO"
                         : "WARNING",
-                    classifiedAsTable
-                        ? "Model classified as Table with sufficient confidence."
-                        : classifiedAsChair
-                            ? "Model classified as Chair with sufficient confidence."
-                            : "Automatic classification is not strong enough for a supported V1 publication family.",
+                    supportedForAutomaticPublication
+                        ? "Model classified as " +
+                          classification.type +
+                          " and matched a registered SAVIC family module."
+                        : "Automatic classification has no registered V1 publication family module.",
                     SavicContentClassifier.Version);
 
                 if (!supportedForAutomaticPublication)
                 {
-                    manifest.status = "NEEDS_REVIEW";
-                    manifests.Save(manifest);
-
-                    return ReturnFailure(
-                        previousPublishedSnapshot,
-                        manifest,
-                        "Model analyzed but content type requires review.");
-                }
-
-                if (semanticParts == null ||
-                    !semanticParts.automationReady)
-                {
-                    manifest.status = "NEEDS_REVIEW";
-                    manifests.Save(manifest);
-
-                    return ReturnFailure(
-                        previousPublishedSnapshot,
-                        manifest,
-                        classification.type +
-                        " classification passed, but semantic part structure requires review.");
-                }
-
-                if (classifiedAsTable)
-                {
-                    if (!SavicTableAuthoringPlanner.TryPlan(
-                            manifest,
-                            out SavicTableAuthoringRecord tablePlan,
-                            out string tablePlanRejection))
-                    {
-                        manifest.tableAuthoring =
-                            tablePlan;
-
-                        manifest.status =
-                            "NEEDS_REVIEW";
-
-                        SavicManifestMutations.UpsertValidation(
-                            manifest,
-                            "Authoring.TablePlan",
-                            "REVIEW",
-                            "WARNING",
-                            tablePlanRejection,
-                            SavicTableAuthoringPlanner.Version);
-
-                        manifests.Save(
-                            manifest);
-
-                        return ReturnFailure(
-                            previousPublishedSnapshot,
-                            manifest,
-                            tablePlanRejection);
-                    }
-
-                    manifest.tableAuthoring =
-                        tablePlan;
-
-                    manifest.status =
-                        "PLANNED";
-
-                    SavicManifestMutations.UpsertValidation(
-                        manifest,
-                        "Authoring.TablePlan",
-                        "PASS",
-                        "INFO",
-                        tablePlan.planReason,
-                        SavicTableAuthoringPlanner.Version);
-
-                    manifests.Save(
-                        manifest);
-
-                    SavicTablePublicationOutcome publication =
-                        tablePublisher.Publish(
-                            manifest,
-                            root);
-
-                    if (!publication.Succeeded)
-                    {
-                        return ReturnFailure(
-                            previousPublishedSnapshot,
-                            manifest,
-                            publication.Message);
-                    }
-
-                    return new SavicSourceProcessingOutcome(
-                        true,
-                        manifest.status,
-                        publication.Message,
-                        manifest);
-                }
-
-                if (!SavicChairAuthoringPlanner.TryPlan(
-                        manifest,
-                        out SavicChairAuthoringRecord chairPlan,
-                        out string chairPlanRejection))
-                {
-                    manifest.chairAuthoring =
-                        chairPlan;
-
                     manifest.status =
                         "NEEDS_REVIEW";
 
-                    SavicManifestMutations.UpsertValidation(
-                        manifest,
-                        "Authoring.ChairPlan",
-                        "REVIEW",
-                        "WARNING",
-                        chairPlanRejection,
-                        SavicChairAuthoringPlanner.Version);
-
                     manifests.Save(
                         manifest);
 
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        chairPlanRejection);
+                        "Model analyzed but content type has no automatic publication module.");
                 }
 
-                manifest.chairAuthoring =
-                    chairPlan;
-
-                manifest.status =
-                    "PLANNED";
-
-                SavicManifestMutations.UpsertValidation(
-                    manifest,
-                    "Authoring.ChairPlan",
-                    "PASS",
-                    "INFO",
-                    chairPlan.planReason,
-                    SavicChairAuthoringPlanner.Version);
-
-                manifests.Save(
-                    manifest);
-
-                SavicChairPublicationOutcome chairPublication =
-                    chairPublisher.Publish(
+                SavicModelFamilyProcessingOutcome familyOutcome =
+                    familyModule.Process(
                         manifest,
                         root);
 
-                if (!chairPublication.Succeeded)
+                if (!familyOutcome.Succeeded)
                 {
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        chairPublication.Message);
+                        familyOutcome.Message);
                 }
 
                 return new SavicSourceProcessingOutcome(
                     true,
                     manifest.status,
-                    chairPublication.Message,
+                    familyOutcome.Message,
                     manifest);
             }
             catch (Exception exception)
