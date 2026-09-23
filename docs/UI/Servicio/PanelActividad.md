@@ -84,3 +84,11 @@ Elementos visuales fijados:
 - Selector `Hoy` en cabecera.
 - Fondo crema/beige, marco dorado y tarjetas internas claras.
 - Mantener esta composición como referencia visual vigente salvo aprobación explícita de un cambio.
+
+## Especificaciones derivadas
+
+La implementación del panel debe seguir:
+- `ActivityEventCatalog.md` — catálogo canónico de frases, eventos, prioridad, agrupación, persistencia y navegación.
+- `ActivityIconFamilies.md` — 28 familias de iconos que cubren el catálogo sin duplicación visual.
+
+Estas dos especificaciones forman parte del contrato vigente del panel ACTIVIDAD.
