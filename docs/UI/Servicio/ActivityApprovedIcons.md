@@ -38,16 +38,16 @@ Este documento registra exclusivamente iconos aprobados por el usuario. Cada sel
 Ruta Library:
 `/BistroBuilder/UI/Referencias/Servicio/PanelActividad/IconosAprobados/`
 
-## Familias pendientes
+## Familias aprobadas previamente
 
-- `activity.marketing`
-- `activity.opportunity`
-- `activity.trend.up`
+| `activity.marketing` | APROBADO | Referencia aprobada/subida previamente | `—` |
+| `activity.opportunity` | APROBADO | Referencia aprobada/subida previamente | `—` |
+| `activity.trend.up` | APROBADO | Referencia aprobada/subida previamente | `—` |
 
 ## Regla de aprobación
 
 - Una familia solo entra aquí después de aprobación explícita.
 - No reemplazar una imagen aprobada por una variante posterior sin nueva aprobación.
 - La familia debe conservar su `IconKey` estable aunque cambie la implementación técnica.
-- Las familias pendientes continúan definidas en `ActivityIconFamilies.md`.
-- Estado actual: **25 de 28 familias aprobadas**.
+- Las 28 familias quedan aprobadas.
+- Estado actual: **28 de 28 familias aprobadas**.
