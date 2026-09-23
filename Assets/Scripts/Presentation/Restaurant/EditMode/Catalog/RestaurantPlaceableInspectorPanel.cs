@@ -103,8 +103,13 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             return;
         }
 
-        if (currentData != null && !root.gameObject.activeSelf)
-            root.gameObject.SetActive(true);
+        if (currentData != null)
+        {
+            if (!root.gameObject.activeSelf)
+                root.gameObject.SetActive(true);
+
+            root.SetAsLastSibling();
+        }
 
         ApplyScreenBounds();
     }
@@ -505,7 +510,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             rulesContainer.gameObject.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 3f;
         layout.childAlignment = TextAnchor.UpperLeft;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
@@ -591,7 +596,10 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         BindData(currentData);
 
         if (root != null)
+        {
             root.gameObject.SetActive(true);
+            root.SetAsLastSibling();
+        }
     }
 
     private void BindData(RestaurantPlaceableInspectorData data)
