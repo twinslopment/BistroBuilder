@@ -74,13 +74,17 @@ Reglas:
 |---|---|---|
 | **Disculpa** | Existe una **Incidencia** o un evento negativo concreto que admite recuperación. | Intervención de recuperación de satisfacción. No elimina la causa del problema. |
 | **Explicar demora** | Existe una **Demora** activa sobre una necesidad relevante de la mesa. | Gestiona la expectativa/impacto de la espera mientras la causa persiste. No acelera físicamente el servicio. |
-| **Agilizar cuenta** | La mesa ha solicitado la cuenta y existe una tarea real de cuenta/cobro pendiente. | Eleva la prioridad operativa de las tareas relacionadas con preparar/entregar/cobrar la cuenta. |
+| **Agilizar cuenta** | La mesa ha solicitado la cuenta, existe una tarea real de cuenta/cobro pendiente y la espera ha alcanzado al menos el estado **Atención**. | Eleva la prioridad operativa de las tareas relacionadas con preparar/entregar/cobrar la cuenta. |
 
 Comportamiento esperado:
 
 - Una mesa recién sentada y atendida dentro de tiempos normales no muestra estas acciones.
 - **Explicar demora** puede aparecer antes que **Disculpa**: es una intervención preventiva cuando ya existe demora pero todavía no una incidencia grave.
 - **Disculpa** aparece cuando el problema ya ha producido una incidencia o existe un fallo explícito.
+- **Agilizar cuenta** no aparece en estado **Normal**. Se ofrece a partir de **Atención**, para evitar convertirla en una acción rutinaria que el jugador pulse en todas las mesas.
+- En **Atención** se presenta como opción preventiva sin tratamiento de alarma; en **Demora** se destaca visualmente; en **Incidencia** puede coexistir con **Disculpa**.
+- Una vez aplicada la priorización, no se permiten pulsaciones repetidas sobre la misma necesidad de cuenta.
+- Cuando un camarero ya ha asumido efectivamente la tarea de cuenta, la acción deja de estar disponible y la UI puede mostrar un estado informativo como `Cuenta en camino`.
 - **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
 - Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
 
