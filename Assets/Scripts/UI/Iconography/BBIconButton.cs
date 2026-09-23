@@ -27,6 +27,7 @@ namespace BistroBuilder.UI.Iconography
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Image borderImage;
         [SerializeField] private Image selectionUnderline;
+        [SerializeField] private Image hoverGlow;
         [SerializeField] private CanvasGroup canvasGroup;
 
         [Header("State")]
@@ -46,12 +47,15 @@ namespace BistroBuilder.UI.Iconography
         private RectTransform iconRect;
         private Vector3 baseScale = Vector3.one;
         private Vector2 baseAnchoredPosition;
+        private Quaternion baseRotation = Quaternion.identity;
         private Vector3 targetScale = Vector3.one;
         private Vector2 targetAnchoredPosition;
+        private Quaternion targetRotation = Quaternion.identity;
         private Color targetIconColor;
         private Color targetBackgroundColor;
         private Color targetBorderColor;
         private float targetUnderlineAlpha;
+        private float targetGlowAlpha;
         private TMP_Text navigationLabel;
         private bool navigationSurface;
 
@@ -102,10 +106,18 @@ namespace BistroBuilder.UI.Iconography
                 selectionUnderline.color = c;
             }
 
+            if (hoverGlow != null)
+            {
+                var glow = hoverGlow.color;
+                var targetGlow = new Color(BBIconDesignTokens.SelectedSoft.r, BBIconDesignTokens.SelectedSoft.g, BBIconDesignTokens.SelectedSoft.b, targetGlowAlpha);
+                hoverGlow.color = Color.Lerp(glow, targetGlow, t);
+            }
+
             if (iconRect != null)
             {
                 iconRect.localScale = Vector3.Lerp(iconRect.localScale, reduced ? baseScale : targetScale, t);
                 iconRect.anchoredPosition = Vector2.Lerp(iconRect.anchoredPosition, reduced ? baseAnchoredPosition : targetAnchoredPosition, t);
+                iconRect.localRotation = Quaternion.Slerp(iconRect.localRotation, reduced ? baseRotation : targetRotation, t);
             }
         }
 
@@ -130,14 +142,15 @@ namespace BistroBuilder.UI.Iconography
             toggleSelectionOnClick = value;
         }
 
-        public void ConfigureNavigationSurface(Image background, Image underline, TMP_Text label)
+        public void ConfigureNavigationSurface(Image background, Image underline, TMP_Text label, Image glow = null)
         {
             navigationSurface = true;
             backgroundImage = background;
             selectionUnderline = underline;
             navigationLabel = label;
+            hoverGlow = glow;
             normalBackground = new Color(0.067f, 0.094f, 0.106f, 0f);
-            hoverBackground = new Color(0.13f, 0.19f, 0.21f, 0.8f);
+            hoverBackground = new Color(0.18f, 0.15f, 0.10f, 0.34f);
             selectedBackground = new Color(0.16f, 0.16f, 0.11f, 0.7f);
             disabledBackground = normalBackground;
             RefreshState(true);
@@ -221,6 +234,7 @@ namespace BistroBuilder.UI.Iconography
             iconRect = iconImage.rectTransform;
             baseScale = iconRect.localScale;
             baseAnchoredPosition = iconRect.anchoredPosition;
+            baseRotation = iconRect.localRotation;
         }
 
         private void RefreshState(bool immediate)
@@ -238,9 +252,11 @@ namespace BistroBuilder.UI.Iconography
                 : BBIconDesignTokens.Neutral;
 
             targetScale = baseScale;
-            if (navigationSurface) semantic = new Color(0.48f, 0.65f, 0.71f);
             targetAnchoredPosition = baseAnchoredPosition;
+            targetRotation = baseRotation;
             targetUnderlineAlpha = 0f;
+            targetGlowAlpha = 0f;
+            if (navigationSurface) semantic = new Color(0.48f, 0.65f, 0.71f);
 
             switch (state)
             {
@@ -272,6 +288,12 @@ namespace BistroBuilder.UI.Iconography
                     break;
             }
 
+            if (navigationSurface && pointerInside && interactable)
+            {
+                ApplyNavigationHoverPose();
+                targetGlowAlpha = selected ? 0.115f : 0.095f;
+            }
+
             if (!immediate)
                 return;
 
@@ -287,11 +309,52 @@ namespace BistroBuilder.UI.Iconography
                 c.a = targetUnderlineAlpha;
                 selectionUnderline.color = c;
             }
+            if (hoverGlow != null)
+            {
+                var glow = BBIconDesignTokens.SelectedSoft;
+                glow.a = targetGlowAlpha;
+                hoverGlow.color = glow;
+            }
             if (iconRect != null)
             {
                 iconRect.localScale = targetScale;
                 iconRect.anchoredPosition = targetAnchoredPosition;
+                iconRect.localRotation = targetRotation;
             }
+        }
+
+        private void ApplyNavigationHoverPose()
+        {
+            float rotation = 0f;
+            float scale = BBIconDesignTokens.HoverScale;
+            Vector2 offset = Vector2.up * BBIconDesignTokens.HoverLift;
+
+            switch (iconId)
+            {
+                case BBIconId.NavActivity:      rotation = -0.7f; scale = 1.050f; offset = new Vector2(0f, 2.2f); break;
+                case BBIconId.NavStaff:         rotation =  0.0f; scale = 1.040f; offset = new Vector2(0f, 1.6f); break;
+                case BBIconId.NavMenu:          rotation = -1.6f; scale = 1.045f; offset = new Vector2(0.4f, 1.7f); break;
+                case BBIconId.NavInventory:     rotation =  1.0f; scale = 1.040f; offset = new Vector2(0f, 1.4f); break;
+                case BBIconId.NavSuppliers:     rotation =  0.0f; scale = 1.035f; offset = new Vector2(2.0f, 1.0f); break;
+                case BBIconId.NavReservations:  rotation = -1.3f; scale = 1.045f; offset = new Vector2(-0.5f, 1.7f); break;
+                case BBIconId.NavEconomy:       rotation =  1.2f; scale = 1.045f; offset = new Vector2(0.5f, 1.6f); break;
+                case BBIconId.NavMarketing:     rotation = -2.0f; scale = 1.050f; offset = new Vector2(1.2f, 1.5f); break;
+                case BBIconId.NavReputation:    rotation =  0.8f; scale = 1.045f; offset = new Vector2(0f, 2.0f); break;
+                case BBIconId.NavOptions:       rotation =  6.0f; scale = 1.035f; offset = new Vector2(0f, 1.0f); break;
+            }
+
+            targetScale = baseScale * scale;
+            targetAnchoredPosition = baseAnchoredPosition + offset;
+            targetRotation = baseRotation * Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        private void OnDisable()
+        {
+            pointerInside = false;
+            if (iconRect == null) return;
+            iconRect.localScale = baseScale;
+            iconRect.anchoredPosition = baseAnchoredPosition;
+            iconRect.localRotation = baseRotation;
         }
     }
 }
