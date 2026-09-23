@@ -43,6 +43,7 @@ namespace BistroBuilder.Editor.Savic
 
         private readonly SavicManifestRepository manifests;
         private readonly SavicTablePublisher tablePublisher;
+        private readonly SavicChairPublisher chairPublisher;
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
@@ -58,6 +59,11 @@ namespace BistroBuilder.Editor.Savic
 
             tablePublisher =
                 new SavicTablePublisher(
+                    layout,
+                    this.manifests);
+
+            chairPublisher =
+                new SavicChairPublisher(
                     layout,
                     this.manifests);
 
@@ -393,17 +399,33 @@ namespace BistroBuilder.Editor.Savic
                         "Table",
                         StringComparison.Ordinal);
 
+                bool classifiedAsChair =
+                    string.Equals(
+                        classification.type,
+                        "Chair",
+                        StringComparison.Ordinal);
+
+                bool supportedForAutomaticPublication =
+                    classifiedAsTable ||
+                    classifiedAsChair;
+
                 SavicManifestMutations.UpsertValidation(
                     manifest,
                     "Classification.ContentType",
-                    classifiedAsTable ? "PASS" : "REVIEW",
-                    classifiedAsTable ? "INFO" : "WARNING",
+                    supportedForAutomaticPublication
+                        ? "PASS"
+                        : "REVIEW",
+                    supportedForAutomaticPublication
+                        ? "INFO"
+                        : "WARNING",
                     classifiedAsTable
                         ? "Model classified as Table with sufficient confidence."
-                        : "Automatic classification is not strong enough for publication.",
+                        : classifiedAsChair
+                            ? "Model classified as Chair with sufficient confidence."
+                            : "Automatic classification is not strong enough for a supported V1 publication family.",
                     SavicContentClassifier.Version);
 
-                if (!classifiedAsTable)
+                if (!supportedForAutomaticPublication)
                 {
                     manifest.status = "NEEDS_REVIEW";
                     manifests.Save(manifest);
@@ -423,63 +445,139 @@ namespace BistroBuilder.Editor.Savic
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        "Table classification passed, but semantic part structure requires review.");
+                        classification.type +
+                        " classification passed, but semantic part structure requires review.");
                 }
 
-                if (!SavicTableAuthoringPlanner.TryPlan(
-                        manifest,
-                        out SavicTableAuthoringRecord plan,
-                        out string planRejection))
+                if (classifiedAsTable)
                 {
-                    manifest.tableAuthoring = plan;
-                    manifest.status = "NEEDS_REVIEW";
+                    if (!SavicTableAuthoringPlanner.TryPlan(
+                            manifest,
+                            out SavicTableAuthoringRecord tablePlan,
+                            out string tablePlanRejection))
+                    {
+                        manifest.tableAuthoring =
+                            tablePlan;
+
+                        manifest.status =
+                            "NEEDS_REVIEW";
+
+                        SavicManifestMutations.UpsertValidation(
+                            manifest,
+                            "Authoring.TablePlan",
+                            "REVIEW",
+                            "WARNING",
+                            tablePlanRejection,
+                            SavicTableAuthoringPlanner.Version);
+
+                        manifests.Save(
+                            manifest);
+
+                        return ReturnFailure(
+                            previousPublishedSnapshot,
+                            manifest,
+                            tablePlanRejection);
+                    }
+
+                    manifest.tableAuthoring =
+                        tablePlan;
+
+                    manifest.status =
+                        "PLANNED";
 
                     SavicManifestMutations.UpsertValidation(
                         manifest,
                         "Authoring.TablePlan",
-                        "REVIEW",
-                        "WARNING",
-                        planRejection,
+                        "PASS",
+                        "INFO",
+                        tablePlan.planReason,
                         SavicTableAuthoringPlanner.Version);
 
-                    manifests.Save(manifest);
+                    manifests.Save(
+                        manifest);
+
+                    SavicTablePublicationOutcome publication =
+                        tablePublisher.Publish(
+                            manifest,
+                            root);
+
+                    if (!publication.Succeeded)
+                    {
+                        return ReturnFailure(
+                            previousPublishedSnapshot,
+                            manifest,
+                            publication.Message);
+                    }
+
+                    return new SavicSourceProcessingOutcome(
+                        true,
+                        manifest.status,
+                        publication.Message,
+                        manifest);
+                }
+
+                if (!SavicChairAuthoringPlanner.TryPlan(
+                        manifest,
+                        out SavicChairAuthoringRecord chairPlan,
+                        out string chairPlanRejection))
+                {
+                    manifest.chairAuthoring =
+                        chairPlan;
+
+                    manifest.status =
+                        "NEEDS_REVIEW";
+
+                    SavicManifestMutations.UpsertValidation(
+                        manifest,
+                        "Authoring.ChairPlan",
+                        "REVIEW",
+                        "WARNING",
+                        chairPlanRejection,
+                        SavicChairAuthoringPlanner.Version);
+
+                    manifests.Save(
+                        manifest);
 
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        planRejection);
+                        chairPlanRejection);
                 }
 
-                manifest.tableAuthoring = plan;
-                manifest.status = "PLANNED";
+                manifest.chairAuthoring =
+                    chairPlan;
+
+                manifest.status =
+                    "PLANNED";
 
                 SavicManifestMutations.UpsertValidation(
                     manifest,
-                    "Authoring.TablePlan",
+                    "Authoring.ChairPlan",
                     "PASS",
                     "INFO",
-                    plan.planReason,
-                    SavicTableAuthoringPlanner.Version);
+                    chairPlan.planReason,
+                    SavicChairAuthoringPlanner.Version);
 
-                manifests.Save(manifest);
+                manifests.Save(
+                    manifest);
 
-                SavicTablePublicationOutcome publication =
-                    tablePublisher.Publish(
+                SavicChairPublicationOutcome chairPublication =
+                    chairPublisher.Publish(
                         manifest,
                         root);
 
-                if (!publication.Succeeded)
+                if (!chairPublication.Succeeded)
                 {
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        publication.Message);
+                        chairPublication.Message);
                 }
 
                 return new SavicSourceProcessingOutcome(
                     true,
                     manifest.status,
-                    publication.Message,
+                    chairPublication.Message,
                     manifest);
             }
             catch (Exception exception)
