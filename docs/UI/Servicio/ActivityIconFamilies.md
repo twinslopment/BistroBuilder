@@ -148,3 +148,10 @@ Ejemplo:
 ## Regla canónica
 
 No diseñar decenas de iconos redundantes. Toda frase nueva debe intentar reutilizar primero una familia existente. Solo se añade una nueva familia cuando el concepto no pueda leerse correctamente con las 28 actuales.
+
+## Registro de aprobaciones
+
+Las selecciones visuales aprobadas se registran en `ActivityApprovedIcons.md`.
+Ese documento es la autoridad para saber qué variante exacta de cada familia está cerrada.
+
+Estado a 2026-09-23: **8 de 28 familias aprobadas**.
