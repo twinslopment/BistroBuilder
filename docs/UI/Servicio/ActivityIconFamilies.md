@@ -154,4 +154,4 @@ No diseñar decenas de iconos redundantes. Toda frase nueva debe intentar reutil
 Las selecciones visuales aprobadas se registran en `ActivityApprovedIcons.md`.
 Ese documento es la autoridad para saber qué variante exacta de cada familia está cerrada.
 
-Estado a 2026-09-23: **8 de 28 familias aprobadas**.
+Estado a 2026-09-23: **25 de 28 familias aprobadas**.
