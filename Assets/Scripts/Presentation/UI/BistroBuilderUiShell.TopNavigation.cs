@@ -143,8 +143,13 @@ public sealed partial class BistroBuilderUiShell
         var glow = HeaderImage(button.transform, "HoverGlow");
         glow.preserveAspect = false;
         glow.rectTransform.anchorMin = Vector2.zero; glow.rectTransform.anchorMax = Vector2.one;
-        glow.rectTransform.offsetMin = new Vector2(2, 2); glow.rectTransform.offsetMax = new Vector2(-2, -2);
+        glow.rectTransform.offsetMin = new Vector2(3, 3); glow.rectTransform.offsetMax = new Vector2(-3, -3);
         glow.color = new Color(BBIconDesignTokens.SelectedSoft.r, BBIconDesignTokens.SelectedSoft.g, BBIconDesignTokens.SelectedSoft.b, 0f);
+        var glowOutline = glow.GetComponent<Outline>();
+        if (glowOutline == null) glowOutline = glow.gameObject.AddComponent<Outline>();
+        glowOutline.effectColor = new Color(BBIconDesignTokens.Selected.r, BBIconDesignTokens.Selected.g, BBIconDesignTokens.Selected.b, 0f);
+        glowOutline.effectDistance = new Vector2(1.2f, -1.2f);
+        glowOutline.useGraphicAlpha = false;
         glow.transform.SetAsFirstSibling();
 
         var icon = HeaderImage(button.transform, "NavigationIcon");
@@ -159,7 +164,7 @@ public sealed partial class BistroBuilderUiShell
         var fx = button.GetComponent<BBIconButton>();
         if (fx == null) fx = button.gameObject.AddComponent<BBIconButton>();
         fx.ConfigureRuntime(id, icon, button);
-        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label, glow);
+        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label, glow, glowOutline);
         fx.SetToggleSelectionOnClick(false);
         return button;
     }
