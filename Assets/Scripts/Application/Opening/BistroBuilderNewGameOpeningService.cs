@@ -4,7 +4,7 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Opening/New Game Opening Service")]
-public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
+public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
 {
     [Header("Autoridades canonicas")]
     [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
@@ -118,6 +118,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
             error = "No puede iniciarse el diseno inicial: " + editRejection;
             return false;
         }
+        if (!Enum.IsDefined(typeof(BistroBuilderStartingPremisesProfile), premisesProfile))
+        { error = "La preparación seleccionada no es válida."; return false; }
         string normalizedName = string.IsNullOrWhiteSpace(restaurantName)
             ? "Mi restaurante"
             : restaurantName.Trim();
@@ -162,6 +164,8 @@ public sealed class BistroBuilderNewGameOpeningService : MonoBehaviour
         if (premisesProfile == BistroBuilderStartingPremisesProfile.Empty &&
             !TryPrepareEmptyPremises(out error))
             return false;
+
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.Essentials && !TryPrepareEssentials(out error)) return false;
 
         state = new BistroBuilderNewGameStateSnapshot
         {
