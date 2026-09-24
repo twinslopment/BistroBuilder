@@ -329,6 +329,7 @@ public static class BistroBuilderServiceTimingPlayTest
         visit.apologizedServiceIncidentCount = 0;
         visit.serviceIncidentPenaltyBasisPoints = 1000;
         visit.serviceIncidentApologyRecoveryBasisPoints = 0;
+        RefreshShellForTest();
     }
 
     private static void VerifyExplicitIncidentAndCapture()
@@ -390,6 +391,20 @@ public static class BistroBuilderServiceTimingPlayTest
         Check(experience.TryGetRuntimeVisit(group.GroupId, out _),
             "Experience Tracking todavía no registró la visita.");
         GetInternalVisit().billWaitSeconds = seconds;
+        RefreshShellForTest();
+    }
+
+    private static void RefreshShellForTest()
+    {
+        Check(shell != null, "El HUD no está disponible para refrescar la prueba.");
+        MethodInfo refresh =
+            typeof(BistroBuilderUiShell).GetMethod(
+                "RefreshReadModels",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+        Check(refresh != null, "No se pudo resolver RefreshReadModels.");
+        refresh.Invoke(shell, null);
+        Canvas.ForceUpdateCanvases();
     }
 
     private static BistroBuilderReputationVisitRuntimeRecord GetInternalVisit()

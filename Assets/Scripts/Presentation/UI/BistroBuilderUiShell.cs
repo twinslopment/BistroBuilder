@@ -1439,6 +1439,9 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private bool HasMeaningfulActivity()
     {
+        if (ActivityPanelController.HasActiveController)
+            return ActivityPanelController.ActiveInstance.HasEntries;
+
         inventoryAlerts.Clear();
         if (inventoryPlanning != null) inventoryPlanning.CopyActiveAlertsTo(inventoryAlerts);
         return recentActivity.Count > 0 || inventoryAlerts.Count > 0;
@@ -1446,6 +1449,29 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void RefreshActivityText()
     {
+        if (ActivityPanelController.HasActiveController)
+        {
+            if (activityText != null)
+            {
+                activityText.text = string.Empty;
+                activityText.enabled = false;
+            }
+
+            if (activityPanel != null)
+            {
+                RestaurantEditModeService editMode =
+                    FindScene<RestaurantEditModeService>();
+                bool editing =
+                    editMode != null && editMode.IsEditModeActive;
+                activityPanel.gameObject.SetActive(
+                    !editing &&
+                    activityVisible &&
+                    ActivityPanelController.ActiveInstance.HasEntries
+                );
+            }
+            return;
+        }
+
         if (activityText == null) return;
         inventoryAlerts.Clear();
         if (inventoryPlanning != null) inventoryPlanning.CopyActiveAlertsTo(inventoryAlerts);
