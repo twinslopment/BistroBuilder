@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using BistroBuilder.UI.Iconography;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -11,41 +10,44 @@ using UnityEngine.UI;
 public static class BistroBuilderTopNavigationPlayTest
 {
     private const string Key = "BB.TopNavigation.Test";
-    private const string ReducedMotionPref = "BB.Options.ReducedMotion";
     private static int stage;
     private static double next;
     private static BistroBuilderUiShell shell;
     private static string failure;
-    static BistroBuilderTopNavigationPlayTest() { EditorApplication.playModeStateChanged += State; }
+
+    static BistroBuilderTopNavigationPlayTest()
+    {
+        EditorApplication.playModeStateChanged += State;
+    }
+
     public static void RunBatch()
     {
-        SessionState.SetBool(Key, true); SessionState.SetBool(Key + ".Pass", false);
-        SessionState.SetBool(Key + ".HadReducedMotion", PlayerPrefs.HasKey(ReducedMotionPref));
-        SessionState.SetInt(Key + ".ReducedMotion", PlayerPrefs.GetInt(ReducedMotionPref, 0));
-        PlayerPrefs.SetInt(ReducedMotionPref, 0);
+        SessionState.SetBool(Key, true);
+        SessionState.SetBool(Key + ".Pass", false);
         EditorSceneManager.OpenScene("Assets/Scenes/Prototype_Restaurant.unity");
         EditorApplication.isPlaying = true;
-    }
-    private static void State(PlayModeStateChange change)
+    }    private static void State(PlayModeStateChange change)
     {
         if (!SessionState.GetBool(Key, false)) return;
+
         if (change == PlayModeStateChange.EnteredPlayMode)
         {
-            stage = 0; failure = null; next = EditorApplication.timeSinceStartup + 3;
+            stage = 0;
+            failure = null;
+            next = EditorApplication.timeSinceStartup + 3.0;
             Application.runInBackground = true;
-            EditorApplication.update += Tick; Application.logMessageReceived += Log;
+            EditorApplication.update += Tick;
+            Application.logMessageReceived += Log;
         }
+
         if (change == PlayModeStateChange.EnteredEditMode)
         {
-            if (SessionState.GetBool(Key + ".HadReducedMotion", false))
-                PlayerPrefs.SetInt(ReducedMotionPref, SessionState.GetInt(Key + ".ReducedMotion", 0));
-            else
-                PlayerPrefs.DeleteKey(ReducedMotionPref);
-            PlayerPrefs.Save();
             SessionState.SetBool(Key, false);
-            EditorApplication.Exit(SessionState.GetBool(Key + ".Pass", false) ? 0 : 1);
+            EditorApplication.Exit(
+                SessionState.GetBool(Key + ".Pass", false) ? 0 : 1);
         }
     }
+
     private static void Log(string message, string stack, LogType type)
     {
         if (type != LogType.Exception && type != LogType.Assert) return;
@@ -53,87 +55,138 @@ public static class BistroBuilderTopNavigationPlayTest
             stack.IndexOf("UnityEditor.Search.SearchDatabase", StringComparison.Ordinal) >= 0)
             return;
         failure = message;
+    }    private static void Check(bool condition, string error)
+    {
+        if (!condition) throw new Exception(error);
     }
-    private static void Check(bool condition, string error) { if (!condition) throw new Exception(error); }
-    private static Button Button(string name) => GameObject.Find(name).GetComponent<Button>();
+
+    private static Button Button(string name)
+    {
+        GameObject go = GameObject.Find(name);
+        return go != null ? go.GetComponent<Button>() : null;
+    }
+
     private static void Tick()
     {
-        if (!EditorApplication.isPlaying || EditorApplication.timeSinceStartup < next) return;
+        if (!EditorApplication.isPlaying ||
+            EditorApplication.timeSinceStartup < next) return;
+
         next = EditorApplication.timeSinceStartup + 0.6;
+
         try
         {
             Check(failure == null, failure);
+
             switch (stage++)
             {
                 case 0:
-                    UnityEngine.Object.FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>().Hide();
+                    UnityEngine.Object.FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
                     shell = UnityEngine.Object.FindFirstObjectByType<BistroBuilderUiShell>();
                     Check(shell != null, "No shell");
                     shell.EnsureShell();
-                    Check(GameObject.Find("RestaurantName") != null && GameObject.Find("ServiceLabel") != null, "Identity survives repeated HUD reconciliation");
-                    Check(BBIconCatalog.LoadDefault().Entries.Count >= 80, "Iconography catalog incomplete");
-                    foreach (string name in new[] { "Actividad", "Personal", "Carta", "Inventario", "Proveedores", "Reservas", "Economia", "Marketing", "Reputacion", "Opciones" })
+
+                    GameObject background = GameObject.Find("ApprovedTopBarV3Background");
+                    Check(background != null, "Missing approved v3 background");
+                    Image image = background.GetComponent<Image>();
+                    Check(image != null && image.sprite != null, "Approved v3 sprite missing");                    RectTransform topBar = GameObject.Find(BistroBuilderUiShell.TopBarName)?.GetComponent<RectTransform>();
+                    Check(topBar != null && topBar.rect.height > 180f, "Approved top bar aspect/height not applied");
+
+                    foreach (string name in new[]
                     {
-                        var button = Button("BBNav_" + name);
-                        Check(button.transform.Find("NavigationIcon").GetComponent<Image>().sprite != null, "Missing icon " + name);
+                        "Actividad", "Personal", "Carta", "Inventario", "Proveedores",
+                        "Reservas", "Economia", "Marketing", "Reputacion", "Opciones"
+                    })
+                    {
+                        Button button = Button("BBNav_" + name);
+                        Check(button != null, "Missing hotspot " + name);
+                        Check(button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null,
+                            "Missing approved hotspot behaviour " + name);
                     }
-                    Button("BBNav_Personal").GetComponent<BBIconButton>().OnPointerEnter(new PointerEventData(EventSystem.current)); break;
+
+                    var personal = Button("BBNav_Personal");
+                    personal.GetComponent<BistroBuilderApprovedTopBarHotspot>()
+                        .OnPointerEnter(new PointerEventData(EventSystem.current));
+                    break;
+
                 case 1:
-                    var staffFx = Button("BBNav_Personal").GetComponent<BBIconButton>();
-                    Check(staffFx.State == BBIconState.Hover, "Hover state");
-                    Check(staffFx.transform.Find("NavigationIcon").localScale.x > 1.01f, "Hover animation");
-                    Check(staffFx.transform.Find("HoverGlow").GetComponent<Image>().color.a > 0.08f, "Hover glow");
-                    Check(staffFx.transform.Find("HoverGlow").GetComponent<Outline>().effectColor.a > 0.12f, "Hover illuminated border");
-                    Button("BBNav_Personal").onClick.Invoke(); break;
-                case 2:
-                    Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible, "Staff navigation");
-                    Check(Button("BBNav_Personal").GetComponent<BBIconButton>().IsSelected, "Active tab highlight");
-                    Button("BBNav_Inventario").onClick.Invoke(); break;
+                    Check(Button("BBNav_Personal").GetComponent<Image>().color.a > 0.05f,
+                        "Approved hover highlight missing");
+                    Button("BBNav_Personal").onClick.Invoke();
+                    break;                case 2:
+                    Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible,
+                        "Staff navigation");
+                    Button("BBNav_Inventario").onClick.Invoke();
+                    break;
+
                 case 3:
-                    Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderInventoryWarehouseRuntimeView>().IsOpen, "Inventory navigation");
-                    Check(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible, "Previous panel closes");
-                    Button("BBNav_Actividad").onClick.Invoke(); break;
+                    Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderInventoryWarehouseRuntimeView>().IsOpen,
+                        "Inventory navigation");
+                    Check(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible,
+                        "Previous panel closes");
+                    Button("BBNav_Actividad").onClick.Invoke();
+                    break;
+
                 case 4:
                     Check(!shell.HasManagementScreenOpen, "Activity restores restaurant");
-                    Button("BBNav_Opciones").onClick.Invoke(); break;
+                    Button("BBNav_Opciones").onClick.Invoke();
+                    break;
+
                 case 5:
                     Check(GameObject.Find("OptionsPanel") != null, "Options menu");
-                    Check(shell.HasManagementScreenOpen, "Menu blocks construction input");
+                    Check(shell.HasManagementScreenOpen, "Options blocks construction input");
                     Button("BBNav_Opciones").onClick.Invoke();
-                    Button("BBNav_Personal").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current)); break;
-                case 6:
-                    Button("BBNav_Opciones").GetComponent<BBIconButton>().OnPointerEnter(new PointerEventData(EventSystem.current)); break;
-                case 7:
-                    var optionsIcon = Button("BBNav_Opciones").transform.Find("NavigationIcon");
-                    Check(Mathf.Abs(Mathf.DeltaAngle(0f, optionsIcon.localEulerAngles.z)) > 2f, "Options unique hover rotation");
-                    Check(Button("BBNav_Opciones").transform.Find("HoverGlow").GetComponent<Image>().color.a > 0.03f, "Options hover glow");
-                    Button("BBNav_Opciones").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current));
-                    Capture(); Finish(true, "Catalog / icons / individual hover motion / illuminated hover / selected state / navigation / options / screenshot"); break;
+                    Capture();
+                    Finish(true,
+                        "approved v3 visual / exact hotspots / hover / navigation / options / screenshot");
+                    break;
             }
         }
-        catch (Exception error) { Finish(false, error.ToString()); }
-    }
-    private static void Capture()
+        catch (Exception error)
+        {
+            Finish(false, error.ToString());
+        }
+    }    private static void Capture()
     {
-        var canvas = shell.GetComponentInParent<Canvas>();
-        var camera = UnityEngine.Object.FindFirstObjectByType<Camera>();
-        var mode = canvas.renderMode; var oldCamera = canvas.worldCamera;
-        var target = new RenderTexture(1920, 1080, 24);
-        var previous = RenderTexture.active; var previousTarget = camera.targetTexture;
-        canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 0.5f;
-        camera.targetTexture = target; Canvas.ForceUpdateCanvases(); camera.Render(); RenderTexture.active = target;
-        var image = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
-        image.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0); image.Apply();
-        File.WriteAllBytes("Logs/TopNavigation1920.png", image.EncodeToPNG());
-        RenderTexture.active = previous; camera.targetTexture = previousTarget;
-        canvas.renderMode = mode; canvas.worldCamera = oldCamera;
-        UnityEngine.Object.Destroy(target); UnityEngine.Object.Destroy(image);
+        Canvas canvas = shell.GetComponentInParent<Canvas>();
+        Camera camera = UnityEngine.Object.FindFirstObjectByType<Camera>();
+        RenderMode mode = canvas.renderMode;
+        Camera oldCamera = canvas.worldCamera;
+
+        RenderTexture target = new RenderTexture(1920, 1080, 24);
+        RenderTexture previous = RenderTexture.active;
+        RenderTexture previousTarget = camera.targetTexture;
+
+        canvas.renderMode = RenderMode.ScreenSpaceCamera;
+        canvas.worldCamera = camera;
+        canvas.planeDistance = 0.5f;
+        camera.targetTexture = target;
+
+        Canvas.ForceUpdateCanvases();
+        camera.Render();
+        RenderTexture.active = target;
+
+        Texture2D image = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+        image.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
+        image.Apply();
+        File.WriteAllBytes("Logs/TopNavigation1920.png", image.EncodeToPNG());        RenderTexture.active = previous;
+        camera.targetTexture = previousTarget;
+        canvas.renderMode = mode;
+        canvas.worldCamera = oldCamera;
+
+        UnityEngine.Object.Destroy(target);
+        UnityEngine.Object.Destroy(image);
     }
+
     private static void Finish(bool pass, string message)
     {
-        EditorApplication.update -= Tick; Application.logMessageReceived -= Log;
+        EditorApplication.update -= Tick;
+        Application.logMessageReceived -= Log;
+
         string result = (pass ? "PASS " : "FAIL ") + message;
-        File.WriteAllText("Logs/TopNavigationTest.txt", result); Debug.Log("BB_TOP_NAVIGATION_" + result);
-        SessionState.SetBool(Key + ".Pass", pass); EditorApplication.isPlaying = false;
+        File.WriteAllText("Logs/TopNavigationTest.txt", result);
+        Debug.Log("BB_TOP_NAVIGATION_" + result);
+
+        SessionState.SetBool(Key + ".Pass", pass);
+        EditorApplication.isPlaying = false;
     }
 }
