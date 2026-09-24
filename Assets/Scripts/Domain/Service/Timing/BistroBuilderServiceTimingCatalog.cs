@@ -15,7 +15,17 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
     private List<BistroBuilderServiceTimingProfile> profiles =
         new List<BistroBuilderServiceTimingProfile>();
 
+    [SerializeField, Range(0, 10000)]
+    private int recoverableServiceIncidentPenaltyBasisPoints = 1000;
+
+    [SerializeField, Range(0, 10000)]
+    private int recoverableServiceIncidentApologyRecoveryBasisPoints = 500;
+
     public IReadOnlyList<BistroBuilderServiceTimingProfile> Profiles => profiles;
+    public int RecoverableServiceIncidentPenaltyBasisPoints =>
+        recoverableServiceIncidentPenaltyBasisPoints;
+    public int RecoverableServiceIncidentApologyRecoveryBasisPoints =>
+        recoverableServiceIncidentApologyRecoveryBasisPoints;
 
     public bool TryGetProfile(
         BistroBuilderServiceTimingPhase phase,
@@ -55,6 +65,17 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
 
     public bool Validate(out string error)
     {
+        if (recoverableServiceIncidentPenaltyBasisPoints < 0 ||
+            recoverableServiceIncidentPenaltyBasisPoints > 10000 ||
+            recoverableServiceIncidentApologyRecoveryBasisPoints < 0 ||
+            recoverableServiceIncidentApologyRecoveryBasisPoints >
+                recoverableServiceIncidentPenaltyBasisPoints)
+        {
+            error =
+                "El tuning de incidencias debe ser válido y la recuperación por disculpa no puede superar su penalización.";
+            return false;
+        }
+
         if (profiles == null || profiles.Count == 0)
         {
             error = "ServiceTimingCatalog no contiene perfiles.";

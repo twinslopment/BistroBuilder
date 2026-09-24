@@ -43,11 +43,14 @@ public static class BistroBuilderServiceTimingValidator
                      !Approximately(bill.DelaySeconds, 210f) ||
                      !Approximately(bill.IncidentSeconds, 300f) ||
                      !Approximately(bill.CriticalSeconds, 420f) ||
-                     bill.ExplanationPenaltyMitigationBasisPoints != 1500)
+                     bill.ExplanationPenaltyMitigationBasisPoints != 1500 ||
+                     bill.ApologyPenaltyMitigationBasisPoints != 2500 ||
+                     catalog.RecoverableServiceIncidentPenaltyBasisPoints != 1000 ||
+                     catalog.RecoverableServiceIncidentApologyRecoveryBasisPoints != 500)
             {
                 errors++;
                 if (logResult)
-                    Debug.LogError("El perfil BillDelivery no coincide con el tuning provisional aprobado.");
+                    Debug.LogError("El perfil BillDelivery o el tuning de recuperación no coincide con el provisional aprobado.");
             }
         }
 

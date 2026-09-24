@@ -20,3 +20,6 @@ MonoBehaviour:
     incidentSeconds: 300
     criticalSeconds: 420
     explanationPenaltyMitigationBasisPoints: 1500
+    apologyPenaltyMitigationBasisPoints: 2500
+  recoverableServiceIncidentPenaltyBasisPoints: 1000
+  recoverableServiceIncidentApologyRecoveryBasisPoints: 500

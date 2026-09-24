@@ -108,8 +108,53 @@ public static class BistroBuilderServiceTimingSelfTest
             ref failures,
             logResult
         );
+        Expect(
+            !BistroBuilderTableContextActionService.CanApologize(
+                false, false, 0),
+            "Sin incidencia no debe aparecer Disculpa.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderTableContextActionService.CanApologize(
+                true, false, 0),
+            "Incidencia temporal debe permitir Disculpa.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            !BistroBuilderTableContextActionService.CanApologize(
+                true, true, 0),
+            "La misma incidencia temporal no debe admitir dos disculpas.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderTableContextActionService.CanApologize(
+                false, true, 1),
+            "Un fallo explícito pendiente debe permitir Disculpa.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderCustomerExperienceTrackingService
+                .IsRecoverableServiceIncidentKind(
+                    BistroBuilderAdvancedOrderIncidentKind.WrongDish),
+            "WrongDish debe considerarse una incidencia recuperable.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            !BistroBuilderCustomerExperienceTrackingService
+                .IsRecoverableServiceIncidentKind(
+                    BistroBuilderAdvancedOrderIncidentKind.CustomerChange),
+            "CustomerChange no debe tratarse como fallo del restaurante.",
+            ref failures,
+            logResult
+        );
 
         TestExplanationMitigation(ref failures, logResult);
+        TestApologyRecovery(ref failures, logResult);
         TestCoordinatorPriority(ref failures, logResult);
         TestSaveRecordContract(ref failures, logResult);
 
@@ -165,6 +210,82 @@ public static class BistroBuilderServiceTimingSelfTest
                 out _
             ),
             "El snapshot con Explicar demora debe validar.",
+            ref failures,
+            logResult
+        );
+    }
+
+    private static void TestApologyRecovery(
+        ref int failures,
+        bool logResult)
+    {
+        int billRecovered =
+            BistroBuilderCustomerExperienceEvaluator.ApplyBillRecoveryMitigations(
+                0,
+                1500,
+                2500
+            );
+
+        Expect(
+            billRecovered == 3625,
+            "Explicar 15% + Disculpa 25% deben recuperar secuencialmente 3625 pb desde una penalización máxima.",
+            ref failures,
+            logResult
+        );
+
+        Expect(
+            BistroBuilderCustomerExperienceEvaluator.ApplyServiceIncidentImpact(
+                7000,
+                1000,
+                0
+            ) == 6000,
+            "Una incidencia explícita provisional debe restar 1000 pb.",
+            ref failures,
+            logResult
+        );
+
+        Expect(
+            BistroBuilderCustomerExperienceEvaluator.ApplyServiceIncidentImpact(
+                7000,
+                1000,
+                500
+            ) == 6500,
+            "Disculpa debe recuperar 500 pb de una incidencia explícita provisional.",
+            ref failures,
+            logResult
+        );
+
+        var snapshot = new BistroBuilderReputationRuntimeSnapshot();
+        snapshot.visits.Add(new BistroBuilderReputationVisitRuntimeRecord
+        {
+            groupId = 78,
+            partySize = 2,
+            segmentId = "general",
+            billWaitSeconds = 300f,
+            billIncidentApologyMitigationBasisPoints = 2500,
+            recoverableServiceIncidentCount = 1,
+            apologizedServiceIncidentCount = 1,
+            serviceIncidentPenaltyBasisPoints = 1000,
+            serviceIncidentApologyRecoveryBasisPoints = 500
+        });
+
+        BistroBuilderReputationRuntimeSnapshot clone = snapshot.DeepClone();
+        Expect(
+            clone.visits.Count == 1 &&
+            clone.visits[0].billIncidentApologyMitigationBasisPoints == 2500 &&
+            clone.visits[0].recoverableServiceIncidentCount == 1 &&
+            clone.visits[0].apologizedServiceIncidentCount == 1 &&
+            clone.visits[0].serviceIncidentApologyRecoveryBasisPoints == 500,
+            "reputation.runtime debe conservar Disculpa e incidencias en snapshot/rehidratación.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderCustomerExperienceTrackingService.TryValidateRuntimeSnapshot(
+                clone,
+                out _
+            ),
+            "El snapshot con Disculpa debe validar.",
             ref failures,
             logResult
         );

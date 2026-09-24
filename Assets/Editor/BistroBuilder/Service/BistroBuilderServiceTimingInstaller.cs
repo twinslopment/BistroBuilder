@@ -139,6 +139,9 @@ public static class BistroBuilderServiceTimingInstaller
         profile.FindPropertyRelative("incidentSeconds").floatValue = 300f;
         profile.FindPropertyRelative("criticalSeconds").floatValue = 420f;
         profile.FindPropertyRelative("explanationPenaltyMitigationBasisPoints").intValue = 1500;
+        profile.FindPropertyRelative("apologyPenaltyMitigationBasisPoints").intValue = 2500;
+        so.FindProperty("recoverableServiceIncidentPenaltyBasisPoints").intValue = 1000;
+        so.FindProperty("recoverableServiceIncidentApologyRecoveryBasisPoints").intValue = 500;
 
         so.ApplyModifiedPropertiesWithoutUndo();
     }

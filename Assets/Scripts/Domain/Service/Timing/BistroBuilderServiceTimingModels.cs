@@ -36,6 +36,8 @@ public sealed class BistroBuilderServiceTimingProfile
     [SerializeField, Min(0f)] private float criticalSeconds;
     [SerializeField, Range(0, 10000)]
     private int explanationPenaltyMitigationBasisPoints;
+    [SerializeField, Range(0, 10000)]
+    private int apologyPenaltyMitigationBasisPoints;
 
     public BistroBuilderServiceTimingPhase Phase => phase;
     public float TargetSeconds => targetSeconds;
@@ -45,6 +47,8 @@ public sealed class BistroBuilderServiceTimingProfile
     public float CriticalSeconds => criticalSeconds;
     public int ExplanationPenaltyMitigationBasisPoints =>
         explanationPenaltyMitigationBasisPoints;
+    public int ApologyPenaltyMitigationBasisPoints =>
+        apologyPenaltyMitigationBasisPoints;
 
     public bool Validate(out string error)
     {
@@ -54,9 +58,11 @@ public sealed class BistroBuilderServiceTimingProfile
             !IsFiniteNonNegative(incidentSeconds) ||
             !IsFiniteNonNegative(criticalSeconds) ||
             explanationPenaltyMitigationBasisPoints < 0 ||
-            explanationPenaltyMitigationBasisPoints > 10000)
+            explanationPenaltyMitigationBasisPoints > 10000 ||
+            apologyPenaltyMitigationBasisPoints < 0 ||
+            apologyPenaltyMitigationBasisPoints > 10000)
         {
-            error = "Los umbrales deben ser finitos/no negativos y la mitigación debe estar entre 0 y 10000 pb.";
+            error = "Los umbrales deben ser finitos/no negativos y las mitigaciones deben estar entre 0 y 10000 pb.";
             return false;
         }
 

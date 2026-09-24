@@ -70,11 +70,12 @@ public static class BistroBuilderAdvancedCustomerExperienceEngine
         int waiterScore = ScorePersonalWait(
             visit.waiterWaitSeconds, member.waiterWaitToleranceSeconds);
         int billScore =
-            BistroBuilderCustomerExperienceEvaluator.ApplyBillDelayExplanationMitigation(
+            BistroBuilderCustomerExperienceEvaluator.ApplyBillRecoveryMitigations(
                 ScorePersonalWait(
                     visit.billWaitSeconds,
                     member.billWaitToleranceSeconds),
-                visit.billDelayExplanationMitigationBasisPoints);
+                visit.billDelayExplanationMitigationBasisPoints,
+                visit.billIncidentApologyMitigationBasisPoints);
         int service = ApplySensitivity(
             Average(waiterScore, billScore), member.serviceSensitivityBasisPoints);
 
@@ -95,10 +96,14 @@ public static class BistroBuilderAdvancedCustomerExperienceEngine
             objectiveExperience.ambienceScoreBasisPoints,
             member.ambienceSensitivityBasisPoints);
 
-        int overall = Clamp((int)Math.Round(
-            (food * 35d + service * 25d + waiting * 15d +
-             value * 20d + ambience * 5d) / 100d,
-            MidpointRounding.AwayFromZero));
+        int overall =
+            BistroBuilderCustomerExperienceEvaluator.ApplyServiceIncidentImpact(
+                (int)Math.Round(
+                    (food * 35d + service * 25d + waiting * 15d +
+                     value * 20d + ambience * 5d) / 100d,
+                    MidpointRounding.AwayFromZero),
+                visit.serviceIncidentPenaltyBasisPoints,
+                visit.serviceIncidentApologyRecoveryBasisPoints);
 
         var individual = new BistroBuilderAdvancedCustomerIndividualExperience
         {

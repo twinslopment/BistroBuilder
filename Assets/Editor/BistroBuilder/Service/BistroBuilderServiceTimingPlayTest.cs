@@ -25,6 +25,9 @@ public static class BistroBuilderServiceTimingPlayTest
     private static RestaurantTable table;
     private static CustomerGroup group;
     private static int baselineOverallSatisfaction;
+    private static int afterExplainSatisfaction;
+    private static int afterApologySatisfaction;
+    private static int explicitIncidentBaselineSatisfaction;
 
     static BistroBuilderServiceTimingPlayTest()
     {
@@ -82,15 +85,21 @@ public static class BistroBuilderServiceTimingPlayTest
                 case 1: SetBillWait(30f); break;
                 case 2: VerifyNormal(); SetBillWait(120f); break;
                 case 3: VerifyAttention(); SetBillWait(210f); break;
-                case 4: VerifyDelayAndCapture(); break;
-                case 5: ClickAccelerate(); break;
-                case 6: VerifyPrioritizedAndCapture(); break;
-                case 7: ClickExplainDelay(); break;
-                case 8: VerifyExplainedAndCapture(); break;
-                case 9:
+                case 4: VerifyDelayAndCapture(); SetBillWait(300f); break;
+                case 5: VerifyIncidentAndCapture(); break;
+                case 6: ClickAccelerate(); break;
+                case 7: VerifyPrioritizedAndCapture(); break;
+                case 8: ClickExplainDelay(); break;
+                case 9: VerifyExplainedAndCapture(); break;
+                case 10: ClickApology(); break;
+                case 11: VerifyApologyAndCapture(); InjectExplicitIncident(); break;
+                case 12: VerifyExplicitIncidentAndCapture(); break;
+                case 13: ClickApology(); break;
+                case 14: VerifyExplicitIncidentRecoveredAndCapture(); break;
+                case 15:
                     Finish(
                         true,
-                        "normal / attention / delay / two-actions / urgent / explain / mitigation / no-repeat"
+                        "normal / attention / delay / incident / three-actions / urgent / explain / apology / explicit-incident / recovery / no-repeat"
                     );
                     break;
             }
@@ -147,6 +156,7 @@ public static class BistroBuilderServiceTimingPlayTest
         Button button = ActionButton();
         Check(!button.gameObject.activeSelf, "Agilizar no debe aparecer en Normal.");
         Check(!ExplainButton().gameObject.activeSelf, "Explicar demora no debe aparecer en Normal.");
+        Check(!ApologyButton().gameObject.activeSelf, "Disculpa no debe aparecer en Normal.");
         Check(ContextText().Contains("tiempo normal"), "El panel no explica el estado Normal.");
     }
 
@@ -158,6 +168,7 @@ public static class BistroBuilderServiceTimingPlayTest
         Check(button.gameObject.activeSelf && button.interactable, "Agilizar debe aparecer en Atención.");
         Check(Label(button) == "AGILIZAR CUENTA", "Etiqueta incorrecta en Atención.");
         Check(!ExplainButton().gameObject.activeSelf, "Explicar demora no debe aparecer todavía en Atención.");
+        Check(!ApologyButton().gameObject.activeSelf, "Disculpa no debe aparecer en Atención.");
         CheckNoBottomOverlap(button.transform as RectTransform);
     }
 
@@ -171,6 +182,8 @@ public static class BistroBuilderServiceTimingPlayTest
         Check(explain.gameObject.activeSelf && explain.interactable,
             "Explicar demora debe aparecer desde Demora.");
         Check(Label(explain) == "EXPLICAR DEMORA", "Etiqueta incorrecta de Explicar demora.");
+        Check(!ApologyButton().gameObject.activeSelf,
+            "Disculpa no debe aparecer todavía en Demora.");
         CheckNoBottomOverlap(accelerate.transform as RectTransform);
         CheckNoBottomOverlap(explain.transform as RectTransform);
         Check(!WorldRect(accelerate.transform as RectTransform)
@@ -180,6 +193,43 @@ public static class BistroBuilderServiceTimingPlayTest
             "El panel no muestra Demora.");
         baselineOverallSatisfaction = CurrentOverallSatisfaction();
         Capture("ServiceTiming_Delay.png");
+    }
+
+    private static void VerifyIncidentAndCapture()
+    {
+        Check(actions.TryGetBillSnapshot(table, out var bill),
+            "Falta snapshot Incidencia.");
+        Check(bill.TimingState == BistroBuilderServiceTimingState.Incident,
+            "300s debe ser Incidencia.");
+        Check(actions.TryGetApologySnapshot(table, out var apology),
+            "Falta snapshot de Disculpa.");
+        Check(apology.CanApologize && apology.HasBillTimingIncident,
+            "Incidencia de cuenta debe habilitar Disculpa.");
+
+        Button accelerate = ActionButton();
+        Button explain = ExplainButton();
+        Button apologize = ApologyButton();
+
+        Check(accelerate.gameObject.activeSelf && accelerate.interactable,
+            "Agilizar debe estar disponible en Incidencia.");
+        Check(explain.gameObject.activeSelf && explain.interactable,
+            "Explicar demora debe estar disponible en Incidencia.");
+        Check(apologize.gameObject.activeSelf && apologize.interactable,
+            "Disculpa debe estar disponible en Incidencia.");
+        Check(Label(apologize) == "DISCULPA",
+            "Etiqueta incorrecta de Disculpa.");
+
+        CheckNoBottomOverlap(accelerate.transform as RectTransform);
+        CheckNoBottomOverlap(explain.transform as RectTransform);
+        CheckNoBottomOverlap(apologize.transform as RectTransform);
+        CheckNoPairwiseOverlap(accelerate, explain, apologize);
+
+        Check(ContextText().Contains("Incidencia") &&
+              ContextText().Contains("Disculpa"),
+            "El panel no informa de la incidencia y la recuperación.");
+
+        baselineOverallSatisfaction = CurrentOverallSatisfaction();
+        Capture("ServiceTiming_Incident.png");
     }
 
     private static void ClickAccelerate()
@@ -195,9 +245,14 @@ public static class BistroBuilderServiceTimingPlayTest
         Check(!snapshot.CanAccelerate, "No debe poder agilizarse dos veces.");
         Check(!ActionButton().gameObject.activeSelf, "Agilizar debe desaparecer tras priorizar.");
         Button explain = ExplainButton();
+        Button apologize = ApologyButton();
         Check(explain.gameObject.activeSelf && explain.interactable,
             "Explicar demora debe seguir disponible tras priorizar.");
+        Check(apologize.gameObject.activeSelf && apologize.interactable,
+            "Disculpa debe seguir disponible tras priorizar.");
         CheckNoBottomOverlap(explain.transform as RectTransform);
+        CheckNoBottomOverlap(apologize.transform as RectTransform);
+        CheckNoPairwiseOverlap(explain, apologize);
         Check(ContextText().Contains("priorizada"), "Falta feedback de cuenta priorizada.");
         Check(!actions.TryAccelerateBill(table, out _), "La repetición de Agilizar debe rechazarse.");
         Capture("ServiceTiming_Prioritized.png");
@@ -217,6 +272,8 @@ public static class BistroBuilderServiceTimingPlayTest
             "Explicar demora debe desaparecer después de aplicarse.");
         Check(!ActionButton().gameObject.activeSelf,
             "Agilizar ya priorizado debe permanecer oculto.");
+        Check(ApologyButton().gameObject.activeSelf,
+            "Disculpa debe seguir disponible tras Explicar demora.");
         Check(ContextText().Contains("Demora explicada") ||
               ContextText().Contains("demora ha sido explicada"),
             "Falta feedback de demora explicada.");
@@ -225,27 +282,132 @@ public static class BistroBuilderServiceTimingPlayTest
               visit.billDelayExplanationMitigationBasisPoints == 1500,
             "La visita no conserva la mitigación provisional del 15%.");
 
-        int after = CurrentOverallSatisfaction();
-        Check(after > baselineOverallSatisfaction,
+        afterExplainSatisfaction = CurrentOverallSatisfaction();
+        Check(afterExplainSatisfaction > baselineOverallSatisfaction,
             "Explicar demora debe mitigar realmente el impacto en satisfacción.");
         Check(!actions.TryExplainBillDelay(table, out _),
             "La repetición de Explicar demora debe rechazarse.");
         Capture("ServiceTiming_Explained.png");
     }
 
+    private static void ClickApology()
+    {
+        ApologyButton().onClick.Invoke();
+    }
+
+    private static void VerifyApologyAndCapture()
+    {
+        Check(actions.TryGetApologySnapshot(table, out var apology),
+            "Falta snapshot tras Disculpa.");
+        Check(apology.BillIncidentAlreadyApologized,
+            "La incidencia temporal no quedó marcada como disculpada.");
+        Check(!apology.CanApologize,
+            "La misma incidencia temporal no debe aceptar otra Disculpa.");
+        Check(!ApologyButton().gameObject.activeSelf,
+            "Disculpa debe desaparecer tras aplicarse.");
+
+        Check(experience.TryGetRuntimeVisit(group.GroupId, out var visit) &&
+              visit.billIncidentApologyMitigationBasisPoints == 2500,
+            "La visita no conserva la recuperación provisional del 25%.");
+
+        afterApologySatisfaction = CurrentOverallSatisfaction();
+        Check(afterApologySatisfaction > afterExplainSatisfaction,
+            "Disculpa debe recuperar parte adicional del impacto en satisfacción.");
+        Check(ContextText().Contains("disculpa realizada"),
+            "Falta feedback de Disculpa realizada.");
+        Check(!actions.TryApologize(table, out _),
+            "La repetición de Disculpa para la misma incidencia debe rechazarse.");
+
+        Capture("ServiceTiming_Apology.png");
+    }
+
+    private static void InjectExplicitIncident()
+    {
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            GetInternalVisit();
+        visit.recoverableServiceIncidentCount = 1;
+        visit.apologizedServiceIncidentCount = 0;
+        visit.serviceIncidentPenaltyBasisPoints = 1000;
+        visit.serviceIncidentApologyRecoveryBasisPoints = 0;
+    }
+
+    private static void VerifyExplicitIncidentAndCapture()
+    {
+        Check(actions.TryGetApologySnapshot(table, out var apology),
+            "Falta snapshot para la incidencia explícita.");
+        Check(apology.BillIncidentAlreadyApologized,
+            "La disculpa temporal anterior debe conservarse.");
+        Check(apology.HasExplicitServiceIncident &&
+              apology.PendingExplicitIncidentCount == 1 &&
+              apology.CanApologize,
+            "Una incidencia explícita nueva debe reabrir Disculpa.");
+
+        Button apologize = ApologyButton();
+        Check(apologize.gameObject.activeSelf && apologize.interactable,
+            "Disculpa debe reaparecer por una incidencia explícita.");
+        Check(ContextText().Contains("fallo de servicio") ||
+              ContextText().Contains("Incidencia de servicio"),
+            "El panel no informa del fallo explícito.");
+
+        explicitIncidentBaselineSatisfaction =
+            CurrentOverallSatisfaction();
+        Check(explicitIncidentBaselineSatisfaction <
+              afterApologySatisfaction,
+            "La incidencia explícita debe tener impacto real antes de la recuperación.");
+
+        Capture("ServiceTiming_ExplicitIncident.png");
+    }
+
+    private static void VerifyExplicitIncidentRecoveredAndCapture()
+    {
+        Check(experience.TryGetRuntimeVisit(group.GroupId, out var visit) &&
+              visit.recoverableServiceIncidentCount == 1 &&
+              visit.apologizedServiceIncidentCount == 1 &&
+              visit.serviceIncidentPenaltyBasisPoints == 1000 &&
+              visit.serviceIncidentApologyRecoveryBasisPoints == 500,
+            "La recuperación de la incidencia explícita no quedó persistida.");
+
+        Check(actions.TryGetApologySnapshot(table, out var apology) &&
+              !apology.CanApologize &&
+              apology.PendingExplicitIncidentCount == 0,
+            "No debe quedar otra Disculpa pendiente tras cubrir la incidencia.");
+        Check(!ApologyButton().gameObject.activeSelf,
+            "Disculpa debe desaparecer tras cubrir la incidencia explícita.");
+
+        int recovered = CurrentOverallSatisfaction();
+        Check(recovered > explicitIncidentBaselineSatisfaction,
+            "Disculpa debe recuperar parte del daño de la incidencia explícita.");
+        Check(ContextText().Contains("disculpa realizada"),
+            "Falta feedback de recuperación tras la incidencia explícita.");
+        Check(!actions.TryApologize(table, out _),
+            "No debe poder repetirse Disculpa sin una incidencia nueva.");
+
+        Capture("ServiceTiming_ExplicitIncidentRecovered.png");
+    }
+
     private static void SetBillWait(float seconds)
     {
         Check(experience.TryGetRuntimeVisit(group.GroupId, out _),
             "Experience Tracking todavía no registró la visita.");
+        GetInternalVisit().billWaitSeconds = seconds;
+    }
 
-        FieldInfo visitsField = typeof(BistroBuilderCustomerExperienceTrackingService)
-            .GetField("visitsByGroup", BindingFlags.Instance | BindingFlags.NonPublic);
+    private static BistroBuilderReputationVisitRuntimeRecord GetInternalVisit()
+    {
+        FieldInfo visitsField =
+            typeof(BistroBuilderCustomerExperienceTrackingService)
+                .GetField(
+                    "visitsByGroup",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                );
         Check(visitsField != null, "No se encontró visitsByGroup.");
         var visits = visitsField.GetValue(experience) as IDictionary;
-        Check(visits != null && visits.Contains(group.GroupId), "No existe visita interna para el grupo.");
-        var visit = visits[group.GroupId] as BistroBuilderReputationVisitRuntimeRecord;
+        Check(visits != null && visits.Contains(group.GroupId),
+            "No existe visita interna para el grupo.");
+        var visit =
+            visits[group.GroupId] as BistroBuilderReputationVisitRuntimeRecord;
         Check(visit != null, "La visita interna es nula.");
-        visit.billWaitSeconds = seconds;
+        return visit;
     }
 
     private static Button ActionButton()
@@ -256,6 +418,11 @@ public static class BistroBuilderServiceTimingPlayTest
     private static Button ExplainButton()
     {
         return FindButton(BistroBuilderUiShell.SecondaryContextActionName);
+    }
+
+    private static Button ApologyButton()
+    {
+        return FindButton(BistroBuilderUiShell.TertiaryContextActionName);
     }
 
     private static Button FindButton(string buttonName)
@@ -317,6 +484,28 @@ public static class BistroBuilderServiceTimingPlayTest
             "La acción contextual se solapa con fecha/hora.");
         Check(!WorldRect(action).Overlaps(WorldRect(timeDock)),
             "La acción contextual se solapa con controles de velocidad.");
+    }
+
+    private static void CheckNoPairwiseOverlap(params Button[] buttons)
+    {
+        for (int first = 0; first < buttons.Length; first++)
+        {
+            RectTransform a = buttons[first] != null
+                ? buttons[first].transform as RectTransform
+                : null;
+            Check(a != null, "Una acción contextual no tiene RectTransform.");
+
+            for (int second = first + 1; second < buttons.Length; second++)
+            {
+                RectTransform b = buttons[second] != null
+                    ? buttons[second].transform as RectTransform
+                    : null;
+                Check(b != null,
+                    "Una acción contextual no tiene RectTransform.");
+                Check(!WorldRect(a).Overlaps(WorldRect(b)),
+                    "Las acciones contextuales no deben solaparse entre sí.");
+            }
+        }
     }
 
     private static Rect WorldRect(RectTransform rect)
