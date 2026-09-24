@@ -454,10 +454,14 @@ public sealed class ActivityPanelController : MonoBehaviour
         if (button == null)
             button = row.gameObject.AddComponent<Button>();
         button.targetGraphic = background;
-        button.colors = BistroBuilderUiTokens.ButtonColors(
-            background.color,
-            new Color32(55, 52, 44, 248),
-            new Color32(61, 58, 49, 255));
+        button.transition = Selectable.Transition.None;
+
+        ActivityRowHoverFeedback hoverFeedback =
+            row.GetComponent<ActivityRowHoverFeedback>();
+        if (hoverFeedback == null)
+            hoverFeedback =
+                row.gameObject.AddComponent<ActivityRowHoverFeedback>();
+        hoverFeedback.Configure(background);
 
         TMP_Text marker = row.Find("Marker")?.GetComponent<TMP_Text>();
         if (marker == null)
