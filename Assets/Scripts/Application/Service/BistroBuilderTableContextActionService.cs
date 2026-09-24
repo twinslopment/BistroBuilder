@@ -8,6 +8,8 @@ public readonly struct BistroBuilderBillContextActionSnapshot
     public readonly bool IsBeingHandled;
     public readonly bool CanAccelerate;
     public readonly bool IsAlreadyAccelerated;
+    public readonly bool CanExplainDelay;
+    public readonly bool IsDelayExplained;
     public readonly float WaitSeconds;
     public readonly BistroBuilderServiceTimingState TimingState;
     public readonly WaiterTaskPriority TaskPriority;
@@ -19,6 +21,8 @@ public readonly struct BistroBuilderBillContextActionSnapshot
         bool isBeingHandled,
         bool canAccelerate,
         bool isAlreadyAccelerated,
+        bool canExplainDelay,
+        bool isDelayExplained,
         float waitSeconds,
         BistroBuilderServiceTimingState timingState,
         WaiterTaskPriority taskPriority)
@@ -29,6 +33,8 @@ public readonly struct BistroBuilderBillContextActionSnapshot
         IsBeingHandled = isBeingHandled;
         CanAccelerate = canAccelerate;
         IsAlreadyAccelerated = isAlreadyAccelerated;
+        CanExplainDelay = canExplainDelay;
+        IsDelayExplained = isDelayExplained;
         WaitSeconds = Mathf.Max(0f, waitSeconds);
         TimingState = timingState;
         TaskPriority = taskPriority;
@@ -99,8 +105,11 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         bool requested = table.CurrentState == TableState.WaitingForBill ||
                          table.CurrentState == TableState.Paying;
 
-        float waitSeconds =
-            ResolveBillWaitSeconds(table.AssignedCustomerGroup);
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            ResolveBillVisit(table.AssignedCustomerGroup);
+        float waitSeconds = visit != null
+            ? Mathf.Max(0f, visit.billWaitSeconds)
+            : 0f;
 
         BistroBuilderServiceTimingState timingState =
             BistroBuilderServiceTimingState.Normal;
@@ -135,21 +144,31 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         bool alreadyAccelerated =
             hasTask && priority >= WaiterTaskPriority.Urgent;
 
+        bool isWaitingForBill = table.CurrentState == TableState.WaitingForBill;
         bool canAccelerate = CanAccelerateBill(
-            table.CurrentState == TableState.WaitingForBill,
+            isWaitingForBill,
             pending,
             beingHandled,
             priority,
             timingState
         );
+        bool explained = visit != null &&
+            visit.billDelayExplanationMitigationBasisPoints > 0;
+        bool canExplainDelay = CanExplainBillDelay(
+            isWaitingForBill,
+            explained,
+            timingState
+        );
 
         snapshot = new BistroBuilderBillContextActionSnapshot(
-            table.CurrentState == TableState.WaitingForBill,
+            isWaitingForBill,
             hasTask,
             pending,
             beingHandled,
             canAccelerate,
             alreadyAccelerated,
+            canExplainDelay,
+            explained,
             waitSeconds,
             timingState,
             priority
@@ -207,6 +226,68 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         return true;
     }
 
+    public bool TryExplainBillDelay(
+        RestaurantTable table,
+        out string error)
+    {
+        error = string.Empty;
+        ResolveDependencies();
+
+        if (!TryGetBillSnapshot(
+                table,
+                out BistroBuilderBillContextActionSnapshot snapshot))
+        {
+            error = "La mesa no tiene una espera de cuenta activa.";
+            return false;
+        }
+
+        if (snapshot.IsDelayExplained)
+        {
+            error = "La demora de esta cuenta ya fue explicada.";
+            return false;
+        }
+
+        if (!snapshot.CanExplainDelay)
+        {
+            error = "Explicar demora no está disponible en este momento.";
+            return false;
+        }
+
+        if (timingCatalog == null ||
+            !timingCatalog.TryGetProfile(
+                BistroBuilderServiceTimingPhase.BillDelivery,
+                out BistroBuilderServiceTimingProfile profile) ||
+            profile == null ||
+            profile.ExplanationPenaltyMitigationBasisPoints <= 0)
+        {
+            error = "Falta el ajuste de impacto de Explicar demora.";
+            return false;
+        }
+
+        if (experienceTrackingService == null)
+        {
+            error = "Customer Experience Tracking no está disponible.";
+            return false;
+        }
+
+        CustomerGroup group = table != null ? table.AssignedCustomerGroup : null;
+        return experienceTrackingService.TryExplainBillDelay(
+            group,
+            profile.ExplanationPenaltyMitigationBasisPoints,
+            out error
+        );
+    }
+
+    public static bool CanExplainBillDelay(
+        bool isWaitingForBill,
+        bool isAlreadyExplained,
+        BistroBuilderServiceTimingState timingState)
+    {
+        return isWaitingForBill &&
+               !isAlreadyExplained &&
+               BistroBuilderServiceTimingEvaluator.IsDelayOrWorse(timingState);
+    }
+
     public static bool CanAccelerateBill(
         bool isWaitingForBill,
         bool isTaskPending,
@@ -225,20 +306,20 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         return BistroBuilderServiceTimingEvaluator.IsActionableWait(timingState);
     }
 
-    private float ResolveBillWaitSeconds(CustomerGroup group)
+    private BistroBuilderReputationVisitRuntimeRecord ResolveBillVisit(
+        CustomerGroup group)
     {
         if (group == null ||
             experienceTrackingService == null ||
             !experienceTrackingService.TryGetRuntimeVisit(
                 group.GroupId,
                 out BistroBuilderReputationVisitRuntimeRecord visit
-            ) ||
-            visit == null)
+            ))
         {
-            return 0f;
+            return null;
         }
 
-        return Mathf.Max(0f, visit.billWaitSeconds);
+        return visit;
     }
 
     private void ResolveDependencies()

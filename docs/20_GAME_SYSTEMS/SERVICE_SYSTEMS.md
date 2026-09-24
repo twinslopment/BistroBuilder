@@ -3,7 +3,7 @@
 ## Clientes y mesas
 El servicio debe mantener grupos/clientes, seating, consumo individual y compartido, cuenta y limpieza. La ficha contextual del cliente/mesa expone información básica y acciones operativas como `Disculpa`, `Explicar demora` o `Agilizar cuenta` cuando proceda.
 
-Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo.
+Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo. `Explicar demora` se habilita desde Demora, no altera la prioridad física de la tarea y aplica una mitigación de satisfacción configurable y de una sola aplicación, persistida mediante `reputation.runtime`.
 
 ## Comandas
 La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.

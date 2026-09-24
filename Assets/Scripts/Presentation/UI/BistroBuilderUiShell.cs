@@ -20,6 +20,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     public const string ActivityPanelName = "BB_UIUX_ActivityPanel";
     public const string ContextPanelName = "BB_UIUX_ContextPanel";
     public const string ServiceActionName = "BB_UIUX_ServiceAction";
+    public const string SecondaryContextActionName = "BB_UIUX_SecondaryContextAction";
     public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf) || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
 
     private static readonly NavSpec[] Navigation =
@@ -54,6 +55,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     [SerializeField] private TMP_Text contextBody;
     [SerializeField] private Button serviceActionButton;
     [SerializeField] private TMP_Text serviceActionLabel;
+    [SerializeField] private Button secondaryContextActionButton;
+    [SerializeField] private TMP_Text secondaryContextActionLabel;
     [SerializeField] private Button closeManagementButton;
 
     private readonly Dictionary<string, Button> proxyButtons =
@@ -132,7 +135,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         ResolveDependencies();
         EnsureShell();
         if (canvas == null || shellRoot == null || topNavigation == null ||
-            bottomOperations == null || activityPanel == null || contextPanel == null || serviceActionButton == null)
+            bottomOperations == null || activityPanel == null || contextPanel == null ||
+            serviceActionButton == null || secondaryContextActionButton == null)
         {
             error = "El shell 21A no pudo resolver su Canvas o sus superficies principales.";
             return false;
@@ -181,6 +185,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         EnsureContextPanel();
         EnsureIconNavigationButtons();
         EnsureServiceAction();
+        EnsureSecondaryContextAction();
         EnsureEditModeChrome();
         ReconcileTimeDock();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
@@ -444,7 +449,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             serviceActionButton.colors = BistroBuilderUiTokens.ButtonColors(BistroBuilderUiTokens.Primary, BistroBuilderUiTokens.PrimaryHover, BistroBuilderUiTokens.PrimaryPressed);
             RectTransform rect = go.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(1f, 0.5f); rect.anchorMax = new Vector2(1f, 0.5f);
-            rect.pivot = new Vector2(1f, 0.5f); rect.anchoredPosition = new Vector2(-14f, 0f);
+            rect.pivot = new Vector2(1f, 0.5f); rect.anchoredPosition = new Vector2(-588f, 0f);
             rect.sizeDelta = new Vector2(220f, 44f);
             GameObject labelGo = NewUi("Label", go.transform);
             serviceActionLabel = labelGo.AddComponent<TextMeshProUGUI>();
@@ -459,9 +464,68 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             Transform label = serviceActionButton.transform.Find("Label");
             serviceActionLabel = label != null ? label.GetComponent<TMP_Text>() : null;
         }
+
+        RectTransform actionRect = serviceActionButton.transform as RectTransform;
+        if (actionRect != null)
+        {
+            actionRect.anchorMin = new Vector2(1f, 0.5f);
+            actionRect.anchorMax = new Vector2(1f, 0.5f);
+            actionRect.pivot = new Vector2(1f, 0.5f);
+            actionRect.anchoredPosition = new Vector2(-588f, 0f);
+            actionRect.sizeDelta = new Vector2(220f, 44f);
+        }
+
         serviceActionButton.onClick.RemoveAllListeners();
         serviceActionButton.onClick.AddListener(HandleServiceActionClicked);
     }
+
+    private void EnsureSecondaryContextAction()
+    {
+        Transform found = bottomOperations.Find(SecondaryContextActionName);
+        secondaryContextActionButton = found != null ? found.GetComponent<Button>() : null;
+        if (secondaryContextActionButton == null)
+        {
+            GameObject go = NewUi(SecondaryContextActionName, bottomOperations);
+            Image image = go.AddComponent<Image>();
+            image.color = BistroBuilderUiTokens.Primary;
+            secondaryContextActionButton = go.AddComponent<Button>();
+            secondaryContextActionButton.colors = BistroBuilderUiTokens.ButtonColors(
+                BistroBuilderUiTokens.Primary,
+                BistroBuilderUiTokens.PrimaryHover,
+                BistroBuilderUiTokens.PrimaryPressed);
+            GameObject labelGo = NewUi("Label", go.transform);
+            secondaryContextActionLabel = labelGo.AddComponent<TextMeshProUGUI>();
+            Stretch(secondaryContextActionLabel.rectTransform);
+            secondaryContextActionLabel.fontSize = 14f;
+            secondaryContextActionLabel.fontStyle = FontStyles.Bold;
+            secondaryContextActionLabel.alignment = TextAlignmentOptions.Center;
+            secondaryContextActionLabel.color = BistroBuilderUiTokens.ContentLight;
+            secondaryContextActionLabel.raycastTarget = false;
+        }
+        else
+        {
+            Transform label = secondaryContextActionButton.transform.Find("Label");
+            secondaryContextActionLabel = label != null ? label.GetComponent<TMP_Text>() : null;
+        }
+
+        PositionBottomAction(secondaryContextActionButton, 820f);
+        secondaryContextActionButton.onClick.RemoveAllListeners();
+        secondaryContextActionButton.onClick.AddListener(HandleExplainDelayClicked);
+        secondaryContextActionButton.gameObject.SetActive(false);
+    }
+
+    private static void PositionBottomAction(Button button, float rightOffset)
+    {
+        if (button == null) return;
+        RectTransform rect = button.transform as RectTransform;
+        if (rect == null) return;
+        rect.anchorMin = new Vector2(1f, 0.5f);
+        rect.anchorMax = new Vector2(1f, 0.5f);
+        rect.pivot = new Vector2(1f, 0.5f);
+        rect.anchoredPosition = new Vector2(-rightOffset, 0f);
+        rect.sizeDelta = new Vector2(220f, 44f);
+    }
+
     private void ReconcileNavigation()
     {
         if (canvas == null || navContent == null) return;
@@ -856,9 +920,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             if (contextTitle != null) contextTitle.text = "Mesa " + selected.TableId;
             if (contextBody != null) contextBody.text = BuildSelectedTableContext(selected, hasBillSnapshot, billSnapshot);
 
+            bool showAccelerate = hasBillSnapshot && billSnapshot.CanAccelerate;
+            bool showExplainDelay = hasBillSnapshot && billSnapshot.CanExplainDelay;
+
             if (serviceActionButton != null && serviceActionLabel != null)
             {
-                bool showAccelerate = hasBillSnapshot && billSnapshot.CanAccelerate;
+                PositionBottomAction(serviceActionButton, 588f);
                 serviceActionButton.gameObject.SetActive(showAccelerate);
                 serviceActionButton.interactable = showAccelerate;
                 serviceActionLabel.text = "AGILIZAR CUENTA";
@@ -871,11 +938,31 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                         : BistroBuilderUiTokens.Attention;
                 }
             }
+
+            if (secondaryContextActionButton != null &&
+                secondaryContextActionLabel != null)
+            {
+                PositionBottomAction(
+                    secondaryContextActionButton,
+                    showAccelerate ? 820f : 588f
+                );
+                secondaryContextActionButton.gameObject.SetActive(showExplainDelay);
+                secondaryContextActionButton.interactable = showExplainDelay;
+                secondaryContextActionLabel.text = "EXPLICAR DEMORA";
+                Image explainImage = secondaryContextActionButton.targetGraphic as Image;
+                if (explainImage != null)
+                    explainImage.color = BistroBuilderUiTokens.Primary;
+            }
             return;
         }
 
         if (serviceActionButton != null)
+        {
+            PositionBottomAction(serviceActionButton, 588f);
             serviceActionButton.gameObject.SetActive(!editing && !HasManagementScreenOpen);
+        }
+        if (secondaryContextActionButton != null)
+            secondaryContextActionButton.gameObject.SetActive(false);
 
         if (contextTitle != null) contextTitle.text = "Contexto";
         if (contextBody != null)
@@ -920,11 +1007,27 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 if (!hasBillSnapshot)
                     guidance = "La mesa espera la cuenta.";
                 else if (billSnapshot.IsBeingHandled)
-                    guidance = "Cuenta en camino.";
+                    guidance = billSnapshot.IsDelayExplained
+                        ? "Demora explicada. Cuenta en camino."
+                        : billSnapshot.CanExplainDelay
+                            ? "Cuenta en camino. Puedes explicar la demora."
+                            : "Cuenta en camino.";
                 else if (billSnapshot.IsAlreadyAccelerated)
-                    guidance = "Cuenta priorizada. Se atenderá en cuanto haya un camarero disponible.";
+                    guidance = billSnapshot.IsDelayExplained
+                        ? "Demora explicada. Cuenta priorizada."
+                        : billSnapshot.CanExplainDelay
+                            ? "Cuenta priorizada. Puedes explicar la demora mientras espera."
+                            : "Cuenta priorizada. Se atenderá en cuanto haya un camarero disponible.";
+                else if (billSnapshot.CanAccelerate && billSnapshot.CanExplainDelay)
+                    guidance = "Hay demora. Puedes agilizar la cuenta o explicar la espera.";
+                else if (billSnapshot.CanExplainDelay)
+                    guidance = "Hay demora. Puedes explicar la espera.";
                 else if (billSnapshot.CanAccelerate)
-                    guidance = "La espera requiere atención. Puedes agilizar la cuenta.";
+                    guidance = billSnapshot.IsDelayExplained
+                        ? "Demora explicada. Puedes seguir agilizando la cuenta."
+                        : "La espera requiere atención. Puedes agilizar la cuenta.";
+                else if (billSnapshot.IsDelayExplained)
+                    guidance = "La demora ha sido explicada.";
                 else
                     guidance = "La cuenta está dentro del tiempo normal de servicio.";
                 break;
@@ -991,6 +1094,28 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             AddActivity("Cierre \u00B7 fin de servicio iniciado.");
         else
             AddActivity("Cierre \u00B7 " + (string.IsNullOrWhiteSpace(error) ? "no disponible ahora." : error));
+        RefreshReadModels();
+    }
+
+    private void HandleExplainDelayClicked()
+    {
+        ResolveDependencies();
+        RestaurantTable selected =
+            tableSelection != null ? tableSelection.SelectedTable : null;
+        if (selected == null)
+            return;
+
+        string actionError = string.Empty;
+        if (tableContextActions != null &&
+            tableContextActions.TryExplainBillDelay(selected, out actionError))
+        {
+            AddActivity("Mesa " + selected.TableId + " · demora explicada.");
+        }
+        else if (!string.IsNullOrWhiteSpace(actionError))
+        {
+            AddActivity("Mesa " + selected.TableId + " · " + actionError);
+        }
+
         RefreshReadModels();
     }
 

@@ -138,6 +138,7 @@ public static class BistroBuilderServiceTimingInstaller
         profile.FindPropertyRelative("delaySeconds").floatValue = 210f;
         profile.FindPropertyRelative("incidentSeconds").floatValue = 300f;
         profile.FindPropertyRelative("criticalSeconds").floatValue = 420f;
+        profile.FindPropertyRelative("explanationPenaltyMitigationBasisPoints").intValue = 1500;
 
         so.ApplyModifiedPropertiesWithoutUndo();
     }

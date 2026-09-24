@@ -1205,7 +1205,7 @@ Category: CANONICAL
 ## Clientes y mesas
 El servicio debe mantener grupos/clientes, seating, consumo individual y compartido, cuenta y limpieza. La ficha contextual del cliente/mesa expone información básica y acciones operativas como `Disculpa`, `Explicar demora` o `Agilizar cuenta` cuando proceda.
 
-Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo.
+Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo. `Explicar demora` se habilita desde Demora, no altera la prioridad física de la tarea y aplica una mitigación de satisfacción configurable y de una sola aplicación, persistida mediante `reputation.runtime`.
 
 ## Comandas
 La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.
@@ -1392,9 +1392,9 @@ Comportamiento esperado:
 - **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
 - Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
 
-#### Primera vertical implementable: espera de cuenta
+#### Vertical runtime: espera de cuenta
 
-La primera integración runtime se limita deliberadamente a **espera de cuenta + `Agilizar cuenta`**. No modifica todavía el sistema avanzado de camareros ni introduce tiempos de platos.
+La primera integración runtime se mantiene deliberadamente limitada a **espera de cuenta**, pero ya cubre dos acciones ratificadas: `Agilizar cuenta` y `Explicar demora`. No modifica el sistema avanzado de camareros ni introduce tiempos de platos.
 
 Tuning provisional de prueba para `BillDelivery`:
 
@@ -1411,6 +1411,10 @@ Estos valores son **datos provisionales de balance**, no cifras definitivas de d
 La espera canónica se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
 
 Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.
+
+`Explicar demora` aparece **desde Demora**, no en Atención. No acelera la tarea física de cuenta. Es de una sola aplicación por necesidad activa y puede coexistir con `Agilizar cuenta`. Su efecto es mitigar parte del impacto de la espera en satisfacción mientras la causa sigue existiendo. La mitigación inicial de prueba queda en **1500 pb (15 % de la penalización de espera de cuenta recuperable)**, configurada en `ServiceTimingCatalog`; es un valor **provisional de balance**, no una cifra definitiva. El estado explicado se persiste dentro de `reputation.runtime` para sobrevivir a Save/Load.
+
+La UI de esta vertical admite hasta dos acciones simultáneas sin solaparse con fecha/hora ni controles de velocidad. Tras priorizar, `Agilizar cuenta` desaparece; tras explicar, `Explicar demora` desaparece. El panel contextual conserva feedback informativo (`Cuenta priorizada`, `Demora explicada`, `Cuenta en camino`) sin mantener botones obsoletos.
 
 ### Acciones pendientes de ratificación
 

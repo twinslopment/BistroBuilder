@@ -83,11 +83,33 @@ public static class BistroBuilderServiceTimingSelfTest
             !BistroBuilderTableContextActionService.CanAccelerateBill(
                 true, false, true, WaiterTaskPriority.High,
                 BistroBuilderServiceTimingState.Delay),
-            "Una cuenta ya asignada no debe mostrar la acción.",
+            "Una cuenta ya asignada no debe mostrar Agilizar cuenta.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            !BistroBuilderTableContextActionService.CanExplainBillDelay(
+                true, false, BistroBuilderServiceTimingState.Attention),
+            "Atención no debe permitir Explicar demora.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderTableContextActionService.CanExplainBillDelay(
+                true, false, BistroBuilderServiceTimingState.Delay),
+            "Demora debe permitir Explicar demora.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            !BistroBuilderTableContextActionService.CanExplainBillDelay(
+                true, true, BistroBuilderServiceTimingState.Incident),
+            "Explicar demora debe ser de una sola aplicación.",
             ref failures,
             logResult
         );
 
+        TestExplanationMitigation(ref failures, logResult);
         TestCoordinatorPriority(ref failures, logResult);
         TestSaveRecordContract(ref failures, logResult);
 
@@ -99,6 +121,53 @@ public static class BistroBuilderServiceTimingSelfTest
             );
 
         return failures == 0;
+    }
+
+    private static void TestExplanationMitigation(
+        ref int failures,
+        bool logResult)
+    {
+        int raw = 0;
+        int mitigated =
+            BistroBuilderCustomerExperienceEvaluator.ApplyBillDelayExplanationMitigation(
+                raw,
+                1500
+            );
+
+        Expect(
+            mitigated == 1500,
+            "Una explicación al 15% debe recuperar 1500 pb cuando la penalización de cuenta es máxima.",
+            ref failures,
+            logResult
+        );
+
+        var snapshot = new BistroBuilderReputationRuntimeSnapshot();
+        snapshot.visits.Add(new BistroBuilderReputationVisitRuntimeRecord
+        {
+            groupId = 77,
+            partySize = 2,
+            segmentId = "general",
+            billWaitSeconds = 210f,
+            billDelayExplanationMitigationBasisPoints = 1500
+        });
+
+        BistroBuilderReputationRuntimeSnapshot clone = snapshot.DeepClone();
+        Expect(
+            clone.visits.Count == 1 &&
+            clone.visits[0].billDelayExplanationMitigationBasisPoints == 1500,
+            "reputation.runtime debe conservar Explicar demora en snapshot/rehidratación.",
+            ref failures,
+            logResult
+        );
+        Expect(
+            BistroBuilderCustomerExperienceTrackingService.TryValidateRuntimeSnapshot(
+                clone,
+                out _
+            ),
+            "El snapshot con Explicar demora debe validar.",
+            ref failures,
+            logResult
+        );
     }
 
     private static void TestCoordinatorPriority(

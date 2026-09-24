@@ -34,6 +34,8 @@ public sealed class BistroBuilderServiceTimingProfile
     [SerializeField, Min(0f)] private float delaySeconds;
     [SerializeField, Min(0f)] private float incidentSeconds;
     [SerializeField, Min(0f)] private float criticalSeconds;
+    [SerializeField, Range(0, 10000)]
+    private int explanationPenaltyMitigationBasisPoints;
 
     public BistroBuilderServiceTimingPhase Phase => phase;
     public float TargetSeconds => targetSeconds;
@@ -41,6 +43,8 @@ public sealed class BistroBuilderServiceTimingProfile
     public float DelaySeconds => delaySeconds;
     public float IncidentSeconds => incidentSeconds;
     public float CriticalSeconds => criticalSeconds;
+    public int ExplanationPenaltyMitigationBasisPoints =>
+        explanationPenaltyMitigationBasisPoints;
 
     public bool Validate(out string error)
     {
@@ -48,9 +52,11 @@ public sealed class BistroBuilderServiceTimingProfile
             !IsFiniteNonNegative(attentionSeconds) ||
             !IsFiniteNonNegative(delaySeconds) ||
             !IsFiniteNonNegative(incidentSeconds) ||
-            !IsFiniteNonNegative(criticalSeconds))
+            !IsFiniteNonNegative(criticalSeconds) ||
+            explanationPenaltyMitigationBasisPoints < 0 ||
+            explanationPenaltyMitigationBasisPoints > 10000)
         {
-            error = "Los umbrales de servicio deben ser finitos y no negativos.";
+            error = "Los umbrales deben ser finitos/no negativos y la mitigación debe estar entre 0 y 10000 pb.";
             return false;
         }
 
@@ -106,6 +112,13 @@ public static class BistroBuilderServiceTimingEvaluator
             return BistroBuilderServiceTimingState.Attention;
 
         return BistroBuilderServiceTimingState.Normal;
+    }
+
+    public static bool IsDelayOrWorse(BistroBuilderServiceTimingState state)
+    {
+        return state == BistroBuilderServiceTimingState.Delay ||
+               state == BistroBuilderServiceTimingState.Incident ||
+               state == BistroBuilderServiceTimingState.Critical;
     }
 
     public static bool IsActionableWait(BistroBuilderServiceTimingState state)

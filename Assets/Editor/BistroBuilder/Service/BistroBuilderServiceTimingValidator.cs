@@ -42,7 +42,8 @@ public static class BistroBuilderServiceTimingValidator
                      !Approximately(bill.AttentionSeconds, 120f) ||
                      !Approximately(bill.DelaySeconds, 210f) ||
                      !Approximately(bill.IncidentSeconds, 300f) ||
-                     !Approximately(bill.CriticalSeconds, 420f))
+                     !Approximately(bill.CriticalSeconds, 420f) ||
+                     bill.ExplanationPenaltyMitigationBasisPoints != 1500)
             {
                 errors++;
                 if (logResult)

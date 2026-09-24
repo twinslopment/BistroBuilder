@@ -16,11 +16,14 @@ public static class BistroBuilderCustomerExperienceEvaluator
         if (!TryValidateRuntimeVisit(visit, out error) || dayIndex < 1)
             return false;
 
+        int billScore = ApplyBillDelayExplanationMitigation(
+            BistroBuilderReputationEngine.ScoreWaitSeconds(
+                visit.billWaitSeconds, 8f, 45f),
+            visit.billDelayExplanationMitigationBasisPoints);
         int service = Average(
             BistroBuilderReputationEngine.ScoreWaitSeconds(
                 visit.waiterWaitSeconds, 8f, 60f),
-            BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.billWaitSeconds, 8f, 45f));
+            billScore);
 
         float expected = Math.Max(4f, visit.expectedFoodSeconds);
         int waiting = Average(
@@ -31,8 +34,7 @@ public static class BistroBuilderCustomerExperienceEvaluator
             BistroBuilderReputationEngine.ScoreWaitSeconds(
                 visit.foodWaitSeconds, expected * 1.35f + 4f,
                 expected * 3f + 30f),
-            BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.billWaitSeconds, 8f, 45f));
+            billScore);
 
         int food = ComputeFoodQuality(visit, expected);
         int value = ComputeValueForMoney(
@@ -78,6 +80,11 @@ public static class BistroBuilderCustomerExperienceEvaluator
                 visit.discoverySource) ||
             !Finite(visit.tableWaitSeconds) || !Finite(visit.waiterWaitSeconds) ||
             !Finite(visit.foodWaitSeconds) || !Finite(visit.billWaitSeconds) ||
+            !Finite(visit.waiterCareCreditSeconds) ||
+            !Finite(visit.foodCareCreditSeconds) ||
+            !Finite(visit.billCareCreditSeconds) ||
+            visit.billDelayExplanationMitigationBasisPoints < 0 ||
+            visit.billDelayExplanationMitigationBasisPoints > 10000 ||
             !Finite(visit.expectedFoodSeconds) || visit.paidAmountCents < 0L ||
             visit.referenceAmountCents < 0L ||
             visit.foodQualityPotentialBasisPoints < 0 ||
@@ -90,6 +97,21 @@ public static class BistroBuilderCustomerExperienceEvaluator
         }
         error = string.Empty;
         return true;
+    }
+
+    public static int ApplyBillDelayExplanationMitigation(
+        int rawBillScoreBasisPoints,
+        int mitigationBasisPoints)
+    {
+        int raw = ClampScore(rawBillScoreBasisPoints);
+        int mitigation = Math.Max(0, Math.Min(10000, mitigationBasisPoints));
+        if (mitigation == 0 || raw >= 10000)
+            return raw;
+
+        int recovered = (int)Math.Round(
+            (10000 - raw) * (mitigation / 10000d),
+            MidpointRounding.AwayFromZero);
+        return ClampScore(raw + recovered);
     }
 
     private static int ComputeFoodQuality(

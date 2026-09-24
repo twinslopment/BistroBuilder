@@ -19,3 +19,4 @@ MonoBehaviour:
     delaySeconds: 210
     incidentSeconds: 300
     criticalSeconds: 420
+    explanationPenaltyMitigationBasisPoints: 1500

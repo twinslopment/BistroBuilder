@@ -137,6 +137,43 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         return true;
     }
 
+    public bool TryExplainBillDelay(
+        CustomerGroup group,
+        int mitigationBasisPoints,
+        out string error)
+    {
+        error = string.Empty;
+        if (group == null || group.GroupId < 1 ||
+            group.CurrentState != CustomerGroupState.WaitingForBill ||
+            mitigationBasisPoints <= 0 || mitigationBasisPoints > 10000)
+        {
+            error = "La explicación de demora de cuenta no es válida en este momento.";
+            return false;
+        }
+
+        RegisterGroup(group);
+        if (!visitsByGroup.TryGetValue(
+                group.GroupId,
+                out BistroBuilderReputationVisitRuntimeRecord visit
+            ) || visit == null || visit.finalized)
+        {
+            error = "No existe una visita activa para explicar la demora.";
+            return false;
+        }
+
+        if (visit.billDelayExplanationMitigationBasisPoints > 0)
+        {
+            error = "La demora de esta cuenta ya fue explicada.";
+            return false;
+        }
+
+        visit.billDelayExplanationMitigationBasisPoints = mitigationBasisPoints;
+        visit.waiterContextActionCount = Math.Min(
+            64, visit.waiterContextActionCount + 1);
+        ExperienceRuntimeChanged?.Invoke();
+        return true;
+    }
+
     public bool TryApplyWaiterContextAction(
         CustomerGroup group,
         BistroBuilderWaiterContextActionKind action,

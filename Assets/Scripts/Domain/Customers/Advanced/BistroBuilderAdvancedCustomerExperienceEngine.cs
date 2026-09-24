@@ -69,8 +69,12 @@ public static class BistroBuilderAdvancedCustomerExperienceEngine
     {
         int waiterScore = ScorePersonalWait(
             visit.waiterWaitSeconds, member.waiterWaitToleranceSeconds);
-        int billScore = ScorePersonalWait(
-            visit.billWaitSeconds, member.billWaitToleranceSeconds);
+        int billScore =
+            BistroBuilderCustomerExperienceEvaluator.ApplyBillDelayExplanationMitigation(
+                ScorePersonalWait(
+                    visit.billWaitSeconds,
+                    member.billWaitToleranceSeconds),
+                visit.billDelayExplanationMitigationBasisPoints);
         int service = ApplySensitivity(
             Average(waiterScore, billScore), member.serviceSensitivityBasisPoints);
 
