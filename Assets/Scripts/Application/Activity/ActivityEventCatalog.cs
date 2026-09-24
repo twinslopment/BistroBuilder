@@ -65,6 +65,10 @@ public static class ActivityIconFamilyCatalog
             { "activity.trend.up", "activity.trend.up" }
         };
 
+    private static readonly string[] CanonicalFamilies = BuildCanonicalFamilies();
+
+    public static IReadOnlyList<string> AllFamilies => CanonicalFamilies;
+
     public static bool TryResolveFamily(string iconKey, out string familyKey)
     {
         familyKey = string.Empty;
@@ -100,6 +104,18 @@ public static class ActivityIconFamilyCatalog
                 builder.Append(parts[i].Substring(1));
         }
         return builder.ToString();
+    }
+
+    private static string[] BuildCanonicalFamilies()
+    {
+        var unique = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string family in Families.Values)
+            unique.Add(family);
+
+        string[] result = new string[unique.Count];
+        unique.CopyTo(result);
+        Array.Sort(result, StringComparer.Ordinal);
+        return result;
     }
 }
 

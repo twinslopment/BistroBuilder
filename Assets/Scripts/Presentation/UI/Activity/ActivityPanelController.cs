@@ -542,11 +542,8 @@ public sealed class ActivityPanelController : MonoBehaviour
 
         if (icon != null)
         {
-            string resourceName =
-                ActivityIconFamilyCatalog.ToRuntimeResourceName(
-                    entry.Definition.IconFamilyKey);
-            Sprite sprite = Resources.Load<Sprite>(
-                "BistroBuilder/UI/ActivityIcons/" + resourceName);
+            Sprite sprite = ActivityIconResolver.ResolveOrNull(
+                entry.Definition.IconFamilyKey);
             icon.sprite = sprite;
             icon.enabled = sprite != null;
         }

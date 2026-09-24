@@ -22,11 +22,37 @@ public static class BistroBuilderActivityRuntimeSelfTest
             Check(ActivityEventCatalog.All.Count == 63,
                 "63 eventos V1 activos registrados", ref passed, ref failed, log);
 
-            var families = new HashSet<string>(StringComparer.Ordinal);
+            var eventFamilies = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < ActivityEventCatalog.All.Count; i++)
-                families.Add(ActivityEventCatalog.All[i].IconFamilyKey);
-            Check(families.Count == 28,
-                "28 familias visuales canónicas", ref passed, ref failed, log);
+                eventFamilies.Add(ActivityEventCatalog.All[i].IconFamilyKey);
+
+            Check(ActivityIconFamilyCatalog.AllFamilies.Count == 28 &&
+                  eventFamilies.SetEquals(ActivityIconFamilyCatalog.AllFamilies),
+                "28 familias visuales canónicas y cubiertas por V1",
+                ref passed, ref failed, log);
+
+            var resourceNames = new HashSet<string>(StringComparer.Ordinal);
+            var missingIcons = new List<string>();
+            for (int i = 0; i < ActivityIconFamilyCatalog.AllFamilies.Count; i++)
+            {
+                string family = ActivityIconFamilyCatalog.AllFamilies[i];
+                resourceNames.Add(ActivityIconResolver.GetResourceName(family));
+                string assetPath =
+                    "Assets/Resources/" +
+                    ActivityIconResolver.GetResourcePath(family) +
+                    ".png";
+                if (AssetDatabase.LoadAssetAtPath<Sprite>(assetPath) == null)
+                    missingIcons.Add(family);
+            }
+
+            Check(resourceNames.Count == 28,
+                "28 nombres de recurso únicos", ref passed, ref failed, log);
+            Check(missingIcons.Count == 0,
+                "28 sprites runtime resolubles" +
+                (missingIcons.Count == 0
+                    ? string.Empty
+                    : " · faltan: " + string.Join(", ", missingIcons)),
+                ref passed, ref failed, log);
 
             first = new GameObject("__BB_ACTIVITY_SELF_TEST_A__");
             ActivityFeedService feed = first.AddComponent<ActivityFeedService>();
