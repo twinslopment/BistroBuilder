@@ -54,6 +54,18 @@ public static class BistroBuilderActivityRuntimeSelfTest
                     : " · faltan: " + string.Join(", ", missingIcons)),
                 ref passed, ref failed, log);
 
+            Check(
+                BistroBuilderTypography.Body != null &&
+                BistroBuilderTypography.Emphasis != null &&
+                BistroBuilderTypography.HasRecoleta,
+                "Tipografías Inter + Recoleta disponibles para ACTIVIDAD",
+                ref passed, ref failed, log);
+
+            Check(
+                ActivityPanelVisualStyle.RoundedSprite != null,
+                "Marco y tarjetas redondeadas runtime disponibles",
+                ref passed, ref failed, log);
+
             first = new GameObject("__BB_ACTIVITY_SELF_TEST_A__");
             ActivityFeedService feed = first.AddComponent<ActivityFeedService>();
 
