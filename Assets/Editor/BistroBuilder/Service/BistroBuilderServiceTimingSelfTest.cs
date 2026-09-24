@@ -47,6 +47,60 @@ public static class BistroBuilderServiceTimingSelfTest
             ExpectState(profile, 420f, BistroBuilderServiceTimingState.Critical, ref failures, logResult);
         }
 
+        if (catalog == null ||
+            !catalog.TryGetProfile(
+                BistroBuilderServiceTimingPhase.TakeOrder,
+                out BistroBuilderServiceTimingProfile takeOrder))
+        {
+            Fail("No se pudo cargar TakeOrder.", ref failures, logResult);
+        }
+        else
+        {
+            ExpectState(takeOrder, 19.99f, BistroBuilderServiceTimingState.Normal, ref failures, logResult);
+            ExpectState(takeOrder, 20f, BistroBuilderServiceTimingState.Attention, ref failures, logResult);
+            ExpectState(takeOrder, 35f, BistroBuilderServiceTimingState.Delay, ref failures, logResult);
+            ExpectState(takeOrder, 50f, BistroBuilderServiceTimingState.Incident, ref failures, logResult);
+            ExpectState(takeOrder, 70f, BistroBuilderServiceTimingState.Critical, ref failures, logResult);
+        }
+
+        BistroBuilderFoodTimingPolicy food =
+            catalog != null ? catalog.FoodTimingPolicy : null;
+        if (food == null)
+        {
+            Fail("No se pudo cargar FoodDelivery dinámico.", ref failures, logResult);
+        }
+        else
+        {
+            food.GetThresholds(
+                20f,
+                out float foodTarget,
+                out float foodAttention,
+                out float foodDelay,
+                out float foodIncident,
+                out float foodCritical
+            );
+            Expect(
+                Mathf.Approximately(foodTarget, 20f) &&
+                Mathf.Approximately(foodAttention, 23f) &&
+                Mathf.Approximately(foodDelay, 31f) &&
+                Mathf.Approximately(foodIncident, 40f) &&
+                Mathf.Approximately(foodCritical, 90f),
+                "FoodDelivery 20s debe derivar 20/23/31/40/90.",
+                ref failures,
+                logResult
+            );
+            Expect(
+                food.Evaluate(20f, 22.99f) == BistroBuilderServiceTimingState.Normal &&
+                food.Evaluate(20f, 23f) == BistroBuilderServiceTimingState.Attention &&
+                food.Evaluate(20f, 31f) == BistroBuilderServiceTimingState.Delay &&
+                food.Evaluate(20f, 40f) == BistroBuilderServiceTimingState.Incident &&
+                food.Evaluate(20f, 90f) == BistroBuilderServiceTimingState.Critical,
+                "FoodDelivery debe respetar todos sus límites dinámicos.",
+                ref failures,
+                logResult
+            );
+        }
+
         Expect(
             !BistroBuilderTableContextActionService.CanAccelerateBill(
                 true, true, false, WaiterTaskPriority.High,
@@ -192,15 +246,26 @@ public static class BistroBuilderServiceTimingSelfTest
             groupId = 77,
             partySize = 2,
             segmentId = "general",
+            waiterWaitSeconds = 35f,
+            foodWaitSeconds = 31f,
+            expectedFoodSeconds = 20f,
             billWaitSeconds = 210f,
+            waiterDelayExplanationMitigationBasisPoints = 1500,
+            waiterIncidentApologyMitigationBasisPoints = 2500,
+            foodDelayExplanationMitigationBasisPoints = 1500,
+            foodIncidentApologyMitigationBasisPoints = 2500,
             billDelayExplanationMitigationBasisPoints = 1500
         });
 
         BistroBuilderReputationRuntimeSnapshot clone = snapshot.DeepClone();
         Expect(
             clone.visits.Count == 1 &&
+            clone.visits[0].waiterDelayExplanationMitigationBasisPoints == 1500 &&
+            clone.visits[0].waiterIncidentApologyMitigationBasisPoints == 2500 &&
+            clone.visits[0].foodDelayExplanationMitigationBasisPoints == 1500 &&
+            clone.visits[0].foodIncidentApologyMitigationBasisPoints == 2500 &&
             clone.visits[0].billDelayExplanationMitigationBasisPoints == 1500,
-            "reputation.runtime debe conservar Explicar demora en snapshot/rehidratación.",
+            "reputation.runtime debe conservar las recuperaciones de camarero, comida y cuenta.",
             ref failures,
             logResult
         );

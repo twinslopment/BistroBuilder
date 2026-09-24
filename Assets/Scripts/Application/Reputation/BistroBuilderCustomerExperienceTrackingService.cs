@@ -138,17 +138,22 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         return true;
     }
 
-    public bool TryExplainBillDelay(
+    public bool TryExplainServiceDelay(
         CustomerGroup group,
+        BistroBuilderServiceTimingPhase phase,
         int mitigationBasisPoints,
         out string error)
     {
         error = string.Empty;
-        if (group == null || group.GroupId < 1 ||
-            group.CurrentState != CustomerGroupState.WaitingForBill ||
-            mitigationBasisPoints <= 0 || mitigationBasisPoints > 10000)
+        if (group == null ||
+            group.GroupId < 1 ||
+            !Enum.IsDefined(typeof(BistroBuilderServiceTimingPhase), phase) ||
+            !IsGroupWaitingForPhase(group, phase) ||
+            mitigationBasisPoints <= 0 ||
+            mitigationBasisPoints > 10000)
         {
-            error = "La explicación de demora de cuenta no es válida en este momento.";
+            error =
+                "La explicación de demora no es válida en este momento.";
             return false;
         }
 
@@ -156,37 +161,65 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (!visitsByGroup.TryGetValue(
                 group.GroupId,
                 out BistroBuilderReputationVisitRuntimeRecord visit
-            ) || visit == null || visit.finalized)
+            ) ||
+            visit == null ||
+            visit.finalized)
         {
             error = "No existe una visita activa para explicar la demora.";
             return false;
         }
 
-        if (visit.billDelayExplanationMitigationBasisPoints > 0)
+        if (GetDelayExplanationMitigation(visit, phase) > 0)
         {
-            error = "La demora de esta cuenta ya fue explicada.";
+            error = "La demora de esta necesidad ya fue explicada.";
             return false;
         }
 
-        visit.billDelayExplanationMitigationBasisPoints = mitigationBasisPoints;
+        SetDelayExplanationMitigation(
+            visit,
+            phase,
+            mitigationBasisPoints
+        );
         visit.waiterContextActionCount = Math.Min(
-            64, visit.waiterContextActionCount + 1);
+            64,
+            visit.waiterContextActionCount + 1
+        );
         ExperienceRuntimeChanged?.Invoke();
         return true;
     }
 
-    public bool TryApologizeForIncident(
+    public bool TryExplainBillDelay(
         CustomerGroup group,
-        bool applyBillIncidentRecovery,
-        int billMitigationBasisPoints,
+        int mitigationBasisPoints,
+        out string error)
+    {
+        return TryExplainServiceDelay(
+            group,
+            BistroBuilderServiceTimingPhase.BillDelivery,
+            mitigationBasisPoints,
+            out error
+        );
+    }
+
+    public bool TryApologizeForServiceIncident(
+        CustomerGroup group,
+        bool applyTimingIncidentRecovery,
+        BistroBuilderServiceTimingPhase timingPhase,
+        int timingMitigationBasisPoints,
         bool coverExplicitIncidents,
         out string error)
     {
         error = string.Empty;
-        if (group == null || group.GroupId < 1 ||
-            (!applyBillIncidentRecovery && !coverExplicitIncidents) ||
-            billMitigationBasisPoints < 0 ||
-            billMitigationBasisPoints > 10000)
+        if (group == null ||
+            group.GroupId < 1 ||
+            (applyTimingIncidentRecovery &&
+             !Enum.IsDefined(
+                 typeof(BistroBuilderServiceTimingPhase),
+                 timingPhase
+             )) ||
+            (!applyTimingIncidentRecovery && !coverExplicitIncidents) ||
+            timingMitigationBasisPoints < 0 ||
+            timingMitigationBasisPoints > 10000)
         {
             error = "La disculpa no es válida en este momento.";
             return false;
@@ -196,7 +229,9 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (!visitsByGroup.TryGetValue(
                 group.GroupId,
                 out BistroBuilderReputationVisitRuntimeRecord visit
-            ) || visit == null || visit.finalized)
+            ) ||
+            visit == null ||
+            visit.finalized)
         {
             error = "No existe una visita activa para aplicar la disculpa.";
             return false;
@@ -204,19 +239,23 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
 
         bool changed = false;
 
-        if (applyBillIncidentRecovery)
+        if (applyTimingIncidentRecovery)
         {
-            if (group.CurrentState != CustomerGroupState.WaitingForBill)
+            if (!IsGroupWaitingForPhase(group, timingPhase))
             {
-                error = "La incidencia temporal de cuenta ya no está activa.";
+                error =
+                    "La incidencia temporal ya no está activa.";
                 return false;
             }
 
-            if (visit.billIncidentApologyMitigationBasisPoints == 0 &&
-                billMitigationBasisPoints > 0)
+            if (GetIncidentApologyMitigation(visit, timingPhase) == 0 &&
+                timingMitigationBasisPoints > 0)
             {
-                visit.billIncidentApologyMitigationBasisPoints =
-                    billMitigationBasisPoints;
+                SetIncidentApologyMitigation(
+                    visit,
+                    timingPhase,
+                    timingMitigationBasisPoints
+                );
                 changed = true;
             }
         }
@@ -243,6 +282,124 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         );
         ExperienceRuntimeChanged?.Invoke();
         return true;
+    }
+
+    public bool TryApologizeForIncident(
+        CustomerGroup group,
+        bool applyBillIncidentRecovery,
+        int billMitigationBasisPoints,
+        bool coverExplicitIncidents,
+        out string error)
+    {
+        return TryApologizeForServiceIncident(
+            group,
+            applyBillIncidentRecovery,
+            BistroBuilderServiceTimingPhase.BillDelivery,
+            billMitigationBasisPoints,
+            coverExplicitIncidents,
+            out error
+        );
+    }
+
+    private static bool IsGroupWaitingForPhase(
+        CustomerGroup group,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (group == null)
+            return false;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return group.CurrentState ==
+                    CustomerGroupState.WaitingForWaiter;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return group.CurrentState ==
+                    CustomerGroupState.WaitingForFood;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return group.CurrentState ==
+                    CustomerGroupState.WaitingForBill;
+            default:
+                return false;
+        }
+    }
+
+    private static int GetDelayExplanationMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (visit == null)
+            return 0;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return visit.waiterDelayExplanationMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return visit.foodDelayExplanationMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return visit.billDelayExplanationMitigationBasisPoints;
+            default:
+                return 0;
+        }
+    }
+
+    private static int GetIncidentApologyMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (visit == null)
+            return 0;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return visit.waiterIncidentApologyMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return visit.foodIncidentApologyMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return visit.billIncidentApologyMitigationBasisPoints;
+            default:
+                return 0;
+        }
+    }
+
+    private static void SetDelayExplanationMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase,
+        int value)
+    {
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                visit.waiterDelayExplanationMitigationBasisPoints = value;
+                break;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                visit.foodDelayExplanationMitigationBasisPoints = value;
+                break;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                visit.billDelayExplanationMitigationBasisPoints = value;
+                break;
+        }
+    }
+
+    private static void SetIncidentApologyMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase,
+        int value)
+    {
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                visit.waiterIncidentApologyMitigationBasisPoints = value;
+                break;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                visit.foodIncidentApologyMitigationBasisPoints = value;
+                break;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                visit.billIncidentApologyMitigationBasisPoints = value;
+                break;
+        }
     }
 
     public static bool IsRecoverableServiceIncidentKind(

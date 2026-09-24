@@ -293,20 +293,71 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
 
         tableId = table.TableId;
         priorLoadGroupReference = group;
-        group.SetState(CustomerGroupState.WaitingForBill);
-        table.SetState(TableState.WaitingForBill);
+        group.SetState(CustomerGroupState.WaitingForWaiter);
+        table.SetState(TableState.WaitingForWaiter);
     }
 
     private static void ApplyActionsAndSave(bool commandLine)
     {
         BistroBuilderReputationVisitRuntimeRecord visit =
             GetInternalVisit(groupId);
+
+        visit.waiterWaitSeconds = 50f;
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var waiterWait) &&
+            waiterWait.Phase == BistroBuilderServiceTimingPhase.TakeOrder &&
+            waiterWait.TimingState ==
+                BistroBuilderServiceTimingState.Incident,
+            "TakeOrder no alcanzó Incidencia."
+        );
+        Check(
+            actions.TryExplainDelay(table, out string waiterExplainError),
+            "Explicar demora TakeOrder falló: " + waiterExplainError
+        );
+        Check(
+            actions.TryApologize(table, out string waiterApologyError),
+            "Disculpa TakeOrder falló: " + waiterApologyError
+        );
+        Check(
+            !actions.TryExplainDelay(table, out _) &&
+            !actions.TryApologize(table, out _),
+            "TakeOrder permitió repetir recuperación."
+        );
+
+        group.SetState(CustomerGroupState.WaitingForFood);
+        table.SetState(TableState.WaitingForFood);
+        visit.expectedFoodSeconds = 20f;
+        visit.foodWaitSeconds = 40f;
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var foodWait) &&
+            foodWait.Phase ==
+                BistroBuilderServiceTimingPhase.FoodDelivery &&
+            foodWait.TimingState ==
+                BistroBuilderServiceTimingState.Incident,
+            "FoodDelivery no alcanzó Incidencia dinámica."
+        );
+        Check(
+            actions.TryExplainDelay(table, out string foodExplainError),
+            "Explicar demora FoodDelivery falló: " + foodExplainError
+        );
+        Check(
+            actions.TryApologize(table, out string foodApologyError),
+            "Disculpa FoodDelivery falló: " + foodApologyError
+        );
+        Check(
+            !actions.TryExplainDelay(table, out _) &&
+            !actions.TryApologize(table, out _),
+            "FoodDelivery permitió repetir recuperación."
+        );
+
+        group.SetState(CustomerGroupState.WaitingForBill);
+        table.SetState(TableState.WaitingForBill);
         visit.billWaitSeconds = 300f;
 
         Check(
             actions.TryGetBillSnapshot(table, out var before) &&
             before.TimingState == BistroBuilderServiceTimingState.Incident,
-            "El fixture no alcanzó Incidencia antes del guardado."
+            "BillDelivery no alcanzó Incidencia antes del guardado."
         );
 
         Check(
@@ -314,12 +365,12 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
             "Agilizar cuenta falló: " + accelerateError
         );
         Check(
-            actions.TryExplainBillDelay(table, out string explainError),
-            "Explicar demora falló: " + explainError
+            actions.TryExplainDelay(table, out string billExplainError),
+            "Explicar demora BillDelivery falló: " + billExplainError
         );
         Check(
-            actions.TryApologize(table, out string apologyError),
-            "Disculpa falló: " + apologyError
+            actions.TryApologize(table, out string billApologyError),
+            "Disculpa BillDelivery falló: " + billApologyError
         );
 
         Check(
@@ -329,13 +380,23 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
             appliedBill.TaskPriority == WaiterTaskPriority.Urgent &&
             !appliedBill.CanAccelerate &&
             !appliedBill.CanExplainDelay,
-            "El estado aplicado antes de Save no es el esperado."
+            "BillDelivery aplicado antes de Save no es el esperado."
         );
         Check(
             actions.TryGetApologySnapshot(table, out var appliedApology) &&
             appliedApology.BillIncidentAlreadyApologized &&
             !appliedApology.CanApologize,
-            "Disculpa no quedó aplicada antes de Save."
+            "Disculpa BillDelivery no quedó aplicada antes de Save."
+        );
+
+        Check(
+            visit.waiterDelayExplanationMitigationBasisPoints == 1500 &&
+            visit.waiterIncidentApologyMitigationBasisPoints == 2500 &&
+            visit.foodDelayExplanationMitigationBasisPoints == 1500 &&
+            visit.foodIncidentApologyMitigationBasisPoints == 2500 &&
+            visit.billDelayExplanationMitigationBasisPoints == 1500 &&
+            visit.billIncidentApologyMitigationBasisPoints == 2500,
+            "No quedaron las seis recuperaciones antes de Save."
         );
 
         saveGame.OperationCompleted -= HandleOperationCompleted;
@@ -437,8 +498,9 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
             {
                 Finish(
                     true,
-                    "PASS — Save -> mutación -> Load x2 restaura Agilizar cuenta, " +
-                    "Explicar demora y Disculpa; reengancha reputation.runtime " +
+                    "PASS — Save -> mutación -> Load x2 conserva TakeOrder, " +
+                    "FoodDelivery y BillDelivery con Explicar demora/Disculpa; " +
+                    "restaura Agilizar cuenta, reengancha reputation.runtime " +
                     "en cada reconstrucción de CustomerGroup y conserva exactamente " +
                     "una tarea DeliverBill priorizada sin duplicados.",
                     commandLine
@@ -478,7 +540,14 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
 
         BistroBuilderReputationVisitRuntimeRecord mutatedVisit =
             GetInternalVisit(groupId);
+        mutatedVisit.waiterWaitSeconds = 0f;
+        mutatedVisit.foodWaitSeconds = 0f;
+        mutatedVisit.expectedFoodSeconds = 4f;
         mutatedVisit.billWaitSeconds = 0f;
+        mutatedVisit.waiterDelayExplanationMitigationBasisPoints = 0;
+        mutatedVisit.waiterIncidentApologyMitigationBasisPoints = 0;
+        mutatedVisit.foodDelayExplanationMitigationBasisPoints = 0;
+        mutatedVisit.foodIncidentApologyMitigationBasisPoints = 0;
         mutatedVisit.billDelayExplanationMitigationBasisPoints = 0;
         mutatedVisit.billIncidentApologyMitigationBasisPoints = 0;
 
@@ -509,7 +578,14 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
 
         BistroBuilderReputationVisitRuntimeRecord mutatedVisit =
             GetInternalVisit(groupId);
+        mutatedVisit.waiterWaitSeconds = 1f;
+        mutatedVisit.foodWaitSeconds = 1f;
+        mutatedVisit.expectedFoodSeconds = 5f;
         mutatedVisit.billWaitSeconds = 1f;
+        mutatedVisit.waiterDelayExplanationMitigationBasisPoints = 0;
+        mutatedVisit.waiterIncidentApologyMitigationBasisPoints = 0;
+        mutatedVisit.foodDelayExplanationMitigationBasisPoints = 0;
+        mutatedVisit.foodIncidentApologyMitigationBasisPoints = 0;
         mutatedVisit.billDelayExplanationMitigationBasisPoints = 0;
         mutatedVisit.billIncidentApologyMitigationBasisPoints = 0;
 
@@ -589,6 +665,19 @@ public static class BistroBuilderServiceTimingSaveLoadPlayTest
             runtimeVisitCount == 1,
             "Load debe conservar exactamente una visita reputation.runtime; hay " +
             runtimeVisitCount + "."
+        );
+        Check(
+            visit.waiterWaitSeconds >= 49f &&
+            visit.waiterDelayExplanationMitigationBasisPoints == 1500 &&
+            visit.waiterIncidentApologyMitigationBasisPoints == 2500,
+            "Load perdió TakeOrder o su recuperación."
+        );
+        Check(
+            visit.foodWaitSeconds >= 39f &&
+            visit.expectedFoodSeconds >= 19f &&
+            visit.foodDelayExplanationMitigationBasisPoints == 1500 &&
+            visit.foodIncidentApologyMitigationBasisPoints == 2500,
+            "Load perdió FoodDelivery o su recuperación dinámica."
         );
         Check(
             visit.billWaitSeconds >= 299f,

@@ -15,6 +15,10 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
     private List<BistroBuilderServiceTimingProfile> profiles =
         new List<BistroBuilderServiceTimingProfile>();
 
+    [SerializeField]
+    private BistroBuilderFoodTimingPolicy foodTimingPolicy =
+        new BistroBuilderFoodTimingPolicy();
+
     [SerializeField, Range(0, 10000)]
     private int recoverableServiceIncidentPenaltyBasisPoints = 1000;
 
@@ -22,6 +26,7 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
     private int recoverableServiceIncidentApologyRecoveryBasisPoints = 500;
 
     public IReadOnlyList<BistroBuilderServiceTimingProfile> Profiles => profiles;
+    public BistroBuilderFoodTimingPolicy FoodTimingPolicy => foodTimingPolicy;
     public int RecoverableServiceIncidentPenaltyBasisPoints =>
         recoverableServiceIncidentPenaltyBasisPoints;
     public int RecoverableServiceIncidentApologyRecoveryBasisPoints =>
@@ -54,12 +59,74 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
         float elapsedSeconds,
         out BistroBuilderServiceTimingState state)
     {
+        return TryEvaluate(
+            phase,
+            elapsedSeconds,
+            0f,
+            out state
+        );
+    }
+
+    public bool TryEvaluate(
+        BistroBuilderServiceTimingPhase phase,
+        float elapsedSeconds,
+        float expectedFoodSeconds,
+        out BistroBuilderServiceTimingState state)
+    {
         state = BistroBuilderServiceTimingState.Normal;
+
+        if (phase == BistroBuilderServiceTimingPhase.FoodDelivery)
+        {
+            if (foodTimingPolicy == null)
+                return false;
+
+            state = foodTimingPolicy.Evaluate(
+                expectedFoodSeconds,
+                elapsedSeconds
+            );
+            return true;
+        }
 
         if (!TryGetProfile(phase, out BistroBuilderServiceTimingProfile profile))
             return false;
 
         state = profile.Evaluate(elapsedSeconds);
+        return true;
+    }
+
+    public bool TryGetRecoveryTuning(
+        BistroBuilderServiceTimingPhase phase,
+        out int explanationMitigationBasisPoints,
+        out int apologyMitigationBasisPoints)
+    {
+        explanationMitigationBasisPoints = 0;
+        apologyMitigationBasisPoints = 0;
+
+        if (phase == BistroBuilderServiceTimingPhase.FoodDelivery)
+        {
+            if (foodTimingPolicy == null)
+                return false;
+
+            explanationMitigationBasisPoints =
+                foodTimingPolicy.ExplanationPenaltyMitigationBasisPoints;
+            apologyMitigationBasisPoints =
+                foodTimingPolicy.ApologyPenaltyMitigationBasisPoints;
+            return true;
+        }
+
+        if (!TryGetProfile(
+                phase,
+                out BistroBuilderServiceTimingProfile profile
+            ) ||
+            profile == null)
+        {
+            return false;
+        }
+
+        explanationMitigationBasisPoints =
+            profile.ExplanationPenaltyMitigationBasisPoints;
+        apologyMitigationBasisPoints =
+            profile.ApologyPenaltyMitigationBasisPoints;
         return true;
     }
 
@@ -73,6 +140,18 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
         {
             error =
                 "El tuning de incidencias debe ser válido y la recuperación por disculpa no puede superar su penalización.";
+            return false;
+        }
+
+        if (foodTimingPolicy == null)
+        {
+            error = "FoodDelivery: falta la política dinámica.";
+            return false;
+        }
+
+        if (!foodTimingPolicy.Validate(out string foodTimingError))
+        {
+            error = "FoodDelivery: " + foodTimingError;
             return false;
         }
 
@@ -118,6 +197,19 @@ public sealed class BistroBuilderServiceTimingCatalog : ScriptableObject
         if (!phases.Contains(BistroBuilderServiceTimingPhase.BillDelivery))
         {
             error = "ServiceTimingCatalog no define BillDelivery.";
+            return false;
+        }
+
+        if (!phases.Contains(BistroBuilderServiceTimingPhase.TakeOrder))
+        {
+            error = "ServiceTimingCatalog no define TakeOrder.";
+            return false;
+        }
+
+        if (phases.Contains(BistroBuilderServiceTimingPhase.FoodDelivery))
+        {
+            error =
+                "FoodDelivery usa una política dinámica y no debe duplicarse como perfil fijo.";
             return false;
         }
 

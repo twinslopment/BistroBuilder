@@ -994,11 +994,24 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
         if (selected != null)
         {
+            BistroBuilderServiceWaitContextActionSnapshot
+                serviceWaitSnapshot = default;
+            bool hasServiceWaitSnapshot =
+                tableContextActions != null &&
+                tableContextActions.TryGetActiveWaitSnapshot(
+                    selected,
+                    out serviceWaitSnapshot
+                );
+
             BistroBuilderBillContextActionSnapshot billSnapshot = default;
             bool hasBillSnapshot = tableContextActions != null &&
-                tableContextActions.TryGetBillSnapshot(selected, out billSnapshot);
+                tableContextActions.TryGetBillSnapshot(
+                    selected,
+                    out billSnapshot
+                );
 
-            BistroBuilderApologyContextActionSnapshot apologySnapshot = default;
+            BistroBuilderApologyContextActionSnapshot apologySnapshot =
+                default;
             bool hasApologySnapshot = tableContextActions != null &&
                 tableContextActions.TryGetApologySnapshot(
                     selected,
@@ -1011,6 +1024,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             {
                 contextBody.text = BuildSelectedTableContext(
                     selected,
+                    hasServiceWaitSnapshot,
+                    serviceWaitSnapshot,
                     hasBillSnapshot,
                     billSnapshot,
                     hasApologySnapshot,
@@ -1021,7 +1036,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             bool showAccelerate =
                 hasBillSnapshot && billSnapshot.CanAccelerate;
             bool showExplainDelay =
-                hasBillSnapshot && billSnapshot.CanExplainDelay;
+                hasServiceWaitSnapshot &&
+                serviceWaitSnapshot.CanExplainDelay;
             bool showApology =
                 hasApologySnapshot && apologySnapshot.CanApologize;
 
@@ -1114,6 +1130,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private string BuildSelectedTableContext(
         RestaurantTable table,
+        bool hasServiceWaitSnapshot,
+        BistroBuilderServiceWaitContextActionSnapshot serviceWaitSnapshot,
         bool hasBillSnapshot,
         BistroBuilderBillContextActionSnapshot billSnapshot,
         bool hasApologySnapshot,
@@ -1127,9 +1145,26 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         string guidance;
         switch (table.CurrentState)
         {
-            case TableState.Dirty: guidance = "Necesita limpieza antes de volver a estar disponible."; break;
-            case TableState.WaitingForWaiter: guidance = "El grupo espera atenci\u00F3n del camarero."; break;
-            case TableState.WaitingForFood: guidance = "La comanda est\u00E1 en curso. Doble clic para revisar comandas."; break;
+            case TableState.Dirty:
+                guidance =
+                    "Necesita limpieza antes de volver a estar disponible.";
+                break;
+            case TableState.WaitingForWaiter:
+                guidance = BuildWaitGuidance(
+                    hasServiceWaitSnapshot,
+                    serviceWaitSnapshot,
+                    "El grupo espera atención del camarero.",
+                    "La atención del camarero"
+                );
+                break;
+            case TableState.WaitingForFood:
+                guidance = BuildWaitGuidance(
+                    hasServiceWaitSnapshot,
+                    serviceWaitSnapshot,
+                    "La comanda está en curso. Doble clic para revisar comandas.",
+                    "La espera de la comida"
+                );
+                break;
             case TableState.WaitingForBill:
                 if (!hasBillSnapshot)
                     guidance = "La mesa espera la cuenta.";
@@ -1162,11 +1197,27 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             default: guidance = group != null ? "Doble clic para abrir las comandas de servicio." : "Sin incidencias activas."; break;
         }
         string timingLine = string.Empty;
-        if (hasBillSnapshot && table.CurrentState == TableState.WaitingForBill)
+        if (hasServiceWaitSnapshot)
         {
-            int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(billSnapshot.WaitSeconds));
-            timingLine = "\nEspera cuenta: " + (totalSeconds / 60).ToString("0") + ":" +
-                (totalSeconds % 60).ToString("00") + " · " + TimingStateLabel(billSnapshot.TimingState);
+            timingLine = "\n" +
+                ServiceWaitLabel(serviceWaitSnapshot.Phase) +
+                ": " +
+                FormatWaitTime(serviceWaitSnapshot.WaitSeconds);
+
+            if (serviceWaitSnapshot.Phase ==
+                    BistroBuilderServiceTimingPhase.FoodDelivery &&
+                serviceWaitSnapshot.ExpectedFoodSeconds > 0f)
+            {
+                timingLine +=
+                    " / esperado " +
+                    FormatWaitTime(
+                        serviceWaitSnapshot.ExpectedFoodSeconds
+                    );
+            }
+
+            timingLine +=
+                " · " +
+                TimingStateLabel(serviceWaitSnapshot.TimingState);
         }
 
         string recoveryLine = string.Empty;
@@ -1174,16 +1225,20 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         {
             if (apologySnapshot.CanApologize)
             {
-                if (apologySnapshot.HasBillTimingIncident &&
+                if (apologySnapshot.HasTimingIncident &&
                     apologySnapshot.HasExplicitServiceIncident)
                 {
                     recoveryLine =
                         "\nIncidencia: demora grave y fallo de servicio. Disculpa disponible.";
                 }
-                else if (apologySnapshot.HasBillTimingIncident)
+                else if (apologySnapshot.HasTimingIncident)
                 {
                     recoveryLine =
-                        "\nIncidencia: la espera de cuenta admite Disculpa.";
+                        "\nIncidencia: " +
+                        ServiceWaitIncidentLabel(
+                            apologySnapshot.TimingPhase
+                        ) +
+                        " admite Disculpa.";
                 }
                 else if (apologySnapshot.HasExplicitServiceIncident)
                 {
@@ -1191,7 +1246,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                         "\nIncidencia de servicio: Disculpa disponible.";
                 }
             }
-            else if (apologySnapshot.BillIncidentAlreadyApologized ||
+            else if (apologySnapshot.TimingIncidentAlreadyApologized ||
                      apologySnapshot.ApologizedServiceIncidentCount > 0)
             {
                 recoveryLine =
@@ -1202,6 +1257,98 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         return "ESTADO  " + state + "\n" + occupancy + timingLine +
             recoveryLine + "\n\n" + guidance +
             "\n\n<color=#A59B8C>Esc o clic en espacio vac\u00EDo para deseleccionar.</color>";
+    }
+
+    private static string BuildWaitGuidance(
+        bool hasSnapshot,
+        BistroBuilderServiceWaitContextActionSnapshot snapshot,
+        string normalGuidance,
+        string subject)
+    {
+        if (!hasSnapshot)
+            return normalGuidance;
+
+        if (snapshot.IsDelayExplained &&
+            snapshot.IsTimingIncidentApologized)
+        {
+            return "Demora explicada y disculpa realizada. " +
+                normalGuidance;
+        }
+
+        if (snapshot.HasTimingIncident &&
+            !snapshot.IsTimingIncidentApologized &&
+            snapshot.CanExplainDelay)
+        {
+            return subject +
+                " está en incidencia. Puedes explicar la demora y disculparte.";
+        }
+
+        if (snapshot.HasTimingIncident &&
+            !snapshot.IsTimingIncidentApologized)
+        {
+            return subject +
+                " está en incidencia. Disculpa disponible.";
+        }
+
+        if (snapshot.CanExplainDelay)
+        {
+            return "Hay demora. Puedes explicar la espera.";
+        }
+
+        if (snapshot.IsDelayExplained)
+        {
+            return "Demora explicada. " + normalGuidance;
+        }
+
+        if (snapshot.TimingState ==
+            BistroBuilderServiceTimingState.Attention)
+        {
+            return subject + " requiere atención.";
+        }
+
+        return normalGuidance;
+    }
+
+    private static string ServiceWaitLabel(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return "Espera camarero";
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return "Espera comida";
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return "Espera cuenta";
+            default:
+                return "Espera";
+        }
+    }
+
+    private static string ServiceWaitIncidentLabel(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return "la espera para tomar comanda";
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return "la espera de la comida";
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return "la espera de cuenta";
+            default:
+                return "la espera";
+        }
+    }
+
+    private static string FormatWaitTime(float seconds)
+    {
+        int totalSeconds =
+            Mathf.Max(0, Mathf.FloorToInt(seconds));
+        return
+            (totalSeconds / 60).ToString("0") +
+            ":" +
+            (totalSeconds % 60).ToString("00");
     }
 
     private void HandleTableSelectionChanged(RestaurantTable table)
@@ -1265,7 +1412,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
         string actionError = string.Empty;
         if (tableContextActions != null &&
-            tableContextActions.TryExplainBillDelay(selected, out actionError))
+            tableContextActions.TryExplainDelay(selected, out actionError))
         {
             AddActivity("Mesa " + selected.TableId + " · demora explicada.");
         }

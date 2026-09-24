@@ -128,21 +128,87 @@ public static class BistroBuilderServiceTimingInstaller
     {
         SerializedObject so = new SerializedObject(catalog);
         SerializedProperty profiles = so.FindProperty("profiles");
-        profiles.arraySize = 1;
+        profiles.arraySize = 2;
 
-        SerializedProperty profile = profiles.GetArrayElementAtIndex(0);
-        profile.FindPropertyRelative("phase").enumValueIndex =
-            (int)BistroBuilderServiceTimingPhase.BillDelivery;
-        profile.FindPropertyRelative("targetSeconds").floatValue = 90f;
-        profile.FindPropertyRelative("attentionSeconds").floatValue = 120f;
-        profile.FindPropertyRelative("delaySeconds").floatValue = 210f;
-        profile.FindPropertyRelative("incidentSeconds").floatValue = 300f;
-        profile.FindPropertyRelative("criticalSeconds").floatValue = 420f;
-        profile.FindPropertyRelative("explanationPenaltyMitigationBasisPoints").intValue = 1500;
-        profile.FindPropertyRelative("apologyPenaltyMitigationBasisPoints").intValue = 2500;
-        so.FindProperty("recoverableServiceIncidentPenaltyBasisPoints").intValue = 1000;
-        so.FindProperty("recoverableServiceIncidentApologyRecoveryBasisPoints").intValue = 500;
+        ConfigureFixedProfile(
+            profiles.GetArrayElementAtIndex(0),
+            BistroBuilderServiceTimingPhase.BillDelivery,
+            90f,
+            120f,
+            210f,
+            300f,
+            420f,
+            1500,
+            2500
+        );
+
+        ConfigureFixedProfile(
+            profiles.GetArrayElementAtIndex(1),
+            BistroBuilderServiceTimingPhase.TakeOrder,
+            10f,
+            20f,
+            35f,
+            50f,
+            70f,
+            1500,
+            2500
+        );
+
+        SerializedProperty food =
+            so.FindProperty("foodTimingPolicy");
+        food.FindPropertyRelative("minimumExpectedSeconds").floatValue = 4f;
+        food.FindPropertyRelative("attentionMultiplier").floatValue = 1.15f;
+        food.FindPropertyRelative("attentionOffsetSeconds").floatValue = 0f;
+        food.FindPropertyRelative("delayMultiplier").floatValue = 1.35f;
+        food.FindPropertyRelative("delayOffsetSeconds").floatValue = 4f;
+        food.FindPropertyRelative("incidentMultiplier").floatValue = 2f;
+        food.FindPropertyRelative("incidentOffsetSeconds").floatValue = 0f;
+        food.FindPropertyRelative("criticalMultiplier").floatValue = 3f;
+        food.FindPropertyRelative("criticalOffsetSeconds").floatValue = 30f;
+        food.FindPropertyRelative(
+            "explanationPenaltyMitigationBasisPoints"
+        ).intValue = 1500;
+        food.FindPropertyRelative(
+            "apologyPenaltyMitigationBasisPoints"
+        ).intValue = 2500;
+
+        so.FindProperty(
+            "recoverableServiceIncidentPenaltyBasisPoints"
+        ).intValue = 1000;
+        so.FindProperty(
+            "recoverableServiceIncidentApologyRecoveryBasisPoints"
+        ).intValue = 500;
 
         so.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static void ConfigureFixedProfile(
+        SerializedProperty profile,
+        BistroBuilderServiceTimingPhase phase,
+        float targetSeconds,
+        float attentionSeconds,
+        float delaySeconds,
+        float incidentSeconds,
+        float criticalSeconds,
+        int explanationMitigationBasisPoints,
+        int apologyMitigationBasisPoints)
+    {
+        profile.FindPropertyRelative("phase").enumValueIndex = (int)phase;
+        profile.FindPropertyRelative("targetSeconds").floatValue =
+            targetSeconds;
+        profile.FindPropertyRelative("attentionSeconds").floatValue =
+            attentionSeconds;
+        profile.FindPropertyRelative("delaySeconds").floatValue =
+            delaySeconds;
+        profile.FindPropertyRelative("incidentSeconds").floatValue =
+            incidentSeconds;
+        profile.FindPropertyRelative("criticalSeconds").floatValue =
+            criticalSeconds;
+        profile.FindPropertyRelative(
+            "explanationPenaltyMitigationBasisPoints"
+        ).intValue = explanationMitigationBasisPoints;
+        profile.FindPropertyRelative(
+            "apologyPenaltyMitigationBasisPoints"
+        ).intValue = apologyMitigationBasisPoints;
     }
 }

@@ -31,26 +31,76 @@ public static class BistroBuilderServiceTimingValidator
                 if (logResult) Debug.LogError(catalogError);
             }
 
-            if (!catalog.TryGetProfile(
+            if (!ValidateFixedProfile(
+                    catalog,
                     BistroBuilderServiceTimingPhase.BillDelivery,
-                    out BistroBuilderServiceTimingProfile bill))
+                    90f,
+                    120f,
+                    210f,
+                    300f,
+                    420f,
+                    1500,
+                    2500,
+                    "BillDelivery",
+                    logResult
+                ))
             {
                 errors++;
-                if (logResult) Debug.LogError("Falta el perfil BillDelivery.");
             }
-            else if (!Approximately(bill.TargetSeconds, 90f) ||
-                     !Approximately(bill.AttentionSeconds, 120f) ||
-                     !Approximately(bill.DelaySeconds, 210f) ||
-                     !Approximately(bill.IncidentSeconds, 300f) ||
-                     !Approximately(bill.CriticalSeconds, 420f) ||
-                     bill.ExplanationPenaltyMitigationBasisPoints != 1500 ||
-                     bill.ApologyPenaltyMitigationBasisPoints != 2500 ||
-                     catalog.RecoverableServiceIncidentPenaltyBasisPoints != 1000 ||
-                     catalog.RecoverableServiceIncidentApologyRecoveryBasisPoints != 500)
+
+            if (!ValidateFixedProfile(
+                    catalog,
+                    BistroBuilderServiceTimingPhase.TakeOrder,
+                    10f,
+                    20f,
+                    35f,
+                    50f,
+                    70f,
+                    1500,
+                    2500,
+                    "TakeOrder",
+                    logResult
+                ))
+            {
+                errors++;
+            }
+
+            BistroBuilderFoodTimingPolicy food =
+                catalog.FoodTimingPolicy;
+            if (food == null ||
+                !Approximately(food.MinimumExpectedSeconds, 4f) ||
+                !Approximately(food.AttentionMultiplier, 1.15f) ||
+                !Approximately(food.AttentionOffsetSeconds, 0f) ||
+                !Approximately(food.DelayMultiplier, 1.35f) ||
+                !Approximately(food.DelayOffsetSeconds, 4f) ||
+                !Approximately(food.IncidentMultiplier, 2f) ||
+                !Approximately(food.IncidentOffsetSeconds, 0f) ||
+                !Approximately(food.CriticalMultiplier, 3f) ||
+                !Approximately(food.CriticalOffsetSeconds, 30f) ||
+                food.ExplanationPenaltyMitigationBasisPoints != 1500 ||
+                food.ApologyPenaltyMitigationBasisPoints != 2500)
             {
                 errors++;
                 if (logResult)
-                    Debug.LogError("El perfil BillDelivery o el tuning de recuperación no coincide con el provisional aprobado.");
+                {
+                    Debug.LogError(
+                        "La política dinámica FoodDelivery no coincide con el tuning provisional."
+                    );
+                }
+            }
+
+            if (catalog.RecoverableServiceIncidentPenaltyBasisPoints !=
+                    1000 ||
+                catalog.RecoverableServiceIncidentApologyRecoveryBasisPoints !=
+                    500)
+            {
+                errors++;
+                if (logResult)
+                {
+                    Debug.LogError(
+                        "El tuning de incidencias explícitas no coincide con el provisional."
+                    );
+                }
             }
         }
 
@@ -116,6 +166,51 @@ public static class BistroBuilderServiceTimingValidator
             );
 
         return errors == 0;
+    }
+
+    private static bool ValidateFixedProfile(
+        BistroBuilderServiceTimingCatalog catalog,
+        BistroBuilderServiceTimingPhase phase,
+        float target,
+        float attention,
+        float delay,
+        float incident,
+        float critical,
+        int explanation,
+        int apology,
+        string label,
+        bool logResult)
+    {
+        if (!catalog.TryGetProfile(
+                phase,
+                out BistroBuilderServiceTimingProfile profile
+            ) ||
+            profile == null)
+        {
+            if (logResult)
+                Debug.LogError("Falta el perfil " + label + ".");
+            return false;
+        }
+
+        bool valid =
+            Approximately(profile.TargetSeconds, target) &&
+            Approximately(profile.AttentionSeconds, attention) &&
+            Approximately(profile.DelaySeconds, delay) &&
+            Approximately(profile.IncidentSeconds, incident) &&
+            Approximately(profile.CriticalSeconds, critical) &&
+            profile.ExplanationPenaltyMitigationBasisPoints ==
+                explanation &&
+            profile.ApologyPenaltyMitigationBasisPoints == apology;
+
+        if (!valid && logResult)
+        {
+            Debug.LogError(
+                "El perfil " + label +
+                " no coincide con el tuning provisional."
+            );
+        }
+
+        return valid;
     }
 
     private static bool Approximately(float a, float b)
