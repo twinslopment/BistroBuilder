@@ -597,7 +597,7 @@ public sealed class ActivityPanelController : MonoBehaviour
         text.color = color;
         text.alignment = alignment;
         text.raycastTarget = false;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
         text.overflowMode = TextOverflowModes.Ellipsis;
         ApplyTypographyRole(text, BistroBuilderUiStyleRole.Body);
         return text;
