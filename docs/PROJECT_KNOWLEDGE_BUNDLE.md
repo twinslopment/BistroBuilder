@@ -657,6 +657,8 @@ Núcleo determinista, estados globales, forecast de 5 días, integración con Ga
 ## Regla de integración
 Climate publica una condición global y sus efectos de gameplay. Terraza/FOH/cliente consumen esa condición; ninguna mesa genera su propio clima ni calcula dirección local.
 
+En el HUD de modo normal/servicio, **Climatología se muestra en la barra horizontal inferior**, junto a **Velocidad** y `Caja`. Esta ubicación es parte de la composición UI vinculante y no debe duplicarse en la barra superior.
+
 ## Gate de cierre
 Compilación limpia, instalación idempotente, validación/autotests, prueba visual y funcional de cambio climático, round-trip de persistencia y ausencia de regresiones en terraza/servicio.
 
@@ -1206,6 +1208,8 @@ Category: CANONICAL
 ## Clientes y mesas
 El servicio debe mantener grupos/clientes, seating, consumo individual y compartido, cuenta y limpieza. La ficha contextual del cliente/mesa expone información básica y acciones operativas como `Disculpa`, `Explicar demora` o `Agilizar cuenta` cuando proceda.
 
+Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. La primera vertical runtime usa la espera canónica existente de `WaitingForBill` y la tarea real `DeliverBill`; `Agilizar cuenta` solo eleva su prioridad a través de `WaiterTaskCoordinator` y conserva esa priorización en Save/Load de servicio activo. `Explicar demora` se habilita desde Demora, no altera la prioridad física de la tarea y aplica una mitigación de satisfacción configurable y de una sola aplicación. `Disculpa` se habilita desde Incidencia/Crítico o por fallos explícitos recuperables de la comanda canónica; no corrige la causa y solo recupera una parte configurable del daño de satisfacción. Tanto explicaciones como disculpas e incidencias se persisten mediante `reputation.runtime`.
+
 ## Comandas
 La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.
 
@@ -1297,6 +1301,173 @@ El input de cámara solo debe actuar cuando procede del Game View y respetar UI 
 
 ---
 
+## SOURCE: docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md
+
+Category: CANONICAL
+
+# Bistro Builder — Catálogo canónico de acciones contextuales
+
+**Estado:** diseño vinculante en construcción. Este documento fija el contrato de UI y gameplay de las acciones contextuales del modo normal/servicio. Las acciones concretas se ampliarán por contexto sin duplicar lógica de dominio.
+
+## Principio de la barra inferior
+
+En modo normal/servicio, la barra horizontal inferior contiene de forma permanente **Velocidad**, `Caja` y **Climatología**. A continuación dispone de una zona de **acciones contextuales**.
+
+La zona contextual no es un menú fijo ni debe llenarse por defecto. Solo muestra acciones que tengan sentido para el elemento seleccionado y para su estado actual. Como regla de diseño, se priorizan aproximadamente **3–4 acciones visibles simultáneamente**. Si no existe una intervención útil, la zona puede permanecer vacía.
+
+Las acciones contextuales no saltan por encima de los sistemas de gameplay. La UI emite intención/comandos; camareros, cocina, comandas, satisfacción, finanzas u otras autoridades siguen resolviendo el resultado.
+
+## Estados canónicos de espera/servicio
+
+Las esperas se interpretan mediante estados semánticos comunes:
+
+| Estado | Significado | Consecuencia de UI |
+|---|---|---|
+| **Normal** | La fase está dentro del tiempo razonable esperado. | No se ofrece una intervención por demora. |
+| **Atención** | La fase se acerca al límite razonable. | Puede ofrecerse una acción preventiva si existe una decisión útil. |
+| **Demora** | Se ha superado el tiempo esperado de la fase. | Se habilitan acciones de gestión de la demora. |
+| **Incidencia** | La demora ya es grave o se ha producido un fallo explícito. | Se habilitan acciones de recuperación y consecuencias de satisfacción. |
+| **Crítico** | Problema grave, repetido o muy deteriorado. | Alta prioridad visual/operativa y recuperación urgente. |
+| **Resolución** | La causa ha sido resuelta y el sistema está cerrando la incidencia. | Las acciones dejan de ofrecerse cuando ya no tienen objeto. |
+
+Una **incidencia** puede originarse de dos formas:
+
+1. **Por tiempo:** una tarea supera de forma suficiente su margen razonable.
+2. **Por evento:** ocurre un fallo real aunque no haya transcurrido un tiempo largo, por ejemplo un plato incorrecto o una atención fallida.
+
+Los contadores empiezan cuando existe realmente la necesidad: una mesa está lista para pedir, una petición de camarero ha sido emitida, una cuenta ha sido solicitada, etc. No se cronometra una fase antes de que exista su obligación operativa.
+
+## Fuente única de tiempos
+
+No se deben hardcodear umbrales independientes en cada pantalla, acción o sistema. La intención es disponer de una fuente canónica configurable, conceptualmente **ServiceTimingCatalog**, consultada por UI y gameplay.
+
+Para fases generales del servicio puede definir:
+
+- atención/recepción inicial;
+- toma de comanda;
+- entrega de bebida;
+- petición de camarero;
+- retirada/atención posterior;
+- entrega de cuenta;
+- cobro;
+- otras fases equivalentes que se ratifiquen.
+
+Cada entrada podrá expresar al menos un objetivo y umbrales para **Atención**, **Demora** e **Incidencia**. Los valores concretos son datos de balance y no se consideran cerrados hasta probarlos en juego.
+
+## Cocina y carta incompleta
+
+No es requisito disponer ahora de un tiempo definitivo para cada plato. El sistema debe separar infraestructura de contenido de balance.
+
+La resolución de tiempo esperado de un plato seguirá esta jerarquía:
+
+`tiempo específico del plato -> perfil de preparación -> valor global por defecto`
+
+Se prevé un concepto **DishPreparationProfile** para agrupar platos por comportamiento de preparación. Ejemplos de categorías como Rápido/Estándar/Lento son perfiles de diseño, no valores definitivos todavía.
+
+Reglas:
+
+- No inventar tiempos individuales para platos que aún no están diseñados.
+- Todo plato debe poder funcionar aunque solo herede el perfil/default.
+- Más adelante un plato puede sobrescribir su tiempo cuando exista una razón de diseño.
+- Los umbrales de Atención/Demora/Incidencia se derivan del tiempo esperado; no se duplican manualmente dentro de cada plato.
+- La estimación puede incorporar la carga/cola real de Cocina cuando exista una previsión fiable.
+- El balance final se valida jugando; no se cierra únicamente sobre números teóricos.
+
+## Contexto Mesa / Cliente
+
+### Acciones ya ratificadas
+
+| Acción | Condición semántica de aparición | Efecto de diseño |
+|---|---|---|
+| **Disculpa** | Existe una **Incidencia** o un evento negativo concreto que admite recuperación. | Intervención de recuperación de satisfacción. No elimina la causa del problema. |
+| **Explicar demora** | Existe una **Demora** activa sobre una necesidad relevante de la mesa. | Gestiona la expectativa/impacto de la espera mientras la causa persiste. No acelera físicamente el servicio. |
+| **Agilizar cuenta** | La mesa ha solicitado la cuenta, existe una tarea real de cuenta/cobro pendiente y la espera ha alcanzado al menos el estado **Atención**. | Eleva la prioridad operativa de las tareas relacionadas con preparar/entregar/cobrar la cuenta. |
+
+Comportamiento esperado:
+
+- Una mesa recién sentada y atendida dentro de tiempos normales no muestra estas acciones.
+- **Explicar demora** puede aparecer antes que **Disculpa**: es una intervención preventiva cuando ya existe demora pero todavía no una incidencia grave.
+- **Disculpa** aparece cuando el problema ya ha producido una incidencia o existe un fallo explícito.
+- **Agilizar cuenta** no aparece en estado **Normal**. Se ofrece a partir de **Atención**, para evitar convertirla en una acción rutinaria que el jugador pulse en todas las mesas.
+- En **Atención** se presenta como opción preventiva sin tratamiento de alarma; en **Demora** se destaca visualmente; en **Incidencia** puede coexistir con **Disculpa**.
+- Una vez aplicada la priorización, no se permiten pulsaciones repetidas sobre la misma necesidad de cuenta.
+- Cuando un camarero ya ha asumido efectivamente la tarea de cuenta, la acción deja de estar disponible y la UI puede mostrar un estado informativo como `Cuenta en camino`.
+- **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
+- Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
+
+#### Vertical runtime: espera de cuenta
+
+La primera integración runtime se mantiene deliberadamente acotada a la gestión contextual de una mesa, pero ya cubre las tres acciones ratificadas: `Agilizar cuenta`, `Explicar demora` y `Disculpa`. No modifica el sistema avanzado de camareros ni introduce tiempos de platos.
+
+Tuning provisional de prueba para `BillDelivery`:
+
+| Referencia | Tiempo |
+|---|---:|
+| Objetivo | 90 s |
+| **Atención** | 120 s |
+| **Demora** | 210 s |
+| **Incidencia** | 300 s |
+| **Crítico** | 420 s |
+
+Estos valores son **datos provisionales de balance**, no cifras definitivas de diseño. Deben permanecer configurables en `ServiceTimingCatalog` y ajustarse mediante playtests.
+
+La espera canónica se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
+
+Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.
+
+`Explicar demora` aparece **desde Demora**, no en Atención. No acelera la tarea física de cuenta. Es de una sola aplicación por necesidad activa y puede coexistir con `Agilizar cuenta`. Su efecto es mitigar parte del impacto de la espera en satisfacción mientras la causa sigue existiendo. La mitigación inicial de prueba queda en **1500 pb (15 % de la penalización de espera de cuenta recuperable)**, configurada en `ServiceTimingCatalog`; es un valor **provisional de balance**, no una cifra definitiva. El estado explicado se persiste dentro de `reputation.runtime` para sobrevivir a Save/Load.
+
+`Disculpa` aparece cuando la espera de cuenta alcanza **Incidencia/Crítico** o cuando la visita tiene una incidencia explícita recuperable procedente de la comanda canónica. En esta primera integración se consideran fallos del restaurante: `WrongDish`, `DuplicateOrder`, `KitchenError`, `QualityIssue`, `AllergyRisk`, `MissingItem` y `ServiceError`. `CustomerChange` no se considera fallo del restaurante y no habilita `Disculpa` por sí solo.
+
+`Disculpa` **no resuelve la causa** ni acelera físicamente ninguna tarea: recupera solo parte del impacto de satisfacción. Para la incidencia temporal de cuenta, la recuperación inicial de prueba es **2500 pb (25 % de la penalización restante recuperable)**. Para incidencias explícitas, el tuning inicial de prueba es **1000 pb de penalización por incidencia** y **500 pb recuperados por cada incidencia cubierta por una disculpa**. Todos estos valores son **provisionales y configurables** en `ServiceTimingCatalog`.
+
+Una misma incidencia temporal de cuenta no admite disculpas repetidas. Las incidencias explícitas se contabilizan en la visita y la disculpa cubre las pendientes; si aparece una incidencia explícita adicional después, `Disculpa` puede volver a estar disponible. El estado de recuperación e incidencias se persiste en `reputation.runtime`.
+
+La UI de esta vertical admite hasta **tres acciones simultáneas** sin solaparse con fecha/hora ni controles de velocidad. Tras priorizar, `Agilizar cuenta` desaparece; tras explicar, `Explicar demora` desaparece; tras cubrir las incidencias disponibles, `Disculpa` desaparece. El panel contextual conserva feedback informativo (`Cuenta priorizada`, `Demora explicada`, `Disculpa realizada`, `Cuenta en camino`) sin mantener botones obsoletos.
+
+### Acciones pendientes de ratificación
+
+Estas acciones son propuestas y **no se consideran todavía cerradas**:
+
+- **Ver comanda**: navegación directa al detalle de la comanda activa de la mesa.
+- **Priorizar atención**: elevar temporalmente la prioridad de una tarea de camarero pendiente sin asignar ni teletransportar manualmente a un camarero.
+
+No incorporar todavía como acciones canónicas sin diseño adicional:
+
+- Cobrar ahora.
+- Servir ahora.
+- Limpiar mesa.
+- Cambiar de mesa.
+- Llamar refuerzos.
+- Ofrecer compensación económica.
+
+Estas opciones podrían saltarse autoridades existentes o requieren reglas económicas/espaciales adicionales.
+
+## Contexto Cocina
+
+Acciones ya aprobadas por el sistema de servicio:
+
+- **Reducir entrada**.
+- **Pausar nuevas comandas** por plato.
+- **Priorizar comanda**, con un máximo de 3 prioridades simultáneas.
+
+Su aparición exacta en la barra contextual deberá derivarse del estado y selección de Cocina/Comanda, sin duplicar las reglas de la autoridad de cocina.
+
+## Regla de implementación incremental
+
+No implementar de una vez carta completa, incidentes, satisfacción, tiempos, prioridades y UI. El orden acordado es:
+
+1. Cerrar el catálogo de acciones y sus **condiciones semánticas**.
+2. Implementar el contrato/configuración de tiempos generales de servicio.
+3. Preparar **DishPreparationProfile** y el fallback global, sin completar todavía toda la carta.
+4. Asignar perfiles/tiempos a los platos a medida que la carta se diseña.
+5. Ajustar umbrales y tiempos mediante pruebas de juego.
+6. Integrar las acciones con sus sistemas reales, sin crear lógica paralela en Presentation.
+
+La ausencia temporal de tiempos específicos por plato no debe bloquear el desarrollo ni obligar a introducir datos ficticios.
+
+---
+
 ## SOURCE: docs/30_UI_UX/NEW_GAME_APPROVED.md
 
 Category: CANONICAL
@@ -1347,8 +1518,8 @@ Category: CANONICAL
 - Navegación de secciones **horizontal en la parte superior**: Actividad, Economía, Personal y demás secciones globales.
 - `Actividad` funciona como feed compacto a la izquierda.
 - Panel contextual a la derecha, compacto y expandible según selección.
-- Franja operativa inferior para acciones del contexto actual.
-- Velocidad, `Caja` y demás indicadores globales operativos se integran en la zona superior; no crear un menú lateral permanente.
+- Barra horizontal inferior operativa para el modo normal/servicio: integra de forma permanente **Velocidad**, `Caja` y **Climatología**, además de las acciones del contexto actual cuando procedan. El catálogo canónico de estas acciones vive en `CONTEXTUAL_ACTION_CATALOG.md`.
+- La zona superior queda reservada a la navegación global y a los elementos superiores ya definidos; **Velocidad, `Caja` y Climatología no se ubican en la barra superior** ni en un menú lateral permanente.
 
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.
@@ -1359,7 +1530,7 @@ Category: CANONICAL
 - Cambiar selección debe transicionar el contexto sin reconstruir visualmente toda la interfaz.
 
 ## Estados visuales
-HUD operativo por estados **Normal / Atención / Crítico / Resolución**. Verde = correcto; ámbar = atención; rojo solo para crítico; azul/gris = neutro. Notificaciones agrupadas, sin spam ni modales rutinarios. `Actividad` muestra aproximadamente 5–8 eventos útiles.
+HUD operativo por estados **Normal / Atención / Demora / Incidencia / Crítico / Resolución**. Verde = correcto; ámbar = atención/demora; rojo se reserva para incidencia/crítico; azul/gris = neutro. Las condiciones semánticas y las acciones asociadas se detallan en `CONTEXTUAL_ACTION_CATALOG.md`. Notificaciones agrupadas, sin spam ni modales rutinarios. `Actividad` muestra aproximadamente 5–8 eventos útiles.
 
 ## Tipografía y tono
 Recoleta para títulos/encabezados cuando encaje con la identidad visual; sans limpia tipo Inter para interfaz. Estética elegante, sobria y legible; evitar barroquismo y ornamentación que compita con el restaurante.
@@ -1481,7 +1652,7 @@ Category: CANONICAL
 | D-010 | VIGENTE | Navigation gobierna rutas/circulación; Animation solo representa. |
 | D-011 | VIGENTE | Character Animation V1 está integrado/cerrado; futuras ampliaciones son V2/hardening. |
 | D-012 | VIGENTE | BBSIS V1 está cerrado; no reabrir salvo regresión real. |
-| D-013 | VIGENTE | UI de Servicio: navegación horizontal superior; Actividad izquierda; contexto derecha; acciones abajo. |
+| D-013 | VIGENTE | UI de Servicio: navegación horizontal superior; Actividad izquierda; contexto derecha; barra inferior operativa. La ubicación de indicadores globales se rige por D-033. |
 | D-014 | VIGENTE | `Caja` = dinero del servicio; `Satisfacción` = satisfacción del servicio. |
 | D-015 | VIGENTE | No mostrar/reservar vistas predefinidas de cámara en UI final. |
 | D-016 | SUPERADA | 369B exponía presets General/Isométrica; ya no forman parte de la experiencia final. |
@@ -1501,6 +1672,12 @@ Category: CANONICAL
 | D-030 | VIGENTE | Acabado Automático solo completa zonas/canales missing o incompletos; nunca sobrescribe trabajo válido salvo orden explícita. |
 | D-031 | VIGENTE | Toda propuesta automática requiere preview y aplicación explícita; reutilizar acabados canónicos tiene prioridad sobre generar nuevos. |
 | D-032 | VIGENTE | Si la semántica de una superficie es incierta, el sistema solicita clasificación y no asigna materiales a ciegas. |
+| D-033 | VIGENTE | En modo normal/servicio, la barra horizontal inferior integra **Velocidad**, `Caja` y **Climatología**, además de las acciones contextuales que correspondan. Estos tres elementos no se colocan en la barra superior. |
+| D-034 | VIGENTE | Los tiempos y estados de espera del servicio se definen desde configuración canónica compartida; no se hardcodean por pantalla/acción. Cocina admite `tiempo específico -> perfil de preparación -> default global`, por lo que la carta puede completarse progresivamente sin inventar tiempos de platos aún no diseñados. |
+| D-035 | VIGENTE | Las acciones contextuales aparecen solo cuando existe una condición semántica válida del objeto seleccionado; no forman un menú fijo. `Disculpa`, `Explicar demora` y `Agilizar cuenta` están ratificadas para Mesa/Cliente; nuevas acciones permanecen como propuestas hasta decisión explícita. |
+| D-036 | VIGENTE | `Agilizar cuenta` no aparece desde que se solicita la cuenta: se ofrece a partir del estado **Atención**. En Demora se destaca, en Incidencia puede coexistir con `Disculpa`, no admite pulsaciones repetidas sobre la misma necesidad y desaparece cuando la cuenta ya está siendo atendida o resuelta. |
+| D-037 | VIGENTE | `Explicar demora` se ofrece desde **Demora** en adelante y solo una vez por necesidad activa. Mitiga de forma configurable la penalización de satisfacción atribuible a la espera, pero no reduce el tiempo real, no cambia el estado semántico y no altera la prioridad de la tarea; el valor concreto de balance permanece provisional. |
+| D-038 | VIGENTE | `Disculpa` se ofrece cuando una necesidad alcanza **Incidencia/Crítico** o existe un fallo explícito recuperable de la comanda canónica. No elimina la causa ni acelera el servicio: recupera solo parte del impacto de satisfacción. `CustomerChange` no cuenta como fallo del restaurante. La aplicación no es repetible sobre la misma incidencia ya cubierta, puede reaparecer ante nuevas incidencias explícitas y todo su tuning de recuperación permanece configurable/provisional. |
 
 ---
 
@@ -1624,7 +1801,7 @@ Category: SUPPORTING
 
 # Barra superior del juego
 
-La barra usa el catálogo SVG y los efectos de `feature/21b-iconography-system` (`34694c7`). Incluye Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing y Reputación, conectados a sus pantallas existentes. La selección usa dorado, subrayado y fondo; al pasar el ratón los iconos aumentan y se elevan suavemente.
+La barra usa el catálogo SVG y los efectos de `feature/21b-iconography-system` (`34694c7`). Incluye Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing y Reputación, conectados a sus pantallas existentes. La selección usa dorado, subrayado y fondo. La versión visual aprobada el 23/09/2026 aplica un hover cálido e iluminado por recuadro y una microanimación continua propia a cada icono mientras el puntero permanece encima; Opciones mantiene un giro corto de engranaje y el resto combina elevación, balanceo o desplazamiento según su semántica.
 
 El nombre del restaurante, el estado del servicio, el calendario y la hora provienen de la partida. El menú de opciones y el desplegable del restaurante permiten entrar en edición, abrir Progreso, Comandas o Cocina, alternar pantalla completa y cerrar paneles. El menú bloquea la interacción con la construcción mientras está abierto.
 
@@ -3913,6 +4090,461 @@ Sombras realizadas con una malla de caída gradual. Los fondos redondeados y los
 ## Comprobación
 
 `BistroBuilderVisualLanguagePlayTest.RunBatch` verifica las familias reales, shader de HUD, niveles de superficie, navegación a Personal y menú de opciones. Genera `Logs/VisualLanguageTest.txt` y capturas en `docs/Images`: `TipografiaYProfundidad.png`, `UIProfundidadJuego.png`, `UITipografiaPersonal.png`.
+
+---
+
+## SOURCE: docs/UI/Servicio/ActivityApprovedIcons.md
+
+Category: SUPPORTING
+
+# Bistro Builder — Iconos aprobados de ACTIVIDAD
+
+Estado: EN CURSO
+Fecha de actualización: 2026-09-23
+Rama canónica: `integration/ui-combined-final-20260917-v2`
+Relacionado: `ActivityIconFamilies.md`
+
+Este documento registra exclusivamente iconos aprobados por el usuario. Cada selección queda vinculada a su imagen canónica en la Library de ChatGPT para evitar pérdidas o sustituciones accidentales.
+
+| Familia | Estado | Archivo canónico | Library file id |
+|---|---|---|---|
+| `activity.people.arrival` | APROBADO | `BB_Activity_People_Arrival.png` | `libfile_d9e6525d45e481918792a363f74cc771` |
+| `activity.table.seated` | APROBADO | `BB_Activity_Table_Seated.png` | `libfile_aac9c1428e10819194a296dd203942dc` |
+| `activity.table.attention` | APROBADO | `BB_Activity_Table_Attention.png` | `libfile_ecdfd3955ddc81919ff55442f49e52f6` |
+| `activity.wait.alert` | APROBADO | `BB_Activity_Wait_Alert.png` | `libfile_4624b479bc988191b66681635de5f57b` |
+| `activity.table.bill` | APROBADO | `BB_Activity_Table_Bill.png` | `libfile_46d5751477208191a1eccb4eedc545ee` |
+| `activity.table.complete` | APROBADO | `BB_Activity_Table_Complete.png` | `libfile_216cca66746881919ad6f865f23cce8f` |
+| `activity.order.new` | APROBADO | `BB_Activity_Order_New.png` | `libfile_302a2cb5b2b08191b8661655a25ab539` |
+| `activity.order.ready` | APROBADO | `BB_Activity_Order_Ready.png` | `libfile_d558d5cd27fc8191b64366e7c43c15d7` |
+| `activity.order.priority` | APROBADO | `BB_Activity_Order_Priority.png` | `libfile_ec8eab9e1d488191809f97039d6b6568` |
+| `activity.order.error` | APROBADO | `BB_Activity_Order_Error.png` | `libfile_891e4e2837c88191af56a4ae913c3039` |
+| `activity.dish.problem` | APROBADO | `BB_Activity_Dish_Problem.png` | `libfile_d3a4fb0d41b081918bb064b057ddca04` |
+| `activity.dish.trending` | APROBADO | `BB_Activity_Dish_Trending.png` | `libfile_89806ccb247081918e56bbbb67398e99` |
+| `activity.kitchen.state` | APROBADO | `BB_Activity_Kitchen_State.png` | `libfile_29824b54f5148191bb594082af093c14` |
+| `activity.kitchen.equipment` | APROBADO | `BB_Activity_Kitchen_Equipment.png` | `libfile_244f232574508191b26d63e460bb6e5e` |
+| `activity.flow.state` | APROBADO | `BB_Activity_Flow_State.png` | `libfile_1e5f4871a05c81918ca096ae28480d69` |
+| `activity.wait.group` | APROBADO | `BB_Activity_Wait_Group.png` | `libfile_6e4810e4ab5881918b3b21ecb034c4de` |
+| `activity.table.available` | APROBADO | `BB_Activity_Table_Available.png` | `libfile_837a13b93bb88191bec7d876c89f7c15` |
+| `activity.bar.state` | APROBADO | `BB_Activity_Bar_State.png` | `libfile_73da123c2dd08191a2ec313674cc6509` |
+| `activity.staff.state` | APROBADO | `BB_Activity_Staff_State.png` | `libfile_f0b0e5b7f86c8191b395c2ff6eeb1f20` |
+| `activity.reservation` | APROBADO | `BB_Activity_Reservation.png` | `libfile_ca5be238c7e48191a29c5e163c1aaf5f` |
+| `activity.reservation.group` | APROBADO | `BB_Activity_Reservation_Group.png` | `libfile_59cad6c6567481918972c9059bd83010` |
+| `activity.guest.special` | APROBADO | `BB_Activity_Guest_Special.png` | `libfile_94b9418a06788191830da05e89684254` |
+| `activity.stock.state` | APROBADO | `BB_Activity_Stock_State.png` | `libfile_d53e1c5009a48191bf9de3f6400c7e58` |
+| `activity.supplier` | APROBADO | `BB_Activity_Supplier.png` | `libfile_af0832038c588191be3413305a2d5531` |
+| `activity.reputation` | APROBADO | `BB_Activity_Reputation.png` | `libfile_2e9400e9a9648191bab7c78b86e87f58` |
+
+Ruta Library:
+`/BistroBuilder/UI/Referencias/Servicio/PanelActividad/IconosAprobados/`
+
+## Cierre de familias
+
+| `activity.marketing` | APROBADO | `BB_Activity_Marketing.png` | `libfile_b5292e4ba01081919c076fcb8fe7e4d9` |
+| `activity.opportunity` | APROBADO | `BB_Activity_Opportunity.png` | `libfile_822a5718c0f08191967d8a1f42445ed6` |
+| `activity.trend.up` | APROBADO | `BB_Activity_Trend_Up.png` | `libfile_7d64f35b6e148191b26cdf53efd8f934` |
+
+## Regla de aprobación
+
+- Una familia solo entra aquí después de aprobación explícita.
+- No reemplazar una imagen aprobada por una variante posterior sin nueva aprobación.
+- La familia debe conservar su `IconKey` estable aunque cambie la implementación técnica.
+- Las 28 familias quedan aprobadas.
+- Estado actual: **28 de 28 familias aprobadas**.
+
+---
+
+## SOURCE: docs/UI/Servicio/ActivityEventCatalog.md
+
+Category: SUPPORTING
+
+# Bistro Builder — Catálogo canónico de eventos de ACTIVIDAD
+
+Estado: DISEÑO CERRADO
+Versión: 1.0
+Fecha: 2026-09-23
+Documento padre: `PanelActividad.md`
+
+## Propósito
+
+Este catálogo define qué frases puede generar el panel ACTIVIDAD, qué datos variables utiliza, qué icono corresponde, cómo se prioriza y qué ocurre al pulsar cada entrada.
+
+Regla principal: ningún sistema de gameplay debe escribir frases completas en la UI. Los sistemas emiten eventos estructurados y ACTIVIDAD compone el texto mediante plantillas localizables.
+
+## Modelo de datos
+
+Cada definición contiene:
+- `EventId`: identificador estable y único.
+- `Category`: Incident, Opportunity, Event o Reservation.
+- `Severity`: Info, Positive, Attention o Critical.
+- `IconKey`: familia visual canónica.
+- `TitleKey` y `BodyKey`: claves de localización.
+- `TargetType`: entidad que se selecciona al pulsar.
+- `Lifetime`: Transient, StickyUntilResolved o ServiceSession.
+- `Aggregation`: regla para evitar spam.
+- `FeatureGate`: sistema requerido, si procede.
+
+## Pipeline de runtime
+
+1. El sistema de gameplay detecta un cambio real.
+2. Emite un evento semántico con IDs y datos, nunca texto final.
+3. `ActivityFeedService` resuelve la definición en `ActivityEventCatalog`.
+4. Se valida deduplicación, prioridad, agrupación y vigencia.
+5. `ActivityTemplateFormatter` resuelve título y cuerpo desde Unity Localization.
+6. `ActivityPanelController` inserta o actualiza la fila.
+7. Al pulsar, `ActivityTargetRouter` centra/selecciona el objetivo y alimenta Contexto.
+
+La UI no puede modificar el estado de gameplay directamente por mostrar un evento.
+
+## Presentación
+
+- Máximo visual simultáneo: 8 filas en la referencia aprobada.
+- El resto permanece disponible mediante scroll.
+- Orden: Critical > Attention > Opportunity relevante > cronología.
+- Un Critical no resuelto permanece fijado.
+- El filtro de cabecera ofrece: Hoy, Incidencias, Oportunidades y Reservas.
+- La hora procede del reloj de juego, no del reloj real.
+- Título de fila: Inter SemiBold.
+- Texto secundario y hora: Inter Regular.
+- Cabecera ACTIVIDAD: Recoleta.
+- Cada entrada puede mostrar un marcador semántico adicional a la derecha.
+
+## Reglas anti-spam y determinismo
+
+- Un mismo `EventId + TargetId` no crea duplicados dentro de su ventana de deduplicación.
+- Los eventos de estado solo se generan cuando cambia el estado.
+- Stock bajo/crítico/agotado se vuelve a emitir únicamente tras abandonar y volver a entrar en ese estado.
+- Reservas generan un único evento por transición.
+- Eventos positivos repetitivos tienen rate-limit.
+- Incidencias resueltas dejan de estar fijadas; su registro histórico puede permanecer.
+- Eventos agregables conservan los TargetIds afectados para poder navegar entre ellos.
+- Guardar/cargar no vuelve a ejecutar efectos ni recompensas.
+- Tras cargar, las referencias inválidas se descartan de forma segura.
+
+## Catálogo — Mesas y clientes
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `table.group_arrived` | **Nuevo grupo** · {guests} personas | Info | `activity.people.arrival` | Group |
+| `table.group_seated` | **Mesa {table}** · Grupo sentado | Info | `activity.table.seated` | Table |
+| `table.attention_needed` | **Mesa {table}** · Necesita atención | Attention | `activity.table.attention` | Table |
+| `table.waiting_excessive` | **Mesa {table}** · Espera demasiado sus platos | Critical | `activity.wait.alert` | Table |
+| `table.bill_requested` | **Mesa {table}** · Ha pedido la cuenta | Info | `activity.table.bill` | Table |
+| `table.finished` | **Mesa {table}** · Servicio finalizado | Info | `activity.table.complete` | Table |
+| `table.customer_unhappy` | **Cliente descontento** · Mesa {table} | Attention | `activity.reputation.negative` | Table |
+| `table.customer_recovered` | **Incidencia resuelta** · Mesa {table} recuperada | Positive | `activity.reputation.recovered` | Table |
+
+## Catálogo — Comandas, platos y cocina
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `order.created` | **Nuevo pedido** · Mesa {table} · {lines} platos | Info | `activity.order.new` | Order |
+| `order.ready` | **Pedido listo** · Mesa {table} | Info | `activity.order.ready` | Order |
+| `order.priority_set` | **Comanda prioritaria** · Mesa {table} | Attention | `activity.order.priority` | Order |
+| `order.error` | **Error de pedido** · Mesa {table} | Attention | `activity.order.error` | Order |
+| `dish.cold_or_poor` | **Problema de plato** · Mesa {table} | Attention | `activity.dish.problem` | Order |
+| `dish.blocked_stock` | **Plato no disponible** · {dish} | Critical | `activity.stock.blocked` | Dish |
+| `dish.trending` | **Plato destacado** · {dish} · {count} pedidos | Positive | `activity.dish.trending` | Dish |
+| `kitchen.state_loaded` | **Cocina cargada** · Aumenta la cola | Attention | `activity.kitchen.loaded` | Kitchen |
+| `kitchen.state_saturated` | **Cocina saturada** · {pending} comandas pendientes | Critical | `activity.kitchen.saturated` | Kitchen |
+| `kitchen.state_blocked` | **Cocina bloqueada** · Requiere actuación | Critical | `activity.kitchen.blocked` | Kitchen |
+| `kitchen.state_recovered` | **Cocina fluida** · Ritmo recuperado | Positive | `activity.kitchen.recovered` | Kitchen |
+| `kitchen.equipment_issue` | **Incidencia de cocina** · {equipment} | Critical | `activity.kitchen.equipment` | Kitchen |
+| `kitchen.priority_limit` | **Prioridades completas** · Máximo alcanzado | Attention | `activity.order.priority` | Kitchen |
+
+## Catálogo — Entrada, sala, barra y espera
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `foh.state_waiting` | **Entrada con espera** · {groups} grupos | Attention | `activity.wait.queue` | Entrance |
+| `foh.state_saturated` | **Sala saturada** · Requiere ajuste | Critical | `activity.zone.saturated` | Zone |
+| `foh.state_slowed` | **Ritmo reducido** · Entrada controlada | Attention | `activity.flow.slowed` | Entrance |
+| `foh.state_recovered` | **Entrada fluida** · Ritmo recuperado | Positive | `activity.flow.recovered` | Entrance |
+| `waitlist.group_added` | **Nuevo grupo en espera** · {guests} personas | Info | `activity.wait.group` | WaitTicket |
+| `waitlist.long_wait` | **Espera elevada** · {minutes} min | Critical | `activity.wait.alert` | WaitTicket |
+| `waitlist.table_available` | **Mesa disponible** · Grupo en espera puede sentarse | Opportunity | `activity.table.available` | WaitTicket |
+| `waitlist.sent_to_bar` | **Espera en barra** · {guests} personas | Info | `activity.bar.wait` | WaitTicket |
+| `waitlist.group_left` | **Grupo perdido** · Abandona la espera | Attention | `activity.wait.left` | WaitTicket |
+| `bar.saturated` | **Barra saturada** · No absorbe más espera | Critical | `activity.bar.saturated` | Bar |
+| `zone.staff_shortage` | **Falta personal** · {zone} | Critical | `activity.staff.shortage` | Zone |
+| `table.needs_reset` | **Mesa pendiente** · Limpieza/preparación | Attention | `activity.table.reset` | Table |
+| `table.ready` | **Mesa preparada** · Disponible de nuevo | Positive | `activity.table.available` | Table |
+
+## Catálogo — Reservas
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `reservation.arriving_soon` | **Reserva próxima** · {guests} pax · {minutes} min | Reservation | `activity.reservation.soon` | Reservation |
+| `reservation.arrived` | **Reserva llegada** · {guests} pax | Reservation | `activity.reservation.arrived` | Reservation |
+| `reservation.seated` | **Reserva sentada** · Mesa {table} | Reservation | `activity.reservation.seated` | Table |
+| `reservation.large_group` | **Grupo grande próximo** · {guests} pax | Attention | `activity.reservation.group` | Reservation |
+| `reservation.special_guest` | **Cliente especial** · Reserva próxima | Opportunity | `activity.guest.special` | Reservation |
+| `reservation.peak_window` | **Pico de reservas** · {count} entradas próximas | Critical | `activity.reservation.peak` | ReservationGroup |
+
+Regla vigente: no se generan eventos de no-show ni de retraso de clientes reservados.
+
+## Catálogo — Inventario y proveedores
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `inventory.low` | **Inventario bajo** · {ingredient} | Attention | `activity.stock.low` | Ingredient |
+| `inventory.critical` | **Stock crítico** · {ingredient} | Critical | `activity.stock.critical` | Ingredient |
+| `inventory.out` | **Stock agotado** · {ingredient} | Critical | `activity.stock.out` | Ingredient |
+| `inventory.updated` | **Inventario actualizado** · {source} | Info | `activity.stock.updated` | Inventory |
+| `supplier.delivery_received` | **Entrega recibida** · {supplier} | Positive | `activity.supplier.delivery` | Supplier |
+| `supplier.issue` | **Problema de suministro** · {supplier} | Attention | `activity.supplier.issue` | Supplier |
+
+## Catálogo — Personal y operación
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `staff.overloaded` | **Empleado saturado** · {employee} | Attention | `activity.staff.overloaded` | Employee |
+| `staff.zone_uncovered` | **Zona sin cobertura** · {zone} | Critical | `activity.staff.shortage` | Zone |
+| `staff.support_needed` | **Apoyo requerido** · {zone} | Attention | `activity.staff.support` | Zone |
+| `staff.upsell_opportunity` | **Venta sugerida** · Mesa {table} | Opportunity | `activity.opportunity.upsell` | Table |
+
+## Catálogo — Reputación, marketing y oportunidades
+
+| EventId | Texto visible | Severity | IconKey | Target |
+|---|---|---|---|---|
+| `reputation.good_review` | **¡Buena reseña!** · “{excerpt}” | Positive | `activity.reputation.positive` | Reputation |
+| `reputation.bad_review` | **Reseña negativa** · “{excerpt}” | Attention | `activity.reputation.negative` | Reputation |
+| `reputation.word_of_mouth` | **Boca a boca** · Demanda orgánica al alza | Positive | `activity.reputation.word_of_mouth` | Reputation |
+| `marketing.campaign_started` | **Campaña activa** · {campaign} | Info | `activity.marketing.campaign` | Marketing |
+| `marketing.demand_spike` | **Demanda al alza** · +{percent}% prevista | Opportunity | `activity.trend.up` | Marketing |
+| `marketing.capacity_risk` | **Demanda excesiva** · Capacidad en riesgo | Critical | `activity.marketing.risk` | Marketing |
+| `opportunity.regular_guest` | **Cliente habitual** · Mesa {table} | Opportunity | `activity.guest.regular` | Table |
+| `opportunity.special_guest` | **Cliente importante** · Mesa {table} | Opportunity | `activity.guest.special` | Table |
+| `opportunity.drink` | **Oportunidad de bebida** · Mesa {table} | Opportunity | `activity.opportunity.drink` | Table |
+| `opportunity.dessert` | **Oportunidad de postre** · Mesa {table} | Opportunity | `activity.opportunity.dessert` | Table |
+| `opportunity.walkin_group` | **Mesa aprovechable** · Grupo espontáneo de {guests} | Opportunity | `activity.opportunity.group` | Group |
+| `opportunity.bar_wait_sale` | **Espera rentable** · Grupo puede pasar a barra | Opportunity | `activity.opportunity.bar` | WaitTicket |
+| `opportunity.high_demand` | **Día de gran afluencia** · {guests} comensales (+{percent}%) | Opportunity | `activity.trend.up` | Restaurant |
+
+## Eventos condicionados por sistemas futuros
+
+Estos IDs quedan reservados pero no forman parte del lote de iconos V1 mientras el canal correspondiente no esté activo:
+- `online.order_problem` — pedido online problemático.
+- `online.paused` — canal online pausado.
+- `online.capacity_risk` — online agravando saturación de cocina.
+
+## Agrupaciones canónicas
+
+- Varias `table.waiting_excessive` en 60 s → **Espera elevada · {count} mesas necesitan atención**.
+- Varias `zone.staff_shortage` simultáneas → **Falta de personal · {count} zonas afectadas**.
+- Varias reservas próximas en una misma ventana → `reservation.peak_window`.
+- Varias oportunidades de upselling de la misma familia pueden agruparse por zona.
+- Las incidencias Critical nunca se ocultan dentro de una agrupación sin conservar acceso a cada objetivo.
+
+## Persistencia
+
+ACTIVIDAD es una proyección de UI, no autoridad de gameplay.
+Al guardar un servicio activo se conservan:
+- eventos visibles recientes;
+- eventos StickyUntilResolved;
+- timestamp de juego;
+- EventId;
+- TargetRef;
+- parámetros de plantilla.
+
+Al cargar:
+- no se repiten efectos;
+- se validan referencias;
+- se rehidratan únicamente entradas todavía relevantes.
+
+## Contrato de implementación
+
+Tipos previstos:
+- `ActivityEventDefinition`
+- `ActivityEventInstance`
+- `ActivityEventCatalog`
+- `ActivityFeedService`
+- `ActivityFeedAggregator`
+- `ActivityTemplateFormatter`
+- `ActivityTargetRouter`
+- `ActivityPanelController`
+
+Los productores de gameplay solo conocen un contrato de emisión, por ejemplo:
+`Publish(ActivityEventId.TableBillRequested, payload)`.
+
+No deben depender de prefabs, TextMeshPro, sprites ni jerarquías UI.
+
+## Criterios de aceptación
+
+- Un evento idéntico no se duplica por polling o reentrada.
+- Las transiciones de estado son deterministas.
+- Critical permanece visible hasta resolución.
+- El filtro no altera ni destruye eventos.
+- Cargar partida no duplica mensajes.
+- Un clic siempre resuelve a un Target válido o falla de forma segura.
+- Las frases se localizan sin recompilar gameplay.
+- Cambiar un icono no modifica la lógica del evento.
+- El panel sigue siendo secundario respecto al restaurante.
+
+Este documento es la fuente canónica para implementar las frases del panel ACTIVIDAD.
+
+---
+
+## SOURCE: docs/UI/Servicio/ActivityIconFamilies.md
+
+Category: SUPPORTING
+
+# Bistro Builder — Familias de iconos de ACTIVIDAD
+
+Estado: DISEÑO CERRADO
+Versión: 1.0
+Fecha: 2026-09-23
+Relacionado: `ActivityEventCatalog.md`
+
+## Objetivo
+
+Definir el lote visual mínimo necesario para cubrir el catálogo completo sin crear un icono distinto para cada frase.
+
+Regla: el icono identifica el concepto; el color/insignia identifica estado o gravedad.
+
+## Lenguaje visual
+
+- Misma familia estética que los iconos aprobados de la barra superior.
+- Volumen 3D contenido, no caricaturesco.
+- Base crema, madera, grafito, dorado suave y colores semánticos puntuales.
+- Sin fondos cuadrados propios; deben funcionar sobre las tarjetas crema del panel.
+- Lectura clara a tamaño pequeño.
+- Siluetas distintas entre familias.
+- Evitar texto dentro del icono salvo elementos naturales del objeto.
+- Mantener coherencia de iluminación y perspectiva.
+
+## Semántica de color
+
+- Info: dorado/crema neutro.
+- Positive: verde controlado.
+- Opportunity: dorado vivo.
+- Attention: ámbar.
+- Critical: coral/rojo.
+- Reservation: coral suave o dorado según contexto.
+
+El color no sustituye al símbolo: todas las variantes deben seguir siendo reconocibles sin depender únicamente del color.
+
+## Lote V1 — 28 familias
+
+1. `activity.people.arrival` — grupo llegando.
+2. `activity.table.seated` — mesa/grupo sentado.
+3. `activity.table.attention` — mesa necesita atención.
+4. `activity.wait.alert` — espera excesiva.
+5. `activity.table.bill` — cuenta solicitada.
+6. `activity.table.complete` — mesa finalizada.
+7. `activity.order.new` — nueva comanda.
+8. `activity.order.ready` — pedido listo.
+9. `activity.order.priority` — comanda prioritaria.
+10. `activity.order.error` — error de pedido.
+11. `activity.dish.problem` — plato con problema.
+12. `activity.dish.trending` — plato destacado.
+13. `activity.kitchen.state` — estado cocina.
+14. `activity.kitchen.equipment` — avería/bloqueo cocina.
+
+15. `activity.flow.state` — entrada/sala: fluida, espera, saturada, ritmo reducido.
+16. `activity.wait.group` — grupo en lista de espera.
+17. `activity.table.available` — mesa disponible/preparada.
+18. `activity.bar.state` — espera en barra / barra saturada.
+19. `activity.staff.state` — falta, saturación o apoyo de personal.
+20. `activity.reservation` — reserva próxima/llegada/sentada.
+21. `activity.reservation.group` — grupo grande / pico de reservas.
+22. `activity.guest.special` — habitual/importante/VIP.
+23. `activity.stock.state` — bajo/crítico/agotado/bloqueo.
+24. `activity.supplier` — entrega/problema de suministro.
+25. `activity.reputation` — reseña positiva/negativa/recuperación.
+26. `activity.marketing` — campaña/demanda/riesgo.
+27. `activity.opportunity` — bebida/postre/upsell/barra.
+28. `activity.trend.up` — gran afluencia/tendencia positiva.
+
+## Variantes por familia
+
+Las variantes se resuelven con insignias pequeñas y color semántico, no rehaciendo el icono desde cero.
+
+Ejemplos:
+- `kitchen.state`: gorro/cocina base + punto o aura de estado.
+- `stock.state`: caja base + flecha abajo / ! / X.
+- `reservation`: calendario o cartel base + reloj / llegada / check.
+- `reputation`: estrella/bocadillo base + sonrisa / alerta.
+- `staff.state`: persona base + ! / apoyo / saturación.
+- `bar.state`: barra/copa base + espera / alerta.
+
+## Iconos que NO necesitan familia propia
+
+No crear iconos separados para:
+- cada número de mesa;
+- cada plato;
+- cada ingrediente;
+- cada proveedor;
+- cada empleado;
+- cada nivel de cocina;
+- cada minuto de espera;
+- cada tamaño de grupo;
+- cada campaña;
+- cada texto de reseña.
+
+Esos datos son variables de la entrada, no conceptos visuales nuevos.
+
+## Prioridad de producción gráfica
+
+Primera tanda:
+- table.bill
+- order.new
+- reservation
+- reputation
+- stock.state
+- dish.trending
+- wait.alert
+- kitchen.state
+- staff.state
+- trend.up
+
+Segunda tanda:
+- people.arrival
+- table.seated
+- table.attention
+- table.complete
+- order.ready
+- order.priority
+- order.error
+- dish.problem
+- kitchen.equipment
+
+Tercera tanda:
+- flow.state
+- wait.group
+- table.available
+- bar.state
+- reservation.group
+- guest.special
+- supplier
+- marketing
+- opportunity
+
+## Exportación recomendada
+
+Para cada familia aprobada:
+- PNG con transparencia para referencia y fallback.
+- SVG cuando la forma lo permita sin perder el acabado.
+- 256×256 master.
+- 128×128 runtime de alta densidad.
+- 64×64 runtime estándar.
+- nombre estable según `IconKey`.
+
+Convención:
+`BB_Activity_<Family>_<Variant>`
+
+Ejemplo:
+`BB_Activity_Stock_Critical.png`
+
+## Regla canónica
+
+No diseñar decenas de iconos redundantes. Toda frase nueva debe intentar reutilizar primero una familia existente. Solo se añade una nueva familia cuando el concepto no pueda leerse correctamente con las 28 actuales.
+
+## Registro de aprobaciones
+
+Las selecciones visuales aprobadas se registran en `ActivityApprovedIcons.md`.
+Ese documento es la autoridad para saber qué variante exacta de cada familia está cerrada.
+
+Estado a 2026-09-23: **28 de 28 familias aprobadas**.
 
 ---
 

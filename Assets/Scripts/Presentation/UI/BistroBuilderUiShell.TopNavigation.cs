@@ -140,17 +140,31 @@ public sealed partial class BistroBuilderUiShell
         labelRect.anchorMin = new Vector2(0, 0); labelRect.anchorMax = new Vector2(1, 0);
         labelRect.pivot = new Vector2(0.5f, 0);
         labelRect.offsetMin = new Vector2(0, 8); labelRect.offsetMax = new Vector2(0, 27);
+        var glow = HeaderImage(button.transform, "HoverGlow");
+        glow.preserveAspect = false;
+        glow.rectTransform.anchorMin = Vector2.zero; glow.rectTransform.anchorMax = Vector2.one;
+        glow.rectTransform.offsetMin = new Vector2(3, 3); glow.rectTransform.offsetMax = new Vector2(-3, -3);
+        glow.color = new Color(BBIconDesignTokens.SelectedSoft.r, BBIconDesignTokens.SelectedSoft.g, BBIconDesignTokens.SelectedSoft.b, 0f);
+        var glowOutline = glow.GetComponent<Outline>();
+        if (glowOutline == null) glowOutline = glow.gameObject.AddComponent<Outline>();
+        glowOutline.effectColor = new Color(BBIconDesignTokens.Selected.r, BBIconDesignTokens.Selected.g, BBIconDesignTokens.Selected.b, 0f);
+        glowOutline.effectDistance = new Vector2(1.2f, -1.2f);
+        glowOutline.useGraphicAlpha = false;
+        glow.transform.SetAsFirstSibling();
+
         var icon = HeaderImage(button.transform, "NavigationIcon");
         icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 1);
         icon.rectTransform.pivot = new Vector2(0.5f, 1);
         icon.rectTransform.sizeDelta = new Vector2(23, 23); icon.rectTransform.anchoredPosition = new Vector2(0, -9);
+        icon.rectTransform.localScale = Vector3.one;
+        icon.rectTransform.localRotation = Quaternion.identity;
         var underline = HeaderImage(button.transform, "SelectionUnderline");
         underline.rectTransform.anchorMin = Vector2.zero; underline.rectTransform.anchorMax = new Vector2(1, 0);
         underline.rectTransform.offsetMin = new Vector2(7, 0); underline.rectTransform.offsetMax = new Vector2(-7, 3);
         var fx = button.GetComponent<BBIconButton>();
         if (fx == null) fx = button.gameObject.AddComponent<BBIconButton>();
         fx.ConfigureRuntime(id, icon, button);
-        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label);
+        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label, glow, glowOutline);
         fx.SetToggleSelectionOnClick(false);
         return button;
     }

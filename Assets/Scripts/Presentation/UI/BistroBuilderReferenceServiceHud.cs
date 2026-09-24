@@ -431,6 +431,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 
     private void RefreshActivity()
     {
+        // El runtime semántico de ACTIVIDAD es la única autoridad visual
+        // cuando está instalado. Se conserva este lector únicamente como
+        // fallback para escenas antiguas.
+        if (ActivityPanelController.HasActiveController)
+            return;
+
         if (activityRowsRoot == null) return;
         activityMessages.Clear();
         if (legacyActivityText != null)

@@ -604,6 +604,10 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
             !waiterTaskCoordinator.RebuildTasksAfterRuntimeLoad(
                 orderSystem,
                 out error
+            ) ||
+            !RestoreBillPriorityBoosts(
+                pendingData.tables,
+                out error
             ))
         {
             context.Fail(error);
@@ -618,6 +622,44 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         {
             context.Fail(error);
         }
+    }
+
+    private bool RestoreBillPriorityBoosts(
+        IReadOnlyList<BistroBuilderTableRuntimeSaveRecord> tableRecords,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (tableRecords == null)
+            return true;
+
+        for (int index = 0; index < tableRecords.Count; index++)
+        {
+            BistroBuilderTableRuntimeSaveRecord record = tableRecords[index];
+            if (record == null || !record.billPriorityBoosted)
+                continue;
+
+            if (!tableRegistry.TryGetTableById(
+                    record.tableId,
+                    out RestaurantTable table
+                ) ||
+                table == null ||
+                table.CurrentState != TableState.WaitingForBill ||
+                !waiterTaskCoordinator.TryChangePendingTableTaskPriority(
+                    WaiterTaskType.DeliverBill,
+                    table,
+                    WaiterTaskPriority.Urgent,
+                    out _
+                ))
+            {
+                error =
+                    "No se pudo restaurar la prioridad agilizada de la cuenta " +
+                    "para la mesa " + record.tableId + ".";
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void FinalizeLoad(BistroBuilderSaveLoadContext context)
@@ -778,7 +820,8 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
                 state = (int)NormalizeTableStateForCheckpoint(table),
                 groupId = table.AssignedCustomerGroup != null
                     ? table.AssignedCustomerGroup.GroupId
-                    : 0
+                    : 0,
+                billPriorityBoosted = IsBillPriorityBoosted(table)
             };
 
             if (!record.TryValidate(out error))
@@ -792,6 +835,19 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         }
 
         return true;
+    }
+
+    private bool IsBillPriorityBoosted(RestaurantTable table)
+    {
+        return table != null &&
+               waiterTaskCoordinator != null &&
+               waiterTaskCoordinator.TryGetActiveTableTask(
+                   WaiterTaskType.DeliverBill,
+                   table,
+                   out WaiterTask task
+               ) &&
+               task != null &&
+               task.Priority >= WaiterTaskPriority.Urgent;
     }
 
     private bool CapturePendingBarTableReservations(

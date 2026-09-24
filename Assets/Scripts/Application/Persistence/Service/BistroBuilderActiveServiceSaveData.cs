@@ -685,6 +685,7 @@ public sealed class BistroBuilderTableRuntimeSaveRecord
     public int tableId;
     public int state;
     public int groupId;
+    public bool billPriorityBoosted;
 
     public bool TryValidate(out string error)
     {
@@ -711,6 +712,13 @@ public sealed class BistroBuilderTableRuntimeSaveRecord
         {
             error = "Una mesa con grupo no puede persistirse como Free " +
                     "o Dirty.";
+            return false;
+        }
+
+        if (billPriorityBoosted && tableState != TableState.WaitingForBill)
+        {
+            error = "Una prioridad de cuenta agilizada solo puede persistirse " +
+                    "mientras la mesa espera la cuenta.";
             return false;
         }
 

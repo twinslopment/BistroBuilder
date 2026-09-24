@@ -10238,6 +10238,7 @@ GameObject:
   - component: {fileID: 263644909}
   - component: {fileID: 263644910}
   - component: {fileID: 263644911}
+  - component: {fileID: 263649999}
   - component: {fileID: 263644912}
   - component: {fileID: 263644913}
   - component: {fileID: 263644914}
@@ -83172,3 +83173,19 @@ SceneRoots:
   - {fileID: 789096647}
   - {fileID: 2062489263}
   - {fileID: 160821483}
+
+--- !u!114 &263649999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 263644897}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc789602efb7fd4a8207c20932c5240, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderTableContextActionService
+  timingCatalog: {fileID: 11400000, guid: c207b691a9c640fc9a37fcede3a080d4, type: 2}
+  taskCoordinator: {fileID: 263644911}
+  experienceTrackingService: {fileID: 263645064}

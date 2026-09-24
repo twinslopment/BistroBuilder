@@ -11,6 +11,7 @@ using UnityEngine.UI;
 public static class BistroBuilderTopNavigationPlayTest
 {
     private const string Key = "BB.TopNavigation.Test";
+    private const string ReducedMotionPref = "BB.Options.ReducedMotion";
     private static int stage;
     private static double next;
     private static BistroBuilderUiShell shell;
@@ -19,6 +20,9 @@ public static class BistroBuilderTopNavigationPlayTest
     public static void RunBatch()
     {
         SessionState.SetBool(Key, true); SessionState.SetBool(Key + ".Pass", false);
+        SessionState.SetBool(Key + ".HadReducedMotion", PlayerPrefs.HasKey(ReducedMotionPref));
+        SessionState.SetInt(Key + ".ReducedMotion", PlayerPrefs.GetInt(ReducedMotionPref, 0));
+        PlayerPrefs.SetInt(ReducedMotionPref, 0);
         EditorSceneManager.OpenScene("Assets/Scenes/Prototype_Restaurant.unity");
         EditorApplication.isPlaying = true;
     }
@@ -33,12 +37,23 @@ public static class BistroBuilderTopNavigationPlayTest
         }
         if (change == PlayModeStateChange.EnteredEditMode)
         {
+            if (SessionState.GetBool(Key + ".HadReducedMotion", false))
+                PlayerPrefs.SetInt(ReducedMotionPref, SessionState.GetInt(Key + ".ReducedMotion", 0));
+            else
+                PlayerPrefs.DeleteKey(ReducedMotionPref);
+            PlayerPrefs.Save();
             SessionState.SetBool(Key, false);
             EditorApplication.Exit(SessionState.GetBool(Key + ".Pass", false) ? 0 : 1);
         }
     }
     private static void Log(string message, string stack, LogType type)
-    { if (type == LogType.Exception || type == LogType.Assert) failure = message; }
+    {
+        if (type != LogType.Exception && type != LogType.Assert) return;
+        if (message.StartsWith("ArgumentOutOfRangeException", StringComparison.Ordinal) &&
+            stack.IndexOf("UnityEditor.Search.SearchDatabase", StringComparison.Ordinal) >= 0)
+            return;
+        failure = message;
+    }
     private static void Check(bool condition, string error) { if (!condition) throw new Exception(error); }
     private static Button Button(string name) => GameObject.Find(name).GetComponent<Button>();
     private static void Tick()
@@ -67,6 +82,8 @@ public static class BistroBuilderTopNavigationPlayTest
                     var staffFx = Button("BBNav_Personal").GetComponent<BBIconButton>();
                     Check(staffFx.State == BBIconState.Hover, "Hover state");
                     Check(staffFx.transform.Find("NavigationIcon").localScale.x > 1.01f, "Hover animation");
+                    Check(staffFx.transform.Find("HoverGlow").GetComponent<Image>().color.a > 0.08f, "Hover glow");
+                    Check(staffFx.transform.Find("HoverGlow").GetComponent<Outline>().effectColor.a > 0.12f, "Hover illuminated border");
                     Button("BBNav_Personal").onClick.Invoke(); break;
                 case 2:
                     Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible, "Staff navigation");
@@ -85,7 +102,13 @@ public static class BistroBuilderTopNavigationPlayTest
                     Button("BBNav_Opciones").onClick.Invoke();
                     Button("BBNav_Personal").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current)); break;
                 case 6:
-                    Capture(); Finish(true, "Catalog / icons / hover motion / selected state / navigation / options / screenshot"); break;
+                    Button("BBNav_Opciones").GetComponent<BBIconButton>().OnPointerEnter(new PointerEventData(EventSystem.current)); break;
+                case 7:
+                    var optionsIcon = Button("BBNav_Opciones").transform.Find("NavigationIcon");
+                    Check(Mathf.Abs(Mathf.DeltaAngle(0f, optionsIcon.localEulerAngles.z)) > 2f, "Options unique hover rotation");
+                    Check(Button("BBNav_Opciones").transform.Find("HoverGlow").GetComponent<Image>().color.a > 0.03f, "Options hover glow");
+                    Button("BBNav_Opciones").GetComponent<BBIconButton>().OnPointerExit(new PointerEventData(EventSystem.current));
+                    Capture(); Finish(true, "Catalog / icons / individual hover motion / illuminated hover / selected state / navigation / options / screenshot"); break;
             }
         }
         catch (Exception error) { Finish(false, error.ToString()); }
