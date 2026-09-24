@@ -41,3 +41,6 @@ La propuesta B no define el estilo general; solo se incorpora de ella el patrón
 
 ## Principios
 UI contextual y progresiva, PC como referencia. Presentation lee snapshots y emite comandos: no duplica lógica ni se convierte en autoridad de dominio. La cámara ayuda a comprender el restaurante y nunca se convierte en protagonista de la experiencia.
+
+## Nueva partida — decisión 24/09/2026
+La composición aprobada es marfil clásico panorámico, con tres opciones de preparación del restaurante y botones Al pase. Véase [diseño aprobado y alcance](NEW_GAME_APPROVED.md). Maqueta interactiva disponible; integración de esta pantalla en Unity pendiente.
