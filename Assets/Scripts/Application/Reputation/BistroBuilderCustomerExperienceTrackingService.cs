@@ -20,6 +20,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     [SerializeField] private BistroBuilderUpgradeEffectsService upgradeEffectsService;
     [SerializeField] private BistroBuilderAdvancedCustomerProfileService advancedCustomerProfileService;
     [SerializeField] private BistroBuilderAdvancedKitchenService advancedKitchenService;
+    [SerializeField] private BistroBuilderServiceTimingCatalog serviceTimingCatalog;
 
     private readonly Dictionary<int, BistroBuilderReputationVisitRuntimeRecord> visitsByGroup =
         new Dictionary<int, BistroBuilderReputationVisitRuntimeRecord>();
@@ -93,7 +94,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             financeService == null || dishCatalogService == null ||
             generalGameStateService == null ||
             upgradeEffectsService == null ||
-            advancedCustomerProfileService == null)
+            advancedCustomerProfileService == null ||
+            serviceTimingCatalog == null)
         {
             error = "Experience Tracking necesita Reputación, clientes, comandas, Finanzas, catálogo y calendario.";
             return false;
@@ -105,7 +107,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             !dishCatalogService.ValidateConfiguration(out error) ||
             !generalGameStateService.ValidateConfiguration(out error) ||
             !upgradeEffectsService.ValidateConfiguration(out error) ||
-            !advancedCustomerProfileService.ValidateConfiguration(out error))
+            !advancedCustomerProfileService.ValidateConfiguration(out error) ||
+            !serviceTimingCatalog.Validate(out error))
             return false;
         error = string.Empty;
         return true;
@@ -135,6 +138,131 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             return false;
         visit = stored.DeepClone();
         return true;
+    }
+
+    public bool TryExplainBillDelay(
+        CustomerGroup group,
+        int mitigationBasisPoints,
+        out string error)
+    {
+        error = string.Empty;
+        if (group == null || group.GroupId < 1 ||
+            group.CurrentState != CustomerGroupState.WaitingForBill ||
+            mitigationBasisPoints <= 0 || mitigationBasisPoints > 10000)
+        {
+            error = "La explicación de demora de cuenta no es válida en este momento.";
+            return false;
+        }
+
+        RegisterGroup(group);
+        if (!visitsByGroup.TryGetValue(
+                group.GroupId,
+                out BistroBuilderReputationVisitRuntimeRecord visit
+            ) || visit == null || visit.finalized)
+        {
+            error = "No existe una visita activa para explicar la demora.";
+            return false;
+        }
+
+        if (visit.billDelayExplanationMitigationBasisPoints > 0)
+        {
+            error = "La demora de esta cuenta ya fue explicada.";
+            return false;
+        }
+
+        visit.billDelayExplanationMitigationBasisPoints = mitigationBasisPoints;
+        visit.waiterContextActionCount = Math.Min(
+            64, visit.waiterContextActionCount + 1);
+        ExperienceRuntimeChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryApologizeForIncident(
+        CustomerGroup group,
+        bool applyBillIncidentRecovery,
+        int billMitigationBasisPoints,
+        bool coverExplicitIncidents,
+        out string error)
+    {
+        error = string.Empty;
+        if (group == null || group.GroupId < 1 ||
+            (!applyBillIncidentRecovery && !coverExplicitIncidents) ||
+            billMitigationBasisPoints < 0 ||
+            billMitigationBasisPoints > 10000)
+        {
+            error = "La disculpa no es válida en este momento.";
+            return false;
+        }
+
+        RegisterGroup(group);
+        if (!visitsByGroup.TryGetValue(
+                group.GroupId,
+                out BistroBuilderReputationVisitRuntimeRecord visit
+            ) || visit == null || visit.finalized)
+        {
+            error = "No existe una visita activa para aplicar la disculpa.";
+            return false;
+        }
+
+        bool changed = false;
+
+        if (applyBillIncidentRecovery)
+        {
+            if (group.CurrentState != CustomerGroupState.WaitingForBill)
+            {
+                error = "La incidencia temporal de cuenta ya no está activa.";
+                return false;
+            }
+
+            if (visit.billIncidentApologyMitigationBasisPoints == 0 &&
+                billMitigationBasisPoints > 0)
+            {
+                visit.billIncidentApologyMitigationBasisPoints =
+                    billMitigationBasisPoints;
+                changed = true;
+            }
+        }
+
+        if (coverExplicitIncidents &&
+            visit.recoverableServiceIncidentCount >
+                visit.apologizedServiceIncidentCount)
+        {
+            visit.apologizedServiceIncidentCount =
+                visit.recoverableServiceIncidentCount;
+            RefreshServiceIncidentImpact(visit);
+            changed = true;
+        }
+
+        if (!changed)
+        {
+            error = "Esta incidencia ya tiene una disculpa aplicada.";
+            return false;
+        }
+
+        visit.waiterContextActionCount = Math.Min(
+            64,
+            visit.waiterContextActionCount + 1
+        );
+        ExperienceRuntimeChanged?.Invoke();
+        return true;
+    }
+
+    public static bool IsRecoverableServiceIncidentKind(
+        BistroBuilderAdvancedOrderIncidentKind incidentKind)
+    {
+        switch (incidentKind)
+        {
+            case BistroBuilderAdvancedOrderIncidentKind.WrongDish:
+            case BistroBuilderAdvancedOrderIncidentKind.DuplicateOrder:
+            case BistroBuilderAdvancedOrderIncidentKind.KitchenError:
+            case BistroBuilderAdvancedOrderIncidentKind.QualityIssue:
+            case BistroBuilderAdvancedOrderIncidentKind.AllergyRisk:
+            case BistroBuilderAdvancedOrderIncidentKind.MissingItem:
+            case BistroBuilderAdvancedOrderIncidentKind.ServiceError:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public bool TryApplyWaiterContextAction(
@@ -209,6 +337,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
                 !string.IsNullOrWhiteSpace(visit.canonicalOrderId))
                 groupByOrderId[visit.canonicalOrderId] = visit.groupId;
         }
+        SynchronizeRecoverableServiceIncidentsForAllVisits();
         SynchronizeGroups();
         ExperienceRuntimeChanged?.Invoke();
         error = string.Empty;
@@ -343,6 +472,31 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         groupByOrderId[order.CanonicalOrderId] = visit.groupId;
         PopulateOrderReference(order.CanonicalOrderId, visit);
         ExperienceRuntimeChanged?.Invoke();
+    }
+
+    private void HandleCanonicalOrderChanged(
+        BistroBuilderCanonicalOrderChangedEvent change)
+    {
+        if (string.IsNullOrWhiteSpace(change.OrderId) ||
+            canonicalOrderService == null ||
+            !groupByOrderId.TryGetValue(change.OrderId, out int groupId) ||
+            !visitsByGroup.TryGetValue(
+                groupId,
+                out BistroBuilderReputationVisitRuntimeRecord visit
+            ) ||
+            visit == null ||
+            visit.finalized ||
+            !canonicalOrderService.TryGetOrderSnapshot(
+                change.OrderId,
+                out BistroBuilderCanonicalOrder order
+            ) ||
+            order == null)
+        {
+            return;
+        }
+
+        if (SynchronizeRecoverableServiceIncidents(order, visit))
+            ExperienceRuntimeChanged?.Invoke();
     }
 
     private void HandleOrderCompleted(RestaurantOrder order)
@@ -483,6 +637,109 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (qualityCount > 0)
             visit.foodQualityPotentialBasisPoints =
                 Mathf.Clamp((int)Math.Round(quality / (double)qualityCount), 0, 10000);
+
+        SynchronizeRecoverableServiceIncidents(order, visit);
+    }
+
+    private void SynchronizeRecoverableServiceIncidentsForAllVisits()
+    {
+        if (canonicalOrderService == null)
+            return;
+
+        foreach (BistroBuilderReputationVisitRuntimeRecord visit in
+                 visitsByGroup.Values)
+        {
+            if (visit == null ||
+                visit.finalized ||
+                string.IsNullOrWhiteSpace(visit.canonicalOrderId) ||
+                !canonicalOrderService.TryGetOrderSnapshot(
+                    visit.canonicalOrderId,
+                    out BistroBuilderCanonicalOrder order
+                ) ||
+                order == null)
+            {
+                continue;
+            }
+
+            SynchronizeRecoverableServiceIncidents(order, visit);
+        }
+    }
+
+    private bool SynchronizeRecoverableServiceIncidents(
+        BistroBuilderCanonicalOrder order,
+        BistroBuilderReputationVisitRuntimeRecord visit)
+    {
+        if (order == null || visit == null)
+            return false;
+
+        int currentIncidentCount = 0;
+        for (int index = 0; index < order.Lines.Count; index++)
+        {
+            BistroBuilderCanonicalOrderLine line = order.Lines[index];
+            if (line != null &&
+                IsRecoverableServiceIncidentKind(line.AdvancedIncidentKind))
+            {
+                currentIncidentCount++;
+            }
+        }
+
+        int previousCount = visit.recoverableServiceIncidentCount;
+        int previousPenalty = visit.serviceIncidentPenaltyBasisPoints;
+        int previousRecovery =
+            visit.serviceIncidentApologyRecoveryBasisPoints;
+
+        visit.recoverableServiceIncidentCount = Math.Max(
+            previousCount,
+            currentIncidentCount
+        );
+        visit.apologizedServiceIncidentCount = Math.Min(
+            visit.apologizedServiceIncidentCount,
+            visit.recoverableServiceIncidentCount
+        );
+        RefreshServiceIncidentImpact(visit);
+
+        return previousCount != visit.recoverableServiceIncidentCount ||
+               previousPenalty != visit.serviceIncidentPenaltyBasisPoints ||
+               previousRecovery !=
+                   visit.serviceIncidentApologyRecoveryBasisPoints;
+    }
+
+    private void RefreshServiceIncidentImpact(
+        BistroBuilderReputationVisitRuntimeRecord visit)
+    {
+        if (visit == null)
+            return;
+
+        if (serviceTimingCatalog == null)
+        {
+            serviceTimingCatalog =
+                Resources.Load<BistroBuilderServiceTimingCatalog>(
+                    BistroBuilderServiceTimingCatalog.ResourcesPath
+                );
+        }
+
+        if (serviceTimingCatalog == null)
+            return;
+
+        long penalty =
+            (long)visit.recoverableServiceIncidentCount *
+            serviceTimingCatalog.RecoverableServiceIncidentPenaltyBasisPoints;
+        visit.serviceIncidentPenaltyBasisPoints =
+            Mathf.Clamp((int)Math.Min(10000L, penalty), 0, 10000);
+
+        long recovery =
+            (long)visit.apologizedServiceIncidentCount *
+            serviceTimingCatalog
+                .RecoverableServiceIncidentApologyRecoveryBasisPoints;
+        visit.serviceIncidentApologyRecoveryBasisPoints =
+            Mathf.Clamp(
+                (int)Math.Min(
+                    visit.serviceIncidentPenaltyBasisPoints,
+                    recovery
+                ),
+                0,
+                visit.serviceIncidentPenaltyBasisPoints
+            );
     }
 
     private static void AccumulateWait(
@@ -534,6 +791,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         }
         if (financeService != null)
             financeService.TransactionPosted += HandleFinanceTransaction;
+        if (canonicalOrderService != null)
+            canonicalOrderService.OrdersChanged += HandleCanonicalOrderChanged;
     }
 
     private void Unsubscribe()
@@ -545,6 +804,8 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         }
         if (financeService != null)
             financeService.TransactionPosted -= HandleFinanceTransaction;
+        if (canonicalOrderService != null)
+            canonicalOrderService.OrdersChanged -= HandleCanonicalOrderChanged;
     }
 
     private void CacheDependencies()
@@ -561,6 +822,13 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             TryGetComponent(out advancedCustomerProfileService);
         if (advancedKitchenService == null)
             TryGetComponent(out advancedKitchenService);
+        if (serviceTimingCatalog == null)
+        {
+            serviceTimingCatalog =
+                Resources.Load<BistroBuilderServiceTimingCatalog>(
+                    BistroBuilderServiceTimingCatalog.ResourcesPath
+                );
+        }
     }
 
     private static bool ContainsReference(
