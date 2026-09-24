@@ -61,9 +61,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     private void OnDisable()
     {
         Unsubscribe();
-        foreach (CustomerGroup group in groupsById.Values)
-            if (group != null) group.StateChanged -= HandleGroupStateChanged;
-        groupsById.Clear();
+        ClearTrackedGroupBindings();
     }
 
     private void Update()
@@ -327,6 +325,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (!TryValidateRuntimeSnapshot(snapshot, out error))
             return false;
 
+        ClearTrackedGroupBindings();
         visitsByGroup.Clear();
         groupByOrderId.Clear();
         for (int i = 0; i < snapshot.visits.Count; i++)
@@ -346,6 +345,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
 
     public bool TryResetRuntimeForLegacyLoad(out string error)
     {
+        ClearTrackedGroupBindings();
         visitsByGroup.Clear();
         groupByOrderId.Clear();
         LastAdvancedExperience = null;
@@ -418,14 +418,42 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     private void RegisterGroup(CustomerGroup group)
     {
         if (group == null || group.GroupId < 1) return;
-        if (!groupsById.ContainsKey(group.GroupId))
+
+        if (groupsById.TryGetValue(
+                group.GroupId,
+                out CustomerGroup trackedGroup
+            ))
+        {
+            if (!ReferenceEquals(trackedGroup, group))
+            {
+                if (trackedGroup != null)
+                    trackedGroup.StateChanged -= HandleGroupStateChanged;
+
+                groupsById[group.GroupId] = group;
+            }
+        }
+        else
         {
             groupsById.Add(group.GroupId, group);
-            group.StateChanged -= HandleGroupStateChanged;
-            group.StateChanged += HandleGroupStateChanged;
         }
+
+        group.StateChanged -= HandleGroupStateChanged;
+        group.StateChanged += HandleGroupStateChanged;
+
         if (!visitsByGroup.ContainsKey(group.GroupId))
             visitsByGroup.Add(group.GroupId, CreateVisit(group));
+    }
+
+    private void ClearTrackedGroupBindings()
+    {
+        foreach (CustomerGroup group in groupsById.Values)
+        {
+            if (group != null)
+                group.StateChanged -= HandleGroupStateChanged;
+        }
+
+        groupsById.Clear();
+        staleGroupIds.Clear();
     }
 
     private BistroBuilderReputationVisitRuntimeRecord CreateVisit(CustomerGroup group)
