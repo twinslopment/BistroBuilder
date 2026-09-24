@@ -38,11 +38,11 @@ Este documento registra exclusivamente iconos aprobados por el usuario. Cada sel
 Ruta Library:
 `/BistroBuilder/UI/Referencias/Servicio/PanelActividad/IconosAprobados/`
 
-## Familias aprobadas previamente
+## Cierre de familias
 
-| `activity.marketing` | APROBADO | Referencia aprobada/subida previamente | `—` |
-| `activity.opportunity` | APROBADO | Referencia aprobada/subida previamente | `—` |
-| `activity.trend.up` | APROBADO | Referencia aprobada/subida previamente | `—` |
+| `activity.marketing` | APROBADO | `BB_Activity_Marketing.png` | `libfile_b5292e4ba01081919c076fcb8fe7e4d9` |
+| `activity.opportunity` | APROBADO | `BB_Activity_Opportunity.png` | `libfile_822a5718c0f08191967d8a1f42445ed6` |
+| `activity.trend.up` | APROBADO | `BB_Activity_Trend_Up.png` | `libfile_7d64f35b6e148191b26cdf53efd8f934` |
 
 ## Regla de aprobación
 
