@@ -96,12 +96,12 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
         Choice(2, "Últimos retoques", "Un restaurante casi terminado.\nDale tu toque y prepárate para abrir.", new Rect(478, 640, 291, 196), 427, 595);
         Line(page, 48, 827, 1384);
         var back = ActionButton(page, "Back", "Atrás", 48, 841, 244, 56, () => SetHome(true));
-        Art(back.transform, "Arrow", new Rect(122, 866, 60, 58), 18, 2, 52, 50);
+        ActionIcon(back.transform, "Arrow", BistroBuilderOpeningActionIcon.Shape.BackArrow, 18, 2, 52, 50);
         ((RectTransform)back.GetComponentInChildren<TMP_Text>().transform).anchoredPosition = new Vector2(62, 0);
         ((RectTransform)back.GetComponentInChildren<TMP_Text>().transform).sizeDelta = new Vector2(160, 56);
         back.GetComponent<BistroBuilderOpeningButtonFeedback>().Icon = back.transform.Find("Arrow") as RectTransform;
         createButton = ActionButton(page, "CreateRestaurant", "Crear restaurante", 1058, 841, 374, 56, BeginCreate);
-        Art(createButton.transform, "Bell", new Rect(1390, 857, 72, 65), 301, 0, 62, 56);
+        ActionIcon(createButton.transform, "Bell", BistroBuilderOpeningActionIcon.Shape.ServiceBell, 301, 0, 62, 56);
         ((RectTransform)createButton.GetComponentInChildren<TMP_Text>().transform).sizeDelta = new Vector2(300, 56);
         var feedback = createButton.GetComponent<BistroBuilderOpeningButtonFeedback>();
         feedback.Icon = createButton.transform.Find("Bell") as RectTransform; feedback.IsBell = true;
@@ -208,6 +208,13 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
         button.onClick.AddListener(action);
         image.gameObject.AddComponent<BistroBuilderOpeningButtonFeedback>();
         return button;
+    }
+    private void ActionIcon(Transform parent, string name, BistroBuilderOpeningActionIcon.Shape shape, float x, float y, float w, float h)
+    {
+        var go = new GameObject(name, typeof(RectTransform), typeof(BistroBuilderOpeningActionIcon));
+        go.transform.SetParent(parent, false);
+        Place((RectTransform)go.transform, x, y, w, h);
+        go.GetComponent<BistroBuilderOpeningActionIcon>().Configure(shape);
     }
     private void Art(Transform parent, string name, Rect source, float x, float y, float w, float h)
     {

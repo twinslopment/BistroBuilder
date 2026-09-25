@@ -137,6 +137,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void Update()
     {
+        if (BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking) return;
         TickMicroFeedback();
         if ((coordinator == null || editModeService == null || interactionCamera == null) &&
             Time.unscaledTime >= nextDependencyRefreshAt)
@@ -1419,17 +1420,14 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         return new Rect(left, y, width, height);
     }
 
+    public bool IsPlaytestPanelVisible => Application.isPlaying && showPlaytestPanel &&
+        !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking &&
+        !(editModeService != null && editModeService.IsEditModeActive &&
+          FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include) != null);
+
     private void OnGUI()
     {
-        if (!Application.isPlaying || !showPlaytestPanel) return;
-
-        if (editModeService != null &&
-            editModeService.IsEditModeActive &&
-            FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include) != null)
-        {
-            return;
-        }
-
+        if (!IsPlaytestPanelVisible) return;
         EnsureGuiStyles();
         CacheDependencies();
         panelRect = CalculateDockRect();

@@ -21,11 +21,16 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen : MonoBehavi
     private bool initialEditEntryAttempted;
 
     public bool IsVisible { get; private set; }
+    private static BistroBuilderNewGameOpeningPlayerScreen activeOpeningScreen;
+    public static bool IsOpeningMenuBlocking => activeOpeningScreen != null && activeOpeningScreen.isActiveAndEnabled &&
+        activeOpeningScreen.IsVisible && activeOpeningScreen.openingService != null &&
+        activeOpeningScreen.openingService.Phase == BistroBuilderNewGamePhase.StartMenu;
 
     private void Awake()
     {
         if (openingService == null) TryGetComponent(out openingService);
         if (constructionTool == null) constructionTool = FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
+        activeOpeningScreen = this;
         IsVisible = visibleOnStart;
     }
 
