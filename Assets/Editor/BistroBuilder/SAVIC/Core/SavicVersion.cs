@@ -4,7 +4,7 @@ namespace BistroBuilder.Editor.Savic
     {
         internal const string ProductVersion = "0.1.0";
         internal const int ManifestSchemaVersion = 1;
-        internal const int QueueSchemaVersion = 1;
+        internal const int QueueSchemaVersion = 2;
         internal const string PipelineVersion = "intake-v1";
     }
 }
