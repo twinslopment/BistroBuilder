@@ -475,6 +475,298 @@ namespace BistroBuilder.Editor.Savic
             }
         }
 
+        internal SavicTablePublicationOutcome RefreshAppearanceOnly(
+            SavicManifest manifest,
+            GameObject sourceModelAsset)
+        {
+            if (manifest == null)
+                throw new ArgumentNullException(nameof(manifest));
+
+            if (sourceModelAsset == null)
+                throw new ArgumentNullException(nameof(sourceModelAsset));
+
+            SavicTableAuthoringRecord plan =
+                manifest.tableAuthoring;
+
+            if (plan == null ||
+                !plan.planned ||
+                string.IsNullOrWhiteSpace(plan.prefabAssetPath) ||
+                string.IsNullOrWhiteSpace(plan.itemDefinitionAssetPath))
+            {
+                return Publish(
+                    manifest,
+                    sourceModelAsset);
+            }
+
+            string prefabPath =
+                plan.prefabAssetPath;
+
+            string itemPath =
+                plan.itemDefinitionAssetPath;
+
+            GameObject existingPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    prefabPath);
+
+            RestaurantPlaceableItemDefinition item =
+                AssetDatabase.LoadAssetAtPath
+                    <RestaurantPlaceableItemDefinition>(
+                        itemPath);
+
+            if (existingPrefab == null ||
+                item == null ||
+                existingPrefab.transform.Find(
+                    "Visual/SourceModel") == null)
+            {
+                return Publish(
+                    manifest,
+                    sourceModelAsset);
+            }
+
+            string contentFolder =
+                Path.GetDirectoryName(itemPath)
+                    ?.Replace('\\', '/');
+
+            if (string.IsNullOrWhiteSpace(contentFolder))
+            {
+                return Fail(
+                    "Table appearance refresh could not resolve content folder.",
+                    prefabPath,
+                    itemPath);
+            }
+
+            string largePreviewPath =
+                contentFolder +
+                "/Preview_Large.png";
+
+            string catalogPreviewPath =
+                contentFolder +
+                "/Preview_Catalog.png";
+
+            string publicationFingerprint =
+                BuildPublicationFingerprint(
+                    manifest,
+                    plan);
+
+            using SavicAssetMutationScope transaction =
+                new SavicAssetMutationScope(
+                    layout,
+                    "refresh_table_appearance_" +
+                    manifest.canonicalContentId);
+
+            transaction.CaptureAsset(prefabPath);
+            transaction.CaptureAsset(itemPath);
+            transaction.CaptureAsset(largePreviewPath);
+            transaction.CaptureAsset(catalogPreviewPath);
+
+            GameObject prefabContents = null;
+
+            try
+            {
+                prefabContents =
+                    PrefabUtility.LoadPrefabContents(
+                        prefabPath);
+
+                Transform visualRoot =
+                    prefabContents.transform.Find(
+                        "Visual");
+
+                if (visualRoot == null)
+                {
+                    throw new InvalidOperationException(
+                        "Published table prefab has no Visual root.");
+                }
+
+                Transform previousSource =
+                    visualRoot.Find(
+                        "SourceModel");
+
+                if (previousSource == null)
+                {
+                    throw new InvalidOperationException(
+                        "Published table prefab has no SourceModel child.");
+                }
+
+                Object.DestroyImmediate(
+                    previousSource.gameObject);
+
+                GameObject sourceInstance =
+                    InstantiateSourceModel(
+                        sourceModelAsset,
+                        visualRoot);
+
+                NormalizeSourceVisual(
+                    sourceInstance.transform,
+                    manifest.model3D,
+                    plan);
+
+                RemoveUnsupportedStaticFurnitureComponents(
+                    sourceInstance);
+
+                Renderer stateRenderer =
+                    sourceInstance.GetComponentInChildren
+                        <Renderer>(true);
+
+                if (stateRenderer == null)
+                {
+                    throw new InvalidOperationException(
+                        "Refreshed table source contains no renderer.");
+                }
+
+                TableStateView stateView =
+                    prefabContents.GetComponent<TableStateView>();
+
+                if (stateView != null)
+                {
+                    SerializedObject stateViewSerialized =
+                        new SerializedObject(
+                            stateView);
+
+                    RequireProperty(
+                        stateViewSerialized,
+                        "tableRenderer").objectReferenceValue =
+                            stateRenderer;
+
+                    stateViewSerialized
+                        .ApplyModifiedPropertiesWithoutUndo();
+                }
+
+                GameObject saved =
+                    PrefabUtility.SaveAsPrefabAsset(
+                        prefabContents,
+                        prefabPath);
+
+                if (saved == null)
+                {
+                    throw new InvalidOperationException(
+                        "Unity did not confirm table appearance-only prefab save.");
+                }
+            }
+            finally
+            {
+                if (prefabContents != null)
+                {
+                    PrefabUtility.UnloadPrefabContents(
+                        prefabContents);
+                }
+            }
+
+            try
+            {
+                AssetDatabase.ImportAsset(
+                    prefabPath,
+                    ImportAssetOptions.ForceSynchronousImport |
+                    ImportAssetOptions.ForceUpdate);
+
+                GameObject reloadedPrefab =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        prefabPath);
+
+                if (reloadedPrefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "Appearance-refreshed table prefab could not be reloaded.");
+                }
+
+                string previewFingerprint =
+                    SavicPreviewRenderer.BuildInputFingerprint(
+                        prefabPath);
+
+                SavicPreviewGenerationResult previews =
+                    SavicPreviewRenderer.GenerateAndAssign(
+                        reloadedPrefab,
+                        item,
+                        contentFolder);
+
+                if (!previews.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Preview refresh failed: " +
+                        previews.Message);
+                }
+
+                AssetDatabase.SaveAssets();
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    PrefabArtifactRole,
+                    prefabPath,
+                    "savic.table-publisher",
+                    Version,
+                    publicationFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    ItemArtifactRole,
+                    itemPath,
+                    "savic.table-publisher",
+                    Version,
+                    publicationFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    LargePreviewArtifactRole,
+                    previews.LargePreviewAssetPath,
+                    "savic.preview-renderer",
+                    SavicPreviewRenderer.Version,
+                    previewFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    CatalogPreviewArtifactRole,
+                    previews.CatalogPreviewAssetPath,
+                    "savic.preview-renderer",
+                    SavicPreviewRenderer.Version,
+                    previewFingerprint);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.IncrementalAppearanceRefresh",
+                    "PASS",
+                    "INFO",
+                    "Table visual source and previews refreshed without rebuilding colliders, spatial, navigation or persistence topology.",
+                    SavicIncrementalInvalidationService.Version);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Presentation.Previews",
+                    "PASS",
+                    "INFO",
+                    previews.Message,
+                    SavicPreviewRenderer.Version);
+
+                manifest.status =
+                    "PUBLISHED";
+
+                manifests.Save(
+                    manifest);
+
+                transaction.Commit();
+
+                return new SavicTablePublicationOutcome(
+                    true,
+                    "Table appearance refreshed incrementally; geometry/colliders were reused.",
+                    prefabPath,
+                    itemPath);
+            }
+            catch (Exception exception)
+            {
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.IncrementalAppearanceRefresh",
+                    "FAIL",
+                    "ERROR",
+                    exception.Message,
+                    SavicIncrementalInvalidationService.Version);
+
+                return Fail(
+                    "Incremental table appearance refresh failed: " +
+                    exception.Message,
+                    prefabPath,
+                    itemPath);
+            }
+        }
+
         private static string BuildPublicationFingerprint(
             SavicManifest manifest,
             SavicTableAuthoringRecord plan)
