@@ -694,6 +694,20 @@ namespace BistroBuilder.Editor.Savic
                 batch,
                 "Pendientes / activos",
                 context.Jobs.PendingProcessCount.ToString());
+            AddField(
+                batch,
+                "Última operación",
+                context.Batch.LastOperationMilliseconds + " ms");
+            AddField(
+                batch,
+                "Excesos de presupuesto",
+                context.Batch.BudgetOverrunCount.ToString());
+            AddField(
+                batch,
+                "Throttle",
+                context.Batch.IsCoolingDown
+                    ? "DESCANSO ADAPTATIVO"
+                    : "LISTO");
 
             VisualElement batchActions = new VisualElement();
             batchActions.style.flexDirection = FlexDirection.Row;
@@ -1570,6 +1584,26 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "Hash", row.Job?.sourceHash);
             AddField(detail, "Mensaje", row.Message);
             AddField(detail, "Archivo", row.Job?.archivedRelativePath);
+
+            if (row.Manifest?.incremental != null &&
+                !string.IsNullOrWhiteSpace(
+                    row.Manifest.incremental.lastAction))
+            {
+                AddField(
+                    detail,
+                    "Invalidación incremental",
+                    row.Manifest.incremental.lastAction);
+                AddField(
+                    detail,
+                    "Motivo incremental",
+                    row.Manifest.incremental.reason);
+                AddField(
+                    detail,
+                    "Geometría/colliders reutilizados",
+                    row.Manifest.incremental.reusedColliders
+                        ? "Sí"
+                        : "No");
+            }
 
             string archivedPath =
                 context.Layout.FromProjectRelativePath(
