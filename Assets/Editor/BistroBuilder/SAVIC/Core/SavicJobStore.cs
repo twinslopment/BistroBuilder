@@ -72,6 +72,7 @@ namespace BistroBuilder.Editor.Savic
                     updatedUtc = now,
                     attempts = 1,
                     message = message ?? string.Empty,
+                    batchEligible = !duplicateExact,
                     checkpoint = duplicateExact
                         ? "DUPLICATE_EXACT"
                         : "INGESTED",
@@ -287,6 +288,7 @@ namespace BistroBuilder.Editor.Savic
                     SavicJobRecord job = snapshot.jobs[index];
 
                     if (job == null ||
+                        !job.batchEligible ||
                         !string.Equals(
                             job.state,
                             SavicJobState.Ingested.ToString(),
@@ -446,6 +448,7 @@ namespace BistroBuilder.Editor.Savic
                     return snapshot.jobs.Count(
                         job =>
                             job != null &&
+                            job.batchEligible &&
                             (string.Equals(
                                  job.state,
                                  SavicJobState.Ingested.ToString(),
