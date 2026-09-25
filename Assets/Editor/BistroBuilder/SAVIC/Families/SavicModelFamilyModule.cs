@@ -41,6 +41,10 @@ namespace BistroBuilder.Editor.Savic
         SavicModelFamilyProcessingOutcome Process(
             SavicManifest manifest,
             GameObject sourceModel);
+
+        SavicModelFamilyProcessingOutcome ProcessAppearanceOnly(
+            SavicManifest manifest,
+            GameObject sourceModel);
     }
 
     internal sealed class SavicModelFamilyRegistry
