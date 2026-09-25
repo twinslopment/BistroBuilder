@@ -108,5 +108,27 @@ namespace BistroBuilder.Editor.Savic
                 : SavicModelFamilyProcessingOutcome.Failure(
                     publication.Message);
         }
+        public SavicModelFamilyProcessingOutcome ProcessAppearanceOnly(
+            SavicManifest manifest,
+            GameObject sourceModel)
+        {
+            if (manifest == null)
+                throw new ArgumentNullException(nameof(manifest));
+
+            if (sourceModel == null)
+                throw new ArgumentNullException(nameof(sourceModel));
+
+            SavicTablePublicationOutcome publication =
+                publisher.RefreshAppearanceOnly(
+                    manifest,
+                    sourceModel);
+
+            return publication.Succeeded
+                ? SavicModelFamilyProcessingOutcome.Success(
+                    publication.Message)
+                : SavicModelFamilyProcessingOutcome.Failure(
+                    publication.Message);
+        }
+
     }
 }
