@@ -294,19 +294,62 @@ namespace BistroBuilder.Editor.Savic
                         "Model imported but geometry requires review.");
                 }
 
+                SavicIncrementalPlan incrementalPlan =
+                    SavicIncrementalInvalidationService.Evaluate(
+                        previousPublishedSnapshot,
+                        manifest,
+                        analysis);
+
+                manifest.incremental =
+                    SavicIncrementalInvalidationService.Stamp(
+                        previousPublishedSnapshot?.incremental,
+                        incrementalPlan);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.IncrementalInvalidation",
+                    "PASS",
+                    "INFO",
+                    incrementalPlan.Action +
+                    ": " +
+                    incrementalPlan.Reason,
+                    SavicIncrementalInvalidationService.Version);
+
+                bool canReuseClassification =
+                    incrementalPlan.GeometryReusable &&
+                    previousPublishedSnapshot?.classification != null &&
+                    previousPublishedSnapshot.classification.classified &&
+                    string.Equals(
+                        previousPublishedSnapshot.classification.classifierVersion,
+                        SavicContentClassifier.Version,
+                        StringComparison.Ordinal);
+
                 SavicClassificationRecord classification =
-                    SavicContentClassifier.Classify(manifest);
+                    canReuseClassification
+                        ? previousPublishedSnapshot.classification
+                        : SavicContentClassifier.Classify(manifest);
 
                 manifest.classification = classification;
                 manifest.family = classification.family;
                 manifest.type = classification.type;
                 manifest.category = classification.category;
 
+                bool canReuseSemanticParts =
+                    incrementalPlan.GeometryReusable &&
+                    previousPublishedSnapshot?.model3D?.semanticParts != null &&
+                    previousPublishedSnapshot.model3D.semanticParts.analyzed &&
+                    string.Equals(
+                        previousPublishedSnapshot.model3D.semanticParts.analyzerVersion,
+                        SavicSemanticPartAnalyzer.Version,
+                        StringComparison.Ordinal);
+
                 SavicSemanticPartAnalysisRecord semanticParts =
-                    SavicSemanticPartAnalyzer.Analyze(
-                        root,
-                        analysis,
-                        classification);
+                    canReuseSemanticParts
+                        ? previousPublishedSnapshot.model3D.semanticParts
+                        : SavicSemanticPartAnalyzer.Analyze(
+                            root,
+                            analysis,
+                            classification);
 
                 analysis.semanticParts =
                     semanticParts;
@@ -337,30 +380,59 @@ namespace BistroBuilder.Editor.Savic
                     classification.evidence,
                     "content.classification.v2");
 
-                SavicResolvedMaterialSemantic resolvedMaterial =
-                    SavicMaterialSemanticResolver.Resolve(
-                        manifest);
+                bool canReuseMaterialSemantic =
+                    incrementalPlan.IsExactReuse &&
+                    previousPublishedSnapshot?.materialSemantic != null &&
+                    string.Equals(
+                        previousPublishedSnapshot.materialSemantic.resolverVersion,
+                        SavicMaterialSemanticResolver.Version,
+                        StringComparison.Ordinal);
 
-                manifest.materialSemantic =
-                    new SavicMaterialSemanticResolutionRecord
-                    {
-                        resolved =
-                            resolvedMaterial.IsKnown,
-                        resolverVersion =
-                            SavicMaterialSemanticResolver.Version,
-                        semantic =
-                            resolvedMaterial.Semantic,
-                        confidence =
-                            resolvedMaterial.Confidence,
-                        score =
-                            resolvedMaterial.Score,
-                        source =
-                            resolvedMaterial.Source,
-                        evidence =
-                            resolvedMaterial.Evidence,
-                        resolvedUtc =
-                            DateTime.UtcNow.ToString("O")
-                    };
+                SavicResolvedMaterialSemantic resolvedMaterial;
+
+                if (canReuseMaterialSemantic)
+                {
+                    SavicMaterialSemanticResolutionRecord previousMaterial =
+                        previousPublishedSnapshot.materialSemantic;
+
+                    resolvedMaterial =
+                        new SavicResolvedMaterialSemantic(
+                            previousMaterial.semantic,
+                            previousMaterial.confidence,
+                            previousMaterial.score,
+                            previousMaterial.evidence,
+                            previousMaterial.source);
+
+                    manifest.materialSemantic =
+                        previousMaterial;
+                }
+                else
+                {
+                    resolvedMaterial =
+                        SavicMaterialSemanticResolver.Resolve(
+                            manifest);
+
+                    manifest.materialSemantic =
+                        new SavicMaterialSemanticResolutionRecord
+                        {
+                            resolved =
+                                resolvedMaterial.IsKnown,
+                            resolverVersion =
+                                SavicMaterialSemanticResolver.Version,
+                            semantic =
+                                resolvedMaterial.Semantic,
+                            confidence =
+                                resolvedMaterial.Confidence,
+                            score =
+                                resolvedMaterial.Score,
+                            source =
+                                resolvedMaterial.Source,
+                            evidence =
+                                resolvedMaterial.Evidence,
+                            resolvedUtc =
+                                DateTime.UtcNow.ToString("O")
+                        };
+                }
 
                 SavicManifestMutations.UpsertDecision(
                     manifest,
@@ -427,9 +499,13 @@ namespace BistroBuilder.Editor.Savic
                 }
 
                 SavicModelFamilyProcessingOutcome familyOutcome =
-                    familyModule.Process(
-                        manifest,
-                        root);
+                    incrementalPlan.IsAppearanceOnly
+                        ? familyModule.ProcessAppearanceOnly(
+                            manifest,
+                            root)
+                        : familyModule.Process(
+                            manifest,
+                            root);
 
                 if (!familyOutcome.Succeeded)
                 {
