@@ -17,6 +17,11 @@ namespace BistroBuilder.Editor.Savic
                 new SavicSourceProcessingService(Layout, Manifests);
             ProjectInventory =
                 new SavicProjectInventoryService(Layout, Manifests);
+            LegacyAdoption =
+                new SavicLegacyAdoptionService(
+                    Layout,
+                    Manifests,
+                    ProjectInventory);
         }
 
         internal static SavicEditorContext Instance =>
@@ -28,6 +33,7 @@ namespace BistroBuilder.Editor.Savic
         internal SavicIntakeService Intake { get; }
         internal SavicSourceProcessingService SourceProcessing { get; }
         internal SavicProjectInventoryService ProjectInventory { get; }
+        internal SavicLegacyAdoptionService LegacyAdoption { get; }
 
         internal static void ResetForDomainDiagnostics()
         {
