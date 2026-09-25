@@ -242,6 +242,7 @@ namespace BistroBuilder.Editor.Savic
                                 DateTime.UtcNow
                                     .ToString("O"),
                             attempts = 1,
+                            batchEligible = true,
                             checkpoint = "INGESTED"
                         });
                 }
