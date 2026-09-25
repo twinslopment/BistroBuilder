@@ -48,6 +48,7 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     public int ActiveCount => CountActive();
     public int QueuedCount => CountQueued();
     public int TotalCapacity => CountCapacity();
+    public int PlayerPriorityOrderCount => CountPlayerPriorityOrders();
     public int CompletedLineCount => completedLineCount;
     public int AverageRecentQualityBasisPoints => recentQualityCount > 0
         ? Mathf.Clamp(recentQualitySum / recentQualityCount, 0, 10000)
@@ -190,18 +191,71 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
             error = "Solo puede priorizarse una preparaciÃ³n que espera estaciÃ³n.";
             return false;
         }
-        StationRuntime station = stations[work.StationId];
-        for (int i = 0; i < station.Queued.Count; i++)
+
+        string canonicalOrderId = work.Order != null
+            ? work.Order.CanonicalOrderId
+            : string.Empty;
+        return TryPrioritizeOrder(canonicalOrderId, out error);
+    }
+
+    public bool TryPrioritizeOrder(string canonicalOrderId, out string error)
+    {
+        canonicalOrderId = BistroBuilderOrderIdUtility.Normalize(canonicalOrderId);
+        if (string.IsNullOrWhiteSpace(canonicalOrderId))
         {
-            if (station.Queued[i] != work &&
-                station.Queued[i].Priority == BistroBuilderKitchenPriorityKind.PlayerPriority)
+            error = "La comanda seleccionada no tiene un identificador canÃ³nico vÃ¡lido.";
+            return false;
+        }
+
+        var priorityOrders = new HashSet<string>(StringComparer.Ordinal);
+        var affectedStations = new HashSet<StationRuntime>();
+        var queuedTargets = new List<WorkItem>(8);
+
+        foreach (WorkItem candidate in workByLine.Values)
+        {
+            string candidateOrderId = candidate.Order != null
+                ? BistroBuilderOrderIdUtility.Normalize(candidate.Order.CanonicalOrderId)
+                : string.Empty;
+
+            if (candidate.Priority == BistroBuilderKitchenPriorityKind.PlayerPriority &&
+                !string.IsNullOrWhiteSpace(candidateOrderId))
             {
-                error = "Esta estaciÃ³n ya tiene una prioridad manual activa.";
-                return false;
+                priorityOrders.Add(candidateOrderId);
+            }
+
+            if (!candidate.Active &&
+                string.Equals(candidateOrderId, canonicalOrderId, StringComparison.Ordinal))
+            {
+                queuedTargets.Add(candidate);
             }
         }
-        work.Priority = BistroBuilderKitchenPriorityKind.PlayerPriority;
-        SortQueue(station);
+
+        if (queuedTargets.Count == 0)
+        {
+            error = "La comanda no tiene preparaciones pendientes que puedan priorizarse.";
+            return false;
+        }
+
+        bool alreadyPrioritized = priorityOrders.Contains(canonicalOrderId);
+        if (!BistroBuilderAdvancedKitchenPolicy.CanAddPlayerPriorityOrder(
+                priorityOrders.Count,
+                alreadyPrioritized))
+        {
+            error = "Ya hay 3 comandas priorizadas. Espera a que termine una antes de priorizar otra.";
+            return false;
+        }
+
+        for (int i = 0; i < queuedTargets.Count; i++)
+        {
+            WorkItem target = queuedTargets[i];
+            target.Priority = BistroBuilderKitchenPriorityKind.PlayerPriority;
+            if (stations.TryGetValue(target.StationId, out StationRuntime station))
+                affectedStations.Add(station);
+        }
+
+        foreach (StationRuntime station in affectedStations)
+            SortQueue(station);
+
         Changed?.Invoke();
         error = string.Empty;
         return true;
@@ -1049,6 +1103,26 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
         foreach (StationRuntime station in stations.Values)
             count += station.Definition.baseCapacity;
         return count;
+    }
+
+    private int CountPlayerPriorityOrders()
+    {
+        var orderIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (WorkItem work in workByLine.Values)
+        {
+            if (work == null ||
+                work.Priority != BistroBuilderKitchenPriorityKind.PlayerPriority ||
+                work.Order == null)
+            {
+                continue;
+            }
+
+            string orderId =
+                BistroBuilderOrderIdUtility.Normalize(work.Order.CanonicalOrderId);
+            if (!string.IsNullOrWhiteSpace(orderId))
+                orderIds.Add(orderId);
+        }
+        return orderIds.Count;
     }
 
     private WorkItem FindFirstActive()

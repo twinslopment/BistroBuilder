@@ -298,9 +298,35 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
         if (string.IsNullOrWhiteSpace(stationId))
             throw new InvalidOperationException("La línea no aparece en una estación real.");
         if (!facade.Prioritize(lineIds[0], out string priorityError))
-            throw new InvalidOperationException("No pudo priorizarse una línea en espera: " + priorityError);
-        if (facade.Prioritize(lineIds[1], out _))
-            throw new InvalidOperationException("La estación aceptó dos prioridades manuales simultáneas.");
+            throw new InvalidOperationException("No pudo priorizarse la comanda en espera: " + priorityError);
+        if (!facade.Prioritize(lineIds[1], out string repeatedPriorityError))
+            throw new InvalidOperationException(
+                "Reaplicar prioridad a la misma comanda debe ser idempotente: " +
+                repeatedPriorityError);
+        if (advanced.PlayerPriorityOrderCount != 1)
+            throw new InvalidOperationException(
+                "Una misma comanda se contabilizó más de una vez como prioridad manual.");
+        if (!facade.TryBuildSnapshot(
+                out BistroBuilderAdvancedKitchenSnapshot prioritized,
+                out string prioritizedError))
+            throw new InvalidOperationException(prioritizedError);
+        for (int i = 0; i < prioritized.stations.Count; i++)
+        {
+            for (int j = 0; j < prioritized.stations[i].tasks.Count; j++)
+            {
+                BistroBuilderKitchenTaskSnapshot task = prioritized.stations[i].tasks[j];
+                if (string.Equals(
+                        task.canonicalOrderId,
+                        legacy.CanonicalOrderId,
+                        StringComparison.Ordinal) &&
+                    !task.active &&
+                    task.priority != BistroBuilderKitchenPriorityKind.PlayerPriority)
+                {
+                    throw new InvalidOperationException(
+                        "Priorizar comanda no elevó todas sus preparaciones pendientes.");
+                }
+            }
+        }
         if (!facade.SetIntakeMode(BistroBuilderKitchenIntakeMode.Reduced, out string reducedError) ||
             advanced.IntakeMode != BistroBuilderKitchenIntakeMode.Reduced)
             throw new InvalidOperationException("El modo reducido no quedó operativo: " + reducedError);
