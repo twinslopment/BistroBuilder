@@ -29,11 +29,12 @@ public sealed class BistroBuilderEditChromeControl : MonoBehaviour, IPointerEnte
     {
         if(button==null)return;
         bool available=button.IsInteractable();
-        background.color=selected?Olive:hovered&&available?new Color32(234,231,225,255):action?new Color32(255,253,249,255):Color.clear;
-        if(icon!=null)icon.color=selected?Color.white:new Color(tint.r,tint.g,tint.b,available?1f:.4f);
-        if(label!=null)label.color=selected?Color.white:new Color(.14f,.15f,.14f,available?1f:.4f);
+        background.color=selected?Olive:hovered&&available?new Color32(234,231,225,255):action?(available?new Color32(231,239,220,255):new Color32(228,225,218,255)):Color.clear;
+        Color actionInk=available?new Color32(48,70,33,255):new Color32(99,101,94,255);
+        if(icon!=null)icon.color=selected?Color.white:action?actionInk:new Color(tint.r,tint.g,tint.b,available?1f:.65f);
+        if(label!=null)label.color=selected?Color.white:action?actionInk:new Color(.14f,.15f,.14f,available?1f:.65f);
         bool keyboard=focused&&BistroBuilderPointerFeedback.KeyboardFocus;
-        outline.enabled=keyboard||action;outline.effectColor=keyboard?new Color32(50,158,220,255):new Color32(226,221,212,255);
+        outline.enabled=keyboard||action;outline.effectColor=keyboard?new Color32(50,158,220,255):available?new Color32(107,130,77,255):new Color32(156,156,145,255);
     }
     public void OnPointerEnter(PointerEventData e){hovered=true;Refresh();if(hint!=null){hint.text=explanation;hint.transform.parent.gameObject.SetActive(true);}}
     public void OnPointerExit(PointerEventData e){hovered=false;Refresh();HideHint();}

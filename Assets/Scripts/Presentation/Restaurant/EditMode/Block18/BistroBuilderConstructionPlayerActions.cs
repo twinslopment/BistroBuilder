@@ -12,6 +12,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool
     private bool constructionPointerDown;
     private float moduleLength = 1f;
     private float moduleAngle;
+    private readonly WallPose[] modulePreviewPose = new WallPose[1];
     private BistroBuilderConstructionDraftView draftView;
     private float interactionPlaneHeight;
     public string DimensionsText => BuildDimensionText();
@@ -27,9 +28,42 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool
     public void ConfigureModule(float length, float angle)
     {
         if (!ConstructionGeometry.Finite(length) || !ConstructionGeometry.Finite(angle)) return;
-        if (!Mathf.Approximately(moduleAngle, Mathf.Repeat(angle, 360f))) LastRotationFeedbackTime = Time.unscaledTime;
+        float orthogonalAngle = Mathf.Repeat(Mathf.Round(angle / 90f) * 90f, 360f);
+        if (!Mathf.Approximately(moduleAngle, orthogonalAngle)) LastRotationFeedbackTime = Time.unscaledTime;
         moduleLength = Mathf.Clamp(length, 0.25f, 8f);
-        moduleAngle = Mathf.Repeat(angle, 360f);
+        moduleAngle = orthogonalAngle;
+        hasLastPointerScreen = false;
+    }
+
+    public bool CanRotateArchitecture => mode == BistroBuilderConstructionRuntimeMode.WallModule ||
+        (mode != BistroBuilderConstructionRuntimeMode.Furniture && selection.Kind == EntityKind.Wall);
+
+    public bool TryRotateArchitecture(out string error)
+    {
+        error = string.Empty;
+        if (!CanRotateArchitecture) { error = "Selecciona una pared o un módulo para girar."; return false; }
+        if (mode == BistroBuilderConstructionRuntimeMode.WallModule)
+        {
+            ConfigureModule(moduleLength, moduleAngle + 90f);
+            SetStatus("Módulo girado 90°. Haz clic para colocarlo.");
+            return true;
+        }
+        if (!EnsureSession(out error)) return false;
+        CancelGesture(string.Empty);
+        RefreshQueries();
+        var wall = queries.CaptureWall(selection.Id);
+        if (wall == null) { error = "La pared seleccionada ya no existe."; return false; }
+        Vector2 center = (wall.axisStart + wall.axisEnd) * 0.5f;
+        Vector2 half = (wall.axisEnd - wall.axisStart) * 0.5f;
+        Vector2 rotated = new Vector2(-half.y, half.x);
+        wall.axisStart = center - rotated;
+        wall.axisEnd = center + rotated;
+        if (!coordinator.TryExecute(new BistroBuilderAtomicEditCommand("Girar pared 90°",
+            new BistroBuilderUpdateWallCommand(wall)), out _, out error))
+        { SetStatus(error); return false; }
+        LastRotationFeedbackTime = Time.unscaledTime;
+        RefreshAfterDraftMutation("Pared girada 90°. Puedes deshacer el giro.");
+        return true;
     }
 
     private static bool IsTextInputFocused()
@@ -59,13 +93,17 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool
     }
 
     private Vector2 ModuleEnd(Vector2 start) => start +
-        new Vector2(Mathf.Cos(moduleAngle * Mathf.Deg2Rad), Mathf.Sin(moduleAngle * Mathf.Deg2Rad)) * moduleLength;
+        (moduleAngle < 45f ? Vector2.right : moduleAngle < 135f ? Vector2.up :
+            moduleAngle < 225f ? Vector2.left : Vector2.down) * moduleLength;
 
     private void RenderModule(Vector2 raw)
     {
         Vector2 start = ResolvePoint(raw, null, default, null);
         EnsurePreviewLineCount(1);
-        SetLine(previewLines[0], start, ModuleEnd(start), ValidColor, 0.065f);
+        modulePreviewPose[0] = new WallPose(default, start, ModuleEnd(start));
+        IsPreviewBlocked = ConstructionGeometry.HasCrossing(queries, modulePreviewPose, "default", 0f, wallHeight);
+        SetLine(previewLines[0], start, ModuleEnd(start), IsPreviewBlocked ? InvalidColor : ValidColor, 0.065f);
+        if (IsPreviewBlocked) SetStatus(BistroBuilderWallCrossingPolicy.Message);
         HideUnusedPreviewLines(1);
     }
 

@@ -30,3 +30,4 @@ MonoBehaviour:
   resaleBasisPoints: 5000
   removalCost: 0
   demolitionBasisPoints: 1500
+  catalogSubcategory: 

@@ -189,6 +189,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         GameObject rootObject =
             new GameObject("BB_UIUX_PlaceableInspector", typeof(RectTransform));
 
+        rootObject.AddComponent<BistroBuilderEditChromeSurface>();
         rootObject.transform.SetParent(canvas.transform, false);
         root = rootObject.GetComponent<RectTransform>();
         root.anchorMin = new Vector2(1f, 1f);
@@ -214,7 +215,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         scroll.scrollSensitivity = 22f;
 
         RectTransform viewport = CreateRect("Viewport", root);
-        Stretch(viewport, 8f, 8f, 8f, 8f);
+        Stretch(viewport, 8f, 8f, 8f, 64f);
         viewport.gameObject.AddComponent<RectMask2D>();
 
         content = CreateRect("Content", viewport);
@@ -230,7 +231,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         layout.spacing = 7f;
         layout.childAlignment = TextAnchor.UpperCenter;
         layout.childControlWidth = true;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
@@ -256,16 +257,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildHeader()
     {
-        RectTransform row = CreateLayoutRow("Header", 44f);
-        HorizontalLayoutGroup layout =
-            row.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 6f;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.childControlHeight = true;
-        layout.childControlWidth = false;
-        layout.childForceExpandHeight = true;
-        layout.childForceExpandWidth = false;
-
+        RectTransform row = CreateRect("InspectorHeader", root);
+        row.anchorMin=new Vector2(0,1);row.anchorMax=new Vector2(1,1);row.pivot=new Vector2(.5f,1);row.offsetMin=new Vector2(16,-58);row.offsetMax=new Vector2(-16,-14);
         titleText = CreateTmp(
             "Title",
             row,
@@ -274,7 +267,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             26f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
-        AddLayout(titleText.gameObject, 0f, 1f);
+        Stretch(titleText.rectTransform,0f,44f,0f,0f);
 
         Button close = CreateTextButton(
             "Close",
@@ -285,6 +278,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             Card,
             TextMuted,
             24f);
+        var closeRect=(RectTransform)close.transform;closeRect.anchorMin=closeRect.anchorMax=new Vector2(1f,.5f);closeRect.pivot=new Vector2(1f,.5f);closeRect.anchoredPosition=Vector2.zero;
         close.onClick.AddListener(Hide);
     }
 
@@ -505,7 +499,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             rulesContainer.gameObject.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 3f;
         layout.childAlignment = TextAnchor.UpperLeft;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
@@ -963,7 +957,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
     }
 
-    private void Hide()
+    public void Hide()
     {
         currentData = null;
         if (root != null)
@@ -1115,8 +1109,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         float flexibleWidth)
     {
         LayoutElement element =
-            go.GetComponent<LayoutElement>() ??
-            go.AddComponent<LayoutElement>();
+            go.GetComponent<LayoutElement>();
+        if(element==null)element=go.AddComponent<LayoutElement>();
 
         element.preferredWidth = preferredWidth;
         element.flexibleWidth = flexibleWidth;

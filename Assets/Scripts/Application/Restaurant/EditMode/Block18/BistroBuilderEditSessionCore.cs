@@ -45,6 +45,7 @@ public sealed class BistroBuilderIntrinsicEditValidationProvider : IBistroBuilde
     {
         var topology = new BistroBuilderWallTopologyBuilder(policy).Build(draft.walls, draftRevision);
         diagnostics.AddRange(topology.diagnostics);
+        BistroBuilderWallCrossingPolicy.Validate(draft, draftRevision, diagnostics);
         BistroBuilderOpeningIntrinsicValidator.Validate(draft, policy, diagnostics, draftRevision);
     }
 }

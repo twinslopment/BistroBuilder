@@ -17,7 +17,7 @@ MonoBehaviour:
   category: 0
   placementScope: 0
   description: "Mesa b\xE1sica rectangular para cuatro clientes."
-  catalogIcon: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
+  catalogIcon: {fileID: 21300000, guid: 3df0acdd4ce3adb4291f9d2348a1aac5, type: 3}
   inspectorPreview: {fileID: 21300000, guid: ccaa32c60679dac4d90c0d101f7c9d68, type: 3}
   dimensionsCentimeters: {x: 200, y: 100, z: 100}
   finishProfile: {fileID: 0}
@@ -29,3 +29,4 @@ MonoBehaviour:
   resaleBasisPoints: 5000
   removalCost: 0
   demolitionBasisPoints: 1500
+  catalogSubcategory: 

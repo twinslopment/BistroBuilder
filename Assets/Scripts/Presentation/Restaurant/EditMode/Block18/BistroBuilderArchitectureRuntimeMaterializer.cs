@@ -96,6 +96,8 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
             }
         }
 
+        BistroBuilderSurfaceFinishVisuals.Build(generatedRoot, document);
+
         return new BistroBuilderArchitectureMaterializationSummary(
             wallCount,
             floorCount,
@@ -114,7 +116,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         BistroBuilderWallRecord wall,
         IReadOnlyList<BistroBuilderOpeningRecord> openings)
     {
-        Mesh mesh = BistroBuilderWallGeometryBuilder.Build(wall, openings);
+        Mesh mesh = BistroBuilderWallGeometryBuilder.Build(wall, openings, lastDocument?.walls);
         var go = new GameObject("Wall_" + wall.wallId.Value);
         go.transform.SetParent(generatedRoot, false);
 
@@ -131,15 +133,14 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         var filter = go.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
-        if (wallMaterial != null) renderer.sharedMaterial = wallMaterial;
+        renderer.sharedMaterial = ContinuousWallMaterial();
         if (createMeshColliders)
         {
             var collider = go.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
 
-        if (CreateWallVisualModules(go.transform, wall, openings))
-            renderer.enabled = false;
+        BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, renderer.sharedMaterial);
 
         BuildBlockedFloorIntervals(wall, openings, blockedIntervals);
         for (int i = 0; i < blockedIntervals.Count; i++)
@@ -345,11 +346,27 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     public bool TryCreateWallVisualPreview(
         Transform parent,
         BistroBuilderWallRecord wall,
-        IReadOnlyList<BistroBuilderOpeningRecord> openings)
+        IReadOnlyList<BistroBuilderOpeningRecord> openings, IReadOnlyList<BistroBuilderWallRecord> neighbours = null)
     {
         if (parent == null || wall == null || !wall.wallId.IsValid) return false;
-        ResolveWallVisualModule();
-        return CreateWallVisualModules(parent, wall, openings);
+        parent.gameObject.AddComponent<MeshFilter>().sharedMesh = BistroBuilderWallGeometryBuilder.Build(wall, openings, neighbours);
+        var material = ContinuousWallMaterial();
+        parent.gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
+        BistroBuilderOpeningVisuals.Build(parent, wall, openings, material);
+        return true;
+    }
+
+    private Material ContinuousWallMaterial()
+    {
+        if (wallMaterial != null) return wallMaterial;
+        var kit = BistroBuilderConstructionAssetKit.Load();
+        if (kit != null && kit.wallMaterial != null) return kit.wallMaterial;
+        if (fallbackWallMaterial == null)
+        {
+            fallbackWallMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard"));
+            fallbackWallMaterial.color = new Color(.73f,.69f,.60f);
+        }
+        return fallbackWallMaterial;
     }
 
     public bool SetWallVisualVisibility(BistroBuilderEditId wallId, bool visible)

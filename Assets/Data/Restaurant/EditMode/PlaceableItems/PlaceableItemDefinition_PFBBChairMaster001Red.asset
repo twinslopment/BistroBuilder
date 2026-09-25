@@ -18,7 +18,7 @@ MonoBehaviour:
   placementScope: 0
   description: "Silla contempor\xE1nea de restaurante con estructura de madera y
     tapizado rojo."
-  catalogIcon: {fileID: 21300000, guid: 73806aa92d6c5f5499014c281d00042c, type: 3}
+  catalogIcon: {fileID: 21300000, guid: c36329a92b3285145b1564ab0f3d75fb, type: 3}
   inspectorPreview: {fileID: 21300000, guid: 73806aa92d6c5f5499014c281d00042c, type: 3}
   dimensionsCentimeters: {x: 48.5, y: 92, z: 51.1}
   finishProfile: {fileID: 0}
@@ -30,3 +30,4 @@ MonoBehaviour:
   resaleBasisPoints: 5000
   removalCost: 0
   demolitionBasisPoints: 1500
+  catalogSubcategory: 

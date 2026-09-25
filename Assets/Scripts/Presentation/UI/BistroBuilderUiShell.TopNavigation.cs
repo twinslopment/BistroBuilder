@@ -27,104 +27,12 @@ public sealed partial class BistroBuilderUiShell
 
     private void EnsureIconNavigationContent()
     {
-        if (topNavigation.GetComponent<BistroBuilderTopBarSurface>() == null)
-            topNavigation.gameObject.AddComponent<BistroBuilderTopBarSurface>();
-        topNavigation.GetComponent<Image>().color = HeaderInk;
-        topNavigation.SetAsLastSibling();
-        var existing = topNavigation.Find("NavigationContent");
-        navContent = existing != null ? (RectTransform)existing : (RectTransform)NewUi("NavigationContent", topNavigation).transform;
-        Stretch(navContent);
-        navContent.offsetMin = new Vector2(310, 0);
-        navContent.offsetMax = new Vector2(-102, 0);
-        var layout = navContent.GetComponent<HorizontalLayoutGroup>();
-        if (layout == null) layout = navContent.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.padding = new RectOffset(4, 4, 0, 0);
-        layout.spacing = 4;
-        layout.childControlWidth = layout.childControlHeight = true;
-        layout.childForceExpandWidth = layout.childForceExpandHeight = true;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        foreach (Transform child in navContent)
-            if (child.name == "Brand" || child.name == "BBNav_Progreso" || child.name == "BBNav_Edicion" || child.name == "BBNav_Cerrar")
-                child.gameObject.SetActive(false);
+        EnsureApprovedTopBarV3Content();
     }
 
     private void EnsureIconNavigationButtons()
     {
-        var brand = HeaderLabel(topNavigation, "Wordmark", "BISTRO\nBUILDER", 21);
-        if (topBrandFont == null && Application.isPlaying)
-        {
-            topBrandFont = BistroBuilderTypography.Title;
-        }
-        if (topBrandFont != null) brand.font = topBrandFont;
-        brand.fontStyle = FontStyles.Normal;
-        brand.lineSpacing = -12;
-        brand.characterSpacing = -2;
-        PlaceHeader((RectTransform)brand.transform, 12, 4, 98, 56);
-        brand.alignment = TextAlignmentOptions.Center;
-        HeaderDivider("BrandDivider", 118);
-        HeaderDivider("IdentityDivider", 302);
-
-        identityButton = HeaderPlainButton(topNavigation, "RestaurantIdentity", "", 180);
-        PlaceHeader((RectTransform)identityButton.transform, 128, 0, 170, 64);
-        identityButton.transform.Find("Label").gameObject.SetActive(false);
-        restaurantHeading = HeaderLabel(identityButton.transform, "RestaurantName", "Mi restaurante", 14);
-        PlaceHeader((RectTransform)restaurantHeading.transform, 0, 10, 145, 22);
-        restaurantHeading.alignment = TextAlignmentOptions.MidlineLeft;
-        restaurantHeading.overflowMode = TextOverflowModes.Ellipsis;
-        serviceHeading = HeaderLabel(identityButton.transform, "ServiceLabel", "Preparación", 12);
-        PlaceHeader((RectTransform)serviceHeading.transform, 0, 34, 164, 20);
-        serviceHeading.alignment = TextAlignmentOptions.MidlineLeft;
-        serviceHeading.color = BBIconDesignTokens.Muted;
-        var chevron = HeaderImage(identityButton.transform, "Chevron");
-        chevron.sprite = BBIconCatalog.LoadDefault()?.GetSprite(BBIconId.GeneralDown);
-        chevron.color = HeaderText;
-        PlaceHeader(chevron.rectTransform, 149, 17, 12, 12);
-        identityButton.onClick.RemoveAllListeners();
-        identityButton.onClick.AddListener(() => ToggleTopPopup(true));
-
-        for (int i = 0; i < Navigation.Length; i++)
-        {
-            string title = Navigation[i].Label;
-            var button = HeaderIconButton(navContent, "BBNav_" + Sanitize(title), title, TopIcons[i]);
-            proxyButtons[title] = button;
-            topPresenters[title] = button.GetComponent<BBIconButton>();
-        }
-
-        optionsButton = HeaderIconButton(topNavigation, "BBNav_Opciones", "Opciones", BBIconId.NavOptions);
-        var optionRect = (RectTransform)optionsButton.transform;
-        optionRect.anchorMin = optionRect.anchorMax = optionRect.pivot = new Vector2(1, 1);
-        optionRect.anchoredPosition = new Vector2(-8, 0);
-        optionRect.sizeDelta = new Vector2(86, 64);
-        optionsButton.onClick.RemoveAllListeners();
-        optionsButton.onClick.AddListener(() => {
-            topPopup.gameObject.SetActive(false);
-            var options = GetComponent<BistroBuilderOptionsScreen>() ?? gameObject.AddComponent<BistroBuilderOptionsScreen>();
-            options.Toggle();
-            RefreshIconNavigation();
-        });
-        var divider = HeaderImage(topNavigation, "ClockDivider");
-        divider.color = new Color(0.25f, 0.30f, 0.31f, 0.7f);
-        divider.rectTransform.anchorMin = divider.rectTransform.anchorMax = new Vector2(1, 1);
-        divider.rectTransform.pivot = new Vector2(1, 1);
-        divider.rectTransform.anchoredPosition = new Vector2(-138, -10);
-        divider.rectTransform.sizeDelta = new Vector2(1, 44);
-        divider.gameObject.SetActive(false);
-        calendarHeading = HeaderLabel(topNavigation, "Calendar", "", 13);
-        timeHeading = HeaderLabel(topNavigation, "Clock", "", 16);
-        calendarHeading.gameObject.SetActive(false);
-        timeHeading.gameObject.SetActive(false);
-        foreach (var label in new[] { calendarHeading, timeHeading })
-        {
-            var rect = (RectTransform)label.transform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1, 1);
-            rect.anchoredPosition = new Vector2(-12, label == calendarHeading ? -11 : -33);
-            rect.sizeDelta = new Vector2(110, 22);
-            label.alignment = TextAlignmentOptions.MidlineLeft;
-        }
-        SuppressLegacyTopBarArtifacts();
-        EnsureTopPopup();
-        if (GetComponent<BistroBuilderOptionsScreen>() == null) gameObject.AddComponent<BistroBuilderOptionsScreen>();
-        RefreshIconNavigation();
+        EnsureApprovedTopBarV3Buttons();
     }
 
     private Button HeaderIconButton(Transform parent, string name, string title, BBIconId id)
@@ -140,17 +48,31 @@ public sealed partial class BistroBuilderUiShell
         labelRect.anchorMin = new Vector2(0, 0); labelRect.anchorMax = new Vector2(1, 0);
         labelRect.pivot = new Vector2(0.5f, 0);
         labelRect.offsetMin = new Vector2(0, 8); labelRect.offsetMax = new Vector2(0, 27);
+        var glow = HeaderImage(button.transform, "HoverGlow");
+        glow.preserveAspect = false;
+        glow.rectTransform.anchorMin = Vector2.zero; glow.rectTransform.anchorMax = Vector2.one;
+        glow.rectTransform.offsetMin = new Vector2(3, 3); glow.rectTransform.offsetMax = new Vector2(-3, -3);
+        glow.color = new Color(BBIconDesignTokens.SelectedSoft.r, BBIconDesignTokens.SelectedSoft.g, BBIconDesignTokens.SelectedSoft.b, 0f);
+        var glowOutline = glow.GetComponent<Outline>();
+        if (glowOutline == null) glowOutline = glow.gameObject.AddComponent<Outline>();
+        glowOutline.effectColor = new Color(BBIconDesignTokens.Selected.r, BBIconDesignTokens.Selected.g, BBIconDesignTokens.Selected.b, 0f);
+        glowOutline.effectDistance = new Vector2(1.2f, -1.2f);
+        glowOutline.useGraphicAlpha = false;
+        glow.transform.SetAsFirstSibling();
+
         var icon = HeaderImage(button.transform, "NavigationIcon");
         icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 1);
         icon.rectTransform.pivot = new Vector2(0.5f, 1);
         icon.rectTransform.sizeDelta = new Vector2(23, 23); icon.rectTransform.anchoredPosition = new Vector2(0, -9);
+        icon.rectTransform.localScale = Vector3.one;
+        icon.rectTransform.localRotation = Quaternion.identity;
         var underline = HeaderImage(button.transform, "SelectionUnderline");
         underline.rectTransform.anchorMin = Vector2.zero; underline.rectTransform.anchorMax = new Vector2(1, 0);
         underline.rectTransform.offsetMin = new Vector2(7, 0); underline.rectTransform.offsetMax = new Vector2(-7, 3);
         var fx = button.GetComponent<BBIconButton>();
         if (fx == null) fx = button.gameObject.AddComponent<BBIconButton>();
         fx.ConfigureRuntime(id, icon, button);
-        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label);
+        fx.ConfigureNavigationSurface(button.GetComponent<Image>(), underline, label, glow, glowOutline);
         fx.SetToggleSelectionOnClick(false);
         return button;
     }
@@ -314,6 +236,9 @@ public sealed partial class BistroBuilderUiShell
             pair.Value.SetSelected(pair.Key == selectedNavigation);
             pair.Value.SetInteractable(proxyButtons[pair.Key].interactable);
         }
-        optionsButton.GetComponent<BBIconButton>().SetSelected(GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true);
+        RefreshApprovedTopBarV3State();
+        var optionsPresenter = optionsButton != null ? optionsButton.GetComponent<BBIconButton>() : null;
+        if (optionsPresenter != null)
+            optionsPresenter.SetSelected(GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -9,14 +9,14 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     private const float MinorSpacing = 0.25f;
     private const float MajorSpacing = 1f;
     private const float DefaultExtent = 10f;
-    private const float SurfaceOffset = 0.0015f;
+    private const float SurfaceOffset = 0.008f;
 
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private Renderer editableFloorRenderer;
     [SerializeField] private MeshFilter editableFloorMeshFilter;
     [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.20f);
     [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.34f);
-    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.010f;
+    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.014f;
     [SerializeField, Min(0.002f)] private float majorLineWidth = 0.016f;
 
     private GameObject gridRoot;

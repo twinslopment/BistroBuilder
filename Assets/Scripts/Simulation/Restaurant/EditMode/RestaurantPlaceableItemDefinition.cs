@@ -84,6 +84,11 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
     [SerializeField, Range(0, 10000)]
     private int demolitionBasisPoints = 1500;
 
+    [Header("Clasificación del catálogo")]
+    [Tooltip("Subcategoría de presentación: plants, pictures, dividers, textiles, accessories; ceiling, wall, floor, exterior, ambient; checkout, dining, reception, support, safety; signage, organization, display, technical, auxiliary.")]
+    [SerializeField] private string catalogSubcategory = "";
+    public string CatalogSubcategory => catalogSubcategory ?? "";
+
     public string ItemId => NormalizeIdentifier(itemId);
 
     public string DisplayName =>
