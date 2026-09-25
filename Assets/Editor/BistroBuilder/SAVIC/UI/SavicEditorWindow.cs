@@ -448,6 +448,11 @@ namespace BistroBuilder.Editor.Savic
 
             AddNavigationButton(
                 rail,
+                SavicEditorSection.Adoption,
+                "Adopción");
+
+            AddNavigationButton(
+                rail,
                 SavicEditorSection.Validation,
                 "Validación");
 
@@ -552,6 +557,10 @@ namespace BistroBuilder.Editor.Savic
                     RenderLibrary();
                     break;
 
+                case SavicEditorSection.Adoption:
+                    RenderAdoption();
+                    break;
+
                 case SavicEditorSection.Validation:
                     RenderValidation();
                     break;
@@ -624,6 +633,17 @@ namespace BistroBuilder.Editor.Savic
                 inventory,
                 "Instantánea",
                 FormatTimestamp(snapshot.Inventory.generatedUtc));
+
+            if (summary.LegacyPendingAdoption > 0)
+            {
+                inventory.Add(
+                    CreateSecondaryButton(
+                        "Revisar adopción legacy (" +
+                        summary.LegacyPendingAdoption +
+                        ")",
+                        () => SelectSection(
+                            SavicEditorSection.Adoption)));
+            }
 
             page.Add(inventory);
 
@@ -963,6 +983,279 @@ namespace BistroBuilder.Editor.Savic
                 });
 
             SelectFirstOrClear(list, visible, detail, RenderAssetDetail);
+        }
+
+        private void RenderAdoption()
+        {
+            VisualElement page = CreatePage();
+
+            AddSectionTitle(
+                page,
+                "Adopción",
+                "Incorpora contenido ya existente al inventario SAVIC sin reconstruir ni sustituir assets.");
+
+            IReadOnlyList<SavicLegacyAdoptionCandidate> preview =
+                context.LegacyAdoption.GetPreview(false);
+
+            List<SavicLegacyAdoptionCandidate> candidates =
+                preview.ToList();
+
+            int eligible =
+                candidates.Count(candidate => candidate.Eligible);
+
+            int recommended =
+                candidates.Count(
+                    candidate =>
+                        candidate.Eligible &&
+                        candidate.RecommendedForBatch);
+
+            page.Add(
+                CreateNotice(
+                    "Adopción no destructiva",
+                    "SAVIC registra identidad, referencias y baseline. " +
+                    "No cambia GUID, prefab, materiales, iconos ni ItemId existentes.",
+                    Pass));
+
+            VisualElement summary = CreatePanel();
+            AddGroupTitle(summary, "Vista previa");
+            AddField(summary, "Pendientes", candidates.Count.ToString());
+            AddField(summary, "Elegibles", eligible.ToString());
+            AddField(summary, "Recomendados en lote", recommended.ToString());
+            AddField(
+                summary,
+                "Manual / excluido del lote",
+                Math.Max(0, candidates.Count - recommended).ToString());
+
+            VisualElement actions = new VisualElement();
+            actions.style.flexDirection = FlexDirection.Row;
+            actions.style.flexWrap = Wrap.Wrap;
+            actions.style.marginTop = 8f;
+
+            actions.Add(
+                CreateSecondaryButton(
+                    "Actualizar vista",
+                    () => RunAction(
+                        "Vista previa de adopción",
+                        () => context.ProjectInventory.ScanAndPersist(),
+                        false)));
+
+            if (recommended > 0)
+            {
+                actions.Add(
+                    CreateSecondaryButton(
+                        "Adoptar recomendados (" +
+                        recommended +
+                        ")",
+                        () =>
+                        {
+                            bool confirmed =
+                                EditorUtility.DisplayDialog(
+                                    "Adoptar contenido legacy",
+                                    "Se registrarán " +
+                                    recommended +
+                                    " assets existentes como gestionados por SAVIC.\n\n" +
+                                    "No se reemplazarán prefabs, GUID, materiales ni entradas del catálogo.",
+                                    "Adoptar",
+                                    "Cancelar");
+
+                            if (!confirmed)
+                                return;
+
+                            RunAction(
+                                "Adopción legacy por lote",
+                                () =>
+                                {
+                                    SavicLegacyAdoptionBatchResult result =
+                                        context.LegacyAdoption.AdoptRecommended();
+
+                                    Debug.Log(
+                                        "[SAVIC] LEGACY ADOPTION BATCH\n" +
+                                        "Adopted: " + result.Adopted +
+                                        "\nAlready managed: " +
+                                        result.AlreadyManaged +
+                                        "\nSkipped: " + result.Skipped);
+                                },
+                                true);
+                        }));
+            }
+
+            summary.Add(actions);
+            page.Add(summary);
+
+            if (candidates.Count == 0)
+            {
+                page.Add(
+                    CreateEmptyState(
+                        "No hay contenido legacy pendiente de adopción."));
+                contentHost.Add(page);
+                return;
+            }
+
+            VisualElement detail = CreateDetailScroll();
+
+            ListView list =
+                CreateListView(
+                    candidates,
+                    CreateStandardRow,
+                    BindCandidate);
+
+            list.selectionChanged +=
+                selection =>
+                    RenderCandidateDetail(
+                        detail,
+                        FirstSelection
+                            <SavicLegacyAdoptionCandidate>(
+                                selection));
+
+            page.Add(CreateSplit(list, detail));
+            contentHost.Add(page);
+
+            SelectFirstOrClear(
+                list,
+                candidates,
+                detail,
+                RenderCandidateDetail);
+
+            void BindCandidate(
+                VisualElement element,
+                SavicLegacyAdoptionCandidate candidate)
+            {
+                string badge =
+                    !candidate.Eligible
+                        ? "BLOQUEADO"
+                        : candidate.RecommendedForBatch
+                            ? "LISTO"
+                            : "MANUAL";
+
+                BindStandardRow(
+                    element,
+                    candidate.Record?.displayName,
+                    (candidate.Record?.category ?? "Sin categoría") +
+                    " · " +
+                    (candidate.Record?.itemId ?? "Sin ItemId"),
+                    badge);
+            }
+
+            void RenderCandidateDetail(
+                VisualElement host,
+                SavicLegacyAdoptionCandidate candidate)
+            {
+                host.Clear();
+
+                if (candidate?.Record == null)
+                {
+                    host.Add(
+                        CreateEmptyState(
+                            "Selecciona un asset legacy."));
+                    return;
+                }
+
+                SavicProjectInventoryItemRecord record =
+                    candidate.Record;
+
+                string state =
+                    !candidate.Eligible
+                        ? "BLOQUEADO"
+                        : candidate.RecommendedForBatch
+                            ? "LISTO PARA ADOPTAR"
+                            : "ADOPCIÓN MANUAL";
+
+                AddDetailTitle(
+                    host,
+                    record.displayName,
+                    state);
+
+                host.Add(
+                    CreateNotice(
+                        candidate.RecommendedForBatch
+                            ? "Sin cambios sobre el asset"
+                            : candidate.Eligible
+                                ? "Revisión manual"
+                                : "No elegible",
+                        candidate.Reason,
+                        candidate.Eligible
+                            ? candidate.RecommendedForBatch
+                                ? Pass
+                                : Warning
+                            : Error));
+
+                AddField(host, "ItemId", record.itemId);
+                AddField(host, "SavicId propuesto", candidate.ProposedSavicId);
+                AddField(host, "Categoría", record.category);
+                AddField(host, "Placeable", record.itemAssetPath);
+                AddField(host, "Prefab", record.prefabAssetPath);
+                AddField(host, "Prefab GUID", record.prefabGuid);
+                AddField(host, "Baseline", record.dependencyHash);
+
+                VisualElement candidateActions =
+                    new VisualElement();
+
+                candidateActions.style.flexDirection =
+                    FlexDirection.Row;
+                candidateActions.style.flexWrap =
+                    Wrap.Wrap;
+                candidateActions.style.marginTop = 8f;
+
+                UnityEngine.Object asset =
+                    AssetDatabase.LoadMainAssetAtPath(
+                        record.itemAssetPath);
+
+                if (asset != null)
+                {
+                    candidateActions.Add(
+                        CreateSecondaryButton(
+                            "Localizar asset",
+                            () => EditorGUIUtility.PingObject(asset)));
+                }
+
+                if (candidate.Eligible)
+                {
+                    candidateActions.Add(
+                        CreateSecondaryButton(
+                            "Adoptar este asset",
+                            () =>
+                            {
+                                bool confirmed =
+                                    EditorUtility.DisplayDialog(
+                                        "Adoptar " +
+                                        record.displayName,
+                                        "SAVIC registrará el asset existente in-place.\n\n" +
+                                        "No sustituirá su prefab, GUID, materiales, imágenes ni ItemId.",
+                                        "Adoptar",
+                                        "Cancelar");
+
+                                if (!confirmed)
+                                    return;
+
+                                RunAction(
+                                    "Adopción de " +
+                                    record.itemId,
+                                    () =>
+                                    {
+                                        SavicLegacyAdoptionResult result =
+                                            context.LegacyAdoption.AdoptOne(
+                                                record.itemAssetPath);
+
+                                        if (!result.Succeeded)
+                                        {
+                                            throw new InvalidOperationException(
+                                                result.Message);
+                                        }
+
+                                        Debug.Log(
+                                            "[SAVIC] LEGACY ADOPTION - PASS\n" +
+                                            record.itemId +
+                                            "\nSavicId: " +
+                                            result.SavicId +
+                                            "\n" +
+                                            result.Message);
+                                    },
+                                    true);
+                            }));
+                }
+
+                host.Add(candidateActions);
+            }
         }
 
         private void RenderValidation()
