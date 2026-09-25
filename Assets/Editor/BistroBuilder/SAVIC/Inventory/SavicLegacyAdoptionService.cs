@@ -103,8 +103,9 @@ namespace BistroBuilder.Editor.Savic
                 new List<SavicLegacyAdoptionCandidate>();
 
             IReadOnlyList<SavicProjectInventoryItemRecord> items =
-                snapshot?.items ??
-                Array.Empty<SavicProjectInventoryItemRecord>();
+                snapshot?.items != null
+                    ? snapshot.items
+                    : Array.Empty<SavicProjectInventoryItemRecord>();
 
             for (int index = 0; index < items.Count; index++)
             {
