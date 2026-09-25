@@ -812,13 +812,16 @@ namespace BistroBuilder.Editor.Savic
                     jobs.Count(
                         job =>
                             IsStatus(job.state, "FailedSource") ||
-                            IsStatus(job.state, "Quarantined")),
+                            IsStatus(job.state, "Quarantined") ||
+                            IsStatus(job.state, "FailedProcessing")),
                 Stale = manifests.Count(
                     manifest => IsStatus(manifest.status, "STALE")),
                 QueuedOrActive = jobs.Count(
                     job =>
                         IsStatus(job.state, "Waiting") ||
-                        IsStatus(job.state, "Hashing")),
+                        IsStatus(job.state, "Hashing") ||
+                        IsStatus(job.state, "Ingested") ||
+                        IsStatus(job.state, "Processing")),
                 InventoryIssues = inventory.issueCount,
                 LegacyPendingAdoption = inventory.legacyPendingAdoption
             };
