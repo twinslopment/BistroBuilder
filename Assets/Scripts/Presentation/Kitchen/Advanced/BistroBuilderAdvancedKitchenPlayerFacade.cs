@@ -9,6 +9,7 @@ using UnityEngine;
 public sealed class BistroBuilderAdvancedKitchenPlayerFacade : MonoBehaviour
 {
     [SerializeField] private BistroBuilderAdvancedKitchenService kitchenService;
+    [SerializeField] private BistroBuilderRestaurantMenuService menuService;
 
     public event Action Changed;
 
@@ -64,12 +65,57 @@ public sealed class BistroBuilderAdvancedKitchenPlayerFacade : MonoBehaviour
         return kitchenService.TryPrioritizeLine(lineId, out error);
     }
 
+    public bool PrioritizeOrder(string canonicalOrderId, out string error)
+    {
+        if (!ValidateConfiguration(out error)) return false;
+        return kitchenService.TryPrioritizeOrder(canonicalOrderId, out error);
+    }
+
+    public bool TrySetDishPaused(string dishId, bool paused, out string error)
+    {
+        CacheDependencies();
+        if (menuService == null)
+        {
+            error = "La acción por plato necesita RestaurantMenuService.";
+            return false;
+        }
+
+        if (menuService.TryGetItemSnapshot(
+                dishId,
+                out BistroBuilderMenuItemRuntimeState current) &&
+            current != null &&
+            current.ManuallySoldOut == paused)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        BistroBuilderMenuMutationResult result =
+            menuService.TrySetManuallySoldOut(dishId, paused);
+        error = result.Succeeded ? string.Empty : result.Message;
+        return result.Succeeded;
+    }
+
+    public bool IsDishPaused(string dishId)
+    {
+        CacheDependencies();
+        return menuService != null &&
+            menuService.TryGetItemSnapshot(
+                dishId,
+                out BistroBuilderMenuItemRuntimeState current) &&
+            current != null &&
+            current.ManuallySoldOut;
+    }
+
     private void HandleChanged() => Changed?.Invoke();
 
     private void CacheDependencies()
     {
         if (kitchenService == null)
             TryGetComponent(out kitchenService);
+        if (menuService == null)
+            menuService = FindFirstObjectByType<BistroBuilderRestaurantMenuService>(
+                FindObjectsInactive.Include);
     }
 
 #if UNITY_EDITOR

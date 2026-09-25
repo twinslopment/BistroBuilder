@@ -93,6 +93,14 @@ public static class BistroBuilderAdvancedKitchen12SelfTest
             "Modo de pausa definido", ref passed, ref failed, log);
         Check(Enum.IsDefined(typeof(BistroBuilderKitchenIncidentKind), BistroBuilderKitchenIncidentKind.EquipmentFailure),
             "Averías definidas", ref passed, ref failed, log);
+        Check(BistroBuilderAdvancedKitchenPolicy.MaxPlayerPriorityOrders == 3,
+            "Máximo de tres comandas priorizadas", ref passed, ref failed, log);
+        Check(BistroBuilderAdvancedKitchenPolicy.CanAddPlayerPriorityOrder(2, false),
+            "Tercera comanda priorizada permitida", ref passed, ref failed, log);
+        Check(!BistroBuilderAdvancedKitchenPolicy.CanAddPlayerPriorityOrder(3, false),
+            "Cuarta comanda priorizada rechazada", ref passed, ref failed, log);
+        Check(BistroBuilderAdvancedKitchenPolicy.CanAddPlayerPriorityOrder(3, true),
+            "Reaplicar prioridad a la misma comanda es idempotente", ref passed, ref failed, log);
 
         report = log.Append("Resultado: ").Append(passed).Append(" OK / ")
             .Append(failed).Append(" fallos.").ToString();

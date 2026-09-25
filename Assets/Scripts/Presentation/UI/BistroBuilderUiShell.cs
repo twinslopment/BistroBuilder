@@ -73,6 +73,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private BistroBuilderFinanceService finance;
     private BistroBuilderInventoryPlanningService inventoryPlanning;
     private BistroBuilderAdvancedKitchenService kitchen;
+    private BistroBuilderAdvancedKitchenPlayerScreen kitchenScreen;
     private BistroBuilderAdvancedFrontOfHouseService frontOfHouse;
     private BistroBuilderCustomerExperienceTrackingService experience;
     private BistroBuilderTableContextActionService tableContextActions;
@@ -989,6 +990,13 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+
+        if (!editing && TryRefreshKitchenContextActions())
+        {
+            if (contextPanel != null) contextPanel.gameObject.SetActive(false);
+            return;
+        }
+
         RestaurantTable selected = !editing && !HasManagementScreenOpen && tableSelection != null ? tableSelection.SelectedTable : null;
         if (contextPanel != null) contextPanel.gameObject.SetActive(selected != null);
 
@@ -1126,6 +1134,77 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         serviceActionLabel.text = state == RestaurantServiceState.Open ? "FIN DE SERVICIO" :
             state == RestaurantServiceState.Closing ? "CIERRE EN CURSO" :
             state == RestaurantServiceState.Preparing ? "PREPARANDO SERVICIO" : "RESTAURANTE CERRADO";
+    }
+
+    private bool TryRefreshKitchenContextActions()
+    {
+        if (kitchenScreen == null || !kitchenScreen.IsOpen)
+            return false;
+
+        bool hasSnapshot = kitchenScreen.TryGetContextSelection(
+            out BistroBuilderAdvancedKitchenSnapshot snapshot,
+            out BistroBuilderKitchenTaskSnapshot task);
+
+        if (!hasSnapshot || snapshot == null)
+        {
+            if (serviceActionButton != null)
+                serviceActionButton.gameObject.SetActive(false);
+            if (secondaryContextActionButton != null)
+                secondaryContextActionButton.gameObject.SetActive(false);
+            if (tertiaryContextActionButton != null)
+                tertiaryContextActionButton.gameObject.SetActive(false);
+            return true;
+        }
+
+        bool showReduceIntake =
+            snapshot.intakeMode == BistroBuilderKitchenIntakeMode.Normal &&
+            snapshot.loadState != BistroBuilderKitchenLoadState.Fluid;
+        bool showPauseDish =
+            task != null &&
+            !kitchenScreen.IsSelectedDishPaused();
+        bool showPrioritizeOrder =
+            task != null &&
+            !task.active &&
+            task.priority != BistroBuilderKitchenPriorityKind.PlayerPriority &&
+            kitchen != null &&
+            kitchen.PlayerPriorityOrderCount <
+                BistroBuilderAdvancedKitchenPolicy.MaxPlayerPriorityOrders;
+
+        LayoutContextActions(
+            showReduceIntake,
+            showPauseDish,
+            showPrioritizeOrder);
+
+        if (serviceActionButton != null && serviceActionLabel != null)
+        {
+            serviceActionButton.gameObject.SetActive(showReduceIntake);
+            serviceActionButton.interactable = showReduceIntake;
+            serviceActionLabel.text = "REDUCIR ENTRADA";
+            Image image = serviceActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Attention;
+        }
+
+        if (secondaryContextActionButton != null &&
+            secondaryContextActionLabel != null)
+        {
+            secondaryContextActionButton.gameObject.SetActive(showPauseDish);
+            secondaryContextActionButton.interactable = showPauseDish;
+            secondaryContextActionLabel.text = "PAUSAR PLATO";
+            Image image = secondaryContextActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Critical;
+        }
+
+        if (tertiaryContextActionButton != null &&
+            tertiaryContextActionLabel != null)
+        {
+            tertiaryContextActionButton.gameObject.SetActive(showPrioritizeOrder);
+            tertiaryContextActionButton.interactable = showPrioritizeOrder;
+            tertiaryContextActionLabel.text = "PRIORIZAR COMANDA";
+            Image image = tertiaryContextActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Primary;
+        }
+
+        return true;
     }
 
     private string BuildSelectedTableContext(
@@ -1374,6 +1453,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleServiceActionClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryReduceIntake(out string kitchenError))
+                AddActivity("Cocina · entrada reducida.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected = tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected != null)
         {
@@ -1405,6 +1494,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleExplainDelayClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryPauseSelectedDish(out string kitchenError))
+                AddActivity("Cocina · nuevas comandas del plato pausadas.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected =
             tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected == null)
@@ -1427,6 +1526,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleApologyClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryPrioritizeSelectedOrder(out string kitchenError))
+                AddActivity("Cocina · comanda priorizada.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected =
             tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected == null)
@@ -1497,6 +1606,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (finance == null) finance = FindScene<BistroBuilderFinanceService>();
         if (inventoryPlanning == null) inventoryPlanning = FindScene<BistroBuilderInventoryPlanningService>();
         if (kitchen == null) kitchen = FindScene<BistroBuilderAdvancedKitchenService>();
+        if (kitchenScreen == null) kitchenScreen = FindScene<BistroBuilderAdvancedKitchenPlayerScreen>();
         if (frontOfHouse == null) frontOfHouse = FindScene<BistroBuilderAdvancedFrontOfHouseService>();
         if (experience == null) experience = FindScene<BistroBuilderCustomerExperienceTrackingService>();
         if (tableContextActions == null) tableContextActions = FindScene<BistroBuilderTableContextActionService>();
