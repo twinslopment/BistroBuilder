@@ -66,6 +66,12 @@ public static class BistroBuilderOpeningIvorySelfTest
                 baselineTables = UnityEngine.Object.FindFirstObjectByType<RestaurantTableRegistry>().RegisteredTableCount;
                 baselinePlaceables = UnityEngine.Object.FindFirstObjectByType<RestaurantPlaceableRegistry>().RegisteredPlaceables.Count;
                 Assert(EventSystem.current != null && EventSystem.current.enabled, "UI input enabled");
+                Assert(BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking, "Opening blocks construction input");
+                // RuntimeInitializeOnLoadMethod runs only at play entry; restore that composition after each diagnostic scene reload.
+                typeof(BistroBuilderConstructionAuthoringRuntimeBootstrap).GetMethod("Install", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
+                var construction = UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
+                Assert(construction != null && !construction.IsPlaytestPanelVisible, "Construction bar hidden on new game");
+                Assert(Find<BistroBuilderOpeningActionIcon>("Arrow") != null && Find<BistroBuilderOpeningActionIcon>("Bell") != null && Find<RawImage>("Arrow") == null && Find<RawImage>("Bell") == null, "Action icons use native silhouettes without image rectangles");
                 var choices = Enumerable.Range(0,3).Select(i => (RectTransform)Find<Button>("Choice" + i).transform).ToArray();
                 Assert(choices.All(r => r.rect.size == choices[0].rect.size), "Three equal cards");
                 Assert(choices[0].rect.width == 626 && choices[0].rect.height == 222, "Card dimensions");
@@ -78,6 +84,7 @@ public static class BistroBuilderOpeningIvorySelfTest
                 Assert(!Find<Button>("CreateRestaurant").interactable, "Empty name cannot create");
                 Find<Button>("Back").onClick.Invoke();
                 Assert(Find<Button>("NewGame").gameObject.activeInHierarchy, "Back returns to main menu");
+                Assert(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>().IsPlaytestPanelVisible, "Construction bar stays hidden after Back");
                 Find<Button>("NewGame").onClick.Invoke();
                 Assert(Find<Button>("Choice0").gameObject.activeInHierarchy, "New game reopens");
                 Find<TMP_InputField>("RestaurantName").text = "Ivory QA " + Index;
@@ -99,6 +106,7 @@ public static class BistroBuilderOpeningIvorySelfTest
                 Assert(service.Phase == BistroBuilderNewGamePhase.InitialSetup, "Create enters initial design " + Expected);
                 Assert(service.PremisesProfile == Expected && service.RestaurantName == "Ivory QA " + Index, "Selected profile and name applied");
                 Assert(!Find<Canvas>("NewGameIvoryCanvas").gameObject.activeSelf, "Opening menu dismissed");
+                Assert(!BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking, "Construction input restored after creation");
                 Assert(Find<Button>("SaveRecovery").gameObject.activeInHierarchy && Find<Button>("ValidateAndContinue").gameObject.activeInHierarchy, "Initial design retains save and validate actions");
                 int tables = UnityEngine.Object.FindFirstObjectByType<RestaurantTableRegistry>().RegisteredTableCount;
                 int items = UnityEngine.Object.FindFirstObjectByType<RestaurantPlaceableRegistry>().RegisteredPlaceables.Count;
