@@ -1585,22 +1585,32 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "Mensaje", row.Message);
             AddField(detail, "Archivo", row.Job?.archivedRelativePath);
 
-            if (row.Manifest?.incremental != null &&
+            SavicManifest jobManifest = null;
+
+            if (!string.IsNullOrWhiteSpace(
+                    row.Job?.manifestSavicId))
+            {
+                context.Manifests.TryGetBySavicId(
+                    row.Job.manifestSavicId,
+                    out jobManifest);
+            }
+
+            if (jobManifest?.incremental != null &&
                 !string.IsNullOrWhiteSpace(
-                    row.Manifest.incremental.lastAction))
+                    jobManifest.incremental.lastAction))
             {
                 AddField(
                     detail,
                     "Invalidación incremental",
-                    row.Manifest.incremental.lastAction);
+                    jobManifest.incremental.lastAction);
                 AddField(
                     detail,
                     "Motivo incremental",
-                    row.Manifest.incremental.reason);
+                    jobManifest.incremental.reason);
                 AddField(
                     detail,
                     "Geometría/colliders reutilizados",
-                    row.Manifest.incremental.reusedColliders
+                    jobManifest.incremental.reusedColliders
                         ? "Sí"
                         : "No");
             }
