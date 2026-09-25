@@ -67,10 +67,15 @@ public static class BistroBuilderAdvancedCustomerExperienceEngine
         BistroBuilderCustomerExperienceRecord objectiveExperience,
         BistroBuilderAdvancedCustomerMemberProfile member)
     {
-        int waiterScore = ScorePersonalWait(
-            visit.waiterWaitSeconds, member.waiterWaitToleranceSeconds);
+        int waiterScore =
+            BistroBuilderCustomerExperienceEvaluator.ApplyWaitRecoveryMitigations(
+                ScorePersonalWait(
+                    visit.waiterWaitSeconds,
+                    member.waiterWaitToleranceSeconds),
+                visit.waiterDelayExplanationMitigationBasisPoints,
+                visit.waiterIncidentApologyMitigationBasisPoints);
         int billScore =
-            BistroBuilderCustomerExperienceEvaluator.ApplyBillRecoveryMitigations(
+            BistroBuilderCustomerExperienceEvaluator.ApplyWaitRecoveryMitigations(
                 ScorePersonalWait(
                     visit.billWaitSeconds,
                     member.billWaitToleranceSeconds),
@@ -83,7 +88,13 @@ public static class BistroBuilderAdvancedCustomerExperienceEngine
             visit.tableWaitSeconds, member.tableWaitToleranceSeconds);
         float foodTolerance = Math.Max(4f, visit.expectedFoodSeconds) *
             member.foodWaitToleranceBasisPoints / 10000f;
-        int foodWaitScore = ScorePersonalWait(visit.foodWaitSeconds, foodTolerance);
+        int foodWaitScore =
+            BistroBuilderCustomerExperienceEvaluator.ApplyWaitRecoveryMitigations(
+                ScorePersonalWait(
+                    visit.foodWaitSeconds,
+                    foodTolerance),
+                visit.foodDelayExplanationMitigationBasisPoints,
+                visit.foodIncidentApologyMitigationBasisPoints);
         int waiting = Average(tableScore, waiterScore, foodWaitScore, billScore);
 
         int food = ApplySensitivity(

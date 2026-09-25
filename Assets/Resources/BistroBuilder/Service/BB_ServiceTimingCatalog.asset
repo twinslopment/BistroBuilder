@@ -21,5 +21,25 @@ MonoBehaviour:
     criticalSeconds: 420
     explanationPenaltyMitigationBasisPoints: 1500
     apologyPenaltyMitigationBasisPoints: 2500
+  - phase: 1
+    targetSeconds: 10
+    attentionSeconds: 20
+    delaySeconds: 35
+    incidentSeconds: 50
+    criticalSeconds: 70
+    explanationPenaltyMitigationBasisPoints: 1500
+    apologyPenaltyMitigationBasisPoints: 2500
+  foodTimingPolicy:
+    minimumExpectedSeconds: 4
+    attentionMultiplier: 1.15
+    attentionOffsetSeconds: 0
+    delayMultiplier: 1.35
+    delayOffsetSeconds: 4
+    incidentMultiplier: 2
+    incidentOffsetSeconds: 0
+    criticalMultiplier: 3
+    criticalOffsetSeconds: 30
+    explanationPenaltyMitigationBasisPoints: 1500
+    apologyPenaltyMitigationBasisPoints: 2500
   recoverableServiceIncidentPenaltyBasisPoints: 1000
   recoverableServiceIncidentApologyRecoveryBasisPoints: 500

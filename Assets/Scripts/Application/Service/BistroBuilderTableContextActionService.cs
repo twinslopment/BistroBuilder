@@ -1,5 +1,37 @@
 using UnityEngine;
 
+public readonly struct BistroBuilderServiceWaitContextActionSnapshot
+{
+    public readonly BistroBuilderServiceTimingPhase Phase;
+    public readonly float WaitSeconds;
+    public readonly float ExpectedFoodSeconds;
+    public readonly BistroBuilderServiceTimingState TimingState;
+    public readonly bool CanExplainDelay;
+    public readonly bool IsDelayExplained;
+    public readonly bool HasTimingIncident;
+    public readonly bool IsTimingIncidentApologized;
+
+    public BistroBuilderServiceWaitContextActionSnapshot(
+        BistroBuilderServiceTimingPhase phase,
+        float waitSeconds,
+        float expectedFoodSeconds,
+        BistroBuilderServiceTimingState timingState,
+        bool canExplainDelay,
+        bool isDelayExplained,
+        bool hasTimingIncident,
+        bool isTimingIncidentApologized)
+    {
+        Phase = phase;
+        WaitSeconds = Mathf.Max(0f, waitSeconds);
+        ExpectedFoodSeconds = Mathf.Max(0f, expectedFoodSeconds);
+        TimingState = timingState;
+        CanExplainDelay = canExplainDelay;
+        IsDelayExplained = isDelayExplained;
+        HasTimingIncident = hasTimingIncident;
+        IsTimingIncidentApologized = isTimingIncidentApologized;
+    }
+}
+
 public readonly struct BistroBuilderBillContextActionSnapshot
 {
     public readonly bool IsBillRequested;
@@ -43,13 +75,31 @@ public readonly struct BistroBuilderBillContextActionSnapshot
 
 public readonly struct BistroBuilderApologyContextActionSnapshot
 {
-    public readonly bool HasBillTimingIncident;
-    public readonly bool BillIncidentAlreadyApologized;
+    public readonly bool HasActiveTimingPhase;
+    public readonly BistroBuilderServiceTimingPhase TimingPhase;
+    public readonly bool HasTimingIncident;
+    public readonly bool TimingIncidentAlreadyApologized;
     public readonly bool HasExplicitServiceIncident;
     public readonly int RecoverableServiceIncidentCount;
     public readonly int ApologizedServiceIncidentCount;
     public readonly bool CanApologize;
-    public readonly BistroBuilderServiceTimingState BillTimingState;
+    public readonly BistroBuilderServiceTimingState TimingState;
+
+    public bool HasBillTimingIncident =>
+        HasActiveTimingPhase &&
+        TimingPhase == BistroBuilderServiceTimingPhase.BillDelivery &&
+        HasTimingIncident;
+
+    public bool BillIncidentAlreadyApologized =>
+        HasActiveTimingPhase &&
+        TimingPhase == BistroBuilderServiceTimingPhase.BillDelivery &&
+        TimingIncidentAlreadyApologized;
+
+    public BistroBuilderServiceTimingState BillTimingState =>
+        HasActiveTimingPhase &&
+        TimingPhase == BistroBuilderServiceTimingPhase.BillDelivery
+            ? TimingState
+            : BistroBuilderServiceTimingState.Normal;
 
     public int PendingExplicitIncidentCount =>
         Mathf.Max(
@@ -59,16 +109,21 @@ public readonly struct BistroBuilderApologyContextActionSnapshot
         );
 
     public BistroBuilderApologyContextActionSnapshot(
-        bool hasBillTimingIncident,
-        bool billIncidentAlreadyApologized,
+        bool hasActiveTimingPhase,
+        BistroBuilderServiceTimingPhase timingPhase,
+        bool hasTimingIncident,
+        bool timingIncidentAlreadyApologized,
         bool hasExplicitServiceIncident,
         int recoverableServiceIncidentCount,
         int apologizedServiceIncidentCount,
         bool canApologize,
-        BistroBuilderServiceTimingState billTimingState)
+        BistroBuilderServiceTimingState timingState)
     {
-        HasBillTimingIncident = hasBillTimingIncident;
-        BillIncidentAlreadyApologized = billIncidentAlreadyApologized;
+        HasActiveTimingPhase = hasActiveTimingPhase;
+        TimingPhase = timingPhase;
+        HasTimingIncident = hasTimingIncident;
+        TimingIncidentAlreadyApologized =
+            timingIncidentAlreadyApologized;
         HasExplicitServiceIncident = hasExplicitServiceIncident;
         RecoverableServiceIncidentCount =
             Mathf.Max(0, recoverableServiceIncidentCount);
@@ -81,14 +136,14 @@ public readonly struct BistroBuilderApologyContextActionSnapshot
                 )
             );
         CanApologize = canApologize;
-        BillTimingState = billTimingState;
+        TimingState = timingState;
     }
 }
 
 /// <summary>
-/// Fachada de aplicación para las acciones contextuales de una mesa.
-/// No posee tareas ni cronómetros: lee las autoridades existentes y emite
-/// comandos al WaiterTaskCoordinator.
+/// Fachada de aplicación para acciones contextuales de mesa.
+/// Lee timers/visitas/tareas autoritativas y emite comandos a sus autoridades.
+/// No mantiene cronómetros ni estado paralelo.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Service/Table Context Action Service")]
@@ -97,9 +152,11 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
     [SerializeField] private BistroBuilderServiceTimingCatalog timingCatalog;
     [SerializeField] private WaiterTaskCoordinator taskCoordinator;
     [SerializeField]
-    private BistroBuilderCustomerExperienceTrackingService experienceTrackingService;
+    private BistroBuilderCustomerExperienceTrackingService
+        experienceTrackingService;
 
-    public BistroBuilderServiceTimingCatalog TimingCatalog => timingCatalog;
+    public BistroBuilderServiceTimingCatalog TimingCatalog =>
+        timingCatalog;
 
     private void Awake()
     {
@@ -136,6 +193,71 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         return true;
     }
 
+    public bool TryGetActiveWaitSnapshot(
+        RestaurantTable table,
+        out BistroBuilderServiceWaitContextActionSnapshot snapshot)
+    {
+        snapshot = default;
+        ResolveDependencies();
+
+        if (table == null || table.AssignedCustomerGroup == null)
+            return false;
+
+        CustomerGroup group = table.AssignedCustomerGroup;
+        if (!TryResolveActivePhase(
+                table,
+                group,
+                out BistroBuilderServiceTimingPhase phase
+            ))
+        {
+            return false;
+        }
+
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            ResolveVisit(group);
+        if (visit == null || timingCatalog == null)
+            return false;
+
+        float waitSeconds = ResolveWaitSeconds(visit, phase);
+        float expectedFoodSeconds =
+            phase == BistroBuilderServiceTimingPhase.FoodDelivery
+                ? Mathf.Max(0f, visit.expectedFoodSeconds)
+                : 0f;
+
+        if (!timingCatalog.TryEvaluate(
+                phase,
+                waitSeconds,
+                expectedFoodSeconds,
+                out BistroBuilderServiceTimingState timingState
+            ))
+        {
+            return false;
+        }
+
+        bool explained =
+            GetDelayExplanationMitigation(visit, phase) > 0;
+        bool apologized =
+            GetIncidentApologyMitigation(visit, phase) > 0;
+        bool incident = IsIncidentOrWorse(timingState);
+        bool canExplain =
+            !explained &&
+            BistroBuilderServiceTimingEvaluator.IsDelayOrWorse(
+                timingState
+            );
+
+        snapshot = new BistroBuilderServiceWaitContextActionSnapshot(
+            phase,
+            waitSeconds,
+            expectedFoodSeconds,
+            timingState,
+            canExplain,
+            explained,
+            incident,
+            apologized
+        );
+        return true;
+    }
+
     public bool TryGetBillSnapshot(
         RestaurantTable table,
         out BistroBuilderBillContextActionSnapshot snapshot)
@@ -146,8 +268,9 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         if (table == null || table.AssignedCustomerGroup == null)
             return false;
 
-        bool requested = table.CurrentState == TableState.WaitingForBill ||
-                         table.CurrentState == TableState.Paying;
+        bool requested =
+            table.CurrentState == TableState.WaitingForBill ||
+            table.CurrentState == TableState.Paying;
 
         BistroBuilderReputationVisitRuntimeRecord visit =
             ResolveVisit(table.AssignedCustomerGroup);
@@ -168,7 +291,8 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         }
 
         WaiterTask task = null;
-        bool hasTask = taskCoordinator != null &&
+        bool hasTask =
+            taskCoordinator != null &&
             taskCoordinator.TryGetActiveTableTask(
                 WaiterTaskType.DeliverBill,
                 table,
@@ -177,7 +301,8 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
             task != null;
 
         bool pending = hasTask && task.IsPending;
-        bool beingHandled = hasTask &&
+        bool beingHandled =
+            hasTask &&
             (task.State == WaiterTaskState.Assigned ||
              task.State == WaiterTaskState.InProgress);
 
@@ -186,9 +311,14 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
             : WaiterTaskPriority.High;
 
         bool alreadyAccelerated =
-            hasTask && priority >= WaiterTaskPriority.Urgent;
+            hasTask &&
+            priority >= WaiterTaskPriority.Urgent;
 
-        bool isWaitingForBill = table.CurrentState == TableState.WaitingForBill;
+        bool isWaitingForBill =
+            table.CurrentState == TableState.WaitingForBill &&
+            table.AssignedCustomerGroup.CurrentState ==
+                CustomerGroupState.WaitingForBill;
+
         bool canAccelerate = CanAccelerateBill(
             isWaitingForBill,
             pending,
@@ -196,8 +326,11 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
             priority,
             timingState
         );
-        bool explained = visit != null &&
+
+        bool explained =
+            visit != null &&
             visit.billDelayExplanationMitigationBasisPoints > 0;
+
         bool canExplainDelay = CanExplainBillDelay(
             isWaitingForBill,
             explained,
@@ -250,9 +383,11 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
 
         if (!snapshot.CanAccelerate)
         {
-            error = snapshot.TimingState == BistroBuilderServiceTimingState.Normal
-                ? "La cuenta todavía está dentro del tiempo normal de servicio."
-                : "Agilizar cuenta no está disponible en este momento.";
+            error =
+                snapshot.TimingState ==
+                BistroBuilderServiceTimingState.Normal
+                    ? "La cuenta todavía está dentro del tiempo normal de servicio."
+                    : "Agilizar cuenta no está disponible en este momento.";
             return false;
         }
 
@@ -270,24 +405,24 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         return true;
     }
 
-    public bool TryExplainBillDelay(
+    public bool TryExplainDelay(
         RestaurantTable table,
         out string error)
     {
         error = string.Empty;
         ResolveDependencies();
 
-        if (!TryGetBillSnapshot(
+        if (!TryGetActiveWaitSnapshot(
                 table,
-                out BistroBuilderBillContextActionSnapshot snapshot))
+                out BistroBuilderServiceWaitContextActionSnapshot snapshot))
         {
-            error = "La mesa no tiene una espera de cuenta activa.";
+            error = "La mesa no tiene una espera contextual activa.";
             return false;
         }
 
         if (snapshot.IsDelayExplained)
         {
-            error = "La demora de esta cuenta ya fue explicada.";
+            error = "La demora de esta necesidad ya fue explicada.";
             return false;
         }
 
@@ -298,11 +433,12 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         }
 
         if (timingCatalog == null ||
-            !timingCatalog.TryGetProfile(
-                BistroBuilderServiceTimingPhase.BillDelivery,
-                out BistroBuilderServiceTimingProfile profile) ||
-            profile == null ||
-            profile.ExplanationPenaltyMitigationBasisPoints <= 0)
+            !timingCatalog.TryGetRecoveryTuning(
+                snapshot.Phase,
+                out int explanationMitigationBasisPoints,
+                out _
+            ) ||
+            explanationMitigationBasisPoints <= 0)
         {
             error = "Falta el ajuste de impacto de Explicar demora.";
             return false;
@@ -314,12 +450,33 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
             return false;
         }
 
-        CustomerGroup group = table != null ? table.AssignedCustomerGroup : null;
-        return experienceTrackingService.TryExplainBillDelay(
+        CustomerGroup group =
+            table != null ? table.AssignedCustomerGroup : null;
+
+        return experienceTrackingService.TryExplainServiceDelay(
             group,
-            profile.ExplanationPenaltyMitigationBasisPoints,
+            snapshot.Phase,
+            explanationMitigationBasisPoints,
             out error
         );
+    }
+
+    public bool TryExplainBillDelay(
+        RestaurantTable table,
+        out string error)
+    {
+        if (!TryGetActiveWaitSnapshot(
+                table,
+                out BistroBuilderServiceWaitContextActionSnapshot snapshot
+            ) ||
+            snapshot.Phase !=
+                BistroBuilderServiceTimingPhase.BillDelivery)
+        {
+            error = "La mesa no tiene una espera de cuenta activa.";
+            return false;
+        }
+
+        return TryExplainDelay(table, out error);
     }
 
     public bool TryGetApologySnapshot(
@@ -332,49 +489,53 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         if (table == null || table.AssignedCustomerGroup == null)
             return false;
 
+        CustomerGroup group = table.AssignedCustomerGroup;
         BistroBuilderReputationVisitRuntimeRecord visit =
-            ResolveVisit(table.AssignedCustomerGroup);
+            ResolveVisit(group);
         if (visit == null)
             return false;
 
-        BistroBuilderServiceTimingState timingState =
-            BistroBuilderServiceTimingState.Normal;
-        if (table.CurrentState == TableState.WaitingForBill &&
-            timingCatalog != null)
-        {
-            timingCatalog.TryEvaluate(
-                BistroBuilderServiceTimingPhase.BillDelivery,
-                visit.billWaitSeconds,
-                out timingState
-            );
-        }
+        bool hasActiveTimingPhase = TryGetActiveWaitSnapshot(
+            table,
+            out BistroBuilderServiceWaitContextActionSnapshot wait
+        );
 
-        bool billIncident =
-            table.CurrentState == TableState.WaitingForBill &&
-            (timingState == BistroBuilderServiceTimingState.Incident ||
-             timingState == BistroBuilderServiceTimingState.Critical);
-        bool billApologized =
-            visit.billIncidentApologyMitigationBasisPoints > 0;
+        BistroBuilderServiceTimingPhase phase =
+            hasActiveTimingPhase
+                ? wait.Phase
+                : BistroBuilderServiceTimingPhase.BillDelivery;
+        BistroBuilderServiceTimingState state =
+            hasActiveTimingPhase
+                ? wait.TimingState
+                : BistroBuilderServiceTimingState.Normal;
+        bool timingIncident =
+            hasActiveTimingPhase && wait.HasTimingIncident;
+        bool timingApologized =
+            hasActiveTimingPhase &&
+            wait.IsTimingIncidentApologized;
+
         int pendingExplicit = Mathf.Max(
             0,
             visit.recoverableServiceIncidentCount -
             visit.apologizedServiceIncidentCount
         );
         bool explicitIncident = pendingExplicit > 0;
-        bool canApologize = CanApologize(
-            billIncident,
-            billApologized,
+        bool canApologize = CanApologizeTimingIncident(
+            timingIncident,
+            timingApologized,
             pendingExplicit
         );
 
         snapshot = new BistroBuilderApologyContextActionSnapshot(
-            billIncident,
-            billApologized,
+            hasActiveTimingPhase,
+            phase,
+            timingIncident,
+            timingApologized,
             explicitIncident,
             visit.recoverableServiceIncidentCount,
             visit.apologizedServiceIncidentCount,
             canApologize,
-            timingState
+            state
         );
         return true;
     }
@@ -388,34 +549,33 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
 
         if (!TryGetApologySnapshot(
                 table,
-                out BistroBuilderApologyContextActionSnapshot snapshot) ||
+                out BistroBuilderApologyContextActionSnapshot snapshot
+            ) ||
             !snapshot.CanApologize)
         {
             error = "Disculpa no está disponible en este momento.";
             return false;
         }
 
-        bool applyBillIncidentRecovery =
-            snapshot.HasBillTimingIncident &&
-            !snapshot.BillIncidentAlreadyApologized;
-        int billMitigationBasisPoints = 0;
+        bool applyTimingIncidentRecovery =
+            snapshot.HasActiveTimingPhase &&
+            snapshot.HasTimingIncident &&
+            !snapshot.TimingIncidentAlreadyApologized;
 
-        if (applyBillIncidentRecovery)
+        int timingMitigationBasisPoints = 0;
+        if (applyTimingIncidentRecovery)
         {
             if (timingCatalog == null ||
-                !timingCatalog.TryGetProfile(
-                    BistroBuilderServiceTimingPhase.BillDelivery,
-                    out BistroBuilderServiceTimingProfile profile
+                !timingCatalog.TryGetRecoveryTuning(
+                    snapshot.TimingPhase,
+                    out _,
+                    out timingMitigationBasisPoints
                 ) ||
-                profile == null ||
-                profile.ApologyPenaltyMitigationBasisPoints <= 0)
+                timingMitigationBasisPoints <= 0)
             {
                 error = "Falta el ajuste de recuperación de Disculpa.";
                 return false;
             }
-
-            billMitigationBasisPoints =
-                profile.ApologyPenaltyMitigationBasisPoints;
         }
 
         if (experienceTrackingService == null)
@@ -427,10 +587,11 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         CustomerGroup group =
             table != null ? table.AssignedCustomerGroup : null;
 
-        return experienceTrackingService.TryApologizeForIncident(
+        return experienceTrackingService.TryApologizeForServiceIncident(
             group,
-            applyBillIncidentRecovery,
-            billMitigationBasisPoints,
+            applyTimingIncidentRecovery,
+            snapshot.TimingPhase,
+            timingMitigationBasisPoints,
             snapshot.PendingExplicitIncidentCount > 0,
             out error
         );
@@ -441,8 +602,20 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         bool billIncidentAlreadyApologized,
         int pendingExplicitIncidentCount)
     {
-        return (hasBillTimingIncident &&
-                !billIncidentAlreadyApologized) ||
+        return CanApologizeTimingIncident(
+            hasBillTimingIncident,
+            billIncidentAlreadyApologized,
+            pendingExplicitIncidentCount
+        );
+    }
+
+    public static bool CanApologizeTimingIncident(
+        bool hasTimingIncident,
+        bool timingIncidentAlreadyApologized,
+        int pendingExplicitIncidentCount)
+    {
+        return (hasTimingIncident &&
+                !timingIncidentAlreadyApologized) ||
                pendingExplicitIncidentCount > 0;
     }
 
@@ -453,7 +626,9 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
     {
         return isWaitingForBill &&
                !isAlreadyExplained &&
-               BistroBuilderServiceTimingEvaluator.IsDelayOrWorse(timingState);
+               BistroBuilderServiceTimingEvaluator.IsDelayOrWorse(
+                   timingState
+               );
     }
 
     public static bool CanAccelerateBill(
@@ -471,7 +646,115 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
             return false;
         }
 
-        return BistroBuilderServiceTimingEvaluator.IsActionableWait(timingState);
+        return BistroBuilderServiceTimingEvaluator.IsActionableWait(
+            timingState
+        );
+    }
+
+    private static bool TryResolveActivePhase(
+        RestaurantTable table,
+        CustomerGroup group,
+        out BistroBuilderServiceTimingPhase phase)
+    {
+        phase = BistroBuilderServiceTimingPhase.BillDelivery;
+        if (table == null || group == null)
+            return false;
+
+        if (table.CurrentState == TableState.WaitingForWaiter &&
+            group.CurrentState == CustomerGroupState.WaitingForWaiter)
+        {
+            phase = BistroBuilderServiceTimingPhase.TakeOrder;
+            return true;
+        }
+
+        if (table.CurrentState == TableState.WaitingForFood &&
+            group.CurrentState == CustomerGroupState.WaitingForFood)
+        {
+            phase = BistroBuilderServiceTimingPhase.FoodDelivery;
+            return true;
+        }
+
+        if (table.CurrentState == TableState.WaitingForBill &&
+            group.CurrentState == CustomerGroupState.WaitingForBill)
+        {
+            phase = BistroBuilderServiceTimingPhase.BillDelivery;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static float ResolveWaitSeconds(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (visit == null)
+            return 0f;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return Mathf.Max(0f, visit.waiterWaitSeconds);
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return Mathf.Max(0f, visit.foodWaitSeconds);
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return Mathf.Max(0f, visit.billWaitSeconds);
+            default:
+                return 0f;
+        }
+    }
+
+    private static int GetDelayExplanationMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (visit == null)
+            return 0;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return visit
+                    .waiterDelayExplanationMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return visit
+                    .foodDelayExplanationMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return visit
+                    .billDelayExplanationMitigationBasisPoints;
+            default:
+                return 0;
+        }
+    }
+
+    private static int GetIncidentApologyMitigation(
+        BistroBuilderReputationVisitRuntimeRecord visit,
+        BistroBuilderServiceTimingPhase phase)
+    {
+        if (visit == null)
+            return 0;
+
+        switch (phase)
+        {
+            case BistroBuilderServiceTimingPhase.TakeOrder:
+                return visit
+                    .waiterIncidentApologyMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.FoodDelivery:
+                return visit
+                    .foodIncidentApologyMitigationBasisPoints;
+            case BistroBuilderServiceTimingPhase.BillDelivery:
+                return visit
+                    .billIncidentApologyMitigationBasisPoints;
+            default:
+                return 0;
+        }
+    }
+
+    private static bool IsIncidentOrWorse(
+        BistroBuilderServiceTimingState state)
+    {
+        return state == BistroBuilderServiceTimingState.Incident ||
+               state == BistroBuilderServiceTimingState.Critical;
     }
 
     private BistroBuilderReputationVisitRuntimeRecord ResolveVisit(
@@ -511,7 +794,8 @@ public sealed class BistroBuilderTableContextActionService : MonoBehaviour
         if (experienceTrackingService == null)
         {
             experienceTrackingService =
-                FindFirstObjectByType<BistroBuilderCustomerExperienceTrackingService>(
+                FindFirstObjectByType<
+                    BistroBuilderCustomerExperienceTrackingService>(
                     FindObjectsInactive.Include
                 );
         }

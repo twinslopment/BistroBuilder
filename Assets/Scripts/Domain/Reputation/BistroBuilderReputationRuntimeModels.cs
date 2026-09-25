@@ -16,6 +16,10 @@ public sealed class BistroBuilderReputationVisitRuntimeRecord
     public float waiterCareCreditSeconds;
     public float foodCareCreditSeconds;
     public float billCareCreditSeconds;
+    public int waiterDelayExplanationMitigationBasisPoints;
+    public int waiterIncidentApologyMitigationBasisPoints;
+    public int foodDelayExplanationMitigationBasisPoints;
+    public int foodIncidentApologyMitigationBasisPoints;
     public int billDelayExplanationMitigationBasisPoints;
     public int billIncidentApologyMitigationBasisPoints;
     public int recoverableServiceIncidentCount;

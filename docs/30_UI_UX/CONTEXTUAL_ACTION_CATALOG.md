@@ -88,9 +88,9 @@ Comportamiento esperado:
 - **Agilizar cuenta** desaparece cuando ya no existe una tarea de cuenta/cobro pendiente.
 - Cuando la causa desaparece, la acción asociada deja de ofrecerse; la UI no conserva botones obsoletos.
 
-#### Vertical runtime: espera de cuenta
+#### Vertical runtime: esperas de mesa
 
-La primera integración runtime se mantiene deliberadamente acotada a la gestión contextual de una mesa, pero ya cubre las tres acciones ratificadas: `Agilizar cuenta`, `Explicar demora` y `Disculpa`. No modifica el sistema avanzado de camareros ni introduce tiempos de platos.
+La integración runtime de Mesa/Cliente cubre ya **toma de comanda**, **espera de comida** y **espera de cuenta**, reutilizando los mismos estados semánticos y las acciones ratificadas `Explicar demora`, `Disculpa` y, exclusivamente para la cuenta, `Agilizar cuenta`. No crea cronómetros paralelos ni modifica la autoridad del sistema avanzado de camareros.
 
 Tuning provisional de prueba para `BillDelivery`:
 
@@ -104,7 +104,28 @@ Tuning provisional de prueba para `BillDelivery`:
 
 Estos valores son **datos provisionales de balance**, no cifras definitivas de diseño. Deben permanecer configurables en `ServiceTimingCatalog` y ajustarse mediante playtests.
 
-La espera canónica se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
+Tuning provisional de prueba para `TakeOrder`, usando el contador canónico existente mientras la mesa/grupo permanecen en `WaitingForWaiter`:
+
+| Referencia | Tiempo |
+|---|---:|
+| Objetivo | 10 s |
+| **Atención** | 20 s |
+| **Demora** | 35 s |
+| **Incidencia** | 50 s |
+| **Crítico** | 70 s |
+
+Para `FoodDelivery` no se usa un tiempo fijo universal. La referencia es el **tiempo esperado real de la comanda**, resolviendo para cada plato el tiempo de preparación efectivo de la carta de esa partida (`BistroBuilderRestaurantMenuService`) y usando la definición canónica del plato solo como fallback cuando corresponda. La comanda toma como referencia el mayor tiempo efectivo entre sus líneas activas. Los umbrales provisionales se derivan dinámicamente:
+
+- Objetivo = tiempo esperado.
+- **Atención** = 1,15 × tiempo esperado.
+- **Demora** = 1,35 × tiempo esperado + 4 s.
+- **Incidencia** = 2 × tiempo esperado.
+- **Crítico** = 3 × tiempo esperado + 30 s.
+- Los umbrales se fuerzan a ser monotónicos para que nunca retrocedan aunque el tiempo esperado sea muy corto.
+
+`Explicar demora` queda disponible desde **Demora** tanto en `TakeOrder` como en `FoodDelivery`; `Disculpa` desde **Incidencia/Crítico**. Ambas son de una sola aplicación por necesidad activa, no aceleran la tarea física y su estado se conserva en `reputation.runtime`. El tuning provisional de recuperación se mantiene en **1500 pb** para explicación y **2500 pb** para disculpa. `Priorizar atención` continúa **sin implementar y pendiente de ratificación**.
+
+La espera canónica de cuenta se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.
 
 Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.
 

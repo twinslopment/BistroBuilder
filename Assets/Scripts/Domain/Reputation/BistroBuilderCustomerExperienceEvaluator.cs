@@ -16,25 +16,30 @@ public static class BistroBuilderCustomerExperienceEvaluator
         if (!TryValidateRuntimeVisit(visit, out error) || dayIndex < 1)
             return false;
 
-        int billScore = ApplyBillRecoveryMitigations(
+        int waiterScore = ApplyWaitRecoveryMitigations(
+            BistroBuilderReputationEngine.ScoreWaitSeconds(
+                visit.waiterWaitSeconds, 8f, 60f),
+            visit.waiterDelayExplanationMitigationBasisPoints,
+            visit.waiterIncidentApologyMitigationBasisPoints);
+        int billScore = ApplyWaitRecoveryMitigations(
             BistroBuilderReputationEngine.ScoreWaitSeconds(
                 visit.billWaitSeconds, 8f, 45f),
             visit.billDelayExplanationMitigationBasisPoints,
             visit.billIncidentApologyMitigationBasisPoints);
-        int service = Average(
-            BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.waiterWaitSeconds, 8f, 60f),
-            billScore);
+        int service = Average(waiterScore, billScore);
 
         float expected = Math.Max(4f, visit.expectedFoodSeconds);
-        int waiting = Average(
-            BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.tableWaitSeconds, 20f, 120f),
-            BistroBuilderReputationEngine.ScoreWaitSeconds(
-                visit.waiterWaitSeconds, 8f, 60f),
+        int foodWaitScore = ApplyWaitRecoveryMitigations(
             BistroBuilderReputationEngine.ScoreWaitSeconds(
                 visit.foodWaitSeconds, expected * 1.35f + 4f,
                 expected * 3f + 30f),
+            visit.foodDelayExplanationMitigationBasisPoints,
+            visit.foodIncidentApologyMitigationBasisPoints);
+        int waiting = Average(
+            BistroBuilderReputationEngine.ScoreWaitSeconds(
+                visit.tableWaitSeconds, 20f, 120f),
+            waiterScore,
+            foodWaitScore,
             billScore);
 
         int food = ComputeFoodQuality(visit, expected);
@@ -87,6 +92,14 @@ public static class BistroBuilderCustomerExperienceEvaluator
             !Finite(visit.waiterCareCreditSeconds) ||
             !Finite(visit.foodCareCreditSeconds) ||
             !Finite(visit.billCareCreditSeconds) ||
+            visit.waiterDelayExplanationMitigationBasisPoints < 0 ||
+            visit.waiterDelayExplanationMitigationBasisPoints > 10000 ||
+            visit.waiterIncidentApologyMitigationBasisPoints < 0 ||
+            visit.waiterIncidentApologyMitigationBasisPoints > 10000 ||
+            visit.foodDelayExplanationMitigationBasisPoints < 0 ||
+            visit.foodDelayExplanationMitigationBasisPoints > 10000 ||
+            visit.foodIncidentApologyMitigationBasisPoints < 0 ||
+            visit.foodIncidentApologyMitigationBasisPoints > 10000 ||
             visit.billDelayExplanationMitigationBasisPoints < 0 ||
             visit.billDelayExplanationMitigationBasisPoints > 10000 ||
             visit.billIncidentApologyMitigationBasisPoints < 0 ||
@@ -129,8 +142,20 @@ public static class BistroBuilderCustomerExperienceEvaluator
         int explanationMitigationBasisPoints,
         int apologyMitigationBasisPoints)
     {
-        int afterExplanation = ApplyPenaltyMitigation(
+        return ApplyWaitRecoveryMitigations(
             rawBillScoreBasisPoints,
+            explanationMitigationBasisPoints,
+            apologyMitigationBasisPoints
+        );
+    }
+
+    public static int ApplyWaitRecoveryMitigations(
+        int rawScoreBasisPoints,
+        int explanationMitigationBasisPoints,
+        int apologyMitigationBasisPoints)
+    {
+        int afterExplanation = ApplyPenaltyMitigation(
+            rawScoreBasisPoints,
             explanationMitigationBasisPoints
         );
         return ApplyPenaltyMitigation(

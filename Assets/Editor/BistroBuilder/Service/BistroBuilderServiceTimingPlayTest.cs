@@ -24,6 +24,10 @@ public static class BistroBuilderServiceTimingPlayTest
     private static WaiterTaskCoordinator coordinator;
     private static RestaurantTable table;
     private static CustomerGroup group;
+    private static int takeOrderBaselineSatisfaction;
+    private static int takeOrderAfterExplainSatisfaction;
+    private static int foodBaselineSatisfaction;
+    private static int foodAfterExplainSatisfaction;
     private static int baselineOverallSatisfaction;
     private static int afterExplainSatisfaction;
     private static int afterApologySatisfaction;
@@ -82,24 +86,43 @@ public static class BistroBuilderServiceTimingPlayTest
             switch (stage++)
             {
                 case 0: Prepare(); break;
-                case 1: SetBillWait(30f); break;
-                case 2: VerifyNormal(); SetBillWait(120f); break;
-                case 3: VerifyAttention(); SetBillWait(210f); break;
-                case 4: VerifyDelayAndCapture(); SetBillWait(300f); break;
-                case 5: VerifyIncidentAndCapture(); break;
-                case 6: ClickAccelerate(); break;
-                case 7: VerifyPrioritizedAndCapture(); break;
-                case 8: ClickExplainDelay(); break;
-                case 9: VerifyExplainedAndCapture(); break;
-                case 10: ClickApology(); break;
-                case 11: VerifyApologyAndCapture(); InjectExplicitIncident(); break;
-                case 12: VerifyExplicitIncidentAndCapture(); break;
-                case 13: ClickApology(); break;
-                case 14: VerifyExplicitIncidentRecoveredAndCapture(); break;
-                case 15:
+
+                case 1: SetTakeOrderWait(15f); break;
+                case 2: VerifyGenericNormal(BistroBuilderServiceTimingPhase.TakeOrder); SetTakeOrderWait(25f); break;
+                case 3: VerifyGenericAttention(BistroBuilderServiceTimingPhase.TakeOrder); SetTakeOrderWait(40f); break;
+                case 4: VerifyGenericDelayAndCapture(BistroBuilderServiceTimingPhase.TakeOrder, "ServiceTiming_TakeOrder_Delay.png"); SetTakeOrderWait(55f); break;
+                case 5: VerifyGenericIncidentAndCapture(BistroBuilderServiceTimingPhase.TakeOrder, "ServiceTiming_TakeOrder_Incident.png"); break;
+                case 6: ClickExplainDelay(); break;
+                case 7: VerifyGenericExplained(BistroBuilderServiceTimingPhase.TakeOrder); break;
+                case 8: ClickApology(); break;
+                case 9: VerifyGenericApology(BistroBuilderServiceTimingPhase.TakeOrder); BeginFoodPhase(); SetFoodWait(20f, 21f); break;
+
+                case 10: VerifyGenericNormal(BistroBuilderServiceTimingPhase.FoodDelivery); SetFoodWait(20f, 25f); break;
+                case 11: VerifyGenericAttention(BistroBuilderServiceTimingPhase.FoodDelivery); SetFoodWait(20f, 33f); break;
+                case 12: VerifyGenericDelayAndCapture(BistroBuilderServiceTimingPhase.FoodDelivery, "ServiceTiming_Food_Delay.png"); SetFoodWait(20f, 45f); break;
+                case 13: VerifyGenericIncidentAndCapture(BistroBuilderServiceTimingPhase.FoodDelivery, "ServiceTiming_Food_Incident.png"); break;
+                case 14: ClickExplainDelay(); break;
+                case 15: VerifyGenericExplained(BistroBuilderServiceTimingPhase.FoodDelivery); break;
+                case 16: ClickApology(); break;
+                case 17: VerifyGenericApology(BistroBuilderServiceTimingPhase.FoodDelivery); BeginBillPhase(); SetBillWait(30f); break;
+
+                case 18: VerifyNormal(); SetBillWait(120f); break;
+                case 19: VerifyAttention(); SetBillWait(210f); break;
+                case 20: VerifyDelayAndCapture(); SetBillWait(300f); break;
+                case 21: VerifyIncidentAndCapture(); break;
+                case 22: ClickAccelerate(); break;
+                case 23: VerifyPrioritizedAndCapture(); break;
+                case 24: ClickExplainDelay(); break;
+                case 25: VerifyExplainedAndCapture(); break;
+                case 26: ClickApology(); break;
+                case 27: VerifyApologyAndCapture(); InjectExplicitIncident(); break;
+                case 28: VerifyExplicitIncidentAndCapture(); break;
+                case 29: ClickApology(); break;
+                case 30: VerifyExplicitIncidentRecoveredAndCapture(); break;
+                case 31:
                     Finish(
                         true,
-                        "normal / attention / delay / incident / three-actions / urgent / explain / apology / explicit-incident / recovery / no-repeat"
+                        "take-order + food dynamic + bill / normal-attention-delay-incident / explain-apology / urgent / persistence-ready / no-repeat / UI-no-overlap"
                     );
                     break;
             }
@@ -112,6 +135,7 @@ public static class BistroBuilderServiceTimingPlayTest
 
     private static void Prepare()
     {
+        Time.timeScale = 0f;
         UnityEngine.Object.FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
         shell = UnityEngine.Object.FindFirstObjectByType<BistroBuilderUiShell>();
         selection = UnityEngine.Object.FindFirstObjectByType<BistroBuilderTableSelectionController>();
@@ -142,11 +166,281 @@ public static class BistroBuilderServiceTimingPlayTest
         Check(group.Initialize(990101, Math.Max(1, Math.Min(2, table.Capacity))), "No se pudo inicializar grupo.");
         Check(assignments.RegisterCustomerGroup(group), "No se pudo registrar grupo.");
         Check(group.AssignTable(table), "No se pudo asignar mesa al grupo.");
-        group.SetState(CustomerGroupState.WaitingForBill);
-        table.SetState(TableState.WaitingForBill);
+        group.SetState(CustomerGroupState.WaitingForWaiter);
+        table.SetState(TableState.WaitingForWaiter);
 
         shell.EnsureShell();
         Check(selection.TrySelectForTest(table, true), "No se pudo seleccionar la mesa.");
+    }
+
+    private static void SetTakeOrderWait(float seconds)
+    {
+        GetInternalVisit().waiterWaitSeconds = seconds;
+        RefreshShellForTest();
+    }
+
+    private static void BeginFoodPhase()
+    {
+        group.SetState(CustomerGroupState.WaitingForFood);
+        table.SetState(TableState.WaitingForFood);
+        RefreshShellForTest();
+    }
+
+    private static void SetFoodWait(
+        float expectedSeconds,
+        float elapsedSeconds)
+    {
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            GetInternalVisit();
+        visit.expectedFoodSeconds = expectedSeconds;
+        visit.foodWaitSeconds = elapsedSeconds;
+        RefreshShellForTest();
+    }
+
+    private static void BeginBillPhase()
+    {
+        group.SetState(CustomerGroupState.WaitingForBill);
+        table.SetState(TableState.WaitingForBill);
+        RefreshShellForTest();
+    }
+
+    private static void VerifyGenericNormal(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.TimingState ==
+                BistroBuilderServiceTimingState.Normal,
+            phase + " debe estar en Normal."
+        );
+        Check(
+            !ActionButton().gameObject.activeSelf,
+            "Agilizar cuenta no debe aparecer fuera de BillDelivery."
+        );
+        Check(
+            !ExplainButton().gameObject.activeSelf,
+            "Explicar demora no debe aparecer en Normal."
+        );
+        Check(
+            !ApologyButton().gameObject.activeSelf,
+            "Disculpa no debe aparecer en Normal."
+        );
+    }
+
+    private static void VerifyGenericAttention(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.TimingState ==
+                BistroBuilderServiceTimingState.Attention,
+            phase + " debe estar en Atención."
+        );
+        Check(
+            !ActionButton().gameObject.activeSelf,
+            "Agilizar cuenta no debe aparecer fuera de BillDelivery."
+        );
+        Check(
+            !ExplainButton().gameObject.activeSelf,
+            "Explicar demora no debe aparecer en Atención."
+        );
+        Check(
+            !ApologyButton().gameObject.activeSelf,
+            "Disculpa no debe aparecer en Atención."
+        );
+        Check(
+            ContextText().Contains("Atención") ||
+            ContextText().Contains("atención"),
+            "El panel no muestra Atención."
+        );
+    }
+
+    private static void VerifyGenericDelayAndCapture(
+        BistroBuilderServiceTimingPhase phase,
+        string captureName)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.TimingState == BistroBuilderServiceTimingState.Delay,
+            phase + " debe estar en Demora."
+        );
+
+        Button explain = ExplainButton();
+        Check(
+            !ActionButton().gameObject.activeSelf,
+            "Agilizar cuenta no debe aparecer fuera de BillDelivery."
+        );
+        Check(
+            explain.gameObject.activeSelf && explain.interactable,
+            "Explicar demora debe aparecer desde Demora."
+        );
+        Check(
+            Label(explain) == "EXPLICAR DEMORA",
+            "Etiqueta incorrecta de Explicar demora."
+        );
+        Check(
+            !ApologyButton().gameObject.activeSelf,
+            "Disculpa no debe aparecer todavía en Demora."
+        );
+        CheckNoBottomOverlap(explain.transform as RectTransform);
+
+        int satisfaction = CurrentOverallSatisfaction();
+        if (phase == BistroBuilderServiceTimingPhase.TakeOrder)
+            takeOrderBaselineSatisfaction = satisfaction;
+        else
+            foodBaselineSatisfaction = satisfaction;
+
+        Capture(captureName);
+    }
+
+    private static void VerifyGenericIncidentAndCapture(
+        BistroBuilderServiceTimingPhase phase,
+        string captureName)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.TimingState ==
+                BistroBuilderServiceTimingState.Incident &&
+            snapshot.HasTimingIncident,
+            phase + " debe estar en Incidencia."
+        );
+        Check(
+            actions.TryGetApologySnapshot(table, out var apology) &&
+            apology.HasTimingIncident &&
+            apology.TimingPhase == phase &&
+            apology.CanApologize,
+            phase + " debe habilitar Disculpa."
+        );
+
+        Button explain = ExplainButton();
+        Button apologize = ApologyButton();
+        Check(
+            !ActionButton().gameObject.activeSelf,
+            "Agilizar cuenta no debe aparecer fuera de BillDelivery."
+        );
+        Check(
+            explain.gameObject.activeSelf && explain.interactable,
+            "Explicar demora debe seguir disponible en Incidencia."
+        );
+        Check(
+            apologize.gameObject.activeSelf && apologize.interactable,
+            "Disculpa debe aparecer en Incidencia."
+        );
+        CheckNoBottomOverlap(explain.transform as RectTransform);
+        CheckNoBottomOverlap(apologize.transform as RectTransform);
+        CheckNoPairwiseOverlap(explain, apologize);
+
+        int satisfaction = CurrentOverallSatisfaction();
+        if (phase == BistroBuilderServiceTimingPhase.TakeOrder)
+            takeOrderBaselineSatisfaction = satisfaction;
+        else
+            foodBaselineSatisfaction = satisfaction;
+
+        Capture(captureName);
+    }
+
+    private static void VerifyGenericExplained(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.IsDelayExplained &&
+            !snapshot.CanExplainDelay,
+            phase + " no conservó Explicar demora."
+        );
+        Check(
+            !ExplainButton().gameObject.activeSelf,
+            "Explicar demora debe desaparecer tras aplicarse."
+        );
+        Check(
+            ApologyButton().gameObject.activeSelf,
+            "Disculpa debe seguir disponible tras explicar una Incidencia."
+        );
+
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            GetInternalVisit();
+        int mitigation =
+            phase == BistroBuilderServiceTimingPhase.TakeOrder
+                ? visit.waiterDelayExplanationMitigationBasisPoints
+                : visit.foodDelayExplanationMitigationBasisPoints;
+        Check(
+            mitigation == 1500,
+            phase + " no conservó la mitigación del 15%."
+        );
+        Check(
+            !actions.TryExplainDelay(table, out _),
+            phase + " permitió repetir Explicar demora."
+        );
+
+        int after = CurrentOverallSatisfaction();
+        if (phase == BistroBuilderServiceTimingPhase.TakeOrder)
+        {
+            takeOrderAfterExplainSatisfaction = after;
+            Check(
+                after > takeOrderBaselineSatisfaction,
+                "Explicar demora TakeOrder no mejoró satisfacción."
+            );
+        }
+        else
+        {
+            foodAfterExplainSatisfaction = after;
+            Check(
+                after > foodBaselineSatisfaction,
+                "Explicar demora FoodDelivery no mejoró satisfacción."
+            );
+        }
+    }
+
+    private static void VerifyGenericApology(
+        BistroBuilderServiceTimingPhase phase)
+    {
+        Check(
+            actions.TryGetActiveWaitSnapshot(table, out var snapshot) &&
+            snapshot.Phase == phase &&
+            snapshot.IsTimingIncidentApologized,
+            phase + " no conservó Disculpa."
+        );
+        Check(
+            actions.TryGetApologySnapshot(table, out var apology) &&
+            apology.TimingIncidentAlreadyApologized &&
+            !apology.CanApologize,
+            phase + " dejó Disculpa repetible."
+        );
+        Check(
+            !ApologyButton().gameObject.activeSelf,
+            "Disculpa debe desaparecer tras aplicarse."
+        );
+
+        BistroBuilderReputationVisitRuntimeRecord visit =
+            GetInternalVisit();
+        int mitigation =
+            phase == BistroBuilderServiceTimingPhase.TakeOrder
+                ? visit.waiterIncidentApologyMitigationBasisPoints
+                : visit.foodIncidentApologyMitigationBasisPoints;
+        Check(
+            mitigation == 2500,
+            phase + " no conservó la recuperación del 25%."
+        );
+        Check(
+            !actions.TryApologize(table, out _),
+            phase + " permitió repetir Disculpa."
+        );
+
+        int after = CurrentOverallSatisfaction();
+        int afterExplain =
+            phase == BistroBuilderServiceTimingPhase.TakeOrder
+                ? takeOrderAfterExplainSatisfaction
+                : foodAfterExplainSatisfaction;
+        Check(
+            after > afterExplain,
+            "Disculpa " + phase +
+            " no mejoró satisfacción tras Explicar demora."
+        );
     }
 
     private static void VerifyNormal()
