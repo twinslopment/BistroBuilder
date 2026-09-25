@@ -1491,6 +1491,14 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 - time slicing;
 - freeze budgets.
 
+[V1 IMPLEMENTADO — FASE A] La cola persistida dispone de estados de procesamiento, checkpoint por job, pausa/reanudación, cancelación segura y recuperación de operaciones interrumpidas tras domain reload. Los jobs históricos anteriores a este scheduler no se activan automáticamente: solo las nuevas ingestas 3D compatibles quedan marcadas como batch-enabled.
+
+[V1 IMPLEMENTADO — FASE A] El scheduler ejecuta como máximo una operación de asset por tick del Editor y nunca procesa dos assets concurrentemente. Cada operación individual permanece atómica para no dejar una publicación a medias; una cancelación durante una operación se materializa al terminar el tramo atómico. Las operaciones lentas quedan registradas con duración y warning de rendimiento.
+
+[V1 IMPLEMENTADO — FASE A] Existe diagnóstico sintético de 100 / 500 / 2.000 jobs que valida persistencia, reload, orden determinista, pausa, cancelación y recuperación sin procesar assets reales. La invalidación incremental fina por etapa sigue pendiente de una fase posterior; no se simula como completada.
+
+[VALIDACIÓN PENDIENTE EN UNITY] Ejecutar `Tools > Bistro Builder > SAVIC > Diagnostics > Run Batch Recovery Self-Test` y revisar la sección `Cola` del Control Center antes de declarar esta fase validada.
+
 ### Bloque 8 — Decoración y equipamiento
 [R]
 
