@@ -820,8 +820,9 @@ namespace BistroBuilder.Editor.Savic
                     job =>
                         IsStatus(job.state, "Waiting") ||
                         IsStatus(job.state, "Hashing") ||
-                        IsStatus(job.state, "Ingested") ||
-                        IsStatus(job.state, "Processing")),
+                        (job.batchEligible &&
+                         (IsStatus(job.state, "Ingested") ||
+                          IsStatus(job.state, "Processing")))),
                 InventoryIssues = inventory.issueCount,
                 LegacyPendingAdoption = inventory.legacyPendingAdoption
             };
