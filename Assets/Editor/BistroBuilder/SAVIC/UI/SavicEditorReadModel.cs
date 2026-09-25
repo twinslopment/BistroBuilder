@@ -13,7 +13,8 @@ namespace BistroBuilder.Editor.Savic
         Library = 3,
         Validation = 4,
         History = 5,
-        Settings = 6
+        Settings = 6,
+        Adoption = 7
     }
 
     internal sealed class SavicEditorSummary
