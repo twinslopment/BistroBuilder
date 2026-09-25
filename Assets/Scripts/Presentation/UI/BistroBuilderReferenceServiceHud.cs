@@ -15,7 +15,7 @@ using UnityEngine.UI;
 public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 {
     public const string RuntimeRevision = "21A-REFERENCE-SERVICE-HUD-V1.0";
-    private const float ActivityWidth = 340f;
+    private const float ActivityWidth = 360f;
     private const float ContextWidth = 390f;
     private const int MaxActivityRows = 8;
     private const int MaxOrderRows = 5;
@@ -207,64 +207,177 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 
     private void EnsureActivityPanel()
     {
+        activityPanel.anchorMin = new Vector2(0f, 0f);
+        activityPanel.anchorMax = new Vector2(0f, 1f);
+        activityPanel.pivot = new Vector2(0f, 0.5f);
+        activityPanel.anchoredPosition = new Vector2(12f, 0f);
         activityPanel.sizeDelta = new Vector2(ActivityWidth, -152f);
+
         legacyActivityText = activityPanel.Find("ActivityText")?.GetComponent<TMP_Text>();
-        if (legacyActivityText != null) legacyActivityText.enabled = false;
+        if (legacyActivityText != null)
+            legacyActivityText.enabled = false;
 
         TMP_Text heading = activityPanel.Find("ActivityHeading")?.GetComponent<TMP_Text>();
-        if (heading != null)
-        {
-            heading.text = "Actividad";
-            heading.fontSize = 22f;
-        }
+        ActivityPanelVisualStyle.ApplyPanelChrome(activityPanel, heading);
 
         Transform existing = activityPanel.Find("BB_ReferenceActivity");
         if (existing != null)
         {
-            activityRowsRoot = existing.Find("Rows") as RectTransform;
-            activityEmptyText = existing.Find("Empty")?.GetComponent<TMP_Text>();
+            activityRowsRoot =
+                existing.Find("Viewport/Rows") as RectTransform ??
+                existing.Find("Rows") as RectTransform;
+            activityEmptyText =
+                existing.Find("Viewport/Empty")?.GetComponent<TMP_Text>() ??
+                existing.Find("Empty")?.GetComponent<TMP_Text>();
             return;
         }
 
+        BuildApprovedActivityPanel();
+    }
+
+    private void BuildApprovedActivityPanel()
+    {
         RectTransform root = NewRect("BB_ReferenceActivity", activityPanel);
         Stretch(root);
-        root.offsetMin = new Vector2(12f, 12f);
-        root.offsetMax = new Vector2(-12f, -52f);
+        root.offsetMin = new Vector2(14f, 14f);
+        root.offsetMax = new Vector2(-14f, -68f);
 
-        Button today = CreateButton(root, "Today", "Hoy", BistroBuilderUiTokens.Surface1);
-        RectTransform todayRect = today.GetComponent<RectTransform>();
-        todayRect.anchorMin = todayRect.anchorMax = new Vector2(1f, 1f);
-        todayRect.pivot = new Vector2(1f, 1f);
-        todayRect.anchoredPosition = new Vector2(0f, 40f);
-        todayRect.sizeDelta = new Vector2(128f, 36f);
-        today.interactable = false;
+        RectTransform filters = NewRect("Filters", root);
+        filters.anchorMin = new Vector2(0f, 1f);
+        filters.anchorMax = new Vector2(1f, 1f);
+        filters.pivot = new Vector2(0.5f, 1f);
+        filters.anchoredPosition = Vector2.zero;
+        filters.sizeDelta = new Vector2(0f, 38f);
 
-        activityRowsRoot = NewRect("Rows", root);
-        activityRowsRoot.anchorMin = new Vector2(0f, 0f);
+        CreateActivityFilterButton(filters, "Today", "Hoy", 0f, 0.19f, true);
+        CreateActivityFilterButton(filters, "Incidents", "Incidencias", 0.20f, 0.47f, false);
+        CreateActivityFilterButton(filters, "Opportunities", "Oportunidades", 0.48f, 0.77f, false);
+        CreateActivityFilterButton(filters, "Reservations", "Reservas", 0.78f, 1f, false);
+
+        TMP_Text sectionTitle = CreateText(
+            root,
+            "SectionTitle",
+            "Sucesos de hoy",
+            14f,
+            ActivityPanelVisualStyle.Ink,
+            TextAlignmentOptions.MidlineLeft);
+        BistroBuilderTypography.Apply(sectionTitle, BistroBuilderUiStyleRole.Heading, true);
+        Place(sectionTitle.rectTransform, 4f, -44f, 190f, 28f);
+
+        TMP_Text visibleCount = CreateText(
+            root,
+            "VisibleCount",
+            string.Empty,
+            10f,
+            ActivityPanelVisualStyle.Muted,
+            TextAlignmentOptions.MidlineRight);
+        BistroBuilderTypography.Apply(visibleCount, BistroBuilderUiStyleRole.Caption, true);
+        Place(visibleCount.rectTransform, 208f, -44f, 120f, 28f);
+
+        BuildActivityScrollArea(root);
+        BuildActivityFooter(root);
+    }
+
+    private void BuildActivityScrollArea(RectTransform root)
+    {
+        RectTransform viewport = NewRect("Viewport", root);
+        viewport.anchorMin = new Vector2(0f, 0f);
+        viewport.anchorMax = new Vector2(1f, 1f);
+        viewport.offsetMin = new Vector2(0f, 28f);
+        viewport.offsetMax = new Vector2(0f, -78f);
+
+        Image viewportImage = viewport.gameObject.AddComponent<Image>();
+        viewportImage.color = new Color(1f, 1f, 1f, 0.001f);
+        viewportImage.raycastTarget = true;
+        viewport.gameObject.AddComponent<RectMask2D>();
+
+        activityRowsRoot = NewRect("Rows", viewport);
+        activityRowsRoot.anchorMin = new Vector2(0f, 1f);
         activityRowsRoot.anchorMax = new Vector2(1f, 1f);
-        activityRowsRoot.offsetMin = new Vector2(0f, 42f);
-        activityRowsRoot.offsetMax = Vector2.zero;
-        VerticalLayoutGroup list = activityRowsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-        list.spacing = 4f;
+        activityRowsRoot.pivot = new Vector2(0.5f, 1f);
+        activityRowsRoot.anchoredPosition = Vector2.zero;
+        activityRowsRoot.sizeDelta = Vector2.zero;
+
+        VerticalLayoutGroup list =
+            activityRowsRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+        list.spacing = 6f;
+        list.padding = new RectOffset(1, 1, 1, 1);
         list.childControlHeight = false;
         list.childControlWidth = true;
         list.childForceExpandHeight = false;
         list.childForceExpandWidth = true;
 
-        activityEmptyText = CreateText(root, "Empty", "Sin actividad reciente", 13f,
-            BistroBuilderUiTokens.TextMuted, TextAlignmentOptions.Center);
-        Stretch(activityEmptyText.rectTransform);
-        activityEmptyText.rectTransform.offsetMin = new Vector2(0f, 70f);
-        activityEmptyText.rectTransform.offsetMax = new Vector2(0f, -70f);
+        ContentSizeFitter fitter =
+            activityRowsRoot.gameObject.AddComponent<ContentSizeFitter>();
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
-        Button footer = CreateButton(root, "Footer", "Ver toda la actividad   →", BistroBuilderUiTokens.Surface1);
-        RectTransform footerRect = footer.GetComponent<RectTransform>();
-        footerRect.anchorMin = new Vector2(0f, 0f);
-        footerRect.anchorMax = new Vector2(1f, 0f);
-        footerRect.pivot = new Vector2(0.5f, 0f);
-        footerRect.anchoredPosition = Vector2.zero;
-        footerRect.sizeDelta = new Vector2(0f, 36f);
-        footer.interactable = false;
+        ScrollRect scroll = root.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport = viewport;
+        scroll.content = activityRowsRoot;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity = BistroBuilderUiTokens.ScrollWheelStepPixels;
+        scroll.decelerationRate = BistroBuilderUiTokens.ScrollDecelerationRate;
+
+        activityEmptyText = CreateText(
+            viewport,
+            "Empty",
+            "Sin actividad reciente",
+            12.5f,
+            ActivityPanelVisualStyle.Muted,
+            TextAlignmentOptions.Center);
+        Stretch(activityEmptyText.rectTransform);
+        BistroBuilderTypography.Apply(activityEmptyText, BistroBuilderUiStyleRole.Body, true);
+    }
+
+    private void BuildActivityFooter(RectTransform root)
+    {
+        TMP_Text footer = CreateText(
+            root,
+            "FooterText",
+            "Crítico · Atención · Oportunidad · cronología",
+            8.6f,
+            ActivityPanelVisualStyle.Muted,
+            TextAlignmentOptions.MidlineLeft);
+        footer.rectTransform.anchorMin = new Vector2(0f, 0f);
+        footer.rectTransform.anchorMax = new Vector2(0.72f, 0f);
+        footer.rectTransform.pivot = new Vector2(0.5f, 0f);
+        footer.rectTransform.anchoredPosition = Vector2.zero;
+        footer.rectTransform.sizeDelta = new Vector2(0f, 24f);
+        BistroBuilderTypography.Apply(footer, BistroBuilderUiStyleRole.Caption, true);
+
+        TMP_Text overflow = CreateText(
+            root,
+            "OverflowText",
+            string.Empty,
+            8.6f,
+            ActivityPanelVisualStyle.Muted,
+            TextAlignmentOptions.MidlineRight);
+        overflow.rectTransform.anchorMin = new Vector2(0.72f, 0f);
+        overflow.rectTransform.anchorMax = new Vector2(1f, 0f);
+        overflow.rectTransform.pivot = new Vector2(0.5f, 0f);
+        overflow.rectTransform.anchoredPosition = Vector2.zero;
+        overflow.rectTransform.sizeDelta = new Vector2(0f, 24f);
+        BistroBuilderTypography.Apply(overflow, BistroBuilderUiStyleRole.Caption, true);
+    }
+
+    private static void CreateActivityFilterButton(
+        RectTransform parent,
+        string name,
+        string label,
+        float minX,
+        float maxX,
+        bool selected)
+    {
+        Button button = CreateButton(parent, name, label, ActivityPanelVisualStyle.PanelLight);
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(minX, 0f);
+        rect.anchorMax = new Vector2(maxX, 1f);
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = new Vector2(-4f, 0f);
+        ActivityPanelVisualStyle.ApplyFilterButton(button, selected);
     }
 
     private void EnsureContextPanel()

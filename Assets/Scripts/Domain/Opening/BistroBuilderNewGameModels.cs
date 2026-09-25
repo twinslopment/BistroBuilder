@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 public enum BistroBuilderNewGamePhase
@@ -16,7 +16,9 @@ public enum BistroBuilderStartingPremisesProfile
     Compact = 0,
     Balanced = 1,
     Spacious = 2,
-    Empty = 3
+    Empty = 3,
+    Essentials = 4,
+    FinishingTouches = 5
 }
 
 public enum BistroBuilderOpeningCheckLevel

@@ -3,7 +3,7 @@ using UnityEngine.EventSystems;
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Opening/New Game Opening Player Screen")]
-public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
+public sealed partial class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
 {
     [SerializeField] private BistroBuilderNewGameOpeningService openingService;
     [SerializeField] private bool visibleOnStart = true;
@@ -53,7 +53,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
         RestoreModalInputState();
     }
 
-    private void OnDisable() => RestoreModalInputState();
+    private void OnDisable() { RestoreModalInputState(); if (ivoryCanvas != null) ivoryCanvas.gameObject.SetActive(false); }
 
     private void OnGUI()
     {
@@ -68,10 +68,15 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
                 initialEditEntryAttempted = true;
                 if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = string.Empty;
             }
-            DrawInitialDesignOverlay();
+            // The existing compact initial-design panel owns these actions.
             return;
         }
         if (!IsVisible) return;
+        if (openingService.Phase == BistroBuilderNewGamePhase.StartMenu)
+        {
+            BistroBuilderRuntimePointerUiGuard.PublishBlockedGuiRect(new Rect(0, 0, Screen.width, Screen.height));
+            return;
+        }
         ApplyModalInputState();
         initialEditEntryAttempted = false;
         if (openingService.Phase == BistroBuilderNewGamePhase.NormalPlay)
@@ -337,6 +342,7 @@ public sealed class BistroBuilderNewGameOpeningPlayerScreen : MonoBehaviour
 
     private void ApplyModalInputState()
     {
+        if (openingService != null && openingService.Phase == BistroBuilderNewGamePhase.StartMenu) return;
         if (!IsVisible || blockedEventSystem != null) return;
         blockedEventSystem = EventSystem.current;
         if (blockedEventSystem == null) return;
