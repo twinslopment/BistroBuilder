@@ -46,6 +46,8 @@ namespace BistroBuilder.Editor.Savic
             new SavicClassificationRecord();
         public SavicMaterialSemanticResolutionRecord materialSemantic =
             new SavicMaterialSemanticResolutionRecord();
+        public SavicIncrementalStateRecord incremental =
+            new SavicIncrementalStateRecord();
         public SavicTableAuthoringRecord tableAuthoring =
             new SavicTableAuthoringRecord();
         public SavicTableColliderAuthoringRecord tableColliders =
@@ -70,6 +72,25 @@ namespace BistroBuilder.Editor.Savic
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
         public List<SavicOverrideRecord> developerOverrides = new List<SavicOverrideRecord>();
+    }
+
+    [Serializable]
+    internal sealed class SavicIncrementalStateRecord
+    {
+        public string evaluatorVersion = string.Empty;
+        public string geometryFingerprint = string.Empty;
+        public string appearanceFingerprint = string.Empty;
+        public string lastAction = "UNSET";
+        public string reason = string.Empty;
+        public bool reusedGeometry;
+        public bool reusedSemanticParts;
+        public bool reusedClassification;
+        public bool reusedColliders;
+        public bool appearanceOnlyRefresh;
+        public int reuseCount;
+        public int fullRebuildCount;
+        public int appearanceRefreshCount;
+        public string evaluatedUtc = string.Empty;
     }
 
     [Serializable]
