@@ -1,5 +1,6 @@
 using System;
 using Stopwatch = System.Diagnostics.Stopwatch;
+using UnityEditor;
 using UnityEngine;
 
 namespace BistroBuilder.Editor.Savic
@@ -10,11 +11,16 @@ namespace BistroBuilder.Editor.Savic
 
         // One asset operation is deliberately atomic. Time-slicing happens
         // between jobs so an interrupted asset never remains half-published.
+        private const long TargetTickBudgetMilliseconds = 16;
         private const long SlowJobWarningMilliseconds = 2000;
+        private const double MaximumCooldownSeconds = 0.25;
 
         private readonly SavicJobStore jobs;
         private readonly SavicSourceProcessingService processing;
         private bool executing;
+        private double nextEligibleEditorTime;
+        private long lastOperationMilliseconds;
+        private int budgetOverrunCount;
 
         internal SavicBatchProcessor(
             SavicJobStore jobs,
@@ -29,6 +35,11 @@ namespace BistroBuilder.Editor.Savic
         }
 
         internal bool IsExecuting => executing;
+        internal long LastOperationMilliseconds => lastOperationMilliseconds;
+        internal int BudgetOverrunCount => budgetOverrunCount;
+        internal bool IsCoolingDown =>
+            EditorApplication.timeSinceStartup <
+            nextEligibleEditorTime;
 
         internal void RecoverAfterDomainReload()
         {
@@ -47,7 +58,9 @@ namespace BistroBuilder.Editor.Savic
         internal bool TickOne()
         {
             if (executing ||
-                jobs.IsPaused)
+                jobs.IsPaused ||
+                EditorApplication.timeSinceStartup <
+                nextEligibleEditorTime)
             {
                 return false;
             }
@@ -90,23 +103,67 @@ namespace BistroBuilder.Editor.Savic
                 executing = false;
             }
 
+            lastOperationMilliseconds =
+                stopwatch.ElapsedMilliseconds;
+
             jobs.CompleteProcessing(
                 job.jobId,
                 outcome,
-                stopwatch.ElapsedMilliseconds);
+                lastOperationMilliseconds);
 
-            if (stopwatch.ElapsedMilliseconds >=
+            double cooldownSeconds =
+                ComputeCooldownSeconds(
+                    lastOperationMilliseconds);
+
+            if (cooldownSeconds > 0d)
+            {
+                budgetOverrunCount++;
+                nextEligibleEditorTime =
+                    EditorApplication.timeSinceStartup +
+                    cooldownSeconds;
+            }
+            else
+            {
+                nextEligibleEditorTime = 0d;
+            }
+
+            if (lastOperationMilliseconds >=
                 SlowJobWarningMilliseconds)
             {
                 Debug.LogWarning(
                     "[SAVIC] Slow batch asset operation: " +
                     job.originalFileName +
                     " took " +
-                    stopwatch.ElapsedMilliseconds +
+                    lastOperationMilliseconds +
                     " ms. Queue execution remains serialized.");
             }
 
             return true;
+        }
+
+        internal static double ComputeCooldownSeconds(
+            long operationMilliseconds)
+        {
+            if (operationMilliseconds <=
+                TargetTickBudgetMilliseconds)
+            {
+                return 0d;
+            }
+
+            double overrunMilliseconds =
+                operationMilliseconds -
+                TargetTickBudgetMilliseconds;
+
+            double cooldown =
+                Math.Max(
+                    0.016d,
+                    overrunMilliseconds /
+                    1000d *
+                    0.15d);
+
+            return Math.Min(
+                MaximumCooldownSeconds,
+                cooldown);
         }
     }
 }
