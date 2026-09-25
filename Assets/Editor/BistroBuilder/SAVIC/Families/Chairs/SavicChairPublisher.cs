@@ -533,6 +533,277 @@ namespace BistroBuilder.Editor.Savic
             }
         }
 
+        internal SavicChairPublicationOutcome RefreshAppearanceOnly(
+            SavicManifest manifest,
+            GameObject sourceModelAsset)
+        {
+            if (manifest == null)
+                throw new ArgumentNullException(nameof(manifest));
+
+            if (sourceModelAsset == null)
+                throw new ArgumentNullException(nameof(sourceModelAsset));
+
+            SavicChairAuthoringRecord plan =
+                manifest.chairAuthoring;
+
+            if (plan == null ||
+                !plan.planned ||
+                string.IsNullOrWhiteSpace(plan.prefabAssetPath) ||
+                string.IsNullOrWhiteSpace(plan.itemDefinitionAssetPath))
+            {
+                return Publish(
+                    manifest,
+                    sourceModelAsset);
+            }
+
+            string prefabPath =
+                plan.prefabAssetPath;
+
+            string itemPath =
+                plan.itemDefinitionAssetPath;
+
+            GameObject existingPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    prefabPath);
+
+            RestaurantPlaceableItemDefinition item =
+                AssetDatabase.LoadAssetAtPath
+                    <RestaurantPlaceableItemDefinition>(
+                        itemPath);
+
+            if (existingPrefab == null ||
+                item == null ||
+                existingPrefab.transform.Find(
+                    "OperationalMotionRoot/Visual/SourceModel") == null)
+            {
+                return Publish(
+                    manifest,
+                    sourceModelAsset);
+            }
+
+            string contentFolder =
+                Path.GetDirectoryName(itemPath)
+                    ?.Replace('\\', '/');
+
+            if (string.IsNullOrWhiteSpace(contentFolder))
+            {
+                return Fail(
+                    "Chair appearance refresh could not resolve content folder.",
+                    prefabPath,
+                    itemPath);
+            }
+
+            string largePreviewPath =
+                contentFolder +
+                "/Preview_Large.png";
+
+            string catalogPreviewPath =
+                contentFolder +
+                "/Preview_Catalog.png";
+
+            string publicationFingerprint =
+                BuildPublicationFingerprint(
+                    manifest,
+                    plan);
+
+            using SavicAssetMutationScope transaction =
+                new SavicAssetMutationScope(
+                    layout,
+                    "refresh_chair_appearance_" +
+                    manifest.canonicalContentId);
+
+            transaction.CaptureAsset(prefabPath);
+            transaction.CaptureAsset(itemPath);
+            transaction.CaptureAsset(largePreviewPath);
+            transaction.CaptureAsset(catalogPreviewPath);
+
+            GameObject prefabContents = null;
+
+            try
+            {
+                prefabContents =
+                    PrefabUtility.LoadPrefabContents(
+                        prefabPath);
+
+                Transform visualRoot =
+                    prefabContents.transform.Find(
+                        "OperationalMotionRoot/Visual");
+
+                if (visualRoot == null)
+                {
+                    throw new InvalidOperationException(
+                        "Published chair prefab has no OperationalMotionRoot/Visual root.");
+                }
+
+                Transform previousSource =
+                    visualRoot.Find(
+                        "SourceModel");
+
+                if (previousSource == null)
+                {
+                    throw new InvalidOperationException(
+                        "Published chair prefab has no SourceModel child.");
+                }
+
+                Object.DestroyImmediate(
+                    previousSource.gameObject);
+
+                GameObject sourceInstance =
+                    InstantiateSourceModel(
+                        sourceModelAsset,
+                        visualRoot);
+
+                NormalizeSourceVisual(
+                    sourceInstance.transform,
+                    manifest.model3D,
+                    plan);
+
+                RemoveUnsupportedSourceComponents(
+                    sourceInstance);
+
+                if (sourceInstance.GetComponentInChildren
+                        <Renderer>(true) == null)
+                {
+                    throw new InvalidOperationException(
+                        "Refreshed chair source contains no renderer.");
+                }
+
+                GameObject saved =
+                    PrefabUtility.SaveAsPrefabAsset(
+                        prefabContents,
+                        prefabPath);
+
+                if (saved == null)
+                {
+                    throw new InvalidOperationException(
+                        "Unity did not confirm chair appearance-only prefab save.");
+                }
+            }
+            finally
+            {
+                if (prefabContents != null)
+                {
+                    PrefabUtility.UnloadPrefabContents(
+                        prefabContents);
+                }
+            }
+
+            try
+            {
+                AssetDatabase.ImportAsset(
+                    prefabPath,
+                    ImportAssetOptions.ForceSynchronousImport |
+                    ImportAssetOptions.ForceUpdate);
+
+                GameObject reloadedPrefab =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        prefabPath);
+
+                if (reloadedPrefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "Appearance-refreshed chair prefab could not be reloaded.");
+                }
+
+                string previewFingerprint =
+                    SavicPreviewRenderer.BuildInputFingerprint(
+                        prefabPath);
+
+                SavicPreviewGenerationResult previews =
+                    SavicPreviewRenderer.GenerateAndAssign(
+                        reloadedPrefab,
+                        item,
+                        contentFolder);
+
+                if (!previews.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Chair preview refresh failed: " +
+                        previews.Message);
+                }
+
+                AssetDatabase.SaveAssets();
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    PrefabArtifactRole,
+                    prefabPath,
+                    "savic.chair-publisher",
+                    Version,
+                    publicationFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    ItemArtifactRole,
+                    itemPath,
+                    "savic.chair-publisher",
+                    Version,
+                    publicationFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    LargePreviewArtifactRole,
+                    previews.LargePreviewAssetPath,
+                    "savic.preview-renderer",
+                    SavicPreviewRenderer.Version,
+                    previewFingerprint);
+
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    CatalogPreviewArtifactRole,
+                    previews.CatalogPreviewAssetPath,
+                    "savic.preview-renderer",
+                    SavicPreviewRenderer.Version,
+                    previewFingerprint);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.IncrementalAppearanceRefresh",
+                    "PASS",
+                    "INFO",
+                    "Chair visual source and previews refreshed without rebuilding colliders, spatial, navigation or persistence topology.",
+                    SavicIncrementalInvalidationService.Version);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Presentation.Previews",
+                    "PASS",
+                    "INFO",
+                    previews.Message,
+                    SavicPreviewRenderer.Version);
+
+                manifest.status =
+                    "PUBLISHED";
+
+                manifests.Save(
+                    manifest);
+
+                transaction.Commit();
+
+                return new SavicChairPublicationOutcome(
+                    true,
+                    "Chair appearance refreshed incrementally; geometry/colliders were reused.",
+                    prefabPath,
+                    itemPath);
+            }
+            catch (Exception exception)
+            {
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.IncrementalAppearanceRefresh",
+                    "FAIL",
+                    "ERROR",
+                    exception.Message,
+                    SavicIncrementalInvalidationService.Version);
+
+                return Fail(
+                    "Incremental chair appearance refresh failed: " +
+                    exception.Message,
+                    prefabPath,
+                    itemPath);
+            }
+        }
+
         private static string BuildPublicationFingerprint(
             SavicManifest manifest,
             SavicChairAuthoringRecord plan)
