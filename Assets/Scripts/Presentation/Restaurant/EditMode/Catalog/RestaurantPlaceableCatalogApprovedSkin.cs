@@ -727,6 +727,13 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
     }
 
 
+    public void OpenSection()
+    {
+        collapsed = false; filterOpen = false;
+        if (filterPanel != null) filterPanel.SetActive(false);
+        NotifyCategoryChanged(true); ApplyCollapsedState();
+    }
+
     public void NotifyCategoryChanged(bool resetAllFilters)
     {
         if (resetAllFilters)

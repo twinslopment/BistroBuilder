@@ -39,6 +39,20 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private bool lastFiltersVisible;
     private string selectedScopeLabel = "Todos";
 
+    public void RefreshSectionChrome()
+    {
+        categoryCount = itemCount = -1;
+        geometryDirty = true;
+        if (!TryCacheHierarchy()) return;
+        var panel = GetComponent<RestaurantPlaceableCatalogPanel>();
+        var title = contentRoot.Find("Header/PreviewTitle")?.GetComponent<TMP_Text>();
+        if (title != null) title.text = panel.SectionTitle;
+        if (tmpSearch != null)
+        {
+            tmpSearch.SetTextWithoutNotify(string.Empty);
+            if (tmpSearch.placeholder is TMP_Text placeholder) placeholder.text = panel.SectionSearchHint;
+        }
+    }
     private void Awake()
     {
         LoadFonts();
@@ -136,6 +150,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             }
 
             contentRoot = found;
+            if(found.GetComponent<BistroBuilderEditChromeSurface>()==null)found.gameObject.AddComponent<BistroBuilderEditChromeSurface>();
         }
 
         if (categoryBar == null)
@@ -207,7 +222,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             Vector2.zero,
             Vector2.zero);
 
-        title.text = "Catálogo de artículos";
+        title.text = GetComponent<RestaurantPlaceableCatalogPanel>().SectionTitle;
         title.enableWordWrapping = false;
 
         Transform close = header.Find("ApprovedClose");
@@ -373,7 +388,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
                 new Vector2(2f, 4f),
                 new Vector2(-2f, -2f));
             tmp.text = label;
-            tmp.enableWordWrapping = false;
+            tmp.enableWordWrapping = true;
+            tmp.enableAutoSizing = true;tmp.fontSizeMin=8;tmp.fontSizeMax=10.5f;
 
             RectTransform iconRect = CreateChildRect(child, "PreviewIcon");
             SetAnchors(
@@ -1185,13 +1201,13 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (panelRect != null)
         {
             float topInset = Mathf.Max(
-                86f,
+                88f,
                 ResolveHorizontalBarInset(
                     BistroBuilderUiShell.TopBarName,
                     64f) + 12f);
 
             float bottomInset = Mathf.Max(
-                150f,
+                106f,
                 ResolveHorizontalBarInset(
                     BistroBuilderUiShell.BottomBarName,
                     64f) + 12f);
@@ -1199,8 +1215,8 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             panelRect.anchorMin = new Vector2(0f, 0f);
             panelRect.anchorMax = new Vector2(0f, 1f);
             panelRect.pivot = new Vector2(0f, 0.5f);
-            panelRect.offsetMin = new Vector2(4f, bottomInset);
-            panelRect.offsetMax = new Vector2(431f, -topInset);
+            panelRect.offsetMin = new Vector2(18f, bottomInset);
+            panelRect.offsetMax = new Vector2(445f, -topInset);
         }
 
         RectTransform header = contentRoot.Find("Header") as RectTransform;
@@ -1648,6 +1664,28 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             ? label.Trim().ToLowerInvariant()
             : string.Empty;
 
+        switch (normalized)
+        {
+            case "plantas": return RestaurantCatalogPreviewIcon.Plant;
+            case "cuadros": return RestaurantCatalogPreviewIcon.Picture;
+            case "separadores": return RestaurantCatalogPreviewIcon.Divider;
+            case "textiles": return RestaurantCatalogPreviewIcon.Textile;
+            case "accesorios": return RestaurantCatalogPreviewIcon.Accessory;
+            case "techo": return RestaurantCatalogPreviewIcon.Pendant;
+            case "pared": return RestaurantCatalogPreviewIcon.Sconce;
+            case "pie": return RestaurantCatalogPreviewIcon.FloorLamp;
+            case "exterior": case "ambiental": return RestaurantCatalogPreviewIcon.Sun;
+            case "caja": return RestaurantCatalogPreviewIcon.Checkout;
+            case "sala": return RestaurantCatalogPreviewIcon.Dining;
+            case "recepción": return RestaurantCatalogPreviewIcon.Reception;
+            case "apoyo": return RestaurantCatalogPreviewIcon.Cart;
+            case "seguridad": return RestaurantCatalogPreviewIcon.Shield;
+            case "señalética": return RestaurantCatalogPreviewIcon.Sign;
+            case "organización": return RestaurantCatalogPreviewIcon.Organization;
+            case "expositor": return RestaurantCatalogPreviewIcon.Display;
+            case "técnico": return RestaurantCatalogPreviewIcon.Tools;
+            case "auxiliar": return RestaurantCatalogPreviewIcon.Auxiliary;
+        }
         if (normalized.Contains("mesa"))
             return RestaurantCatalogPreviewIcon.Table;
         if (normalized.Contains("silla") ||

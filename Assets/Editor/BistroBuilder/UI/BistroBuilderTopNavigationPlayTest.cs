@@ -85,11 +85,15 @@ public static class BistroBuilderTopNavigationPlayTest
                     Check(shell != null, "No shell");
                     shell.EnsureShell();
 
-                    GameObject background = GameObject.Find("ApprovedTopBarV3Background");
-                    Check(background != null, "Missing approved v3 background");
-                    Image image = background.GetComponent<Image>();
-                    Check(image != null && image.sprite != null, "Approved v3 sprite missing");                    RectTransform topBar = GameObject.Find(BistroBuilderUiShell.TopBarName)?.GetComponent<RectTransform>();
-                    Check(topBar != null && topBar.rect.height > 180f, "Approved top bar aspect/height not applied");
+                    GameObject compactRow = GameObject.Find("CompactTopBarRow");
+                    Check(compactRow != null, "Missing compact responsive top bar row");
+                    RectTransform topBar = GameObject.Find(BistroBuilderUiShell.TopBarName)?.GetComponent<RectTransform>();
+                    RectTransform canvasRect = shell.GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
+                    Check(topBar != null, "Compact top bar missing");
+                    Check(canvasRect != null && topBar.rect.width >= canvasRect.rect.width - 2f,
+                        "Compact top bar does not fill viewport width");
+                    Check(topBar.rect.height >= 84f && topBar.rect.height <= 103f,
+                        "Compact top bar subtle responsive height not applied");
 
                     foreach (string name in new[]
                     {

@@ -9,6 +9,13 @@ public sealed partial class BistroBuilderUiShell
     private const string ApprovedTopBarResource =
         "BistroBuilder/UI/TopBar/BistroBuilder_NormalTopBar_v3";
 
+    private const float ApprovedTopBarAspect = 1993f / 287f;
+    private const float ApprovedTopBarTopInset = 0f;
+    private const float ApprovedTopBarSideInset = 0f;
+    private const float ApprovedTopBarHeightFraction = 0.18f;
+    private const float ApprovedTopBarMinHeight = 170f;
+    private const float ApprovedTopBarMaxHeight = 200f;
+
     private readonly Dictionary<string, BistroBuilderApprovedTopBarHotspot>
         approvedTopBarHotspots = new Dictionary<string, BistroBuilderApprovedTopBarHotspot>();
 
@@ -29,6 +36,9 @@ public sealed partial class BistroBuilderUiShell
 
     private void EnsureApprovedTopBarV3Content()
     {
+        EnsureCompactResponsiveTopBar();
+        return;
+
         if (topNavigation == null) return;        var oldSurface = topNavigation.GetComponent<BistroBuilderTopBarSurface>();
         if (oldSurface == null) oldSurface = topNavigation.gameObject.AddComponent<BistroBuilderTopBarSurface>();
         oldSurface.enabled = true;
@@ -37,9 +47,8 @@ public sealed partial class BistroBuilderUiShell
         if (rootImage != null) rootImage.color = Color.clear;
 
         AspectRatioFitter fitter = topNavigation.GetComponent<AspectRatioFitter>();
-        if (fitter == null) fitter = topNavigation.gameObject.AddComponent<AspectRatioFitter>();
-        fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
-        fitter.aspectRatio = 1993f / 287f;
+        if (fitter != null) fitter.aspectMode = AspectRatioFitter.AspectMode.None;
+        RefreshApprovedTopBarV3Layout();
 
         Transform existing = topNavigation.Find("ApprovedTopBarV3Background");
         Image background = existing != null ? existing.GetComponent<Image>() : null;
@@ -91,6 +100,9 @@ public sealed partial class BistroBuilderUiShell
 
     private void EnsureApprovedTopBarV3Buttons()
     {
+        BuildCompactResponsiveTopBarButtons();
+        return;
+
         EnsureApprovedTopBarV3Content();
         if (topNavigation == null) return;
 
@@ -218,8 +230,14 @@ public sealed partial class BistroBuilderUiShell
         return text;
     }
 
+    private void RefreshApprovedTopBarV3Layout()
+    {
+        ConfigureCompactTopBarRoot();
+    }
+
     private void RefreshApprovedTopBarV3State()
     {
+        RefreshApprovedTopBarV3Layout();
         foreach (var pair in approvedTopBarHotspots)
         {
             pair.Value.SetSelected(pair.Key == selectedNavigation);

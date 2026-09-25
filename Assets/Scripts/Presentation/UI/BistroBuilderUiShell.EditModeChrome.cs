@@ -86,8 +86,8 @@ public sealed partial class BistroBuilderUiShell
         ChromeDivider(root,30);
         ChromeButton(root,"EditGrid",Symbol.Grid,"",44,46,"Mostrar u ocultar la cuadrícula",()=>{if(editChromeGrid!=null)editChromeGrid.enabled=!editChromeGrid.enabled;});
         ChromeDivider(root,30);
-        ChromeButton(root,"EditTerrain",Symbol.Terrain,"",44,46,"Dibujar una habitación arrastrando sobre el terreno",()=>editModeConstructionTool?.SetMode(Mode.Room));
-        var paint=ChromeButton(root,"EditPaint",Symbol.Paint,"",48,46,"Acabados de superficies: todavía no disponible",null);paint.interactable=false;
+        ChromeButton(root,"EditTerrain",Symbol.Terrain,"",44,46,"Dibujar una habitación arrastrando sobre el terreno",()=>{editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Walls);editModeConstructionTool?.SetMode(Mode.Room);});
+        var paint=ChromeButton(root,"EditPaint",Symbol.Paint,"",48,46,"Abrir catálogo de superficies",()=>editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Surfaces));
         ChromeSpacer(root,"EditTopSpacerB");
         var clock=ChromeBlock(root,"EditClock",132,46);ChromeIcon(clock,"Sun",Symbol.Sun,new Color32(246,171,40,255),new Vector2(17,23),31);
         editModeClockText=ChromeText(clock,"Time","—",16,EditChromeMuted);ChromeBox(editModeClockText.rectTransform,39,0,93,46);
@@ -112,7 +112,7 @@ public sealed partial class BistroBuilderUiShell
         ChromeTool(root,"EditOther",Symbol.More,"Otro",Mode.Furniture,RestaurantPlaceableItemCategory.Other);
         ChromeSpacer(root,"EditBottomSpacer");
         ChromeButton(root,"EditDelete",Symbol.Delete,"Eliminar",127,58,"Eliminar la selección; aplica la devolución o coste indicado en el inspector",DeleteChromeSelection,true);
-        ChromeButton(root,"EditRotate",Symbol.Rotate,"Rotar",118,58,"Girar el artículo; haz clic en el suelo para confirmar",RotateChromeSelection,true);
+        ChromeButton(root,"EditRotate",Symbol.Rotate,"Rotar",118,58,"Girar artículo, pared o módulo. Paredes y módulos: 90° (R)",RotateChromeSelection,true);
         ChromeButton(root,"EditDuplicate",Symbol.Duplicate,"Duplicar",131,58,"Preparar otra unidad para colocar; se cobra al confirmar",DuplicateChromeSelection,true);
     }
     string EditPlotDimensions()
@@ -131,6 +131,11 @@ public sealed partial class BistroBuilderUiShell
     }
     void RotateChromeSelection()
     {
+        if (!IsFurnitureTool() && editModeConstructionTool != null)
+        {
+            if (!editModeConstructionTool.TryRotateArchitecture(out var error)) ChromeMessage(error);
+            return;
+        }
         if(editModeFurnitureController==null)return;
         if(!editModeFurnitureController.HasActivePlacement&&!editModeFurnitureController.TryBeginMoveSelected())return;
         editModeFurnitureController.RotateActiveCandidateFromInterface();
@@ -145,23 +150,26 @@ public sealed partial class BistroBuilderUiShell
     void RefreshEditModeChrome(bool editing,bool managing)
     {
         EnsureEditModeChrome();bool visible=editing&&!managing;
+        var timeDock = canvas != null ? canvas.transform.Find("BB_368B_TimeControlsDock") : null;
+        if(timeDock != null){var group=timeDock.GetComponent<CanvasGroup>();if(group==null)group=timeDock.gameObject.AddComponent<CanvasGroup>();group.alpha=editing?0:1;group.interactable=group.blocksRaycasts=!editing;}
         if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
-        if(topNavigation!=null)topNavigation.gameObject.SetActive(!visible);
-        if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!visible);
+        if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);
+        if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!editing);
         if(!visible){if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
         ResolveEditChrome();
         editModeMoneyText.text=finance!=null?BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents):"—";
         editModeClockText.text=EditChromeClock();
         var mode=editModeConstructionTool!=null?editModeConstructionTool.Mode:Mode.Furniture;
-        int category=editModeCatalogPanel!=null?editModeCatalogPanel.SelectedCategoryCode:-1;
+        var section=editModeCatalogPanel!=null?editModeCatalogPanel.CurrentSection:RestaurantEditCatalogSection.Build;
         bool furniture=mode==Mode.Furniture;
-        ChromeSelected("EditBuild",furniture&&category!=(int)RestaurantPlaceableItemCategory.Decoration&&category!=(int)RestaurantPlaceableItemCategory.Lighting&&category!=(int)RestaurantPlaceableItemCategory.ServiceEquipment&&category!=(int)RestaurantPlaceableItemCategory.Other);
-        ChromeSelected("EditSurfaces",mode==Mode.Room);ChromeSelected("EditWalls",mode==Mode.Wall||mode==Mode.WallModule||mode==Mode.Door||mode==Mode.Window);
-        ChromeSelected("EditDecor",furniture&&category==(int)RestaurantPlaceableItemCategory.Decoration);
-        ChromeSelected("EditLighting",furniture&&category==(int)RestaurantPlaceableItemCategory.Lighting);
-        ChromeSelected("EditServices",furniture&&category==(int)RestaurantPlaceableItemCategory.ServiceEquipment);
-        ChromeSelected("EditOther",furniture&&category==(int)RestaurantPlaceableItemCategory.Other);
+        ChromeSelected("EditBuild",section==RestaurantEditCatalogSection.Build);
+        ChromeSelected("EditSurfaces",section==RestaurantEditCatalogSection.Surfaces);
+        ChromeSelected("EditWalls",section==RestaurantEditCatalogSection.Walls);
+        ChromeSelected("EditDecor",section==RestaurantEditCatalogSection.Decoration);
+        ChromeSelected("EditLighting",section==RestaurantEditCatalogSection.Lighting);
+        ChromeSelected("EditServices",section==RestaurantEditCatalogSection.Services);
+        ChromeSelected("EditOther",section==RestaurantEditCatalogSection.Other);
         ChromeSelected("EditPan",mode==Mode.Select);ChromeSelected("EditGrid",editChromeGrid!=null&&editChromeGrid.enabled);
         ChromeSelected("EditTerrain",mode==Mode.Room);
         bool selected=editModeFurnitureController!=null&&editModeFurnitureController.HasSelection;
@@ -169,7 +177,7 @@ public sealed partial class BistroBuilderUiShell
         bool structure=editModeConstructionTool!=null&&(editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Wall||editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Opening);
         editChromeButtons["EditMove"].interactable=furniture&&selected&&!placement;
         editChromeButtons["EditDelete"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
-        editChromeButtons["EditRotate"].interactable=furniture&&(placement||selected);
+        editChromeButtons["EditRotate"].interactable=furniture?(placement||selected):editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture;
         editChromeButtons["EditDuplicate"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
         editChromeButtons["EditUndo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo;
         editChromeButtons["EditRedo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo;
@@ -190,7 +198,17 @@ public sealed partial class BistroBuilderUiShell
     void ChromeSelected(string key,bool value)=>editChromeControls[key].SetSelected(value);
     void ChromeTool(Transform root,string key,Symbol symbol,string title,Mode mode,RestaurantPlaceableItemCategory? category)
     {
-        ChromeButton(root,key,symbol,title,96,68,title,()=>{editModeConstructionTool?.SetMode(mode);if(category.HasValue)editModeCatalogPanel?.SelectCategoryFromInterface(category.Value);else if(mode==Mode.Furniture)editModeCatalogPanel?.SelectAllFromInterface();},false,true);
+        RestaurantEditCatalogSection section = key switch
+        {
+            "EditSurfaces" => RestaurantEditCatalogSection.Surfaces,
+            "EditWalls" => RestaurantEditCatalogSection.Walls,
+            "EditDecor" => RestaurantEditCatalogSection.Decoration,
+            "EditLighting" => RestaurantEditCatalogSection.Lighting,
+            "EditServices" => RestaurantEditCatalogSection.Services,
+            "EditOther" => RestaurantEditCatalogSection.Other,
+            _ => RestaurantEditCatalogSection.Build
+        };
+        ChromeButton(root,key,symbol,title,96,68,title,()=>editModeCatalogPanel?.SelectSection(section),false,true);
     }
     Button ChromeButton(Transform parent,string key,Symbol symbol,string title,float width,float height,string help,UnityEngine.Events.UnityAction action,bool outlined=false,bool vertical=false,Color? tint=null)
     {
@@ -198,7 +216,7 @@ public sealed partial class BistroBuilderUiShell
         var button=root.gameObject.AddComponent<Button>();button.targetGraphic=bg;button.transition=Selectable.Transition.None;
         button.navigation=new UnityEngine.UI.Navigation{mode=UnityEngine.UI.Navigation.Mode.Automatic};if(action!=null)button.onClick.AddListener(action);
         var icon=ChromeIcon(root,"Icon",symbol,tint??EditChromeMuted,vertical?new Vector2(width/2,23):string.IsNullOrEmpty(title)?new Vector2(width/2,height/2):new Vector2(26,height/2),vertical?28:outlined?26:30);
-        TMP_Text label=null;if(!string.IsNullOrEmpty(title)){label=ChromeText(root,"Label",title,14,EditChromeText);if(vertical){ChromeBox(label.rectTransform,0,43,width,22);label.alignment=TextAlignmentOptions.Center;}else ChromeBox(label.rectTransform,48,0,width-53,height);}
+        TMP_Text label=null;if(!string.IsNullOrEmpty(title)){label=ChromeText(root,"Label",title,outlined?15:14,EditChromeText);if(outlined)label.fontStyle=FontStyles.Bold;if(vertical){ChromeBox(label.rectTransform,0,43,width,22);label.alignment=TextAlignmentOptions.Center;}else ChromeBox(label.rectTransform,48,0,width-53,height);}
         var control=root.gameObject.AddComponent<BistroBuilderEditChromeControl>();control.Configure(button,icon,label,editModeToolStatusText,help,tint??EditChromeMuted,outlined);
         editChromeButtons.Add(key,button);editChromeControls.Add(key,control);return button;
     }
