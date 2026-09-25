@@ -15,6 +15,10 @@ namespace BistroBuilder.Editor.Savic
             Intake = new SavicIntakeService(Layout, Manifests, Jobs);
             SourceProcessing =
                 new SavicSourceProcessingService(Layout, Manifests);
+            Batch =
+                new SavicBatchProcessor(
+                    Jobs,
+                    SourceProcessing);
             ProjectInventory =
                 new SavicProjectInventoryService(Layout, Manifests);
             LegacyAdoption =
@@ -32,6 +36,7 @@ namespace BistroBuilder.Editor.Savic
         internal SavicJobStore Jobs { get; }
         internal SavicIntakeService Intake { get; }
         internal SavicSourceProcessingService SourceProcessing { get; }
+        internal SavicBatchProcessor Batch { get; }
         internal SavicProjectInventoryService ProjectInventory { get; }
         internal SavicLegacyAdoptionService LegacyAdoption { get; }
 
