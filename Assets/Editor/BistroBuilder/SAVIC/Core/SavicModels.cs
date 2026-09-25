@@ -562,6 +562,7 @@ namespace BistroBuilder.Editor.Savic
         public string updatedUtc = string.Empty;
         public int attempts;
         public string message = string.Empty;
+        public bool batchEligible;
         public bool cancelRequested;
         public string checkpoint = string.Empty;
         public string processingStartedUtc = string.Empty;
