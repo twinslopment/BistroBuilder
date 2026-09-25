@@ -18,7 +18,12 @@ namespace BistroBuilder.Editor.Savic
         Ingested = 2,
         DuplicateExact = 3,
         FailedSource = 4,
-        Quarantined = 5
+        Quarantined = 5,
+        Processing = 6,
+        NeedsReview = 7,
+        FailedProcessing = 8,
+        Done = 9,
+        Cancelled = 10
     }
 
     [Serializable]
@@ -537,6 +542,10 @@ namespace BistroBuilder.Editor.Savic
     {
         public int schemaVersion = SavicVersion.QueueSchemaVersion;
         public string savedUtc = string.Empty;
+        public bool paused;
+        public int schedulerGeneration;
+        public int recoveredJobs;
+        public string lastRecoveryUtc = string.Empty;
         public List<SavicJobRecord> jobs = new List<SavicJobRecord>();
     }
 
@@ -553,6 +562,11 @@ namespace BistroBuilder.Editor.Savic
         public string updatedUtc = string.Empty;
         public int attempts;
         public string message = string.Empty;
+        public bool cancelRequested;
+        public string checkpoint = string.Empty;
+        public string processingStartedUtc = string.Empty;
+        public string completedUtc = string.Empty;
+        public long lastDurationMilliseconds;
     }
 
     internal readonly struct SavicIntakeOutcome
