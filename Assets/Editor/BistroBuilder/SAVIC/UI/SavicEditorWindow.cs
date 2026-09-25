@@ -1584,7 +1584,8 @@ namespace BistroBuilder.Editor.Savic
                         () => RevealPath(archivedPath)));
             }
 
-            if (IsCancellableJobState(row.State))
+            if (row.Job?.batchEligible == true &&
+                IsCancellableJobState(row.State))
             {
                 detail.Add(
                     CreateSecondaryButton(
