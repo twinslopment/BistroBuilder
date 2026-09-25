@@ -114,7 +114,7 @@ Tuning provisional de prueba para `TakeOrder`, usando el contador canónico exis
 | **Incidencia** | 50 s |
 | **Crítico** | 70 s |
 
-Para `FoodDelivery` no se usa un tiempo fijo universal. La referencia es el **tiempo esperado real de la comanda**, alimentado desde los tiempos de preparación de sus platos mediante la jerarquía canónica ya definida. Los umbrales provisionales se derivan dinámicamente:
+Para `FoodDelivery` no se usa un tiempo fijo universal. La referencia es el **tiempo esperado real de la comanda**, resolviendo para cada plato el tiempo de preparación efectivo de la carta de esa partida (`BistroBuilderRestaurantMenuService`) y usando la definición canónica del plato solo como fallback cuando corresponda. La comanda toma como referencia el mayor tiempo efectivo entre sus líneas activas. Los umbrales provisionales se derivan dinámicamente:
 
 - Objetivo = tiempo esperado.
 - **Atención** = 1,15 × tiempo esperado.

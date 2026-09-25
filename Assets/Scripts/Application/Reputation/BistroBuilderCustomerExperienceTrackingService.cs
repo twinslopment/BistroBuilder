@@ -16,6 +16,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
     [SerializeField] private BistroBuilderCanonicalOrderService canonicalOrderService;
     [SerializeField] private BistroBuilderFinanceService financeService;
     [SerializeField] private BistroBuilderDishCatalogService dishCatalogService;
+    [SerializeField] private BistroBuilderRestaurantMenuService restaurantMenuService;
     [SerializeField] private BistroBuilderGeneralGameStateService generalGameStateService;
     [SerializeField] private BistroBuilderUpgradeEffectsService upgradeEffectsService;
     [SerializeField] private BistroBuilderAdvancedCustomerProfileService advancedCustomerProfileService;
@@ -90,6 +91,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (reputationService == null || tableAssignmentSystem == null ||
             orderSystem == null || canonicalOrderService == null ||
             financeService == null || dishCatalogService == null ||
+            restaurantMenuService == null ||
             generalGameStateService == null ||
             upgradeEffectsService == null ||
             advancedCustomerProfileService == null ||
@@ -103,6 +105,7 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
             !canonicalOrderService.ValidateConfiguration(out error) ||
             !financeService.ValidateConfiguration(out error) ||
             !dishCatalogService.ValidateConfiguration(out error) ||
+            !restaurantMenuService.ValidateConfiguration(out error) ||
             !generalGameStateService.ValidateConfiguration(out error) ||
             !upgradeEffectsService.ValidateConfiguration(out error) ||
             !advancedCustomerProfileService.ValidateConfiguration(out error) ||
@@ -805,7 +808,13 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
                     line.DishId, out BistroBuilderDishDefinition dish) && dish != null)
             {
                 reference += dish.BasePriceCents;
-                expected = Mathf.Max(expected, dish.BasePreparationSeconds);
+                expected = Mathf.Max(
+                    expected,
+                    ResolveEffectivePreparationSeconds(
+                        line.DishId,
+                        dish
+                    )
+                );
                 int potential = 6500 + (dish.Complexity - 1) * 250;
                 if (line.WasSignatureDishAtOrder) potential += 500;
                 quality += Mathf.Clamp(potential, 5000, 9500);
@@ -824,6 +833,27 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
                 Mathf.Clamp((int)Math.Round(quality / (double)qualityCount), 0, 10000);
 
         SynchronizeRecoverableServiceIncidents(order, visit);
+    }
+
+    private float ResolveEffectivePreparationSeconds(
+        string dishId,
+        BistroBuilderDishDefinition fallbackDefinition)
+    {
+        if (restaurantMenuService != null &&
+            restaurantMenuService.TryResolvePreparationSettings(
+                dishId,
+                out _,
+                out int preparationSeconds,
+                out _
+            ) &&
+            preparationSeconds > 0)
+        {
+            return preparationSeconds;
+        }
+
+        return fallbackDefinition != null
+            ? Mathf.Max(4f, fallbackDefinition.BasePreparationSeconds)
+            : 4f;
     }
 
     private void SynchronizeRecoverableServiceIncidentsForAllVisits()
@@ -1001,6 +1031,16 @@ public sealed class BistroBuilderCustomerExperienceTrackingService : MonoBehavio
         if (canonicalOrderService == null) TryGetComponent(out canonicalOrderService);
         if (financeService == null) TryGetComponent(out financeService);
         if (dishCatalogService == null) TryGetComponent(out dishCatalogService);
+        if (restaurantMenuService == null)
+        {
+            if (!TryGetComponent(out restaurantMenuService))
+            {
+                restaurantMenuService =
+                    FindFirstObjectByType<BistroBuilderRestaurantMenuService>(
+                        FindObjectsInactive.Include
+                    );
+            }
+        }
         if (generalGameStateService == null) TryGetComponent(out generalGameStateService);
         if (upgradeEffectsService == null) TryGetComponent(out upgradeEffectsService);
         if (advancedCustomerProfileService == null)
