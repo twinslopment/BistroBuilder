@@ -72,7 +72,12 @@ namespace BistroBuilder.Editor.Savic
                     updatedUtc = now,
                     attempts = 1,
                     message = message ?? string.Empty,
-                    batchEligible = !duplicateExact,
+                    batchEligible =
+                        !duplicateExact &&
+                        string.Equals(
+                            manifest.source.sourceKind,
+                            SavicSourceKind.Model3D.ToString(),
+                            StringComparison.Ordinal),
                     checkpoint = duplicateExact
                         ? "DUPLICATE_EXACT"
                         : "INGESTED",
