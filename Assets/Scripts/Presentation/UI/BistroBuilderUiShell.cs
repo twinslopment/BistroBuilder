@@ -202,6 +202,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         }
 
         if (designSystem != null) designSystem.ApplyAllNow(true);
+        ReapplyNormalBottomBarStyle();
     }
 
     private RectTransform EnsureBar(RectTransform parent, string name, bool top)
@@ -282,43 +283,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void EnsureBottomStatus()
     {
-        Transform found = bottomOperations.Find("StatusContent");
-        bottomStatusContent = found as RectTransform;
-        if (bottomStatusContent == null)
-        {
-            GameObject go = NewUi("StatusContent", bottomOperations);
-            bottomStatusContent = go.GetComponent<RectTransform>();
-            HorizontalLayoutGroup layout = go.AddComponent<HorizontalLayoutGroup>();
-            layout.padding = new RectOffset(18, 250, 8, 8);
-            layout.spacing = 8f;
-            layout.childAlignment = TextAnchor.MiddleLeft;
-            layout.childControlWidth = false;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
-        }
-        Stretch(bottomStatusContent);
-
-        cashText = EnsureStatusPill("Cash", "Caja —", 150f);
-        satisfactionText = EnsureStatusPill("Satisfaction", "Satisfacción —", 170f);
-        kitchenText = EnsureStatusPill("Kitchen", "Cocina —", 150f);
-        waitingText = EnsureStatusPill("Waiting", "Espera: 0 clientes", 165f);
+        EnsureNormalBottomBar();
     }
 
     private void EnsureBottomDateTime()
     {
-        Transform found = bottomOperations.Find("BottomDateTime");
-        GameObject go = found != null ? found.gameObject : NewUi("BottomDateTime", bottomOperations);
-        bottomDateTimeText = go.GetComponent<TMP_Text>();
-        if (bottomDateTimeText == null) bottomDateTimeText = go.AddComponent<TextMeshProUGUI>();
-        RectTransform rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
-        rect.anchoredPosition = new Vector2(-356f, 0f);
-        rect.sizeDelta = new Vector2(220f, 44f);
-        bottomDateTimeText.fontSize = 13f;
-        bottomDateTimeText.color = BistroBuilderUiTokens.TextPrimary;
-        bottomDateTimeText.alignment = TextAlignmentOptions.MidlineRight;
-        bottomDateTimeText.raycastTarget = false;
+        bottomDateTimeText = null;
     }
 
     private TMP_Text EnsureStatusPill(string name, string value, float width)
@@ -916,60 +886,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && !managing && activityVisible && hasActivity);
         RestaurantTable selectedTable = !editing && !managing && tableSelection != null ? tableSelection.SelectedTable : null;
         if (contextPanel != null) contextPanel.gameObject.SetActive(selectedTable != null);
-        if (bottomStatusContent != null) bottomStatusContent.gameObject.SetActive(!editing && !managing);
-        if (cashText != null)
-        {
-            cashText.text = finance != null
-                ? (editing ? "Presupuesto  " : "Caja  ") + BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents)
-                : (editing ? "Presupuesto  —" : "Caja  —");
-        }
-
-        if (satisfactionText != null)
-        {
-            if (editing)
-            {
-                satisfactionText.text = ResolveEditCostText();
-            }
-            else
-            {
-            int satisfaction = experience != null
-                ? experience.LastRecordedSatisfactionBasisPoints : 0;
-            satisfactionText.text = satisfaction > 0
-                ? "Satisfacción  " + (satisfaction / 100f).ToString("0") + "%"
-                : "Satisfacción  —";
-            }
-        }
-
-        if (kitchenText != null)
-        {
-            if (editing)
-            {
-                kitchenText.text = "Aforo  " + (seatRegistry != null ? seatRegistry.RegisteredSeatCount : 0);
-                kitchenText.color = BistroBuilderUiTokens.TextPrimary;
-            }
-            else
-            {
-            kitchenText.text = "Cocina  " + KitchenLabel(kitchen != null
-                ? kitchen.LoadState : BistroBuilderKitchenLoadState.Fluid);
-            kitchenText.color = KitchenColor(kitchen != null
-                ? kitchen.LoadState : BistroBuilderKitchenLoadState.Fluid);
-            }
-        }
-
-        if (waitingText != null)
-        {
-            if (editing)
-            {
-                waitingText.text = "Edición  fuera de servicio";
-                waitingText.color = BistroBuilderUiTokens.TextPrimary;
-            }
-            else
-            {
-            int waiting = ResolveWaitingClientCount();
-            waitingText.text = "Espera: " + waiting + " clientes";
-            waitingText.color = waiting > 0 ? BistroBuilderUiTokens.Attention : BistroBuilderUiTokens.TextPrimary;
-            }
-        }
+        RefreshNormalBottomBar(editing, managing);
         RefreshActivityText();
         RefreshContextAndServiceAction();
     }
@@ -1782,14 +1699,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         if (canvas == null) return;
         Transform dock = canvas.transform.Find("BB_368B_TimeControlsDock");
-        RectTransform rect = dock as RectTransform;
-        if (rect == null) return;
-        rect.anchorMin = new Vector2(1f, 0f);
-        rect.anchorMax = new Vector2(1f, 0f);
-        rect.pivot = new Vector2(1f, 0f);
-        rect.anchoredPosition = new Vector2(-16f, 9f);
-        rect.sizeDelta = new Vector2(324f, 46f);
-        rect.SetAsLastSibling();
+        if (dock == null) return;
+        dock.gameObject.SetActive(normalBottomBarRoot == null);
     }
 
     private static string KitchenLabel(BistroBuilderKitchenLoadState state)
