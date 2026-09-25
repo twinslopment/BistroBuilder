@@ -30,6 +30,7 @@ namespace BistroBuilder.Editor.Savic
             try
             {
                 SavicEditorContext.Instance.Layout.EnsureInfrastructure();
+                SavicEditorContext.Instance.Batch.RecoverAfterDomainReload();
 
                 EditorApplication.update -= OnEditorUpdate;
                 EditorApplication.update += OnEditorUpdate;
@@ -74,6 +75,15 @@ namespace BistroBuilder.Editor.Savic
             catch (Exception exception)
             {
                 Debug.LogError("[SAVIC] Intake tick failed safely: " + exception);
+            }
+
+            try
+            {
+                SavicEditorContext.Instance.Batch.TickOne();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[SAVIC] Batch tick failed safely: " + exception);
             }
 
             TryRefreshProjectInventory(now);
