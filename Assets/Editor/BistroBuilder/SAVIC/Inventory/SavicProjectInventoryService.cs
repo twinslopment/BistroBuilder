@@ -61,8 +61,8 @@ namespace BistroBuilder.Editor.Savic
                     catalogItems.Add(item);
             }
 
-            Dictionary<string, string> savicIdByContentId =
-                BuildSavicIdentityMap();
+            Dictionary<string, SavicManifest> savicManifestByContentId =
+                BuildSavicManifestMap();
 
             string[] itemGuids =
                 AssetDatabase.FindAssets(
@@ -113,7 +113,7 @@ namespace BistroBuilder.Editor.Savic
                         assetGuid,
                         itemPath,
                         catalogItems.Contains(item),
-                        savicIdByContentId);
+                        savicManifestByContentId);
 
                 snapshot.items.Add(record);
 
@@ -150,6 +150,11 @@ namespace BistroBuilder.Editor.Savic
                     snapshot,
                     item,
                     record);
+
+                AppendManagedDriftIssues(
+                    snapshot,
+                    record,
+                    savicManifestByContentId);
             }
 
             AppendDuplicateIdIssues(
@@ -211,10 +216,10 @@ namespace BistroBuilder.Editor.Savic
             }
         }
 
-        private Dictionary<string, string> BuildSavicIdentityMap()
+        private Dictionary<string, SavicManifest> BuildSavicManifestMap()
         {
-            Dictionary<string, string> result =
-                new Dictionary<string, string>(
+            Dictionary<string, SavicManifest> result =
+                new Dictionary<string, SavicManifest>(
                     StringComparer.Ordinal);
 
             IReadOnlyList<SavicManifest> all =
@@ -238,7 +243,7 @@ namespace BistroBuilder.Editor.Savic
 
                 result[
                     manifest.canonicalContentId] =
-                        manifest.savicId;
+                        manifest;
             }
 
             return result;
@@ -249,7 +254,7 @@ namespace BistroBuilder.Editor.Savic
             string assetGuid,
             string itemPath,
             bool inMainCatalog,
-            IReadOnlyDictionary<string, string> savicIdByContentId)
+            IReadOnlyDictionary<string, SavicManifest> savicManifestByContentId)
         {
             string itemId =
                 item.ItemId ?? string.Empty;
@@ -280,12 +285,17 @@ namespace BistroBuilder.Editor.Savic
             string savicId =
                 string.Empty;
 
-            savicIdByContentId.TryGetValue(
-                itemId,
-                out savicId);
+            if (savicManifestByContentId.TryGetValue(
+                    itemId,
+                    out SavicManifest owningManifest) &&
+                owningManifest != null)
+            {
+                savicId =
+                    owningManifest.savicId ?? string.Empty;
 
-            if (!string.IsNullOrWhiteSpace(savicId))
-                managed = true;
+                if (!string.IsNullOrWhiteSpace(savicId))
+                    managed = true;
+            }
 
             string adoptionState =
                 managed
@@ -413,6 +423,62 @@ namespace BistroBuilder.Editor.Savic
                     "WARNING",
                     record,
                     "Manifest owns the ContentId but the asset is missing its SAVIC management marker.");
+            }
+        }
+
+        private static void AppendManagedDriftIssues(
+            SavicProjectInventorySnapshot snapshot,
+            SavicProjectInventoryItemRecord record,
+            IReadOnlyDictionary<string, SavicManifest> manifestsByContentId)
+        {
+            if (snapshot == null ||
+                record == null ||
+                !record.managedBySavic ||
+                string.IsNullOrWhiteSpace(record.itemId) ||
+                manifestsByContentId == null ||
+                !manifestsByContentId.TryGetValue(
+                    record.itemId,
+                    out SavicManifest manifest) ||
+                manifest == null ||
+                !SavicLegacyAdoptionService.IsLegacyAdoptionManifest(manifest))
+            {
+                return;
+            }
+
+            SavicArtifactRecord baseline =
+                manifest.artifacts?.Find(
+                    artifact =>
+                        artifact != null &&
+                        string.Equals(
+                            artifact.role,
+                            "catalog.item_definition",
+                            StringComparison.Ordinal));
+
+            if (baseline == null ||
+                string.IsNullOrWhiteSpace(
+                    baseline.inputFingerprint))
+            {
+                AddIssue(
+                    snapshot,
+                    "LEGACY_ADOPTION_BASELINE_MISSING",
+                    "WARNING",
+                    record,
+                    "Legacy-managed asset has no dependency baseline.");
+                return;
+            }
+
+            if (!string.Equals(
+                    baseline.inputFingerprint,
+                    record.dependencyHash,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                AddIssue(
+                    snapshot,
+                    "SAVIC_MANAGED_CONTENT_DRIFT",
+                    "WARNING",
+                    record,
+                    "A legacy asset managed by SAVIC changed after adoption. " +
+                    "Review the current dependencies before re-baselining.");
             }
         }
 
