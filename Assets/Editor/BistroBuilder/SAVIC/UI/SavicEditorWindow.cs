@@ -682,7 +682,39 @@ namespace BistroBuilder.Editor.Savic
             AddSectionTitle(
                 page,
                 "Cola",
-                "Trazabilidad de ingesta. Checkpoint, pausa y cancelación pertenecen al bloque 7.");
+                "Procesamiento serializado, persistente y recuperable entre recargas del Editor.");
+
+            VisualElement batch = CreatePanel();
+            AddGroupTitle(batch, "Batch / Recovery");
+            AddField(
+                batch,
+                "Estado",
+                context.Jobs.IsPaused ? "PAUSADO" : "ACTIVO");
+            AddField(
+                batch,
+                "Pendientes / activos",
+                context.Jobs.PendingProcessCount.ToString());
+
+            VisualElement batchActions = new VisualElement();
+            batchActions.style.flexDirection = FlexDirection.Row;
+            batchActions.style.flexWrap = Wrap.Wrap;
+            batchActions.style.marginTop = 6f;
+
+            batchActions.Add(
+                CreateSecondaryButton(
+                    context.Jobs.IsPaused
+                        ? "Reanudar cola"
+                        : "Pausar cola",
+                    () => RunAction(
+                        context.Jobs.IsPaused
+                            ? "Reanudación de cola"
+                            : "Pausa de cola",
+                        () => context.Jobs.SetPaused(
+                            !context.Jobs.IsPaused),
+                        false)));
+
+            batch.Add(batchActions);
+            page.Add(batch);
 
             VisualElement filters = CreateFilterBar();
             TextField search = CreateSearchField(queueSearch);
@@ -1524,7 +1556,16 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "JobId", row.JobId);
             AddField(detail, "SavicId", row.Job?.manifestSavicId);
             AddField(detail, "Estado", row.State);
+            AddField(detail, "Checkpoint", row.Job?.checkpoint);
             AddField(detail, "Intentos", (row.Job?.attempts ?? 0).ToString());
+            AddField(
+                detail,
+                "Duración última operación",
+                (row.Job?.lastDurationMilliseconds ?? 0) + " ms");
+            AddField(
+                detail,
+                "Cancelación solicitada",
+                row.Job?.cancelRequested == true ? "Sí" : "No");
             AddField(detail, "Actualizado", FormatTimestamp(row.UpdatedUtc));
             AddField(detail, "Hash", row.Job?.sourceHash);
             AddField(detail, "Mensaje", row.Message);
@@ -1541,6 +1582,18 @@ namespace BistroBuilder.Editor.Savic
                     CreateSecondaryButton(
                         "Mostrar fuente archivada",
                         () => RevealPath(archivedPath)));
+            }
+
+            if (IsCancellableJobState(row.State))
+            {
+                detail.Add(
+                    CreateSecondaryButton(
+                        "Cancelar trabajo",
+                        () => RunAction(
+                            "Cancelación de trabajo",
+                            () => context.Jobs.RequestCancel(
+                                row.JobId),
+                            false)));
             }
         }
 
@@ -2067,6 +2120,27 @@ namespace BistroBuilder.Editor.Savic
 
             if (hasActions)
                 parent.Add(actions);
+        }
+
+        private static bool IsCancellableJobState(
+            string state)
+        {
+            return string.Equals(
+                       state,
+                       SavicJobState.Waiting.ToString(),
+                       StringComparison.Ordinal) ||
+                   string.Equals(
+                       state,
+                       SavicJobState.Hashing.ToString(),
+                       StringComparison.Ordinal) ||
+                   string.Equals(
+                       state,
+                       SavicJobState.Ingested.ToString(),
+                       StringComparison.Ordinal) ||
+                   string.Equals(
+                       state,
+                       SavicJobState.Processing.ToString(),
+                       StringComparison.Ordinal);
         }
 
         private void RunAction(
