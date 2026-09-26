@@ -68,22 +68,6 @@ namespace BistroBuilder.Editor.Savic
                     "Archived source is missing: " + archivedPath);
             }
 
-            string archiveHash =
-                SavicHashService.ComputeSha256(archivedPath);
-
-            if (!string.Equals(
-                    archiveHash,
-                    manifest.source.sourceHash,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    string.Empty,
-                    null,
-                    "Archived source failed SHA-256 integrity validation.");
-            }
-
             if (!ValidateContainerPreflight(
                     archivedPath,
                     manifest.source.extension,
@@ -115,6 +99,25 @@ namespace BistroBuilder.Editor.Savic
 
             try
             {
+                if (!changed)
+                {
+                    UnityEngine.Object existingMainObject =
+                        AssetDatabase.LoadMainAssetAtPath(
+                            assetPath);
+
+                    if (existingMainObject is GameObject)
+                    {
+                        mutation.Commit();
+
+                        return new SavicSourceImportResult(
+                            true,
+                            false,
+                            assetPath,
+                            existingMainObject,
+                            "Existing validated Unity source mirror reused without reimport.");
+                    }
+                }
+
                 AssetDatabase.ImportAsset(
                     assetPath,
                     ImportAssetOptions.ForceSynchronousImport |
@@ -311,10 +314,10 @@ namespace BistroBuilder.Editor.Savic
                 if (hadExisting)
                     File.Copy(mirrorAbsolutePath, backupPath, true);
 
-                File.Copy(archivedPath, tempPath, true);
-
                 string tempHash =
-                    SavicHashService.ComputeSha256(tempPath);
+                    CopyFileAndComputeSha256(
+                        archivedPath,
+                        tempPath);
 
                 if (!string.Equals(
                         tempHash,
@@ -322,10 +325,22 @@ namespace BistroBuilder.Editor.Savic
                         StringComparison.OrdinalIgnoreCase))
                 {
                     throw new IOException(
-                        "Staged Unity source mirror failed SHA-256 verification.");
+                        "Archived source failed SHA-256 integrity validation while materializing the Unity mirror.");
                 }
 
-                File.Copy(tempPath, mirrorAbsolutePath, true);
+                if (hadExisting)
+                {
+                    File.Copy(
+                        tempPath,
+                        mirrorAbsolutePath,
+                        true);
+                }
+                else
+                {
+                    File.Move(
+                        tempPath,
+                        mirrorAbsolutePath);
+                }
 
                 return new MirrorMutation(
                     mirrorAbsolutePath,
@@ -347,6 +362,75 @@ namespace BistroBuilder.Editor.Savic
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
             }
+        }
+
+        private static string CopyFileAndComputeSha256(
+            string sourcePath,
+            string destinationPath)
+        {
+            const int bufferSize =
+                1024 * 1024;
+
+            byte[] buffer =
+                new byte[bufferSize];
+
+            using System.Security.Cryptography.SHA256 sha =
+                System.Security.Cryptography.SHA256.Create();
+
+            using FileStream source =
+                new FileStream(
+                    sourcePath,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    bufferSize,
+                    FileOptions.SequentialScan);
+
+            using FileStream destination =
+                new FileStream(
+                    destinationPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize,
+                    FileOptions.SequentialScan);
+
+            int read;
+
+            while ((read =
+                        source.Read(
+                            buffer,
+                            0,
+                            buffer.Length)) > 0)
+            {
+                sha.TransformBlock(
+                    buffer,
+                    0,
+                    read,
+                    null,
+                    0);
+
+                destination.Write(
+                    buffer,
+                    0,
+                    read);
+            }
+
+            sha.TransformFinalBlock(
+                Array.Empty<byte>(),
+                0,
+                0);
+
+            byte[] hash =
+                sha.Hash ??
+                throw new IOException(
+                    "SHA-256 did not produce a mirror hash.");
+
+            return string.Concat(
+                Array.ConvertAll(
+                    hash,
+                    value =>
+                        value.ToString("x2")));
         }
 
         private static void RollbackMirror(
