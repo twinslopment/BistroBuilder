@@ -10,7 +10,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairSemanticPartAnalyzer
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         private const float MinimumTriangleArea = 0.00000001f;
         private const int MaximumSampledTrianglesPerMeshInstance = 250000;
@@ -199,6 +199,16 @@ namespace BistroBuilder.Editor.Savic
                     back,
                     support,
                     arms);
+
+            if (!result.automationReady &&
+                TryBuildGeometryBackedFallback(
+                    model,
+                    classification,
+                    result,
+                    out SavicSemanticPartAnalysisRecord fallback))
+            {
+                return fallback;
+            }
 
             return result;
         }
@@ -460,6 +470,347 @@ namespace BistroBuilder.Editor.Savic
                         instanceKey);
                 }
             }
+        }
+
+        private static bool TryBuildGeometryBackedFallback(
+            SavicModelAnalysisRecord model,
+            SavicClassificationRecord classification,
+            SavicSemanticPartAnalysisRecord primary,
+            out SavicSemanticPartAnalysisRecord fallback)
+        {
+            fallback = null;
+
+            SavicChairGeometryProfileRecord geometry =
+                model?.chairGeometry;
+
+            if (geometry == null ||
+                !geometry.analyzed ||
+                !geometry.usable ||
+                geometry.confidenceScore < 0.82f ||
+                string.Equals(
+                    geometry.backAxis,
+                    "UNKNOWN",
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    geometry.backSide,
+                    "UNKNOWN",
+                    StringComparison.Ordinal) ||
+                classification == null ||
+                !classification.nameBacked ||
+                !classification.explicitTypeToken ||
+                classification.score < 0.74f)
+            {
+                return false;
+            }
+
+            float seatY =
+                Mathf.Clamp(
+                    geometry.seatHeight01,
+                    0.30f,
+                    0.70f);
+
+            float seatThickness =
+                0.075f;
+
+            SavicSemanticPartRecord seat =
+                BuildSyntheticPart(
+                    model,
+                    "chair.seat",
+                    "Seat",
+                    0.24f,
+                    0.5f,
+                    Mathf.Max(
+                        seatThickness * 0.5f,
+                        seatY -
+                        seatThickness * 0.5f),
+                    0.5f,
+                    0.78f,
+                    seatThickness,
+                    0.72f,
+                    Mathf.Clamp01(
+                        Math.Max(
+                            0.72f,
+                            geometry.confidenceScore *
+                            0.96f)),
+                    "Geometry-backed synthetic seat zone derived from detected seat height and projected seat evidence.");
+
+            bool backAxisX =
+                string.Equals(
+                    geometry.backAxis,
+                    "X",
+                    StringComparison.Ordinal);
+
+            bool backPositive =
+                string.Equals(
+                    geometry.backSide,
+                    "POSITIVE",
+                    StringComparison.Ordinal);
+
+            float backCenterAxis =
+                backPositive
+                    ? 0.91f
+                    : 0.09f;
+
+            float backHeight =
+                Mathf.Clamp(
+                    1f -
+                    seatY -
+                    0.06f,
+                    0.20f,
+                    0.62f);
+
+            float backCenterY =
+                Mathf.Clamp01(
+                    seatY +
+                    0.04f +
+                    backHeight *
+                    0.5f);
+
+            SavicSemanticPartRecord back =
+                BuildSyntheticPart(
+                    model,
+                    "chair.back",
+                    "Backrest",
+                    0.26f,
+                    backAxisX
+                        ? backCenterAxis
+                        : 0.5f,
+                    backCenterY,
+                    backAxisX
+                        ? 0.5f
+                        : backCenterAxis,
+                    backAxisX
+                        ? 0.12f
+                        : 0.76f,
+                    backHeight,
+                    backAxisX
+                        ? 0.76f
+                        : 0.12f,
+                    Mathf.Clamp01(
+                        Math.Max(
+                            0.72f,
+                            geometry.confidenceScore *
+                            0.91f)),
+                    "Geometry-backed synthetic backrest zone derived from upper vertical structure and resolved back edge.");
+
+            float supportHeight =
+                Mathf.Clamp(
+                    seatY -
+                    seatThickness *
+                    0.5f,
+                    0.18f,
+                    0.68f);
+
+            SavicSemanticPartRecord support =
+                BuildSyntheticPart(
+                    model,
+                    "chair.support",
+                    "BaseSupport",
+                    0.32f,
+                    0.5f,
+                    supportHeight *
+                    0.5f,
+                    0.5f,
+                    0.62f,
+                    supportHeight,
+                    0.62f,
+                    Mathf.Clamp01(
+                        Math.Max(
+                            0.72f,
+                            geometry.confidenceScore *
+                            0.90f)),
+                    "Geometry-backed synthetic lower support zone derived from detected seat plane and lower support area.");
+
+            fallback =
+                new SavicSemanticPartAnalysisRecord
+                {
+                    analyzed = true,
+                    analyzerVersion =
+                        "chair-" + Version,
+                    automationReady = true,
+                    rawRegionCount =
+                        primary?.rawRegionCount ?? 0,
+                    regionDetailMode =
+                        "GEOMETRY_BACKED_SYNTHETIC",
+                    rawRegionDetailTruncated =
+                        primary?.rawRegionDetailTruncated ?? false,
+                    semanticPartCount = 3,
+                    semanticCoverage = 0.82f,
+                    unresolvedAreaRatio = 0.18f,
+                    supportPattern =
+                        new SavicSupportPatternRecord
+                        {
+                            analyzed = true,
+                            mode = "CENTRAL_OR_MIXED",
+                            confidence = "HIGH",
+                            confidenceScore =
+                                Mathf.Clamp01(
+                                    Math.Max(
+                                        0.72f,
+                                        geometry.confidenceScore *
+                                        0.88f)),
+                            zoneCount = 1,
+                            centerSupported = true,
+                            broadBaseAreaRatio =
+                                Mathf.Clamp01(
+                                    geometry.lowerSupportAreaRatio),
+                            evidence =
+                                "Synthetic conservative support topology derived from strong chair geometry; detailed foot topology was not trusted."
+                        },
+                    evidence =
+                        "Primary chair surface partition was not automation-ready; a conservative geometry-backed semantic fallback was used because chair identity and geometry profile were both high-confidence.",
+                    analyzedUtc =
+                        DateTime.UtcNow.ToString("O")
+                };
+
+            fallback.parts.Add(
+                seat);
+
+            fallback.parts.Add(
+                back);
+
+            fallback.parts.Add(
+                support);
+
+            AddRelation(
+                fallback,
+                support,
+                seat,
+                "SUPPORTS",
+                "Synthetic lower support zone supports the detected seat plane.");
+
+            AddRelation(
+                fallback,
+                back,
+                seat,
+                "ATTACHED_TO",
+                "Synthetic backrest zone is anchored above the detected seat plane.");
+
+            return true;
+        }
+
+        private static SavicSemanticPartRecord BuildSyntheticPart(
+            SavicModelAnalysisRecord model,
+            string partId,
+            string role,
+            float areaFraction,
+            float normalizedCenterX,
+            float normalizedCenterY,
+            float normalizedCenterZ,
+            float normalizedSizeX,
+            float normalizedSizeY,
+            float normalizedSizeZ,
+            float confidence,
+            string evidence)
+        {
+            float width =
+                Math.Max(
+                    0.0001f,
+                    model.widthMeters);
+
+            float height =
+                Math.Max(
+                    0.0001f,
+                    model.heightMeters);
+
+            float depth =
+                Math.Max(
+                    0.0001f,
+                    model.depthMeters);
+
+            float minimumX =
+                model.boundsCenterX -
+                width *
+                0.5f;
+
+            float minimumY =
+                model.boundsCenterY -
+                height *
+                0.5f;
+
+            float minimumZ =
+                model.boundsCenterZ -
+                depth *
+                0.5f;
+
+            return new SavicSemanticPartRecord
+            {
+                partId =
+                    partId,
+                role =
+                    role,
+                confidence =
+                    ConfidenceName(
+                        confidence),
+                confidenceScore =
+                    Mathf.Clamp01(
+                        confidence),
+                syntheticZone =
+                    true,
+                movableCandidate =
+                    false,
+                sourceRegionCount =
+                    0,
+                sourceRegionKeys =
+                    "geometry-profile",
+                triangleCount =
+                    0,
+                areaFraction =
+                    Mathf.Clamp01(
+                        areaFraction),
+                centerX =
+                    minimumX +
+                    normalizedCenterX *
+                    width,
+                centerY =
+                    minimumY +
+                    normalizedCenterY *
+                    height,
+                centerZ =
+                    minimumZ +
+                    normalizedCenterZ *
+                    depth,
+                sizeX =
+                    normalizedSizeX *
+                    width,
+                sizeY =
+                    normalizedSizeY *
+                    height,
+                sizeZ =
+                    normalizedSizeZ *
+                    depth,
+                normalizedCenterX =
+                    Mathf.Clamp01(
+                        normalizedCenterX),
+                normalizedCenterY =
+                    Mathf.Clamp01(
+                        normalizedCenterY),
+                normalizedCenterZ =
+                    Mathf.Clamp01(
+                        normalizedCenterZ),
+                normalizedSizeX =
+                    Mathf.Clamp01(
+                        normalizedSizeX),
+                normalizedSizeY =
+                    Mathf.Clamp01(
+                        normalizedSizeY),
+                normalizedSizeZ =
+                    Mathf.Clamp01(
+                        normalizedSizeZ),
+                meanAbsoluteNormalX =
+                    0f,
+                meanAbsoluteNormalY =
+                    string.Equals(
+                        role,
+                        "Seat",
+                        StringComparison.Ordinal)
+                        ? 1f
+                        : 0f,
+                meanAbsoluteNormalZ =
+                    0f,
+                evidence =
+                    evidence ?? string.Empty
+            };
         }
 
         private static float BuildSeatConfidence(
