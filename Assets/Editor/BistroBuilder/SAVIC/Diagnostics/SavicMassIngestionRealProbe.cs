@@ -141,6 +141,46 @@ namespace BistroBuilder.Editor.Savic
                     currentLayout,
                     WineCoolerPath);
 
+                SavicEquipmentIntegrationDecision coolerPolicy =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        "wine_cooler_cabinet.glb",
+                        "KitchenEquipment");
+
+                Require(
+                    coolerPolicy.IsPassive &&
+                    string.Equals(
+                        coolerPolicy.RequiredAreaCapabilityId,
+                        SavicEquipmentIntegrationPolicy
+                            .FoodProductionCapabilityId,
+                        StringComparison.Ordinal),
+                    "Passive refrigeration equipment did not map to the canonical food_production area contract.");
+
+                SavicEquipmentIntegrationDecision ovenPolicy =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        "commercial_oven.fbx",
+                        "KitchenEquipment");
+
+                Require(
+                    ovenPolicy.RequiresGameplayAdapter &&
+                    string.Equals(
+                        ovenPolicy.ReasonCode,
+                        "FUNCTIONAL_ADAPTER_REQUIRED",
+                        StringComparison.Ordinal),
+                    "Interactive kitchen equipment no longer requires an approved gameplay adapter.");
+
+                SavicEquipmentIntegrationDecision passPolicy =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        "service_pass.fbx",
+                        "ServiceEquipment");
+
+                Require(
+                    passPolicy.RequiresGameplayAdapter &&
+                    string.Equals(
+                        passPolicy.ReasonCode,
+                        "FUNCTIONAL_ADAPTER_REQUIRED",
+                        StringComparison.Ordinal),
+                    "Interactive service equipment no longer requires an approved gameplay adapter.");
+
                 ProbeInput[] inputs =
                 {
                     ProbeInput.BrokenGlb(
@@ -718,17 +758,10 @@ namespace BistroBuilder.Editor.Savic
                     wineCoolerJob != null &&
                     string.Equals(
                         wineCoolerJob.state,
-                        SavicJobState.NeedsReview.ToString(),
-                        StringComparison.Ordinal) &&
-                    string.Equals(
-                        wineCoolerJob.reasonCode,
-                        "FUNCTIONAL_ADAPTER_REQUIRED",
-                        StringComparison.Ordinal) &&
-                    string.Equals(
-                        wineCoolerJob.primaryStage,
-                        "PREIMPORT_ROUTE",
+                        SavicJobState.Done.ToString(),
                         StringComparison.Ordinal),
-                    "Functional equipment was not routed to a precise pre-import review state.");
+                    "Passive wine cooler did not publish. " +
+                    BuildJobStateSummary(finalJobs));
 
                 Require(
                     wineCoolerJob.stageTimings != null &&
@@ -737,23 +770,16 @@ namespace BistroBuilder.Editor.Savic
                             stage != null &&
                             string.Equals(
                                 stage.stageId,
-                                "PREIMPORT_ROUTE",
+                                "IMPORT_SOURCE",
                                 StringComparison.Ordinal)) &&
-                    !wineCoolerJob.stageTimings.Any(
+                    wineCoolerJob.stageTimings.Any(
                         stage =>
                             stage != null &&
                             string.Equals(
                                 stage.stageId,
-                                "IMPORT_SOURCE",
+                                "FAMILY_PUBLICATION",
                                 StringComparison.Ordinal)),
-                    "Wine cooler still entered Unity import despite an unsupported functional-adapter route.");
-
-                Require(
-                    wineCoolerJob.lastDurationMilliseconds <
-                    SavicBatchProcessor.SlowJobWarningMilliseconds,
-                    "Wine cooler pre-import route is still slow: " +
-                    wineCoolerJob.lastDurationMilliseconds +
-                    " ms.");
+                    "Passive wine cooler did not pass through the normal visual publication pipeline.");
 
                 Require(
                     manifests.TryGetBySavicId(
@@ -765,6 +791,84 @@ namespace BistroBuilder.Editor.Savic
                         "KitchenEquipment",
                         StringComparison.Ordinal),
                     "Wine cooler was not recognized as kitchen equipment.");
+
+                Require(
+                    wineCoolerManifest.genericPlaceable != null &&
+                    wineCoolerManifest.genericPlaceable.planned &&
+                    !wineCoolerManifest.genericPlaceable
+                        .requiresFunctionalAdapter &&
+                    string.Equals(
+                        wineCoolerManifest.genericPlaceable
+                            .integrationMode,
+                        SavicEquipmentIntegrationPolicy
+                            .PassiveAreaPlaceableMode,
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        wineCoolerManifest.genericPlaceable
+                            .requiredAreaCapabilityId,
+                        SavicEquipmentIntegrationPolicy
+                            .FoodProductionCapabilityId,
+                        StringComparison.Ordinal),
+                    "Wine cooler authoring plan does not use the canonical passive equipment integration contract.");
+
+                Require(
+                    wineCoolerManifest.genericPlaceableReadiness != null &&
+                    wineCoolerManifest.genericPlaceableReadiness.validated &&
+                    wineCoolerManifest.genericPlaceableReadiness
+                        .areaCapabilityReady &&
+                    !wineCoolerManifest.genericPlaceableReadiness
+                        .spatialContractRequired &&
+                    string.Equals(
+                        wineCoolerManifest.genericPlaceableReadiness
+                            .requiredAreaCapabilityId,
+                        SavicEquipmentIntegrationPolicy
+                            .FoodProductionCapabilityId,
+                        StringComparison.Ordinal),
+                    "Wine cooler readiness did not validate the canonical food_production area capability.");
+
+                GameObject wineCoolerPrefab =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        wineCoolerManifest.genericPlaceable
+                            .prefabAssetPath);
+
+                Require(
+                    wineCoolerPrefab != null,
+                    "Published wine cooler prefab could not be resolved.");
+
+                RestaurantAreaMember wineCoolerAreaMember =
+                    wineCoolerPrefab.GetComponent
+                        <RestaurantAreaMember>();
+
+                Require(
+                    wineCoolerAreaMember != null &&
+                    wineCoolerAreaMember.RequiredCapabilityCount == 1 &&
+                    wineCoolerAreaMember.RequiredCapabilities.Any(
+                        capability =>
+                            capability != null &&
+                            string.Equals(
+                                capability.CapabilityId,
+                                SavicEquipmentIntegrationPolicy
+                                    .FoodProductionCapabilityId,
+                                StringComparison.Ordinal)),
+                    "Published wine cooler does not require exactly the canonical food_production capability.");
+
+                Require(
+                    wineCoolerPrefab.GetComponent<KitchenSystem>() == null &&
+                    wineCoolerPrefab.GetComponent
+                        <BistroBuilderKitchenSpatialAdapter>() == null,
+                    "Passive wine cooler incorrectly received invented kitchen gameplay or BBSIS authority.");
+
+                RestaurantPlaceableObject wineCoolerPlaceable =
+                    wineCoolerPrefab.GetComponent
+                        <RestaurantPlaceableObject>();
+
+                Require(
+                    wineCoolerPlaceable != null &&
+                    wineCoolerPlaceable.ItemDefinition != null &&
+                    wineCoolerPlaceable.ItemDefinition.Category ==
+                        RestaurantPlaceableItemCategory
+                            .KitchenEquipment,
+                    "Published wine cooler is not registered as canonical KitchenEquipment.");
 
                 Require(
                     manifests.TryGetBySavicId(
@@ -859,8 +963,10 @@ namespace BistroBuilder.Editor.Savic
                     " / publish " +
                     (mirrorPublishStage?.durationMilliseconds ?? -1) +
                     " ms\n" +
-                    "Functional equipment safe review: PASS\n" +
-                    "Functional equipment pre-import routing: PASS\n" +
+                    "Equipment integration policy contracts: PASS\n" +
+                    "Passive kitchen equipment publication: PASS\n" +
+                    "Food-production area capability: PASS\n" +
+                    "No invented appliance gameplay: PASS\n" +
                     "Wine cooler batch duration: " +
                     wineCoolerJob.lastDurationMilliseconds +
                     " ms\n" +
