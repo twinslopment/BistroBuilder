@@ -1523,7 +1523,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE D / OBSERVABILIDAD OPERATIVA] El esquema de queue pasa a V3. Los registros históricos siguen siendo legibles; cuando un outcome antiguo o excepcional carece de traza, SAVIC asigna un diagnóstico seguro de fallback en vez de dejar el job sin explicación.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE D] `Run Mass Ingestion Real Probe` se ha ampliado para exigir reason codes, etapa principal, timings reales de import/análisis/publicación y coherencia de las métricas agregadas sobre el mismo lote real. No declarar cerrada esta fase hasta obtener PASS con estas comprobaciones activas.
+[V1 VALIDADO — FASE D / OBSERVABILIDAD OPERATIVA] `Run Mass Ingestion Real Probe` PASS con reason codes, etapa principal, timings por etapa y analytics de cola validados sobre lote real. Resultado: P95 de job 1.094 ms, motivo recurrente `UNSUPPORTED_PUBLICATION_FAMILY` (2), 2 `DONE`, 2 `NEEDS_REVIEW`, 1 fallo seguro, 5 ticks y 2.466 ms de drenado total.
 
 
 ### Bloque 8 — Decoración y equipamiento
