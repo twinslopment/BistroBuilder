@@ -9,7 +9,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairGeometryAnalyzer
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
 
         private const int VerticalBinCount = 24;
         private const int MaximumSampledTrianglesPerMeshInstance = 200000;
@@ -305,6 +305,15 @@ namespace BistroBuilder.Editor.Savic
             private readonly double[] upwardHeightByBin =
                 new double[VerticalBinCount];
 
+            private readonly double[] horizontalAreaByBin =
+                new double[VerticalBinCount];
+
+            private readonly double[] horizontalProjectedByBin =
+                new double[VerticalBinCount];
+
+            private readonly double[] horizontalHeightByBin =
+                new double[VerticalBinCount];
+
             private readonly double[] verticalAreaByBin =
                 new double[VerticalBinCount];
 
@@ -425,6 +434,25 @@ namespace BistroBuilder.Editor.Savic
                 totalAreaByBin[bin] +=
                     weightedArea;
 
+                float absoluteNormalY =
+                    Mathf.Abs(
+                        normal.y);
+
+                if (absoluteNormalY >=
+                    SeatUpwardNormalThreshold)
+                {
+                    horizontalAreaByBin[bin] +=
+                        weightedArea;
+
+                    horizontalProjectedByBin[bin] +=
+                        weightedArea *
+                        absoluteNormalY;
+
+                    horizontalHeightByBin[bin] +=
+                        weightedArea *
+                        height01;
+                }
+
                 if (normal.y >=
                     SeatUpwardNormalThreshold)
                 {
@@ -440,7 +468,7 @@ namespace BistroBuilder.Editor.Savic
                         height01;
                 }
 
-                if (Mathf.Abs(normal.y) <=
+                if (absoluteNormalY <=
                     VerticalNormalThreshold)
                 {
                     float x01 =
@@ -525,7 +553,7 @@ namespace BistroBuilder.Editor.Savic
                 {
                     double candidate =
                         SumNeighborhood(
-                            upwardProjectedByBin,
+                            horizontalProjectedByBin,
                             bin,
                             1);
 
@@ -558,9 +586,15 @@ namespace BistroBuilder.Editor.Savic
                         maximumSamplingStride =
                             maximumSamplingStride,
                         evidence =
-                            "No upward-facing seat candidate was found in the usable chair height band."
+                            "No sufficiently horizontal seat candidate was found in the usable chair height band."
                     };
                 }
+
+                double seatSurfaceArea =
+                    SumNeighborhood(
+                        horizontalAreaByBin,
+                        seatBin,
+                        1);
 
                 double seatUpwardArea =
                     SumNeighborhood(
@@ -570,15 +604,15 @@ namespace BistroBuilder.Editor.Savic
 
                 double seatHeightWeighted =
                     SumNeighborhood(
-                        upwardHeightByBin,
+                        horizontalHeightByBin,
                         seatBin,
                         1);
 
                 float seatHeight01 =
-                    seatUpwardArea > 0d
+                    seatSurfaceArea > 0d
                         ? (float)Math.Clamp(
                             seatHeightWeighted /
-                            seatUpwardArea,
+                            seatSurfaceArea,
                             0d,
                             1d)
                         : ((float)seatBin + 0.5f) /
@@ -594,6 +628,11 @@ namespace BistroBuilder.Editor.Savic
                 float seatUpwardAreaRatio =
                     Ratio(
                         seatUpwardArea,
+                        totalArea);
+
+                float seatSurfaceAreaRatio =
+                    Ratio(
+                        seatSurfaceArea,
                         totalArea);
 
                 float upperThreshold =
@@ -734,28 +773,49 @@ namespace BistroBuilder.Editor.Savic
                         lowerSupportArea,
                         totalArea);
 
+                bool seatResolved =
+                    seatHeight01 >= 0.32f &&
+                    seatHeight01 <= 0.68f &&
+                    seatProjectedCoverage >= 0.12f &&
+                    seatSurfaceAreaRatio >= 0.025f;
+
+                bool orientationResolved =
+                    upperVerticalAreaRatio >= 0.08f &&
+                    upperVerticalArea > 0d &&
+                    backEdgeBias >= 0.05f;
+
+                bool supportResolved =
+                    lowerSupportAreaRatio >= 0.12f;
+
                 float confidence =
                     BuildConfidence(
                         seatHeight01,
                         seatProjectedCoverage,
-                        seatUpwardAreaRatio,
+                        seatSurfaceAreaRatio,
                         upperVerticalAreaRatio,
                         backEdgeBias,
                         lowerSupportAreaRatio);
 
                 bool usable =
-                    seatHeight01 >= 0.32f &&
-                    seatHeight01 <= 0.68f &&
-                    seatProjectedCoverage >= 0.12f &&
-                    seatUpwardAreaRatio >= 0.025f &&
-                    upperVerticalAreaRatio >= 0.08f &&
-                    lowerSupportAreaRatio >= 0.12f;
+                    seatResolved &&
+                    orientationResolved &&
+                    supportResolved;
 
                 return new SavicChairGeometryProfileRecord
                 {
                     analyzed = true,
                     analyzerVersion = Version,
                     usable = usable,
+                    seatResolved =
+                        seatResolved,
+                    orientationResolved =
+                        orientationResolved,
+                    supportResolved =
+                        supportResolved,
+                    seatDetectionMode =
+                        seatUpwardArea > 0d
+                            ? "WINDING_INVARIANT_HORIZONTAL_WITH_UPWARD_SUPPORT"
+                            : "WINDING_INVARIANT_HORIZONTAL",
                     sourceTriangleCount =
                         sourceTriangleCount,
                     sampledTriangleCount =
@@ -773,6 +833,8 @@ namespace BistroBuilder.Editor.Savic
                         height,
                     seatUpwardAreaRatio =
                         seatUpwardAreaRatio,
+                    seatSurfaceAreaRatio =
+                        seatSurfaceAreaRatio,
                     seatProjectedCoverage =
                         seatProjectedCoverage,
                     upperVerticalAreaRatio =
@@ -807,6 +869,7 @@ namespace BistroBuilder.Editor.Savic
                         BuildEvidence(
                             seatHeight01,
                             seatProjectedCoverage,
+                            seatSurfaceAreaRatio,
                             seatUpwardAreaRatio,
                             upperVerticalAreaRatio,
                             backAxis,
@@ -916,7 +979,8 @@ namespace BistroBuilder.Editor.Savic
             private static string BuildEvidence(
                 float seatHeight01,
                 float seatCoverage,
-                float seatAreaRatio,
+                float seatSurfaceAreaRatio,
+                float seatUpwardAreaRatio,
                 float upperVerticalAreaRatio,
                 string backAxis,
                 string backSide,
@@ -933,8 +997,12 @@ namespace BistroBuilder.Editor.Savic
                     seatCoverage.ToString(
                         "0.###",
                         CultureInfo.InvariantCulture) +
-                    "; seat upward area " +
-                    seatAreaRatio.ToString(
+                    "; seat horizontal surface area " +
+                    seatSurfaceAreaRatio.ToString(
+                        "0.###",
+                        CultureInfo.InvariantCulture) +
+                    "; seat upward-winding area " +
+                    seatUpwardAreaRatio.ToString(
                         "0.###",
                         CultureInfo.InvariantCulture) +
                     "; upper vertical area " +
