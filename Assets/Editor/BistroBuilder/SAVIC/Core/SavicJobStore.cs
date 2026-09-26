@@ -433,9 +433,23 @@ namespace BistroBuilder.Editor.Savic
                 if (diagnostics != null)
                 {
                     job.reasonCode =
-                        diagnostics.reasonCode ?? string.Empty;
+                        string.IsNullOrWhiteSpace(
+                            diagnostics.reasonCode)
+                            ? outcome.Succeeded
+                                ? "PUBLISHED"
+                                : string.IsNullOrWhiteSpace(
+                                      outcome.Status)
+                                    ? "UNCLASSIFIED_OUTCOME"
+                                    : outcome.Status
+                                          .Trim()
+                                          .ToUpperInvariant()
+                            : diagnostics.reasonCode;
+
                     job.primaryStage =
-                        diagnostics.primaryStage ?? string.Empty;
+                        string.IsNullOrWhiteSpace(
+                            diagnostics.primaryStage)
+                            ? "BATCH"
+                            : diagnostics.primaryStage;
                     job.stageTimings =
                         diagnostics.stages == null
                             ? new List<SavicProcessingStageRecord>()
