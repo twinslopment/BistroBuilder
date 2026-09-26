@@ -1543,7 +1543,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE F] El wine cooler de prueba (GLB de ~183 MB) ya no debe crear SourceMirror ni entrar en GLTFast durante el batch mientras falte su adapter funcional. La prueba exige además que su duración quede por debajo del umbral de slow-job de 2.000 ms; si no, la optimización no se considera validada.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE F] Ejecutar `Run Mass Ingestion Real Probe`. Debe aparecer `Functional equipment pre-import routing: PASS`, no debe emitirse warning de slow operation para el wine cooler y el log debe mostrar su nueva duración.
+[V1 VALIDADO — FASE F / PRE-IMPORT ROUTING] `Run Mass Ingestion Real Probe` PASS. El wine cooler de ~183 MB se resolvió por `PREIMPORT_ROUTE` en 11 ms, sin warning de slow operation y sin entrar en importación/análisis 3D pesado. P95 del lote: 2.161 ms; el cuello de botella pasa ahora al espejo de suelo, que tarda 2.161 ms. Drenado total: 4.656 ms para 7 jobs 3D.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
