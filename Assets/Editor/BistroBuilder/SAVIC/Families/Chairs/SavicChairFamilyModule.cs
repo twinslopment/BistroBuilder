@@ -41,24 +41,19 @@ namespace BistroBuilder.Editor.Savic
             SavicSemanticPartAnalysisRecord semantic =
                 manifest.model3D?.semanticParts;
 
-            bool semanticReady =
-                semantic != null &&
-                semantic.analyzed &&
-                semantic.automationReady;
+            if (semantic == null ||
+                !semantic.automationReady)
+            {
+                manifest.status =
+                    "NEEDS_REVIEW";
 
-            SavicManifestMutations.UpsertValidation(
-                manifest,
-                "Analysis.ChairSemantic",
-                semanticReady
-                    ? "PASS"
-                    : "REVIEW",
-                semanticReady
-                    ? "INFO"
-                    : "WARNING",
-                semanticReady
-                    ? "Detailed chair semantic parts are automation-ready."
-                    : "Detailed chair semantic parts are not automation-ready; publication may continue using geometry-backed functional authoring and colliders.",
-                SavicChairSemanticPartAnalyzer.Version);
+                manifests.Save(
+                    manifest);
+
+                return SavicModelFamilyProcessingOutcome.Failure(
+                    "Chair classification passed, but semantic part structure requires review.",
+                    "CHAIR_SEMANTIC_REVIEW");
+            }
 
             if (!SavicChairAuthoringPlanner.TryPlan(
                     manifest,
