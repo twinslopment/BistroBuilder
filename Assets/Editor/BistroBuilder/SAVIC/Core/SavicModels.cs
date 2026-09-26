@@ -466,6 +466,8 @@ namespace BistroBuilder.Editor.Savic
         public float minimumClearanceMeters;
         public int suggestedPurchasePriceEuro;
         public bool requiresFunctionalAdapter;
+        public string integrationMode = "NONE";
+        public string requiredAreaCapabilityId = string.Empty;
         public string prefabAssetPath = string.Empty;
         public string editableDefinitionAssetPath = string.Empty;
         public string itemDefinitionAssetPath = string.Empty;
@@ -485,6 +487,9 @@ namespace BistroBuilder.Editor.Savic
         public bool persistenceReady;
         public bool navigationReady;
         public bool spatialContractRequired;
+        public bool areaCapabilityReady;
+        public string requiredAreaCapabilityId = string.Empty;
+        public string integrationMode = "NONE";
         public string prefabAssetPath = string.Empty;
         public string itemDefinitionAssetPath = string.Empty;
         public string evidence = string.Empty;
