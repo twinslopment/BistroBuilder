@@ -339,22 +339,39 @@ namespace BistroBuilder.Editor.Savic
                          StringComparison.Ordinal)),
                     "Malformed GLB did not terminate safely as an isolated failure/review.");
 
+                HashSet<string> realModelNames =
+                    new HashSet<string>(
+                        inputs
+                            .Where(
+                                input =>
+                                    input.Kind ==
+                                    ProbeInputKind.RealModel)
+                            .Select(
+                                input =>
+                                    input.IncomingFileName),
+                        StringComparer.Ordinal);
+
                 SavicJobRecord knownGoodJob =
-                    finalJobs.FirstOrDefault(
-                        job =>
-                            job != null &&
-                            string.Equals(
-                                job.originalFileName,
-                                Prefix + "02_chair_master_002.fbx",
-                                StringComparison.Ordinal));
+                    finalJobs
+                        .Where(
+                            job =>
+                                job != null &&
+                                realModelNames.Contains(
+                                    job.originalFileName) &&
+                                string.Equals(
+                                    job.state,
+                                    SavicJobState.Done.ToString(),
+                                    StringComparison.Ordinal))
+                        .OrderBy(
+                            job =>
+                                job.createdUtc,
+                            StringComparer.Ordinal)
+                        .FirstOrDefault();
 
                 Require(
-                    knownGoodJob != null &&
-                    string.Equals(
-                        knownGoodJob.state,
-                        SavicJobState.Done.ToString(),
-                        StringComparison.Ordinal),
-                    "Known-good chair after the malformed source did not complete.");
+                    knownGoodJob != null,
+                    "No valid real model completed after the malformed source. " +
+                    BuildJobStateSummary(finalJobs));
 
                 List<SavicJobRecord> eligibleJobs =
                     finalJobs
@@ -764,15 +781,26 @@ namespace BistroBuilder.Editor.Savic
                 return;
             }
 
+            string absolutePath =
+                ToAbsoluteProjectPath(
+                    assetPath);
+
             if (AssetDatabase.LoadMainAssetAtPath(
                     assetPath) != null ||
                 File.Exists(
-                    ToAbsoluteProjectPath(
-                        assetPath)))
+                    absolutePath))
             {
                 AssetDatabase.DeleteAsset(
                     assetPath);
             }
+
+            // AssetDatabase may have already lost the failed main object.
+            // Remove orphaned diagnostic metadata explicitly as a final guard.
+            DeleteIfExists(
+                absolutePath);
+
+            DeleteIfExists(
+                absolutePath + ".meta");
         }
 
         private static string ToAbsoluteProjectPath(
@@ -817,6 +845,35 @@ namespace BistroBuilder.Editor.Savic
                     "[SAVIC] Mass probe file cleanup warning: " +
                     exception.Message);
             }
+        }
+
+        private static string BuildJobStateSummary(
+            IReadOnlyList<SavicJobRecord> jobs)
+        {
+            if (jobs == null)
+                return "No job state available.";
+
+            return string.Join(
+                "; ",
+                jobs
+                    .Where(
+                        job =>
+                            job != null &&
+                            (job.originalFileName ?? string.Empty)
+                                .StartsWith(
+                                    Prefix,
+                                    StringComparison.Ordinal))
+                    .Select(
+                        job =>
+                            (job.originalFileName ?? "<unnamed>") +
+                            "=" +
+                            (job.state ?? "<null>") +
+                            (string.IsNullOrWhiteSpace(
+                                 job.message)
+                                ? string.Empty
+                                : " (" +
+                                  job.message +
+                                  ")")));
         }
 
         private static void Require(
