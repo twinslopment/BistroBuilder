@@ -73,6 +73,69 @@ namespace BistroBuilder.Editor.Savic
                 },
                 StringComparer.OrdinalIgnoreCase);
 
+        internal static bool IsHighConfidenceStaticGenericCandidate(
+            string sourceFileName)
+        {
+            HashSet<string> tokens =
+                Tokenize(
+                    Path.GetFileNameWithoutExtension(
+                        sourceFileName ??
+                        string.Empty));
+
+            if (tokens.Count == 0 ||
+                ContainsAny(
+                    tokens,
+                    new[]
+                    {
+                        "chair", "chairs", "silla", "sillas",
+                        "stool", "stools", "taburete", "taburetes",
+                        "bench", "benches", "banco", "bancos",
+                        "table", "tables", "mesa", "mesas"
+                    }) ||
+                ContainsAny(
+                    tokens,
+                    FunctionalEquipment) ||
+                ContainsAny(
+                    tokens,
+                    WallEvidence) ||
+                ContainsAny(
+                    tokens,
+                    CeilingEvidence) ||
+                ContainsAny(
+                    tokens,
+                    SurfaceEvidence))
+            {
+                return false;
+            }
+
+            bool floorDecoration =
+                (tokens.Contains("mirror") ||
+                 tokens.Contains("plant") ||
+                 tokens.Contains("planter") ||
+                 tokens.Contains("pedestal") ||
+                 tokens.Contains("sculpture") ||
+                 tokens.Contains("statue") ||
+                 tokens.Contains("ornament") ||
+                 tokens.Contains("ornamental") ||
+                 tokens.Contains("decor") ||
+                 tokens.Contains("decoration") ||
+                 tokens.Contains("decorative") ||
+                 tokens.Contains("deco") ||
+                 (tokens.Contains("framed") &&
+                  tokens.Contains("floor"))) &&
+                ContainsAny(
+                    tokens,
+                    FloorEvidence);
+
+            bool passiveEquipment =
+                ContainsAny(
+                    tokens,
+                    PassiveEquipment);
+
+            return floorDecoration ||
+                   passiveEquipment;
+        }
+
         internal static bool TryResolvePreImportReview(
             string sourceFileName,
             out string type,
