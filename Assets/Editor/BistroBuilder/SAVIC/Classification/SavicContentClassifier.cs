@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "4.0.0";
+        internal const string Version = "4.1.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -618,18 +618,18 @@ namespace BistroBuilder.Editor.Savic
             {
                 score += 0.08f;
                 evidence.Add(
-                    "bounds are plausible for furniture");
+                    "absolute bounds are plausible for furniture");
             }
 
-            bool plausibleChairProportions =
-                HasPlausibleChairProportions(
+            bool plausibleChairShapeRatios =
+                HasPlausibleChairShapeRatios(
                     analysis);
 
-            if (plausibleChairProportions)
+            if (plausibleChairShapeRatios)
             {
                 score += 0.16f;
                 evidence.Add(
-                    "proportions are compatible with a dining chair");
+                    "scale-independent proportions are compatible with a chair");
             }
 
             SavicChairGeometryProfileRecord chairGeometry =
@@ -695,13 +695,12 @@ namespace BistroBuilder.Editor.Savic
 
             bool nameBackedChair =
                 explicitChairToken &&
-                plausibleChairProportions &&
-                score >= 0.62f;
+                plausibleChairShapeRatios &&
+                score >= 0.56f;
 
             bool geometryBackedChair =
                 strongChairGeometry &&
-                plausibleFurnitureDimensions &&
-                plausibleChairProportions &&
+                plausibleChairShapeRatios &&
                 score >= 0.74f;
 
             if (conflictingToken ||
@@ -750,7 +749,7 @@ namespace BistroBuilder.Editor.Savic
             return true;
         }
 
-        private static bool HasPlausibleChairProportions(
+        private static bool HasPlausibleChairShapeRatios(
             SavicModelAnalysisRecord analysis)
         {
             if (analysis == null)
@@ -790,18 +789,15 @@ namespace BistroBuilder.Editor.Savic
                         width,
                         depth));
 
+            // Classification answers "what is this?", not "is it already
+            // authored at production scale?". Absolute scale belongs to the
+            // authoring planner and quality gate.
             return
-                height >= 0.55f &&
-                height <= 1.35f &&
-                width >= 0.28f &&
-                width <= 1.05f &&
-                depth >= 0.28f &&
-                depth <= 1.05f &&
-                widthToHeight >= 0.28f &&
-                widthToHeight <= 0.95f &&
-                depthToHeight >= 0.28f &&
-                depthToHeight <= 1.00f &&
-                horizontalAspect <= 1.90f;
+                widthToHeight >= 0.22f &&
+                widthToHeight <= 1.15f &&
+                depthToHeight >= 0.22f &&
+                depthToHeight <= 1.20f &&
+                horizontalAspect <= 2.20f;
         }
 
         private static bool HasPlausibleGenericPlaceableDimensions(
