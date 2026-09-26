@@ -10,7 +10,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairSemanticPartAnalyzer
     {
-        internal const string Version = "1.1.0";
+        internal const string Version = "1.2.0";
 
         private const float MinimumTriangleArea = 0.00000001f;
         private const int MaximumSampledTrianglesPerMeshInstance = 250000;
@@ -486,7 +486,11 @@ namespace BistroBuilder.Editor.Savic
             if (geometry == null ||
                 !geometry.analyzed ||
                 !geometry.usable ||
-                geometry.confidenceScore < 0.82f ||
+                geometry.confidenceScore < 0.58f ||
+                geometry.seatProjectedCoverage < 0.12f ||
+                geometry.seatUpwardAreaRatio < 0.025f ||
+                geometry.upperVerticalAreaRatio < 0.08f ||
+                geometry.lowerSupportAreaRatio < 0.12f ||
                 string.Equals(
                     geometry.backAxis,
                     "UNKNOWN",
@@ -498,7 +502,10 @@ namespace BistroBuilder.Editor.Savic
                 classification == null ||
                 !classification.nameBacked ||
                 !classification.explicitTypeToken ||
-                classification.score < 0.74f)
+                !string.Equals(
+                    classification.type,
+                    "Chair",
+                    StringComparison.Ordinal))
             {
                 return false;
             }
@@ -658,7 +665,7 @@ namespace BistroBuilder.Editor.Savic
                                 "Synthetic conservative support topology derived from strong chair geometry; detailed foot topology was not trusted."
                         },
                     evidence =
-                        "Primary chair surface partition was not automation-ready; a conservative geometry-backed semantic fallback was used because chair identity and geometry profile were both high-confidence.",
+                        "Primary chair surface partition was not automation-ready; a conservative geometry-backed semantic fallback was used because explicit chair identity and the geometry hard-gates independently confirmed seat, upper back structure and lower support."
                     analyzedUtc =
                         DateTime.UtcNow.ToString("O")
                 };
