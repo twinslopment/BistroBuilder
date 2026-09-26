@@ -172,8 +172,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         int id = component.GetInstanceID();
         if (!force && styledIds.Contains(id)) return false;
         styledIds.Add(id);
+        if (component.GetComponentInParent<BistroBuilderTopBarSurface>(true) != null) return false;
         if (component is Selectable selectable) BistroBuilderInteractionSurface.Attach(selectable);
-        if (component.GetComponentInParent<BistroBuilderTopBarSurface>() != null) return false;
         return true;
     }
 

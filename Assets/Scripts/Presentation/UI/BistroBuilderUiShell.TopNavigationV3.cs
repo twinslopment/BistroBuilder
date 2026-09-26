@@ -1,234 +1,122 @@
 using System.Collections.Generic;
-using BistroBuilder.UI.Iconography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public sealed partial class BistroBuilderUiShell
 {
-    private const string ApprovedTopBarResource =
-        "BistroBuilder/UI/TopBar/BistroBuilder_NormalTopBar_v3";
-
-    private readonly Dictionary<string, BistroBuilderApprovedTopBarHotspot>
-        approvedTopBarHotspots = new Dictionary<string, BistroBuilderApprovedTopBarHotspot>();
-
+    private readonly Dictionary<string,BistroBuilderApprovedTopBarHotspot> approvedTopBarHotspots = new();
     private BistroBuilderApprovedTopBarHotspot approvedOptionsHotspot;
-    private Sprite approvedTopBarSprite;
-
-    private static readonly float[] ApprovedHotspotLeft =
-    {
-        0.2729554f, 0.3411942f, 0.4134471f, 0.4872052f, 0.5604616f,
-        0.6342197f, 0.7054692f, 0.7787255f, 0.8494731f
-    };
-
-    private static readonly float[] ApprovedHotspotWidth =
-    {
-        0.0682388f, 0.0722529f, 0.0737581f, 0.0732564f, 0.0737581f,
-        0.0712493f, 0.0732564f, 0.0707477f, 0.0717511f
-    };
+    private BistroBuilderTopBarArtCatalog approvedArt;
+    private Vector2 approvedLayoutSize;
+    private float approvedLayoutScale;
+    private readonly List<RectTransform> approvedCells = new();
+    private readonly List<RectTransform> approvedIconHolders = new();
+    private readonly List<TMP_Text> approvedLabels = new();
+    private BistroBuilderTopBarArtwork approvedLogo;
 
     private void EnsureApprovedTopBarV3Content()
     {
-        if (topNavigation == null) return;        var oldSurface = topNavigation.GetComponent<BistroBuilderTopBarSurface>();
-        if (oldSurface == null) oldSurface = topNavigation.gameObject.AddComponent<BistroBuilderTopBarSurface>();
-        oldSurface.enabled = true;
-
-        Image rootImage = topNavigation.GetComponent<Image>();
-        if (rootImage != null) rootImage.color = Color.clear;
-
-        AspectRatioFitter fitter = topNavigation.GetComponent<AspectRatioFitter>();
-        if (fitter == null) fitter = topNavigation.gameObject.AddComponent<AspectRatioFitter>();
-        fitter.aspectMode = AspectRatioFitter.AspectMode.WidthControlsHeight;
-        fitter.aspectRatio = 1993f / 287f;
-
-        Transform existing = topNavigation.Find("ApprovedTopBarV3Background");
-        Image background = existing != null ? existing.GetComponent<Image>() : null;
-        if (background == null)
-        {
-            GameObject go = NewUi("ApprovedTopBarV3Background", topNavigation);
-            background = go.AddComponent<Image>();
-            background.raycastTarget = false;
-        }
-
-        Stretch(background.rectTransform);
-        background.preserveAspect = false;
-
-        if (approvedTopBarSprite == null)
-        {
-            Texture2D texture = Resources.Load<Texture2D>(ApprovedTopBarResource);
-            if (texture != null)
-            {
-                approvedTopBarSprite = Sprite.Create(
-                    texture,
-                    new Rect(0f, 0f, texture.width, texture.height),
-                    new Vector2(0.5f, 0.5f),
-                    100f);
-                approvedTopBarSprite.name = "BistroBuilder_NormalTopBar_v3_Runtime";
-            }
-        }        background.sprite = approvedTopBarSprite;
-        background.color = Color.white;
-        background.transform.SetAsFirstSibling();
-
-        Transform oldNav = topNavigation.Find("NavigationContent");
-        if (oldNav != null) oldNav.gameObject.SetActive(false);
-
-        // ReconcileNavigation usa navContent como señal de que la navegación está lista.
-        // En la v3 los hotspots viven directamente sobre la placa completa.
-        navContent = topNavigation;
-
-        foreach (string oldName in new[]
-        {
-            "Wordmark", "BrandDivider", "IdentityDivider", "RestaurantIdentity",
-            "ClockDivider", "Calendar", "Clock"
-        })
-        {
-            Transform old = topNavigation.Find(oldName);
-            if (old != null) old.gameObject.SetActive(false);
-        }
-
+        if(topNavigation==null)return;
+        if(topNavigation.GetComponent<BistroBuilderTopBarSurface>()==null)topNavigation.gameObject.AddComponent<BistroBuilderTopBarSurface>();
+        topNavigation.GetComponent<Image>().color=Color.clear;
+        var fitter=topNavigation.GetComponent<AspectRatioFitter>();
+        if(fitter!=null)fitter.enabled=false;
+        foreach(string name in new[]{"ApprovedTopBarV3Background","NavigationContent","Wordmark","BrandDivider","IdentityDivider","RestaurantIdentity","ClockDivider","Calendar","Clock"})
+        {var old=topNavigation.Find(name);if(old!=null)old.gameObject.SetActive(false);}
+        if(topNavigation.Find("ApprovedFrame")==null){var frame=NewUi("ApprovedFrame",topNavigation).AddComponent<BistroBuilderTopBarPlate>();frame.raycastTarget=false;Stretch(frame.rectTransform);frame.transform.SetAsFirstSibling();}
+        if(approvedArt==null)approvedArt=JsonUtility.FromJson<BistroBuilderTopBarArtCatalog>(Resources.Load<TextAsset>("BistroBuilder/UI/TopBar/Parts/catalog").text);
+        navContent=topNavigation;
         topNavigation.SetAsLastSibling();
     }
-
     private void EnsureApprovedTopBarV3Buttons()
     {
         EnsureApprovedTopBarV3Content();
-        if (topNavigation == null) return;
-
-        approvedTopBarHotspots.Clear();
-        topPresenters.Clear();
-        proxyButtons.Clear();
-
-        identityButton = ApprovedTopBarButton(
-            "ApprovedIdentity",
-            0f,
-            0.273f);
-        identityButton.onClick.RemoveAllListeners();
-        identityButton.onClick.AddListener(() => ToggleTopPopup(true));        restaurantHeading = EnsureApprovedHiddenText(
-            identityButton.transform,
-            "RestaurantNameState",
-            "Mi restaurante");
-        serviceHeading = EnsureApprovedHiddenText(
-            identityButton.transform,
-            "ServiceState",
-            "Preparación del servicio");
-
-        for (int i = 0; i < Navigation.Length; i++)
+        if(approvedCells.Count>0){LayoutApprovedTopBar(true);return;}
+        proxyButtons.Clear(); topPresenters.Clear();
+        identityButton=CreateApprovedButton("ApprovedIdentity");
+        identityButton.onClick.AddListener(()=>ToggleTopPopup(true));
+        approvedLogo=CreateApprovedArtwork(identityButton.transform,"ApprovedLogo",10);
+        restaurantHeading=EnsureApprovedHiddenText(identityButton.transform,"RestaurantNameState","Mi restaurante");
+        serviceHeading=EnsureApprovedHiddenText(identityButton.transform,"ServiceState","");
+        for(int i=0;i<10;i++)
         {
-            string title = Navigation[i].Label;
-            Button button = ApprovedTopBarButton(
-                "BBNav_" + Sanitize(title),
-                ApprovedHotspotLeft[i],
-                ApprovedHotspotWidth[i]);
-
-            proxyButtons[title] = button;
-            approvedTopBarHotspots[title] =
-                button.GetComponent<BistroBuilderApprovedTopBarHotspot>();
+            string title=i<Navigation.Length?Navigation[i].Label:"Opciones";
+            Button button=CreateApprovedButton("BBNav_"+Sanitize(title));
+            approvedCells.Add((RectTransform)button.transform);
+            var holder=(RectTransform)NewUi("ArtworkHolder",button.transform).transform;
+            approvedIconHolders.Add(holder);
+            var icon=CreateApprovedArtwork(holder,"ApprovedIcon",i);
+            icon.rectTransform.anchorMin=icon.rectTransform.anchorMax=icon.rectTransform.pivot=new Vector2(.5f,.5f);
+            var label=NewUi("ApprovedLabel",button.transform).AddComponent<TextMeshProUGUI>();
+            label.font=BistroBuilderTypography.Title??BistroBuilderTypography.Body;
+            label.text=title;label.color=new Color(.18f,.13f,.08f);label.fontSize=14;
+            label.alignment=TextAlignmentOptions.Center;label.textWrappingMode=TextWrappingModes.NoWrap;label.raycastTarget=false;
+            label.enableAutoSizing=true;label.fontSizeMin=11;label.fontSizeMax=14;
+            approvedLabels.Add(label);
+            var fx=button.gameObject.AddComponent<BistroBuilderApprovedTopBarHotspot>();fx.Configure(button,icon.rectTransform,approvedArt.entries[i]);
+            if(i<Navigation.Length){proxyButtons[title]=button;approvedTopBarHotspots[title]=fx;}
+            else {optionsButton=button;approvedOptionsHotspot=fx;button.onClick.AddListener(()=>{
+                if(topPopup!=null)topPopup.gameObject.SetActive(false);
+                (GetComponent<BistroBuilderOptionsScreen>()??gameObject.AddComponent<BistroBuilderOptionsScreen>()).Toggle();RefreshIconNavigation();});}
+            if(i>0){var divider=HeaderImage(button.transform,"ApprovedDivider");divider.color=new Color(.49f,.34f,.19f,.19f);divider.preserveAspect=false;
+                var r=divider.rectTransform;r.anchorMin=new Vector2(0,.12f);r.anchorMax=new Vector2(0,.88f);r.sizeDelta=new Vector2(1,0);r.anchoredPosition=Vector2.zero;}
         }
-
-        optionsButton = ApprovedTopBarButton(
-            "BBNav_Opciones",
-            0.9212243f,
-            0.0652283f);
-        approvedOptionsHotspot =
-            optionsButton.GetComponent<BistroBuilderApprovedTopBarHotspot>();
-
-        optionsButton.onClick.RemoveAllListeners();
-        optionsButton.onClick.AddListener(() =>
-        {
-            if (topPopup != null) topPopup.gameObject.SetActive(false);
-            var options = GetComponent<BistroBuilderOptionsScreen>() ??
-                          gameObject.AddComponent<BistroBuilderOptionsScreen>();
-            options.Toggle();
-            RefreshIconNavigation();
-        });        calendarHeading = EnsureApprovedHiddenText(
-            topNavigation,
-            "ApprovedCalendarState",
-            string.Empty);
-        timeHeading = EnsureApprovedHiddenText(
-            topNavigation,
-            "ApprovedClockState",
-            string.Empty);
-
-        SuppressLegacyTopBarArtifacts();
-        EnsureTopPopup();
-        if (GetComponent<BistroBuilderOptionsScreen>() == null)
-            gameObject.AddComponent<BistroBuilderOptionsScreen>();
-
-        RefreshIconNavigation();
+        calendarHeading=EnsureApprovedHiddenText(topNavigation,"ApprovedCalendarState","");
+        timeHeading=EnsureApprovedHiddenText(topNavigation,"ApprovedClockState","");
+        SuppressLegacyTopBarArtifacts();EnsureTopPopup();
+        if(GetComponent<BistroBuilderOptionsScreen>()==null)gameObject.AddComponent<BistroBuilderOptionsScreen>();
+        LayoutApprovedTopBar(true);RefreshIconNavigation();
     }
-
-    private Button ApprovedTopBarButton(
-        string name,
-        float normalizedLeft,
-        float normalizedWidth)
+    private Button CreateApprovedButton(string name)
     {
-        Transform existing = topNavigation.Find(name);
-        GameObject go = existing != null
-            ? existing.gameObject
-            : NewUi(name, topNavigation);
-
-        Image image = go.GetComponent<Image>();
-        if (image == null) image = go.AddComponent<Image>();
-        image.color = Color.clear;
-        image.raycastTarget = true;
-
-        Button button = go.GetComponent<Button>();
-        if (button == null) button = go.AddComponent<Button>();
-        button.targetGraphic = image;
-        button.transition = Selectable.Transition.None;        RectTransform rect = go.GetComponent<RectTransform>();
-        rect.anchorMin = new Vector2(normalizedLeft, 0f);
-        rect.anchorMax = new Vector2(normalizedLeft + normalizedWidth, 0.90f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.offsetMin = Vector2.zero;
-        rect.offsetMax = Vector2.zero;
-        rect.localScale = Vector3.one;
-
-        TMP_Text oldLabel = go.GetComponentInChildren<TMP_Text>(true);
-        if (oldLabel != null) oldLabel.gameObject.SetActive(false);
-
-        foreach (Transform child in go.transform)
-            if (child.name == "NavigationIcon" ||
-                child.name == "SelectionUnderline" ||
-                child.name == "HoverGlow")
-                child.gameObject.SetActive(false);
-
-        BistroBuilderApprovedTopBarHotspot hotspot =
-            go.GetComponent<BistroBuilderApprovedTopBarHotspot>();
-        if (hotspot == null)
-            hotspot = go.AddComponent<BistroBuilderApprovedTopBarHotspot>();
-        hotspot.Configure(button);
-
-        go.transform.SetAsLastSibling();
+        var go=NewUi(name,topNavigation);var hit=go.AddComponent<Image>();hit.color=Color.clear;
+        var button=go.AddComponent<Button>();button.targetGraphic=hit;button.transition=Selectable.Transition.None;
         return button;
     }
-
-    private static TMP_Text EnsureApprovedHiddenText(
-        Transform parent,
-        string name,
-        string initial)
+    private BistroBuilderTopBarArtwork CreateApprovedArtwork(Transform parent,string name,int index)
     {
-        Transform existing = parent.Find(name);
-        GameObject go = existing != null
-            ? existing.gameObject
-            : NewUi(name, parent);        TMP_Text text = go.GetComponent<TextMeshProUGUI>();
-        if (text == null) text = go.AddComponent<TextMeshProUGUI>();
-        text.text = initial;
-        text.raycastTarget = false;
-        text.gameObject.SetActive(false);
-        return text;
+        var art=NewUi(name,parent).AddComponent<BistroBuilderTopBarArtwork>();art.Configure(approvedArt.entries[index]);return art;
     }
-
+    private void LayoutApprovedTopBar(bool force=false)
+    {
+        if(topNavigation==null||approvedCells.Count!=10||shellRoot==null)return;
+        Vector2 viewport=shellRoot.rect.size;float scale=canvas!=null?Mathf.Max(.01f,canvas.scaleFactor):1;
+        if(!force&&viewport==approvedLayoutSize&&Mathf.Abs(scale-approvedLayoutScale)<.001f)return;
+        approvedLayoutSize=viewport;approvedLayoutScale=scale;
+        float physicalHeight=viewport.y*scale;
+        float h=Mathf.Clamp(physicalHeight*.089f,76,144)/scale;
+        float margin=Mathf.Clamp(viewport.x*.012f,8,24);
+        topNavigation.anchorMin=new Vector2(0,1);topNavigation.anchorMax=new Vector2(1,1);topNavigation.pivot=new Vector2(.5f,1);
+        topNavigation.anchoredPosition=new Vector2(0,-8/scale);topNavigation.sizeDelta=new Vector2(-margin*2,h);
+        float width=viewport.x-margin*2;
+        // A compact brand at narrow widths leaves all ten destinations reachable.
+        float brand=Mathf.Min(h*1.98f,width*.18f);
+        float cell=(width-brand-20)/10;
+        PlaceHeader((RectTransform)identityButton.transform,5,0,brand,h);
+        float logoH=Mathf.Min(h-4,(brand-8)/approvedLogo.Aspect);
+        PlaceHeader(approvedLogo.rectTransform,(brand-logoH*approvedLogo.Aspect)/2,(h-logoH)/2,logoH*approvedLogo.Aspect,logoH);
+        for(int i=0;i<10;i++)
+        {
+            PlaceHeader(approvedCells[i],brand+8+i*cell,5,cell,h-10);
+            var art=approvedIconHolders[i].GetComponentInChildren<BistroBuilderTopBarArtwork>();
+            float iconH=Mathf.Min(h*.51f,(cell-16/scale)/art.Aspect);
+            float iconW=iconH*art.Aspect;
+            PlaceHeader(approvedIconHolders[i],(cell-iconW)/2,Mathf.Max(4,(h-35/scale-iconH)/2),iconW,iconH);
+            art.rectTransform.sizeDelta=new Vector2(iconW,iconH);
+            PlaceHeader(approvedLabels[i].rectTransform,3,h-32/scale,cell-6,22/scale);
+            approvedLabels[i].fontSizeMax=Mathf.Clamp(physicalHeight/78,11,20)/scale;
+            approvedLabels[i].fontSizeMin=10/scale;
+        }
+        if(activityPanel!=null)activityPanel.anchoredPosition=new Vector2(activityPanel.anchoredPosition.x,-h-20/scale);
+    }
+    private static TMP_Text EnsureApprovedHiddenText(Transform parent,string name,string initial)
+    {
+        var go=NewUi(name,parent);var text=go.AddComponent<TextMeshProUGUI>();text.text=initial;text.raycastTarget=false;go.SetActive(false);return text;
+    }
     private void RefreshApprovedTopBarV3State()
     {
-        foreach (var pair in approvedTopBarHotspots)
-        {
-            pair.Value.SetSelected(pair.Key == selectedNavigation);
-            if (proxyButtons.TryGetValue(pair.Key, out Button button))
-                pair.Value.SetInteractable(button != null && button.interactable);
-        }
-
-        if (approvedOptionsHotspot != null)
-            approvedOptionsHotspot.SetSelected(
-                GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true);
+        foreach(var pair in approvedTopBarHotspots){pair.Value.SetSelected(pair.Key==selectedNavigation);if(proxyButtons.TryGetValue(pair.Key,out var b))pair.Value.SetInteractable(b!=null&&b.interactable);}
+        if(approvedOptionsHotspot!=null)approvedOptionsHotspot.SetSelected(GetComponent<BistroBuilderOptionsScreen>()?.IsOpen==true);
     }
 }

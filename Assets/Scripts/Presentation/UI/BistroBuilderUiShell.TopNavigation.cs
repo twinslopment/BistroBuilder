@@ -196,6 +196,7 @@ public sealed partial class BistroBuilderUiShell
     }
     private void LateUpdate()
     {
+        LayoutApprovedTopBar();
         if (!dismissTopPopup) return;
         dismissTopPopup = false;
         if (topPopup != null) topPopup.gameObject.SetActive(false);

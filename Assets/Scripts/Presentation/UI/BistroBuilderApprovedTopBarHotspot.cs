@@ -3,92 +3,51 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
-public sealed class BistroBuilderApprovedTopBarHotspot :
-    MonoBehaviour,
-    IPointerEnterHandler,
-    IPointerExitHandler,
-    IPointerDownHandler,
-    IPointerUpHandler
+public sealed class BistroBuilderApprovedTopBarHotspot : MonoBehaviour,
+    IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, ISelectHandler, IDeselectHandler
 {
-    private Image surface;
-    private Outline outline;
     private Button button;
-    private bool selected;
-    private bool hovered;
-    private bool pressed;
-
-    private static readonly Color Clear = new Color(1f, 0.89f, 0.62f, 0f);
-    private static readonly Color Hover = new Color(1f, 0.86f, 0.48f, 0.10f);
-    private static readonly Color Selected = new Color(1f, 0.80f, 0.30f, 0.07f);
-    private static readonly Color Pressed = new Color(1f, 0.76f, 0.22f, 0.14f);
-
-    public void Configure(Button target)
+    private BistroBuilderTopBarPlate plate;
+    private RectTransform icon;
+    private BistroBuilderTopBarArtEntry motion;
+    private bool selected, hovered, pressed, focused;
+    private float amount, clock;
+    public float HoverAmount => amount;
+    public void Configure(Button target, RectTransform artwork, BistroBuilderTopBarArtEntry animation)
     {
-        button = target;
-        surface = target != null ? target.GetComponent<Image>() : null;
-        if (surface == null && target != null) surface = target.gameObject.AddComponent<Image>();        if (surface != null) surface.raycastTarget = true;
-
-        outline = GetComponent<Outline>();
-        if (outline == null) outline = gameObject.AddComponent<Outline>();
-        outline.effectDistance = new Vector2(1f, -1f);
-        outline.useGraphicAlpha = false;
-
-        Refresh();
+        button=target; icon=artwork; motion=animation;
+        var surface=new GameObject("ApprovedCell",typeof(RectTransform),typeof(CanvasRenderer));surface.transform.SetParent(transform,false);surface.transform.SetAsFirstSibling();
+        plate=surface.AddComponent<BistroBuilderTopBarPlate>();var rect=plate.rectTransform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=rect.offsetMax=Vector2.zero;
+        plate.Cell=true; plate.raycastTarget=false;
     }
-
-    public void SetSelected(bool value)
+    public void SetSelected(bool value) => selected=value;
+    public void SetInteractable(bool value) { if(button!=null)button.interactable=value; }
+    public void OnPointerEnter(PointerEventData e) { hovered=true; clock=0; }
+    public void OnPointerExit(PointerEventData e) { hovered=false; pressed=false; }
+    public void OnPointerDown(PointerEventData e) { if(e.button==PointerEventData.InputButton.Left)pressed=true; }
+    public void OnPointerUp(PointerEventData e) => pressed=false;
+    public void OnSelect(BaseEventData e) => focused=true;
+    public void OnDeselect(BaseEventData e) => focused=false;
+    private void Update()
     {
-        selected = value;
-        Refresh();
+        bool enabled=button!=null&&button.IsInteractable();
+        bool keyboard=focused&&BistroBuilderPointerFeedback.KeyboardFocus;
+        amount=Mathf.MoveTowards(amount,enabled&&(hovered||keyboard)?1:0,Time.unscaledDeltaTime/.17f);
+        clock+=Time.unscaledDeltaTime;
+        if(plate!=null)plate.State(amount,enabled&&selected?1:0,enabled&&keyboard?1:0);
+        if(icon==null||motion==null)return;
+        float wave=(1-Mathf.Cos(clock*Mathf.PI/Mathf.Max(.1f,motion.duration)))*.5f*amount;
+        if(BistroBuilderOptionsScreen.ReducedMotion)wave=0;
+        float scale=1+(motion.zoom-1)*wave;
+        if(pressed&&enabled&&!BistroBuilderOptionsScreen.ReducedMotion)scale=.96f;
+        icon.localScale=new Vector3(scale,scale,1);
+        icon.localRotation=Quaternion.Euler(0,0,-motion.rotation*wave);
+        // Artwork is anchored at the centre of its own fixed-size holder.
+        icon.anchoredPosition=new Vector2(motion.dx,-motion.dy)*wave*.45f;
     }
-
-    public void SetInteractable(bool value)
+    private void OnDisable()
     {
-        if (button != null) button.interactable = value;
-        Refresh();
-    }
-
-    public void OnPointerEnter(PointerEventData eventData)
-    {
-        hovered = true;
-        Refresh();
-    }
-
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        hovered = false;
-        pressed = false;
-        Refresh();
-    }    public void OnPointerDown(PointerEventData eventData)
-    {
-        pressed = true;
-        Refresh();
-    }
-
-    public void OnPointerUp(PointerEventData eventData)
-    {
-        pressed = false;
-        Refresh();
-    }
-
-    private void Refresh()
-    {
-        if (surface == null) return;
-
-        bool enabled = button == null || button.interactable;
-        Color color = !enabled
-            ? Clear
-            : pressed
-                ? Pressed
-                : selected
-                    ? Selected
-                    : hovered ? Hover : Clear;
-        surface.color = color;
-
-        if (outline != null)
-        {
-            float alpha = !enabled ? 0f : selected ? 0.42f : hovered ? 0.28f : 0f;
-            outline.effectColor = new Color(0.87f, 0.63f, 0.23f, alpha);
-        }
+        hovered=pressed=focused=false; amount=0;
+        if(icon!=null){icon.anchoredPosition=Vector2.zero;icon.localRotation=Quaternion.identity;icon.localScale=Vector3.one;}
     }
 }

@@ -195,6 +195,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         ReconcileTimeDock();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
         {
+            if (panel == topNavigation) continue;
             var image = panel.GetComponent<Image>();
             image.color = panel == topNavigation ? BistroBuilderUiTokens.Background : BistroBuilderUiTokens.Surface1;
             BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Panel, true);

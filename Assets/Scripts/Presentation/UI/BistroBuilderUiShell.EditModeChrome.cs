@@ -144,7 +144,7 @@ public sealed partial class BistroBuilderUiShell
     void ChromeMessage(string message){if(editModeToolStatusText==null||string.IsNullOrEmpty(message))return;editModeToolStatusText.text=message;editModeToolStatusText.transform.parent.gameObject.SetActive(true);}
     void RefreshEditModeChrome(bool editing,bool managing)
     {
-        EnsureEditModeChrome();bool visible=editing&&!managing;
+        EnsureEditModeChrome();RefreshModeSelector(editing,managing);bool visible=editing&&!managing;
         if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
         if(topNavigation!=null)topNavigation.gameObject.SetActive(!visible);
