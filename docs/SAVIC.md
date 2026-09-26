@@ -1549,7 +1549,15 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE G] La optimización es selectiva: mesas, sillas, equipamiento funcional, wall/ceiling/surface decoration y casos ambiguos mantienen su ruta completa o su review gate. No se relajan los validadores de mesas/sillas.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE G] `Run Mass Ingestion Real Probe` exige ahora que el floor mirror use `GenericStatic fast path` y termine por debajo del umbral de slow-job de 2.000 ms. El log desglosa importación/análisis/publicación para localizar el siguiente cuello de botella si aún supera el presupuesto.
+[V1 IMPLEMENTADO — FASE G / GENERIC-STATIC FAST PATH] El floor mirror usa ya el modo ligero de análisis; la validación real mostró 3.198 ms totales: importación 1.999 ms, análisis 163 ms y publicación 1.033 ms. El análisis dejó de ser el cuello de botella, pero agrupar importación + publicación en un único tick seguía provocando un bloqueo >2 s.
+
+[V1 IMPLEMENTADO — FASE H / STAGED GENERIC PROCESSING] Los placeables genéricos estáticos de alta confianza separan ahora la preparación/importación del SourceMirror de su análisis/publicación. El job persiste `sourcePrepared`, duración total acumulada y máximo tiempo atómico; tras preparar la fuente vuelve a `INGESTED/SOURCE_PREPARED` y continúa en un tick posterior. Una recarga de dominio puede reanudar desde ese checkpoint sin dejar una publicación a medias.
+
+[V1 IMPLEMENTADO — FASE H] El import adapter evita trabajo redundante: ya no recalcula por separado el SHA-256 del archivo archivado antes de materializar el mirror, copia+hashea en una sola pasada, usa move para el primer mirror y, si el mirror ya está validado e importado, reutiliza el `GameObject` sin `ForceUpdate`/reimportación.
+
+[V1 IMPLEMENTADO — FASE H] Queue schema V4 incorpora estado de preparación de fuente y `maximumAtomicDurationMilliseconds`. El tiempo total del asset sigue midiéndose para throughput, pero el criterio de congelación del Editor se evalúa por etapa atómica real.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE H] Ejecutar `Run Mass Ingestion Real Probe`. El floor mirror debe mantener `Generic-static lightweight analysis: PASS`, persistir el checkpoint de source preparation y mostrar `Floor mirror max atomic stage` por debajo de 2.000 ms. El log separará `prepare-import / reuse-import / analyze / publish`.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
