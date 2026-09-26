@@ -1527,7 +1527,17 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 
 ### Bloque 8 — Decoración y equipamiento
-[R]
+[V1 IMPLEMENTACIÓN ACTIVA]
+
+[V1 IMPLEMENTADO — FASE E / PLACEABLE GENÉRICO SEGURO] El clasificador V4 reconoce por evidencia nominal explícita `Decoration`, `KitchenEquipment` y `ServiceEquipment` sin convertir automáticamente cualquier objeto desconocido en mobiliario. Sillas/mesas y tokens conflictivos mantienen prioridad para evitar falsos positivos.
+
+[V1 IMPLEMENTADO — FASE E] Existe una familia genérica de placeables pasivos de suelo. Para decoración con evidencia clara de suelo y para equipamiento inequívocamente pasivo genera de forma transaccional: prefab, `RestaurantPlaceableObject`, definición editable, footprint, BoxCollider simple, ancla de suelo, entrada canónica de catálogo, dos previews, metadatos de inspector y readiness de persistencia/navegación. La identidad usa un `CanonicalContentId` estable derivado del `SavicId`.
+
+[V1 IMPLEMENTADO — FASE E] SAVIC no publica silenciosamente objetos que requieren semántica todavía no soportada. Pared, techo y superficie se envían a revisión con reason code específico. Equipamiento funcional (horno, cooler, frigorífico, extractor, fregadero, barra/counter, POS, etc.) se clasifica correctamente pero queda en `NEEDS_REVIEW` con `FUNCTIONAL_ADAPTER_REQUIRED` hasta que exista su adapter gameplay; nunca se degrada a mera decoración.
+
+[V1 IMPLEMENTADO — FASE E] El placeable genérico participa en la invalidación incremental: cambios solo visuales sustituyen `Visual/SourceModel` y previews sin reconstruir collider, footprint ni identidad runtime.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE E] `Run Mass Ingestion Real Probe` incluye ahora dos fuentes reales archivadas adicionales: un espejo de suelo, que debe publicarse automáticamente como `Decoration`, y un wine cooler, que debe reconocerse como `KitchenEquipment` y detenerse de forma segura en `FUNCTIONAL_ADAPTER_REQUIRED`. No declarar cerrado este bloque hasta obtener PASS.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
