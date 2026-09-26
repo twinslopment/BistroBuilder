@@ -545,12 +545,36 @@ namespace BistroBuilder.Editor.Savic
         private void TrimHistory()
         {
             const int maximumRecords = 5000;
+
             if (snapshot.jobs.Count <= maximumRecords)
                 return;
 
-            snapshot.jobs.RemoveRange(
-                0,
-                snapshot.jobs.Count - maximumRecords);
+            int toRemove =
+                snapshot.jobs.Count -
+                maximumRecords;
+
+            int index = 0;
+
+            while (toRemove > 0 &&
+                   index < snapshot.jobs.Count)
+            {
+                SavicJobRecord job =
+                    snapshot.jobs[index];
+
+                if (job == null ||
+                    IsTerminal(job.state))
+                {
+                    snapshot.jobs.RemoveAt(index);
+                    toRemove--;
+                    continue;
+                }
+
+                index++;
+            }
+
+            // Never discard active work just to satisfy the history cap.
+            // If more than 5,000 records are simultaneously non-terminal,
+            // the queue is allowed to exceed the nominal history limit.
         }
     }
 }
