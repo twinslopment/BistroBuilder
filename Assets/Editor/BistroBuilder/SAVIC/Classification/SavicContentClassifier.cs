@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "3.0.0";
+        internal const string Version = "4.0.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -86,6 +86,66 @@ namespace BistroBuilder.Editor.Savic
                 },
                 StringComparer.OrdinalIgnoreCase);
 
+        private static readonly HashSet<string> DecorationTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "decor", "decoration", "decorative", "deco",
+                    "mirror", "plant", "planter", "pedestal",
+                    "sculpture", "statue", "ornament", "ornamental"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> KitchenEquipmentStrongTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "oven", "stove", "range", "grill",
+                    "cooler", "fridge", "refrigerator",
+                    "freezer", "dishwasher", "extractor",
+                    "hood", "sink", "fryer"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> KitchenEquipmentContextTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "kitchen", "commercial", "cabinet",
+                    "equipment", "storage", "rack", "shelf"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ServiceEquipmentStrongTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "counter", "register", "pos", "cash",
+                    "pass"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ServiceEquipmentContextTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "bar", "service", "station", "cabinet",
+                    "storage", "rack", "shelf"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> GenericPlaceableConflicts =
+            new HashSet<string>(
+                new[]
+                {
+                    "chair", "chairs", "silla", "sillas",
+                    "stool", "stools", "taburete", "taburetes",
+                    "bench", "benches", "banco", "bancos",
+                    "sofa", "sofas", "table", "tables",
+                    "mesa", "mesas"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
         private static readonly HashSet<string> ConflictingFurnitureTokens =
             new HashSet<string>(
                 new[]
@@ -151,6 +211,14 @@ namespace BistroBuilder.Editor.Savic
                 Tokenize(sourceName);
 
             if (TryClassifyChair(
+                    tokens,
+                    analysis,
+                    result))
+            {
+                return result;
+            }
+
+            if (TryClassifyGenericPlaceable(
                     tokens,
                     analysis,
                     result))
@@ -297,6 +365,189 @@ namespace BistroBuilder.Editor.Savic
                     : "No positive classification evidence.";
 
             return result;
+        }
+
+        private static bool TryClassifyGenericPlaceable(
+            ISet<string> tokens,
+            SavicModelAnalysisRecord analysis,
+            SavicClassificationRecord result)
+        {
+            if (tokens == null ||
+                analysis == null ||
+                result == null ||
+                ContainsAny(
+                    tokens,
+                    GenericPlaceableConflicts))
+            {
+                return false;
+            }
+
+            bool plausibleDimensions =
+                HasPlausibleFurnitureDimensions(
+                    analysis);
+
+            if (!plausibleDimensions)
+                return false;
+
+            bool decoration =
+                ContainsAny(
+                    tokens,
+                    DecorationTokens);
+
+            bool kitchenStrong =
+                ContainsAny(
+                    tokens,
+                    KitchenEquipmentStrongTokens);
+
+            int kitchenContext =
+                CountMatches(
+                    tokens,
+                    KitchenEquipmentContextTokens);
+
+            bool kitchen =
+                kitchenStrong ||
+                kitchenContext >= 2;
+
+            bool serviceStrong =
+                ContainsAny(
+                    tokens,
+                    ServiceEquipmentStrongTokens);
+
+            int serviceContext =
+                CountMatches(
+                    tokens,
+                    ServiceEquipmentContextTokens);
+
+            bool service =
+                serviceStrong ||
+                serviceContext >= 2;
+
+            string type =
+                string.Empty;
+
+            string category =
+                string.Empty;
+
+            float score =
+                0f;
+
+            List<string> evidence =
+                new List<string>(6);
+
+            if (kitchen)
+            {
+                type =
+                    "KitchenEquipment";
+
+                category =
+                    "KitchenEquipment";
+
+                score +=
+                    kitchenStrong
+                        ? 0.78f
+                        : 0.66f;
+
+                evidence.Add(
+                    kitchenStrong
+                        ? "name contains explicit kitchen-equipment token"
+                        : kitchenContext +
+                          " kitchen-equipment context tokens");
+            }
+            else if (service)
+            {
+                type =
+                    "ServiceEquipment";
+
+                category =
+                    "ServiceEquipment";
+
+                score +=
+                    serviceStrong
+                        ? 0.76f
+                        : 0.64f;
+
+                evidence.Add(
+                    serviceStrong
+                        ? "name contains explicit service-equipment token"
+                        : serviceContext +
+                          " service-equipment context tokens");
+            }
+            else if (decoration)
+            {
+                type =
+                    "Decoration";
+
+                category =
+                    "Decoration";
+
+                score +=
+                    0.74f;
+
+                evidence.Add(
+                    "name contains explicit decoration token");
+            }
+            else
+            {
+                return false;
+            }
+
+            if (plausibleDimensions)
+            {
+                score +=
+                    0.10f;
+
+                evidence.Add(
+                    "bounds are plausible for a static placeable");
+            }
+
+            if (analysis.hasSkinnedMeshes)
+            {
+                score -=
+                    0.20f;
+
+                evidence.Add(
+                    "skinned meshes reduce generic static confidence");
+            }
+
+            score =
+                Clamp01(
+                    score);
+
+            if (score < 0.62f)
+                return false;
+
+            result.family =
+                "Placeable";
+
+            result.type =
+                type;
+
+            result.category =
+                category;
+
+            result.score =
+                score;
+
+            result.explicitTypeToken =
+                true;
+
+            result.nameBacked =
+                true;
+
+            result.geometryBacked =
+                false;
+
+            result.confidence =
+                score >= 0.80f
+                    ? "HIGH"
+                    : "MEDIUM";
+
+            result.evidence =
+                string.Join(
+                    "; ",
+                    evidence);
+
+            return true;
         }
 
         private static bool TryClassifyChair(
