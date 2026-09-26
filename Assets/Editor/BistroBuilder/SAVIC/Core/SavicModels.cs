@@ -180,6 +180,10 @@ namespace BistroBuilder.Editor.Savic
         public bool analyzed;
         public string analyzerVersion = string.Empty;
         public bool usable;
+        public bool seatResolved;
+        public bool orientationResolved;
+        public bool supportResolved;
+        public string seatDetectionMode = "UNRESOLVED";
         public long sourceTriangleCount;
         public long sampledTriangleCount;
         public long invalidTriangleCount;
@@ -188,6 +192,7 @@ namespace BistroBuilder.Editor.Savic
         public float seatHeight01;
         public float seatHeightMeters;
         public float seatUpwardAreaRatio;
+        public float seatSurfaceAreaRatio;
         public float seatProjectedCoverage;
         public float upperVerticalAreaRatio;
         public float upperVerticalCentroidX01 = 0.5f;
