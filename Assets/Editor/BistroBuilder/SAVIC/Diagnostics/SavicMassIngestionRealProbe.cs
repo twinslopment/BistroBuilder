@@ -30,6 +30,16 @@ namespace BistroBuilder.Editor.Savic
             "Assets/Art/Blender/Placeables/Dining/" +
             "calibration_1m/Models/calibration_1m.fbx";
 
+        private const string FloorMirrorPath =
+            "ContentSource/SHA256/f7/" +
+            "f7b31aa9a018f1d26d13c5e9edbc63dcb882848c4006ed2852d9e850c0783dc2/" +
+            "Meshy_AI_Black_Framed_Floor_Mi_0922102652_texture.glb";
+
+        private const string WineCoolerPath =
+            "ContentSource/SHA256/1f/" +
+            "1f845b80d751bbb2631dec4b87c73c58128e0255ca1873a93ba79e8d150cfc95/" +
+            "Meshy_AI_Wine_Cooler_Cabinet_0922115804_texture.glb";
+
         private const string Prefix =
             "_SAVIC_MASS_PROBE_";
 
@@ -123,6 +133,14 @@ namespace BistroBuilder.Editor.Savic
                     currentLayout,
                     CalibrationPath);
 
+                RequireSourceExists(
+                    currentLayout,
+                    FloorMirrorPath);
+
+                RequireSourceExists(
+                    currentLayout,
+                    WineCoolerPath);
+
                 ProbeInput[] inputs =
                 {
                     ProbeInput.BrokenGlb(
@@ -148,8 +166,16 @@ namespace BistroBuilder.Editor.Savic
                         Prefix + "06_calibration_1m.fbx",
                         CalibrationPath),
 
+                    ProbeInput.RealModel(
+                        Prefix + "07_floor_mirror.glb",
+                        FloorMirrorPath),
+
+                    ProbeInput.RealModel(
+                        Prefix + "08_wine_cooler_cabinet.glb",
+                        WineCoolerPath),
+
                     ProbeInput.Structured(
-                        Prefix + "07_metadata.json")
+                        Prefix + "09_metadata.json")
                 };
 
                 List<SavicIntakeOutcome> outcomes =
@@ -241,10 +267,18 @@ namespace BistroBuilder.Editor.Savic
                     1,
                     "Queue did not persist the duplicate as terminal.");
 
+                int expectedBatchEligible =
+                    inputs.Count(
+                        input =>
+                            input.Kind ==
+                                ProbeInputKind.RealModel ||
+                            input.Kind ==
+                                ProbeInputKind.BrokenGlb);
+
                 Require(
                     jobs.PendingProcessCount ==
-                    5,
-                    "Expected five batch-eligible 3D jobs before processing.");
+                    expectedBatchEligible,
+                    "Unexpected batch-eligible 3D job count before processing.");
 
                 SavicJobRecord metadataJob =
                     jobs.Jobs.FirstOrDefault(
@@ -252,7 +286,7 @@ namespace BistroBuilder.Editor.Savic
                             job != null &&
                             string.Equals(
                                 job.originalFileName,
-                                Prefix + "07_metadata.json",
+                                Prefix + "09_metadata.json",
                                 StringComparison.Ordinal));
 
                 Require(
@@ -383,7 +417,7 @@ namespace BistroBuilder.Editor.Savic
 
                 Require(
                     eligibleJobs.Count ==
-                    5,
+                    expectedBatchEligible,
                     "Unexpected batch-eligible job count after processing.");
 
                 Require(
@@ -481,6 +515,75 @@ namespace BistroBuilder.Editor.Savic
                         metrics.TopIssueReason),
                     "Operational analytics did not identify any issue reason.");
 
+                SavicJobRecord floorMirrorJob =
+                    finalJobs.FirstOrDefault(
+                        job =>
+                            job != null &&
+                            string.Equals(
+                                job.originalFileName,
+                                Prefix + "07_floor_mirror.glb",
+                                StringComparison.Ordinal));
+
+                Require(
+                    floorMirrorJob != null &&
+                    string.Equals(
+                        floorMirrorJob.state,
+                        SavicJobState.Done.ToString(),
+                        StringComparison.Ordinal),
+                    "High-confidence floor decoration did not publish automatically. " +
+                    BuildJobStateSummary(finalJobs));
+
+                Require(
+                    manifests.TryGetBySavicId(
+                        floorMirrorJob.manifestSavicId,
+                        out SavicManifest floorMirrorManifest) &&
+                    floorMirrorManifest != null &&
+                    string.Equals(
+                        floorMirrorManifest.classification?.type,
+                        "Decoration",
+                        StringComparison.Ordinal) &&
+                    floorMirrorManifest.genericPlaceableReadiness != null &&
+                    floorMirrorManifest.genericPlaceableReadiness.validated,
+                    "Published floor decoration lacks generic placeable readiness.");
+
+                Require(
+                    CountCatalogEntries(
+                        floorMirrorManifest.canonicalContentId) ==
+                    1,
+                    "Published floor decoration does not resolve exactly once in the catalog.");
+
+                SavicJobRecord wineCoolerJob =
+                    finalJobs.FirstOrDefault(
+                        job =>
+                            job != null &&
+                            string.Equals(
+                                job.originalFileName,
+                                Prefix + "08_wine_cooler_cabinet.glb",
+                                StringComparison.Ordinal));
+
+                Require(
+                    wineCoolerJob != null &&
+                    string.Equals(
+                        wineCoolerJob.state,
+                        SavicJobState.NeedsReview.ToString(),
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        wineCoolerJob.reasonCode,
+                        "FUNCTIONAL_ADAPTER_REQUIRED",
+                        StringComparison.Ordinal),
+                    "Functional equipment was not routed to a precise safe review state.");
+
+                Require(
+                    manifests.TryGetBySavicId(
+                        wineCoolerJob.manifestSavicId,
+                        out SavicManifest wineCoolerManifest) &&
+                    wineCoolerManifest != null &&
+                    string.Equals(
+                        wineCoolerManifest.classification?.type,
+                        "KitchenEquipment",
+                        StringComparison.Ordinal),
+                    "Wine cooler was not recognized as kitchen equipment.");
+
                 Require(
                     manifests.TryGetBySavicId(
                         knownGoodJob.manifestSavicId,
@@ -546,6 +649,8 @@ namespace BistroBuilder.Editor.Savic
                     "Operational reason codes: PASS\n" +
                     "Per-stage timings: PASS\n" +
                     "Queue analytics: PASS\n" +
+                    "Generic floor decoration publication: PASS\n" +
+                    "Functional equipment safe review: PASS\n" +
                     "P95 job duration: " +
                     metrics.P95DurationMilliseconds +
                     " ms\n" +
