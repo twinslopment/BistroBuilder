@@ -654,6 +654,8 @@ namespace BistroBuilder.Editor.Savic
         public string processingStartedUtc = string.Empty;
         public string completedUtc = string.Empty;
         public long lastDurationMilliseconds;
+        public long maximumAtomicDurationMilliseconds;
+        public bool sourcePrepared;
         public string outcomeStatus = string.Empty;
         public string reasonCode = string.Empty;
         public string primaryStage = string.Empty;
