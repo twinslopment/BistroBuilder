@@ -195,6 +195,10 @@ namespace BistroBuilder.Editor.Savic
         public float seatSurfaceAreaRatio;
         public float seatProjectedCoverage;
         public float upperVerticalAreaRatio;
+        public float upperOccupancyAreaRatio;
+        public float upperOccupancyCentroidX01 = 0.5f;
+        public float upperOccupancyCentroidZ01 = 0.5f;
+        public string orientationDetectionMode = "UNRESOLVED";
         public float upperVerticalCentroidX01 = 0.5f;
         public float upperVerticalCentroidZ01 = 0.5f;
         public string backAxis = "UNKNOWN";
