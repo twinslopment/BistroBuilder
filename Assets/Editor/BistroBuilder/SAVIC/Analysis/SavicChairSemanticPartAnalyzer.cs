@@ -10,7 +10,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairSemanticPartAnalyzer
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
 
         private const float MinimumTriangleArea = 0.00000001f;
         private const int MaximumSampledTrianglesPerMeshInstance = 250000;
