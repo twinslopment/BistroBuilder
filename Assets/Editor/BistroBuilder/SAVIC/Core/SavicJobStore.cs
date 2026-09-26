@@ -413,8 +413,10 @@ namespace BistroBuilder.Editor.Savic
                         true;
 
                     job.message =
-                        outcome?.Message ??
-                        "Unity source prepared for staged continuation.";
+                        string.IsNullOrWhiteSpace(
+                            outcome.Message)
+                            ? "Unity source prepared for staged continuation."
+                            : outcome.Message;
                 }
 
                 job.processingStartedUtc =
@@ -557,26 +559,6 @@ namespace BistroBuilder.Editor.Savic
         {
             if (job == null)
                 return;
-
-            if (outcome == null)
-            {
-                job.outcomeStatus =
-                    "UNCLASSIFIED_OUTCOME";
-
-                job.reasonCode =
-                    "UNCLASSIFIED_OUTCOME";
-
-                job.primaryStage =
-                    "BATCH";
-
-                if (!appendStages)
-                {
-                    job.stageTimings =
-                        new List<SavicProcessingStageRecord>();
-                }
-
-                return;
-            }
 
             job.outcomeStatus =
                 outcome.Status ?? string.Empty;
