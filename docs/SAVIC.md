@@ -1537,7 +1537,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE E] El placeable genérico participa en la invalidación incremental: cambios solo visuales sustituyen `Visual/SourceModel` y previews sin reconstruir collider, footprint ni identidad runtime.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE E] `Run Mass Ingestion Real Probe` incluye ahora dos fuentes reales archivadas adicionales: un espejo de suelo, que debe publicarse automáticamente como `Decoration`, y un wine cooler, que debe reconocerse como `KitchenEquipment` y detenerse de forma segura en `FUNCTIONAL_ADAPTER_REQUIRED`. No declarar cerrado este bloque hasta obtener PASS.
+[V1 VALIDADO — FASE E / PLACEABLE GENÉRICO SEGURO] `Run Mass Ingestion Real Probe` PASS con 9 entradas y 7 jobs 3D batch-eligible. El espejo de suelo real se publicó automáticamente como `Decoration`; el wine cooler real se clasificó como `KitchenEquipment` y se detuvo correctamente en `FUNCTIONAL_ADAPTER_REQUIRED`. Resultado: 3 `DONE`, 3 `NEEDS_REVIEW`, 1 fallo seguro, 7 ticks y 19.045 ms de drenado total. P95 observado: 14.266 ms, dominado por el wine cooler; queda abierto como trabajo de rendimiento de asset individual, no como fallo funcional del bloque.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
