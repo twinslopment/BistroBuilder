@@ -6,7 +6,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairAuthoringPlanner
     {
-        internal const string Version = "1.2.0";
+        internal const string Version = "2.0.0";
 
         internal const string TemplatePrefabAssetPath =
             "Assets/Prefabs/Restaurant/Generated/Seating/" +
@@ -73,14 +73,6 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            if (!geometry.seatResolved)
-            {
-                rejectionReason =
-                    "Chair seat geometry is unresolved. " +
-                    geometry.evidence;
-                return false;
-            }
-
             if (!geometry.orientationResolved)
             {
                 rejectionReason =
@@ -119,53 +111,58 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            float sourceSeatHeight =
-                geometry.seatHeightMeters;
-
-            if (!IsFinitePositive(sourceSeatHeight))
-            {
-                rejectionReason =
-                    "Chair seat height is unavailable or invalid.";
-                return false;
-            }
-
             float uniformScale =
                 1f;
 
             bool scaleCorrectionApplied =
                 false;
 
-            if (sourceSeatHeight <
-                    MinimumAcceptedSeatHeightMeters ||
-                sourceSeatHeight >
-                    MaximumAcceptedSeatHeightMeters)
+            bool canonicalSeatFallback =
+                !geometry.seatResolved ||
+                !IsFinitePositive(
+                    geometry.seatHeightMeters);
+
+            float sourceSeatHeight =
+                canonicalSeatFallback
+                    ? NominalSeatHeightMeters
+                    : geometry.seatHeightMeters;
+
+            if (!canonicalSeatFallback &&
+                (sourceSeatHeight <
+                     MinimumAcceptedSeatHeightMeters ||
+                 sourceSeatHeight >
+                     MaximumAcceptedSeatHeightMeters))
             {
-                if (sourceSeatHeight <
-                        MinimumSourceSeatHeightForCorrection ||
-                    sourceSeatHeight >
+                if (sourceSeatHeight >=
+                        MinimumSourceSeatHeightForCorrection &&
+                    sourceSeatHeight <=
                         MaximumSourceSeatHeightForCorrection)
                 {
-                    rejectionReason =
-                        "Detected seat height is outside the safe auto-correction range.";
-                    return false;
+                    uniformScale =
+                        NominalSeatHeightMeters /
+                        sourceSeatHeight;
+
+                    if (uniformScale <
+                            MinimumSafeUniformScale ||
+                        uniformScale >
+                            MaximumSafeUniformScale)
+                    {
+                        rejectionReason =
+                            "Required chair scale correction is too large for automatic publication.";
+                        return false;
+                    }
+
+                    scaleCorrectionApplied =
+                        true;
                 }
-
-                uniformScale =
-                    NominalSeatHeightMeters /
-                    sourceSeatHeight;
-
-                if (uniformScale <
-                        MinimumSafeUniformScale ||
-                    uniformScale >
-                        MaximumSafeUniformScale)
+                else
                 {
-                    rejectionReason =
-                        "Required chair scale correction is too large for automatic publication.";
-                    return false;
-                }
+                    canonicalSeatFallback =
+                        true;
 
-                scaleCorrectionApplied =
-                    true;
+                    sourceSeatHeight =
+                        NominalSeatHeightMeters;
+                }
             }
 
             float sourceFrontX =
@@ -211,8 +208,10 @@ namespace BistroBuilder.Editor.Savic
                     : scaledDepth;
 
             float finalSeatHeight =
-                sourceSeatHeight *
-                uniformScale;
+                canonicalSeatFallback
+                    ? NominalSeatHeightMeters
+                    : sourceSeatHeight *
+                      uniformScale;
 
             if (!HasSafePublishedDimensions(
                     finalWidth,
@@ -264,6 +263,7 @@ namespace BistroBuilder.Editor.Savic
                     planReason =
                         BuildPlanReason(
                             scaleCorrectionApplied,
+                            canonicalSeatFallback,
                             visualYawDegrees,
                             finalSeatHeight),
                     plannedUtc =
@@ -422,13 +422,16 @@ namespace BistroBuilder.Editor.Savic
 
         private static string BuildPlanReason(
             bool scaleCorrectionApplied,
+            bool canonicalSeatFallback,
             float visualYawDegrees,
             float finalSeatHeight)
         {
             string scaleReason =
-                scaleCorrectionApplied
-                    ? "uniform seat-height normalization applied"
-                    : "source seat height accepted";
+                canonicalSeatFallback
+                    ? "canonical dining-chair seat height used because source seat surface was not reliable"
+                    : scaleCorrectionApplied
+                        ? "uniform seat-height normalization applied"
+                        : "source seat height accepted";
 
             string rotationReason =
                 Math.Abs(visualYawDegrees) <=
