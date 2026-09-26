@@ -9,7 +9,7 @@ namespace BistroBuilder.Editor.Savic
         ISavicSourceImportAdapter
     {
         internal const string BuilderId = "savic.source-import.unity-model";
-        internal const string BuilderVersion = "1.0.0";
+        internal const string BuilderVersion = "1.1.0";
 
         private readonly SavicStorageLayout layout;
 
@@ -40,7 +40,8 @@ namespace BistroBuilder.Editor.Savic
                    extension == ".fbx";
         }
 
-        public SavicSourceImportResult Import(SavicManifest manifest)
+        public SavicSourceImportResult Materialize(
+            SavicManifest manifest)
         {
             if (!CanImport(manifest))
             {
@@ -88,34 +89,100 @@ namespace BistroBuilder.Editor.Savic
                     manifest.source.originalFileName);
 
             string assetPath =
-                layout.ToProjectRelativePath(mirrorAbsolutePath);
-
-            MirrorMutation mutation = EnsureMirror(
-                archivedPath,
-                mirrorAbsolutePath,
-                manifest.source.sourceHash);
-
-            bool changed = mutation.Changed;
+                layout.ToProjectRelativePath(
+                    mirrorAbsolutePath);
 
             try
             {
-                if (!changed)
+                bool changed =
+                    EnsureMirrorMaterialized(
+                        archivedPath,
+                        mirrorAbsolutePath,
+                        manifest.source.sourceHash);
+
+                return new SavicSourceImportResult(
+                    true,
+                    changed,
+                    assetPath,
+                    null,
+                    changed
+                        ? "Unity source mirror materialized and hash-verified."
+                        : "Existing hash-addressed Unity source mirror reused.");
+            }
+            catch (Exception exception)
+            {
+                return new SavicSourceImportResult(
+                    false,
+                    false,
+                    assetPath,
+                    null,
+                    "Unity source mirror materialization failed: " +
+                    exception.Message);
+            }
+        }
+
+        public SavicSourceImportResult ImportPrepared(
+            SavicManifest manifest)
+        {
+            if (!CanImport(manifest))
+            {
+                return new SavicSourceImportResult(
+                    false,
+                    false,
+                    string.Empty,
+                    null,
+                    "No compatible 3D source import adapter is available.");
+            }
+
+            ValidateManifest(manifest);
+
+            string mirrorAbsolutePath =
+                layout.GetUnitySourceMirrorPath(
+                    manifest.source.sourceHash,
+                    manifest.source.originalFileName);
+
+            string assetPath =
+                layout.ToProjectRelativePath(
+                    mirrorAbsolutePath);
+
+            if (!File.Exists(mirrorAbsolutePath))
+            {
+                return new SavicSourceImportResult(
+                    false,
+                    false,
+                    assetPath,
+                    null,
+                    "Prepared Unity source mirror is missing.");
+            }
+
+            if (!ValidateContainerPreflight(
+                    mirrorAbsolutePath,
+                    manifest.source.extension,
+                    out string preflightError))
+            {
+                return new SavicSourceImportResult(
+                    false,
+                    false,
+                    assetPath,
+                    null,
+                    "Prepared Unity source mirror failed preflight: " +
+                    preflightError);
+            }
+
+            try
+            {
+                UnityEngine.Object existingMainObject =
+                    AssetDatabase.LoadMainAssetAtPath(
+                        assetPath);
+
+                if (existingMainObject is GameObject)
                 {
-                    UnityEngine.Object existingMainObject =
-                        AssetDatabase.LoadMainAssetAtPath(
-                            assetPath);
-
-                    if (existingMainObject is GameObject)
-                    {
-                        mutation.Commit();
-
-                        return new SavicSourceImportResult(
-                            true,
-                            false,
-                            assetPath,
-                            existingMainObject,
-                            "Existing validated Unity source mirror reused without reimport.");
-                    }
+                    return new SavicSourceImportResult(
+                        true,
+                        false,
+                        assetPath,
+                        existingMainObject,
+                        "Prepared Unity source mirror already has a valid imported GameObject.");
                 }
 
                 AssetDatabase.ImportAsset(
@@ -124,51 +191,72 @@ namespace BistroBuilder.Editor.Savic
                     ImportAssetOptions.ForceUpdate);
 
                 UnityEngine.Object mainObject =
-                    AssetDatabase.LoadMainAssetAtPath(assetPath);
+                    AssetDatabase.LoadMainAssetAtPath(
+                        assetPath);
 
                 if (mainObject == null)
                 {
-                    RollbackMirror(assetPath, mutation);
                     return new SavicSourceImportResult(
                         false,
-                        changed,
+                        true,
                         assetPath,
                         null,
-                        "Unity imported no main object from the source.");
+                        "Unity imported no main object from the prepared source.");
                 }
 
                 if (mainObject is not GameObject)
                 {
-                    RollbackMirror(assetPath, mutation);
                     return new SavicSourceImportResult(
                         false,
-                        changed,
+                        true,
                         assetPath,
                         mainObject,
                         "Imported 3D source main object is not a GameObject.");
                 }
 
-                mutation.Commit();
-
                 return new SavicSourceImportResult(
                     true,
-                    changed,
+                    true,
                     assetPath,
                     mainObject,
-                    changed
-                        ? "Unity source mirror materialized and imported."
-                        : "Existing Unity source mirror validated and imported.");
+                    "Prepared Unity source mirror imported successfully.");
             }
             catch (Exception exception)
             {
-                RollbackMirror(assetPath, mutation);
                 return new SavicSourceImportResult(
                     false,
-                    changed,
+                    true,
                     assetPath,
                     null,
-                    "Unity source import failed: " + exception.Message);
+                    "Unity source import failed: " +
+                    exception.Message);
             }
+        }
+
+        public SavicSourceImportResult Import(
+            SavicManifest manifest)
+        {
+            SavicSourceImportResult materialized =
+                Materialize(
+                    manifest);
+
+            if (!materialized.Succeeded)
+                return materialized;
+
+            SavicSourceImportResult imported =
+                ImportPrepared(
+                    manifest);
+
+            if (!imported.Succeeded)
+                return imported;
+
+            return new SavicSourceImportResult(
+                true,
+                materialized.Changed ||
+                imported.Changed,
+                imported.AssetPath,
+                imported.MainObject,
+                imported.Message);
         }
 
         private static bool ValidateContainerPreflight(
@@ -269,51 +357,52 @@ namespace BistroBuilder.Editor.Savic
                 throw new InvalidOperationException("Manifest has no archived source path.");
         }
 
-        private MirrorMutation EnsureMirror(
+        private bool EnsureMirrorMaterialized(
             string archivedPath,
             string mirrorAbsolutePath,
             string expectedHash)
         {
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(mirrorAbsolutePath)
+            string mirrorDirectory =
+                Path.GetDirectoryName(
+                    mirrorAbsolutePath)
                 ?? throw new InvalidOperationException(
-                    "Could not resolve Unity mirror directory."));
+                    "Could not resolve Unity mirror directory.");
 
-            bool hadExisting = File.Exists(mirrorAbsolutePath);
+            Directory.CreateDirectory(
+                mirrorDirectory);
 
-            if (hadExisting)
+            if (File.Exists(
+                    mirrorAbsolutePath))
             {
                 string mirrorHash =
-                    SavicHashService.ComputeSha256(mirrorAbsolutePath);
+                    SavicHashService.ComputeSha256(
+                        mirrorAbsolutePath);
 
                 if (string.Equals(
                         mirrorHash,
                         expectedHash,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return MirrorMutation.Unchanged(mirrorAbsolutePath);
+                    return false;
                 }
             }
 
-            Directory.CreateDirectory(layout.StagingRoot);
+            string tempPath =
+                Path.Combine(
+                    mirrorDirectory,
+                    "." +
+                    Path.GetFileName(
+                        mirrorAbsolutePath) +
+                    ".savic-" +
+                    Guid.NewGuid().ToString("N") +
+                    ".tmp");
 
-            string tempPath = Path.Combine(
-                layout.StagingRoot,
-                "mirror_" + Guid.NewGuid().ToString("N") +
-                Path.GetExtension(mirrorAbsolutePath));
-
-            string backupPath = hadExisting
-                ? Path.Combine(
-                    layout.StagingRoot,
-                    "mirror_backup_" + Guid.NewGuid().ToString("N") +
-                    Path.GetExtension(mirrorAbsolutePath))
-                : string.Empty;
+            string backupPath =
+                mirrorAbsolutePath +
+                ".savic-backup";
 
             try
             {
-                if (hadExisting)
-                    File.Copy(mirrorAbsolutePath, backupPath, true);
-
                 string tempHash =
                     CopyFileAndComputeSha256(
                         archivedPath,
@@ -328,12 +417,28 @@ namespace BistroBuilder.Editor.Savic
                         "Archived source failed SHA-256 integrity validation while materializing the Unity mirror.");
                 }
 
-                if (hadExisting)
+                if (File.Exists(
+                        mirrorAbsolutePath))
                 {
-                    File.Copy(
+                    if (File.Exists(
+                            backupPath))
+                    {
+                        File.Delete(
+                            backupPath);
+                    }
+
+                    File.Replace(
                         tempPath,
                         mirrorAbsolutePath,
+                        backupPath,
                         true);
+
+                    if (File.Exists(
+                            backupPath))
+                    {
+                        File.Delete(
+                            backupPath);
+                    }
                 }
                 else
                 {
@@ -342,25 +447,23 @@ namespace BistroBuilder.Editor.Savic
                         mirrorAbsolutePath);
                 }
 
-                return new MirrorMutation(
-                    mirrorAbsolutePath,
-                    backupPath,
-                    hadExisting,
-                    true);
-            }
-            catch
-            {
-                if (hadExisting && File.Exists(backupPath))
-                    File.Copy(backupPath, mirrorAbsolutePath, true);
-                else if (!hadExisting && File.Exists(mirrorAbsolutePath))
-                    File.Delete(mirrorAbsolutePath);
-
-                throw;
+                return true;
             }
             finally
             {
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
+                if (File.Exists(
+                        tempPath))
+                {
+                    File.Delete(
+                        tempPath);
+                }
+
+                if (File.Exists(
+                        backupPath))
+                {
+                    File.Delete(
+                        backupPath);
+                }
             }
         }
 
@@ -431,107 +534,6 @@ namespace BistroBuilder.Editor.Savic
                     hash,
                     value =>
                         value.ToString("x2")));
-        }
-
-        private static void RollbackMirror(
-            string assetPath,
-            MirrorMutation mutation)
-        {
-            if (mutation == null || !mutation.Changed)
-                return;
-
-            try
-            {
-                if (!mutation.HadExisting)
-                {
-                    // Let Unity remove both the asset and its .meta before
-                    // deleting any raw mirror bytes. This avoids orphaned
-                    // metadata after a failed importer.
-                    AssetDatabase.DeleteAsset(
-                        assetPath);
-
-                    mutation.Rollback();
-                    return;
-                }
-
-                mutation.Rollback();
-
-                AssetDatabase.ImportAsset(
-                    assetPath,
-                    ImportAssetOptions.ForceSynchronousImport |
-                    ImportAssetOptions.ForceUpdate);
-            }
-            catch (Exception cleanupException)
-            {
-                Debug.LogError(
-                    "[SAVIC] Source mirror rollback failed for '" +
-                    assetPath + "': " + cleanupException);
-            }
-        }
-
-        private sealed class MirrorMutation
-        {
-            internal MirrorMutation(
-                string mirrorPath,
-                string backupPath,
-                bool hadExisting,
-                bool changed)
-            {
-                MirrorPath = mirrorPath;
-                BackupPath = backupPath;
-                HadExisting = hadExisting;
-                Changed = changed;
-            }
-
-            internal string MirrorPath { get; }
-            internal string BackupPath { get; }
-            internal bool HadExisting { get; }
-            internal bool Changed { get; }
-
-            internal static MirrorMutation Unchanged(string mirrorPath)
-            {
-                return new MirrorMutation(
-                    mirrorPath,
-                    string.Empty,
-                    true,
-                    false);
-            }
-
-            internal void Commit()
-            {
-                if (!string.IsNullOrWhiteSpace(BackupPath) &&
-                    File.Exists(BackupPath))
-                {
-                    File.Delete(BackupPath);
-                }
-            }
-
-            internal void Rollback()
-            {
-                if (!Changed)
-                    return;
-
-                if (HadExisting)
-                {
-                    if (!File.Exists(BackupPath))
-                    {
-                        throw new IOException(
-                            "SAVIC mirror rollback backup is missing.");
-                    }
-
-                    File.Copy(BackupPath, MirrorPath, true);
-                }
-                else if (File.Exists(MirrorPath))
-                {
-                    File.Delete(MirrorPath);
-                }
-
-                if (!string.IsNullOrWhiteSpace(BackupPath) &&
-                    File.Exists(BackupPath))
-                {
-                    File.Delete(BackupPath);
-                }
-            }
         }
 
     }
