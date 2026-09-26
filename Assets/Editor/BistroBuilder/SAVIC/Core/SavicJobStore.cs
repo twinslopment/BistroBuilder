@@ -424,6 +424,52 @@ namespace BistroBuilder.Editor.Savic
                 job.updatedUtc = now;
                 job.lastDurationMilliseconds =
                     Math.Max(0L, durationMilliseconds);
+                job.outcomeStatus =
+                    outcome.Status ?? string.Empty;
+
+                SavicProcessingDiagnostics diagnostics =
+                    outcome.Diagnostics;
+
+                if (diagnostics != null)
+                {
+                    job.reasonCode =
+                        diagnostics.reasonCode ?? string.Empty;
+                    job.primaryStage =
+                        diagnostics.primaryStage ?? string.Empty;
+                    job.stageTimings =
+                        diagnostics.stages == null
+                            ? new List<SavicProcessingStageRecord>()
+                            : diagnostics.stages
+                                .Where(stage => stage != null)
+                                .Select(
+                                    stage =>
+                                        new SavicProcessingStageRecord
+                                        {
+                                            stageId =
+                                                stage.stageId ?? string.Empty,
+                                            result =
+                                                stage.result ?? string.Empty,
+                                            durationMilliseconds =
+                                                Math.Max(
+                                                    0L,
+                                                    stage.durationMilliseconds),
+                                            detail =
+                                                stage.detail ?? string.Empty
+                                        })
+                                .ToList();
+                }
+                else
+                {
+                    job.reasonCode =
+                        outcome.Succeeded
+                            ? "PUBLISHED"
+                            : "UNCLASSIFIED_OUTCOME";
+                    job.primaryStage =
+                        "BATCH";
+                    job.stageTimings =
+                        new List<SavicProcessingStageRecord>();
+                }
+
                 snapshot.schedulerGeneration++;
                 Save();
             }
