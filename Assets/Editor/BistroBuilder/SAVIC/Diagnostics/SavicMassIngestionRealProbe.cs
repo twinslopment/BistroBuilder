@@ -517,13 +517,13 @@ namespace BistroBuilder.Editor.Savic
                 Require(
                     string.Equals(
                         brokenJob.reasonCode,
-                        "SOURCE_IMPORT_FAILED",
+                        "SOURCE_MATERIALIZATION_FAILED",
                         StringComparison.Ordinal) &&
                     string.Equals(
                         brokenJob.primaryStage,
-                        "IMPORT_SOURCE",
+                        "MATERIALIZE_SOURCE_MIRROR",
                         StringComparison.Ordinal),
-                    "Malformed asset did not retain a clear import-stage reason code.");
+                    "Malformed asset did not retain a clear materialization-stage reason code.");
 
                 SavicOperationalMetrics metrics =
                     SavicOperationalAnalytics.Build(
@@ -571,6 +571,16 @@ namespace BistroBuilder.Editor.Savic
                         StringComparison.Ordinal),
                     "High-confidence floor decoration did not publish automatically. " +
                     BuildJobStateSummary(finalJobs));
+
+                SavicProcessingStageRecord mirrorMaterializeStage =
+                    floorMirrorJob.stageTimings?
+                        .FirstOrDefault(
+                            stage =>
+                                stage != null &&
+                                string.Equals(
+                                    stage.stageId,
+                                    "MATERIALIZE_SOURCE_MIRROR",
+                                    StringComparison.Ordinal));
 
                 SavicProcessingStageRecord mirrorPrepareImportStage =
                     floorMirrorJob.stageTimings?
@@ -621,15 +631,23 @@ namespace BistroBuilder.Editor.Savic
                     "Floor decoration did not use the generic-static lightweight analysis path.");
 
                 Require(
-                    floorMirrorJob.sourcePrepared &&
+                    string.Equals(
+                        floorMirrorJob.preparationStage,
+                        SavicSourcePreparationStage
+                            .SourceImported
+                            .ToString(),
+                        StringComparison.Ordinal) &&
+                    mirrorMaterializeStage != null &&
                     mirrorPrepareImportStage != null,
-                    "Floor decoration did not persist the staged source-preparation checkpoint.");
+                    "Floor decoration did not persist materialize/import preparation checkpoints.");
 
                 Require(
                     floorMirrorJob.maximumAtomicDurationMilliseconds <
                     SavicBatchProcessor.SlowJobWarningMilliseconds,
                     "Floor decoration still contains a slow atomic stage: max=" +
                     floorMirrorJob.maximumAtomicDurationMilliseconds +
+                    " ms, materialize=" +
+                    (mirrorMaterializeStage?.durationMilliseconds ?? -1) +
                     " ms, prepare-import=" +
                     (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
                     " ms, reuse-import=" +
@@ -794,7 +812,9 @@ namespace BistroBuilder.Editor.Savic
                     "Floor mirror max atomic stage: " +
                     floorMirrorJob.maximumAtomicDurationMilliseconds +
                     " ms\n" +
-                    "Floor mirror stages: prepare-import " +
+                    "Floor mirror stages: materialize " +
+                    (mirrorMaterializeStage?.durationMilliseconds ?? -1) +
+                    " / prepare-import " +
                     (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
                     " / reuse-import " +
                     (mirrorReuseImportStage?.durationMilliseconds ?? -1) +
