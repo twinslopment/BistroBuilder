@@ -402,6 +402,45 @@ namespace BistroBuilder.Editor.Savic
                             StringComparer.Ordinal)
                         .FirstOrDefault();
 
+                SavicJobRecord masterChairJob =
+                    finalJobs.FirstOrDefault(
+                        job =>
+                            job != null &&
+                            string.Equals(
+                                job.originalFileName,
+                                Prefix + "02_chair_master_002.fbx",
+                                StringComparison.Ordinal));
+
+                Require(
+                    masterChairJob != null &&
+                    (string.Equals(
+                         masterChairJob.state,
+                         SavicJobState.Done.ToString(),
+                         StringComparison.Ordinal) ||
+                     string.Equals(
+                         masterChairJob.state,
+                         SavicJobState.NeedsReview.ToString(),
+                         StringComparison.Ordinal)),
+                    "Explicit chair source did not terminate in a chair-specific state.");
+
+                Require(
+                    manifests.TryGetBySavicId(
+                        masterChairJob.manifestSavicId,
+                        out SavicManifest masterChairManifest) &&
+                    masterChairManifest != null &&
+                    string.Equals(
+                        masterChairManifest.classification?.type,
+                        "Chair",
+                        StringComparison.Ordinal),
+                    "Explicit chair source was not classified as Chair.");
+
+                Require(
+                    !string.Equals(
+                        masterChairJob.reasonCode,
+                        "UNSUPPORTED_PUBLICATION_FAMILY",
+                        StringComparison.Ordinal),
+                    "Explicit chair source still fell through to unsupported family.");
+
                 Require(
                     knownGoodJob != null,
                     "No valid real model completed after the malformed source. " +
@@ -742,6 +781,7 @@ namespace BistroBuilder.Editor.Savic
                     "Interrupted-job recovery: PASS\n" +
                     "Malformed asset isolation: PASS\n" +
                     "Known-good asset after failure: PASS\n" +
+                    "Explicit chair family routing: PASS\n" +
                     "Terminal drain: PASS\n" +
                     "Operational reason codes: PASS\n" +
                     "Per-stage timings: PASS\n" +
