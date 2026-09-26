@@ -1581,7 +1581,13 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE K] `CHAIR_SEMANTIC_REVIEW` deja de ser un estado terminal de publicación. La calidad semántica queda registrada como PASS/REVIEW, pero una silla válida puede seguir hasta authoring/publication. Los fallos terminales legítimos pasan a ser gates funcionales concretos (`CHAIR_AUTHORING_REVIEW` o `CHAIR_PUBLICATION_FAILED`).
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002`, ya conocido como asset válido, debe llegar a `DONE`. El log debe mostrar `Chair publication independent of semantic partition: PASS` y la estrategia de collider usada. Si la semántica detallada no es fiable, debe aparecer `GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT`.
+[V1 REDISEÑADO — FASE K / CHAIR FUNCTIONAL GEOMETRY V2] Tras comprobar que `chair_master_002` seguía bloqueado por `CHAIR_AUTHORING_REVIEW`, se elimina la dependencia del gate agregado `chairGeometry.usable` como caja negra. El perfil de silla expone ahora readiness funcional separada: `seatResolved`, `orientationResolved` y `supportResolved`, con diagnóstico individual.
+
+[V1 IMPLEMENTADO — FASE K] La detección de asiento es ahora independiente del winding de la malla. El analizador V2 localiza superficies horizontales mediante `abs(normal.y)`, manteniendo por separado la métrica de caras con normal positiva. Esto evita que una silla válida falle únicamente porque el FBX tenga winding/normales invertidas o mixtas. El perfil persiste `seatSurfaceAreaRatio` y `seatDetectionMode`.
+
+[V1 IMPLEMENTADO — FASE K] El planner exige los tres contratos funcionales concretos (asiento, orientación y soporte) y, si alguno falla, devuelve el motivo exacto junto con la evidencia geométrica. La semántica detallada permanece opcional; el collider puede seguir por `GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT`.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002` debe llegar a `DONE`. Si no lo hace, el propio error imprimirá qué contrato funcional concreto falla (seat/orientation/support) y sus métricas, evitando nuevos ciclos de error genérico.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
