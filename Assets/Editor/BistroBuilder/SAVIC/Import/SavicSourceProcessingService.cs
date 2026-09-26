@@ -589,7 +589,7 @@ namespace BistroBuilder.Editor.Savic
                         previousPublishedSnapshot,
                         manifest,
                         familyOutcome.Message,
-                        "FAMILY_PUBLICATION_FAILED",
+                        familyOutcome.ReasonCode,
                         "FAMILY_PUBLICATION",
                         trace);
                 }
