@@ -351,9 +351,10 @@ namespace BistroBuilder.Editor.Savic
             return claimed != null;
         }
 
-        internal void YieldPreparedSource(
+        internal void YieldPreparationStage(
             string jobId,
             SavicSourceProcessingOutcome outcome,
+            SavicSourcePreparationStage preparationStage,
             long durationMilliseconds)
         {
             if (string.IsNullOrWhiteSpace(jobId))
@@ -396,26 +397,33 @@ namespace BistroBuilder.Editor.Savic
                         now;
 
                     job.message =
-                        "Cancellation completed after source preparation.";
+                        "Cancellation completed after the current source-preparation stage.";
                 }
                 else
                 {
                     job.state =
                         SavicJobState.Ingested.ToString();
 
+                    job.preparationStage =
+                        preparationStage.ToString();
+
+                    job.sourcePrepared =
+                        preparationStage ==
+                        SavicSourcePreparationStage.SourceImported;
+
                     job.checkpoint =
-                        "SOURCE_PREPARED";
+                        preparationStage ==
+                        SavicSourcePreparationStage.MirrorMaterialized
+                            ? "MIRROR_MATERIALIZED"
+                            : "SOURCE_PREPARED";
 
                     job.completedUtc =
                         string.Empty;
 
-                    job.sourcePrepared =
-                        true;
-
                     job.message =
                         string.IsNullOrWhiteSpace(
                             outcome.Message)
-                            ? "Unity source prepared for staged continuation."
+                            ? "Source preparation stage completed."
                             : outcome.Message;
                 }
 
@@ -543,7 +551,12 @@ namespace BistroBuilder.Editor.Savic
                 ApplyOutcomeDiagnostics(
                     job,
                     outcome,
-                    job.sourcePrepared);
+                    !string.IsNullOrWhiteSpace(
+                        job.preparationStage) &&
+                    !string.Equals(
+                        job.preparationStage,
+                        SavicSourcePreparationStage.None.ToString(),
+                        StringComparison.Ordinal));
 
                 snapshot.schedulerGeneration++;
                 Save();
@@ -709,6 +722,38 @@ namespace BistroBuilder.Editor.Savic
                 ?? new SavicQueueSnapshot();
 
             snapshot.jobs ??= new List<SavicJobRecord>();
+
+            for (int index = 0;
+                 index < snapshot.jobs.Count;
+                 index++)
+            {
+                SavicJobRecord job =
+                    snapshot.jobs[index];
+
+                if (job == null)
+                    continue;
+
+                if (string.IsNullOrWhiteSpace(
+                        job.preparationStage))
+                {
+                    job.preparationStage =
+                        job.sourcePrepared
+                            ? SavicSourcePreparationStage
+                                .SourceImported
+                                .ToString()
+                            : SavicSourcePreparationStage
+                                .None
+                                .ToString();
+                }
+
+                job.sourcePrepared =
+                    string.Equals(
+                        job.preparationStage,
+                        SavicSourcePreparationStage
+                            .SourceImported
+                            .ToString(),
+                        StringComparison.Ordinal);
+            }
         }
 
         private void Save()
