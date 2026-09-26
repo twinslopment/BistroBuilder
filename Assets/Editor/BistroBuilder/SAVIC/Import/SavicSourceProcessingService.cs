@@ -68,6 +68,18 @@ namespace BistroBuilder.Editor.Savic
                         this.manifests),
                     new SavicChairFamilyModule(
                         layout,
+                        this.manifests),
+                    new SavicGenericPlaceableFamilyModule(
+                        "Decoration",
+                        layout,
+                        this.manifests),
+                    new SavicGenericPlaceableFamilyModule(
+                        "KitchenEquipment",
+                        layout,
+                        this.manifests),
+                    new SavicGenericPlaceableFamilyModule(
+                        "ServiceEquipment",
+                        layout,
                         this.manifests));
 
             adapters.Add(
