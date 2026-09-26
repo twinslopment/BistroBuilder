@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "4.2.0";
+        internal const string Version = "4.3.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -584,9 +584,12 @@ namespace BistroBuilder.Editor.Savic
 
             if (explicitChairToken)
             {
-                score += 0.40f;
+                // This score expresses identity confidence. Publication
+                // readiness is evaluated later by geometry/semantic/authoring
+                // gates and must not dilute an explicit, non-conflicting type.
+                score += 0.70f;
                 evidence.Add(
-                    "name contains an explicit chair token");
+                    "name contains an explicit non-conflicting chair identity token");
             }
 
             int contextMatches =
