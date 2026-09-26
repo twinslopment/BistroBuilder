@@ -32,7 +32,7 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         if (Instance == null || Instance.bypassExit || !Instance.IsReady) return false;
         if (Instance.opening != null && Instance.opening.IsInitialDesignPhase)
         {
-            Instance.actionStatus = "Termina el diseÃ±o con Validar restaurante y continuar."; return true;
+            Instance.actionStatus = "Termina el diseño con Validar restaurante y continuar."; return true;
         }
         if (Instance.tool != null && Instance.tool.HasDraftChanges)
         { Instance.exitRequested = true; Instance.modal.gameObject.SetActive(true); return true; }
@@ -72,8 +72,8 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         openingControls.gameObject.SetActive(tool.SelectedKind == EntityKind.Opening);
         selection.text = tool.SelectionDescription();
         dimensions.text = tool.DimensionsText;
-        moduleLabel.text = "MÃ³dulo  " + tool.ModuleLength.ToString("0.00") + " m Â· " + tool.ModuleAngle.ToString("0") + "Â°";
-        summary.text = "CONSTRUCCIÃ“N\n" + tool.WallCount + " paredes Â· " + tool.RoomCount + " habitaciones";
+        moduleLabel.text = "Módulo  " + tool.ModuleLength.ToString("0.00") + " m · " + tool.ModuleAngle.ToString("0") + "°";
+        summary.text = "CONSTRUCCIÓN\n" + tool.WallCount + " paredes · " + tool.RoomCount + " habitaciones";
         status.text = string.IsNullOrEmpty(actionStatus) ? tool.StatusMessage : actionStatus;
         undo.interactable = tool.CanUndo; redo.interactable = tool.CanRedo;
         copy.interactable = remove.interactable = tool.SelectedKind == EntityKind.Wall || tool.SelectedKind == EntityKind.Opening;
@@ -89,31 +89,31 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         if (canvas == null || tool == null) return;
         root = Node("BB_ConstructionWorkspace", canvas.transform);
         Stretch(root);
-        var catalogue = Panel("CatÃ¡logo de construcciÃ³n", root, new Vector2(0,1), new Vector2(12,-82), new Vector2(252,760));
-        Text(catalogue, "DiseÃ±a tu local", 25, 40);
+        var catalogue = Panel("Catálogo de construcción", root, new Vector2(0,1), new Vector2(12,-82), new Vector2(252,760));
+        Text(catalogue, "Diseña tu local", 25, 40);
         Text(catalogue, "HERRAMIENTAS", 12, 24);
         Mode(catalogue, "Pared continua", BistroBuilderConstructionRuntimeMode.Wall, "wall");
-        Mode(catalogue, "MÃ³dulo de pared", BistroBuilderConstructionRuntimeMode.WallModule, "module");
-        Mode(catalogue, "HabitaciÃ³n por arrastre", BistroBuilderConstructionRuntimeMode.Room, "room");
+        Mode(catalogue, "Módulo de pared", BistroBuilderConstructionRuntimeMode.WallModule, "module");
+        Mode(catalogue, "Habitación por arrastre", BistroBuilderConstructionRuntimeMode.Room, "room");
         var apertures = Row(catalogue);
         Mode(apertures, "Puerta", BistroBuilderConstructionRuntimeMode.Door, "door");
         Mode(apertures, "Ventana", BistroBuilderConstructionRuntimeMode.Window, "window");
         Text(catalogue, "TIPO DE ESPACIO", 12, 24);
         var zoneRow = Row(catalogue);
-        Zone(zoneRow, "SalÃ³n", "zone.dining"); Zone(zoneRow, "Cocina", "zone.kitchen");
+        Zone(zoneRow, "Salón", "zone.dining"); Zone(zoneRow, "Cocina", "zone.kitchen");
         var otherZones = Row(catalogue);
-        Zone(otherZones, "BaÃ±o", "zone.bathroom"); Zone(otherZones, "Barra", "zone.bar"); Zone(otherZones, "Terraza", "zone.terrace");
-        moduleControls = Column("MÃ³dulos", catalogue);
+        Zone(otherZones, "Baño", "zone.bathroom"); Zone(otherZones, "Barra", "zone.bar"); Zone(otherZones, "Terraza", "zone.terrace");
+        moduleControls = Column("Módulos", catalogue);
         moduleLabel = Text(moduleControls, "", 14, 26);
         var lengths = Row(moduleControls);
         foreach (float length in new[] {0.5f, 1f, 2f, 4f})
         { float captured = length; Button(lengths, length + " m", () => tool.ConfigureModule(captured, tool.ModuleAngle)); }
-        Button(moduleControls, "Girar mÃ³dulo 90Â°", () => tool.ConfigureModule(tool.ModuleLength, tool.ModuleAngle + 90)).gameObject.AddComponent<BistroBuilderPointerHint>().Kind = BistroBuilderPointerKind.Rotate;
+        Button(moduleControls, "Girar módulo 90°", () => tool.ConfigureModule(tool.ModuleLength, tool.ModuleAngle + 90)).gameObject.AddComponent<BistroBuilderPointerHint>().Kind = BistroBuilderPointerKind.Rotate;
         Mode(catalogue, "Abrir mobiliario", BistroBuilderConstructionRuntimeMode.Furniture, "furniture");
         Button(catalogue, "Carta y platos - probar scroll", OpenCarta, 42);
         summary = Text(catalogue, "", 14, 48);
 
-        inspector = Panel("Inspector de construcciÃ³n", root, new Vector2(1,1), new Vector2(-12,-82), new Vector2(274,420));
+        inspector = Panel("Inspector de construcción", root, new Vector2(1,1), new Vector2(-12,-82), new Vector2(274,420));
         Text(inspector, "Inspector", 25, 40);
         selection = Text(inspector, "", 16, 165);
         var editRow = Row(inspector);
@@ -121,15 +121,15 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         remove = Button(editRow, "Eliminar", () => { tool.TryDeleteSelection(out var error); actionStatus = error; });
         openingControls = Column("Editar abertura", inspector);
         var movement = Row(openingControls);
-        Button(movement, "â† 0,25 m", () => AdjustOpening(-0.25f));
-        Button(movement, "0,25 m â†’", () => AdjustOpening(0.25f));
+        Button(movement, "← 0,25 m", () => AdjustOpening(-0.25f));
+        Button(movement, "0,25 m →", () => AdjustOpening(0.25f));
 
-        initialControls = Panel("DiseÃ±o inicial", root, new Vector2(1,0), new Vector2(-12,200), new Vector2(274,160));
-        Text(initialControls, "DiseÃ±o inicial", 20, 28);
-        saveInitial = Button(initialControls, "Guardar recuperaciÃ³n", SaveInitial);
+        initialControls = Panel("Diseño inicial", root, new Vector2(1,0), new Vector2(-12,200), new Vector2(274,160));
+        Text(initialControls, "Diseño inicial", 20, 28);
+        saveInitial = Button(initialControls, "Guardar recuperación", SaveInitial);
         completeInitial = Button(initialControls, "Validar restaurante y continuar", CompleteInitial, 52);
 
-        var bottom = Panel("Acciones de construcciÃ³n", root, new Vector2(0.5f,0), new Vector2(0,82), new Vector2(990,104));
+        var bottom = Panel("Acciones de construcción", root, new Vector2(0.5f,0), new Vector2(0,82), new Vector2(990,104));
         status = Text(bottom, "", 15, 30);
         var actions = Row(bottom);
         dimensions = Text(actions, "", 13, 38);
@@ -146,26 +146,26 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
     {
         modal = Node("Cambios pendientes", root); Stretch(modal);
         modal.gameObject.AddComponent<Image>().color = BistroBuilderUiTokens.Overlay;
-        var dialog = Panel("ConfirmaciÃ³n", modal, new Vector2(0.5f,0.5f), Vector2.zero, new Vector2(460,290));
+        var dialog = Panel("Confirmación", modal, new Vector2(0.5f,0.5f), Vector2.zero, new Vector2(460,290));
         Text(dialog, "Cambios pendientes", 25, 42);
-        Text(dialog, "Aplica la construcciÃ³n o descarta el borrador. TambiÃ©n puedes seguir editando.", 16, 62);
+        Text(dialog, "Aplica la construcción o descarta el borrador. También puedes seguir editando.", 16, 62);
         Button(dialog, "Aplicar cambios", () => { Apply(); if (!tool.HasDraftChanges) { modal.gameObject.SetActive(false); if (exitRequested) ExitNow(); } });
         Button(dialog, "Descartar cambios", () => { tool.TryCancelDraft(out var e); actionStatus = e; modal.gameObject.SetActive(false); if (exitRequested) ExitNow(); });
         Button(dialog, "Seguir editando", () => modal.gameObject.SetActive(false));
         modal.gameObject.SetActive(false);
     }
-    private void Apply() { actionStatus = tool.TryCommitDraft(out var error) ? "ConstrucciÃ³n aplicada." : error; }
+    private void Apply() { actionStatus = tool.TryCommitDraft(out var error) ? "Construcción aplicada." : error; }
     private void AdjustOpening(float delta) { tool.TryAdjustOpening(delta, false, out var error); actionStatus = error; }
     private void OpenCarta()
     {
         Cache();
         if (shell == null)
         {
-            actionStatus = "No estÃ¡ disponible la navegaciÃ³n principal.";
+            actionStatus = "No está disponible la navegación principal.";
             return;
         }
         actionStatus = shell.TryOpenNavigationFromInterface("Carta", out string error)
-            ? "Carta abierta: prueba el scroll con la rueda del ratÃ³n."
+            ? "Carta abierta: prueba el scroll con la rueda del ratón."
             : error;
     }
     private void RequestExit() { if (!InterceptExit()) ExitNow(); }
@@ -179,7 +179,7 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
     private void SaveInitial()
     {
         if (!tool.TryCommitDraft(out var error)) { actionStatus = error; return; }
-        actionStatus = opening.TryRequestInitialSave(out error) ? "Guardando punto de recuperaciÃ³nâ€¦" : error;
+        actionStatus = opening.TryRequestInitialSave(out error) ? "Guardando punto de recuperación…" : error;
     }
     private void CompleteInitial()
     {

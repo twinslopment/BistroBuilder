@@ -165,7 +165,31 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             !TryPrepareEmptyPremises(out error))
             return false;
 
-        if (premisesProfile == BistroBuilderStartingPremisesProfile.Essentials && !TryPrepareEssentials(out error)) return false;
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.Essentials &&
+            !TryPrepareEssentials(out error))
+            return false;
+
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.FinishingTouches &&
+            !TryPrepareFinishingTouchesBlueprint(out error))
+            return false;
+
+        // Enter Edit Mode before publishing InitialSetup. FinishingTouches needs the
+        // canonical placement pipeline active, and a failure must leave StartMenu intact.
+        if (!editModeService.TryEnterEditMode(out _, out string enterEditError))
+        {
+            error = "La partida no pudo abrir el modo edición inicial: " + enterEditError;
+            if (premisesProfile == BistroBuilderStartingPremisesProfile.FinishingTouches)
+                TryRollbackFinishingTouchesWorld();
+            return false;
+        }
+
+        if (premisesProfile == BistroBuilderStartingPremisesProfile.FinishingTouches &&
+            !TryMaterializeFinishingTouchesFurniture(out error))
+        {
+            editModeService.TryExitEditMode(false, out _);
+            TryRollbackFinishingTouchesWorld();
+            return false;
+        }
 
         state = new BistroBuilderNewGameStateSnapshot
         {
@@ -184,12 +208,6 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         state.revision++;
         StateChanged?.Invoke();
         TryRequestInitialSave(out _);
-
-        if (!editModeService.TryEnterEditMode(out _, out string enterEditError))
-        {
-            error = "La partida se creo, pero no pudo abrirse el modo edicion: " + enterEditError;
-            return false;
-        }
         return true;
     }
 
