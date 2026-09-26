@@ -109,7 +109,8 @@ namespace BistroBuilder.Editor.Savic
                 Array.Empty<SavicEditorReviewRow>(),
                 Array.Empty<SavicEditorValidationRow>(),
                 Array.Empty<SavicEditorHistoryRow>(),
-                new SavicProjectInventorySnapshot());
+                new SavicProjectInventorySnapshot(),
+                new SavicOperationalMetrics());
 
         internal SavicEditorSnapshot(
             SavicEditorSummary summary,
@@ -118,7 +119,8 @@ namespace BistroBuilder.Editor.Savic
             IReadOnlyList<SavicEditorReviewRow> reviews,
             IReadOnlyList<SavicEditorValidationRow> validations,
             IReadOnlyList<SavicEditorHistoryRow> history,
-            SavicProjectInventorySnapshot inventory)
+            SavicProjectInventorySnapshot inventory,
+            SavicOperationalMetrics operations)
         {
             Summary = summary ?? new SavicEditorSummary();
             Assets = assets ?? Array.Empty<SavicEditorAssetRow>();
@@ -127,6 +129,7 @@ namespace BistroBuilder.Editor.Savic
             Validations = validations ?? Array.Empty<SavicEditorValidationRow>();
             History = history ?? Array.Empty<SavicEditorHistoryRow>();
             Inventory = inventory ?? new SavicProjectInventorySnapshot();
+            Operations = operations ?? new SavicOperationalMetrics();
         }
 
         internal SavicEditorSummary Summary { get; }
@@ -136,6 +139,7 @@ namespace BistroBuilder.Editor.Savic
         internal IReadOnlyList<SavicEditorValidationRow> Validations { get; }
         internal IReadOnlyList<SavicEditorHistoryRow> History { get; }
         internal SavicProjectInventorySnapshot Inventory { get; }
+        internal SavicOperationalMetrics Operations { get; }
     }
 
     internal static class SavicEditorReadModel
@@ -171,7 +175,14 @@ namespace BistroBuilder.Editor.Savic
                 BuildValidations(manifestList, inventory);
 
             List<SavicEditorReviewRow> reviews =
-                BuildReviews(manifestList, inventory);
+                BuildReviews(
+                    manifestList,
+                    jobList,
+                    inventory);
+
+            SavicOperationalMetrics operations =
+                SavicOperationalAnalytics.Build(
+                    jobList);
 
             List<SavicEditorHistoryRow> history =
                 BuildHistory(assets, jobRows);
@@ -190,7 +201,8 @@ namespace BistroBuilder.Editor.Savic
                 reviews,
                 validations,
                 history,
-                inventory);
+                inventory,
+                operations);
         }
 
         internal static List<SavicEditorAssetRow> FilterAssets(
@@ -240,7 +252,10 @@ namespace BistroBuilder.Editor.Savic
                         row.State,
                         row.Message,
                         row.Job?.manifestSavicId,
-                        row.Job?.sourceHash))
+                        row.Job?.sourceHash,
+                        row.Job?.reasonCode,
+                        row.Job?.primaryStage,
+                        row.Job?.outcomeStatus))
                 .ToList();
         }
 
@@ -513,6 +528,93 @@ namespace BistroBuilder.Editor.Savic
                 }
             }
 
+            foreach (SavicJobRecord job in
+                     jobs ?? Array.Empty<SavicJobRecord>())
+            {
+                if (job == null)
+                    continue;
+
+                bool needsReview =
+                    IsStatus(
+                        job.state,
+                        SavicJobState.NeedsReview.ToString());
+
+                bool failed =
+                    IsStatus(
+                        job.state,
+                        SavicJobState.FailedProcessing.ToString()) ||
+                    IsStatus(
+                        job.state,
+                        SavicJobState.FailedSource.ToString()) ||
+                    IsStatus(
+                        job.state,
+                        SavicJobState.Quarantined.ToString());
+
+                if (!needsReview &&
+                    !failed)
+                {
+                    continue;
+                }
+
+                string timestamp =
+                    FirstNonEmpty(
+                        job.updatedUtc,
+                        job.completedUtc,
+                        job.createdUtc);
+
+                string reason =
+                    FirstNonEmpty(
+                        job.reasonCode,
+                        job.checkpoint,
+                        job.state,
+                        "Sin código de diagnóstico");
+
+                string stage =
+                    string.IsNullOrWhiteSpace(
+                        job.primaryStage)
+                        ? string.Empty
+                        : " · Etapa: " +
+                          job.primaryStage;
+
+                result.Add(
+                    new SavicEditorReviewRow
+                    {
+                        StableKey =
+                            "job:" +
+                            (job.jobId ?? string.Empty),
+                        Source = "JOB",
+                        SavicId =
+                            job.manifestSavicId ?? string.Empty,
+                        DisplayName =
+                            FirstNonEmpty(
+                                job.originalFileName,
+                                job.manifestSavicId,
+                                "Trabajo SAVIC"),
+                        Status =
+                            NormalizeValue(
+                                job.state),
+                        Severity =
+                            failed
+                                ? "ERROR"
+                                : "WARNING",
+                        Issue =
+                            reason +
+                            stage +
+                            (string.IsNullOrWhiteSpace(
+                                 job.message)
+                                ? string.Empty
+                                : " · " +
+                                  job.message),
+                        AssetPath =
+                            job.archivedRelativePath ?? string.Empty,
+                        UpdatedUtc =
+                            timestamp,
+                        SortTimestamp =
+                            ParseTimestamp(
+                                timestamp)
+                    });
+            }
+
             string inventoryTimestamp =
                 inventory.generatedUtc ?? string.Empty;
 
@@ -558,6 +660,7 @@ namespace BistroBuilder.Editor.Savic
 
         private static List<SavicEditorReviewRow> BuildReviews(
             IEnumerable<SavicManifest> manifests,
+            IEnumerable<SavicJobRecord> jobs,
             SavicProjectInventorySnapshot inventory)
         {
             List<SavicEditorReviewRow> result =
@@ -763,6 +866,16 @@ namespace BistroBuilder.Editor.Savic
                         Title = job.DisplayName,
                         Detail =
                             job.State +
+                            (job.Job?.lastDurationMilliseconds > 0
+                                ? " · " +
+                                  job.Job.lastDurationMilliseconds +
+                                  " ms"
+                                : string.Empty) +
+                            (string.IsNullOrWhiteSpace(
+                                 job.Job?.reasonCode)
+                                ? string.Empty
+                                : " · " +
+                                  job.Job.reasonCode) +
                             (string.IsNullOrWhiteSpace(job.Message)
                                 ? string.Empty
                                 : " · " + job.Message),
