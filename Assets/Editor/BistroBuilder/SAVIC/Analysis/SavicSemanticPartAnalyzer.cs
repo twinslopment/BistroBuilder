@@ -10,7 +10,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicSemanticPartAnalyzer
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "3.0.0";
 
         private const float MinimumTriangleArea = 0.00000001f;
         private const float TableVerticalSplit01 = 0.62f;
