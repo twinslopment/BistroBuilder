@@ -13,7 +13,7 @@ namespace BistroBuilder.Editor.Savic
 
     internal static class SavicModelAnalyzer
     {
-        internal const string Version = "2.2.0";
+        internal const string Version = "3.0.0";
         private const float MinimumDimension = 0.0001f;
 
         internal static SavicModelAnalysisRecord Analyze(GameObject root)
@@ -342,12 +342,13 @@ namespace BistroBuilder.Editor.Savic
 
         private sealed class BoundsAccumulator
         {
-            private readonly Matrix4x4 rootWorldToLocal;
+            private readonly Transform root;
             private Bounds bounds;
 
             internal BoundsAccumulator(Transform root)
             {
-                rootWorldToLocal = root.worldToLocalMatrix;
+                this.root =
+                    root ?? throw new ArgumentNullException(nameof(root));
             }
 
             internal bool HasBounds { get; private set; }
@@ -358,8 +359,9 @@ namespace BistroBuilder.Editor.Savic
                 Bounds localBounds)
             {
                 Matrix4x4 toRoot =
-                    rootWorldToLocal *
-                    owner.localToWorldMatrix;
+                    SavicMetricSpace.LocalToMetric(
+                        root,
+                        owner);
 
                 Vector3 min = localBounds.min;
                 Vector3 max = localBounds.max;
