@@ -835,6 +835,8 @@ namespace BistroBuilder.Editor.Savic
                         PublicationFingerprintSchema,
                         Version,
                         manifest.source.sourceHash ?? string.Empty,
+                        manifest.incremental?.geometryFingerprint ?? string.Empty,
+                        manifest.incremental?.appearanceFingerprint ?? string.Empty,
                         plan.plannerVersion ?? string.Empty,
                         plan.uniformScale.ToString(
                             "R",
