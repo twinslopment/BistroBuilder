@@ -79,6 +79,17 @@ namespace BistroBuilder.Editor.Savic
                 detail);
         }
 
+        internal void RecordDecision(
+            string stageId,
+            string detail)
+        {
+            Record(
+                stageId,
+                "PASS",
+                0,
+                detail);
+        }
+
         internal SavicProcessingDiagnostics Finish(
             string reasonCode,
             string primaryStage,
