@@ -1565,6 +1565,14 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [VALIDACIÓN PENDIENTE EN UNITY — FASE I] Ejecutar `Run Mass Ingestion Real Probe`. Debe aparecer `Explicit chair family routing: PASS`. El caso `calibration_1m` puede seguir como familia no soportada porque es un asset técnico de calibración, no contenido jugable.
 
+[V1 IMPLEMENTADO — FASE J / SOURCE PIPELINE POR ETAPAS] La preparación de cualquier modelo 3D deja de depender de una ruta monolítica. Todos los jobs 3D pasan por checkpoints persistentes: `MIRROR_MATERIALIZED` → `SOURCE_PREPARED` → análisis/publicación. El pre-import routing se evalúa antes del primer checkpoint, por lo que contenido que ya sabemos que necesita review no incurre en I/O/importación innecesaria.
+
+[V1 IMPLEMENTADO — FASE J] El adapter Unity separa materialización hash-addressed del SourceMirror e importación AssetDatabase. La materialización valida SHA-256 y sustituye el mirror de forma atómica; la etapa de importación reutiliza un GameObject ya importado y solo ejecuta `ImportAsset` cuando hace falta. Queue schema V5 persiste `preparationStage`; `sourcePrepared` queda únicamente como campo de migración de snapshots V4.
+
+[V1 IMPLEMENTADO — FASE J] Este diseño se aplica también a mesas y sillas, no solo a decoración genérica. Así una importación, análisis o publicación costosa no se acumulan en el mismo tick. La telemetría conserva duración total y máximo atómico por job.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE J] Repetir `Run Mass Ingestion Real Probe`. Además de `Explicit chair family routing: PASS`, el floor mirror debe conservar checkpoints materialize/import, el asset malformado debe fallar en `MATERIALIZE_SOURCE_MIRROR` y los warnings slow deben evaluarse sobre cada etapa atómica real.
+
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
 
