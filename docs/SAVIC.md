@@ -1509,7 +1509,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE B / PROBE REAL] Existe `Run Incremental Real Asset Probe`, prueba desechable sobre `BB_Chair_Master_002`: publica una silla real, aplica un cambio únicamente visual/material, verifica que conserva colliders + BBSIS/spatial + navegación + persistencia, después aplica un cambio estructural y exige rebuild completo, regeneración de colliders y GUIDs estables. Todo el contenido de prueba se limpia al terminar.
 
-[VALIDACIÓN PENDIENTE EN UNITY — PROBE REAL] Ejecutar `Tools > Bistro Builder > SAVIC > Diagnostics > Run Incremental Real Asset Probe` antes de declarar cerrada la validación vertical real de la Fase B.
+[V1 VALIDADO — FASE B / PROBE REAL] `Run Incremental Real Asset Probe` PASS sobre `BB_Chair_Master_002`: baseline real publicado, cambio material detectado como `APPEARANCE_ONLY`, refresco visual sin reconstruir colliders/BBSIS/navegación/persistencia, cambio estructural detectado como `FULL_REBUILD`, colliders regenerados, GUIDs de prefab/item preservados y sin duplicados de catálogo.
 
 ### Bloque 8 — Decoración y equipamiento
 [R]
