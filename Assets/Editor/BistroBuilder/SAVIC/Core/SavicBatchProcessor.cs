@@ -12,7 +12,7 @@ namespace BistroBuilder.Editor.Savic
         // One asset operation is deliberately atomic. Time-slicing happens
         // between jobs so an interrupted asset never remains half-published.
         private const long TargetTickBudgetMilliseconds = 16;
-        private const long SlowJobWarningMilliseconds = 2000;
+        internal const long SlowJobWarningMilliseconds = 2000;
         private const double MaximumCooldownSeconds = 0.25;
 
         private readonly SavicJobStore jobs;
