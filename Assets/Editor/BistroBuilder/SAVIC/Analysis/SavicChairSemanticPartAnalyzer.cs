@@ -665,7 +665,7 @@ namespace BistroBuilder.Editor.Savic
                                 "Synthetic conservative support topology derived from strong chair geometry; detailed foot topology was not trusted."
                         },
                     evidence =
-                        "Primary chair surface partition was not automation-ready; a conservative geometry-backed semantic fallback was used because explicit chair identity and the geometry hard-gates independently confirmed seat, upper back structure and lower support."
+                        "Primary chair surface partition was not automation-ready; a conservative geometry-backed semantic fallback was used because explicit chair identity and the geometry hard-gates independently confirmed seat, upper back structure and lower support.",
                     analyzedUtc =
                         DateTime.UtcNow.ToString("O")
                 };
