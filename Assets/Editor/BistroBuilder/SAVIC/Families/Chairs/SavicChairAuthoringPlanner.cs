@@ -6,7 +6,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairAuthoringPlanner
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         internal const string TemplatePrefabAssetPath =
             "Assets/Prefabs/Restaurant/Generated/Seating/" +
@@ -50,13 +50,6 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            if (manifest.classification.score < 0.74f)
-            {
-                rejectionReason =
-                    "Chair classification confidence is too low for automatic authoring.";
-                return false;
-            }
-
             SavicModelAnalysisRecord analysis =
                 manifest.model3D;
 
@@ -69,15 +62,6 @@ namespace BistroBuilder.Editor.Savic
             {
                 rejectionReason =
                     "The model has no usable chair geometry profile.";
-                return false;
-            }
-
-            if (analysis.semanticParts == null ||
-                !analysis.semanticParts.analyzed ||
-                !analysis.semanticParts.automationReady)
-            {
-                rejectionReason =
-                    "Chair semantic parts are not automation-ready.";
                 return false;
             }
 
