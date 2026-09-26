@@ -7,10 +7,11 @@ namespace BistroBuilder.Editor.Savic
 {
     internal sealed class SavicBatchProcessor
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
-        // One asset operation is deliberately atomic. Time-slicing happens
-        // between jobs so an interrupted asset never remains half-published.
+        // Individual mutation stages remain atomic. High-confidence generic
+        // assets may yield after source preparation so import and publication
+        // do not monopolize one Editor tick.
         private const long TargetTickBudgetMilliseconds = 16;
         internal const long SlowJobWarningMilliseconds = 2000;
         private const double MaximumCooldownSeconds = 0.25;
@@ -88,12 +89,36 @@ namespace BistroBuilder.Editor.Savic
                 Stopwatch.StartNew();
 
             SavicSourceProcessingOutcome outcome;
+            bool yieldedAfterPreparation =
+                false;
 
             try
             {
-                outcome =
-                    processing.ProcessBySavicId(
-                        job.manifestSavicId);
+                bool stageGenericSourceImport =
+                    !job.sourcePrepared &&
+                    SavicGenericPlaceableAuthoringPlanner
+                        .IsHighConfidenceStaticGenericCandidate(
+                            job.originalFileName);
+
+                if (stageGenericSourceImport)
+                {
+                    outcome =
+                        processing.PrepareSourceImportBySavicId(
+                            job.manifestSavicId);
+
+                    yieldedAfterPreparation =
+                        outcome.Succeeded &&
+                        string.Equals(
+                            outcome.Status,
+                            "SOURCE_PREPARED",
+                            StringComparison.Ordinal);
+                }
+                else
+                {
+                    outcome =
+                        processing.ProcessBySavicId(
+                            job.manifestSavicId);
+                }
             }
             catch (Exception exception)
             {
@@ -118,10 +143,20 @@ namespace BistroBuilder.Editor.Savic
             lastOperationMilliseconds =
                 stopwatch.ElapsedMilliseconds;
 
-            jobs.CompleteProcessing(
-                job.jobId,
-                outcome,
-                lastOperationMilliseconds);
+            if (yieldedAfterPreparation)
+            {
+                jobs.YieldPreparedSource(
+                    job.jobId,
+                    outcome,
+                    lastOperationMilliseconds);
+            }
+            else
+            {
+                jobs.CompleteProcessing(
+                    job.jobId,
+                    outcome,
+                    lastOperationMilliseconds);
+            }
 
             double cooldownSeconds =
                 ComputeCooldownSeconds(
@@ -147,7 +182,7 @@ namespace BistroBuilder.Editor.Savic
                     job.originalFileName +
                     " took " +
                     lastOperationMilliseconds +
-                    " ms. Queue execution remains serialized.");
+                    " ms. Atomic stage execution remains serialized.");
             }
 
             return true;
