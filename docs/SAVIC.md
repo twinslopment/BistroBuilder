@@ -1573,6 +1573,12 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 VALIDADO — FASE J / SOURCE PIPELINE POR ETAPAS] `Run Mass Ingestion Real Probe` PASS. El floor mirror procesó con checkpoints materialize/import y máximo atómico de 1.137 ms; desglose: materialize 156 ms, prepare-import 1.118 ms, reuse-import 196 ms, análisis 162 ms y publicación 778 ms. Total del job 2.439 ms, sin superar el presupuesto atómico de 2.000 ms. Wine cooler por pre-import routing: 9 ms. Resultado global: 3 `DONE`, 3 `NEEDS_REVIEW`, 1 fallo seguro, 17 ticks y 5.383 ms de drenado.
 
+[V1 IMPLEMENTADO — FASE K / CHAIR SEMANTIC FALLBACK] La semántica de silla mantiene primero el análisis detallado por triángulos. Si ese particionado no alcanza readiness pero la identidad `Chair` es explícita y el perfil geométrico de silla es fuerte, SAVIC puede construir una representación semántica conservadora y explícitamente sintética de `seat/back/support`. Las zonas quedan marcadas `syntheticZone=true`; no se inventan brazos ni patas individuales.
+
+[V1 IMPLEMENTADO — FASE K] El fallback solo se activa con geometría utilizable, confianza geométrica >= 0,82, back axis/lado resueltos, clasificación name-backed + explicit token y score >= 0,74. El collider builder sigue usando la misma Quality Gate; el fallback no evita validación de dimensiones, escala, asiento, navegación, BBSIS ni persistencia.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. Deben aparecer `Chair semantic automation readiness: PASS` y `Chair semantic mode: ...`. `chair_master_002` ya no puede terminar en `CHAIR_SEMANTIC_REVIEW`; si falla después, debe hacerlo en un gate posterior y específico.
+
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
 
