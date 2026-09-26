@@ -635,6 +635,13 @@ namespace BistroBuilder.Editor.Savic
             new List<SavicProcessingStageRecord>();
     }
 
+    internal enum SavicSourcePreparationStage
+    {
+        None = 0,
+        MirrorMaterialized = 1,
+        SourceImported = 2
+    }
+
     [Serializable]
     internal sealed class SavicJobRecord
     {
@@ -655,7 +662,12 @@ namespace BistroBuilder.Editor.Savic
         public string completedUtc = string.Empty;
         public long lastDurationMilliseconds;
         public long maximumAtomicDurationMilliseconds;
+        public string preparationStage =
+            SavicSourcePreparationStage.None.ToString();
+
+        // Queue-schema migration only. New code uses preparationStage.
         public bool sourcePrepared;
+
         public string outcomeStatus = string.Empty;
         public string reasonCode = string.Empty;
         public string primaryStage = string.Empty;
