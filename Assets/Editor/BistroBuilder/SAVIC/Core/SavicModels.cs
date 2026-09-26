@@ -385,6 +385,11 @@ namespace BistroBuilder.Editor.Savic
         public float canonicalFrontLocalZ = 1f;
         public int suggestedPurchasePriceEuro;
         public bool scaleCorrectionApplied;
+        public bool unitNormalizationApplied;
+        public string unitNormalizationMode = "NONE";
+        public float sourceWidthMeters;
+        public float sourceHeightMeters;
+        public float sourceDepthMeters;
         public string templatePrefabAssetPath = string.Empty;
         public string seatUseProfileAssetPath = string.Empty;
         public string editableDefinitionAssetPath = string.Empty;
