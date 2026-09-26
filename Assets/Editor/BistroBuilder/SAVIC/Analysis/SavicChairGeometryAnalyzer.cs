@@ -9,7 +9,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairGeometryAnalyzer
     {
-        internal const string Version = "2.1.0";
+        internal const string Version = "1.0.0";
 
         private const int VerticalBinCount = 24;
         private const int MaximumSampledTrianglesPerMeshInstance = 200000;
@@ -296,12 +296,6 @@ namespace BistroBuilder.Editor.Savic
             private readonly double[] totalAreaByBin =
                 new double[VerticalBinCount];
 
-            private readonly double[] totalXByBin =
-                new double[VerticalBinCount];
-
-            private readonly double[] totalZByBin =
-                new double[VerticalBinCount];
-
             private readonly double[] upwardAreaByBin =
                 new double[VerticalBinCount];
 
@@ -309,15 +303,6 @@ namespace BistroBuilder.Editor.Savic
                 new double[VerticalBinCount];
 
             private readonly double[] upwardHeightByBin =
-                new double[VerticalBinCount];
-
-            private readonly double[] horizontalAreaByBin =
-                new double[VerticalBinCount];
-
-            private readonly double[] horizontalProjectedByBin =
-                new double[VerticalBinCount];
-
-            private readonly double[] horizontalHeightByBin =
                 new double[VerticalBinCount];
 
             private readonly double[] verticalAreaByBin =
@@ -440,45 +425,6 @@ namespace BistroBuilder.Editor.Savic
                 totalAreaByBin[bin] +=
                     weightedArea;
 
-                float x01All =
-                    Mathf.Clamp01(
-                        (centroid.x -
-                         minimumX) /
-                        width);
-
-                float z01All =
-                    Mathf.Clamp01(
-                        (centroid.z -
-                         minimumZ) /
-                        depth);
-
-                totalXByBin[bin] +=
-                    weightedArea *
-                    x01All;
-
-                totalZByBin[bin] +=
-                    weightedArea *
-                    z01All;
-
-                float absoluteNormalY =
-                    Mathf.Abs(
-                        normal.y);
-
-                if (absoluteNormalY >=
-                    SeatUpwardNormalThreshold)
-                {
-                    horizontalAreaByBin[bin] +=
-                        weightedArea;
-
-                    horizontalProjectedByBin[bin] +=
-                        weightedArea *
-                        absoluteNormalY;
-
-                    horizontalHeightByBin[bin] +=
-                        weightedArea *
-                        height01;
-                }
-
                 if (normal.y >=
                     SeatUpwardNormalThreshold)
                 {
@@ -494,7 +440,7 @@ namespace BistroBuilder.Editor.Savic
                         height01;
                 }
 
-                if (absoluteNormalY <=
+                if (Mathf.Abs(normal.y) <=
                     VerticalNormalThreshold)
                 {
                     float x01 =
@@ -579,7 +525,7 @@ namespace BistroBuilder.Editor.Savic
                 {
                     double candidate =
                         SumNeighborhood(
-                            horizontalProjectedByBin,
+                            upwardProjectedByBin,
                             bin,
                             1);
 
@@ -612,15 +558,9 @@ namespace BistroBuilder.Editor.Savic
                         maximumSamplingStride =
                             maximumSamplingStride,
                         evidence =
-                            "No sufficiently horizontal seat candidate was found in the usable chair height band."
+                            "No upward-facing seat candidate was found in the usable chair height band."
                     };
                 }
-
-                double seatSurfaceArea =
-                    SumNeighborhood(
-                        horizontalAreaByBin,
-                        seatBin,
-                        1);
 
                 double seatUpwardArea =
                     SumNeighborhood(
@@ -630,15 +570,15 @@ namespace BistroBuilder.Editor.Savic
 
                 double seatHeightWeighted =
                     SumNeighborhood(
-                        horizontalHeightByBin,
+                        upwardHeightByBin,
                         seatBin,
                         1);
 
                 float seatHeight01 =
-                    seatSurfaceArea > 0d
+                    seatUpwardArea > 0d
                         ? (float)Math.Clamp(
                             seatHeightWeighted /
-                            seatSurfaceArea,
+                            seatUpwardArea,
                             0d,
                             1d)
                         : ((float)seatBin + 0.5f) /
@@ -654,11 +594,6 @@ namespace BistroBuilder.Editor.Savic
                 float seatUpwardAreaRatio =
                     Ratio(
                         seatUpwardArea,
-                        totalArea);
-
-                float seatSurfaceAreaRatio =
-                    Ratio(
-                        seatSurfaceArea,
                         totalArea);
 
                 float upperThreshold =
@@ -715,122 +650,15 @@ namespace BistroBuilder.Editor.Savic
                             1d)
                         : 0.5f;
 
-                int firstUpperOccupancyBin =
-                    Mathf.Clamp(
-                        Mathf.FloorToInt(
-                            0.58f *
-                            VerticalBinCount),
-                        0,
-                        VerticalBinCount - 1);
-
-                double upperOccupancyArea = 0d;
-                double upperOccupancyX = 0d;
-                double upperOccupancyZ = 0d;
-
-                for (int bin = firstUpperOccupancyBin;
-                     bin < VerticalBinCount;
-                     bin++)
-                {
-                    upperOccupancyArea +=
-                        totalAreaByBin[bin];
-
-                    upperOccupancyX +=
-                        totalXByBin[bin];
-
-                    upperOccupancyZ +=
-                        totalZByBin[bin];
-                }
-
-                float upperOccupancyAreaRatio =
-                    Ratio(
-                        upperOccupancyArea,
-                        totalArea);
-
-                float upperOccupancyCentroidX01 =
-                    upperOccupancyArea > 0d
-                        ? (float)Math.Clamp(
-                            upperOccupancyX /
-                            upperOccupancyArea,
-                            0d,
-                            1d)
-                        : 0.5f;
-
-                float upperOccupancyCentroidZ01 =
-                    upperOccupancyArea > 0d
-                        ? (float)Math.Clamp(
-                            upperOccupancyZ /
-                            upperOccupancyArea,
-                            0d,
-                            1d)
-                        : 0.5f;
-
-                float verticalXBias =
+                float xBias =
                     Mathf.Abs(
                         upperVerticalCentroidX01 -
                         0.5f) *
                     2f;
 
-                float verticalZBias =
-                    Mathf.Abs(
-                        upperVerticalCentroidZ01 -
-                        0.5f) *
-                    2f;
-
-                float occupancyXBias =
-                    Mathf.Abs(
-                        upperOccupancyCentroidX01 -
-                        0.5f) *
-                    2f;
-
-                float occupancyZBias =
-                    Mathf.Abs(
-                        upperOccupancyCentroidZ01 -
-                        0.5f) *
-                    2f;
-
-                float verticalBias =
-                    Math.Max(
-                        verticalXBias,
-                        verticalZBias);
-
-                float occupancyBias =
-                    Math.Max(
-                        occupancyXBias,
-                        occupancyZBias);
-
-                bool verticalOrientationReliable =
-                    upperVerticalAreaRatio >= 0.02f &&
-                    verticalBias >= 0.08f;
-
-                bool occupancyOrientationReliable =
-                    upperOccupancyAreaRatio >= 0.08f &&
-                    occupancyBias >= 0.08f;
-
-                bool useVerticalOrientation =
-                    verticalOrientationReliable &&
-                    (!occupancyOrientationReliable ||
-                     verticalBias >=
-                     occupancyBias);
-
-                float orientationCentroidX01 =
-                    useVerticalOrientation
-                        ? upperVerticalCentroidX01
-                        : upperOccupancyCentroidX01;
-
-                float orientationCentroidZ01 =
-                    useVerticalOrientation
-                        ? upperVerticalCentroidZ01
-                        : upperOccupancyCentroidZ01;
-
-                float xBias =
-                    Mathf.Abs(
-                        orientationCentroidX01 -
-                        0.5f) *
-                    2f;
-
                 float zBias =
                     Mathf.Abs(
-                        orientationCentroidZ01 -
+                        upperVerticalCentroidZ01 -
                         0.5f) *
                     2f;
 
@@ -844,9 +672,9 @@ namespace BistroBuilder.Editor.Savic
                         backAxis,
                         "X",
                         StringComparison.Ordinal)
-                        ? orientationCentroidX01 -
+                        ? upperVerticalCentroidX01 -
                           0.5f
-                        : orientationCentroidZ01 -
+                        : upperVerticalCentroidZ01 -
                           0.5f;
 
                 string backSide =
@@ -859,39 +687,25 @@ namespace BistroBuilder.Editor.Savic
                         xBias,
                         zBias);
 
-                bool orientationResolved =
-                    verticalOrientationReliable ||
-                    occupancyOrientationReliable;
-
-                string orientationDetectionMode =
-                    useVerticalOrientation
-                        ? "UPPER_VERTICAL_SURFACE"
-                        : occupancyOrientationReliable
-                            ? "UPPER_OCCUPANCY_CENTROID"
-                            : "UNRESOLVED";
-
                 float frontX = 0f;
                 float frontZ = 0f;
 
-                if (orientationResolved)
+                if (string.Equals(
+                        backAxis,
+                        "X",
+                        StringComparison.Ordinal))
                 {
-                    if (string.Equals(
-                            backAxis,
-                            "X",
-                            StringComparison.Ordinal))
-                    {
-                        frontX =
-                            signedBias >= 0f
-                                ? -1f
-                                : 1f;
-                    }
-                    else
-                    {
-                        frontZ =
-                            signedBias >= 0f
-                                ? -1f
-                                : 1f;
-                    }
+                    frontX =
+                        signedBias >= 0f
+                            ? -1f
+                            : 1f;
+                }
+                else
+                {
+                    frontZ =
+                        signedBias >= 0f
+                            ? -1f
+                            : 1f;
                 }
 
                 int supportLastBin =
@@ -920,48 +734,28 @@ namespace BistroBuilder.Editor.Savic
                         lowerSupportArea,
                         totalArea);
 
-                bool seatResolved =
-                    seatHeight01 >= 0.32f &&
-                    seatHeight01 <= 0.68f &&
-                    seatProjectedCoverage >= 0.12f &&
-                    seatSurfaceAreaRatio >= 0.025f;
-
-                bool supportResolved =
-                    lowerSupportAreaRatio >= 0.12f;
-
                 float confidence =
                     BuildConfidence(
                         seatHeight01,
                         seatProjectedCoverage,
-                        seatSurfaceAreaRatio,
-                        Math.Max(
-                            upperVerticalAreaRatio,
-                            upperOccupancyAreaRatio),
+                        seatUpwardAreaRatio,
+                        upperVerticalAreaRatio,
                         backEdgeBias,
                         lowerSupportAreaRatio);
 
-                // A chair can still be authorable when seat-surface detection is
-                // weak: the authoring planner may use the canonical ergonomic
-                // seat height. Orientation and support remain non-negotiable.
                 bool usable =
-                    orientationResolved &&
-                    supportResolved;
+                    seatHeight01 >= 0.32f &&
+                    seatHeight01 <= 0.68f &&
+                    seatProjectedCoverage >= 0.12f &&
+                    seatUpwardAreaRatio >= 0.025f &&
+                    upperVerticalAreaRatio >= 0.08f &&
+                    lowerSupportAreaRatio >= 0.12f;
 
                 return new SavicChairGeometryProfileRecord
                 {
                     analyzed = true,
                     analyzerVersion = Version,
                     usable = usable,
-                    seatResolved =
-                        seatResolved,
-                    orientationResolved =
-                        orientationResolved,
-                    supportResolved =
-                        supportResolved,
-                    seatDetectionMode =
-                        seatUpwardArea > 0d
-                            ? "WINDING_INVARIANT_HORIZONTAL_WITH_UPWARD_SUPPORT"
-                            : "WINDING_INVARIANT_HORIZONTAL",
                     sourceTriangleCount =
                         sourceTriangleCount,
                     sampledTriangleCount =
@@ -979,40 +773,30 @@ namespace BistroBuilder.Editor.Savic
                         height,
                     seatUpwardAreaRatio =
                         seatUpwardAreaRatio,
-                    seatSurfaceAreaRatio =
-                        seatSurfaceAreaRatio,
                     seatProjectedCoverage =
                         seatProjectedCoverage,
                     upperVerticalAreaRatio =
                         upperVerticalAreaRatio,
-                    upperOccupancyAreaRatio =
-                        upperOccupancyAreaRatio,
-                    upperOccupancyCentroidX01 =
-                        upperOccupancyCentroidX01,
-                    upperOccupancyCentroidZ01 =
-                        upperOccupancyCentroidZ01,
-                    orientationDetectionMode =
-                        orientationDetectionMode,
                     upperVerticalCentroidX01 =
                         upperVerticalCentroidX01,
                     upperVerticalCentroidZ01 =
                         upperVerticalCentroidZ01,
                     backAxis =
-                        orientationResolved
+                        upperVerticalArea > 0d
                             ? backAxis
                             : "UNKNOWN",
                     backSide =
-                        orientationResolved
+                        upperVerticalArea > 0d
                             ? backSide
                             : "UNKNOWN",
                     backEdgeBias =
                         backEdgeBias,
                     frontDirectionLocalX =
-                        orientationResolved
+                        upperVerticalArea > 0d
                             ? frontX
                             : 0f,
                     frontDirectionLocalZ =
-                        orientationResolved
+                        upperVerticalArea > 0d
                             ? frontZ
                             : 0f,
                     lowerSupportAreaRatio =
@@ -1023,11 +807,8 @@ namespace BistroBuilder.Editor.Savic
                         BuildEvidence(
                             seatHeight01,
                             seatProjectedCoverage,
-                            seatSurfaceAreaRatio,
                             seatUpwardAreaRatio,
                             upperVerticalAreaRatio,
-                            upperOccupancyAreaRatio,
-                            orientationDetectionMode,
                             backAxis,
                             backSide,
                             backEdgeBias,
@@ -1135,11 +916,8 @@ namespace BistroBuilder.Editor.Savic
             private static string BuildEvidence(
                 float seatHeight01,
                 float seatCoverage,
-                float seatSurfaceAreaRatio,
-                float seatUpwardAreaRatio,
+                float seatAreaRatio,
                 float upperVerticalAreaRatio,
-                float upperOccupancyAreaRatio,
-                string orientationDetectionMode,
                 string backAxis,
                 string backSide,
                 float backEdgeBias,
@@ -1155,24 +933,14 @@ namespace BistroBuilder.Editor.Savic
                     seatCoverage.ToString(
                         "0.###",
                         CultureInfo.InvariantCulture) +
-                    "; seat horizontal surface area " +
-                    seatSurfaceAreaRatio.ToString(
-                        "0.###",
-                        CultureInfo.InvariantCulture) +
-                    "; seat upward-winding area " +
-                    seatUpwardAreaRatio.ToString(
+                    "; seat upward area " +
+                    seatAreaRatio.ToString(
                         "0.###",
                         CultureInfo.InvariantCulture) +
                     "; upper vertical area " +
                     upperVerticalAreaRatio.ToString(
                         "0.###",
                         CultureInfo.InvariantCulture) +
-                    "; upper occupancy area " +
-                    upperOccupancyAreaRatio.ToString(
-                        "0.###",
-                        CultureInfo.InvariantCulture) +
-                    "; orientation mode " +
-                    orientationDetectionMode +
                     "; inferred back " +
                     backAxis +
                     "/" +
