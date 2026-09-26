@@ -730,6 +730,107 @@ namespace BistroBuilder.Editor.Savic
             batch.Add(batchActions);
             page.Add(batch);
 
+            SavicOperationalMetrics operations =
+                snapshot.Operations ??
+                new SavicOperationalMetrics();
+
+            VisualElement operationsPanel = CreatePanel();
+            AddGroupTitle(
+                operationsPanel,
+                "Operación / rendimiento");
+
+            AddField(
+                operationsPanel,
+                "Finalizados",
+                operations.TerminalJobs +
+                " / " +
+                operations.EligibleJobs);
+
+            AddField(
+                operationsPanel,
+                "DONE / Revisión / Fallo / Cancelado",
+                operations.DoneJobs +
+                " / " +
+                operations.NeedsReviewJobs +
+                " / " +
+                operations.FailedJobs +
+                " / " +
+                operations.CancelledJobs);
+
+            AddField(
+                operationsPanel,
+                "Éxito terminal",
+                operations.SuccessRatePercent.ToString(
+                    "0.0",
+                    CultureInfo.InvariantCulture) +
+                " %");
+
+            AddField(
+                operationsPanel,
+                "Duración media / P95",
+                operations.AverageDurationMilliseconds +
+                " ms / " +
+                operations.P95DurationMilliseconds +
+                " ms");
+
+            AddField(
+                operationsPanel,
+                "Trabajo más lento",
+                string.IsNullOrWhiteSpace(
+                    operations.SlowestJobName)
+                    ? "Sin datos"
+                    : operations.SlowestJobName +
+                      " · " +
+                      operations.SlowestJobMilliseconds +
+                      " ms");
+
+            AddField(
+                operationsPanel,
+                "Motivo recurrente",
+                string.IsNullOrWhiteSpace(
+                    operations.TopIssueReason)
+                    ? "Sin incidencias clasificadas"
+                    : operations.TopIssueReason +
+                      " · " +
+                      operations.TopIssueReasonCount);
+
+            if (operations.Stages != null &&
+                operations.Stages.Count > 0)
+            {
+                AddSubheading(
+                    operationsPanel,
+                    "Etapas más costosas");
+
+                int stageLimit =
+                    Math.Min(
+                        6,
+                        operations.Stages.Count);
+
+                for (int stageIndex = 0;
+                     stageIndex < stageLimit;
+                     stageIndex++)
+                {
+                    SavicOperationalStageMetric stage =
+                        operations.Stages[stageIndex];
+
+                    AddField(
+                        operationsPanel,
+                        stage.StageId,
+                        "avg " +
+                        stage.AverageMilliseconds +
+                        " ms · p95 " +
+                        stage.P95Milliseconds +
+                        " ms · max " +
+                        stage.MaximumMilliseconds +
+                        " ms · fallos " +
+                        stage.Failures +
+                        "/" +
+                        stage.Samples);
+                }
+            }
+
+            page.Add(operationsPanel);
+
             VisualElement filters = CreateFilterBar();
             TextField search = CreateSearchField(queueSearch);
             List<string> stateChoices =
@@ -1570,6 +1671,9 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "JobId", row.JobId);
             AddField(detail, "SavicId", row.Job?.manifestSavicId);
             AddField(detail, "Estado", row.State);
+            AddField(detail, "Resultado pipeline", row.Job?.outcomeStatus);
+            AddField(detail, "Código diagnóstico", row.Job?.reasonCode);
+            AddField(detail, "Etapa principal", row.Job?.primaryStage);
             AddField(detail, "Checkpoint", row.Job?.checkpoint);
             AddField(detail, "Intentos", (row.Job?.attempts ?? 0).ToString());
             AddField(
@@ -1584,6 +1688,38 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "Hash", row.Job?.sourceHash);
             AddField(detail, "Mensaje", row.Message);
             AddField(detail, "Archivo", row.Job?.archivedRelativePath);
+
+            if (row.Job?.stageTimings != null &&
+                row.Job.stageTimings.Count > 0)
+            {
+                AddSubheading(
+                    detail,
+                    "Tiempos por etapa");
+
+                for (int stageIndex = 0;
+                     stageIndex < row.Job.stageTimings.Count;
+                     stageIndex++)
+                {
+                    SavicProcessingStageRecord stage =
+                        row.Job.stageTimings[stageIndex];
+
+                    if (stage == null)
+                        continue;
+
+                    AddField(
+                        detail,
+                        stage.stageId,
+                        stage.result +
+                        " · " +
+                        stage.durationMilliseconds +
+                        " ms" +
+                        (string.IsNullOrWhiteSpace(
+                             stage.detail)
+                            ? string.Empty
+                            : " · " +
+                              stage.detail));
+                }
+            }
 
             SavicManifest jobManifest = null;
 
