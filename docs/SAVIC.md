@@ -1545,6 +1545,12 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 VALIDADO — FASE F / PRE-IMPORT ROUTING] `Run Mass Ingestion Real Probe` PASS. El wine cooler de ~183 MB se resolvió por `PREIMPORT_ROUTE` en 11 ms, sin warning de slow operation y sin entrar en importación/análisis 3D pesado. P95 del lote: 2.161 ms; el cuello de botella pasa ahora al espejo de suelo, que tarda 2.161 ms. Drenado total: 4.656 ms para 7 jobs 3D.
 
+[V1 IMPLEMENTADO — FASE G / GENERIC-STATIC FAST PATH] Los placeables genéricos estáticos de alta confianza ya no ejecutan perfiles geométricos específicos de mesa y silla. `SavicModelAnalyzer` incorpora modo `GenericStatic`: conserva bounds, conteos, materiales y datos necesarios para publicación/incremental, pero omite `SavicGeometryProfileAnalyzer` y `SavicChairGeometryAnalyzer` cuando la identidad del asset demuestra que no son pertinentes.
+
+[V1 IMPLEMENTADO — FASE G] La optimización es selectiva: mesas, sillas, equipamiento funcional, wall/ceiling/surface decoration y casos ambiguos mantienen su ruta completa o su review gate. No se relajan los validadores de mesas/sillas.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE G] `Run Mass Ingestion Real Probe` exige ahora que el floor mirror use `GenericStatic fast path` y termine por debajo del umbral de slow-job de 2.000 ms. El log desglosa importación/análisis/publicación para localizar el siguiente cuello de botella si aún supera el presupuesto.
+
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
 
