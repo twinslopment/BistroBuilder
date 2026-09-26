@@ -225,8 +225,9 @@ namespace BistroBuilder.Editor.Savic
 
                 AnalyzeMeshInstance(
                     filter.sharedMesh,
-                    root.transform.worldToLocalMatrix *
-                    filter.transform.localToWorldMatrix,
+                    SavicMetricSpace.LocalToMetric(
+                        root.transform,
+                        filter.transform),
                     BuildHierarchyKey(
                         root.transform,
                         filter.transform),
@@ -257,8 +258,9 @@ namespace BistroBuilder.Editor.Savic
 
                 AnalyzeMeshInstance(
                     renderer.sharedMesh,
-                    root.transform.worldToLocalMatrix *
-                    renderer.transform.localToWorldMatrix,
+                    SavicMetricSpace.LocalToMetric(
+                        root.transform,
+                        renderer.transform),
                     BuildHierarchyKey(
                         root.transform,
                         renderer.transform),
