@@ -442,6 +442,19 @@ namespace BistroBuilder.Editor.Savic
                     "Explicit chair source still fell through to unsupported family.");
 
                 Require(
+                    masterChairManifest.model3D?.semanticParts != null &&
+                    masterChairManifest.model3D.semanticParts.analyzed &&
+                    masterChairManifest.model3D.semanticParts.automationReady,
+                    "Explicit chair did not reach automation-ready semantic parts.");
+
+                Require(
+                    !string.Equals(
+                        masterChairJob.reasonCode,
+                        "CHAIR_SEMANTIC_REVIEW",
+                        StringComparison.Ordinal),
+                    "Explicit chair still stopped at semantic review.");
+
+                Require(
                     knownGoodJob != null,
                     "No valid real model completed after the malformed source. " +
                     BuildJobStateSummary(finalJobs));
@@ -800,6 +813,11 @@ namespace BistroBuilder.Editor.Savic
                     "Malformed asset isolation: PASS\n" +
                     "Known-good asset after failure: PASS\n" +
                     "Explicit chair family routing: PASS\n" +
+                    "Chair semantic automation readiness: PASS\n" +
+                    "Chair semantic mode: " +
+                    (masterChairManifest.model3D?.semanticParts?.regionDetailMode ??
+                     "UNKNOWN") +
+                    "\n" +
                     "Terminal drain: PASS\n" +
                     "Operational reason codes: PASS\n" +
                     "Per-stage timings: PASS\n" +
