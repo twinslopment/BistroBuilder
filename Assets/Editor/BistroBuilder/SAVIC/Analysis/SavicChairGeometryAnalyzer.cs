@@ -59,8 +59,9 @@ namespace BistroBuilder.Editor.Savic
 
                 AnalyzeMeshInstance(
                     filter.sharedMesh,
-                    root.transform.worldToLocalMatrix *
-                    filter.transform.localToWorldMatrix,
+                    SavicMetricSpace.LocalToMetric(
+                        root.transform,
+                        filter.transform),
                     accumulator);
             }
 
@@ -83,8 +84,9 @@ namespace BistroBuilder.Editor.Savic
 
                 AnalyzeMeshInstance(
                     renderer.sharedMesh,
-                    root.transform.worldToLocalMatrix *
-                    renderer.transform.localToWorldMatrix,
+                    SavicMetricSpace.LocalToMetric(
+                        root.transform,
+                        renderer.transform),
                     accumulator);
             }
 
