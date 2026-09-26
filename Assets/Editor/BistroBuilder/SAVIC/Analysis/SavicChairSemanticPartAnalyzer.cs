@@ -487,8 +487,9 @@ namespace BistroBuilder.Editor.Savic
                 !geometry.analyzed ||
                 !geometry.usable ||
                 geometry.confidenceScore < 0.58f ||
+                !geometry.seatResolved ||
                 geometry.seatProjectedCoverage < 0.12f ||
-                geometry.seatUpwardAreaRatio < 0.025f ||
+                geometry.seatSurfaceAreaRatio < 0.025f ||
                 geometry.upperVerticalAreaRatio < 0.08f ||
                 geometry.lowerSupportAreaRatio < 0.12f ||
                 string.Equals(
