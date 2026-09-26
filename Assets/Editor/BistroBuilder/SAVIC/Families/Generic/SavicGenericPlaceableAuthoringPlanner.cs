@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicGenericPlaceableAuthoringPlanner
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
 
         private static readonly HashSet<string> FloorEvidence =
             new HashSet<string>(
@@ -49,30 +49,6 @@ namespace BistroBuilder.Editor.Savic
                 },
                 StringComparer.OrdinalIgnoreCase);
 
-        private static readonly HashSet<string> FunctionalEquipment =
-            new HashSet<string>(
-                new[]
-                {
-                    "oven", "stove", "range", "grill",
-                    "cooler", "fridge", "refrigerator",
-                    "freezer", "dishwasher", "extractor",
-                    "hood", "coffee", "machine",
-                    "fryer", "sink", "tap", "faucet",
-                    "counter", "bar", "pass", "register",
-                    "pos", "cash"
-                },
-                StringComparer.OrdinalIgnoreCase);
-
-        private static readonly HashSet<string> PassiveEquipment =
-            new HashSet<string>(
-                new[]
-                {
-                    "cabinet", "cupboard", "shelf",
-                    "shelving", "rack", "storage",
-                    "locker", "stand"
-                },
-                StringComparer.OrdinalIgnoreCase);
-
         internal static bool IsHighConfidenceStaticGenericCandidate(
             string sourceFileName)
         {
@@ -92,9 +68,6 @@ namespace BistroBuilder.Editor.Savic
                         "bench", "benches", "banco", "bancos",
                         "table", "tables", "mesa", "mesas"
                     }) ||
-                ContainsAny(
-                    tokens,
-                    FunctionalEquipment) ||
                 ContainsAny(
                     tokens,
                     WallEvidence) ||
@@ -127,13 +100,13 @@ namespace BistroBuilder.Editor.Savic
                     tokens,
                     FloorEvidence);
 
-            bool passiveEquipment =
-                ContainsAny(
-                    tokens,
-                    PassiveEquipment);
+            SavicEquipmentIntegrationDecision
+                equipmentDecision =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        sourceFileName);
 
             return floorDecoration ||
-                   passiveEquipment;
+                   equipmentDecision.IsPassive;
         }
 
         internal static bool TryResolvePreImportReview(
@@ -168,32 +141,25 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            if (ContainsAny(
-                    tokens,
-                    FunctionalEquipment))
-            {
-                bool service =
-                    tokens.Contains("counter") ||
-                    tokens.Contains("bar") ||
-                    tokens.Contains("pass") ||
-                    tokens.Contains("register") ||
-                    tokens.Contains("pos") ||
-                    tokens.Contains("cash");
+            SavicEquipmentIntegrationDecision
+                equipmentDecision =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        sourceFileName);
 
+            if (equipmentDecision.RequiresGameplayAdapter)
+            {
                 type =
-                    service
-                        ? "ServiceEquipment"
-                        : "KitchenEquipment";
+                    equipmentDecision.TypeId;
 
                 category =
-                    type;
+                    equipmentDecision.TypeId;
 
                 reasonCode =
-                    "FUNCTIONAL_ADAPTER_REQUIRED";
+                    equipmentDecision.ReasonCode;
 
                 message =
-                    "High-confidence functional equipment was identified from source identity before Unity model import. " +
-                    "A dedicated gameplay adapter is required, so expensive 3D import/analysis is intentionally skipped.";
+                    equipmentDecision.Evidence +
+                    " Expensive 3D import/analysis is intentionally skipped until the approved adapter exists.";
 
                 return true;
             }
@@ -415,41 +381,71 @@ namespace BistroBuilder.Editor.Savic
                     "ServiceEquipment",
                     StringComparison.Ordinal);
 
-            bool requiresFunctionalAdapter =
-                equipment &&
-                ContainsAny(
-                    tokens,
-                    FunctionalEquipment);
+            SavicEquipmentIntegrationDecision
+                equipmentDecision =
+                    SavicEquipmentIntegrationPolicy.Resolve(
+                        manifest.source.originalFileName,
+                        type);
 
-            if (requiresFunctionalAdapter)
+            if (equipment)
             {
-                plan.requiresFunctionalAdapter =
-                    true;
+                if (equipmentDecision.RequiresGameplayAdapter)
+                {
+                    plan.requiresFunctionalAdapter =
+                        true;
 
-                reasonCode =
-                    "FUNCTIONAL_ADAPTER_REQUIRED";
+                    reasonCode =
+                        equipmentDecision.ReasonCode;
 
-                error =
-                    "The asset is recognized as equipment, but its gameplay function requires a dedicated adapter before publication.";
+                    error =
+                        equipmentDecision.Evidence;
 
-                return false;
-            }
+                    return false;
+                }
 
-            if (equipment &&
-                !ContainsAny(
-                    tokens,
-                    PassiveEquipment))
-            {
-                plan.requiresFunctionalAdapter =
-                    true;
+                if (!equipmentDecision.IsPassive)
+                {
+                    plan.requiresFunctionalAdapter =
+                        equipmentDecision.Mode ==
+                        SavicEquipmentIntegrationMode
+                            .RequiresDedicatedGameplayAdapter;
 
-                reasonCode =
-                    "EQUIPMENT_FUNCTION_AMBIGUOUS";
+                    reasonCode =
+                        string.IsNullOrWhiteSpace(
+                            equipmentDecision.ReasonCode)
+                            ? "EQUIPMENT_FUNCTION_AMBIGUOUS"
+                            : equipmentDecision.ReasonCode;
 
-                error =
-                    "Equipment function is ambiguous; SAVIC will not publish it as passive decoration.";
+                    error =
+                        string.IsNullOrWhiteSpace(
+                            equipmentDecision.Evidence)
+                            ? "Equipment function is ambiguous; SAVIC will not publish it as passive content."
+                            : equipmentDecision.Evidence;
 
-                return false;
+                    return false;
+                }
+
+                if (!string.Equals(
+                        equipmentDecision.TypeId,
+                        type,
+                        StringComparison.Ordinal))
+                {
+                    reasonCode =
+                        "EQUIPMENT_TYPE_CONFLICT";
+
+                    error =
+                        "Equipment integration policy conflicts with the classified equipment type.";
+
+                    return false;
+                }
+
+                plan.integrationMode =
+                    SavicEquipmentIntegrationPolicy
+                        .PassiveAreaPlaceableMode;
+
+                plan.requiredAreaCapabilityId =
+                    equipmentDecision
+                        .RequiredAreaCapabilityId;
             }
 
             if (string.Equals(
@@ -534,7 +530,7 @@ namespace BistroBuilder.Editor.Savic
                 category ==
                 RestaurantPlaceableItemCategory.Decoration
                     ? "High-confidence static floor decoration; generic non-interactive placeable is safe."
-                    : "Passive floor equipment with no functional token; generic placeable publication is safe.";
+                    : equipmentDecision.Evidence;
 
             plan.plannedUtc =
                 DateTime.UtcNow.ToString("O");
