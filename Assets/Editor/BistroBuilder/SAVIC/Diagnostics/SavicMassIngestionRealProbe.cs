@@ -442,17 +442,45 @@ namespace BistroBuilder.Editor.Savic
                     "Explicit chair source still fell through to unsupported family.");
 
                 Require(
-                    masterChairManifest.model3D?.semanticParts != null &&
-                    masterChairManifest.model3D.semanticParts.analyzed &&
-                    masterChairManifest.model3D.semanticParts.automationReady,
-                    "Explicit chair did not reach automation-ready semantic parts.");
-
-                Require(
                     !string.Equals(
                         masterChairJob.reasonCode,
                         "CHAIR_SEMANTIC_REVIEW",
                         StringComparison.Ordinal),
                     "Explicit chair still stopped at semantic review.");
+
+                Require(
+                    string.Equals(
+                        masterChairJob.state,
+                        SavicJobState.Done.ToString(),
+                        StringComparison.Ordinal),
+                    "Known-valid explicit chair did not reach DONE. State=" +
+                    masterChairJob.state +
+                    ", reason=" +
+                    masterChairJob.reasonCode +
+                    ", message=" +
+                    masterChairJob.message);
+
+                Require(
+                    masterChairManifest.chairColliders != null &&
+                    masterChairManifest.chairColliders.generated &&
+                    masterChairManifest.chairColliders.colliderCount >= 3,
+                    "Published explicit chair has no valid generated collider set.");
+
+                bool detailedSemanticReady =
+                    masterChairManifest.model3D?.semanticParts != null &&
+                    masterChairManifest.model3D.semanticParts.analyzed &&
+                    masterChairManifest.model3D.semanticParts.automationReady;
+
+                if (!detailedSemanticReady)
+                {
+                    Require(
+                        !masterChairManifest.chairColliders.semanticBacked &&
+                        string.Equals(
+                            masterChairManifest.chairColliders.strategy,
+                            "GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT",
+                            StringComparison.Ordinal),
+                        "Chair without detailed semantic readiness did not use the geometry-backed collider strategy.");
+                }
 
                 Require(
                     knownGoodJob != null,
@@ -813,9 +841,13 @@ namespace BistroBuilder.Editor.Savic
                     "Malformed asset isolation: PASS\n" +
                     "Known-good asset after failure: PASS\n" +
                     "Explicit chair family routing: PASS\n" +
-                    "Chair semantic automation readiness: PASS\n" +
+                    "Chair publication independent of semantic partition: PASS\n" +
                     "Chair semantic mode: " +
                     (masterChairManifest.model3D?.semanticParts?.regionDetailMode ??
+                     "UNKNOWN") +
+                    "\n" +
+                    "Chair collider strategy: " +
+                    (masterChairManifest.chairColliders?.strategy ??
                      "UNKNOWN") +
                     "\n" +
                     "Terminal drain: PASS\n" +
