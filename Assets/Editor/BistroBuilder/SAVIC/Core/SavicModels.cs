@@ -180,10 +180,6 @@ namespace BistroBuilder.Editor.Savic
         public bool analyzed;
         public string analyzerVersion = string.Empty;
         public bool usable;
-        public bool seatResolved;
-        public bool orientationResolved;
-        public bool supportResolved;
-        public string seatDetectionMode = "UNRESOLVED";
         public long sourceTriangleCount;
         public long sampledTriangleCount;
         public long invalidTriangleCount;
@@ -192,13 +188,8 @@ namespace BistroBuilder.Editor.Savic
         public float seatHeight01;
         public float seatHeightMeters;
         public float seatUpwardAreaRatio;
-        public float seatSurfaceAreaRatio;
         public float seatProjectedCoverage;
         public float upperVerticalAreaRatio;
-        public float upperOccupancyAreaRatio;
-        public float upperOccupancyCentroidX01 = 0.5f;
-        public float upperOccupancyCentroidZ01 = 0.5f;
-        public string orientationDetectionMode = "UNRESOLVED";
         public float upperVerticalCentroidX01 = 0.5f;
         public float upperVerticalCentroidZ01 = 0.5f;
         public string backAxis = "UNKNOWN";
@@ -385,11 +376,6 @@ namespace BistroBuilder.Editor.Savic
         public float canonicalFrontLocalZ = 1f;
         public int suggestedPurchasePriceEuro;
         public bool scaleCorrectionApplied;
-        public bool unitNormalizationApplied;
-        public string unitNormalizationMode = "NONE";
-        public float sourceWidthMeters;
-        public float sourceHeightMeters;
-        public float sourceDepthMeters;
         public string templatePrefabAssetPath = string.Empty;
         public string seatUseProfileAssetPath = string.Empty;
         public string editableDefinitionAssetPath = string.Empty;
