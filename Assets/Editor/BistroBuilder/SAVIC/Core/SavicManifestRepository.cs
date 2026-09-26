@@ -8,6 +8,7 @@ namespace BistroBuilder.Editor.Savic
     internal sealed class SavicManifestRepository
     {
         private readonly SavicStorageLayout layout;
+        private readonly string manifestRoot;
         private readonly Dictionary<string, SavicManifest> bySourceHash =
             new Dictionary<string, SavicManifest>(StringComparer.OrdinalIgnoreCase);
 
@@ -20,8 +21,21 @@ namespace BistroBuilder.Editor.Savic
         private bool loaded;
 
         internal SavicManifestRepository(SavicStorageLayout layout)
+            : this(layout, null)
         {
-            this.layout = layout ?? throw new ArgumentNullException(nameof(layout));
+        }
+
+        internal SavicManifestRepository(
+            SavicStorageLayout layout,
+            string manifestRootOverride)
+        {
+            this.layout =
+                layout ?? throw new ArgumentNullException(nameof(layout));
+
+            manifestRoot =
+                string.IsNullOrWhiteSpace(manifestRootOverride)
+                    ? this.layout.ManifestsRoot
+                    : Path.GetFullPath(manifestRootOverride);
         }
 
         internal event Action Changed;
@@ -192,12 +206,13 @@ namespace BistroBuilder.Editor.Savic
                 return;
 
             layout.EnsureInfrastructure();
+            Directory.CreateDirectory(manifestRoot);
             bySourceHash.Clear();
             bySavicId.Clear();
             pathBySavicId.Clear();
 
             string[] paths = Directory.GetFiles(
-                layout.ManifestsRoot,
+                manifestRoot,
                 "*.json",
                 SearchOption.TopDirectoryOnly);
 
@@ -249,7 +264,8 @@ namespace BistroBuilder.Editor.Savic
 
         private string GetManifestPath(string savicId)
         {
-            return Path.Combine(layout.ManifestsRoot, savicId + ".json");
+            Directory.CreateDirectory(manifestRoot);
+            return Path.Combine(manifestRoot, savicId + ".json");
         }
     }
 }
