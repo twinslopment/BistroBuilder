@@ -140,6 +140,82 @@ namespace BistroBuilder.Editor.Savic
                         "Source kind is not eligible for the 3D pipeline."));
             }
 
+            if (SavicGenericPlaceableAuthoringPlanner
+                .TryResolvePreImportReview(
+                    manifest.source.originalFileName,
+                    out string routedType,
+                    out string routedCategory,
+                    out string routedReasonCode,
+                    out string routedMessage))
+            {
+                SavicClassificationRecord routedClassification =
+                    new SavicClassificationRecord
+                    {
+                        classified = true,
+                        classifierVersion =
+                            SavicContentClassifier.Version,
+                        family = "Placeable",
+                        type = routedType,
+                        category = routedCategory,
+                        confidence = "HIGH",
+                        score = 0.95f,
+                        explicitTypeToken = true,
+                        nameBacked = true,
+                        geometryBacked = false,
+                        evidence = routedMessage,
+                        classifiedUtc =
+                            DateTime.UtcNow.ToString("O")
+                    };
+
+                manifest.classification =
+                    routedClassification;
+
+                manifest.family =
+                    routedClassification.family;
+
+                manifest.type =
+                    routedClassification.type;
+
+                manifest.category =
+                    routedClassification.category;
+
+                manifest.status =
+                    "NEEDS_REVIEW";
+
+                trace.RecordDecision(
+                    "PREIMPORT_ROUTE",
+                    routedMessage);
+
+                SavicManifestMutations.UpsertDecision(
+                    manifest,
+                    "content.type",
+                    routedClassification.type,
+                    routedClassification.confidence,
+                    routedClassification.evidence,
+                    "content.classification.preimport.v1");
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.PreImportRouting",
+                    "REVIEW",
+                    "WARNING",
+                    routedMessage,
+                    SavicGenericPlaceableAuthoringPlanner.Version);
+
+                manifests.Save(
+                    manifest);
+
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    manifest.status,
+                    routedMessage,
+                    manifest,
+                    trace.Finish(
+                        routedReasonCode,
+                        "PREIMPORT_ROUTE",
+                        routedMessage));
+            }
+
             ISavicSourceImportAdapter adapter =
                 ResolveAdapter(manifest);
 
