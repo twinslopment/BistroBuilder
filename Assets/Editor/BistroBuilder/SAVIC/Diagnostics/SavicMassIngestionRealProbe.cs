@@ -570,8 +570,37 @@ namespace BistroBuilder.Editor.Savic
                     string.Equals(
                         wineCoolerJob.reasonCode,
                         "FUNCTIONAL_ADAPTER_REQUIRED",
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        wineCoolerJob.primaryStage,
+                        "PREIMPORT_ROUTE",
                         StringComparison.Ordinal),
-                    "Functional equipment was not routed to a precise safe review state.");
+                    "Functional equipment was not routed to a precise pre-import review state.");
+
+                Require(
+                    wineCoolerJob.stageTimings != null &&
+                    wineCoolerJob.stageTimings.Any(
+                        stage =>
+                            stage != null &&
+                            string.Equals(
+                                stage.stageId,
+                                "PREIMPORT_ROUTE",
+                                StringComparison.Ordinal)) &&
+                    !wineCoolerJob.stageTimings.Any(
+                        stage =>
+                            stage != null &&
+                            string.Equals(
+                                stage.stageId,
+                                "IMPORT_SOURCE",
+                                StringComparison.Ordinal)),
+                    "Wine cooler still entered Unity import despite an unsupported functional-adapter route.");
+
+                Require(
+                    wineCoolerJob.lastDurationMilliseconds <
+                    SavicBatchProcessor.SlowJobWarningMilliseconds,
+                    "Wine cooler pre-import route is still slow: " +
+                    wineCoolerJob.lastDurationMilliseconds +
+                    " ms.");
 
                 Require(
                     manifests.TryGetBySavicId(
@@ -651,6 +680,10 @@ namespace BistroBuilder.Editor.Savic
                     "Queue analytics: PASS\n" +
                     "Generic floor decoration publication: PASS\n" +
                     "Functional equipment safe review: PASS\n" +
+                    "Functional equipment pre-import routing: PASS\n" +
+                    "Wine cooler batch duration: " +
+                    wineCoolerJob.lastDurationMilliseconds +
+                    " ms\n" +
                     "P95 job duration: " +
                     metrics.P95DurationMilliseconds +
                     " ms\n" +
