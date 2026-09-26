@@ -393,12 +393,40 @@ namespace BistroBuilder.Editor.Savic
         private static bool HasSafeDimensions(
             SavicModelAnalysisRecord analysis)
         {
-            return analysis.widthMeters >= 0.05f &&
-                   analysis.depthMeters >= 0.05f &&
-                   analysis.heightMeters >= 0.05f &&
-                   analysis.widthMeters <= 5.0f &&
-                   analysis.depthMeters <= 5.0f &&
-                   analysis.heightMeters <= 5.0f;
+            if (analysis == null)
+                return false;
+
+            float width =
+                analysis.widthMeters;
+
+            float height =
+                analysis.heightMeters;
+
+            float depth =
+                analysis.depthMeters;
+
+            if (width < 0.01f ||
+                height < 0.01f ||
+                depth < 0.01f ||
+                width > 5.0f ||
+                height > 5.0f ||
+                depth > 5.0f)
+            {
+                return false;
+            }
+
+            int substantialAxes = 0;
+
+            if (width >= 0.10f)
+                substantialAxes++;
+
+            if (height >= 0.10f)
+                substantialAxes++;
+
+            if (depth >= 0.10f)
+                substantialAxes++;
+
+            return substantialAxes >= 2;
         }
 
         private static RestaurantPlaceableItemCategory ResolveCategory(
