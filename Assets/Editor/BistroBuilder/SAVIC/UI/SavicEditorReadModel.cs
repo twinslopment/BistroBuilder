@@ -528,93 +528,6 @@ namespace BistroBuilder.Editor.Savic
                 }
             }
 
-            foreach (SavicJobRecord job in
-                     jobs ?? Array.Empty<SavicJobRecord>())
-            {
-                if (job == null)
-                    continue;
-
-                bool needsReview =
-                    IsStatus(
-                        job.state,
-                        SavicJobState.NeedsReview.ToString());
-
-                bool failed =
-                    IsStatus(
-                        job.state,
-                        SavicJobState.FailedProcessing.ToString()) ||
-                    IsStatus(
-                        job.state,
-                        SavicJobState.FailedSource.ToString()) ||
-                    IsStatus(
-                        job.state,
-                        SavicJobState.Quarantined.ToString());
-
-                if (!needsReview &&
-                    !failed)
-                {
-                    continue;
-                }
-
-                string timestamp =
-                    FirstNonEmpty(
-                        job.updatedUtc,
-                        job.completedUtc,
-                        job.createdUtc);
-
-                string reason =
-                    FirstNonEmpty(
-                        job.reasonCode,
-                        job.checkpoint,
-                        job.state,
-                        "Sin código de diagnóstico");
-
-                string stage =
-                    string.IsNullOrWhiteSpace(
-                        job.primaryStage)
-                        ? string.Empty
-                        : " · Etapa: " +
-                          job.primaryStage;
-
-                result.Add(
-                    new SavicEditorReviewRow
-                    {
-                        StableKey =
-                            "job:" +
-                            (job.jobId ?? string.Empty),
-                        Source = "JOB",
-                        SavicId =
-                            job.manifestSavicId ?? string.Empty,
-                        DisplayName =
-                            FirstNonEmpty(
-                                job.originalFileName,
-                                job.manifestSavicId,
-                                "Trabajo SAVIC"),
-                        Status =
-                            NormalizeValue(
-                                job.state),
-                        Severity =
-                            failed
-                                ? "ERROR"
-                                : "WARNING",
-                        Issue =
-                            reason +
-                            stage +
-                            (string.IsNullOrWhiteSpace(
-                                 job.message)
-                                ? string.Empty
-                                : " · " +
-                                  job.message),
-                        AssetPath =
-                            job.archivedRelativePath ?? string.Empty,
-                        UpdatedUtc =
-                            timestamp,
-                        SortTimestamp =
-                            ParseTimestamp(
-                                timestamp)
-                    });
-            }
-
             string inventoryTimestamp =
                 inventory.generatedUtc ?? string.Empty;
 
@@ -741,6 +654,93 @@ namespace BistroBuilder.Editor.Savic
 
                     result.Add(row);
                 }
+            }
+
+            foreach (SavicJobRecord job in
+                     jobs ?? Array.Empty<SavicJobRecord>())
+            {
+                if (job == null)
+                    continue;
+
+                bool needsReview =
+                    IsStatus(
+                        job.state,
+                        SavicJobState.NeedsReview.ToString());
+
+                bool failed =
+                    IsStatus(
+                        job.state,
+                        SavicJobState.FailedProcessing.ToString()) ||
+                    IsStatus(
+                        job.state,
+                        SavicJobState.FailedSource.ToString()) ||
+                    IsStatus(
+                        job.state,
+                        SavicJobState.Quarantined.ToString());
+
+                if (!needsReview &&
+                    !failed)
+                {
+                    continue;
+                }
+
+                string timestamp =
+                    FirstNonEmpty(
+                        job.updatedUtc,
+                        job.completedUtc,
+                        job.createdUtc);
+
+                string reason =
+                    FirstNonEmpty(
+                        job.reasonCode,
+                        job.checkpoint,
+                        job.state,
+                        "Sin código de diagnóstico");
+
+                string stage =
+                    string.IsNullOrWhiteSpace(
+                        job.primaryStage)
+                        ? string.Empty
+                        : " · Etapa: " +
+                          job.primaryStage;
+
+                result.Add(
+                    new SavicEditorReviewRow
+                    {
+                        StableKey =
+                            "job:" +
+                            (job.jobId ?? string.Empty),
+                        Source = "JOB",
+                        SavicId =
+                            job.manifestSavicId ?? string.Empty,
+                        DisplayName =
+                            FirstNonEmpty(
+                                job.originalFileName,
+                                job.manifestSavicId,
+                                "Trabajo SAVIC"),
+                        Status =
+                            NormalizeValue(
+                                job.state),
+                        Severity =
+                            failed
+                                ? "ERROR"
+                                : "WARNING",
+                        Issue =
+                            reason +
+                            stage +
+                            (string.IsNullOrWhiteSpace(
+                                 job.message)
+                                ? string.Empty
+                                : " · " +
+                                  job.message),
+                        AssetPath =
+                            job.archivedRelativePath ?? string.Empty,
+                        UpdatedUtc =
+                            timestamp,
+                        SortTimestamp =
+                            ParseTimestamp(
+                                timestamp)
+                    });
             }
 
             string inventoryTimestamp =
