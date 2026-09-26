@@ -5,12 +5,27 @@ using UnityEngine.Rendering;
 
 namespace BistroBuilder.Editor.Savic
 {
+    internal enum SavicModelAnalysisMode
+    {
+        Full = 0,
+        GenericStatic = 1
+    }
+
     internal static class SavicModelAnalyzer
     {
-        internal const string Version = "2.1.0";
+        internal const string Version = "2.2.0";
         private const float MinimumDimension = 0.0001f;
 
         internal static SavicModelAnalysisRecord Analyze(GameObject root)
+        {
+            return Analyze(
+                root,
+                SavicModelAnalysisMode.Full);
+        }
+
+        internal static SavicModelAnalysisRecord Analyze(
+            GameObject root,
+            SavicModelAnalysisMode mode)
         {
             if (root == null)
                 throw new ArgumentNullException(nameof(root));
@@ -165,15 +180,43 @@ namespace BistroBuilder.Editor.Savic
                     analyzedUtc = DateTime.UtcNow.ToString("O")
                 };
 
-            result.geometry =
-                SavicGeometryProfileAnalyzer.Analyze(
-                    root,
-                    result);
+            if (mode ==
+                SavicModelAnalysisMode.GenericStatic)
+            {
+                result.geometry =
+                    new SavicGeometryProfileRecord
+                    {
+                        analyzed = false,
+                        analyzerVersion =
+                            SavicGeometryProfileAnalyzer.Version,
+                        usable = false,
+                        evidence =
+                            "Detailed structural surface profiling skipped by high-confidence generic-static analysis mode."
+                    };
 
-            result.chairGeometry =
-                SavicChairGeometryAnalyzer.Analyze(
-                    root,
-                    result);
+                result.chairGeometry =
+                    new SavicChairGeometryProfileRecord
+                    {
+                        analyzed = false,
+                        analyzerVersion =
+                            SavicChairGeometryAnalyzer.Version,
+                        usable = false,
+                        evidence =
+                            "Chair-specific geometry profiling skipped by high-confidence generic-static analysis mode."
+                    };
+            }
+            else
+            {
+                result.geometry =
+                    SavicGeometryProfileAnalyzer.Analyze(
+                        root,
+                        result);
+
+                result.chairGeometry =
+                    SavicChairGeometryAnalyzer.Analyze(
+                        root,
+                        result);
+            }
 
             result.materials =
                 SavicMaterialSemanticAnalyzer.Analyze(
