@@ -458,7 +458,10 @@ namespace BistroBuilder.Editor.Savic
                     ", reason=" +
                     masterChairJob.reasonCode +
                     ", message=" +
-                    masterChairJob.message);
+                    masterChairJob.message +
+                    ", geometry=" +
+                    BuildChairGeometryDiagnostic(
+                        masterChairManifest.model3D?.chairGeometry));
 
                 Require(
                     masterChairManifest.chairColliders != null &&
@@ -1271,6 +1274,39 @@ namespace BistroBuilder.Editor.Savic
                     "[SAVIC] Mass probe file cleanup warning: " +
                     exception.Message);
             }
+        }
+
+        private static string BuildChairGeometryDiagnostic(
+            SavicChairGeometryProfileRecord geometry)
+        {
+            if (geometry == null)
+                return "<null>";
+
+            return
+                "usable=" +
+                geometry.usable +
+                ", seat=" +
+                geometry.seatResolved +
+                ", orientation=" +
+                geometry.orientationResolved +
+                ", support=" +
+                geometry.supportResolved +
+                ", seatMode=" +
+                geometry.seatDetectionMode +
+                ", seatH01=" +
+                geometry.seatHeight01.ToString("0.###") +
+                ", seatCoverage=" +
+                geometry.seatProjectedCoverage.ToString("0.###") +
+                ", seatSurface=" +
+                geometry.seatSurfaceAreaRatio.ToString("0.###") +
+                ", upperVertical=" +
+                geometry.upperVerticalAreaRatio.ToString("0.###") +
+                ", backBias=" +
+                geometry.backEdgeBias.ToString("0.###") +
+                ", lowerSupport=" +
+                geometry.lowerSupportAreaRatio.ToString("0.###") +
+                ", evidence=" +
+                (geometry.evidence ?? string.Empty);
         }
 
         private static string BuildJobStateSummary(
