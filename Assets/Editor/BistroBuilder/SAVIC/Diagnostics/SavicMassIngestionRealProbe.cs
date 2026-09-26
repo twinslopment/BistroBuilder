@@ -469,6 +469,17 @@ namespace BistroBuilder.Editor.Savic
                     masterChairManifest.chairColliders.colliderCount >= 3,
                     "Published explicit chair has no valid generated collider set.");
 
+                Require(
+                    masterChairManifest.chairAuthoring != null &&
+                    masterChairManifest.chairAuthoring.planned &&
+                    masterChairManifest.chairAuthoring.finalWidthMeters >= 0.32f &&
+                    masterChairManifest.chairAuthoring.finalWidthMeters <= 0.95f &&
+                    masterChairManifest.chairAuthoring.finalHeightMeters >= 0.62f &&
+                    masterChairManifest.chairAuthoring.finalHeightMeters <= 1.25f &&
+                    masterChairManifest.chairAuthoring.finalDepthMeters >= 0.34f &&
+                    masterChairManifest.chairAuthoring.finalDepthMeters <= 0.95f,
+                    "Published explicit chair does not have a safe canonical authoring envelope.");
+
                 bool detailedSemanticReady =
                     masterChairManifest.model3D?.semanticParts != null &&
                     masterChairManifest.model3D.semanticParts.analyzed &&
@@ -853,6 +864,23 @@ namespace BistroBuilder.Editor.Savic
                     (masterChairManifest.chairColliders?.strategy ??
                      "UNKNOWN") +
                     "\n" +
+                    "Chair unit normalization: " +
+                    (masterChairManifest.chairAuthoring?.unitNormalizationMode ??
+                     "UNKNOWN") +
+                    " · scale " +
+                    (masterChairManifest.chairAuthoring?.uniformScale ?? 0f)
+                        .ToString("0.######") +
+                    "\n" +
+                    "Chair final dimensions: " +
+                    (masterChairManifest.chairAuthoring?.finalWidthMeters ?? 0f)
+                        .ToString("0.###") +
+                    " x " +
+                    (masterChairManifest.chairAuthoring?.finalHeightMeters ?? 0f)
+                        .ToString("0.###") +
+                    " x " +
+                    (masterChairManifest.chairAuthoring?.finalDepthMeters ?? 0f)
+                        .ToString("0.###") +
+                    " m\n" +
                     "Terminal drain: PASS\n" +
                     "Operational reason codes: PASS\n" +
                     "Per-stage timings: PASS\n" +
