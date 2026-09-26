@@ -302,10 +302,29 @@ namespace BistroBuilder.Editor.Savic
 
             try
             {
+                bool genericStaticFastPath =
+                    SavicGenericPlaceableAuthoringPlanner
+                        .IsHighConfidenceStaticGenericCandidate(
+                            manifest.source.originalFileName);
+
+                SavicModelAnalysisMode analysisMode =
+                    genericStaticFastPath
+                        ? SavicModelAnalysisMode.GenericStatic
+                        : SavicModelAnalysisMode.Full;
+
                 SavicModelAnalysisRecord analysis =
                     trace.Measure(
                         "ANALYZE_GEOMETRY",
-                        () => SavicModelAnalyzer.Analyze(root));
+                        () =>
+                            SavicModelAnalyzer.Analyze(
+                                root,
+                                analysisMode),
+                        null,
+                        _ =>
+                            analysisMode ==
+                            SavicModelAnalysisMode.GenericStatic
+                                ? "GenericStatic fast path: detailed table/chair geometry profiling skipped."
+                                : "Full furniture geometry analysis.");
 
                 manifest.model3D = analysis;
 
