@@ -104,6 +104,114 @@ namespace BistroBuilder.Editor.Savic
         }
 
         internal SavicSourceProcessingOutcome
+            MaterializeSourceMirrorBySavicId(
+                string savicId)
+        {
+            if (!manifests.TryGetBySavicId(
+                    savicId,
+                    out SavicManifest manifest))
+            {
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    "NOT_FOUND",
+                    "No SAVIC manifest exists for the requested identity.",
+                    null);
+            }
+
+            if (manifest?.source == null)
+            {
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    "INVALID_MANIFEST",
+                    "Manifest or source record is missing.",
+                    manifest);
+            }
+
+            SavicProcessingTrace trace =
+                new SavicProcessingTrace();
+
+            ISavicSourceImportAdapter adapter =
+                ResolveAdapter(
+                    manifest);
+
+            if (adapter == null)
+            {
+                RecordFailure(
+                    manifest,
+                    ImportValidationId,
+                    "ERROR",
+                    "No compatible source import adapter is available.");
+
+                return ReturnFailure(
+                    null,
+                    manifest,
+                    "No compatible source import adapter is available.",
+                    "NO_IMPORT_ADAPTER",
+                    "MATERIALIZE_SOURCE_MIRROR",
+                    trace);
+            }
+
+            SavicSourceImportResult materialized =
+                trace.Measure(
+                    "MATERIALIZE_SOURCE_MIRROR",
+                    () =>
+                        adapter.Materialize(
+                            manifest),
+                    result =>
+                        result.Succeeded,
+                    result =>
+                        result.Message);
+
+            if (!materialized.Succeeded)
+            {
+                RecordFailure(
+                    manifest,
+                    ImportValidationId,
+                    "ERROR",
+                    materialized.Message);
+
+                return ReturnFailure(
+                    null,
+                    manifest,
+                    materialized.Message,
+                    "SOURCE_MATERIALIZATION_FAILED",
+                    "MATERIALIZE_SOURCE_MIRROR",
+                    trace);
+            }
+
+            SavicManifestMutations.UpsertArtifact(
+                manifest,
+                SourceMirrorRole,
+                materialized.AssetPath,
+                SavicUnityModelSourceImportAdapter.BuilderId,
+                SavicUnityModelSourceImportAdapter.BuilderVersion);
+
+            SavicManifestMutations.UpsertValidation(
+                manifest,
+                ArchiveValidationId,
+                "PASS",
+                "INFO",
+                "Archived source passed integrity validation while materializing the Unity mirror.",
+                SavicUnityModelSourceImportAdapter.BuilderVersion);
+
+            manifest.status =
+                "SOURCE_MATERIALIZED";
+
+            manifests.Save(
+                manifest);
+
+            return new SavicSourceProcessingOutcome(
+                true,
+                "SOURCE_MATERIALIZED",
+                materialized.Message,
+                manifest,
+                trace.Finish(
+                    "SOURCE_MATERIALIZED",
+                    "MATERIALIZE_SOURCE_MIRROR",
+                    materialized.Message));
+        }
+
+        internal SavicSourceProcessingOutcome
             PrepareSourceImportBySavicId(
                 string savicId)
         {
@@ -155,7 +263,7 @@ namespace BistroBuilder.Editor.Savic
                 trace.Measure(
                     "PREPARE_IMPORT_SOURCE",
                     () =>
-                        adapter.Import(
+                        adapter.ImportPrepared(
                             manifest),
                     result =>
                         result.Succeeded,
@@ -191,7 +299,7 @@ namespace BistroBuilder.Editor.Savic
                 ArchiveValidationId,
                 "PASS",
                 "INFO",
-                "Archived source passed integrity validation while materializing or reusing the Unity mirror.",
+                "Prepared Unity source mirror is available for processing.",
                 SavicUnityModelSourceImportAdapter.BuilderVersion);
 
             SavicManifestMutations.UpsertValidation(
