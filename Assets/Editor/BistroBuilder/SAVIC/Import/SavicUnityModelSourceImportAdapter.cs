@@ -84,6 +84,20 @@ namespace BistroBuilder.Editor.Savic
                     "Archived source failed SHA-256 integrity validation.");
             }
 
+            if (!ValidateContainerPreflight(
+                    archivedPath,
+                    manifest.source.extension,
+                    out string preflightError))
+            {
+                return new SavicSourceImportResult(
+                    false,
+                    false,
+                    string.Empty,
+                    null,
+                    "3D source preflight rejected the archived file before Unity import: " +
+                    preflightError);
+            }
+
             string mirrorAbsolutePath =
                 layout.GetUnitySourceMirrorPath(
                     manifest.source.sourceHash,
@@ -152,6 +166,94 @@ namespace BistroBuilder.Editor.Savic
                     null,
                     "Unity source import failed: " + exception.Message);
             }
+        }
+
+        private static bool ValidateContainerPreflight(
+            string archivedPath,
+            string extension,
+            out string error)
+        {
+            error = string.Empty;
+
+            string normalized =
+                extension?.Trim().ToLowerInvariant() ??
+                string.Empty;
+
+            if (normalized != ".glb")
+                return true;
+
+            FileInfo info =
+                new FileInfo(
+                    archivedPath);
+
+            if (!info.Exists ||
+                info.Length < 12)
+            {
+                error =
+                    "GLB header is missing or truncated.";
+                return false;
+            }
+
+            byte[] header =
+                new byte[12];
+
+            using (FileStream stream =
+                   File.Open(
+                       archivedPath,
+                       FileMode.Open,
+                       FileAccess.Read,
+                       FileShare.Read))
+            {
+                if (stream.Read(
+                        header,
+                        0,
+                        header.Length) !=
+                    header.Length)
+                {
+                    error =
+                        "GLB header could not be read completely.";
+                    return false;
+                }
+            }
+
+            uint magic =
+                BitConverter.ToUInt32(
+                    header,
+                    0);
+
+            uint version =
+                BitConverter.ToUInt32(
+                    header,
+                    4);
+
+            uint declaredLength =
+                BitConverter.ToUInt32(
+                    header,
+                    8);
+
+            if (magic != 0x46546C67u)
+            {
+                error =
+                    "GLB magic is invalid.";
+                return false;
+            }
+
+            if (version != 2u)
+            {
+                error =
+                    "Only GLB version 2 is accepted by SAVIC V1.";
+                return false;
+            }
+
+            if (declaredLength !=
+                (uint)info.Length)
+            {
+                error =
+                    "GLB declared length does not match archived byte length.";
+                return false;
+            }
+
+            return true;
         }
 
         private static void ValidateManifest(SavicManifest manifest)
@@ -256,19 +358,24 @@ namespace BistroBuilder.Editor.Savic
 
             try
             {
+                if (!mutation.HadExisting)
+                {
+                    // Let Unity remove both the asset and its .meta before
+                    // deleting any raw mirror bytes. This avoids orphaned
+                    // metadata after a failed importer.
+                    AssetDatabase.DeleteAsset(
+                        assetPath);
+
+                    mutation.Rollback();
+                    return;
+                }
+
                 mutation.Rollback();
 
-                if (mutation.HadExisting)
-                {
-                    AssetDatabase.ImportAsset(
-                        assetPath,
-                        ImportAssetOptions.ForceSynchronousImport |
-                        ImportAssetOptions.ForceUpdate);
-                }
-                else
-                {
-                    AssetDatabase.DeleteAsset(assetPath);
-                }
+                AssetDatabase.ImportAsset(
+                    assetPath,
+                    ImportAssetOptions.ForceSynchronousImport |
+                    ImportAssetOptions.ForceUpdate);
             }
             catch (Exception cleanupException)
             {
