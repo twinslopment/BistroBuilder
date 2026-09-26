@@ -34,7 +34,7 @@ namespace BistroBuilder.Editor.Savic
 
     internal sealed class SavicGenericPlaceablePublisher
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "2.0.0";
 
         private const string MainCatalogPath =
             "Assets/Data/Restaurant/EditMode/Catalog/" +
@@ -373,7 +373,10 @@ namespace BistroBuilder.Editor.Savic
             if (existingPrefab == null ||
                 item == null ||
                 existingPrefab.transform.Find(
-                    "Visual/SourceModel") == null)
+                    "Visual/SourceModel") == null ||
+                !HasRequiredAreaCapability(
+                    existingPrefab,
+                    plan))
             {
                 return Publish(
                     manifest,
@@ -895,7 +898,8 @@ namespace BistroBuilder.Editor.Savic
                     Vector3.zero;
 
                 ConfigureAreaMember(
-                    areaMember);
+                    areaMember,
+                    plan);
 
                 ConfigureFootprint(
                     footprint,
@@ -1010,8 +1014,15 @@ namespace BistroBuilder.Editor.Savic
         }
 
         private static void ConfigureAreaMember(
-            RestaurantAreaMember areaMember)
+            RestaurantAreaMember areaMember,
+            SavicGenericPlaceableAuthoringRecord plan)
         {
+            if (areaMember == null)
+                throw new ArgumentNullException(nameof(areaMember));
+
+            if (plan == null)
+                throw new ArgumentNullException(nameof(plan));
+
             SerializedObject serialized =
                 new SerializedObject(
                     areaMember);
@@ -1031,10 +1042,152 @@ namespace BistroBuilder.Editor.Savic
                     serialized,
                     "requiredCapabilities");
 
-            requirements.arraySize =
-                0;
+            if (string.IsNullOrWhiteSpace(
+                    plan.requiredAreaCapabilityId))
+            {
+                requirements.arraySize =
+                    0;
+            }
+            else
+            {
+                RestaurantAreaCapabilityDefinition capability =
+                    ResolveAreaCapability(
+                        plan.requiredAreaCapabilityId);
+
+                requirements.arraySize =
+                    1;
+
+                requirements
+                    .GetArrayElementAtIndex(0)
+                    .objectReferenceValue =
+                        capability;
+            }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static bool HasRequiredAreaCapability(
+            GameObject prefab,
+            SavicGenericPlaceableAuthoringRecord plan)
+        {
+            if (prefab == null ||
+                plan == null)
+            {
+                return false;
+            }
+
+            RestaurantAreaMember member =
+                prefab.GetComponent<RestaurantAreaMember>();
+
+            if (member == null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(
+                    plan.requiredAreaCapabilityId))
+            {
+                return member.RequiredCapabilityCount ==
+                       0;
+            }
+
+            string requiredId =
+                plan.requiredAreaCapabilityId.Trim();
+
+            int matches =
+                0;
+
+            IReadOnlyList<RestaurantAreaCapabilityDefinition>
+                requirements =
+                    member.RequiredCapabilities;
+
+            if (requirements != null)
+            {
+                for (int index = 0;
+                     index < requirements.Count;
+                     index++)
+                {
+                    RestaurantAreaCapabilityDefinition capability =
+                        requirements[index];
+
+                    if (capability != null &&
+                        string.Equals(
+                            capability.CapabilityId,
+                            requiredId,
+                            StringComparison.Ordinal))
+                    {
+                        matches++;
+                    }
+                }
+            }
+
+            return matches == 1 &&
+                   member.RequiredCapabilityCount == 1;
+        }
+
+        private static RestaurantAreaCapabilityDefinition
+            ResolveAreaCapability(
+                string capabilityId)
+        {
+            if (string.IsNullOrWhiteSpace(
+                    capabilityId))
+            {
+                throw new ArgumentException(
+                    "Area capability id is required.",
+                    nameof(capabilityId));
+            }
+
+            string normalized =
+                capabilityId.Trim();
+
+            string[] guids =
+                AssetDatabase.FindAssets(
+                    "t:RestaurantAreaCapabilityDefinition");
+
+            RestaurantAreaCapabilityDefinition match =
+                null;
+
+            int matchCount =
+                0;
+
+            for (int index = 0;
+                 index < guids.Length;
+                 index++)
+            {
+                string assetPath =
+                    AssetDatabase.GUIDToAssetPath(
+                        guids[index]);
+
+                RestaurantAreaCapabilityDefinition candidate =
+                    AssetDatabase.LoadAssetAtPath
+                        <RestaurantAreaCapabilityDefinition>(
+                            assetPath);
+
+                if (candidate == null ||
+                    !string.Equals(
+                        candidate.CapabilityId,
+                        normalized,
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                match =
+                    candidate;
+
+                matchCount++;
+            }
+
+            if (matchCount != 1 ||
+                match == null)
+            {
+                throw new InvalidOperationException(
+                    "Expected exactly one RestaurantAreaCapabilityDefinition for '" +
+                    normalized +
+                    "', found " +
+                    matchCount +
+                    ".");
+            }
+
+            return match;
         }
 
         private static void ConfigureFootprint(
@@ -1311,12 +1464,17 @@ namespace BistroBuilder.Editor.Savic
                 prefab.GetComponent
                     <BoxCollider>();
 
+            RestaurantAreaMember areaMember =
+                prefab.GetComponent
+                    <RestaurantAreaMember>();
+
             if (placeable == null ||
                 footprint == null ||
-                collider == null)
+                collider == null ||
+                areaMember == null)
             {
                 error =
-                    "Generic prefab is missing placeable, footprint or collider components.";
+                    "Generic prefab is missing placeable, area-member, footprint or collider components.";
                 return false;
             }
 
@@ -1366,12 +1524,18 @@ namespace BistroBuilder.Editor.Savic
             bool navigationReady =
                 footprintReady;
 
+            bool areaCapabilityReady =
+                HasRequiredAreaCapability(
+                    prefab,
+                    plan);
+
             bool ready =
                 footprintReady &&
                 colliderReady &&
                 catalogReady &&
                 persistenceReady &&
-                navigationReady;
+                navigationReady &&
+                areaCapabilityReady;
 
             manifest.genericPlaceableReadiness =
                 new SavicGenericPlaceableReadinessRecord
@@ -1394,13 +1558,26 @@ namespace BistroBuilder.Editor.Savic
                         navigationReady,
                     spatialContractRequired =
                         false,
+                    areaCapabilityReady =
+                        areaCapabilityReady,
+                    requiredAreaCapabilityId =
+                        plan.requiredAreaCapabilityId ??
+                        string.Empty,
+                    integrationMode =
+                        plan.integrationMode ??
+                        "NONE",
                     prefabAssetPath =
                         plan.prefabAssetPath,
                     itemDefinitionAssetPath =
                         plan.itemDefinitionAssetPath,
                     evidence =
                         ready
-                            ? "Static generic placeable has canonical floor anchor, footprint, collider, catalog identity and persistence-ready prefab. No interactive BBSIS contract is required."
+                            ? string.IsNullOrWhiteSpace(
+                                  plan.requiredAreaCapabilityId)
+                                ? "Static generic placeable has canonical floor anchor, footprint, collider, catalog identity and persistence-ready prefab. No interactive BBSIS contract is required."
+                                : "Passive equipment has canonical floor anchor, footprint, collider, catalog identity, persistence-ready prefab and required area capability '" +
+                                  plan.requiredAreaCapabilityId +
+                                  "'. No interactive appliance gameplay or BBSIS work contract was invented."
                             : "Generic readiness validation failed.",
                     validatedUtc =
                         DateTime.UtcNow.ToString("O")
@@ -1408,11 +1585,13 @@ namespace BistroBuilder.Editor.Savic
 
             UpsertReadinessValidations(
                 manifest,
+                plan,
                 footprintReady,
                 colliderReady,
                 catalogReady,
                 persistenceReady,
-                navigationReady);
+                navigationReady,
+                areaCapabilityReady);
 
             if (!ready)
             {
@@ -1425,11 +1604,13 @@ namespace BistroBuilder.Editor.Savic
 
         private static void UpsertReadinessValidations(
             SavicManifest manifest,
+            SavicGenericPlaceableAuthoringRecord plan,
             bool footprintReady,
             bool colliderReady,
             bool catalogReady,
             bool persistenceReady,
-            bool navigationReady)
+            bool navigationReady,
+            bool areaCapabilityReady)
         {
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -1483,10 +1664,30 @@ namespace BistroBuilder.Editor.Savic
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
+                "GenericPlaceable.AreaCapability",
+                areaCapabilityReady ? "PASS" : "FAIL",
+                areaCapabilityReady ? "INFO" : "ERROR",
+                areaCapabilityReady
+                    ? string.IsNullOrWhiteSpace(
+                          plan.requiredAreaCapabilityId)
+                        ? "No area capability is required for this generic placeable."
+                        : "Placement requires the existing canonical area capability '" +
+                          plan.requiredAreaCapabilityId +
+                          "'."
+                    : "Required area capability is missing or duplicated on the published prefab.",
+                Version);
+
+            SavicManifestMutations.UpsertValidation(
+                manifest,
                 "GenericPlaceable.BBSIS",
                 "PASS",
                 "INFO",
-                "No interactive BBSIS contract is required for this passive generic placeable.",
+                string.Equals(
+                    plan.integrationMode,
+                    SavicEquipmentIntegrationPolicy.PassiveAreaPlaceableMode,
+                    StringComparison.Ordinal)
+                    ? "Passive equipment uses the existing area-capability placement contract; no interactive appliance BBSIS contract is created."
+                    : "No interactive BBSIS contract is required for this passive generic placeable.",
                 Version);
         }
 
@@ -1546,6 +1747,10 @@ namespace BistroBuilder.Editor.Savic
                     plan.placementMode ??
                         string.Empty,
                     plan.category ??
+                        string.Empty,
+                    plan.integrationMode ??
+                        string.Empty,
+                    plan.requiredAreaCapabilityId ??
                         string.Empty,
                     F(plan.finalWidthMeters),
                     F(plan.finalHeightMeters),
