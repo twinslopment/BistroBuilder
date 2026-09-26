@@ -8,14 +8,22 @@ namespace BistroBuilder.Editor.Savic
     {
         internal SavicModelFamilyProcessingOutcome(
             bool succeeded,
-            string message)
+            string message,
+            string reasonCode = "")
         {
             Succeeded = succeeded;
             Message = message ?? string.Empty;
+            ReasonCode =
+                string.IsNullOrWhiteSpace(reasonCode)
+                    ? succeeded
+                        ? "PUBLISHED"
+                        : "FAMILY_PUBLICATION_FAILED"
+                    : reasonCode;
         }
 
         internal bool Succeeded { get; }
         internal string Message { get; }
+        internal string ReasonCode { get; }
 
         internal static SavicModelFamilyProcessingOutcome Success(
             string message)
@@ -26,11 +34,13 @@ namespace BistroBuilder.Editor.Savic
         }
 
         internal static SavicModelFamilyProcessingOutcome Failure(
-            string message)
+            string message,
+            string reasonCode = "FAMILY_PUBLICATION_FAILED")
         {
             return new SavicModelFamilyProcessingOutcome(
                 false,
-                message);
+                message,
+                reasonCode);
         }
     }
 
