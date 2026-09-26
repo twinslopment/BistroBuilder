@@ -1575,7 +1575,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE K / CHAIR SEMANTIC FALLBACK] La semántica de silla mantiene primero el análisis detallado por triángulos. Si ese particionado no alcanza readiness pero la identidad `Chair` es explícita y el perfil geométrico de silla es fuerte, SAVIC puede construir una representación semántica conservadora y explícitamente sintética de `seat/back/support`. Las zonas quedan marcadas `syntheticZone=true`; no se inventan brazos ni patas individuales.
 
-[V1 IMPLEMENTADO — FASE K] El fallback solo se activa con geometría utilizable, confianza geométrica >= 0,82, back axis/lado resueltos, clasificación name-backed + explicit token y score >= 0,74. El collider builder sigue usando la misma Quality Gate; el fallback no evita validación de dimensiones, escala, asiento, navegación, BBSIS ni persistencia.
+[V1 IMPLEMENTADO — FASE K] El fallback no reutiliza el score de identidad como si fuera readiness. Se activa únicamente con identidad explícita de silla y hard-gates geométricos independientes: perfil de silla utilizable, confianza geométrica >= 0,58, cobertura proyectada de asiento >= 0,12, área ascendente de asiento >= 0,025, estructura vertical superior >= 0,08, soporte inferior >= 0,12 y back axis/lado resueltos. El collider builder y el planner siguen aplicando sus Quality Gates de dimensiones, escala, asiento, navegación, BBSIS y persistencia.
 
 [VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. Deben aparecer `Chair semantic automation readiness: PASS` y `Chair semantic mode: ...`. `chair_master_002` ya no puede terminar en `CHAIR_SEMANTIC_REVIEW`; si falla después, debe hacerlo en un gate posterior y específico.
 
