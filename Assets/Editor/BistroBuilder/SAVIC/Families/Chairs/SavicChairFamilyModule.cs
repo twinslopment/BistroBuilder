@@ -51,7 +51,8 @@ namespace BistroBuilder.Editor.Savic
                     manifest);
 
                 return SavicModelFamilyProcessingOutcome.Failure(
-                    "Chair classification passed, but semantic part structure requires review.");
+                    "Chair classification passed, but semantic part structure requires review.",
+                    "CHAIR_SEMANTIC_REVIEW");
             }
 
             if (!SavicChairAuthoringPlanner.TryPlan(
@@ -77,7 +78,8 @@ namespace BistroBuilder.Editor.Savic
                     manifest);
 
                 return SavicModelFamilyProcessingOutcome.Failure(
-                    rejection);
+                    rejection,
+                    "CHAIR_AUTHORING_REVIEW");
             }
 
             manifest.chairAuthoring =
@@ -106,7 +108,8 @@ namespace BistroBuilder.Editor.Savic
                 ? SavicModelFamilyProcessingOutcome.Success(
                     publication.Message)
                 : SavicModelFamilyProcessingOutcome.Failure(
-                    publication.Message);
+                    publication.Message,
+                    "CHAIR_PUBLICATION_FAILED");
         }
         public SavicModelFamilyProcessingOutcome ProcessAppearanceOnly(
             SavicManifest manifest,
