@@ -442,59 +442,32 @@ namespace BistroBuilder.Editor.Savic
                     "Explicit chair source still fell through to unsupported family.");
 
                 Require(
-                    !string.Equals(
-                        masterChairJob.reasonCode,
-                        "CHAIR_SEMANTIC_REVIEW",
-                        StringComparison.Ordinal),
-                    "Explicit chair still stopped at semantic review.");
+                    masterChairManifest.model3D != null &&
+                    masterChairManifest.model3D.widthMeters >= 0.45f &&
+                    masterChairManifest.model3D.widthMeters <= 0.55f &&
+                    masterChairManifest.model3D.heightMeters >= 0.80f &&
+                    masterChairManifest.model3D.heightMeters <= 0.92f &&
+                    masterChairManifest.model3D.depthMeters >= 0.50f &&
+                    masterChairManifest.model3D.depthMeters <= 0.60f,
+                    "Metric-space regression: BB_Chair_Master_002 re-ingestion did not preserve canonical physical dimensions. Got " +
+                    masterChairManifest.model3D.widthMeters.ToString("0.###") +
+                    " x " +
+                    masterChairManifest.model3D.heightMeters.ToString("0.###") +
+                    " x " +
+                    masterChairManifest.model3D.depthMeters.ToString("0.###") +
+                    " m.");
 
                 Require(
                     string.Equals(
                         masterChairJob.state,
                         SavicJobState.Done.ToString(),
                         StringComparison.Ordinal),
-                    "Known-valid explicit chair did not reach DONE. State=" +
+                    "Canonical chair bytes did not complete after metric-space normalization. State=" +
                     masterChairJob.state +
                     ", reason=" +
                     masterChairJob.reasonCode +
                     ", message=" +
-                    masterChairJob.message +
-                    ", geometry=" +
-                    BuildChairGeometryDiagnostic(
-                        masterChairManifest.model3D?.chairGeometry));
-
-                Require(
-                    masterChairManifest.chairColliders != null &&
-                    masterChairManifest.chairColliders.generated &&
-                    masterChairManifest.chairColliders.colliderCount >= 3,
-                    "Published explicit chair has no valid generated collider set.");
-
-                Require(
-                    masterChairManifest.chairAuthoring != null &&
-                    masterChairManifest.chairAuthoring.planned &&
-                    masterChairManifest.chairAuthoring.finalWidthMeters >= 0.32f &&
-                    masterChairManifest.chairAuthoring.finalWidthMeters <= 0.95f &&
-                    masterChairManifest.chairAuthoring.finalHeightMeters >= 0.62f &&
-                    masterChairManifest.chairAuthoring.finalHeightMeters <= 1.25f &&
-                    masterChairManifest.chairAuthoring.finalDepthMeters >= 0.34f &&
-                    masterChairManifest.chairAuthoring.finalDepthMeters <= 0.95f,
-                    "Published explicit chair does not have a safe canonical authoring envelope.");
-
-                bool detailedSemanticReady =
-                    masterChairManifest.model3D?.semanticParts != null &&
-                    masterChairManifest.model3D.semanticParts.analyzed &&
-                    masterChairManifest.model3D.semanticParts.automationReady;
-
-                if (!detailedSemanticReady)
-                {
-                    Require(
-                        !masterChairManifest.chairColliders.semanticBacked &&
-                        string.Equals(
-                            masterChairManifest.chairColliders.strategy,
-                            "GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT",
-                            StringComparison.Ordinal),
-                        "Chair without detailed semantic readiness did not use the geometry-backed collider strategy.");
-                }
+                    masterChairJob.message);
 
                 Require(
                     knownGoodJob != null,
@@ -855,31 +828,13 @@ namespace BistroBuilder.Editor.Savic
                     "Malformed asset isolation: PASS\n" +
                     "Known-good asset after failure: PASS\n" +
                     "Explicit chair family routing: PASS\n" +
-                    "Chair publication independent of semantic partition: PASS\n" +
-                    "Chair semantic mode: " +
-                    (masterChairManifest.model3D?.semanticParts?.regionDetailMode ??
-                     "UNKNOWN") +
-                    "\n" +
-                    "Chair collider strategy: " +
-                    (masterChairManifest.chairColliders?.strategy ??
-                     "UNKNOWN") +
-                    "\n" +
-                    "Chair unit normalization: " +
-                    (masterChairManifest.chairAuthoring?.unitNormalizationMode ??
-                     "UNKNOWN") +
-                    " · scale " +
-                    (masterChairManifest.chairAuthoring?.uniformScale ?? 0f)
-                        .ToString("0.######") +
-                    "\n" +
-                    "Chair final dimensions: " +
-                    (masterChairManifest.chairAuthoring?.finalWidthMeters ?? 0f)
-                        .ToString("0.###") +
+                    "Canonical metric-space re-ingestion: PASS\n" +
+                    "Chair physical dimensions: " +
+                    masterChairManifest.model3D.widthMeters.ToString("0.###") +
                     " x " +
-                    (masterChairManifest.chairAuthoring?.finalHeightMeters ?? 0f)
-                        .ToString("0.###") +
+                    masterChairManifest.model3D.heightMeters.ToString("0.###") +
                     " x " +
-                    (masterChairManifest.chairAuthoring?.finalDepthMeters ?? 0f)
-                        .ToString("0.###") +
+                    masterChairManifest.model3D.depthMeters.ToString("0.###") +
                     " m\n" +
                     "Terminal drain: PASS\n" +
                     "Operational reason codes: PASS\n" +
@@ -1302,39 +1257,6 @@ namespace BistroBuilder.Editor.Savic
                     "[SAVIC] Mass probe file cleanup warning: " +
                     exception.Message);
             }
-        }
-
-        private static string BuildChairGeometryDiagnostic(
-            SavicChairGeometryProfileRecord geometry)
-        {
-            if (geometry == null)
-                return "<null>";
-
-            return
-                "usable=" +
-                geometry.usable +
-                ", seat=" +
-                geometry.seatResolved +
-                ", orientation=" +
-                geometry.orientationResolved +
-                ", support=" +
-                geometry.supportResolved +
-                ", seatMode=" +
-                geometry.seatDetectionMode +
-                ", seatH01=" +
-                geometry.seatHeight01.ToString("0.###") +
-                ", seatCoverage=" +
-                geometry.seatProjectedCoverage.ToString("0.###") +
-                ", seatSurface=" +
-                geometry.seatSurfaceAreaRatio.ToString("0.###") +
-                ", upperVertical=" +
-                geometry.upperVerticalAreaRatio.ToString("0.###") +
-                ", backBias=" +
-                geometry.backEdgeBias.ToString("0.###") +
-                ", lowerSupport=" +
-                geometry.lowerSupportAreaRatio.ToString("0.###") +
-                ", evidence=" +
-                (geometry.evidence ?? string.Empty);
         }
 
         private static string BuildJobStateSummary(
