@@ -1585,9 +1585,13 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE K] La detección de asiento es ahora independiente del winding de la malla. El analizador V2 localiza superficies horizontales mediante `abs(normal.y)`, manteniendo por separado la métrica de caras con normal positiva. Esto evita que una silla válida falle únicamente porque el FBX tenga winding/normales invertidas o mixtas. El perfil persiste `seatSurfaceAreaRatio` y `seatDetectionMode`.
 
-[V1 IMPLEMENTADO — FASE K] El planner exige los tres contratos funcionales concretos (asiento, orientación y soporte) y, si alguno falla, devuelve el motivo exacto junto con la evidencia geométrica. La semántica detallada permanece opcional; el collider puede seguir por `GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT`.
+[V1 REDISEÑADO — FASE K / ERGONOMIC AUTHORING] El asiento detectado en la malla deja de ser un requisito de publicación. Si la superficie de asiento es fiable, SAVIC la usa; si no lo es, el planner aplica la altura ergonómica canónica del `SeatUseProfile` (0,46 m) y deja la semántica de asiento como evidencia opcional. El asset sigue obligado a superar dimensiones publicadas, orientación, soporte, escala, skinned/negative-scale y validadores runtime.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002` debe llegar a `DONE`. Si no lo hace, el propio error imprimirá qué contrato funcional concreto falla (seat/orientation/support) y sus métricas, evitando nuevos ciclos de error genérico.
+[V1 IMPLEMENTADO — FASE K] La orientación ya no depende exclusivamente de caras verticales del respaldo. El analizador V2.1 conserva esa señal cuando es fuerte y añade un fallback de `UPPER_OCCUPANCY_CENTROID`: calcula la distribución de toda la geometría de la mitad superior y resuelve el lado del respaldo por asimetría espacial. Esto cubre respaldos acolchados, redondeados o con triangulación que no presenta suficiente área estrictamente vertical.
+
+[V1 IMPLEMENTADO — FASE K] `chairGeometry.usable` significa ahora que existen orientación y soporte funcionales suficientes para autoría; `seatResolved` se conserva como dato de calidad, no como bloqueo. El collider `GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT` usa la altura final del plan, por lo que no depende de inventar una superficie semántica inexistente.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002` debe llegar a `DONE`. El resultado debe mostrar `Chair publication independent of semantic partition: PASS` y la estrategia de collider utilizada. Si todavía falla, el diagnóstico distinguirá orientación o soporte; ya no puede volver a bloquearse únicamente porque la detección de superficie de asiento sea débil.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
