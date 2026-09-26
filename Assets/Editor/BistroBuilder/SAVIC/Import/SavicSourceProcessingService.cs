@@ -103,6 +103,45 @@ namespace BistroBuilder.Editor.Savic
             return Process(manifest);
         }
 
+        internal bool TryRouteBeforeImportBySavicId(
+            string savicId,
+            out SavicSourceProcessingOutcome outcome)
+        {
+            if (!manifests.TryGetBySavicId(
+                    savicId,
+                    out SavicManifest manifest))
+            {
+                outcome =
+                    new SavicSourceProcessingOutcome(
+                        false,
+                        "NOT_FOUND",
+                        "No SAVIC manifest exists for the requested identity.",
+                        null);
+
+                return true;
+            }
+
+            if (manifest?.source == null)
+            {
+                outcome =
+                    new SavicSourceProcessingOutcome(
+                        false,
+                        "INVALID_MANIFEST",
+                        "Manifest or source record is missing.",
+                        manifest);
+
+                return true;
+            }
+
+            SavicProcessingTrace trace =
+                new SavicProcessingTrace();
+
+            return TryRouteBeforeImport(
+                manifest,
+                trace,
+                out outcome);
+        }
+
         internal SavicSourceProcessingOutcome
             MaterializeSourceMirrorBySavicId(
                 string savicId)
@@ -364,80 +403,12 @@ namespace BistroBuilder.Editor.Savic
                         "Source kind is not eligible for the 3D pipeline."));
             }
 
-            if (SavicGenericPlaceableAuthoringPlanner
-                .TryResolvePreImportReview(
-                    manifest.source.originalFileName,
-                    out string routedType,
-                    out string routedCategory,
-                    out string routedReasonCode,
-                    out string routedMessage))
+            if (TryRouteBeforeImport(
+                    manifest,
+                    trace,
+                    out SavicSourceProcessingOutcome routedOutcome))
             {
-                SavicClassificationRecord routedClassification =
-                    new SavicClassificationRecord
-                    {
-                        classified = true,
-                        classifierVersion =
-                            SavicContentClassifier.Version,
-                        family = "Placeable",
-                        type = routedType,
-                        category = routedCategory,
-                        confidence = "HIGH",
-                        score = 0.95f,
-                        explicitTypeToken = true,
-                        nameBacked = true,
-                        geometryBacked = false,
-                        evidence = routedMessage,
-                        classifiedUtc =
-                            DateTime.UtcNow.ToString("O")
-                    };
-
-                manifest.classification =
-                    routedClassification;
-
-                manifest.family =
-                    routedClassification.family;
-
-                manifest.type =
-                    routedClassification.type;
-
-                manifest.category =
-                    routedClassification.category;
-
-                manifest.status =
-                    "NEEDS_REVIEW";
-
-                trace.RecordDecision(
-                    "PREIMPORT_ROUTE",
-                    routedMessage);
-
-                SavicManifestMutations.UpsertDecision(
-                    manifest,
-                    "content.type",
-                    routedClassification.type,
-                    routedClassification.confidence,
-                    routedClassification.evidence,
-                    "content.classification.preimport.v1");
-
-                SavicManifestMutations.UpsertValidation(
-                    manifest,
-                    "Pipeline.PreImportRouting",
-                    "REVIEW",
-                    "WARNING",
-                    routedMessage,
-                    SavicGenericPlaceableAuthoringPlanner.Version);
-
-                manifests.Save(
-                    manifest);
-
-                return new SavicSourceProcessingOutcome(
-                    false,
-                    manifest.status,
-                    routedMessage,
-                    manifest,
-                    trace.Finish(
-                        routedReasonCode,
-                        "PREIMPORT_ROUTE",
-                        routedMessage));
+                return routedOutcome;
             }
 
             ISavicSourceImportAdapter adapter =
@@ -1083,6 +1054,96 @@ namespace BistroBuilder.Editor.Savic
 
             return JsonUtility.FromJson<SavicManifest>(
                 json);
+        }
+
+        private bool TryRouteBeforeImport(
+            SavicManifest manifest,
+            SavicProcessingTrace trace,
+            out SavicSourceProcessingOutcome outcome)
+        {
+            outcome =
+                default;
+
+            if (!SavicGenericPlaceableAuthoringPlanner
+                .TryResolvePreImportReview(
+                    manifest.source.originalFileName,
+                    out string routedType,
+                    out string routedCategory,
+                    out string routedReasonCode,
+                    out string routedMessage))
+            {
+                return false;
+            }
+
+            SavicClassificationRecord routedClassification =
+                new SavicClassificationRecord
+                {
+                    classified = true,
+                    classifierVersion =
+                        SavicContentClassifier.Version,
+                    family = "Placeable",
+                    type = routedType,
+                    category = routedCategory,
+                    confidence = "HIGH",
+                    score = 0.95f,
+                    explicitTypeToken = true,
+                    nameBacked = true,
+                    geometryBacked = false,
+                    evidence = routedMessage,
+                    classifiedUtc =
+                        DateTime.UtcNow.ToString("O")
+                };
+
+            manifest.classification =
+                routedClassification;
+
+            manifest.family =
+                routedClassification.family;
+
+            manifest.type =
+                routedClassification.type;
+
+            manifest.category =
+                routedClassification.category;
+
+            manifest.status =
+                "NEEDS_REVIEW";
+
+            trace.RecordDecision(
+                "PREIMPORT_ROUTE",
+                routedMessage);
+
+            SavicManifestMutations.UpsertDecision(
+                manifest,
+                "content.type",
+                routedClassification.type,
+                routedClassification.confidence,
+                routedClassification.evidence,
+                "content.classification.preimport.v1");
+
+            SavicManifestMutations.UpsertValidation(
+                manifest,
+                "Pipeline.PreImportRouting",
+                "REVIEW",
+                "WARNING",
+                routedMessage,
+                SavicGenericPlaceableAuthoringPlanner.Version);
+
+            manifests.Save(
+                manifest);
+
+            outcome =
+                new SavicSourceProcessingOutcome(
+                    false,
+                    manifest.status,
+                    routedMessage,
+                    manifest,
+                    trace.Finish(
+                        routedReasonCode,
+                        "PREIMPORT_ROUTE",
+                        routedMessage));
+
+            return true;
         }
 
         private ISavicSourceImportAdapter ResolveAdapter(
