@@ -399,6 +399,89 @@ namespace BistroBuilder.Editor.Savic
                     "Mass queue still reports pending 3D work.");
 
                 Require(
+                    eligibleJobs.All(
+                        job =>
+                            !string.IsNullOrWhiteSpace(
+                                job.reasonCode) &&
+                            !string.IsNullOrWhiteSpace(
+                                job.primaryStage)),
+                    "At least one terminal batch job is missing operational diagnosis.");
+
+                Require(
+                    eligibleJobs
+                        .Where(
+                            job =>
+                                string.Equals(
+                                    job.state,
+                                    SavicJobState.Done.ToString(),
+                                    StringComparison.Ordinal))
+                        .All(
+                            job =>
+                                job.stageTimings != null &&
+                                job.stageTimings.Any(
+                                    stage =>
+                                        stage != null &&
+                                        string.Equals(
+                                            stage.stageId,
+                                            "IMPORT_SOURCE",
+                                            StringComparison.Ordinal)) &&
+                                job.stageTimings.Any(
+                                    stage =>
+                                        stage != null &&
+                                        string.Equals(
+                                            stage.stageId,
+                                            "ANALYZE_GEOMETRY",
+                                            StringComparison.Ordinal)) &&
+                                job.stageTimings.Any(
+                                    stage =>
+                                        stage != null &&
+                                        string.Equals(
+                                            stage.stageId,
+                                            "FAMILY_PUBLICATION",
+                                            StringComparison.Ordinal))),
+                    "A successful real asset is missing expected stage timings.");
+
+                Require(
+                    string.Equals(
+                        brokenJob.reasonCode,
+                        "SOURCE_IMPORT_FAILED",
+                        StringComparison.Ordinal) &&
+                    string.Equals(
+                        brokenJob.primaryStage,
+                        "IMPORT_SOURCE",
+                        StringComparison.Ordinal),
+                    "Malformed asset did not retain a clear import-stage reason code.");
+
+                SavicOperationalMetrics metrics =
+                    SavicOperationalAnalytics.Build(
+                        finalJobs);
+
+                Require(
+                    metrics.EligibleJobs ==
+                    eligibleJobs.Count &&
+                    metrics.TerminalJobs ==
+                    eligibleJobs.Count &&
+                    metrics.ActiveJobs ==
+                    0,
+                    "Operational queue metrics do not match the drained real batch.");
+
+                Require(
+                    metrics.Stages != null &&
+                    metrics.Stages.Any(
+                        stage =>
+                            stage != null &&
+                            string.Equals(
+                                stage.StageId,
+                                "IMPORT_SOURCE",
+                                StringComparison.Ordinal)),
+                    "Operational stage aggregation did not include source import.");
+
+                Require(
+                    !string.IsNullOrWhiteSpace(
+                        metrics.TopIssueReason),
+                    "Operational analytics did not identify any issue reason.");
+
+                Require(
                     manifests.TryGetBySavicId(
                         knownGoodJob.manifestSavicId,
                         out SavicManifest knownGoodManifest) &&
@@ -460,6 +543,17 @@ namespace BistroBuilder.Editor.Savic
                     "Malformed asset isolation: PASS\n" +
                     "Known-good asset after failure: PASS\n" +
                     "Terminal drain: PASS\n" +
+                    "Operational reason codes: PASS\n" +
+                    "Per-stage timings: PASS\n" +
+                    "Queue analytics: PASS\n" +
+                    "P95 job duration: " +
+                    metrics.P95DurationMilliseconds +
+                    " ms\n" +
+                    "Top issue reason: " +
+                    metrics.TopIssueReason +
+                    " (" +
+                    metrics.TopIssueReasonCount +
+                    ")\n" +
                     "Published DONE: " +
                     done +
                     "\nNeeds review: " +
