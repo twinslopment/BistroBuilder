@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "4.1.0";
+        internal const string Version = "4.2.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -695,13 +695,19 @@ namespace BistroBuilder.Editor.Savic
 
             bool nameBackedChair =
                 explicitChairToken &&
-                plausibleChairShapeRatios &&
-                score >= 0.56f;
+                !conflictingToken;
 
             bool geometryBackedChair =
                 strongChairGeometry &&
                 plausibleChairShapeRatios &&
                 score >= 0.74f;
+
+            if (nameBackedChair &&
+                !plausibleChairShapeRatios)
+            {
+                evidence.Add(
+                    "explicit chair identity accepted; scale/shape readiness deferred to chair authoring review");
+            }
 
             if (conflictingToken ||
                 (!nameBackedChair &&
