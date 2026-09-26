@@ -6,7 +6,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairAuthoringPlanner
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "3.0.0";
 
         internal const string TemplatePrefabAssetPath =
             "Assets/Prefabs/Restaurant/Generated/Seating/" +
@@ -27,6 +27,21 @@ namespace BistroBuilder.Editor.Savic
         private const float MaximumSourceSeatHeightForCorrection = 0.75f;
         private const float MinimumSafeUniformScale = 0.65f;
         private const float MaximumSafeUniformScale = 1.45f;
+
+        private const float CanonicalChairWidthMeters = 0.50f;
+        private const float CanonicalChairHeightMeters = 0.86f;
+        private const float CanonicalChairDepthMeters = 0.55f;
+
+        private static readonly float[] CommonUnitScales =
+        {
+            0.001f,
+            0.01f,
+            0.1f,
+            1f,
+            10f,
+            100f,
+            1000f
+        };
 
         internal static bool TryPlan(
             SavicManifest manifest,
@@ -111,60 +126,6 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            float uniformScale =
-                1f;
-
-            bool scaleCorrectionApplied =
-                false;
-
-            bool canonicalSeatFallback =
-                !geometry.seatResolved ||
-                !IsFinitePositive(
-                    geometry.seatHeightMeters);
-
-            float sourceSeatHeight =
-                canonicalSeatFallback
-                    ? NominalSeatHeightMeters
-                    : geometry.seatHeightMeters;
-
-            if (!canonicalSeatFallback &&
-                (sourceSeatHeight <
-                     MinimumAcceptedSeatHeightMeters ||
-                 sourceSeatHeight >
-                     MaximumAcceptedSeatHeightMeters))
-            {
-                if (sourceSeatHeight >=
-                        MinimumSourceSeatHeightForCorrection &&
-                    sourceSeatHeight <=
-                        MaximumSourceSeatHeightForCorrection)
-                {
-                    uniformScale =
-                        NominalSeatHeightMeters /
-                        sourceSeatHeight;
-
-                    if (uniformScale <
-                            MinimumSafeUniformScale ||
-                        uniformScale >
-                            MaximumSafeUniformScale)
-                    {
-                        rejectionReason =
-                            "Required chair scale correction is too large for automatic publication.";
-                        return false;
-                    }
-
-                    scaleCorrectionApplied =
-                        true;
-                }
-                else
-                {
-                    canonicalSeatFallback =
-                        true;
-
-                    sourceSeatHeight =
-                        NominalSeatHeightMeters;
-                }
-            }
-
             float sourceFrontX =
                 geometry.frontDirectionLocalX;
 
@@ -181,46 +142,82 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            float scaledWidth =
-                analysis.widthMeters *
-                uniformScale;
-
-            float scaledHeight =
-                analysis.heightMeters *
-                uniformScale;
-
-            float scaledDepth =
-                analysis.depthMeters *
-                uniformScale;
-
             bool quarterTurn =
                 ApproximatelyQuarterTurn(
                     visualYawDegrees);
 
-            float finalWidth =
+            float orientedSourceWidth =
                 quarterTurn
-                    ? scaledDepth
-                    : scaledWidth;
+                    ? analysis.depthMeters
+                    : analysis.widthMeters;
+
+            float orientedSourceDepth =
+                quarterTurn
+                    ? analysis.widthMeters
+                    : analysis.depthMeters;
+
+            if (!TryResolveAuthoringScale(
+                    orientedSourceWidth,
+                    analysis.heightMeters,
+                    orientedSourceDepth,
+                    geometry,
+                    out float uniformScale,
+                    out bool scaleCorrectionApplied,
+                    out bool unitNormalizationApplied,
+                    out string unitNormalizationMode,
+                    out bool canonicalSeatFallback,
+                    out string scaleReason))
+            {
+                rejectionReason =
+                    scaleReason;
+                return false;
+            }
+
+            float finalWidth =
+                orientedSourceWidth *
+                uniformScale;
+
+            float finalHeight =
+                analysis.heightMeters *
+                uniformScale;
 
             float finalDepth =
-                quarterTurn
-                    ? scaledWidth
-                    : scaledDepth;
+                orientedSourceDepth *
+                uniformScale;
 
             float finalSeatHeight =
                 canonicalSeatFallback
                     ? NominalSeatHeightMeters
-                    : sourceSeatHeight *
+                    : geometry.seatHeightMeters *
                       uniformScale;
 
             if (!HasSafePublishedDimensions(
                     finalWidth,
-                    scaledHeight,
+                    finalHeight,
                     finalDepth,
                     finalSeatHeight))
             {
                 rejectionReason =
-                    "Normalized dimensions are not safe for an automatic dining-chair profile.";
+                    "Chair unit/scale normalization produced unsafe dining-chair dimensions: " +
+                    "source=" +
+                    FormatDimensions(
+                        orientedSourceWidth,
+                        analysis.heightMeters,
+                        orientedSourceDepth) +
+                    ", scale=" +
+                    uniformScale.ToString(
+                        "0.######",
+                        CultureInfo.InvariantCulture) +
+                    ", final=" +
+                    FormatDimensions(
+                        finalWidth,
+                        finalHeight,
+                        finalDepth) +
+                    ", seat=" +
+                    finalSeatHeight.ToString(
+                        "0.###",
+                        CultureInfo.InvariantCulture) +
+                    " m.";
                 return false;
             }
 
@@ -236,7 +233,7 @@ namespace BistroBuilder.Editor.Savic
                     finalWidthMeters =
                         finalWidth,
                     finalHeightMeters =
-                        scaledHeight,
+                        finalHeight,
                     finalDepthMeters =
                         finalDepth,
                     finalSeatHeightMeters =
@@ -254,6 +251,16 @@ namespace BistroBuilder.Editor.Savic
                             analysis),
                     scaleCorrectionApplied =
                         scaleCorrectionApplied,
+                    unitNormalizationApplied =
+                        unitNormalizationApplied,
+                    unitNormalizationMode =
+                        unitNormalizationMode,
+                    sourceWidthMeters =
+                        orientedSourceWidth,
+                    sourceHeightMeters =
+                        analysis.heightMeters,
+                    sourceDepthMeters =
+                        orientedSourceDepth,
                     templatePrefabAssetPath =
                         TemplatePrefabAssetPath,
                     seatUseProfileAssetPath =
@@ -263,8 +270,14 @@ namespace BistroBuilder.Editor.Savic
                     planReason =
                         BuildPlanReason(
                             scaleCorrectionApplied,
+                            unitNormalizationApplied,
+                            unitNormalizationMode,
                             canonicalSeatFallback,
                             visualYawDegrees,
+                            uniformScale,
+                            finalWidth,
+                            finalHeight,
+                            finalDepth,
                             finalSeatHeight),
                     plannedUtc =
                         DateTime.UtcNow.ToString("O")
@@ -422,16 +435,29 @@ namespace BistroBuilder.Editor.Savic
 
         private static string BuildPlanReason(
             bool scaleCorrectionApplied,
+            bool unitNormalizationApplied,
+            string unitNormalizationMode,
             bool canonicalSeatFallback,
             float visualYawDegrees,
+            float uniformScale,
+            float finalWidth,
+            float finalHeight,
+            float finalDepth,
             float finalSeatHeight)
         {
             string scaleReason =
-                canonicalSeatFallback
-                    ? "canonical dining-chair seat height used because source seat surface was not reliable"
-                    : scaleCorrectionApplied
-                        ? "uniform seat-height normalization applied"
-                        : "source seat height accepted";
+                unitNormalizationApplied
+                    ? "source units normalized with " +
+                      unitNormalizationMode +
+                      " scale " +
+                      uniformScale.ToString(
+                          "0.######",
+                          CultureInfo.InvariantCulture)
+                    : canonicalSeatFallback
+                        ? "canonical dining-chair seat height used because source seat surface was not reliable"
+                        : scaleCorrectionApplied
+                            ? "moderate seat-height normalization applied"
+                            : "source physical scale accepted";
 
             string rotationReason =
                 Math.Abs(visualYawDegrees) <=
@@ -447,11 +473,272 @@ namespace BistroBuilder.Editor.Savic
                 scaleReason +
                 "; " +
                 rotationReason +
+                "; final dimensions " +
+                FormatDimensions(
+                    finalWidth,
+                    finalHeight,
+                    finalDepth) +
                 "; final seat height " +
                 finalSeatHeight.ToString(
                     "0.###",
                     CultureInfo.InvariantCulture) +
                 " m.";
+        }
+
+        private static bool TryResolveAuthoringScale(
+            float sourceWidth,
+            float sourceHeight,
+            float sourceDepth,
+            SavicChairGeometryProfileRecord geometry,
+            out float scale,
+            out bool scaleCorrectionApplied,
+            out bool unitNormalizationApplied,
+            out string unitNormalizationMode,
+            out bool canonicalSeatFallback,
+            out string rejectionReason)
+        {
+            scale = 1f;
+            scaleCorrectionApplied = false;
+            unitNormalizationApplied = false;
+            unitNormalizationMode = "NONE";
+            canonicalSeatFallback =
+                geometry == null ||
+                !geometry.seatResolved ||
+                !IsFinitePositive(
+                    geometry.seatHeightMeters);
+            rejectionReason = string.Empty;
+
+            if (!IsFinitePositive(sourceWidth) ||
+                !IsFinitePositive(sourceHeight) ||
+                !IsFinitePositive(sourceDepth))
+            {
+                rejectionReason =
+                    "Chair source dimensions are missing or invalid.";
+                return false;
+            }
+
+            float minimumScale =
+                Math.Max(
+                    0.000001f,
+                    Math.Max(
+                        0.32f / sourceWidth,
+                        Math.Max(
+                            0.62f / sourceHeight,
+                            0.34f / sourceDepth)));
+
+            float maximumScale =
+                Math.Min(
+                    1000000f,
+                    Math.Min(
+                        0.95f / sourceWidth,
+                        Math.Min(
+                            1.25f / sourceHeight,
+                            0.95f / sourceDepth)));
+
+            if (minimumScale >
+                maximumScale)
+            {
+                rejectionReason =
+                    "Chair proportions cannot fit the safe dining-chair envelope with any uniform scale. Source dimensions " +
+                    FormatDimensions(
+                        sourceWidth,
+                        sourceHeight,
+                        sourceDepth) +
+                    ".";
+                return false;
+            }
+
+            bool sourceScaleAlreadySafe =
+                1f >= minimumScale &&
+                1f <= maximumScale;
+
+            if (sourceScaleAlreadySafe)
+            {
+                if (!canonicalSeatFallback)
+                {
+                    float sourceSeatHeight =
+                        geometry.seatHeightMeters;
+
+                    if (sourceSeatHeight <
+                            MinimumAcceptedSeatHeightMeters ||
+                        sourceSeatHeight >
+                            MaximumAcceptedSeatHeightMeters)
+                    {
+                        float seatScale =
+                            NominalSeatHeightMeters /
+                            sourceSeatHeight;
+
+                        if (seatScale >=
+                                MinimumSafeUniformScale &&
+                            seatScale <=
+                                MaximumSafeUniformScale &&
+                            seatScale >=
+                                minimumScale &&
+                            seatScale <=
+                                maximumScale)
+                        {
+                            scale =
+                                seatScale;
+
+                            scaleCorrectionApplied =
+                                true;
+                        }
+                        else
+                        {
+                            canonicalSeatFallback =
+                                true;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            float preferredScale =
+                Median3(
+                    CanonicalChairWidthMeters /
+                    sourceWidth,
+                    CanonicalChairHeightMeters /
+                    sourceHeight,
+                    CanonicalChairDepthMeters /
+                    sourceDepth);
+
+            float bestUnitScale =
+                0f;
+
+            float bestError =
+                float.PositiveInfinity;
+
+            for (int index = 0;
+                 index < CommonUnitScales.Length;
+                 index++)
+            {
+                float candidate =
+                    CommonUnitScales[index];
+
+                if (candidate <
+                        minimumScale ||
+                    candidate >
+                        maximumScale)
+                {
+                    continue;
+                }
+
+                float error =
+                    Math.Abs(
+                        Mathf.Log10(
+                            candidate /
+                            Math.Max(
+                                0.000001f,
+                                preferredScale)));
+
+                if (error <
+                    bestError)
+                {
+                    bestError =
+                        error;
+
+                    bestUnitScale =
+                        candidate;
+                }
+            }
+
+            if (bestUnitScale > 0f)
+            {
+                scale =
+                    bestUnitScale;
+
+                unitNormalizationApplied =
+                    true;
+
+                unitNormalizationMode =
+                    "COMMON_UNIT_FACTOR";
+
+                canonicalSeatFallback =
+                    true;
+
+                return true;
+            }
+
+            float clampedPreferred =
+                Mathf.Clamp(
+                    preferredScale,
+                    minimumScale,
+                    maximumScale);
+
+            if (clampedPreferred >=
+                    MinimumSafeUniformScale &&
+                clampedPreferred <=
+                    MaximumSafeUniformScale)
+            {
+                scale =
+                    clampedPreferred;
+
+                scaleCorrectionApplied =
+                    true;
+
+                canonicalSeatFallback =
+                    true;
+
+                return true;
+            }
+
+            rejectionReason =
+                "Chair source scale is outside the safe authoring range and does not match a supported common unit conversion. Source dimensions " +
+                FormatDimensions(
+                    sourceWidth,
+                    sourceHeight,
+                    sourceDepth) +
+                "; feasible uniform scale " +
+                minimumScale.ToString(
+                    "0.######",
+                    CultureInfo.InvariantCulture) +
+                "–" +
+                maximumScale.ToString(
+                    "0.######",
+                    CultureInfo.InvariantCulture) +
+                ".";
+
+            return false;
+        }
+
+        private static float Median3(
+            float a,
+            float b,
+            float c)
+        {
+            return
+                a > b
+                    ? b > c
+                        ? b
+                        : a > c
+                            ? c
+                            : a
+                    : a > c
+                        ? a
+                        : b > c
+                            ? c
+                            : b;
+        }
+
+        private static string FormatDimensions(
+            float width,
+            float height,
+            float depth)
+        {
+            return
+                width.ToString(
+                    "0.###",
+                    CultureInfo.InvariantCulture) +
+                " x " +
+                height.ToString(
+                    "0.###",
+                    CultureInfo.InvariantCulture) +
+                " x " +
+                depth.ToString(
+                    "0.###",
+                    CultureInfo.InvariantCulture) +
+                " m";
         }
 
         private static bool IsFinitePositive(
