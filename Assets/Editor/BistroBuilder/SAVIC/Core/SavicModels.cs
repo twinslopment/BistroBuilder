@@ -571,6 +571,28 @@ namespace BistroBuilder.Editor.Savic
     }
 
     [Serializable]
+    internal sealed class SavicProcessingStageRecord
+    {
+        public string stageId = string.Empty;
+        public string result = string.Empty;
+        public long durationMilliseconds;
+        public string detail = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicProcessingDiagnostics
+    {
+        public string traceVersion = string.Empty;
+        public string reasonCode = string.Empty;
+        public string primaryStage = string.Empty;
+        public string summary = string.Empty;
+        public long totalMilliseconds;
+        public string completedUtc = string.Empty;
+        public List<SavicProcessingStageRecord> stages =
+            new List<SavicProcessingStageRecord>();
+    }
+
+    [Serializable]
     internal sealed class SavicJobRecord
     {
         public string jobId = string.Empty;
@@ -589,6 +611,11 @@ namespace BistroBuilder.Editor.Savic
         public string processingStartedUtc = string.Empty;
         public string completedUtc = string.Empty;
         public long lastDurationMilliseconds;
+        public string outcomeStatus = string.Empty;
+        public string reasonCode = string.Empty;
+        public string primaryStage = string.Empty;
+        public List<SavicProcessingStageRecord> stageTimings =
+            new List<SavicProcessingStageRecord>();
     }
 
     internal readonly struct SavicIntakeOutcome
