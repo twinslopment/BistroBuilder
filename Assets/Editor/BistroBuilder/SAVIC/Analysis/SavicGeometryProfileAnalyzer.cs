@@ -9,7 +9,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicGeometryProfileAnalyzer
     {
-        internal const string Version = "1.1.0";
+        internal const string Version = "2.0.0";
 
         private const int MaximumSampledTrianglesPerMeshInstance =
             250000;
