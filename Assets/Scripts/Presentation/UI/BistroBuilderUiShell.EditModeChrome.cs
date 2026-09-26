@@ -144,11 +144,11 @@ public sealed partial class BistroBuilderUiShell
     void ChromeMessage(string message){if(editModeToolStatusText==null||string.IsNullOrEmpty(message))return;editModeToolStatusText.text=message;editModeToolStatusText.transform.parent.gameObject.SetActive(true);}
     void RefreshEditModeChrome(bool editing,bool managing)
     {
-        EnsureEditModeChrome();bool visible=editing&&!managing;
+        EnsureEditModeChrome();RefreshModeSelector(editing,managing);bool visible=editing&&!managing;
         if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
-        if(topNavigation!=null)topNavigation.gameObject.SetActive(!visible);
-        if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!visible);
+        if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);
+        if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!editing);
         if(!visible){if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
         ResolveEditChrome();
         editModeMoneyText.text=finance!=null?BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents):"—";
