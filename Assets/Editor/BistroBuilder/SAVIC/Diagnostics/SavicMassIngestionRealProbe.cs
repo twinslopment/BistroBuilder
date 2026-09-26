@@ -533,7 +533,17 @@ namespace BistroBuilder.Editor.Savic
                     "High-confidence floor decoration did not publish automatically. " +
                     BuildJobStateSummary(finalJobs));
 
-                SavicProcessingStageRecord mirrorImportStage =
+                SavicProcessingStageRecord mirrorPrepareImportStage =
+                    floorMirrorJob.stageTimings?
+                        .FirstOrDefault(
+                            stage =>
+                                stage != null &&
+                                string.Equals(
+                                    stage.stageId,
+                                    "PREPARE_IMPORT_SOURCE",
+                                    StringComparison.Ordinal));
+
+                SavicProcessingStageRecord mirrorReuseImportStage =
                     floorMirrorJob.stageTimings?
                         .FirstOrDefault(
                             stage =>
@@ -572,15 +582,22 @@ namespace BistroBuilder.Editor.Savic
                     "Floor decoration did not use the generic-static lightweight analysis path.");
 
                 Require(
-                    floorMirrorJob.lastDurationMilliseconds <
+                    floorMirrorJob.sourcePrepared &&
+                    mirrorPrepareImportStage != null,
+                    "Floor decoration did not persist the staged source-preparation checkpoint.");
+
+                Require(
+                    floorMirrorJob.maximumAtomicDurationMilliseconds <
                     SavicBatchProcessor.SlowJobWarningMilliseconds,
-                    "Floor decoration is still a slow batch asset operation: " +
-                    floorMirrorJob.lastDurationMilliseconds +
-                    " ms. Import=" +
-                    (mirrorImportStage?.durationMilliseconds ?? -1) +
-                    " ms, Analyze=" +
+                    "Floor decoration still contains a slow atomic stage: max=" +
+                    floorMirrorJob.maximumAtomicDurationMilliseconds +
+                    " ms, prepare-import=" +
+                    (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
+                    " ms, reuse-import=" +
+                    (mirrorReuseImportStage?.durationMilliseconds ?? -1) +
+                    " ms, analyze=" +
                     (mirrorAnalyzeStage?.durationMilliseconds ?? -1) +
-                    " ms, Publish=" +
+                    " ms, publish=" +
                     (mirrorPublishStage?.durationMilliseconds ?? -1) +
                     " ms.");
 
@@ -731,15 +748,21 @@ namespace BistroBuilder.Editor.Savic
                     "Queue analytics: PASS\n" +
                     "Generic floor decoration publication: PASS\n" +
                     "Generic-static lightweight analysis: PASS\n" +
-                    "Floor mirror batch duration: " +
+                    "Floor mirror total batch duration: " +
                     floorMirrorJob.lastDurationMilliseconds +
-                    " ms (import " +
-                    (mirrorImportStage?.durationMilliseconds ?? -1) +
+                    " ms\n" +
+                    "Floor mirror max atomic stage: " +
+                    floorMirrorJob.maximumAtomicDurationMilliseconds +
+                    " ms\n" +
+                    "Floor mirror stages: prepare-import " +
+                    (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
+                    " / reuse-import " +
+                    (mirrorReuseImportStage?.durationMilliseconds ?? -1) +
                     " / analyze " +
                     (mirrorAnalyzeStage?.durationMilliseconds ?? -1) +
                     " / publish " +
                     (mirrorPublishStage?.durationMilliseconds ?? -1) +
-                    " ms)\n" +
+                    " ms\n" +
                     "Functional equipment safe review: PASS\n" +
                     "Functional equipment pre-import routing: PASS\n" +
                     "Wine cooler batch duration: " +
