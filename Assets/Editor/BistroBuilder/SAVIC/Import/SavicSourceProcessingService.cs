@@ -10,18 +10,23 @@ namespace BistroBuilder.Editor.Savic
             bool succeeded,
             string status,
             string message,
-            SavicManifest manifest)
+            SavicManifest manifest,
+            SavicProcessingDiagnostics diagnostics = null)
         {
             Succeeded = succeeded;
             Status = status ?? string.Empty;
             Message = message ?? string.Empty;
             Manifest = manifest;
+            Diagnostics =
+                diagnostics ??
+                new SavicProcessingDiagnostics();
         }
 
         internal bool Succeeded { get; }
         internal string Status { get; }
         internal string Message { get; }
         internal SavicManifest Manifest { get; }
+        internal SavicProcessingDiagnostics Diagnostics { get; }
     }
 
     internal sealed class SavicSourceProcessingService
@@ -98,6 +103,9 @@ namespace BistroBuilder.Editor.Savic
                     manifest);
             }
 
+            SavicProcessingTrace trace =
+                new SavicProcessingTrace();
+
             SavicManifest previousPublishedSnapshot =
                 IsPublished(
                     manifest)
@@ -113,7 +121,11 @@ namespace BistroBuilder.Editor.Savic
                     false,
                     "UNSUPPORTED_SOURCE_KIND",
                     "This processing service currently accepts only 3D models.",
-                    manifest);
+                    manifest,
+                    trace.Finish(
+                        "UNSUPPORTED_SOURCE_KIND",
+                        "PRECHECK",
+                        "Source kind is not eligible for the 3D pipeline."));
             }
 
             ISavicSourceImportAdapter adapter =
@@ -130,11 +142,18 @@ namespace BistroBuilder.Editor.Savic
                 return ReturnFailure(
                     previousPublishedSnapshot,
                     manifest,
-                    "No compatible source import adapter is available.");
+                    "No compatible source import adapter is available.",
+                    "NO_IMPORT_ADAPTER",
+                    "IMPORT_SOURCE",
+                    trace);
             }
 
             SavicSourceImportResult import =
-                adapter.Import(manifest);
+                trace.Measure(
+                    "IMPORT_SOURCE",
+                    () => adapter.Import(manifest),
+                    result => result.Succeeded,
+                    result => result.Message);
 
             if (!import.Succeeded)
             {
@@ -147,7 +166,10 @@ namespace BistroBuilder.Editor.Savic
                 return ReturnFailure(
                     previousPublishedSnapshot,
                     manifest,
-                    import.Message);
+                    import.Message,
+                    "SOURCE_IMPORT_FAILED",
+                    "IMPORT_SOURCE",
+                    trace);
             }
 
             SavicManifestMutations.UpsertArtifact(
@@ -184,13 +206,18 @@ namespace BistroBuilder.Editor.Savic
                 return ReturnFailure(
                     previousPublishedSnapshot,
                     manifest,
-                    "Imported model main object is not a GameObject.");
+                    "Imported model main object is not a GameObject.",
+                    "INVALID_IMPORTED_OBJECT",
+                    "IMPORT_SOURCE",
+                    trace);
             }
 
             try
             {
                 SavicModelAnalysisRecord analysis =
-                    SavicModelAnalyzer.Analyze(root);
+                    trace.Measure(
+                        "ANALYZE_GEOMETRY",
+                        () => SavicModelAnalyzer.Analyze(root));
 
                 manifest.model3D = analysis;
 
@@ -291,14 +318,20 @@ namespace BistroBuilder.Editor.Savic
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        "Model imported but geometry requires review.");
+                        "Model imported but geometry requires review.",
+                        "GEOMETRY_REQUIRES_REVIEW",
+                        "ANALYZE_GEOMETRY",
+                        trace);
                 }
 
                 SavicIncrementalPlan incrementalPlan =
-                    SavicIncrementalInvalidationService.Evaluate(
-                        previousPublishedSnapshot,
-                        manifest,
-                        analysis);
+                    trace.Measure(
+                        "INCREMENTAL_PLAN",
+                        () =>
+                            SavicIncrementalInvalidationService.Evaluate(
+                                previousPublishedSnapshot,
+                                manifest,
+                                analysis));
 
                 manifest.incremental =
                     SavicIncrementalInvalidationService.Stamp(
@@ -324,10 +357,24 @@ namespace BistroBuilder.Editor.Savic
                         SavicContentClassifier.Version,
                         StringComparison.Ordinal);
 
-                SavicClassificationRecord classification =
-                    canReuseClassification
-                        ? previousPublishedSnapshot.classification
-                        : SavicContentClassifier.Classify(manifest);
+                SavicClassificationRecord classification;
+
+                if (canReuseClassification)
+                {
+                    classification =
+                        previousPublishedSnapshot.classification;
+
+                    trace.RecordReuse(
+                        "CLASSIFICATION",
+                        "Classification reused from compatible published baseline.");
+                }
+                else
+                {
+                    classification =
+                        trace.Measure(
+                            "CLASSIFICATION",
+                            () => SavicContentClassifier.Classify(manifest));
+                }
 
                 manifest.classification = classification;
                 manifest.family = classification.family;
@@ -343,13 +390,27 @@ namespace BistroBuilder.Editor.Savic
                         SavicSemanticPartAnalyzer.Version,
                         StringComparison.Ordinal);
 
-                SavicSemanticPartAnalysisRecord semanticParts =
-                    canReuseSemanticParts
-                        ? previousPublishedSnapshot.model3D.semanticParts
-                        : SavicSemanticPartAnalyzer.Analyze(
-                            root,
-                            analysis,
-                            classification);
+                SavicSemanticPartAnalysisRecord semanticParts;
+
+                if (canReuseSemanticParts)
+                {
+                    semanticParts =
+                        previousPublishedSnapshot.model3D.semanticParts;
+
+                    trace.RecordReuse(
+                        "SEMANTIC_PARTS",
+                        "Semantic-part analysis reused from compatible published baseline.");
+                }
+                else
+                {
+                    semanticParts =
+                        trace.Measure(
+                            "SEMANTIC_PARTS",
+                            () => SavicSemanticPartAnalyzer.Analyze(
+                                root,
+                                analysis,
+                                classification));
+                }
 
                 analysis.semanticParts =
                     semanticParts;
@@ -405,12 +466,19 @@ namespace BistroBuilder.Editor.Savic
 
                     manifest.materialSemantic =
                         previousMaterial;
+
+                    trace.RecordReuse(
+                        "MATERIAL_SEMANTIC",
+                        "Material semantic reused from compatible published baseline.");
                 }
                 else
                 {
                     resolvedMaterial =
-                        SavicMaterialSemanticResolver.Resolve(
-                            manifest);
+                        trace.Measure(
+                            "MATERIAL_SEMANTIC",
+                            () =>
+                                SavicMaterialSemanticResolver.Resolve(
+                                    manifest));
 
                     manifest.materialSemantic =
                         new SavicMaterialSemanticResolutionRecord
@@ -495,31 +563,46 @@ namespace BistroBuilder.Editor.Savic
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        "Model analyzed but content type has no automatic publication module.");
+                        "Model analyzed but content type has no automatic publication module.",
+                        "UNSUPPORTED_PUBLICATION_FAMILY",
+                        "CLASSIFICATION",
+                        trace);
                 }
 
                 SavicModelFamilyProcessingOutcome familyOutcome =
-                    incrementalPlan.IsAppearanceOnly
-                        ? familyModule.ProcessAppearanceOnly(
-                            manifest,
-                            root)
-                        : familyModule.Process(
-                            manifest,
-                            root);
+                    trace.Measure(
+                        "FAMILY_PUBLICATION",
+                        () =>
+                            incrementalPlan.IsAppearanceOnly
+                                ? familyModule.ProcessAppearanceOnly(
+                                    manifest,
+                                    root)
+                                : familyModule.Process(
+                                    manifest,
+                                    root),
+                        result => result.Succeeded,
+                        result => result.Message);
 
                 if (!familyOutcome.Succeeded)
                 {
                     return ReturnFailure(
                         previousPublishedSnapshot,
                         manifest,
-                        familyOutcome.Message);
+                        familyOutcome.Message,
+                        "FAMILY_PUBLICATION_FAILED",
+                        "FAMILY_PUBLICATION",
+                        trace);
                 }
 
                 return new SavicSourceProcessingOutcome(
                     true,
                     manifest.status,
                     familyOutcome.Message,
-                    manifest);
+                    manifest,
+                    trace.Finish(
+                        "PUBLISHED",
+                        "FAMILY_PUBLICATION",
+                        familyOutcome.Message));
             }
             catch (Exception exception)
             {
@@ -532,7 +615,10 @@ namespace BistroBuilder.Editor.Savic
                 return ReturnFailure(
                     previousPublishedSnapshot,
                     manifest,
-                    "Model processing failed: " + exception.Message);
+                    "Model processing failed: " + exception.Message,
+                    "PIPELINE_EXCEPTION",
+                    trace.LastStageId,
+                    trace);
             }
         }
 
@@ -591,7 +677,10 @@ namespace BistroBuilder.Editor.Savic
         private SavicSourceProcessingOutcome ReturnFailure(
             SavicManifest previousPublishedSnapshot,
             SavicManifest currentManifest,
-            string message)
+            string message,
+            string reasonCode,
+            string primaryStage,
+            SavicProcessingTrace trace)
         {
             if (previousPublishedSnapshot != null)
             {
@@ -610,7 +699,12 @@ namespace BistroBuilder.Editor.Savic
                         "PUBLISHED",
                         message +
                         " Previous published version preserved.",
-                        previousPublishedSnapshot);
+                        previousPublishedSnapshot,
+                        trace?.Finish(
+                            reasonCode,
+                            primaryStage,
+                            message) ??
+                        new SavicProcessingDiagnostics());
                 }
                 catch (Exception restoreException)
                 {
@@ -625,7 +719,12 @@ namespace BistroBuilder.Editor.Savic
                 false,
                 currentManifest?.status ?? "FAILED_PROCESSING",
                 message,
-                currentManifest);
+                currentManifest,
+                trace?.Finish(
+                    reasonCode,
+                    primaryStage,
+                    message) ??
+                new SavicProcessingDiagnostics());
         }
 
         private static bool IsPublished(
