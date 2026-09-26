@@ -6,7 +6,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairAuthoringPlanner
     {
-        internal const string Version = "1.1.0";
+        internal const string Version = "1.2.0";
 
         internal const string TemplatePrefabAssetPath =
             "Assets/Prefabs/Restaurant/Generated/Seating/" +
@@ -55,13 +55,53 @@ namespace BistroBuilder.Editor.Savic
 
             if (analysis == null ||
                 !analysis.analyzed ||
-                !analysis.hasUsableBounds ||
-                analysis.chairGeometry == null ||
-                !analysis.chairGeometry.analyzed ||
-                !analysis.chairGeometry.usable)
+                !analysis.hasUsableBounds)
             {
                 rejectionReason =
-                    "The model has no usable chair geometry profile.";
+                    "Chair authoring requires analyzed model bounds.";
+                return false;
+            }
+
+            SavicChairGeometryProfileRecord geometry =
+                analysis.chairGeometry;
+
+            if (geometry == null ||
+                !geometry.analyzed)
+            {
+                rejectionReason =
+                    "Chair functional geometry analysis did not complete.";
+                return false;
+            }
+
+            if (!geometry.seatResolved)
+            {
+                rejectionReason =
+                    "Chair seat geometry is unresolved. " +
+                    geometry.evidence;
+                return false;
+            }
+
+            if (!geometry.orientationResolved)
+            {
+                rejectionReason =
+                    "Chair front/back orientation is unresolved. " +
+                    geometry.evidence;
+                return false;
+            }
+
+            if (!geometry.supportResolved)
+            {
+                rejectionReason =
+                    "Chair lower-support geometry is unresolved. " +
+                    geometry.evidence;
+                return false;
+            }
+
+            if (!geometry.usable)
+            {
+                rejectionReason =
+                    "Chair functional geometry gates are inconsistent. " +
+                    geometry.evidence;
                 return false;
             }
 
@@ -80,7 +120,7 @@ namespace BistroBuilder.Editor.Savic
             }
 
             float sourceSeatHeight =
-                analysis.chairGeometry.seatHeightMeters;
+                geometry.seatHeightMeters;
 
             if (!IsFinitePositive(sourceSeatHeight))
             {
@@ -129,10 +169,10 @@ namespace BistroBuilder.Editor.Savic
             }
 
             float sourceFrontX =
-                analysis.chairGeometry.frontDirectionLocalX;
+                geometry.frontDirectionLocalX;
 
             float sourceFrontZ =
-                analysis.chairGeometry.frontDirectionLocalZ;
+                geometry.frontDirectionLocalZ;
 
             if (!TryResolveCanonicalYaw(
                     sourceFrontX,
