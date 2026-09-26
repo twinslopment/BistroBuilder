@@ -383,7 +383,7 @@ namespace BistroBuilder.Editor.Savic
             }
 
             bool plausibleDimensions =
-                HasPlausibleFurnitureDimensions(
+                HasPlausibleGenericPlaceableDimensions(
                     analysis);
 
             if (!plausibleDimensions)
@@ -802,6 +802,47 @@ namespace BistroBuilder.Editor.Savic
                 depthToHeight >= 0.28f &&
                 depthToHeight <= 1.00f &&
                 horizontalAspect <= 1.90f;
+        }
+
+        private static bool HasPlausibleGenericPlaceableDimensions(
+            SavicModelAnalysisRecord analysis)
+        {
+            if (analysis == null)
+                return false;
+
+            float width =
+                analysis.widthMeters;
+
+            float height =
+                analysis.heightMeters;
+
+            float depth =
+                analysis.depthMeters;
+
+            if (width < 0.01f ||
+                height < 0.01f ||
+                depth < 0.01f ||
+                width > 5f ||
+                height > 5f ||
+                depth > 5f)
+            {
+                return false;
+            }
+
+            int substantialAxes = 0;
+
+            if (width >= 0.10f)
+                substantialAxes++;
+
+            if (height >= 0.10f)
+                substantialAxes++;
+
+            if (depth >= 0.10f)
+                substantialAxes++;
+
+            // Thin placeables (for example framed floor mirrors)
+            // are legitimate provided two dimensions are substantial.
+            return substantialAxes >= 2;
         }
 
         private static bool HasPlausibleFurnitureDimensions(
