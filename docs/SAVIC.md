@@ -1505,7 +1505,11 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE B] El scheduler mantiene una sola operación atómica por tick y aplica un presupuesto objetivo de 16 ms entre jobs. Si una operación lo excede, registra el overrun y añade un descanso adaptativo antes del siguiente trabajo; las operaciones de asset siguen siendo atómicas para evitar prefabs/publicaciones a medias.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE B] Ejecutar `Tools > Bistro Builder > SAVIC > Diagnostics > Run Incremental Invalidation Self-Test`. Después validar visualmente que la sección `Cola` muestra duración, excesos de presupuesto y acción incremental.
+[V1 VALIDADO — FASE B / NÚCLEO] `Run Incremental Invalidation Self-Test` PASS: reutilización exacta, material-only, invalidación geométrica, fallback seguro, reutilización de colliders/semántica, throttle y 2.000 fingerprints deterministas en 144 ms.
+
+[V1 IMPLEMENTADO — FASE B / PROBE REAL] Existe `Run Incremental Real Asset Probe`, prueba desechable sobre `BB_Chair_Master_002`: publica una silla real, aplica un cambio únicamente visual/material, verifica que conserva colliders + BBSIS/spatial + navegación + persistencia, después aplica un cambio estructural y exige rebuild completo, regeneración de colliders y GUIDs estables. Todo el contenido de prueba se limpia al terminar.
+
+[VALIDACIÓN PENDIENTE EN UNITY — PROBE REAL] Ejecutar `Tools > Bistro Builder > SAVIC > Diagnostics > Run Incremental Real Asset Probe` antes de declarar cerrada la validación vertical real de la Fase B.
 
 ### Bloque 8 — Decoración y equipamiento
 [R]
