@@ -382,8 +382,19 @@ namespace BistroBuilder.Editor.Savic
                     "Mass queue still reports pending 3D work.");
 
                 Require(
-                    CountCatalogEntriesWithPrefix() >= 1,
-                    "Known-good real model did not reach publication during mass probe.");
+                    manifests.TryGetBySavicId(
+                        knownGoodJob.manifestSavicId,
+                        out SavicManifest knownGoodManifest) &&
+                    knownGoodManifest != null &&
+                    !string.IsNullOrWhiteSpace(
+                        knownGoodManifest.canonicalContentId),
+                    "Known-good completed job has no published ContentId.");
+
+                Require(
+                    CountCatalogEntries(
+                        knownGoodManifest.canonicalContentId) ==
+                    1,
+                    "Known-good publication does not resolve exactly once in the canonical catalog.");
 
                 ValidateNoDuplicatePublishedIds(
                     manifests.GetAll());
@@ -615,15 +626,20 @@ namespace BistroBuilder.Editor.Savic
                 "Mass processing produced duplicate canonical ContentIds.");
         }
 
-        private static int CountCatalogEntriesWithPrefix()
+        private static int CountCatalogEntries(
+            string itemId)
         {
             RestaurantPlaceableCatalogDefinition catalog =
                 AssetDatabase.LoadAssetAtPath
                     <RestaurantPlaceableCatalogDefinition>(
                         MainCatalogPath);
 
-            if (catalog == null)
+            if (catalog == null ||
+                string.IsNullOrWhiteSpace(
+                    itemId))
+            {
                 return 0;
+            }
 
             int count =
                 0;
@@ -638,17 +654,10 @@ namespace BistroBuilder.Editor.Savic
                 RestaurantPlaceableItemDefinition item =
                     items[index];
 
-                if (item == null)
-                    continue;
-
-                string assetPath =
-                    AssetDatabase.GetAssetPath(
-                        item);
-
-                if (!string.IsNullOrWhiteSpace(
-                        assetPath) &&
-                    assetPath.StartsWith(
-                        "Assets/Generated/BistroBuilder/SAVIC/Published/",
+                if (item != null &&
+                    string.Equals(
+                        item.ItemId,
+                        itemId,
                         StringComparison.Ordinal))
                 {
                     count++;
