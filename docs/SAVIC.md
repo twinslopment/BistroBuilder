@@ -1591,7 +1591,13 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE K] `chairGeometry.usable` significa ahora que existen orientación y soporte funcionales suficientes para autoría; `seatResolved` se conserva como dato de calidad, no como bloqueo. El collider `GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT` usa la altura final del plan, por lo que no depende de inventar una superficie semántica inexistente.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002` debe llegar a `DONE`. El resultado debe mostrar `Chair publication independent of semantic partition: PASS` y la estrategia de collider utilizada. Si todavía falla, el diagnóstico distinguirá orientación o soporte; ya no puede volver a bloquearse únicamente porque la detección de superficie de asiento sea débil.
+[V1 REDISEÑADO — FASE K / UNIT NORMALIZATION] La readiness física de una silla ya no asume que el FBX/GLB llega expresado directamente en metros. Antes de rechazar dimensiones, el planner calcula el intervalo de escala uniforme que puede encajar el asset en el envelope seguro de silla de comedor. Si la escala original ya es válida se conserva; si no, intenta primero factores de unidad canónicos (0,001 / 0,01 / 0,1 / 10 / 100 / 1000). Solo si ninguno encaja permite una corrección moderada de autoría. Una geometría cuyas proporciones no pueden entrar en el envelope con escala uniforme sigue siendo rechazada.
+
+[V1 IMPLEMENTADO — FASE K] La normalización de unidades queda persistida en `chairAuthoring`: dimensiones fuente, `unitNormalizationApplied`, modo de normalización y `uniformScale`. La altura de asiento canónica de 0,46 m se usa cuando el seat detector no es fiable; no se utiliza para deformar el mesh ni para ocultar proporciones inválidas.
+
+[V1 IMPLEMENTADO — FASE K] El envelope final continúa siendo vinculante: ancho 0,32–0,95 m, alto 0,62–1,25 m, fondo 0,34–0,95 m y asiento 0,40–0,52 m. El probe valida explícitamente estas dimensiones después del plan, por lo que la normalización no puede convertir un asset arbitrario en una silla válida mediante escala libre.
+
+[VALIDACIÓN PENDIENTE EN UNITY — FASE K] Ejecutar `Run Mass Ingestion Real Probe`. `chair_master_002` debe llegar a `DONE`. El log mostrará estrategia de collider, modo/factor de normalización y dimensiones físicas finales. Si falla, deberá ser porque las proporciones no admiten ninguna escala uniforme segura o por un gate funcional posterior, no por las unidades de origen.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
