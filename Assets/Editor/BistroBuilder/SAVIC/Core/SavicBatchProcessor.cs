@@ -57,10 +57,22 @@ namespace BistroBuilder.Editor.Savic
 
         internal bool TickOne()
         {
+            return TickOneCore(false);
+        }
+
+        internal bool TickOneIgnoringCooldownForDiagnostics()
+        {
+            return TickOneCore(true);
+        }
+
+        private bool TickOneCore(
+            bool ignoreCooldown)
+        {
             if (executing ||
                 jobs.IsPaused ||
-                EditorApplication.timeSinceStartup <
-                nextEligibleEditorTime)
+                (!ignoreCooldown &&
+                 EditorApplication.timeSinceStartup <
+                 nextEligibleEditorTime))
             {
                 return false;
             }
