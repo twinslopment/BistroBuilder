@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairColliderBuilder
     {
-        internal const string Version = "1.1.0";
+        internal const string Version = "1.0.0";
 
         private const string CollisionRootName =
             "SAVIC_Collision";
@@ -52,10 +52,41 @@ namespace BistroBuilder.Editor.Savic
             SavicSemanticPartAnalysisRecord semantic =
                 manifest.model3D.semanticParts;
 
-            bool semanticReady =
-                semantic != null &&
-                semantic.analyzed &&
-                semantic.automationReady;
+            if (semantic == null ||
+                !semantic.analyzed ||
+                !semantic.automationReady)
+            {
+                throw new InvalidOperationException(
+                    "Chair collider generation requires automation-ready semantic parts.");
+            }
+
+            SavicSemanticPartRecord seat =
+                FindPart(
+                    semantic,
+                    "chair.seat");
+
+            SavicSemanticPartRecord back =
+                FindPart(
+                    semantic,
+                    "chair.back");
+
+            SavicSemanticPartRecord support =
+                FindPart(
+                    semantic,
+                    "chair.support");
+
+            SavicSemanticPartRecord arms =
+                FindPart(
+                    semantic,
+                    "chair.arms");
+
+            if (seat == null ||
+                back == null ||
+                support == null)
+            {
+                throw new InvalidOperationException(
+                    "Chair semantic model must contain seat, back and support.");
+            }
 
             RemoveAllColliders(root);
 
@@ -67,17 +98,89 @@ namespace BistroBuilder.Editor.Savic
             ClearChildren(
                 collisionRoot);
 
+            Vector3 scaledSourceSize =
+                new Vector3(
+                    manifest.model3D.widthMeters,
+                    manifest.model3D.heightMeters,
+                    manifest.model3D.depthMeters) *
+                plan.uniformScale;
+
+            Quaternion sourceYaw =
+                Quaternion.Euler(
+                    0f,
+                    plan.visualYawDegrees,
+                    0f);
+
+            CreatePartCollider(
+                collisionRoot,
+                SeatColliderName,
+                seat,
+                scaledSourceSize,
+                sourceYaw);
+
+            CreatePartCollider(
+                collisionRoot,
+                BackColliderName,
+                back,
+                scaledSourceSize,
+                sourceYaw);
+
+            int supportCount =
+                BuildSupportColliders(
+                    collisionRoot,
+                    semantic,
+                    seat,
+                    support,
+                    scaledSourceSize,
+                    sourceYaw);
+
+            int armCount =
+                arms != null
+                    ? BuildArmColliders(
+                        collisionRoot,
+                        arms,
+                        manifest.model3D.chairGeometry,
+                        scaledSourceSize,
+                        sourceYaw)
+                    : 0;
+
             SavicChairColliderAuthoringRecord record =
-                semanticReady
-                    ? BuildSemanticColliders(
-                        collisionRoot,
-                        manifest,
-                        plan,
-                        semantic)
-                    : BuildGeometryEnvelopeColliders(
-                        collisionRoot,
-                        manifest,
-                        plan);
+                new SavicChairColliderAuthoringRecord
+                {
+                    generated = true,
+                    builderVersion = Version,
+                    strategy =
+                        armCount > 0
+                            ? "SEMANTIC_SEAT_BACK_SUPPORTS_ARMS"
+                            : "SEMANTIC_SEAT_BACK_SUPPORTS",
+                    colliderCount =
+                        2 +
+                        supportCount +
+                        armCount,
+                    seatColliderCount =
+                        1,
+                    backColliderCount =
+                        1,
+                    supportColliderCount =
+                        supportCount,
+                    armColliderCount =
+                        armCount,
+                    semanticBacked =
+                        true,
+                    evidence =
+                        "Generated from SAVIC chair semantic parts " +
+                        semantic.analyzerVersion +
+                        "; support mode " +
+                        (semantic.supportPattern?.mode ??
+                         "UNASSESSED") +
+                        "; arms " +
+                        (armCount > 0
+                            ? "bilateral"
+                            : "none") +
+                        ".",
+                    generatedUtc =
+                        DateTime.UtcNow.ToString("O")
+                };
 
             if (!Validate(
                     root,
@@ -105,7 +208,7 @@ namespace BistroBuilder.Editor.Savic
                 string.Empty;
 
             if (root == null ||
-                manifest?.model3D == null ||
+                manifest?.model3D?.semanticParts == null ||
                 plan == null ||
                 record == null ||
                 !record.generated)
@@ -316,276 +419,6 @@ namespace BistroBuilder.Editor.Savic
             }
 
             return true;
-        }
-
-        private static SavicChairColliderAuthoringRecord
-            BuildSemanticColliders(
-                Transform collisionRoot,
-                SavicManifest manifest,
-                SavicChairAuthoringRecord plan,
-                SavicSemanticPartAnalysisRecord semantic)
-        {
-            SavicSemanticPartRecord seat =
-                FindPart(
-                    semantic,
-                    "chair.seat");
-
-            SavicSemanticPartRecord back =
-                FindPart(
-                    semantic,
-                    "chair.back");
-
-            SavicSemanticPartRecord support =
-                FindPart(
-                    semantic,
-                    "chair.support");
-
-            SavicSemanticPartRecord arms =
-                FindPart(
-                    semantic,
-                    "chair.arms");
-
-            if (seat == null ||
-                back == null ||
-                support == null)
-            {
-                throw new InvalidOperationException(
-                    "Automation-ready chair semantic model must contain seat, back and support.");
-            }
-
-            Vector3 scaledSourceSize =
-                new Vector3(
-                    manifest.model3D.widthMeters,
-                    manifest.model3D.heightMeters,
-                    manifest.model3D.depthMeters) *
-                plan.uniformScale;
-
-            Quaternion sourceYaw =
-                Quaternion.Euler(
-                    0f,
-                    plan.visualYawDegrees,
-                    0f);
-
-            CreatePartCollider(
-                collisionRoot,
-                SeatColliderName,
-                seat,
-                scaledSourceSize,
-                sourceYaw);
-
-            CreatePartCollider(
-                collisionRoot,
-                BackColliderName,
-                back,
-                scaledSourceSize,
-                sourceYaw);
-
-            int supportCount =
-                BuildSupportColliders(
-                    collisionRoot,
-                    semantic,
-                    seat,
-                    support,
-                    scaledSourceSize,
-                    sourceYaw);
-
-            int armCount =
-                arms != null
-                    ? BuildArmColliders(
-                        collisionRoot,
-                        arms,
-                        manifest.model3D.chairGeometry,
-                        scaledSourceSize,
-                        sourceYaw)
-                    : 0;
-
-            return new SavicChairColliderAuthoringRecord
-            {
-                generated = true,
-                builderVersion = Version,
-                strategy =
-                    armCount > 0
-                        ? "SEMANTIC_SEAT_BACK_SUPPORTS_ARMS"
-                        : "SEMANTIC_SEAT_BACK_SUPPORTS",
-                colliderCount =
-                    2 +
-                    supportCount +
-                    armCount,
-                seatColliderCount =
-                    1,
-                backColliderCount =
-                    1,
-                supportColliderCount =
-                    supportCount,
-                armColliderCount =
-                    armCount,
-                semanticBacked =
-                    true,
-                evidence =
-                    "Generated from automation-ready chair semantic parts " +
-                    semantic.analyzerVersion +
-                    ".",
-                generatedUtc =
-                    DateTime.UtcNow.ToString("O")
-            };
-        }
-
-        private static SavicChairColliderAuthoringRecord
-            BuildGeometryEnvelopeColliders(
-                Transform collisionRoot,
-                SavicManifest manifest,
-                SavicChairAuthoringRecord plan)
-        {
-            SavicChairGeometryProfileRecord geometry =
-                manifest.model3D.chairGeometry;
-
-            if (geometry == null ||
-                !geometry.analyzed ||
-                !geometry.usable)
-            {
-                throw new InvalidOperationException(
-                    "Geometry-backed chair colliders require a usable chair geometry profile.");
-            }
-
-            float width =
-                Math.Max(
-                    MinimumColliderSize,
-                    plan.finalWidthMeters);
-
-            float height =
-                Math.Max(
-                    MinimumColliderSize,
-                    plan.finalHeightMeters);
-
-            float depth =
-                Math.Max(
-                    MinimumColliderSize,
-                    plan.finalDepthMeters);
-
-            float seatHeight =
-                Mathf.Clamp(
-                    plan.finalSeatHeightMeters,
-                    MinimumColliderSize * 2f,
-                    height - MinimumColliderSize);
-
-            float seatThickness =
-                Mathf.Clamp(
-                    height * 0.06f,
-                    0.045f,
-                    0.10f);
-
-            float seatWidth =
-                Mathf.Clamp(
-                    width * 0.78f,
-                    MinimumColliderSize,
-                    width);
-
-            float seatDepth =
-                Mathf.Clamp(
-                    depth * 0.72f,
-                    MinimumColliderSize,
-                    depth);
-
-            CreateCollider(
-                collisionRoot,
-                SeatColliderName,
-                new Vector3(
-                    0f,
-                    Math.Max(
-                        seatThickness * 0.5f,
-                        seatHeight -
-                        seatThickness * 0.5f),
-                    0f),
-                new Vector3(
-                    seatWidth,
-                    seatThickness,
-                    seatDepth),
-                Quaternion.identity);
-
-            float backHeight =
-                Math.Max(
-                    0.15f,
-                    height -
-                    seatHeight);
-
-            float backThickness =
-                Mathf.Clamp(
-                    depth * 0.12f,
-                    0.04f,
-                    0.10f);
-
-            float backWidth =
-                Mathf.Clamp(
-                    width * 0.78f,
-                    MinimumColliderSize,
-                    width);
-
-            CreateCollider(
-                collisionRoot,
-                BackColliderName,
-                new Vector3(
-                    0f,
-                    Math.Min(
-                        height -
-                        backHeight * 0.5f,
-                        seatHeight +
-                        backHeight * 0.5f),
-                    -depth * 0.5f +
-                    backThickness * 0.5f),
-                new Vector3(
-                    backWidth,
-                    backHeight,
-                    backThickness),
-                Quaternion.identity);
-
-            float supportHeight =
-                Math.Max(
-                    MinimumColliderSize,
-                    seatHeight -
-                    seatThickness);
-
-            float supportWidth =
-                Mathf.Clamp(
-                    width * 0.58f,
-                    MinimumColliderSize,
-                    width);
-
-            float supportDepth =
-                Mathf.Clamp(
-                    depth * 0.58f,
-                    MinimumColliderSize,
-                    depth);
-
-            CreateCollider(
-                collisionRoot,
-                SupportPrefix + "00",
-                new Vector3(
-                    0f,
-                    supportHeight * 0.5f,
-                    0f),
-                new Vector3(
-                    supportWidth,
-                    supportHeight,
-                    supportDepth),
-                Quaternion.identity);
-
-            return new SavicChairColliderAuthoringRecord
-            {
-                generated = true,
-                builderVersion = Version,
-                strategy =
-                    "GEOMETRY_ENVELOPE_SEAT_BACK_SUPPORT",
-                colliderCount = 3,
-                seatColliderCount = 1,
-                backColliderCount = 1,
-                supportColliderCount = 1,
-                armColliderCount = 0,
-                semanticBacked = false,
-                evidence =
-                    "Generated from canonical chair dimensions, detected seat height and resolved chair orientation because detailed semantic partition was not automation-ready.",
-                generatedUtc =
-                    DateTime.UtcNow.ToString("O")
-            };
         }
 
         private static int BuildSupportColliders(
