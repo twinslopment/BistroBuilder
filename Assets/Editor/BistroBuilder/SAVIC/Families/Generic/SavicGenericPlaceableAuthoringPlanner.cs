@@ -73,6 +73,132 @@ namespace BistroBuilder.Editor.Savic
                 },
                 StringComparer.OrdinalIgnoreCase);
 
+        internal static bool TryResolvePreImportReview(
+            string sourceFileName,
+            out string type,
+            out string category,
+            out string reasonCode,
+            out string message)
+        {
+            type = string.Empty;
+            category = string.Empty;
+            reasonCode = string.Empty;
+            message = string.Empty;
+
+            HashSet<string> tokens =
+                Tokenize(
+                    Path.GetFileNameWithoutExtension(
+                        sourceFileName ??
+                        string.Empty));
+
+            if (tokens.Count == 0 ||
+                ContainsAny(
+                    tokens,
+                    new[]
+                    {
+                        "chair", "chairs", "silla", "sillas",
+                        "stool", "stools", "taburete", "taburetes",
+                        "bench", "benches", "banco", "bancos",
+                        "table", "tables", "mesa", "mesas"
+                    }))
+            {
+                return false;
+            }
+
+            if (ContainsAny(
+                    tokens,
+                    FunctionalEquipment))
+            {
+                bool service =
+                    tokens.Contains("counter") ||
+                    tokens.Contains("bar") ||
+                    tokens.Contains("pass") ||
+                    tokens.Contains("register") ||
+                    tokens.Contains("pos") ||
+                    tokens.Contains("cash");
+
+                type =
+                    service
+                        ? "ServiceEquipment"
+                        : "KitchenEquipment";
+
+                category =
+                    type;
+
+                reasonCode =
+                    "FUNCTIONAL_ADAPTER_REQUIRED";
+
+                message =
+                    "High-confidence functional equipment was identified from source identity before Unity model import. " +
+                    "A dedicated gameplay adapter is required, so expensive 3D import/analysis is intentionally skipped.";
+
+                return true;
+            }
+
+            bool decoration =
+                tokens.Contains("decor") ||
+                tokens.Contains("decoration") ||
+                tokens.Contains("decorative") ||
+                tokens.Contains("deco") ||
+                tokens.Contains("mirror") ||
+                tokens.Contains("plant") ||
+                tokens.Contains("planter") ||
+                tokens.Contains("pedestal") ||
+                tokens.Contains("sculpture") ||
+                tokens.Contains("statue") ||
+                tokens.Contains("ornament") ||
+                tokens.Contains("ornamental") ||
+                (tokens.Contains("framed") &&
+                 tokens.Contains("floor"));
+
+            if (!decoration)
+                return false;
+
+            if (ContainsAny(
+                    tokens,
+                    WallEvidence))
+            {
+                type = "Decoration";
+                category = "Decoration";
+                reasonCode =
+                    "PLACEMENT_WALL_REQUIRES_ADAPTER";
+                message =
+                    "Wall-mounted decoration was identified before Unity model import. " +
+                    "The wall-placement adapter is not available yet, so expensive import/analysis is skipped.";
+                return true;
+            }
+
+            if (ContainsAny(
+                    tokens,
+                    CeilingEvidence))
+            {
+                type = "Decoration";
+                category = "Decoration";
+                reasonCode =
+                    "PLACEMENT_CEILING_REQUIRES_ADAPTER";
+                message =
+                    "Ceiling-mounted decoration was identified before Unity model import. " +
+                    "The ceiling-placement adapter is not available yet, so expensive import/analysis is skipped.";
+                return true;
+            }
+
+            if (ContainsAny(
+                    tokens,
+                    SurfaceEvidence))
+            {
+                type = "Decoration";
+                category = "Decoration";
+                reasonCode =
+                    "PLACEMENT_SURFACE_REQUIRES_ADAPTER";
+                message =
+                    "Surface decoration was identified before Unity model import. " +
+                    "The surface-placement adapter is not available yet, so expensive import/analysis is skipped.";
+                return true;
+            }
+
+            return false;
+        }
+
         internal static bool TryPlan(
             SavicManifest manifest,
             out SavicGenericPlaceableAuthoringRecord plan,
