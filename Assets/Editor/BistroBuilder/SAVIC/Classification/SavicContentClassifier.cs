@@ -389,10 +389,18 @@ namespace BistroBuilder.Editor.Savic
             if (!plausibleDimensions)
                 return false;
 
-            bool decoration =
+            bool explicitDecoration =
                 ContainsAny(
                     tokens,
                     DecorationTokens);
+
+            bool framedFloorDecoration =
+                tokens.Contains("framed") &&
+                tokens.Contains("floor");
+
+            bool decoration =
+                explicitDecoration ||
+                framedFloorDecoration;
 
             bool kitchenStrong =
                 ContainsAny(
@@ -481,10 +489,14 @@ namespace BistroBuilder.Editor.Savic
                     "Decoration";
 
                 score +=
-                    0.74f;
+                    framedFloorDecoration
+                        ? 0.82f
+                        : 0.74f;
 
                 evidence.Add(
-                    "name contains explicit decoration token");
+                    framedFloorDecoration
+                        ? "name contains framed + floor evidence consistent with a freestanding decorative object"
+                        : "name contains explicit decoration token");
             }
             else
             {
