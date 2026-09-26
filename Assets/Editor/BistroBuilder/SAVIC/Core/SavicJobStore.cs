@@ -351,6 +351,106 @@ namespace BistroBuilder.Editor.Savic
             return claimed != null;
         }
 
+        internal void YieldPreparedSource(
+            string jobId,
+            SavicSourceProcessingOutcome outcome,
+            long durationMilliseconds)
+        {
+            if (string.IsNullOrWhiteSpace(jobId))
+                throw new ArgumentException(
+                    "JobId is required.",
+                    nameof(jobId));
+
+            string now =
+                DateTime.UtcNow.ToString("O");
+
+            lock (sync)
+            {
+                EnsureLoaded();
+
+                SavicJobRecord job =
+                    snapshot.jobs.FirstOrDefault(
+                        candidate =>
+                            candidate != null &&
+                            string.Equals(
+                                candidate.jobId,
+                                jobId,
+                                StringComparison.Ordinal));
+
+                if (job == null)
+                {
+                    throw new InvalidOperationException(
+                        "Queue job no longer exists: " +
+                        jobId);
+                }
+
+                if (job.cancelRequested)
+                {
+                    job.state =
+                        SavicJobState.Cancelled.ToString();
+
+                    job.checkpoint =
+                        "CANCELLED_AFTER_ATOMIC_OPERATION";
+
+                    job.completedUtc =
+                        now;
+
+                    job.message =
+                        "Cancellation completed after source preparation.";
+                }
+                else
+                {
+                    job.state =
+                        SavicJobState.Ingested.ToString();
+
+                    job.checkpoint =
+                        "SOURCE_PREPARED";
+
+                    job.completedUtc =
+                        string.Empty;
+
+                    job.sourcePrepared =
+                        true;
+
+                    job.message =
+                        outcome?.Message ??
+                        "Unity source prepared for staged continuation.";
+                }
+
+                job.processingStartedUtc =
+                    string.Empty;
+
+                job.updatedUtc =
+                    now;
+
+                long safeDuration =
+                    Math.Max(
+                        0L,
+                        durationMilliseconds);
+
+                job.lastDurationMilliseconds =
+                    Math.Max(
+                        0L,
+                        job.lastDurationMilliseconds) +
+                    safeDuration;
+
+                job.maximumAtomicDurationMilliseconds =
+                    Math.Max(
+                        job.maximumAtomicDurationMilliseconds,
+                        safeDuration);
+
+                ApplyOutcomeDiagnostics(
+                    job,
+                    outcome,
+                    true);
+
+                snapshot.schedulerGeneration++;
+                Save();
+            }
+
+            NotifyChanged();
+        }
+
         internal void CompleteProcessing(
             string jobId,
             SavicSourceProcessingOutcome outcome,
@@ -422,73 +522,139 @@ namespace BistroBuilder.Editor.Savic
                 job.processingStartedUtc = string.Empty;
                 job.completedUtc = now;
                 job.updatedUtc = now;
+                long safeDuration =
+                    Math.Max(
+                        0L,
+                        durationMilliseconds);
+
                 job.lastDurationMilliseconds =
-                    Math.Max(0L, durationMilliseconds);
-                job.outcomeStatus =
-                    outcome.Status ?? string.Empty;
+                    Math.Max(
+                        0L,
+                        job.lastDurationMilliseconds) +
+                    safeDuration;
 
-                SavicProcessingDiagnostics diagnostics =
-                    outcome.Diagnostics;
+                job.maximumAtomicDurationMilliseconds =
+                    Math.Max(
+                        job.maximumAtomicDurationMilliseconds,
+                        safeDuration);
 
-                if (diagnostics != null)
-                {
-                    job.reasonCode =
-                        string.IsNullOrWhiteSpace(
-                            diagnostics.reasonCode)
-                            ? outcome.Succeeded
-                                ? "PUBLISHED"
-                                : string.IsNullOrWhiteSpace(
-                                      outcome.Status)
-                                    ? "UNCLASSIFIED_OUTCOME"
-                                    : outcome.Status
-                                          .Trim()
-                                          .ToUpperInvariant()
-                            : diagnostics.reasonCode;
-
-                    job.primaryStage =
-                        string.IsNullOrWhiteSpace(
-                            diagnostics.primaryStage)
-                            ? "BATCH"
-                            : diagnostics.primaryStage;
-                    job.stageTimings =
-                        diagnostics.stages == null
-                            ? new List<SavicProcessingStageRecord>()
-                            : diagnostics.stages
-                                .Where(stage => stage != null)
-                                .Select(
-                                    stage =>
-                                        new SavicProcessingStageRecord
-                                        {
-                                            stageId =
-                                                stage.stageId ?? string.Empty,
-                                            result =
-                                                stage.result ?? string.Empty,
-                                            durationMilliseconds =
-                                                Math.Max(
-                                                    0L,
-                                                    stage.durationMilliseconds),
-                                            detail =
-                                                stage.detail ?? string.Empty
-                                        })
-                                .ToList();
-                }
-                else
-                {
-                    job.reasonCode =
-                        outcome.Succeeded
-                            ? "PUBLISHED"
-                            : "UNCLASSIFIED_OUTCOME";
-                    job.primaryStage =
-                        "BATCH";
-                    job.stageTimings =
-                        new List<SavicProcessingStageRecord>();
-                }
+                ApplyOutcomeDiagnostics(
+                    job,
+                    outcome,
+                    job.sourcePrepared);
 
                 snapshot.schedulerGeneration++;
                 Save();
             }
 
             NotifyChanged();
+        }
+
+        private static void ApplyOutcomeDiagnostics(
+            SavicJobRecord job,
+            SavicSourceProcessingOutcome outcome,
+            bool appendStages)
+        {
+            if (job == null)
+                return;
+
+            if (outcome == null)
+            {
+                job.outcomeStatus =
+                    "UNCLASSIFIED_OUTCOME";
+
+                job.reasonCode =
+                    "UNCLASSIFIED_OUTCOME";
+
+                job.primaryStage =
+                    "BATCH";
+
+                if (!appendStages)
+                {
+                    job.stageTimings =
+                        new List<SavicProcessingStageRecord>();
+                }
+
+                return;
+            }
+
+            job.outcomeStatus =
+                outcome.Status ?? string.Empty;
+
+            SavicProcessingDiagnostics diagnostics =
+                outcome.Diagnostics;
+
+            if (diagnostics != null)
+            {
+                job.reasonCode =
+                    string.IsNullOrWhiteSpace(
+                        diagnostics.reasonCode)
+                        ? outcome.Succeeded
+                            ? "PUBLISHED"
+                            : string.IsNullOrWhiteSpace(
+                                  outcome.Status)
+                                ? "UNCLASSIFIED_OUTCOME"
+                                : outcome.Status
+                                      .Trim()
+                                      .ToUpperInvariant()
+                        : diagnostics.reasonCode;
+
+                job.primaryStage =
+                    string.IsNullOrWhiteSpace(
+                        diagnostics.primaryStage)
+                        ? "BATCH"
+                        : diagnostics.primaryStage;
+
+                List<SavicProcessingStageRecord> incoming =
+                    diagnostics.stages == null
+                        ? new List<SavicProcessingStageRecord>()
+                        : diagnostics.stages
+                            .Where(stage => stage != null)
+                            .Select(
+                                stage =>
+                                    new SavicProcessingStageRecord
+                                    {
+                                        stageId =
+                                            stage.stageId ?? string.Empty,
+                                        result =
+                                            stage.result ?? string.Empty,
+                                        durationMilliseconds =
+                                            Math.Max(
+                                                0L,
+                                                stage.durationMilliseconds),
+                                        detail =
+                                            stage.detail ?? string.Empty
+                                    })
+                            .ToList();
+
+                if (!appendStages ||
+                    job.stageTimings == null)
+                {
+                    job.stageTimings =
+                        incoming;
+                }
+                else
+                {
+                    job.stageTimings.AddRange(
+                        incoming);
+                }
+
+                return;
+            }
+
+            job.reasonCode =
+                outcome.Succeeded
+                    ? "PUBLISHED"
+                    : "UNCLASSIFIED_OUTCOME";
+
+            job.primaryStage =
+                "BATCH";
+
+            if (!appendStages)
+            {
+                job.stageTimings =
+                    new List<SavicProcessingStageRecord>();
+            }
         }
 
         internal int CountByState(SavicJobState state)
