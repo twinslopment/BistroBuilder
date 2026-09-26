@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal sealed class SavicBatchProcessor
     {
-        internal const string Version = "1.1.0";
+        internal const string Version = "1.2.0";
 
         // Individual mutation stages remain atomic. High-confidence generic
         // assets may yield after source preparation so import and publication
@@ -91,16 +91,45 @@ namespace BistroBuilder.Editor.Savic
             SavicSourceProcessingOutcome outcome;
             bool yieldedAfterPreparation =
                 false;
+            SavicSourcePreparationStage yieldedStage =
+                SavicSourcePreparationStage.None;
 
             try
             {
-                bool stageGenericSourceImport =
-                    !job.sourcePrepared &&
-                    SavicGenericPlaceableAuthoringPlanner
-                        .IsHighConfidenceStaticGenericCandidate(
-                            job.originalFileName);
+                SavicSourcePreparationStage preparationStage =
+                    ParsePreparationStage(
+                        job);
 
-                if (stageGenericSourceImport)
+                if (preparationStage ==
+                    SavicSourcePreparationStage.None &&
+                    processing.TryRouteBeforeImportBySavicId(
+                        job.manifestSavicId,
+                        out SavicSourceProcessingOutcome routedOutcome))
+                {
+                    outcome =
+                        routedOutcome;
+                }
+                else if (preparationStage ==
+                         SavicSourcePreparationStage.None)
+                {
+                    outcome =
+                        processing.MaterializeSourceMirrorBySavicId(
+                            job.manifestSavicId);
+
+                    yieldedAfterPreparation =
+                        outcome.Succeeded &&
+                        string.Equals(
+                            outcome.Status,
+                            "SOURCE_MATERIALIZED",
+                            StringComparison.Ordinal);
+
+                    yieldedStage =
+                        SavicSourcePreparationStage
+                            .MirrorMaterialized;
+                }
+                else if (preparationStage ==
+                         SavicSourcePreparationStage
+                             .MirrorMaterialized)
                 {
                     outcome =
                         processing.PrepareSourceImportBySavicId(
@@ -112,6 +141,10 @@ namespace BistroBuilder.Editor.Savic
                             outcome.Status,
                             "SOURCE_PREPARED",
                             StringComparison.Ordinal);
+
+                    yieldedStage =
+                        SavicSourcePreparationStage
+                            .SourceImported;
                 }
                 else
                 {
@@ -145,9 +178,10 @@ namespace BistroBuilder.Editor.Savic
 
             if (yieldedAfterPreparation)
             {
-                jobs.YieldPreparedSource(
+                jobs.YieldPreparationStage(
                     job.jobId,
                     outcome,
+                    yieldedStage,
                     lastOperationMilliseconds);
             }
             else
@@ -186,6 +220,26 @@ namespace BistroBuilder.Editor.Savic
             }
 
             return true;
+        }
+
+        private static SavicSourcePreparationStage
+            ParsePreparationStage(
+                SavicJobRecord job)
+        {
+            if (job == null)
+                return SavicSourcePreparationStage.None;
+
+            if (Enum.TryParse(
+                    job.preparationStage,
+                    true,
+                    out SavicSourcePreparationStage stage))
+            {
+                return stage;
+            }
+
+            return job.sourcePrepared
+                ? SavicSourcePreparationStage.SourceImported
+                : SavicSourcePreparationStage.None;
         }
 
         internal static double ComputeCooldownSeconds(
