@@ -1557,7 +1557,7 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO — FASE H] Queue schema V4 incorpora estado de preparación de fuente y `maximumAtomicDurationMilliseconds`. El tiempo total del asset sigue midiéndose para throughput, pero el criterio de congelación del Editor se evalúa por etapa atómica real.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE H] Ejecutar `Run Mass Ingestion Real Probe`. El floor mirror debe mantener `Generic-static lightweight analysis: PASS`, persistir el checkpoint de source preparation y mostrar `Floor mirror max atomic stage` por debajo de 2.000 ms. El log separará `prepare-import / reuse-import / analyze / publish`.
+[V1 VALIDADO — FASE H / STAGED GENERIC PROCESSING] `Run Mass Ingestion Real Probe` PASS. El floor mirror mantuvo `Generic-static lightweight analysis` y procesó en etapas persistentes: total 2.957 ms, máximo atómico 1.576 ms, `prepare-import` 1.355 ms, `reuse-import` 207 ms, análisis 83 ms y publicación 1.285 ms. No se produjo warning de slow operation para el espejo. Wine cooler por pre-import routing: 26 ms. El P95 total del job queda en 2.957 ms, pero el presupuesto de congelación se cumple porque ninguna etapa atómica supera 2.000 ms.
 
 ### Bloque 9 — Puertas, paredes y ventanas
 [R]
