@@ -407,7 +407,7 @@ namespace BistroBuilder.Editor.Savic
                     buffer,
                     0,
                     read,
-                    null,
+                    buffer,
                     0);
 
                 destination.Write(
