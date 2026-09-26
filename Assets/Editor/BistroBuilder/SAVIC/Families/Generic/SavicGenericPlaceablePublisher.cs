@@ -195,6 +195,7 @@ namespace BistroBuilder.Editor.Savic
             {
                 RestaurantEditableObjectDefinition editable =
                     LoadOrCreateEditable(
+                        manifest,
                         plan);
 
                 RestaurantPlaceableItemDefinition item =
@@ -589,6 +590,7 @@ namespace BistroBuilder.Editor.Savic
         }
 
         private RestaurantEditableObjectDefinition LoadOrCreateEditable(
+            SavicManifest manifest,
             SavicGenericPlaceableAuthoringRecord plan)
         {
             RestaurantEditableObjectDefinition editable =
@@ -631,7 +633,7 @@ namespace BistroBuilder.Editor.Savic
                 serialized,
                 "displayName",
                 HumanizeSourceName(
-                    plan.itemDefinitionAssetPath));
+                    manifest.source?.originalFileName));
 
             SetString(
                 serialized,
