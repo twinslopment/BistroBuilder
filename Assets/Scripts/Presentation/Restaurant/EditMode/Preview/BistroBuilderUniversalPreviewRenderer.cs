@@ -56,6 +56,16 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         ResolveService();
         EnsureVisualRoot();
         volumePropertyBlock = new MaterialPropertyBlock();
+
+        if (lineMaterial == null ||
+            volumeMaterial == null)
+        {
+            Debug.LogError(
+                "BB Universal Preview necesita el shader " +
+                "'Sprites/Default' para representar sus guías.",
+                this
+            );
+        }
     }
 
     private void OnEnable()
@@ -325,19 +335,6 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
             Shader.Find("Sprites/Default");
 
         if (shader == null)
-        {
-            shader =
-                Shader.Find(
-                    "Universal Render Pipeline/Unlit");
-        }
-
-        if (shader == null)
-        {
-            shader =
-                Shader.Find("Unlit/Color");
-        }
-
-        if (shader == null)
             return null;
 
         Material material =
@@ -345,20 +342,14 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
             {
                 name = name,
                 hideFlags =
-                    HideFlags.HideAndDontSave
+                    HideFlags.HideAndDontSave,
+                renderQueue =
+                    (int)RenderQueue.Transparent
             };
 
-        /*
-         * Sprites/Default ya utiliza blending alfa y funciona
-         * correctamente con geometría world-space. Se prioriza
-         * para que el alpha de las guías y volúmenes no dependa
-         * de modificar el render state mediante PropertyBlock.
-         */
-        if (shader.name == "Sprites/Default")
-        {
-            material.renderQueue =
-                (int)RenderQueue.Transparent;
-        }
+        material.SetColor(
+            ColorPropertyId,
+            Color.white);
 
         return material;
     }
