@@ -312,6 +312,125 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         SetMode(BistroBuilderConstructionRuntimeMode.Room);
         SetStatus("Habitación " + ZoneLabel(definitionId) + ": marca dos esquinas opuestas.");
     }
+
+    public bool TryPreviewRoomAtPlanPoints(
+        Vector2 firstCorner,
+        Vector2 oppositeCorner,
+        string definitionId,
+        out string error)
+    {
+        error = string.Empty;
+
+        CacheDependencies();
+        ResolveDefinitions();
+
+        if (editModeService == null ||
+            !editModeService.IsEditModeActive)
+        {
+            error =
+                "Activa el modo edición antes de previsualizar una habitación.";
+
+            SetStatus(error);
+            return false;
+        }
+
+        if (definitions == null ||
+            !definitions.ContainsZone(definitionId))
+        {
+            error =
+                "La zona " +
+                definitionId +
+                " no está publicada para construcción.";
+
+            SetStatus(error);
+            return false;
+        }
+
+        if (!EnsureSession(out error))
+        {
+            SetStatus(error);
+            return false;
+        }
+
+        if (!queries.Matches(coordinator.Session))
+            RefreshQueries();
+
+        CancelGesture(string.Empty);
+
+        zoneDefinitionId =
+            definitionId;
+
+        mode =
+            BistroBuilderConstructionRuntimeMode.Room;
+
+        SuspendFurnitureInput();
+
+        gesture =
+            new ConstructionGesture();
+
+        if (!gesture.BeginRectangle(
+                coordinator.Session,
+                queries,
+                firstCorner,
+                CreateWallTemplate(),
+                definitions,
+                zoneDefinitionId,
+                minimumRoomSide,
+                out error))
+        {
+            SetStatus(error);
+            return false;
+        }
+
+        gestureAnchor =
+            firstCorner;
+
+        twoClickGesture =
+            true;
+
+        dragGesture =
+            false;
+
+        lastGestureVisualState =
+            ConstructionGestureState.Previewing;
+
+        hasLastGestureRenderPoint =
+            false;
+
+        invalidShakeStartedAt =
+            -1f;
+
+        bool updated =
+            gesture.Update(
+                oppositeCorner);
+
+        lastGestureRenderPoint =
+            oppositeCorner;
+
+        hasLastGestureRenderPoint =
+            true;
+
+        RenderGesture(
+            oppositeCorner);
+
+        if (!updated ||
+            gesture.State !=
+                ConstructionGestureState.Ready)
+        {
+            error =
+                TranslateDiagnostic(
+                    gesture.Diagnostic);
+
+            SetStatus(error);
+            return false;
+        }
+
+        SetStatus(
+            "Habitación lista para confirmar.");
+
+        return true;
+    }
+
     public bool TryUndo(out string error)
     {
         error = string.Empty;
