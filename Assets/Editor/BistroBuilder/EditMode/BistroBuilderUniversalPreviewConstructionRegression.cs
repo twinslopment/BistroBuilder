@@ -233,12 +233,15 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                         "No se pudo cancelar el borrador de preview: " +
                         cancelError);
 
-                    break;
-
-                case 3:
+                    /*
+                     * La herramienta Room abre una Draft Session cuando su
+                     * Update detecta que sigue activa. Por eso la cancelación
+                     * y el retorno a Furniture forman una única operación de
+                     * cierre de la regresión y se validan en este mismo frame.
+                     */
                     Check(
                         !coordinator.HasSession,
-                        "Cancelar no cerró la Draft Session.");
+                        "Cancelar no cerró inmediatamente la Draft Session.");
 
                     Check(
                         !preview.Current.IsVisible,
@@ -246,6 +249,10 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
 
                     tool.SetMode(
                         BistroBuilderConstructionRuntimeMode.Furniture);
+
+                    Check(
+                        !coordinator.HasSession,
+                        "Cambiar a Furniture reabrió la Draft Session.");
 
                     editController.TryExitEditMode(
                         true);
