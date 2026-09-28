@@ -327,12 +327,12 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                 state.Volumes[i];
 
             Check(
-                Mathf.Abs(box.Size.y - 2.5f) <= 0.001f,
-                "El volumen no conserva la altura canónica de 2,5 m.");
+                Mathf.Abs(box.Size.y - tool.WallHeight) <= 0.001f,
+                "El volumen no conserva la altura configurada.");
 
             Check(
-                Mathf.Abs(box.Size.z - 0.12f) <= 0.001f,
-                "El volumen no conserva el grosor de pared de 0,12 m.");
+                Mathf.Abs(box.Size.z - tool.WallThickness) <= 0.001f,
+                "El volumen no conserva el grosor configurado.");
         }
     }
 
