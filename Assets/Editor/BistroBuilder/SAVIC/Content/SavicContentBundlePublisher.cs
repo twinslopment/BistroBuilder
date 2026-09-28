@@ -183,6 +183,12 @@ namespace BistroBuilder.Editor.Savic
                         ingredientAuthoring,
                         resolvedIngredients);
 
+                BistroBuilderIngredientsRecipesEditorUtility
+                    .RebuildAllCatalogs(
+                        ingredientCatalog,
+                        recipeCatalog,
+                        dishCatalog);
+
                 EditorUtility.SetDirty(ingredientCatalog);
                 EditorUtility.SetDirty(dishCatalog);
                 EditorUtility.SetDirty(recipeCatalog);
@@ -474,9 +480,6 @@ namespace BistroBuilder.Editor.Savic
                         error);
                 }
 
-                catalog.EditorUpsert(
-                    definition);
-
                 resolved[pair.Key] =
                     definition;
 
@@ -599,9 +602,6 @@ namespace BistroBuilder.Editor.Savic
                         error);
                 }
 
-                catalog.EditorUpsert(
-                    definition);
-
                 resolved[pair.Key] =
                     definition;
 
@@ -612,7 +612,8 @@ namespace BistroBuilder.Editor.Savic
                         ResolveImageContent(
                             record.imageContentId);
 
-                    imageCatalog.EditorUpsert(
+                    UpsertDishImage(
+                        imageCatalog,
                         pair.Key,
                         image,
                         record.imageContentId);
@@ -773,9 +774,6 @@ namespace BistroBuilder.Editor.Savic
                         ": " +
                         error);
                 }
-
-                catalog.EditorUpsert(
-                    definition);
 
                 published++;
             }
@@ -1221,6 +1219,84 @@ namespace BistroBuilder.Editor.Savic
                 target.isActive =
                     source.isActive;
             }
+        }
+
+        private static void UpsertDishImage(
+            BistroBuilderDishImageCatalog catalog,
+            string dishId,
+            Sprite image,
+            string sourceFileName)
+        {
+            if (catalog == null)
+                throw new ArgumentNullException(nameof(catalog));
+
+            if (image == null)
+                throw new ArgumentNullException(nameof(image));
+
+            string normalized =
+                NormalizeStableIdRequired(
+                    dishId,
+                    "dishId");
+
+            SerializedObject serialized =
+                new SerializedObject(catalog);
+
+            SerializedProperty entries =
+                RequireProperty(
+                    serialized,
+                    "entries");
+
+            int targetIndex = -1;
+
+            for (int index = 0;
+                 index < entries.arraySize;
+                 index++)
+            {
+                SerializedProperty element =
+                    entries.GetArrayElementAtIndex(index);
+
+                SerializedProperty id =
+                    element.FindPropertyRelative(
+                        "dishId");
+
+                if (id != null &&
+                    string.Equals(
+                        id.stringValue,
+                        normalized,
+                        StringComparison.Ordinal))
+                {
+                    targetIndex = index;
+                    break;
+                }
+            }
+
+            if (targetIndex < 0)
+            {
+                targetIndex =
+                    entries.arraySize;
+
+                entries.InsertArrayElementAtIndex(
+                    targetIndex);
+            }
+
+            SerializedProperty target =
+                entries.GetArrayElementAtIndex(
+                    targetIndex);
+
+            target.FindPropertyRelative(
+                    "dishId").stringValue =
+                normalized;
+
+            target.FindPropertyRelative(
+                    "image").objectReferenceValue =
+                image;
+
+            target.FindPropertyRelative(
+                    "sourceFileName").stringValue =
+                sourceFileName ?? string.Empty;
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
         }
 
         private Sprite ResolveImageContent(
