@@ -11,22 +11,25 @@ using UnityEngine.Rendering;
 public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 {
     [SerializeField] private BistroBuilderUniversalPreviewService previewService;
-    [SerializeField, Min(0.004f)] private float candidateWidth = 0.028f;
-    [SerializeField, Min(0.004f)] private float ghostWidth = 0.016f;
-    [SerializeField, Min(0.004f)] private float conflictWidth = 0.042f;
+    [SerializeField, Min(0.004f)] private float candidateWidth = 0.024f;
+    [SerializeField, Min(0.004f)] private float ghostWidth = 0.012f;
+    [SerializeField, Min(0.004f)] private float conflictWidth = 0.032f;
 
-    [SerializeField] private Color neutralColor = new Color(0.94f, 0.92f, 0.86f, 0.78f);
-    [SerializeField] private Color validColor = new Color(0.34f, 0.78f, 0.70f, 0.96f);
-    [SerializeField] private Color invalidColor = new Color(0.90f, 0.38f, 0.32f, 0.96f);
-    [SerializeField] private Color ghostColor = new Color(0.68f, 0.76f, 0.84f, 0.30f);
-    [SerializeField] private Color conflictColor = new Color(0.96f, 0.48f, 0.34f, 0.92f);
-    [SerializeField] private Color snapColor = new Color(0.42f, 0.76f, 1.00f, 0.95f);
+    [SerializeField] private Color neutralColor = new Color(0.90f, 0.89f, 0.84f, 0.70f);
+    [SerializeField] private Color validColor = new Color(0.36f, 0.72f, 0.64f, 0.92f);
+    [SerializeField] private Color invalidColor = new Color(0.88f, 0.43f, 0.36f, 0.92f);
+    [SerializeField] private Color ghostColor = new Color(0.66f, 0.73f, 0.79f, 0.22f);
+    [SerializeField] private Color conflictColor = new Color(0.94f, 0.48f, 0.36f, 0.86f);
+    [SerializeField] private Color snapColor = new Color(0.46f, 0.69f, 0.90f, 0.90f);
 
     private readonly List<LineRenderer> candidateLines = new List<LineRenderer>(16);
     private readonly List<LineRenderer> ghostLines = new List<LineRenderer>(16);
     private readonly List<LineRenderer> conflictLines = new List<LineRenderer>(8);
+    private readonly List<MeshRenderer> volumeRenderers = new List<MeshRenderer>(8);
     private Transform visualRoot;
     private Material lineMaterial;
+    private Material volumeMaterial;
+    private MaterialPropertyBlock volumePropertyBlock;
     private LineRenderer snapLine;
     private float snapPulseStartedAt = -1f;
     private int lastRevision = -1;
@@ -45,6 +48,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     {
         ResolveService();
         EnsureVisualRoot();
+        volumePropertyBlock = new MaterialPropertyBlock();
     }
 
     private void OnEnable()
@@ -69,6 +73,12 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         {
             if (Application.isPlaying) Destroy(lineMaterial);
             else DestroyImmediate(lineMaterial);
+        }
+
+        if (volumeMaterial != null)
+        {
+            if (Application.isPlaying) Destroy(volumeMaterial);
+            else DestroyImmediate(volumeMaterial);
         }
     }
 
@@ -124,6 +134,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         RenderSegments(state.CandidateSegments, candidateLines, candidateColor, candidateWidth, "Candidate");
         RenderSegments(state.GhostSegments, ghostLines, ghostColor, ghostWidth, "Ghost");
         RenderSegments(state.ConflictSegments, conflictLines, conflictColor, conflictWidth, "Conflict");
+        RenderVolumes(state.Volumes, state.Validity);
 
         if (state.HasSnapPoint)
         {
@@ -200,6 +211,84 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                 name = "BB_UniversalPreview_Line",
                 hideFlags = HideFlags.HideAndDontSave
             };
+
+            volumeMaterial = new Material(shader)
+            {
+                name = "BB_UniversalPreview_Volume",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+        }
+    }
+
+    private void RenderVolumes(
+        IReadOnlyList<BistroBuilderPreviewBox> volumes,
+        BistroBuilderPreviewValidity validity)
+    {
+        int count = volumes != null ? volumes.Count : 0;
+        EnsureVolumePool(count);
+
+        Color color = ResolveVolumeColor(validity);
+
+        for (int i = 0; i < count; i++)
+        {
+            BistroBuilderPreviewBox box = volumes[i];
+            MeshRenderer renderer = volumeRenderers[i];
+            renderer.enabled = true;
+            renderer.transform.SetPositionAndRotation(box.Center, box.Rotation);
+            renderer.transform.localScale = box.Size;
+
+            if (volumePropertyBlock == null)
+                volumePropertyBlock = new MaterialPropertyBlock();
+
+            volumePropertyBlock.Clear();
+            volumePropertyBlock.SetColor("_Color", color);
+            volumePropertyBlock.SetColor("_BaseColor", color);
+            renderer.SetPropertyBlock(volumePropertyBlock);
+        }
+
+        for (int i = count; i < volumeRenderers.Count; i++)
+            if (volumeRenderers[i] != null)
+                volumeRenderers[i].enabled = false;
+    }
+
+    private Color ResolveVolumeColor(BistroBuilderPreviewValidity validity)
+    {
+        Color baseColor = ResolveCandidateColor(validity);
+        baseColor.a =
+            validity == BistroBuilderPreviewValidity.Invalid
+                ? 0.09f
+                : 0.11f;
+        return baseColor;
+    }
+
+    private void EnsureVolumePool(int count)
+    {
+        EnsureVisualRoot();
+
+        while (volumeRenderers.Count < count)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = "Volume_" + volumeRenderers.Count.ToString("D2");
+            go.transform.SetParent(visualRoot, false);
+            go.layer = 2;
+
+            Collider collider = go.GetComponent<Collider>();
+            if (collider != null)
+            {
+                if (Application.isPlaying) Destroy(collider);
+                else DestroyImmediate(collider);
+            }
+
+            MeshRenderer renderer = go.GetComponent<MeshRenderer>();
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.lightProbeUsage = LightProbeUsage.Off;
+            renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            if (volumeMaterial != null)
+                renderer.sharedMaterial = volumeMaterial;
+            renderer.enabled = false;
+
+            volumeRenderers.Add(renderer);
         }
     }
 
@@ -267,6 +356,11 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         HidePool(candidateLines);
         HidePool(ghostLines);
         HidePool(conflictLines);
+
+        for (int i = 0; i < volumeRenderers.Count; i++)
+            if (volumeRenderers[i] != null)
+                volumeRenderers[i].enabled = false;
+
         if (snapLine != null) snapLine.enabled = false;
         snapPulseStartedAt = -1f;
     }

@@ -72,6 +72,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private LineRenderer[] moveGhostLines = Array.Empty<LineRenderer>();
     private readonly List<Vector3> universalPreviewSegments = new List<Vector3>(32);
     private readonly List<Vector3> universalGhostSegments = new List<Vector3>(32);
+    private readonly List<BistroBuilderPreviewBox> universalPreviewVolumes =
+        new List<BistroBuilderPreviewBox>(8);
     private WallPose[] placementFeedbackWalls = Array.Empty<WallPose>();
     private PlacementFeedbackKind placementFeedbackKind;
     private Color placementFeedbackColor;
@@ -699,31 +701,58 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         if (universalPreviewService != null)
         {
             universalPreviewSegments.Clear();
+            universalPreviewVolumes.Clear();
 
             if (count > 0)
             {
                 for (int i = 0; i < count; i++)
+                {
+                    Vector2 start = gesture.PreviewWalls[i].Start + shake;
+                    Vector2 end = gesture.PreviewWalls[i].End + shake;
+
                     AddUniversalSegment(
-                        gesture.PreviewWalls[i].Start + shake,
-                        gesture.PreviewWalls[i].End + shake,
+                        start,
+                        end,
                         universalPreviewSegments,
                         0.065f);
+
+                    AddUniversalWallVolume(
+                        start,
+                        end,
+                        universalPreviewVolumes);
+                }
             }
             else if (gesture.Kind == ConstructionGestureKind.Wall)
             {
+                Vector2 start = gestureAnchor + shake;
+                Vector2 end = currentPoint + shake;
+
                 AddUniversalSegment(
-                    gestureAnchor + shake,
-                    currentPoint + shake,
+                    start,
+                    end,
                     universalPreviewSegments,
                     0.065f);
+
+                AddUniversalWallVolume(
+                    start,
+                    end,
+                    universalPreviewVolumes);
             }
             else if (gesture.Kind == ConstructionGestureKind.Rectangle)
             {
+                Vector2 a = gestureAnchor + shake;
+                Vector2 b = currentPoint + shake;
+
                 AddUniversalRectangle(
-                    gestureAnchor + shake,
-                    currentPoint + shake,
+                    a,
+                    b,
                     universalPreviewSegments,
                     0.065f);
+
+                AddUniversalRectangleVolumes(
+                    a,
+                    b,
+                    universalPreviewVolumes);
             }
 
             BistroBuilderPreviewDomain domain =
@@ -747,7 +776,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                 validity,
                 phase,
                 universalPreviewSegments,
-                status);
+                status,
+                universalPreviewVolumes);
 
             if (universalGhostSegments.Count > 0)
                 universalPreviewService.SetGhostSegments(
@@ -810,6 +840,48 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         AddUniversalSegment(p1, p2, destination, y);
         AddUniversalSegment(p2, p3, destination, y);
         AddUniversalSegment(p3, p0, destination, y);
+    }
+
+    private void AddUniversalWallVolume(
+        Vector2 a,
+        Vector2 b,
+        List<BistroBuilderPreviewBox> destination)
+    {
+        Vector2 delta = b - a;
+        float length = delta.magnitude;
+
+        if (length <= 0.001f)
+        {
+            return;
+        }
+
+        Vector2 midpoint = (a + b) * 0.5f;
+        Vector3 direction = new Vector3(delta.x, 0f, delta.y).normalized;
+        Quaternion rotation = Quaternion.FromToRotation(Vector3.right, direction);
+
+        destination.Add(
+            new BistroBuilderPreviewBox(
+                new Vector3(midpoint.x, wallHeight * 0.5f, midpoint.y),
+                rotation,
+                new Vector3(length, wallHeight, wallThickness)));
+    }
+
+    private void AddUniversalRectangleVolumes(
+        Vector2 a,
+        Vector2 b,
+        List<BistroBuilderPreviewBox> destination)
+    {
+        Vector2 min = Vector2.Min(a, b);
+        Vector2 max = Vector2.Max(a, b);
+        Vector2 p0 = min;
+        Vector2 p1 = new Vector2(max.x, min.y);
+        Vector2 p2 = max;
+        Vector2 p3 = new Vector2(min.x, max.y);
+
+        AddUniversalWallVolume(p0, p1, destination);
+        AddUniversalWallVolume(p1, p2, destination);
+        AddUniversalWallVolume(p2, p3, destination);
+        AddUniversalWallVolume(p3, p0, destination);
     }
 
     private void RenderRectangleFallback(Vector2 a, Vector2 b, Color color)

@@ -48,10 +48,11 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         ResolveDependencies();
         Subscribe();
 
-        if (interactionController != null &&
-            interactionController.ActiveMember != null)
+        if (transactionService != null &&
+            transactionService.HasActiveTransaction &&
+            transactionService.ActiveMember != null)
         {
-            BeginProxy(interactionController.ActiveMember);
+            BeginProxy(transactionService.ActiveMember);
         }
     }
 
@@ -87,19 +88,11 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         }
     }
 
-    private void HandleActiveMemberChanged(RestaurantAreaMember member)
+    private void HandlePlacementStarted(
+        RestaurantAreaMember member,
+        RestaurantPlacementValidationResult result)
     {
-        if (member != null)
-        {
-            BeginProxy(member);
-            return;
-        }
-
-        if (!settling)
-        {
-            RestoreSourceRenderers();
-            ResetState();
-        }
+        BeginProxy(member);
     }
 
     private void HandleCommitted(
@@ -260,16 +253,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     private void Subscribe()
     {
-        if (interactionController != null)
-        {
-            interactionController.ActiveMemberChanged -= HandleActiveMemberChanged;
-            interactionController.ActiveMemberChanged += HandleActiveMemberChanged;
-        }
-
         if (transactionService != null)
         {
+            transactionService.PlacementStarted -= HandlePlacementStarted;
             transactionService.PlacementCommitted -= HandleCommitted;
             transactionService.PlacementCancelled -= HandleCancelled;
+            transactionService.PlacementStarted += HandlePlacementStarted;
             transactionService.PlacementCommitted += HandleCommitted;
             transactionService.PlacementCancelled += HandleCancelled;
         }
@@ -277,11 +266,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     private void Unsubscribe()
     {
-        if (interactionController != null)
-            interactionController.ActiveMemberChanged -= HandleActiveMemberChanged;
-
         if (transactionService != null)
         {
+            transactionService.PlacementStarted -= HandlePlacementStarted;
             transactionService.PlacementCommitted -= HandleCommitted;
             transactionService.PlacementCancelled -= HandleCancelled;
         }

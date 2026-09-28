@@ -30,6 +30,26 @@ public enum BistroBuilderPreviewPhase
     Cancelled = 5
 }
 
+public readonly struct BistroBuilderPreviewBox
+{
+    public Vector3 Center { get; }
+    public Quaternion Rotation { get; }
+    public Vector3 Size { get; }
+
+    public BistroBuilderPreviewBox(
+        Vector3 center,
+        Quaternion rotation,
+        Vector3 size)
+    {
+        Center = center;
+        Rotation = rotation;
+        Size = new Vector3(
+            Mathf.Max(0.001f, Mathf.Abs(size.x)),
+            Mathf.Max(0.001f, Mathf.Abs(size.y)),
+            Mathf.Max(0.001f, Mathf.Abs(size.z)));
+    }
+}
+
 /// <summary>
 /// Snapshot reutilizable de la preview universal.
 /// Las listas son de solo lectura para consumidores; el servicio conserva la propiedad.
@@ -39,6 +59,8 @@ public sealed class BistroBuilderUniversalPreviewState
     private readonly List<Vector3> candidateSegments = new List<Vector3>(32);
     private readonly List<Vector3> ghostSegments = new List<Vector3>(32);
     private readonly List<Vector3> conflictSegments = new List<Vector3>(16);
+    private readonly List<BistroBuilderPreviewBox> volumes =
+        new List<BistroBuilderPreviewBox>(8);
 
     public int Revision { get; internal set; }
     public string OwnerId { get; internal set; } = string.Empty;
@@ -57,6 +79,7 @@ public sealed class BistroBuilderUniversalPreviewState
     public IReadOnlyList<Vector3> CandidateSegments => candidateSegments;
     public IReadOnlyList<Vector3> GhostSegments => ghostSegments;
     public IReadOnlyList<Vector3> ConflictSegments => conflictSegments;
+    public IReadOnlyList<BistroBuilderPreviewBox> Volumes => volumes;
 
     public bool IsVisible =>
         Phase != BistroBuilderPreviewPhase.Hidden &&
@@ -67,6 +90,7 @@ public sealed class BistroBuilderUniversalPreviewState
     internal List<Vector3> MutableCandidateSegments => candidateSegments;
     internal List<Vector3> MutableGhostSegments => ghostSegments;
     internal List<Vector3> MutableConflictSegments => conflictSegments;
+    internal List<BistroBuilderPreviewBox> MutableVolumes => volumes;
 
     internal void Reset()
     {
@@ -85,5 +109,6 @@ public sealed class BistroBuilderUniversalPreviewState
         candidateSegments.Clear();
         ghostSegments.Clear();
         conflictSegments.Clear();
+        volumes.Clear();
     }
 }

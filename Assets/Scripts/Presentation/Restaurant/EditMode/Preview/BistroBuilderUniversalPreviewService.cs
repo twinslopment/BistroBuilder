@@ -46,10 +46,12 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         BistroBuilderPreviewValidity validity,
         BistroBuilderPreviewPhase phase,
         IReadOnlyList<Vector3> segments,
-        string message = "")
+        string message = "",
+        IReadOnlyList<BistroBuilderPreviewBox> volumes = null)
     {
         BeginWrite(ownerId, domain, validity, phase, message);
         CopySegments(segments, current.MutableCandidateSegments);
+        CopyVolumes(volumes, current.MutableVolumes);
         Publish();
     }
 
@@ -171,6 +173,7 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         current.MutableCandidateSegments.Clear();
         current.MutableGhostSegments.Clear();
         current.MutableConflictSegments.Clear();
+        current.MutableVolumes.Clear();
     }
 
     private void Publish()
@@ -193,6 +196,17 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         if (source == null) return;
         int evenCount = source.Count - (source.Count % 2);
         for (int i = 0; i < evenCount; i++)
+            destination.Add(source[i]);
+    }
+
+    private static void CopyVolumes(
+        IReadOnlyList<BistroBuilderPreviewBox> source,
+        List<BistroBuilderPreviewBox> destination)
+    {
+        destination.Clear();
+        if (source == null) return;
+
+        for (int i = 0; i < source.Count; i++)
             destination.Add(source[i]);
     }
 
