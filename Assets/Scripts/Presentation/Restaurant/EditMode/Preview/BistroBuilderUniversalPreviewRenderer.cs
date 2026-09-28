@@ -29,6 +29,8 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private Transform visualRoot;
     private Material lineMaterial;
     private Material volumeMaterial;
+    private Mesh volumeMesh;
+
     private static readonly int ColorPropertyId =
         Shader.PropertyToID("_Color");
 
@@ -86,6 +88,12 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         {
             if (Application.isPlaying) Destroy(volumeMaterial);
             else DestroyImmediate(volumeMaterial);
+        }
+
+        if (volumeMesh != null)
+        {
+            if (Application.isPlaying) Destroy(volumeMesh);
+            else DestroyImmediate(volumeMesh);
         }
     }
 
@@ -285,29 +293,92 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         while (volumeRenderers.Count < count)
         {
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = "Volume_" + volumeRenderers.Count.ToString("D2");
-            go.transform.SetParent(visualRoot, false);
+            GameObject go =
+                new GameObject(
+                    "Volume_" +
+                    volumeRenderers.Count.ToString("D2"));
+
+            go.transform.SetParent(
+                visualRoot,
+                false);
+
             go.layer = 2;
 
-            Collider collider = go.GetComponent<Collider>();
-            if (collider != null)
-            {
-                if (Application.isPlaying) Destroy(collider);
-                else DestroyImmediate(collider);
-            }
+            MeshFilter filter =
+                go.AddComponent<MeshFilter>();
 
-            MeshRenderer renderer = go.GetComponent<MeshRenderer>();
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            renderer.lightProbeUsage = LightProbeUsage.Off;
-            renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            filter.sharedMesh =
+                GetOrCreateVolumeMesh();
+
+            MeshRenderer renderer =
+                go.AddComponent<MeshRenderer>();
+
+            renderer.shadowCastingMode =
+                ShadowCastingMode.Off;
+
+            renderer.receiveShadows =
+                false;
+
+            renderer.lightProbeUsage =
+                LightProbeUsage.Off;
+
+            renderer.reflectionProbeUsage =
+                ReflectionProbeUsage.Off;
+
             if (volumeMaterial != null)
-                renderer.sharedMaterial = volumeMaterial;
-            renderer.enabled = false;
+                renderer.sharedMaterial =
+                    volumeMaterial;
 
-            volumeRenderers.Add(renderer);
+            renderer.enabled =
+                false;
+
+            volumeRenderers.Add(
+                renderer);
         }
+    }
+
+    private Mesh GetOrCreateVolumeMesh()
+    {
+        if (volumeMesh != null)
+            return volumeMesh;
+
+        volumeMesh =
+            new Mesh
+            {
+                name =
+                    "BB_UniversalPreview_UnitCube",
+                hideFlags =
+                    HideFlags.HideAndDontSave
+            };
+
+        volumeMesh.vertices =
+            new[]
+            {
+                new Vector3(-0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f, -0.5f),
+                new Vector3( 0.5f, -0.5f,  0.5f),
+                new Vector3(-0.5f, -0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f, -0.5f),
+                new Vector3( 0.5f,  0.5f,  0.5f),
+                new Vector3(-0.5f,  0.5f,  0.5f)
+            };
+
+        volumeMesh.triangles =
+            new[]
+            {
+                0, 2, 1, 0, 3, 2,
+                4, 5, 6, 4, 6, 7,
+                0, 1, 5, 0, 5, 4,
+                1, 2, 6, 1, 6, 5,
+                2, 3, 7, 2, 7, 6,
+                3, 0, 4, 3, 4, 7
+            };
+
+        volumeMesh.RecalculateNormals();
+        volumeMesh.RecalculateBounds();
+
+        return volumeMesh;
     }
 
     private static Material CreateRuntimeMaterial(
