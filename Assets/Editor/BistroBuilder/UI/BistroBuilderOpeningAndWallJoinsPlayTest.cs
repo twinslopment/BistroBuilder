@@ -11,6 +11,11 @@ using Object=UnityEngine.Object;
 public static class BistroBuilderOpeningAndWallJoinsPlayTest
 {
     static void Check(bool value,string reason){if(!value)throw new Exception("Opening/wall joins: "+reason);}
+    static T Find<T>(string name) where T : Component =>
+        Object.FindObjectsByType<T>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None)
+        .FirstOrDefault(component => component.name == name);
     static BistroBuilderWallRecord Wall(float x,float y,float x2,float y2)=>new BistroBuilderWallRecord{wallId=BistroBuilderEditId.NewId(),axisStart=new Vector2(x,y),axisEnd=new Vector2(x2,y2),height=2.5f,thickness=.12f,wallDefinitionId="wall.default"};
     static Vector3 World(BistroBuilderWallRecord wall,Vector3 p)
     {var axis=wall.axisEnd-wall.axisStart;return new Vector3(wall.axisStart.x,wall.baseElevation,wall.axisStart.y)+Quaternion.FromToRotation(Vector3.right,new Vector3(axis.x,0,axis.y).normalized)*p;}
