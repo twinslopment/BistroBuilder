@@ -48,6 +48,7 @@ namespace BistroBuilder.Editor.Savic
 
         private readonly SavicManifestRepository manifests;
         private readonly SavicModelFamilyRegistry familyRegistry;
+        private readonly SavicImagePublisher imagePublisher;
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
@@ -94,8 +95,16 @@ namespace BistroBuilder.Editor.Savic
                         layout,
                         this.manifests));
 
+            imagePublisher =
+                new SavicImagePublisher(
+                    layout,
+                    this.manifests);
+
             adapters.Add(
                 new SavicUnityModelSourceImportAdapter(layout));
+
+            adapters.Add(
+                new SavicUnityImageSourceImportAdapter(layout));
         }
 
         internal SavicSourceProcessingOutcome ProcessBySavicId(
@@ -234,8 +243,8 @@ namespace BistroBuilder.Editor.Savic
                 manifest,
                 SourceMirrorRole,
                 materialized.AssetPath,
-                SavicUnityModelSourceImportAdapter.BuilderId,
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterId,
+                adapter.AdapterVersion);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -243,7 +252,7 @@ namespace BistroBuilder.Editor.Savic
                 "PASS",
                 "INFO",
                 "Archived source passed integrity validation while materializing the Unity mirror.",
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterVersion);
 
             manifest.status =
                 "SOURCE_MATERIALIZED";
@@ -342,8 +351,8 @@ namespace BistroBuilder.Editor.Savic
                 manifest,
                 SourceMirrorRole,
                 import.AssetPath,
-                SavicUnityModelSourceImportAdapter.BuilderId,
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterId,
+                adapter.AdapterVersion);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -351,7 +360,7 @@ namespace BistroBuilder.Editor.Savic
                 "PASS",
                 "INFO",
                 "Prepared Unity source mirror is available for processing.",
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterVersion);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -359,7 +368,7 @@ namespace BistroBuilder.Editor.Savic
                 "PASS",
                 "INFO",
                 import.Message,
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterVersion);
 
             manifest.status =
                 "SOURCE_READY";
@@ -399,20 +408,29 @@ namespace BistroBuilder.Editor.Savic
                     ? CloneManifest(manifest)
                     : null;
 
-            if (!string.Equals(
+            bool isModel3D =
+                string.Equals(
                     manifest.source.sourceKind,
                     SavicSourceKind.Model3D.ToString(),
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal);
+
+            bool isImage =
+                string.Equals(
+                    manifest.source.sourceKind,
+                    SavicSourceKind.Image.ToString(),
+                    StringComparison.Ordinal);
+
+            if (!isModel3D && !isImage)
             {
                 return new SavicSourceProcessingOutcome(
                     false,
                     "UNSUPPORTED_SOURCE_KIND",
-                    "This processing service currently accepts only 3D models.",
+                    "This processing service currently accepts 3D models and images.",
                     manifest,
                     trace.Finish(
                         "UNSUPPORTED_SOURCE_KIND",
                         "PRECHECK",
-                        "Source kind is not eligible for the 3D pipeline."));
+                        "Source kind has no registered SAVIC processing pipeline."));
             }
 
             if (TryRouteBeforeImport(
@@ -471,8 +489,8 @@ namespace BistroBuilder.Editor.Savic
                 manifest,
                 SourceMirrorRole,
                 import.AssetPath,
-                SavicUnityModelSourceImportAdapter.BuilderId,
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterId,
+                adapter.AdapterVersion);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -480,7 +498,7 @@ namespace BistroBuilder.Editor.Savic
                 "PASS",
                 "INFO",
                 "Archived source passed SHA-256 integrity validation.",
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterVersion);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -488,7 +506,16 @@ namespace BistroBuilder.Editor.Savic
                 "PASS",
                 "INFO",
                 import.Message,
-                SavicUnityModelSourceImportAdapter.BuilderVersion);
+                adapter.AdapterVersion);
+
+            if (isImage)
+            {
+                return ProcessImage(
+                    previousPublishedSnapshot,
+                    manifest,
+                    import,
+                    trace);
+            }
 
             if (import.MainObject is not GameObject root)
             {
@@ -936,6 +963,151 @@ namespace BistroBuilder.Editor.Savic
             }
         }
 
+        private SavicSourceProcessingOutcome ProcessImage(
+            SavicManifest previousPublishedSnapshot,
+            SavicManifest manifest,
+            SavicSourceImportResult import,
+            SavicProcessingTrace trace)
+        {
+            if (import.MainObject is not Texture2D)
+            {
+                RecordFailure(
+                    manifest,
+                    "Image.UnityImport",
+                    "ERROR",
+                    "Imported image main object is not a Texture2D.");
+
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    "Imported image main object is not a Texture2D.",
+                    "INVALID_IMPORTED_IMAGE",
+                    "IMPORT_SOURCE",
+                    trace);
+            }
+
+            bool planned =
+                trace.Measure(
+                    "IMAGE_PLAN",
+                    () =>
+                        SavicImageAuthoringPlanner.TryPlan(
+                            manifest,
+                            out SavicImageAuthoringRecord plan,
+                            out string reasonCode,
+                            out string planningError)
+                            ? new ImagePlanResult(
+                                true,
+                                plan,
+                                string.Empty,
+                                string.Empty)
+                            : new ImagePlanResult(
+                                false,
+                                plan,
+                                reasonCode,
+                                planningError),
+                    result => result.Succeeded,
+                    result => result.Message)
+                .Succeeded;
+
+            SavicImageAuthoringRecord resolvedPlan;
+            string resolvedReason;
+            string resolvedError;
+
+            bool resolved =
+                SavicImageAuthoringPlanner.TryPlan(
+                    manifest,
+                    out resolvedPlan,
+                    out resolvedReason,
+                    out resolvedError);
+
+            manifest.imageAuthoring =
+                resolvedPlan;
+
+            if (!resolved || !planned)
+            {
+                manifest.status = "NEEDS_REVIEW";
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Image.AuthoringPlan",
+                    "REVIEW",
+                    "WARNING",
+                    resolvedError,
+                    SavicImageAuthoringPlanner.Version);
+
+                manifests.Save(manifest);
+
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    resolvedError,
+                    string.IsNullOrWhiteSpace(resolvedReason)
+                        ? "IMAGE_REQUIRES_REVIEW"
+                        : resolvedReason,
+                    "IMAGE_PLAN",
+                    trace);
+            }
+
+            SavicManifestMutations.UpsertValidation(
+                manifest,
+                "Image.AuthoringPlan",
+                "PASS",
+                "INFO",
+                resolvedPlan.planReason,
+                SavicImageAuthoringPlanner.Version);
+
+            SavicImagePublicationOutcome publication =
+                trace.Measure(
+                    "IMAGE_PUBLICATION",
+                    () =>
+                        imagePublisher.Publish(
+                            manifest,
+                            import.AssetPath),
+                    result => result.Succeeded,
+                    result => result.Message);
+
+            if (!publication.Succeeded)
+            {
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    publication.Message,
+                    "IMAGE_PUBLICATION_FAILED",
+                    "IMAGE_PUBLICATION",
+                    trace);
+            }
+
+            return new SavicSourceProcessingOutcome(
+                true,
+                manifest.status,
+                publication.Message,
+                manifest,
+                trace.Finish(
+                    "PUBLISHED",
+                    "IMAGE_PUBLICATION",
+                    publication.Message));
+        }
+
+        private readonly struct ImagePlanResult
+        {
+            internal ImagePlanResult(
+                bool succeeded,
+                SavicImageAuthoringRecord plan,
+                string reasonCode,
+                string message)
+            {
+                Succeeded = succeeded;
+                Plan = plan;
+                ReasonCode = reasonCode ?? string.Empty;
+                Message = message ?? string.Empty;
+            }
+
+            internal bool Succeeded { get; }
+            internal SavicImageAuthoringRecord Plan { get; }
+            internal string ReasonCode { get; }
+            internal string Message { get; }
+        }
+
         private static void RecordSemanticPartDecisions(
             SavicManifest manifest,
             SavicSemanticPartAnalysisRecord semanticParts)
@@ -1075,6 +1247,61 @@ namespace BistroBuilder.Editor.Savic
         {
             outcome =
                 default;
+
+            if (string.Equals(
+                    manifest.source.sourceKind,
+                    SavicSourceKind.Image.ToString(),
+                    StringComparison.Ordinal))
+            {
+                bool imagePlanReady =
+                    SavicImageAuthoringPlanner.TryPlan(
+                        manifest,
+                        out SavicImageAuthoringRecord imagePlan,
+                        out string imageReasonCode,
+                        out string imageError);
+
+                manifest.imageAuthoring =
+                    imagePlan;
+
+                if (imagePlanReady)
+                    return false;
+
+                manifest.family = "Image";
+                manifest.type = "Image";
+                manifest.category = "Images";
+                manifest.status = "NEEDS_REVIEW";
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Pipeline.PreImportRouting",
+                    "REVIEW",
+                    "WARNING",
+                    imageError,
+                    SavicImageAuthoringPlanner.Version);
+
+                manifests.Save(manifest);
+
+                outcome =
+                    new SavicSourceProcessingOutcome(
+                        false,
+                        manifest.status,
+                        imageError,
+                        manifest,
+                        trace.Finish(
+                            imageReasonCode,
+                            "PREIMPORT_ROUTE",
+                            imageError));
+
+                return true;
+            }
+
+            if (!string.Equals(
+                    manifest.source.sourceKind,
+                    SavicSourceKind.Model3D.ToString(),
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
 
             if (!SavicGenericPlaceableAuthoringPlanner
                 .TryResolvePreImportReview(
