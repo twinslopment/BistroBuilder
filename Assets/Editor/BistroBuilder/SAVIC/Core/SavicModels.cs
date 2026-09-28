@@ -72,6 +72,10 @@ namespace BistroBuilder.Editor.Savic
             new SavicGenericPlaceableAuthoringRecord();
         public SavicGenericPlaceableReadinessRecord genericPlaceableReadiness =
             new SavicGenericPlaceableReadinessRecord();
+        public SavicConstructionAuthoringRecord construction =
+            new SavicConstructionAuthoringRecord();
+        public SavicConstructionReadinessRecord constructionReadiness =
+            new SavicConstructionReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -492,6 +496,39 @@ namespace BistroBuilder.Editor.Savic
         public string integrationMode = "NONE";
         public string prefabAssetPath = string.Empty;
         public string itemDefinitionAssetPath = string.Empty;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicConstructionAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public string role = "UNSET";
+        public string definitionId = string.Empty;
+        public string openingType = string.Empty;
+        public float nominalWidthMeters;
+        public float nominalHeightMeters;
+        public float nominalDepthMeters;
+        public string prefabAssetPath = string.Empty;
+        public string planReason = string.Empty;
+        public string plannedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicConstructionReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public bool prefabResolvable;
+        public bool constructionKitResolvable;
+        public bool definitionResolvable;
+        public bool passageColliderSafe;
+        public bool wallVisualOnly;
+        public string definitionId = string.Empty;
+        public string role = "UNSET";
+        public string prefabAssetPath = string.Empty;
         public string evidence = string.Empty;
         public string validatedUtc = string.Empty;
     }
