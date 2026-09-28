@@ -335,6 +335,55 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         AddSegment(destination, d, a);
     }
 
+    private static void AddObstacleSegments(
+        RestaurantPlacementObstacle obstacle,
+        List<Vector3> destination)
+    {
+        if (obstacle == null)
+            return;
+
+        Vector2 size =
+            obstacle.WorldSize;
+
+        float halfWidth =
+            size.x * 0.5f +
+            obstacle.MinimumClearance;
+
+        float halfDepth =
+            size.y * 0.5f +
+            obstacle.MinimumClearance;
+
+        Vector3 center =
+            obstacle.WorldCenter;
+
+        center.y += 0.035f;
+
+        Vector3 right =
+            obstacle.WorldRightAxis *
+            halfWidth;
+
+        Vector3 forward =
+            obstacle.WorldForwardAxis *
+            halfDepth;
+
+        Vector3 a =
+            center - right - forward;
+
+        Vector3 b =
+            center + right - forward;
+
+        Vector3 c =
+            center + right + forward;
+
+        Vector3 d =
+            center - right + forward;
+
+        AddSegment(destination, a, b);
+        AddSegment(destination, b, c);
+        AddSegment(destination, c, d);
+        AddSegment(destination, d, a);
+    }
+
     private static void AddSegment(List<Vector3> destination, Vector3 a, Vector3 b)
     {
         destination.Add(a);
