@@ -186,10 +186,11 @@ No se crearán sistemas visuales independientes por familia salvo un adaptador e
 
 - Aspecto elegante, sobrio y de juego comercial.
 - Objeto real o representación visual fiel; no hologramas genéricos.
-- Elevación visual suave al transportar mobiliario.
+- Elevación visual suave al transportar mobiliario, iniciada al comenzar una operación de movimiento/colocación, no por el mero hecho de seleccionar.
 - Huella/contorno de colocación limpia y discreta.
 - Ghost tenue de la posición anterior cuando aporte información.
 - Snapping con guías breves y pulso suave.
+- Construcción con volumen provisional translúcido cuando sea útil para comprender altura, grosor y ocupación antes de materializar.
 - Posición válida con confirmación visual contenida.
 - Posición inválida mostrando el conflicto de forma localizada siempre que los datos existentes lo permitan.
 - Confirmación con asentamiento suave y retirada de ayudas.
@@ -199,7 +200,7 @@ No se crearán sistemas visuales independientes por familia salvo un adaptador e
 ### Arquitectura aprobada
 
 - `BistroBuilderUniversalPreviewService` mantiene el estado visual provisional común.
-- `BistroBuilderUniversalPreviewRenderer` representa guías, huellas, ghost, conflicto y snap.
+- `BistroBuilderUniversalPreviewRenderer` representa guías, huellas, ghost, conflicto, snap y volúmenes provisionales.
 - `BistroBuilderFurniturePreviewProxyRenderer` separa la presentación visual del mobiliario mientras se transporta, permitiendo elevación y asentamiento sin trasladar esa animación a las reglas espaciales.
 - El controlador de mobiliario publica su validación y snapping existentes en el sistema universal.
 - La herramienta de construcción publica paredes, habitaciones y huecos en el mismo núcleo.
@@ -220,11 +221,20 @@ No se crearán sistemas visuales independientes por familia salvo un adaptador e
 
 Una futura herramienta de superficies, módulos, BBPLFS u otra familia no debe crear otra estética de preview. Debe publicar su candidato, validez, snap, ghost y conflictos en BB Universal Preview System.
 
+### Referencias visuales V1
+
+- `docs/ModoEdicion/PreviewReference/01_valid_furniture.png` — mobiliario en posición válida con huella, ghost y snap.
+- `docs/ModoEdicion/PreviewReference/02_invalid_conflict.png` — conflicto localizado sin teñir todo el objeto.
+- `docs/ModoEdicion/PreviewReference/03_construction_wall.png` — pared provisional con línea, snap, ghost y volumen translúcido.
+
+Estas imágenes fijan la dirección visual V1; la integración en juego deberá conservar la misma lectura aunque el acabado final se ajuste a la iluminación y materiales definitivos.
+
 ### Criterio de aceptación
 
 El sistema se considerará definitivo cuando una operación equivalente tenga el mismo lenguaje visual en muebles y construcción, mantenga intactas las reglas existentes y permita cancelar, confirmar, deshacer, rehacer, guardar y recargar sin divergencias.
 
-**Fundación técnica inicial:** commit `62bd2f2c`.
+**Fundación técnica inicial:** commit `62bd2f2c`.  
+**Refinamiento visual y volúmenes provisionales:** commit `cc0024ab`.
 
 ## 9. Registro de próximas decisiones
 
