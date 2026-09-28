@@ -643,8 +643,10 @@ namespace BistroBuilder.Editor.Savic
     internal enum SavicSourcePreparationStage
     {
         None = 0,
-        MirrorMaterialized = 1,
-        SourceImported = 2
+        MirrorMaterializing = 1,
+        MirrorMaterialized = 2,
+        ImportRequested = 3,
+        SourceImported = 4
     }
 
     [Serializable]
