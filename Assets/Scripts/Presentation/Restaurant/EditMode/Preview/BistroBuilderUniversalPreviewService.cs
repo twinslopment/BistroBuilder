@@ -61,21 +61,6 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         return editMode.gameObject.AddComponent<BistroBuilderUniversalPreviewService>();
     }
 
-    public void PublishSegments(
-        string ownerId,
-        BistroBuilderPreviewDomain domain,
-        BistroBuilderPreviewValidity validity,
-        BistroBuilderPreviewPhase phase,
-        IReadOnlyList<Vector3> segments,
-        string message = "",
-        IReadOnlyList<BistroBuilderPreviewBox> volumes = null)
-    {
-        BeginWrite(ownerId, domain, validity, phase, message);
-        CopySegments(segments, current.MutableCandidateSegments);
-        CopyVolumes(volumes, current.MutableVolumes);
-        Publish();
-    }
-
     public void PublishConstruction(
         BistroBuilderPreviewDomain domain,
         BistroBuilderPreviewValidity validity,
@@ -126,23 +111,6 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
                 BistroBuilderPreviewPhase.Snapped;
         }
 
-        Publish();
-    }
-
-    public void SetGhostSegments(string ownerId, IReadOnlyList<Vector3> segments)
-    {
-        if (!IsOwner(ownerId)) return;
-        CopySegments(segments, current.MutableGhostSegments);
-        Publish();
-    }
-
-    public void SetSnapPoint(string ownerId, Vector3 point, bool visible)
-    {
-        if (!IsOwner(ownerId)) return;
-        current.HasSnapPoint = visible;
-        current.SnapPoint = point;
-        if (visible && current.Phase == BistroBuilderPreviewPhase.Previewing)
-            current.Phase = BistroBuilderPreviewPhase.Snapped;
         Publish();
     }
 
