@@ -187,10 +187,17 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                     break;
 
                 case 1:
-                    Check(
-                        coordinator.HasSession ||
-                        !tool.HasDraftSession,
-                        "Estado de Draft Session incoherente.");
+                    if (!coordinator.HasSession)
+                    {
+                        Check(
+                            coordinator.TryBeginSession(
+                                out string sessionError),
+                            "No se pudo abrir Draft Session: " +
+                            sessionError);
+                    }
+
+                    baselineWalls =
+                        coordinator.Session.Draft.walls.Count;
 
                     Check(
                         tool.TryPreviewRoomAtPlanPoints(
@@ -203,10 +210,12 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
 
                     Check(
                         coordinator.HasSession,
-                        "La preview no inicializó Draft Session.");
+                        "La preview perdió la Draft Session.");
 
-                    baselineWalls =
-                        coordinator.Session.Draft.walls.Count;
+                    Check(
+                        coordinator.Session.Draft.walls.Count ==
+                            baselineWalls,
+                        "La preview modificó el borrador durante su creación.");
 
                     break;
 
@@ -214,7 +223,7 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                     Check(
                         coordinator.Session.Draft.walls.Count ==
                             baselineWalls,
-                        "La preview modificó el borrador antes de confirmar.");
+                        "La preview modificó el borrador antes de cancelar.");
 
                     AssertConstructionPreview();
 
