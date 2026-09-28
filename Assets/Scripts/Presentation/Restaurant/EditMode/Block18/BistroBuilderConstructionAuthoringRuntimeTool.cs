@@ -1380,8 +1380,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         invalidShakeStartedAt = -1f;
         hasLastGestureRenderPoint = false;
         lastGestureVisualState = ConstructionGestureState.Idle;
-        universalPreviewService?.ClearOwner(
-            BistroBuilderUniversalPreviewService.ConstructionOwner);
     }
 
     private void RefreshAfterDraftMutation(string message)
