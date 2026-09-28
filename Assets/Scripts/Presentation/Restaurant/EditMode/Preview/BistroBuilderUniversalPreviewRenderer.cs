@@ -29,10 +29,17 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private Transform visualRoot;
     private Material lineMaterial;
     private Material volumeMaterial;
+    private static readonly int ColorPropertyId =
+        Shader.PropertyToID("_Color");
+
+    private static readonly int BaseColorPropertyId =
+        Shader.PropertyToID("_BaseColor");
+
     private MaterialPropertyBlock volumePropertyBlock;
     private LineRenderer snapLine;
     private float snapPulseStartedAt = -1f;
-    private int lastRevision = -1;
+    private bool hadSnapPoint;
+    private Vector3 lastSnapPoint;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureRuntimeRenderer()
@@ -138,18 +145,33 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         if (state.HasSnapPoint)
         {
-            EnsureSnapLine();
-            DrawSnapDiamond(state.SnapPoint, 0.11f, snapColor, 0.026f);
-            if (lastRevision != state.Revision)
-                snapPulseStartedAt = Time.unscaledTime;
-        }
-        else if (snapLine != null)
-        {
-            snapLine.enabled = false;
-            snapPulseStartedAt = -1f;
-        }
+            bool snapChanged =
+                !hadSnapPoint ||
+                (state.SnapPoint - lastSnapPoint).sqrMagnitude >
+                    0.0004f;
 
-        lastRevision = state.Revision;
+            EnsureSnapLine();
+            DrawSnapDiamond(
+                state.SnapPoint,
+                0.11f,
+                snapColor,
+                0.026f);
+
+            if (snapChanged)
+                snapPulseStartedAt = Time.unscaledTime;
+
+            hadSnapPoint = true;
+            lastSnapPoint = state.SnapPoint;
+        }
+        else
+        {
+            if (snapLine != null)
+                snapLine.enabled = false;
+
+            snapPulseStartedAt = -1f;
+            hadSnapPoint = false;
+            lastSnapPoint = default;
+        }
     }
 
     private Color ResolveCandidateColor(BistroBuilderPreviewValidity validity)
@@ -201,23 +223,13 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         root.layer = 2;
         visualRoot = root.transform;
 
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
-        if (shader == null) shader = Shader.Find("Unlit/Color");
-        if (shader != null)
-        {
-            lineMaterial = new Material(shader)
-            {
-                name = "BB_UniversalPreview_Line",
-                hideFlags = HideFlags.HideAndDontSave
-            };
+        lineMaterial =
+            CreateRuntimeMaterial(
+                "BB_UniversalPreview_Line");
 
-            volumeMaterial = new Material(shader)
-            {
-                name = "BB_UniversalPreview_Volume",
-                hideFlags = HideFlags.HideAndDontSave
-            };
-        }
+        volumeMaterial =
+            CreateRuntimeMaterial(
+                "BB_UniversalPreview_Volume");
     }
 
     private void RenderVolumes(
@@ -225,6 +237,16 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         BistroBuilderPreviewValidity validity)
     {
         int count = volumes != null ? volumes.Count : 0;
+
+        if (volumeMaterial == null)
+        {
+            for (int i = 0; i < volumeRenderers.Count; i++)
+                if (volumeRenderers[i] != null)
+                    volumeRenderers[i].enabled = false;
+
+            return;
+        }
+
         EnsureVolumePool(count);
 
         Color color = ResolveVolumeColor(validity);
@@ -241,8 +263,12 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                 volumePropertyBlock = new MaterialPropertyBlock();
 
             volumePropertyBlock.Clear();
-            volumePropertyBlock.SetColor("_Color", color);
-            volumePropertyBlock.SetColor("_BaseColor", color);
+            volumePropertyBlock.SetColor(
+                ColorPropertyId,
+                color);
+            volumePropertyBlock.SetColor(
+                BaseColorPropertyId,
+                color);
             renderer.SetPropertyBlock(volumePropertyBlock);
         }
 
@@ -290,6 +316,51 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
             volumeRenderers.Add(renderer);
         }
+    }
+
+    private static Material CreateRuntimeMaterial(
+        string name)
+    {
+        Shader shader =
+            Shader.Find("Sprites/Default");
+
+        if (shader == null)
+        {
+            shader =
+                Shader.Find(
+                    "Universal Render Pipeline/Unlit");
+        }
+
+        if (shader == null)
+        {
+            shader =
+                Shader.Find("Unlit/Color");
+        }
+
+        if (shader == null)
+            return null;
+
+        Material material =
+            new Material(shader)
+            {
+                name = name,
+                hideFlags =
+                    HideFlags.HideAndDontSave
+            };
+
+        /*
+         * Sprites/Default ya utiliza blending alfa y funciona
+         * correctamente con geometría world-space. Se prioriza
+         * para que el alpha de las guías y volúmenes no dependa
+         * de modificar el render state mediante PropertyBlock.
+         */
+        if (shader.name == "Sprites/Default")
+        {
+            material.renderQueue =
+                (int)RenderQueue.Transparent;
+        }
+
+        return material;
     }
 
     private LineRenderer CreateLine(string name)
@@ -363,6 +434,8 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         if (snapLine != null) snapLine.enabled = false;
         snapPulseStartedAt = -1f;
+        hadSnapPoint = false;
+        lastSnapPoint = default;
     }
 
     private static void HidePool(List<LineRenderer> pool)
