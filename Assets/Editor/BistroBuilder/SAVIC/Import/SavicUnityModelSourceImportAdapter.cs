@@ -13,6 +13,9 @@ namespace BistroBuilder.Editor.Savic
 
         private readonly SavicStorageLayout layout;
 
+        public string BuilderId => SavicUnityModelSourceImportAdapter.BuilderId;
+        public string BuilderVersion => SavicUnityModelSourceImportAdapter.BuilderVersion;
+
         internal SavicUnityModelSourceImportAdapter(
             SavicStorageLayout layout)
         {
