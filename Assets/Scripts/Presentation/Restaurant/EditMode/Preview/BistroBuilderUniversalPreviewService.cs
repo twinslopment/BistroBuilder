@@ -296,6 +296,15 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         destination.Clear();
         if (conflict == null) return;
 
+        if (conflict is RestaurantPlacementObstacle obstacle)
+        {
+            AddObstacleSegments(
+                obstacle,
+                destination);
+
+            return;
+        }
+
         GameObject go = null;
         if (conflict is Component component) go = component.gameObject;
         else if (conflict is GameObject gameObject) go = gameObject;
@@ -320,6 +329,55 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         Vector3 b = new Vector3(bounds.max.x, y, bounds.min.z);
         Vector3 c = new Vector3(bounds.max.x, y, bounds.max.z);
         Vector3 d = new Vector3(bounds.min.x, y, bounds.max.z);
+        AddSegment(destination, a, b);
+        AddSegment(destination, b, c);
+        AddSegment(destination, c, d);
+        AddSegment(destination, d, a);
+    }
+
+    private static void AddObstacleSegments(
+        RestaurantPlacementObstacle obstacle,
+        List<Vector3> destination)
+    {
+        if (obstacle == null)
+            return;
+
+        Vector2 size =
+            obstacle.WorldSize;
+
+        float halfWidth =
+            size.x * 0.5f +
+            obstacle.MinimumClearance;
+
+        float halfDepth =
+            size.y * 0.5f +
+            obstacle.MinimumClearance;
+
+        Vector3 center =
+            obstacle.WorldCenter;
+
+        center.y += 0.035f;
+
+        Vector3 right =
+            obstacle.WorldRightAxis *
+            halfWidth;
+
+        Vector3 forward =
+            obstacle.WorldForwardAxis *
+            halfDepth;
+
+        Vector3 a =
+            center - right - forward;
+
+        Vector3 b =
+            center + right - forward;
+
+        Vector3 c =
+            center + right + forward;
+
+        Vector3 d =
+            center - right + forward;
+
         AddSegment(destination, a, b);
         AddSegment(destination, b, c);
         AddSegment(destination, c, d);
