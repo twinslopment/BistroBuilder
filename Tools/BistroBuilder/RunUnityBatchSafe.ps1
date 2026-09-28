@@ -3,7 +3,8 @@ param(
     [string]$ExecuteMethod,
     [string]$LogName = "bb_safe_batch.log",
     [int]$TimeoutSeconds = 300,
-    [switch]$NoQuit
+    [switch]$NoQuit,
+    [string[]]$AdditionalUnityArguments = @()
 )
 
 Set-StrictMode -Version Latest
@@ -124,7 +125,12 @@ $resultPath = Join-Path $tempDir ("bb_safe_batch_" + $token + '.exit')
 $logPath = Join-Path $logDir $LogName
 
 $unityArguments = @(
-    '-batchmode',
+    '-batchmode'
+)
+if ($AdditionalUnityArguments.Count -gt 0) {
+    $unityArguments += $AdditionalUnityArguments
+}
+$unityArguments += @(
     '-projectPath', ('"' + $projectRoot + '"'),
     '-executeMethod', $ExecuteMethod,
     '-logFile', ('"' + $logPath + '"')
