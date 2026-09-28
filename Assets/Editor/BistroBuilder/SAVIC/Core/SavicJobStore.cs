@@ -447,10 +447,33 @@ namespace BistroBuilder.Editor.Savic
                         job.maximumAtomicDurationMilliseconds,
                         safeDuration);
 
-                ApplyOutcomeDiagnostics(
-                    job,
-                    outcome,
-                    true);
+                if (IsPendingPreparationStatus(
+                        outcome.Status))
+                {
+                    job.outcomeStatus =
+                        outcome.Status ??
+                        string.Empty;
+
+                    job.reasonCode =
+                        string.IsNullOrWhiteSpace(
+                            outcome.Diagnostics?.reasonCode)
+                            ? outcome.Status ??
+                              string.Empty
+                            : outcome.Diagnostics.reasonCode;
+
+                    job.primaryStage =
+                        string.IsNullOrWhiteSpace(
+                            outcome.Diagnostics?.primaryStage)
+                            ? "BATCH"
+                            : outcome.Diagnostics.primaryStage;
+                }
+                else
+                {
+                    ApplyOutcomeDiagnostics(
+                        job,
+                        outcome,
+                        true);
+                }
 
                 snapshot.schedulerGeneration++;
                 Save();
@@ -648,6 +671,20 @@ namespace BistroBuilder.Editor.Savic
                 job.stageTimings =
                     new List<SavicProcessingStageRecord>();
             }
+        }
+
+        private static bool IsPendingPreparationStatus(
+            string status)
+        {
+            return
+                string.Equals(
+                    status,
+                    "SOURCE_MATERIALIZATION_PENDING",
+                    StringComparison.Ordinal) ||
+                string.Equals(
+                    status,
+                    "SOURCE_IMPORT_PENDING",
+                    StringComparison.Ordinal);
         }
 
         private static string GetPreparationCheckpoint(
