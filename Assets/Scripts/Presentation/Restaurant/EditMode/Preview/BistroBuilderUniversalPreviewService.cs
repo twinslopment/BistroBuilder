@@ -55,6 +55,59 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         Publish();
     }
 
+    public void PublishConstruction(
+        BistroBuilderPreviewDomain domain,
+        BistroBuilderPreviewValidity validity,
+        BistroBuilderPreviewPhase phase,
+        IReadOnlyList<Vector3> candidateSegments,
+        IReadOnlyList<Vector3> ghostSegments,
+        IReadOnlyList<BistroBuilderPreviewBox> volumes,
+        bool hasSnapPoint,
+        Vector3 snapPoint,
+        string message = "")
+    {
+        BeginWrite(
+            ConstructionOwner,
+            domain,
+            validity,
+            phase,
+            message
+        );
+
+        CopySegments(
+            candidateSegments,
+            current.MutableCandidateSegments
+        );
+
+        CopySegments(
+            ghostSegments,
+            current.MutableGhostSegments
+        );
+
+        CopyVolumes(
+            volumes,
+            current.MutableVolumes
+        );
+
+        current.HasSnapPoint =
+            hasSnapPoint;
+
+        current.SnapPoint =
+            hasSnapPoint
+                ? snapPoint
+                : Vector3.zero;
+
+        if (hasSnapPoint &&
+            current.Phase ==
+                BistroBuilderPreviewPhase.Previewing)
+        {
+            current.Phase =
+                BistroBuilderPreviewPhase.Snapped;
+        }
+
+        Publish();
+    }
+
     public void SetGhostSegments(string ownerId, IReadOnlyList<Vector3> segments)
     {
         if (!IsOwner(ownerId)) return;
