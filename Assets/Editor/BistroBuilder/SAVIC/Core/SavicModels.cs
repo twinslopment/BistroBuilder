@@ -80,6 +80,10 @@ namespace BistroBuilder.Editor.Savic
             new SavicImageAuthoringRecord();
         public SavicImageReadinessRecord imageReadiness =
             new SavicImageReadinessRecord();
+        public SavicContentBundleAuthoringRecord contentBundle =
+            new SavicContentBundleAuthoringRecord();
+        public SavicContentBundleReadinessRecord contentBundleReadiness =
+            new SavicContentBundleReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -571,6 +575,39 @@ namespace BistroBuilder.Editor.Savic
         public string mapType = "GENERIC";
         public string targetIconId = string.Empty;
         public string publishedAssetPath = string.Empty;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicContentBundleAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public string schemaId = string.Empty;
+        public int schemaVersion;
+        public string bundleId = string.Empty;
+        public int ingredientCount;
+        public int dishCount;
+        public int recipeCount;
+        public int supplierCount;
+        public string planReason = string.Empty;
+        public string plannedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicContentBundleReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public bool ingredientCatalogValid;
+        public bool dishCatalogValid;
+        public bool recipeCatalogValid;
+        public bool supplierAuthoringValid;
+        public int ingredientsPublished;
+        public int dishesPublished;
+        public int recipesPublished;
+        public int suppliersPublished;
         public string evidence = string.Empty;
         public string validatedUtc = string.Empty;
     }
