@@ -223,16 +223,24 @@ public static class BistroBuilderUniversalPreviewPlayTest
                         "La preview de mobiliario quedó activa después de cancelar.");
 
                     PrepareConstructionTest();
-                    Pointer(30f, 30f, true);
                     break;
 
                 case 5:
-                    Pointer(36f, 34f, true);
+                    Check(coordinator.HasSession,
+                        "Construction no inicializó Draft Session después de su Update real.");
+                    baselineWalls = coordinator.Session.Draft.walls.Count;
+                    Pointer(30f, 30f, true);
                     break;
 
                 case 6:
+                    Pointer(36f, 34f, true);
+                    break;
+
+                case 7:
                     Check(construction.HasActiveGesture,
                         "La herramienta real de construcción no mantiene gesto activo.");
+                    Check(coordinator.Session.Draft.walls.Count == baselineWalls,
+                        "La preview modificó el borrador antes de confirmar.");
                     Check(preview.Current.IsVisible,
                         "La construcción no publicó preview universal.");
                     Check(preview.Current.OwnerId ==
@@ -248,7 +256,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
                     Pointer(36f, 34f, false);
                     break;
 
-                case 7:
+                case 8:
                     Check(coordinator.Session.Draft.walls.Count == baselineWalls + 4,
                         "Soltar la preview no materializó las cuatro paredes esperadas.");
                     Check(construction.TryUndo(out string undoError),
@@ -393,8 +401,8 @@ public static class BistroBuilderUniversalPreviewPlayTest
         construction.SetRoomZone("zone.dining");
         construction.SetMode(BistroBuilderConstructionRuntimeMode.Room);
 
-        Check(coordinator.HasSession, "Construction no inicializó Draft Session.");
-        baselineWalls = coordinator.Session.Draft.walls.Count;
+        // La sesión se crea en el siguiente Update real de la herramienta.
+        // El siguiente stage la comprueba antes de enviar el primer clic.
     }
 
     private static void AssertFurniturePreview(bool validExpected)
