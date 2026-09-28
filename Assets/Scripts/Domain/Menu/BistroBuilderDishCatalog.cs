@@ -148,6 +148,42 @@ public sealed class BistroBuilderDishCatalog : ScriptableObject
     }
 
 #if UNITY_EDITOR
+    public void EditorUpsert(
+        BistroBuilderDishDefinition definition)
+    {
+        if (definition == null)
+            throw new ArgumentNullException(nameof(definition));
+
+        if (!definition.TryValidate(out string error))
+            throw new InvalidOperationException(error);
+
+        if (definitions == null)
+            definitions = new List<BistroBuilderDishDefinition>();
+
+        for (int index = 0; index < definitions.Count; index++)
+        {
+            BistroBuilderDishDefinition current = definitions[index];
+            if (current != null &&
+                string.Equals(
+                    current.DishId,
+                    definition.DishId,
+                    StringComparison.Ordinal))
+            {
+                definitions[index] = definition;
+                if (!TryRebuildIndex(out error))
+                    throw new InvalidOperationException(error);
+                return;
+            }
+        }
+
+        definitions.Add(definition);
+        if (!TryRebuildIndex(out error))
+            throw new InvalidOperationException(error);
+    }
+
+#endif
+
+#if UNITY_EDITOR
     private void OnValidate()
     {
         TryRebuildIndex(out _);
