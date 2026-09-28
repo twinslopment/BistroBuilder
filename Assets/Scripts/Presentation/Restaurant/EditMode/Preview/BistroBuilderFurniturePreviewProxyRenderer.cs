@@ -36,16 +36,6 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     private float currentLift;
     private bool settling;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void EnsureRuntimeProxy()
-    {
-        RestaurantEditInteractionController controller =
-            FindFirstObjectByType<RestaurantEditInteractionController>();
-        if (controller == null) return;
-        if (controller.GetComponent<BistroBuilderFurniturePreviewProxyRenderer>() == null)
-            controller.gameObject.AddComponent<BistroBuilderFurniturePreviewProxyRenderer>();
-    }
-
     private void Awake()
     {
         ResolveDependencies();
