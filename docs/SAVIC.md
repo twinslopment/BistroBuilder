@@ -1624,10 +1624,22 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 [V1 VALIDADO] `Run Image Vertical Probe` PASS. La prueba real confirma publicación de imagen de contenido, perfil de normal map, Sprite + binding a `BBIconCatalog`, persistencia del override tras reconstruir el catálogo, rechazo controlado de WebP e ID UI desconocido. Bloque 10 CERRADO.
 
 ### Bloque 11 — Platos, ingredientes, recetas y proveedores
-[R]
+[V1 CERRADO — PASS]
+
+[V1 IMPLEMENTADO] SAVIC publica bundles estructurados de contenido reutilizando las autoridades canónicas del juego: ingredientes, formatos comerciales, platos, recetas y proveedores/ofertas. La publicación conserva referencias cruzadas estables entre ingrediente, formato, plato, receta, proveedor y oferta, y actualiza los catálogos de forma atómica.
+
+[V1 VALIDADO] `Run Content Bundle Vertical Probe` PASS. Validado en Unity: publicación de ingrediente, formato comercial, plato, receta y proveedor/oferta; contrato de coste por ración; referencias cruzadas; catálogos atómicos; rechazo controlado de CSV/TSV no soportado. Bloque 11 CERRADO.
 
 ### Bloque 12 — CI/headless validation
-[R]
+[V1 IMPLEMENTADO — VALIDACIÓN FINAL EN CURSO]
+
+[V1 IMPLEMENTADO] `SavicV1ClosureGate` ejecuta en una sola pasada los nueve contratos críticos de SAVIC V1: foundation, batch recovery, legacy adoption, incremental invalidation, publication rollback, mass ingestion, construction, images/UI y content bundles. Es invocable desde menú o mediante `BistroBuilder.Editor.Savic.SavicV1ClosureGate.RunFromCommandLine`, genera `Temp/SAVIC/SavicV1ClosureGateReport.json` y devuelve código 0/1 en batch mode.
+
+[V1 VALIDADO EN UNITY EDITOR] `SAVIC V1 CLOSURE GATE - PASS`: 9 PASS / 0 FAIL. Duración observada: 32,4 s. Desglose: foundation 153 ms; batch recovery 360 ms; legacy adoption 266 ms; incremental invalidation 51 ms; publication rollback 1.200 ms; mass ingestion 27.118 ms; construction 1.299 ms; images/UI 1.230 ms; content bundle 728 ms.
+
+[V1 IMPLEMENTADO] `Tools/BistroBuilder/RunSavicV1ClosureGate.ps1` reutiliza `RunUnityBatchSafe.ps1` y ejecuta el Closure Gate con `-batchmode -nographics -accept-apiupdate`, respetando el lock real del proyecto y evitando abrir dos Unity simultáneos. `RunUnityBatchSafe.ps1` admite ahora argumentos Unity adicionales sin alterar su comportamiento por defecto.
+
+[PENDIENTE DE ÚNICO PASS FINAL] Falta ejecutar el nuevo runner batch sobre el proyecto con su `Library`/paquetes ya resueltos. Los intentos sobre un worktree limpio no llegaron a ejecutar SAVIC: el primero falló antes de compilar por IPC de Unity Package Manager y los intentos con `-noUpm` no resolvieron uGUI/TextMeshPro/Input System. Esto es un bloqueo del entorno limpio, no un fallo del Closure Gate ni de SAVIC.
 
 ### Bloque 13 — Intelligence Layer
 [F]
