@@ -25,6 +25,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
 
     private static RestaurantEditInteractionController edit;
     private static RestaurantPlacementTransactionService transaction;
+    private static RestaurantPlacementValidationService validation;
     private static RestaurantPlaceableRegistry registry;
     private static BistroBuilderUniversalPreviewService preview;
     private static BistroBuilderUniversalPreviewRenderer previewRenderer;
@@ -274,6 +275,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
     {
         edit = UnityEngine.Object.FindFirstObjectByType<RestaurantEditInteractionController>();
         transaction = UnityEngine.Object.FindFirstObjectByType<RestaurantPlacementTransactionService>();
+        validation = UnityEngine.Object.FindFirstObjectByType<RestaurantPlacementValidationService>();
         registry = UnityEngine.Object.FindFirstObjectByType<RestaurantPlaceableRegistry>();
         preview = BistroBuilderUniversalPreviewService.GetOrCreate();
         previewRenderer = UnityEngine.Object.FindFirstObjectByType<BistroBuilderUniversalPreviewRenderer>();
@@ -286,6 +288,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
     {
         return edit != null &&
                transaction != null &&
+               validation != null &&
                registry != null &&
                registry.RegisteredPlaceableCount >= 2 &&
                preview != null &&
@@ -349,7 +352,10 @@ public static class BistroBuilderUniversalPreviewPlayTest
             !footprint.BlocksOtherPlacements)
             return false;
 
-        return placeable.GetComponentsInChildren<MeshRenderer>(true).Length > 0;
+        if (placeable.GetComponentsInChildren<MeshRenderer>(true).Length == 0)
+            return false;
+
+        return validation.ValidateCurrentPlacement(member).IsValid;
     }
 
     private static void ConfigureFurnitureCamera()
