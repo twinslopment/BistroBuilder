@@ -18,7 +18,7 @@ namespace BistroBuilder.Editor.Savic
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 ".fbx", ".glb", ".gltf", ".obj",
-                ".png", ".jpg", ".jpeg", ".webp", ".tga", ".psd",
+                ".png", ".jpg", ".jpeg", ".webp", ".tga", ".psd", ".tif", ".tiff",
                 ".json", ".csv"
             };
 
@@ -550,7 +550,9 @@ namespace BistroBuilder.Editor.Savic
                 string.Equals(extension, ".jpeg", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(extension, ".webp", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(extension, ".tga", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(extension, ".psd", StringComparison.OrdinalIgnoreCase))
+                string.Equals(extension, ".psd", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".tif", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".tiff", StringComparison.OrdinalIgnoreCase))
             {
                 return SavicSourceKind.Image;
             }
