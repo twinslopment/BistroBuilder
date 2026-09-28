@@ -116,26 +116,18 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     {
         if (previewService == null) return;
         previewService.PreviewChanged -= HandlePreviewChanged;
-        previewService.PreviewCleared -= HandlePreviewCleared;
         previewService.PreviewChanged += HandlePreviewChanged;
-        previewService.PreviewCleared += HandlePreviewCleared;
     }
 
     private void Unsubscribe()
     {
         if (previewService == null) return;
         previewService.PreviewChanged -= HandlePreviewChanged;
-        previewService.PreviewCleared -= HandlePreviewCleared;
     }
 
     private void HandlePreviewChanged(BistroBuilderUniversalPreviewState state)
     {
         Render(state);
-    }
-
-    private void HandlePreviewCleared()
-    {
-        HideAll();
     }
 
     private void Render(BistroBuilderUniversalPreviewState state)
