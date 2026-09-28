@@ -27,6 +27,8 @@ namespace BistroBuilder.Editor.Savic
 
     internal interface ISavicSourceImportAdapter
     {
+        string BuilderId { get; }
+        string BuilderVersion { get; }
         bool CanImport(SavicManifest manifest);
         SavicSourceImportResult Materialize(SavicManifest manifest);
         SavicSourceImportResult ImportPrepared(SavicManifest manifest);
