@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Autoridad visual única para cualquier operación provisional del modo edición.
@@ -21,7 +22,20 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
     public event Action<BistroBuilderUniversalPreviewState> PreviewChanged;
 
     [RuntimeInitializeOnLoadMethod(
-        RuntimeInitializeLoadType.AfterSceneLoad)]
+        RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterSceneHook()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private static void HandleSceneLoaded(
+        Scene scene,
+        LoadSceneMode loadMode)
+    {
+        EnsureRuntimeInstallation();
+    }
+
     private static void EnsureRuntimeInstallation()
     {
         BistroBuilderUniversalPreviewService service =
