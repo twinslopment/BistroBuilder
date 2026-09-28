@@ -582,7 +582,10 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         if (universalPreviewService == null)
         {
             universalPreviewService =
-                BistroBuilderUniversalPreviewService.GetOrCreate();
+                Application.isPlaying
+                    ? BistroBuilderUniversalPreviewService.GetOrCreate()
+                    : FindFirstObjectByType<
+                        BistroBuilderUniversalPreviewService>();
         }
     }
 
