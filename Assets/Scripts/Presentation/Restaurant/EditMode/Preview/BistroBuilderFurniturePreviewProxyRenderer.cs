@@ -100,7 +100,7 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         if (activeRoot == null || !ReferenceEquals(activeRoot, member))
             return;
 
-        previewService?.MarkConfirmed(
+        previewService?.ClearOwner(
             BistroBuilderUniversalPreviewService.FurnitureOwner);
         settling = true;
     }
