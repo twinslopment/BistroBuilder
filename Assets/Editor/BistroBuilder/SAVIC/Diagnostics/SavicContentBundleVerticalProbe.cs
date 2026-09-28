@@ -473,11 +473,16 @@ namespace BistroBuilder.Editor.Savic
                     SavicContentBundlePublisher
                         .IngredientAuthoringDatabasePath);
 
-            Require(
+            BistroBuilderIngredientAuthoringRecord record = null;
+
+            bool ingredientAuthoringResolved =
                 authoring != null &&
                 authoring.TryGetIngredient(
                     ingredientId,
-                    out BistroBuilderIngredientAuthoringRecord record) &&
+                    out record);
+
+            Require(
+                ingredientAuthoringResolved &&
                 record != null,
                 "Ingredient authoring record is missing.");
 
@@ -582,11 +587,16 @@ namespace BistroBuilder.Editor.Savic
                     SavicContentBundlePublisher
                         .IngredientAuthoringDatabasePath);
 
-            Require(
+            BistroBuilderSupplierAuthoringRecord supplier = null;
+
+            bool supplierResolved =
                 supplierDatabase != null &&
                 supplierDatabase.TryGetSupplier(
                     supplierId,
-                    out BistroBuilderSupplierAuthoringRecord supplier) &&
+                    out supplier);
+
+            Require(
+                supplierResolved &&
                 supplier != null,
                 "Published supplier is missing.");
 
