@@ -1613,7 +1613,15 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 [V1 VALIDADO — BLOQUE 9 / PUERTAS, PAREDES Y VENTANAS] `Run Construction Vertical Probe` PASS. La prueba vertical confirma clasificación, planning, publicación, registro por `definitionId`, materialización real de pared SAVIC, rellenos de puerta y ventana, aislamiento de definiciones y ausencia de collider authority en los huecos. Bloque 9 CERRADO.
 
 ### Bloque 10 — Materiales, imágenes y UI
-[R]
+[V1 VALIDADO — BLOQUE 10 / IMÁGENES, TEXTURAS Y UI] SAVIC dispone de un pipeline de imagen separado del 3D pero integrado en la misma cola, identidad, archivado, SourceMirror, trazabilidad y rollback. Publica tres roles deterministas: `CONTENT_IMAGE`, `MATERIAL_TEXTURE` y `UI_ICON`.
+
+[V1 IMPLEMENTADO] Las imágenes de contenido se publican como Sprite gestionado; los mapas de material usan perfiles TextureImporter explícitos por evidencia nominal (normal, albedo/basecolor, metallic, roughness, smoothness, occlusion, emission y mask) sin inventar agrupaciones de materiales. Los normal maps se importan como `TextureImporterType.NormalMap`, datos lineales y mipmaps; imágenes de color mantienen sRGB cuando corresponde.
+
+[V1 IMPLEMENTADO] Un nombre explícito `ui_<BBIconId>.<ext>` o `ui_<BBIconId>__<sufijo>.<ext>` sustituye únicamente el sprite del `BBIconId` canónico, conserva su rol semántico y queda etiquetado como contenido SAVIC. El instalador/rebuild de Iconography 21B preserva overrides gestionados por SAVIC en lugar de restaurar silenciosamente el SVG base. Un ID UI desconocido se envía a revisión.
+
+[V1 IMPLEMENTADO] PNG/JPG/JPEG/TGA/PSD/TIF/TIFF disponen de adapter Unity V1. WebP puede archivarse por intake pero queda en `NEEDS_REVIEW / IMAGE_FORMAT_UNSUPPORTED` antes de importación, evitando depender de soporte no canónico del importador.
+
+[V1 VALIDADO] `Run Image Vertical Probe` PASS. La prueba real confirma publicación de imagen de contenido, perfil de normal map, Sprite + binding a `BBIconCatalog`, persistencia del override tras reconstruir el catálogo, rechazo controlado de WebP e ID UI desconocido. Bloque 10 CERRADO.
 
 ### Bloque 11 — Platos, ingredientes, recetas y proveedores
 [R]
