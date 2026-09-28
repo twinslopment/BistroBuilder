@@ -245,11 +245,16 @@ namespace BistroBuilder.Editor.Savic
                     AssetDatabase.LoadAssetAtPath<BBIconCatalog>(
                         IconCatalogPath);
 
-                Require(
+                BBIconDefinition rebuiltEntry = default;
+
+                bool rebuildBindingResolved =
                     rebuiltCatalog != null &&
                     rebuiltCatalog.TryGet(
                         BBIconId.StatusCorrect,
-                        out BBIconDefinition rebuiltEntry) &&
+                        out rebuiltEntry);
+
+                Require(
+                    rebuildBindingResolved &&
                     rebuiltEntry.sprite != null &&
                     string.Equals(
                         AssetDatabase.GetAssetPath(
