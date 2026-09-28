@@ -1422,8 +1422,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     public bool IsPlaytestPanelVisible => Application.isPlaying && showPlaytestPanel &&
         !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking &&
-        !(editModeService != null && editModeService.IsEditModeActive &&
-          FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include) != null);
+        FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include) == null;
 
     private void OnGUI()
     {

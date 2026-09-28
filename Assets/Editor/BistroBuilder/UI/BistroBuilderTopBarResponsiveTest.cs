@@ -40,15 +40,16 @@ public static class BistroBuilderTopBarResponsiveTest
                     var edit=UnityEngine.Object.FindFirstObjectByType<RestaurantEditModeService>();if(edit.IsEditModeActive)edit.TryExitEditMode(true,out _);
                     shell=UnityEngine.Object.FindFirstObjectByType<BistroBuilderUiShell>();shell.EnsureShell();typeof(BistroBuilderUiShell).GetMethod("RefreshReadModels",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,null);
                     bar=GameObject.Find(BistroBuilderUiShell.TopBarName).GetComponent<RectTransform>();
+                    Check(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>().IsPlaytestPanelVisible,"Legacy construction panel hidden in normal mode");
                     Check(bar.GetComponentsInChildren<BistroBuilderTopBarArtwork>().Length==11,"Ten complete icons and original logo");
                     hover=Button("Personal").GetComponent<BistroBuilderApprovedTopBarHotspot>();
                     moving=hover.GetComponentInChildren<BistroBuilderTopBarArtwork>().rectTransform;restPosition=moving.localPosition;
                     Check(hover.isActiveAndEnabled && Button("Personal").IsInteractable(),"Hover target active and interactable");
                     if(EventSystem.current.currentInputModule!=null)EventSystem.current.currentInputModule.enabled=false;
-                    hover.OnPointerEnter(new PointerEventData(EventSystem.current));next=EditorApplication.timeSinceStartup+1.5;break;
+                    hover.OnPointerEnter(new PointerEventData(EventSystem.current));Check(hover.HoverAmount>=.4f && moving.localScale.x>1,"Visible hover feedback in pointer-enter frame");hover.OnPointerDown(new PointerEventData(EventSystem.current){button=PointerEventData.InputButton.Left});Check(moving.localScale.x<1,"Immediate press feedback");hover.OnPointerUp(new PointerEventData(EventSystem.current));Check(moving.localScale.x>1,"Immediate release feedback");next=EditorApplication.timeSinceStartup+1.5;break;
                 case 1:
                     if(hover.HoverAmount<.99f){stage--;return;}
-                    Check(hover.HoverAmount>.95f,"170ms hover fade; amount="+hover.HoverAmount+" active="+hover.isActiveAndEnabled);
+                    Check(hover.HoverAmount>.95f,"90ms hover settling; amount="+hover.HoverAmount+" active="+hover.isActiveAndEnabled);
                     Check(moving.localScale.x>1||moving.localPosition!=restPosition,"Independent icon animation");
                     foreach(var size in new[]{new Vector2Int(1920,1080),new Vector2Int(1280,720),new Vector2Int(1024,768),new Vector2Int(800,600),new Vector2Int(2560,1440),new Vector2Int(3440,1440),new Vector2Int(3840,2160)})Capture(size.x,size.y);
                     hover.OnPointerExit(new PointerEventData(EventSystem.current));Button("Personal").onClick.Invoke();break;
@@ -87,6 +88,7 @@ public static class BistroBuilderTopBarResponsiveTest
             Check(buttons.Length==10,"All ten destinations reachable "+width);
             Check(buttons.All(b=>b.GetComponent<BistroBuilderInteractionSurface>()==null),"No generic button styling "+width);
             Check(bar.GetComponentsInChildren<TMP_Text>().Where(t=>t.name=="ApprovedLabel").All(t=>!t.isTextOverflowing&&t.color.r<.3f),"Legible dark labels without clipping "+width);
+            Check(bar.GetComponentsInChildren<BistroBuilderTopBarArtwork>().All(a=>a.mainTexture is Texture2D texture && texture.mipmapCount>1 && texture.filterMode==FilterMode.Trilinear),"Stable filtered icon detail "+width);
             Check(bar.GetComponentsInChildren<BistroBuilderTopBarArtwork>().All(a=>Mathf.Abs(a.rectTransform.rect.width/a.rectTransform.rect.height-a.Aspect)<.01f),"Logo and icons never stretched "+width);
             RenderTexture.active=rt;image=new Texture2D(width,height,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,width,height),0,0);image.Apply();Check(image.GetPixel(width/2,height-15).r>.65f,"Rendered ivory pixels present "+width);File.WriteAllBytes("Logs/TopBarResponsive/bar-"+width+".png",image.EncodeToPNG());
         }finally{

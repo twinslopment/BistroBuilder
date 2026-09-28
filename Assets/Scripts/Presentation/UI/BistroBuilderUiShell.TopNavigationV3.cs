@@ -50,7 +50,7 @@ public sealed partial class BistroBuilderUiShell
             icon.rectTransform.anchorMin=icon.rectTransform.anchorMax=icon.rectTransform.pivot=new Vector2(.5f,.5f);
             var label=NewUi("ApprovedLabel",button.transform).AddComponent<TextMeshProUGUI>();
             label.font=BistroBuilderTypography.Title??BistroBuilderTypography.Body;
-            label.text=title;label.color=new Color(.18f,.13f,.08f);label.fontSize=14;
+            label.text=title;label.color=new Color(.13f,.09f,.045f);label.fontSize=15;label.fontStyle=FontStyles.Bold;
             label.alignment=TextAlignmentOptions.Center;label.textWrappingMode=TextWrappingModes.NoWrap;label.raycastTarget=false;
             label.enableAutoSizing=true;label.fontSizeMin=11;label.fontSizeMax=14;
             approvedLabels.Add(label);
@@ -100,12 +100,12 @@ public sealed partial class BistroBuilderUiShell
         {
             PlaceHeader(approvedCells[i],brand+8+i*cell,5,cell,h-10);
             var art=approvedIconHolders[i].GetComponentInChildren<BistroBuilderTopBarArtwork>();
-            float iconH=Mathf.Min(h*.51f,(cell-16/scale)/art.Aspect);
+            float iconH=Mathf.Min(h*.59f,(cell-16/scale)/art.Aspect);
             float iconW=iconH*art.Aspect;
-            PlaceHeader(approvedIconHolders[i],(cell-iconW)/2,Mathf.Max(4,(h-35/scale-iconH)/2),iconW,iconH);
+            PlaceHeader(approvedIconHolders[i],(cell-iconW)/2,Mathf.Max(3/scale,(h-35/scale-iconH)/2),iconW,iconH);
             art.rectTransform.sizeDelta=new Vector2(iconW,iconH);
             PlaceHeader(approvedLabels[i].rectTransform,3,h-32/scale,cell-6,22/scale);
-            approvedLabels[i].fontSizeMax=Mathf.Clamp(physicalHeight/78,11,20)/scale;
+            approvedLabels[i].fontSizeMax=Mathf.Clamp(physicalHeight/70,12,22)/scale;
             approvedLabels[i].fontSizeMin=10/scale;
         }
         if(activityPanel!=null)activityPanel.anchoredPosition=new Vector2(activityPanel.anchoredPosition.x,-h-20/scale);

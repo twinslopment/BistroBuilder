@@ -29,13 +29,22 @@ public sealed class BistroBuilderTopBarArtwork : MaskableGraphic
     {
         art = Resources.Load<Texture2D>("BistroBuilder/UI/TopBar/Parts/" + entry.texture);
         if (art == null) return;
-        float w = entry.width > 0 ? entry.width : art.width;
-        float h = entry.height > 0 ? entry.height : art.height;
+        // Fit the painted silhouette, not the empty padding of the source crop.
+        float left = float.MaxValue, top = float.MaxValue;
+        float right = float.MinValue, bottom = float.MinValue;
+        for (int i = 0; i < entry.outline.Length; i += 2)
+        {
+            left = Mathf.Min(left, entry.outline[i]);
+            right = Mathf.Max(right, entry.outline[i]);
+            top = Mathf.Min(top, entry.outline[i + 1]);
+            bottom = Mathf.Max(bottom, entry.outline[i + 1]);
+        }
+        float w = Mathf.Max(1, right - left), h = Mathf.Max(1, bottom - top);
         Aspect = w / h;
-        uv = new Rect(entry.x / art.width, 1 - (entry.y + h) / art.height, w / art.width, h / art.height);
+        uv = new Rect((entry.x + left) / art.width, 1 - (entry.y + bottom) / art.height, w / art.width, h / art.height);
         points = new Vector2[entry.outline.Length / 2];
         for (int i = 0; i < points.Length; i++)
-            points[i] = new Vector2(entry.outline[i * 2] / w, 1 - entry.outline[i * 2 + 1] / h);
+            points[i] = new Vector2((entry.outline[i * 2] - left) / w, 1 - (entry.outline[i * 2 + 1] - top) / h);
         triangles = Triangulate(points);
         raycastTarget = false;
         SetAllDirty();

@@ -32,8 +32,6 @@ public sealed class BistroBuilderOptionsScreen : MonoBehaviour
         AudioListener.volume = PlayerPrefs.GetFloat(Pref + "Volume", 1);
         if (PlayerPrefs.HasKey(Pref + "VSync")) QualitySettings.vSyncCount = PlayerPrefs.GetInt(Pref + "VSync");
         if (PlayerPrefs.HasKey(Pref + "FrameRate")) Application.targetFrameRate = PlayerPrefs.GetInt(Pref + "FrameRate");
-        if (PlayerPrefs.HasKey(Pref + "FullScreen") && Array.IndexOf(Environment.GetCommandLineArgs(), "-screen-fullscreen") < 0)
-            Screen.fullScreenMode = PlayerPrefs.GetInt(Pref + "FullScreen") == 1 ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed;
         nextAutosave = Time.unscaledTime + 300;
     }
     void OnDestroy()
@@ -133,8 +131,8 @@ public sealed class BistroBuilderOptionsScreen : MonoBehaviour
                 break;
             case 2:
                 Note("Pantalla y rendimiento", true);
-                Row("Usar pantalla completa", BBIconId.OptionsVideo, () => { Screen.fullScreenMode = FullScreenMode.FullScreenWindow; PlayerPrefs.SetInt(Pref + "FullScreen", 1); status.text = "Pantalla completa activada."; });
-                Row("Usar ventana", BBIconId.OptionsVideo, () => { Screen.fullScreenMode = FullScreenMode.Windowed; PlayerPrefs.SetInt(Pref + "FullScreen", 0); status.text = "Modo ventana activado."; });
+                Row("Usar pantalla completa", BBIconId.OptionsVideo, () => { BistroBuilderDisplaySettings.SetFullscreen(true); PlayerPrefs.SetInt(Pref + "FullScreen", 1); status.text = "Pantalla completa activada."; });
+                Row("Usar ventana", BBIconId.OptionsVideo, () => { BistroBuilderDisplaySettings.SetFullscreen(false); PlayerPrefs.SetInt(Pref + "FullScreen", 0); status.text = "Modo ventana activado."; });
                 ToggleRow("Sincronización vertical", "VSync", QualitySettings.vSyncCount > 0, BBIconId.OptionsVideo, value => QualitySettings.vSyncCount = value ? 1 : 0);
                 foreach (int fps in new[] { 30, 60, 120 }) { int limit = fps; Row("Limitar a " + limit + " FPS", BBIconId.OptionsVideo, () => { Application.targetFrameRate = limit; PlayerPrefs.SetInt(Pref + "FrameRate", limit); status.text = "Límite establecido: " + limit + " FPS. La sincronización vertical tiene prioridad."; }); }
                 break;
