@@ -242,19 +242,38 @@ namespace BistroBuilder.Editor.Savic
                     generated.childCount == 1,
                     "Generated SAVIC wall hierarchy is invalid.");
 
-                Renderer[] wallRenderers =
-                    generated.GetChild(0)
-                        .GetComponentsInChildren<Renderer>(true);
+                Transform wallRoot =
+                    generated.GetChild(0);
+
+                int visualModuleCount = 0;
+                for (int childIndex = 0;
+                     childIndex < wallRoot.childCount;
+                     childIndex++)
+                {
+                    Transform child =
+                        wallRoot.GetChild(childIndex);
+
+                    if (child == null ||
+                        !child.name.StartsWith(
+                            "WallVisualModule_",
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    visualModuleCount++;
+
+                    Require(
+                        child.GetComponentsInChildren<Renderer>(true).Length > 0,
+                        "A tiled SAVIC wall visual module contains no Renderer.");
+                }
 
                 Require(
-                    Array.Exists(
-                        wallRenderers,
-                        renderer =>
-                            renderer != null &&
-                            renderer.gameObject.name.StartsWith(
-                                "WallVisualModule_",
-                                StringComparison.Ordinal)),
-                    "SAVIC wall visual module was not tiled by the canonical materializer.");
+                    visualModuleCount >= 4,
+                    "SAVIC wall visual module was not tiled by the canonical materializer. " +
+                    "Expected multiple wall tiles, found " +
+                    visualModuleCount +
+                    ".");
 
                 openingHost =
                     new GameObject(
