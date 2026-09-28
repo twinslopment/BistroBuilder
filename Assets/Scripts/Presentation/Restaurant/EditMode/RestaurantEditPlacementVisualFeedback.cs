@@ -189,6 +189,10 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             return;
         }
 
+        CaptureOriginalPose(
+            currentMember
+        );
+
         BeginVisualFeedback(
             currentMember
         );
@@ -212,22 +216,9 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             return;
         }
 
-        if (interactionController != null &&
-            interactionController.PlacementTransactionService != null &&
-            interactionController.PlacementTransactionService.TryGetOriginalWorldPose(
-                out Vector3 capturedOriginalPosition,
-                out Quaternion capturedOriginalRotation))
-        {
-            originalWorldPosition = capturedOriginalPosition;
-            originalWorldRotation = capturedOriginalRotation;
-        }
-        else
-        {
-            originalWorldPosition = member.transform.position;
-            originalWorldRotation = member.transform.rotation;
-        }
-
-        hasOriginalPose = true;
+        CaptureOriginalPose(
+            member
+        );
 
         BeginVisualFeedback(
             member
@@ -269,6 +260,12 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         rendererBuffer.Clear();
         rendererSnapshots.Clear();
+
+        if (!useLegacyFullObjectTint)
+        {
+            hasActiveFeedback = false;
+            return;
+        }
 
         member.GetComponentsInChildren(
             includeInactiveRenderers,
@@ -312,6 +309,48 @@ public sealed class RestaurantEditPlacementVisualFeedback :
                 member
             );
         }
+    }
+
+    private void CaptureOriginalPose(
+        RestaurantAreaMember member)
+    {
+        if (member == null)
+        {
+            hasOriginalPose = false;
+            originalWorldPosition = Vector3.zero;
+            originalWorldRotation =
+                Quaternion.identity;
+            return;
+        }
+
+        RestaurantPlacementTransactionService
+            transactionService =
+                interactionController != null
+                    ? interactionController
+                        .PlacementTransactionService
+                    : null;
+
+        if (transactionService != null &&
+            transactionService.TryGetOriginalWorldPose(
+                out Vector3 capturedPosition,
+                out Quaternion capturedRotation))
+        {
+            originalWorldPosition =
+                capturedPosition;
+
+            originalWorldRotation =
+                capturedRotation;
+        }
+        else
+        {
+            originalWorldPosition =
+                member.transform.position;
+
+            originalWorldRotation =
+                member.transform.rotation;
+        }
+
+        hasOriginalPose = true;
     }
 
     /// <summary>
