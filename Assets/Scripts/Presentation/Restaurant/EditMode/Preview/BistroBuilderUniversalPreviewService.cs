@@ -19,7 +19,6 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
 
     public BistroBuilderUniversalPreviewState Current => current;
     public event Action<BistroBuilderUniversalPreviewState> PreviewChanged;
-    public event Action PreviewCleared;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void EnsureRuntimeService()
@@ -200,7 +199,6 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         if (!IsOwner(ownerId)) return;
         current.Reset();
         current.Revision++;
-        PreviewCleared?.Invoke();
         PreviewChanged?.Invoke(current);
     }
 
