@@ -1662,6 +1662,23 @@ public sealed class RestaurantEditInteractionController :
         out RestaurantPlacementTransactionFailureReason
             failureReason)
     {
+        result =
+            default;
+
+        failureReason =
+            RestaurantPlacementTransactionFailureReason.None;
+
+        if (activeMember == null ||
+            transactionService == null ||
+            !transactionService.HasActiveTransaction)
+        {
+            failureReason =
+                RestaurantPlacementTransactionFailureReason
+                    .NoActiveOperation;
+
+            return false;
+        }
+
         candidatePosition =
             worldPosition;
 
