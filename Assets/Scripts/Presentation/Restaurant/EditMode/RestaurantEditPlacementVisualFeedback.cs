@@ -32,6 +32,14 @@ public sealed class RestaurantEditPlacementVisualFeedback :
     private RestaurantEditInteractionController
         interactionController;
 
+    [SerializeField]
+    private BistroBuilderUniversalPreviewService
+        universalPreviewService;
+
+    [Tooltip("Mantiene el tintado verde/rojo antiguo solo como fallback de diagnóstico.")]
+    [SerializeField]
+    private bool useLegacyFullObjectTint;
+
     [Header("Renderizadores")]
 
     [Tooltip(
@@ -126,6 +134,9 @@ public sealed class RestaurantEditPlacementVisualFeedback :
     private RestaurantAreaMember activeMember;
 
     private bool hasActiveFeedback;
+    private bool hasOriginalPose;
+    private Vector3 originalWorldPosition;
+    private Quaternion originalWorldRotation = Quaternion.identity;
 
     private void Awake()
     {
@@ -201,6 +212,23 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             return;
         }
 
+        if (interactionController != null &&
+            interactionController.PlacementTransactionService != null &&
+            interactionController.PlacementTransactionService.TryGetOriginalWorldPose(
+                out Vector3 capturedOriginalPosition,
+                out Quaternion capturedOriginalRotation))
+        {
+            originalWorldPosition = capturedOriginalPosition;
+            originalWorldRotation = capturedOriginalRotation;
+        }
+        else
+        {
+            originalWorldPosition = member.transform.position;
+            originalWorldRotation = member.transform.rotation;
+        }
+
+        hasOriginalPose = true;
+
         BeginVisualFeedback(
             member
         );
@@ -213,8 +241,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         RestaurantPlacementValidationResult result
     )
     {
-        if (!hasActiveFeedback ||
-            activeMember == null)
+        if (activeMember == null)
         {
             return;
         }
@@ -294,6 +321,13 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         RestaurantPlacementValidationResult result
     )
     {
+        PublishUniversalPreview(result);
+
+        if (!useLegacyFullObjectTint)
+        {
+            return;
+        }
+
         Color targetColor;
 
         if (result.IsValid)
@@ -309,6 +343,48 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         ApplyColorToCapturedRenderers(
             targetColor
+        );
+    }
+
+    private void PublishUniversalPreview(
+        RestaurantPlacementValidationResult result
+    )
+    {
+        if (universalPreviewService == null ||
+            activeMember == null)
+        {
+            return;
+        }
+
+        if (!hasOriginalPose)
+        {
+            originalWorldPosition = activeMember.transform.position;
+            originalWorldRotation = activeMember.transform.rotation;
+            hasOriginalPose = true;
+        }
+
+        RestaurantPlacementSnapResult snapResult =
+            interactionController != null &&
+            interactionController.PlacementSnapService != null
+                ? interactionController.PlacementSnapService.CurrentResult
+                : RestaurantPlacementSnapResult.Unsnapped(
+                    activeMember.transform.position,
+                    activeMember.transform.rotation
+                );
+
+        bool showOriginalGhost =
+            interactionController == null ||
+            interactionController.PlacementTransactionService == null ||
+            interactionController.PlacementTransactionService.ActiveTransactionKind !=
+                RestaurantPlacementTransactionKind.CreateNew;
+
+        universalPreviewService.PublishFurniture(
+            activeMember,
+            originalWorldPosition,
+            originalWorldRotation,
+            result,
+            snapResult,
+            showOriginalGhost
         );
     }
 
@@ -404,8 +480,15 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             workingBlock.Clear();
         }
 
+        universalPreviewService?.ClearOwner(
+            BistroBuilderUniversalPreviewService.FurnitureOwner
+        );
+
         activeMember = null;
         hasActiveFeedback = false;
+        hasOriginalPose = false;
+        originalWorldPosition = Vector3.zero;
+        originalWorldRotation = Quaternion.identity;
     }
 
     /// <summary>
@@ -467,6 +550,12 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             TryGetComponent(
                 out interactionController
             );
+        }
+
+        if (universalPreviewService == null)
+        {
+            universalPreviewService =
+                BistroBuilderUniversalPreviewService.GetOrCreate();
         }
     }
 

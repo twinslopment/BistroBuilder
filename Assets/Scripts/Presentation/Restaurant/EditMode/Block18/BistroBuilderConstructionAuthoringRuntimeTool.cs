@@ -26,6 +26,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     [SerializeField] private Camera interactionCamera;
     [SerializeField] private BistroBuilderArchitectureRuntimeMaterializer architectureMaterializer;
     [SerializeField] private RestaurantPlaceableCatalogPanel catalogPanel;
+    [SerializeField] private BistroBuilderUniversalPreviewService universalPreviewService;
 
     [Header("Construction V1")]
     [SerializeField, Min(0.05f)] private float wallThickness = 0.12f;
@@ -69,6 +70,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private LineRenderer snapPulseLine;
     private LineRenderer[] placementFeedbackLines = Array.Empty<LineRenderer>();
     private LineRenderer[] moveGhostLines = Array.Empty<LineRenderer>();
+    private readonly List<Vector3> universalPreviewSegments = new List<Vector3>(32);
+    private readonly List<Vector3> universalGhostSegments = new List<Vector3>(32);
     private WallPose[] placementFeedbackWalls = Array.Empty<WallPose>();
     private PlacementFeedbackKind placementFeedbackKind;
     private Color placementFeedbackColor;
@@ -629,10 +632,39 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         IsPreviewBlocked = !ok;
         Vector2 direction = (host.axisEnd - host.axisStart).normalized;
         Vector2 half = direction * (template.width * 0.5f);
-        EnsurePreviewLineCount(1);
-        SetLine(previewLines[0], center - half, center + half, ok ? ValidColor : InvalidColor, 0.075f);
-        HideUnusedPreviewLines(1);
-        ShowSnapMarker(center, SnapKind.Wall);
+
+        if (universalPreviewService != null)
+        {
+            universalPreviewSegments.Clear();
+            AddUniversalSegment(
+                center - half,
+                center + half,
+                universalPreviewSegments,
+                0.075f);
+
+            universalPreviewService.PublishSegments(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                BistroBuilderPreviewDomain.Opening,
+                ok ? BistroBuilderPreviewValidity.Valid : BistroBuilderPreviewValidity.Invalid,
+                ok ? BistroBuilderPreviewPhase.Ready : BistroBuilderPreviewPhase.Previewing,
+                universalPreviewSegments,
+                ok ? string.Empty : TranslateDiagnostic(error));
+
+            universalPreviewService.SetSnapPoint(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                new Vector3(center.x, 0.07f, center.y),
+                true);
+
+            HideUnusedPreviewLines(0);
+        }
+        else
+        {
+            EnsurePreviewLineCount(1);
+            SetLine(previewLines[0], center - half, center + half, ok ? ValidColor : InvalidColor, 0.075f);
+            HideUnusedPreviewLines(1);
+            ShowSnapMarker(center, SnapKind.Wall);
+        }
+
         if (!ok) SetStatus(TranslateDiagnostic(error));
     }
 
@@ -663,6 +695,75 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         Color color = gesture.State == ConstructionGestureState.Ready ? ValidColor : InvalidColor;
         Vector2 shake = CurrentInvalidShakeOffset();
         int count = gesture.PreviewWalls.Count;
+
+        if (universalPreviewService != null)
+        {
+            universalPreviewSegments.Clear();
+
+            if (count > 0)
+            {
+                for (int i = 0; i < count; i++)
+                    AddUniversalSegment(
+                        gesture.PreviewWalls[i].Start + shake,
+                        gesture.PreviewWalls[i].End + shake,
+                        universalPreviewSegments,
+                        0.065f);
+            }
+            else if (gesture.Kind == ConstructionGestureKind.Wall)
+            {
+                AddUniversalSegment(
+                    gestureAnchor + shake,
+                    currentPoint + shake,
+                    universalPreviewSegments,
+                    0.065f);
+            }
+            else if (gesture.Kind == ConstructionGestureKind.Rectangle)
+            {
+                AddUniversalRectangle(
+                    gestureAnchor + shake,
+                    currentPoint + shake,
+                    universalPreviewSegments,
+                    0.065f);
+            }
+
+            BistroBuilderPreviewDomain domain =
+                gesture.Kind == ConstructionGestureKind.Rectangle
+                    ? BistroBuilderPreviewDomain.Room
+                    : BistroBuilderPreviewDomain.Wall;
+
+            BistroBuilderPreviewValidity validity =
+                gesture.State == ConstructionGestureState.Ready
+                    ? BistroBuilderPreviewValidity.Valid
+                    : BistroBuilderPreviewValidity.Invalid;
+
+            BistroBuilderPreviewPhase phase =
+                gesture.State == ConstructionGestureState.Ready
+                    ? BistroBuilderPreviewPhase.Ready
+                    : BistroBuilderPreviewPhase.Previewing;
+
+            universalPreviewService.PublishSegments(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                domain,
+                validity,
+                phase,
+                universalPreviewSegments,
+                status);
+
+            if (universalGhostSegments.Count > 0)
+                universalPreviewService.SetGhostSegments(
+                    BistroBuilderUniversalPreviewService.ConstructionOwner,
+                    universalGhostSegments);
+
+            if (observedSnapKind != SnapKind.None)
+                universalPreviewService.SetSnapPoint(
+                    BistroBuilderUniversalPreviewService.ConstructionOwner,
+                    new Vector3(observedSnapPoint.x, 0.07f, observedSnapPoint.y),
+                    true);
+
+            HideUnusedPreviewLines(0);
+            return;
+        }
+
         if (count > 0)
         {
             EnsurePreviewLineCount(count);
@@ -681,6 +782,34 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
             RenderRectangleFallback(gestureAnchor + shake, currentPoint + shake, color);
         else
             ClearPreviewLines();
+    }
+
+    private static void AddUniversalSegment(
+        Vector2 a,
+        Vector2 b,
+        List<Vector3> destination,
+        float y)
+    {
+        destination.Add(new Vector3(a.x, y, a.y));
+        destination.Add(new Vector3(b.x, y, b.y));
+    }
+
+    private static void AddUniversalRectangle(
+        Vector2 a,
+        Vector2 b,
+        List<Vector3> destination,
+        float y)
+    {
+        Vector2 min = Vector2.Min(a, b);
+        Vector2 max = Vector2.Max(a, b);
+        Vector2 p0 = min;
+        Vector2 p1 = new Vector2(max.x, min.y);
+        Vector2 p2 = max;
+        Vector2 p3 = new Vector2(min.x, max.y);
+        AddUniversalSegment(p0, p1, destination, y);
+        AddUniversalSegment(p1, p2, destination, y);
+        AddUniversalSegment(p2, p3, destination, y);
+        AddUniversalSegment(p3, p0, destination, y);
     }
 
     private void RenderRectangleFallback(Vector2 a, Vector2 b, Color color)
@@ -822,11 +951,24 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void ClearPreviewLines()
     {
+        universalPreviewService?.ClearOwner(
+            BistroBuilderUniversalPreviewService.ConstructionOwner);
         for (int i = 0; i < previewLines.Length; i++) previewLines[i].enabled = false;
     }
 
     private void ShowSnapMarker(Vector2 point, SnapKind kind)
     {
+        if (universalPreviewService != null)
+        {
+            universalPreviewService.SetSnapPoint(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                new Vector3(point.x, 0.07f, point.y),
+                kind != SnapKind.None);
+            observedSnapKind = kind;
+            observedSnapPoint = point;
+            return;
+        }
+
         EnsureVisuals();
         float r = 0.11f;
         snapMarker.enabled = true;
@@ -853,6 +995,12 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void HideSnapMarker()
     {
+        if (universalPreviewService != null)
+            universalPreviewService.SetSnapPoint(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                Vector3.zero,
+                false);
+
         if (snapMarker != null) snapMarker.enabled = false;
         observedSnapKind = SnapKind.None;
     }
@@ -1023,6 +1171,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         EnsureVisuals();
         Color ghost = new Color(0.72f, 0.82f, 0.92f, 0.32f);
         int count = 0;
+        universalGhostSegments.Clear();
         if (junction.HasValue)
         {
             for (int i = 0; i < queries.Walls.Count; i++)
@@ -1032,21 +1181,62 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                 bool incident = Vector2.Distance(wall.axisStart, junction.Value) <= 0.015f ||
                                 Vector2.Distance(wall.axisEnd, junction.Value) <= 0.015f;
                 if (!incident) continue;
-                EnsureMoveGhostLineCount(count + 1);
-                SetLine(moveGhostLines[count++], wall.axisStart, wall.axisEnd, ghost, 0.035f);
+                if (universalPreviewService != null)
+                {
+                    AddUniversalSegment(
+                        wall.axisStart,
+                        wall.axisEnd,
+                        universalGhostSegments,
+                        0.045f);
+                    count++;
+                }
+                else
+                {
+                    EnsureMoveGhostLineCount(count + 1);
+                    SetLine(moveGhostLines[count++], wall.axisStart, wall.axisEnd, ghost, 0.035f);
+                }
             }
         }
         else if (selectedWall != null)
         {
-            EnsureMoveGhostLineCount(1);
-            SetLine(moveGhostLines[count++], selectedWall.axisStart, selectedWall.axisEnd, ghost, 0.035f);
+            if (universalPreviewService != null)
+            {
+                AddUniversalSegment(
+                    selectedWall.axisStart,
+                    selectedWall.axisEnd,
+                    universalGhostSegments,
+                    0.045f);
+                count++;
+            }
+            else
+            {
+                EnsureMoveGhostLineCount(1);
+                SetLine(moveGhostLines[count++], selectedWall.axisStart, selectedWall.axisEnd, ghost, 0.035f);
+            }
         }
+
+        if (universalPreviewService != null)
+        {
+            universalPreviewService.SetGhostSegments(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                universalGhostSegments);
+            for (int i = 0; i < moveGhostLines.Length; i++)
+                if (moveGhostLines[i] != null) moveGhostLines[i].enabled = false;
+            return;
+        }
+
         for (int i = count; i < moveGhostLines.Length; i++)
             if (moveGhostLines[i] != null) moveGhostLines[i].enabled = false;
     }
 
     private void ClearMoveGhost()
     {
+        universalGhostSegments.Clear();
+        if (universalPreviewService != null)
+            universalPreviewService.SetGhostSegments(
+                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                universalGhostSegments);
+
         for (int i = 0; i < moveGhostLines.Length; i++)
             if (moveGhostLines[i] != null) moveGhostLines[i].enabled = false;
     }
@@ -1138,6 +1328,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         invalidShakeStartedAt = -1f;
         hasLastGestureRenderPoint = false;
         lastGestureVisualState = ConstructionGestureState.Idle;
+        universalPreviewService?.ClearOwner(
+            BistroBuilderUniversalPreviewService.ConstructionOwner);
     }
 
     private void RefreshAfterDraftMutation(string message)
@@ -1356,6 +1548,8 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         if (furnitureController == null) furnitureController = FindFirstObjectByType<RestaurantEditInteractionController>();
         if (architectureMaterializer == null) architectureMaterializer = FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>();
         if (catalogPanel == null) catalogPanel = FindFirstObjectByType<RestaurantPlaceableCatalogPanel>();
+        if (universalPreviewService == null)
+            universalPreviewService = BistroBuilderUniversalPreviewService.GetOrCreate();
         if (interactionCamera == null)
             interactionCamera = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
     }

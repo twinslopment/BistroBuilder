@@ -351,6 +351,9 @@ public sealed class RestaurantEditInteractionController :
     public RestaurantPlacementSnapService PlacementSnapService =>
         placementSnapService;
 
+    public RestaurantPlacementTransactionService PlacementTransactionService =>
+        transactionService;
+
     public RestaurantPlacementLinkedGroupService
         PlacementLinkedGroupService =>
             linkedGroupService;
