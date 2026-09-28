@@ -173,6 +173,42 @@ public sealed class BistroBuilderRecipeCatalog : ScriptableObject
     }
 
 #if UNITY_EDITOR
+    public void EditorUpsert(
+        BistroBuilderRecipeDefinition definition)
+    {
+        if (definition == null)
+            throw new ArgumentNullException(nameof(definition));
+
+        if (!definition.TryValidate(out string error))
+            throw new InvalidOperationException(error);
+
+        if (definitions == null)
+            definitions = new List<BistroBuilderRecipeDefinition>();
+
+        for (int index = 0; index < definitions.Count; index++)
+        {
+            BistroBuilderRecipeDefinition current = definitions[index];
+            if (current != null &&
+                string.Equals(
+                    current.RecipeId,
+                    definition.RecipeId,
+                    StringComparison.Ordinal))
+            {
+                definitions[index] = definition;
+                if (!TryRebuildIndex(out error))
+                    throw new InvalidOperationException(error);
+                return;
+            }
+        }
+
+        definitions.Add(definition);
+        if (!TryRebuildIndex(out error))
+            throw new InvalidOperationException(error);
+    }
+
+#endif
+
+#if UNITY_EDITOR
     private void OnValidate()
     {
         TryRebuildIndex(out _);
