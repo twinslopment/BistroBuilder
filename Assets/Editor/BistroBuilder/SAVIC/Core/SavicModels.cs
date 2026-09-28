@@ -76,6 +76,10 @@ namespace BistroBuilder.Editor.Savic
             new SavicConstructionAuthoringRecord();
         public SavicConstructionReadinessRecord constructionReadiness =
             new SavicConstructionReadinessRecord();
+        public SavicImageAuthoringRecord imageAuthoring =
+            new SavicImageAuthoringRecord();
+        public SavicImageReadinessRecord imageReadiness =
+            new SavicImageReadinessRecord();
         public List<SavicDecisionRecord> decisions = new List<SavicDecisionRecord>();
         public List<SavicArtifactRecord> artifacts = new List<SavicArtifactRecord>();
         public List<SavicValidationRecord> validations = new List<SavicValidationRecord>();
@@ -530,6 +534,43 @@ namespace BistroBuilder.Editor.Savic
         public string definitionId = string.Empty;
         public string role = "UNSET";
         public string prefabAssetPath = string.Empty;
+        public string evidence = string.Empty;
+        public string validatedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicImageAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public string role = "UNSET";
+        public string mapType = "GENERIC";
+        public string targetIconId = string.Empty;
+        public bool importAsSprite;
+        public bool sRgb = true;
+        public bool mipmaps;
+        public int maximumTextureSize = 2048;
+        public string publishedAssetPath = string.Empty;
+        public string planReason = string.Empty;
+        public string plannedUtc = string.Empty;
+    }
+
+    [Serializable]
+    internal sealed class SavicImageReadinessRecord
+    {
+        public bool validated;
+        public string validatorVersion = string.Empty;
+        public bool textureResolvable;
+        public bool spriteResolvable;
+        public bool importerProfileValid;
+        public bool catalogBindingValid;
+        public int widthPixels;
+        public int heightPixels;
+        public bool sourceHasAlpha;
+        public string role = "UNSET";
+        public string mapType = "GENERIC";
+        public string targetIconId = string.Empty;
+        public string publishedAssetPath = string.Empty;
         public string evidence = string.Empty;
         public string validatedUtc = string.Empty;
     }
