@@ -20,10 +20,32 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
     public BistroBuilderUniversalPreviewState Current => current;
     public event Action<BistroBuilderUniversalPreviewState> PreviewChanged;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void EnsureRuntimeService()
+    [RuntimeInitializeOnLoadMethod(
+        RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void EnsureRuntimeInstallation()
     {
-        GetOrCreate();
+        BistroBuilderUniversalPreviewService service =
+            GetOrCreate();
+
+        if (service != null &&
+            service.GetComponent<
+                BistroBuilderUniversalPreviewRenderer>() == null)
+        {
+            service.gameObject.AddComponent<
+                BistroBuilderUniversalPreviewRenderer>();
+        }
+
+        RestaurantEditInteractionController controller =
+            FindFirstObjectByType<
+                RestaurantEditInteractionController>();
+
+        if (controller != null &&
+            controller.GetComponent<
+                BistroBuilderFurniturePreviewProxyRenderer>() == null)
+        {
+            controller.gameObject.AddComponent<
+                BistroBuilderFurniturePreviewProxyRenderer>();
+        }
     }
 
     public static BistroBuilderUniversalPreviewService GetOrCreate()
