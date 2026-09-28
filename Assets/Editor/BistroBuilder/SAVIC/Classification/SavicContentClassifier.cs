@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "4.2.0";
+        internal const string Version = "4.3.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -31,6 +31,41 @@ namespace BistroBuilder.Editor.Savic
                     "sillas",
                     "armchair",
                     "armchairs"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> DoorTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "door", "doors", "puerta", "puertas", "doorway"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> WindowTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "window", "windows", "ventana", "ventanas"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> WallTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "wall", "walls", "pared", "paredes", "partition"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> ConstructionIdentityConflicts =
+            new HashSet<string>(
+                new[]
+                {
+                    "cabinet", "cupboard", "wardrobe", "locker", "drawer",
+                    "fridge", "refrigerator", "freezer", "oven",
+                    "mirror", "painting", "poster", "art",
+                    "shelf", "shelving", "rack", "lamp", "light"
                 },
                 StringComparer.OrdinalIgnoreCase);
 
@@ -210,6 +245,14 @@ namespace BistroBuilder.Editor.Savic
             HashSet<string> tokens =
                 Tokenize(sourceName);
 
+            if (TryClassifyConstruction(
+                    tokens,
+                    analysis,
+                    result))
+            {
+                return result;
+            }
+
             if (TryClassifyChair(
                     tokens,
                     analysis,
@@ -365,6 +408,67 @@ namespace BistroBuilder.Editor.Savic
                     : "No positive classification evidence.";
 
             return result;
+        }
+
+        private static bool TryClassifyConstruction(
+            ISet<string> tokens,
+            SavicModelAnalysisRecord analysis,
+            SavicClassificationRecord result)
+        {
+            if (tokens == null || analysis == null || result == null)
+                return false;
+
+            bool door = ContainsAny(tokens, DoorTokens);
+            bool window = ContainsAny(tokens, WindowTokens);
+            bool wall = ContainsAny(tokens, WallTokens);
+            int identityCount = (door ? 1 : 0) + (window ? 1 : 0) + (wall ? 1 : 0);
+
+            if (identityCount != 1 ||
+                ContainsAny(tokens, ConstructionIdentityConflicts))
+            {
+                return false;
+            }
+
+            string type =
+                door ? "Door" :
+                window ? "Window" :
+                "Wall";
+
+            float score = 0.82f;
+            List<string> evidence =
+                new List<string>(4)
+                {
+                    "name contains an explicit architectural " +
+                    type.ToLowerInvariant() +
+                    " token"
+                };
+
+            if (analysis.hasUsableBounds)
+            {
+                score += 0.10f;
+                evidence.Add("model has usable metric bounds");
+            }
+
+            if (analysis.hasSkinnedMeshes)
+            {
+                score -= 0.25f;
+                evidence.Add("skinned meshes reduce static architecture confidence");
+            }
+
+            score = Clamp01(score);
+            if (score < 0.70f)
+                return false;
+
+            result.family = "Architecture";
+            result.type = type;
+            result.category = "Construction";
+            result.score = score;
+            result.explicitTypeToken = true;
+            result.nameBacked = true;
+            result.geometryBacked = false;
+            result.confidence = score >= 0.88f ? "HIGH" : "MEDIUM";
+            result.evidence = string.Join("; ", evidence);
+            return true;
         }
 
         private static bool TryClassifyGenericPlaceable(
