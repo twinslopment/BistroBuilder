@@ -26,13 +26,24 @@ public static class BistroBuilderOpeningAndWallJoinsPlayTest
         Check(panel.Find("Title").GetComponent<TMP_Text>().font==BistroBuilderTypography.Title,"Recoleta title");
         Check(panel.Find("Subtitle").GetComponent<TMP_Text>().font==BistroBuilderTypography.Body,"Inter text");
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;
-        foreach(var icon in menu.GetComponentsInChildren<BistroBuilderPremisesIcon>())
+        var expectedProfiles=new[]{
+            BistroBuilderStartingPremisesProfile.Empty,
+            BistroBuilderStartingPremisesProfile.Essentials,
+            BistroBuilderStartingPremisesProfile.FinishingTouches
+        };
+        for(int i=0;i<expectedProfiles.Length;i++)
         {
-            icon.transform.parent.GetComponent<Button>().onClick.Invoke();Canvas.ForceUpdateCanvases();
-            Check((BistroBuilderStartingPremisesProfile)typeof(BistroBuilderNewGameOpeningPlayerScreen).GetField("premises",flags).GetValue(screen)==icon.Profile,"select profile "+icon.Profile);
-            Check(icon.canvasRenderer.GetMesh()!=null&&icon.canvasRenderer.GetMesh().vertexCount>0,"vector plan icon "+icon.Profile);
+            var choice=Find<Button>("Choice"+i);
+            Check(choice!=null,"choice card "+i+" exists");
+            choice.onClick.Invoke();Canvas.ForceUpdateCanvases();
+            Check((BistroBuilderStartingPremisesProfile)typeof(BistroBuilderNewGameOpeningPlayerScreen)
+                .GetField("premises",flags).GetValue(screen)==expectedProfiles[i],
+                "select profile "+expectedProfiles[i]);
+            var preview=choice.transform.Find("PremisesPreview")?.GetComponent<RawImage>();
+            Check(preview!=null&&preview.texture!=null,"premises preview "+expectedProfiles[i]);
         }
-        Check(menu.GetComponentsInChildren<BistroBuilderPremisesIcon>().Length==4,"four distinct premise icons");
+        Check(Enumerable.Range(0,3).All(i=>Find<Button>("Choice"+i)!=null),
+            "three current preparation choices");
         var input=menu.GetComponentInChildren<TMP_InputField>();string previous=input.text;input.text="La Esquina";
         Check((string)typeof(BistroBuilderNewGameOpeningPlayerScreen).GetField("restaurantName",flags).GetValue(screen)=="La Esquina","restaurant name input works");input.text=previous;
         Check(EventSystem.current!=null&&EventSystem.current.enabled,"UI input enabled");
@@ -93,7 +104,7 @@ public static class BistroBuilderOpeningAndWallJoinsPlayTest
             camera.transform.SetPositionAndRotation(position,rotation);camera.cullingMask=mask;camera.orthographic=ortho;camera.orthographicSize=size;
             materializer.ClearGenerated();Object.DestroyImmediate(root);
         }
-        System.IO.File.WriteAllText("Logs/OpeningAndWallJoinsTest.txt","PASS: opaque compact menu, Recoleta/Inter, 4 selectable vector icons, name input, menu closure, one wall choice; shared inner/outer mitres, reverse orientation, straight joins, T joins, continuous committed mesh, door collider aperture, draft parity. Captures 1280/1920/ultrawide.");
+        System.IO.File.WriteAllText("Logs/OpeningAndWallJoinsTest.txt","PASS: opaque compact menu, Recoleta/Inter, 3 selectable preparation previews, name input, menu closure, one wall choice; shared inner/outer mitres, reverse orientation, straight joins, T joins, continuous committed mesh, door collider aperture, draft parity. Captures 1280/1920/ultrawide.");
         Debug.Log("BB_WALL_JOINS_PASS");
     }
 }
