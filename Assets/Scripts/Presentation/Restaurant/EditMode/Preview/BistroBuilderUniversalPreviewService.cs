@@ -296,6 +296,15 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         destination.Clear();
         if (conflict == null) return;
 
+        if (conflict is RestaurantPlacementObstacle obstacle)
+        {
+            AddObstacleSegments(
+                obstacle,
+                destination);
+
+            return;
+        }
+
         GameObject go = null;
         if (conflict is Component component) go = component.gameObject;
         else if (conflict is GameObject gameObject) go = gameObject;
