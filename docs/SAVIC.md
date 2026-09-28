@@ -1595,10 +1595,22 @@ Estado actual: implementado en código; pendiente ejecutar la prueba de regresi�
 
 [V1 IMPLEMENTADO] El contrato de integración queda persistido en el manifest (`integrationMode`, `requiredAreaCapabilityId`) y forma parte del fingerprint de publicación. El Quality Gate comprueba que el prefab publicado contiene exactamente la capacidad requerida y que el contenido pasivo no ha recibido componentes de gameplay inventados.
 
-[VALIDACIÓN PENDIENTE EN UNITY — FASE L] Ejecutar `Run Mass Ingestion Real Probe`. El wine cooler real debe terminar en `DONE`, publicarse como `KitchenEquipment`, exigir exactamente `food_production` y no contener `KitchenSystem` ni `BistroBuilderKitchenSpatialAdapter`. El probe conserva además casos sintéticos que verifican que un horno y un pass siguen requiriendo adapter funcional.
+[V1 VALIDADO — FASE L / EQUIPAMIENTO Y CONTRATOS DE GAMEPLAY] `Run Mass Ingestion Real Probe` PASS sobre la base estable de SAVIC. El wine cooler real termina en `DONE`, se publica como `KitchenEquipment` pasivo, exige exactamente la capacidad `food_production` y el Quality Gate confirma que no contiene `KitchenSystem` ni `BistroBuilderKitchenSpatialAdapter`. Los contratos sintéticos de horno y pass permanecen bloqueados con `FUNCTIONAL_ADAPTER_REQUIRED`. Los avisos de duración observados al importar el GLB pesado se consideran trabajo de rendimiento separado y no invalidan el contrato funcional.
 
 ### Bloque 9 — Puertas, paredes y ventanas
-[R]
+[V1 IMPLEMENTACIÓN ACTIVA]
+
+[V1 IMPLEMENTADO — FASE 9A / REGISTRO CONSTRUCTIVO MULTI-ASSET] El `BistroBuilderConstructionAssetKit` conserva las referencias legacy de puerta, ventana y módulos de pared, pero incorpora registros canónicos multi-asset por `definitionId`. Puertas/ventanas almacenan además `openingType`, prefab y tamaño nominal; los módulos visuales de pared almacenan prefab y tamaño nominal. La resolución exacta por ID tiene prioridad y los defaults legacy solo actúan como compatibilidad para `wall.default`, `door` y `window`. Un ID explícito desconocido nunca degrada silenciosamente al asset por defecto.
+
+[V1 IMPLEMENTADO — FASE 9A] `BistroBuilderOpeningVisuals` resuelve ahora el relleno visual mediante `fillDefinitionId` y escala con las dimensiones nominales registradas. `BistroBuilderArchitectureRuntimeMaterializer` resuelve el módulo visual de cada pared mediante `wallDefinitionId`. La geometría de muro, los huecos, Navigation, BBSIS, Finance y Save/Load continúan bajo autoridad del sistema constructivo existente; SAVIC no duplica esos sistemas.
+
+[V1 IMPLEMENTADO — FASE 9B / FAMILIA ARCHITECTURE] El clasificador reconoce explícitamente `Wall`, `Door` y `Window` como familia `Architecture` / categoría `Construction`, con conflictos nominales para evitar falsos positivos como `cabinet_door` o `wall_mirror`. El planner normaliza ancho/grosor entre los ejes horizontales, registra yaw de 90° cuando corresponde, aplica rangos dimensionales seguros por tipo y genera un `CanonicalContentId`/ruta de publicación estable.
+
+[V1 IMPLEMENTADO — FASE 9B] `SavicConstructionPublisher` publica de forma transaccional un prefab visual normalizado, elimina `Collider` y `Rigidbody` de la fuente para no crear una segunda autoridad física, registra el prefab por `definitionId` en el kit constructivo y valida que el mismo ID resuelva exactamente al prefab y dimensiones nominales publicadas. Puertas y ventanas deben quedar sin colliders de paso; las paredes SAVIC son exclusivamente módulos visuales sobre la geometría canónica del materializador.
+
+[V1 IMPLEMENTADO — FASE 9C / PROBE VERTICAL] Existe `Run Construction Vertical Probe`, aislado y reversible. Valida clasificación positiva y negativa, planning, publicación de Wall/Door/Window, registro exacto en el kit, materialización real de una pared SAVIC mediante `BistroBuilderArchitectureRuntimeMaterializer`, rellenos de puerta/ventana mediante `BistroBuilderOpeningVisuals` y ausencia de collider authority en los huecos. Usa el módulo de pared real `BB_Wall_Module_Master_001.glb` y restaura el kit/contenido de prueba al terminar.
+
+[VALIDACIÓN PENDIENTE EN UNITY — BLOQUE 9] Ejecutar `Tools > Bistro Builder > SAVIC > Diagnostics > Run Construction Vertical Probe`. El bloque se cierra únicamente con `[SAVIC] CONSTRUCTION VERTICAL PROBE - PASS`.
 
 ### Bloque 10 — Materiales, imágenes y UI
 [R]
