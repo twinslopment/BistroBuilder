@@ -376,8 +376,8 @@ namespace BistroBuilder.Editor.Savic
                     processedTicks++;
 
                     Require(
-                        processedTicks <= 6000,
-                        "Mass batch exceeded the asynchronous preparation safety tick limit.");
+                        processedTicks <= 32,
+                        "Mass batch exceeded the safety tick limit.");
 
                     bool processed =
                         batch.TickOneIgnoringCooldownForDiagnostics();
@@ -385,15 +385,6 @@ namespace BistroBuilder.Editor.Savic
                     Require(
                         processed,
                         "Mass batch stalled while processable jobs remained.");
-
-                    if (recoveredJobs.PendingProcessCount > 0)
-                    {
-                        // The production scheduler returns to the Editor loop.
-                        // This synchronous diagnostic yields briefly so
-                        // background file I/O and Unity import workers get the
-                        // same opportunity to advance.
-                        System.Threading.Thread.Sleep(5);
-                    }
                 }
 
                 drain.Stop();
@@ -659,16 +650,6 @@ namespace BistroBuilder.Editor.Savic
                                     "MATERIALIZE_SOURCE_MIRROR",
                                     StringComparison.Ordinal));
 
-                SavicProcessingStageRecord mirrorRequestImportStage =
-                    floorMirrorJob.stageTimings?
-                        .FirstOrDefault(
-                            stage =>
-                                stage != null &&
-                                string.Equals(
-                                    stage.stageId,
-                                    "REQUEST_SOURCE_IMPORT",
-                                    StringComparison.Ordinal));
-
                 SavicProcessingStageRecord mirrorPrepareImportStage =
                     floorMirrorJob.stageTimings?
                         .FirstOrDefault(
@@ -725,9 +706,8 @@ namespace BistroBuilder.Editor.Savic
                             .ToString(),
                         StringComparison.Ordinal) &&
                     mirrorMaterializeStage != null &&
-                    mirrorRequestImportStage != null &&
                     mirrorPrepareImportStage != null,
-                    "Floor decoration did not persist materialize/request/import preparation checkpoints.");
+                    "Floor decoration did not persist materialize/import preparation checkpoints.");
 
                 Require(
                     floorMirrorJob.maximumAtomicDurationMilliseconds <
@@ -736,8 +716,6 @@ namespace BistroBuilder.Editor.Savic
                     floorMirrorJob.maximumAtomicDurationMilliseconds +
                     " ms, materialize=" +
                     (mirrorMaterializeStage?.durationMilliseconds ?? -1) +
-                    " ms, request-import=" +
-                    (mirrorRequestImportStage?.durationMilliseconds ?? -1) +
                     " ms, prepare-import=" +
                     (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
                     " ms, reuse-import=" +
@@ -976,8 +954,6 @@ namespace BistroBuilder.Editor.Savic
                     " ms\n" +
                     "Floor mirror stages: materialize " +
                     (mirrorMaterializeStage?.durationMilliseconds ?? -1) +
-                    " / request-import " +
-                    (mirrorRequestImportStage?.durationMilliseconds ?? -1) +
                     " / prepare-import " +
                     (mirrorPrepareImportStage?.durationMilliseconds ?? -1) +
                     " / reuse-import " +

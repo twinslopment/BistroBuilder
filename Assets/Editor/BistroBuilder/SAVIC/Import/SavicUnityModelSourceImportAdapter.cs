@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,14 +9,9 @@ namespace BistroBuilder.Editor.Savic
         ISavicSourceImportAdapter
     {
         internal const string BuilderId = "savic.source-import.unity-model";
-        internal const string BuilderVersion = "2.0.0";
+        internal const string BuilderVersion = "1.1.0";
 
         private readonly SavicStorageLayout layout;
-
-        private readonly Dictionary<string, Task<MirrorMaterializationResult>>
-            materializationTasks =
-                new Dictionary<string, Task<MirrorMaterializationResult>>(
-                    StringComparer.OrdinalIgnoreCase);
 
         internal SavicUnityModelSourceImportAdapter(
             SavicStorageLayout layout)
@@ -99,98 +92,36 @@ namespace BistroBuilder.Editor.Savic
                 layout.ToProjectRelativePath(
                     mirrorAbsolutePath);
 
-            string taskKey =
-                manifest.source.sourceHash +
-                "|" +
-                mirrorAbsolutePath;
-
-            if (!materializationTasks.TryGetValue(
-                    taskKey,
-                    out Task<MirrorMaterializationResult> task))
+            try
             {
-                task =
-                    Task.Run(
-                        () =>
-                            EnsureMirrorMaterialized(
-                                archivedPath,
-                                mirrorAbsolutePath,
-                                manifest.source.sourceHash));
-
-                materializationTasks[taskKey] =
-                    task;
+                bool changed =
+                    EnsureMirrorMaterialized(
+                        archivedPath,
+                        mirrorAbsolutePath,
+                        manifest.source.sourceHash);
 
                 return new SavicSourceImportResult(
                     true,
-                    false,
+                    changed,
                     assetPath,
                     null,
-                    "Unity source mirror materialization started on background I/O.",
-                    true);
+                    changed
+                        ? "Unity source mirror materialized and hash-verified."
+                        : "Existing hash-addressed Unity source mirror reused.");
             }
-
-            if (!task.IsCompleted)
+            catch (Exception exception)
             {
-                return new SavicSourceImportResult(
-                    true,
-                    false,
-                    assetPath,
-                    null,
-                    "Unity source mirror materialization is still running on background I/O.",
-                    true);
-            }
-
-            materializationTasks.Remove(
-                taskKey);
-
-            if (task.IsFaulted)
-            {
-                string taskError =
-                    task.Exception?
-                        .GetBaseException()
-                        .Message ??
-                    "Unknown mirror materialization failure.";
-
                 return new SavicSourceImportResult(
                     false,
                     false,
                     assetPath,
                     null,
                     "Unity source mirror materialization failed: " +
-                    taskError);
+                    exception.Message);
             }
-
-            if (task.IsCanceled)
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    assetPath,
-                    null,
-                    "Unity source mirror materialization was cancelled.");
-            }
-
-            MirrorMaterializationResult result =
-                task.Result;
-
-            if (!result.Succeeded)
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    assetPath,
-                    null,
-                    result.Message);
-            }
-
-            return new SavicSourceImportResult(
-                true,
-                result.Changed,
-                assetPath,
-                null,
-                result.Message);
         }
 
-        public SavicSourceImportResult RequestImport(
+        public SavicSourceImportResult ImportPrepared(
             SavicManifest manifest)
         {
             if (!CanImport(manifest))
@@ -240,136 +171,24 @@ namespace BistroBuilder.Editor.Savic
 
             try
             {
-                Type existingType =
-                    AssetDatabase.GetMainAssetTypeAtPath(
+                UnityEngine.Object existingMainObject =
+                    AssetDatabase.LoadMainAssetAtPath(
                         assetPath);
 
-                if (existingType != null &&
-                    typeof(GameObject).IsAssignableFrom(
-                        existingType))
+                if (existingMainObject is GameObject)
                 {
-                    UnityEngine.Object existing =
-                        AssetDatabase.LoadMainAssetAtPath(
-                            assetPath);
-
                     return new SavicSourceImportResult(
                         true,
                         false,
                         assetPath,
-                        existing,
-                        "Prepared Unity source mirror was already imported.");
+                        existingMainObject,
+                        "Prepared Unity source mirror already has a valid imported GameObject.");
                 }
 
-                // Deliberately avoid ForceSynchronousImport and ForceUpdate.
-                // Source mirrors are content-addressed, so a new byte payload
-                // receives a new path. Unity's Asset Pipeline may therefore
-                // import the requested asset using its configured worker mode.
                 AssetDatabase.ImportAsset(
                     assetPath,
-                    ImportAssetOptions.Default);
-
-                Type requestedType =
-                    AssetDatabase.GetMainAssetTypeAtPath(
-                        assetPath);
-
-                if (requestedType != null &&
-                    typeof(GameObject).IsAssignableFrom(
-                        requestedType))
-                {
-                    UnityEngine.Object imported =
-                        AssetDatabase.LoadMainAssetAtPath(
-                            assetPath);
-
-                    return new SavicSourceImportResult(
-                        true,
-                        true,
-                        assetPath,
-                        imported,
-                        "Unity source import completed while the request was being scheduled.");
-                }
-
-                return new SavicSourceImportResult(
-                    true,
-                    true,
-                    assetPath,
-                    null,
-                    "Unity source import requested through the non-forced Asset Pipeline.",
-                    true);
-            }
-            catch (Exception exception)
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    assetPath,
-                    null,
-                    "Unity source import request failed: " +
-                    exception.Message);
-            }
-        }
-
-        public SavicSourceImportResult ImportPrepared(
-            SavicManifest manifest)
-        {
-            if (!CanImport(manifest))
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    string.Empty,
-                    null,
-                    "No compatible 3D source import adapter is available.");
-            }
-
-            ValidateManifest(manifest);
-
-            string mirrorAbsolutePath =
-                layout.GetUnitySourceMirrorPath(
-                    manifest.source.sourceHash,
-                    manifest.source.originalFileName);
-
-            string assetPath =
-                layout.ToProjectRelativePath(
-                    mirrorAbsolutePath);
-
-            if (!File.Exists(mirrorAbsolutePath))
-            {
-                return new SavicSourceImportResult(
-                    false,
-                    false,
-                    assetPath,
-                    null,
-                    "Prepared Unity source mirror is missing.");
-            }
-
-            try
-            {
-                Type mainType =
-                    AssetDatabase.GetMainAssetTypeAtPath(
-                        assetPath);
-
-                if (mainType == null)
-                {
-                    return new SavicSourceImportResult(
-                        true,
-                        false,
-                        assetPath,
-                        null,
-                        "Unity source import is still pending in the Asset Pipeline.",
-                        true);
-                }
-
-                if (!typeof(GameObject).IsAssignableFrom(
-                        mainType))
-                {
-                    return new SavicSourceImportResult(
-                        false,
-                        false,
-                        assetPath,
-                        null,
-                        "Imported 3D source main object type is not a GameObject: " +
-                        mainType.FullName);
-                }
+                    ImportAssetOptions.ForceSynchronousImport |
+                    ImportAssetOptions.ForceUpdate);
 
                 UnityEngine.Object mainObject =
                     AssetDatabase.LoadMainAssetAtPath(
@@ -378,19 +197,18 @@ namespace BistroBuilder.Editor.Savic
                 if (mainObject == null)
                 {
                     return new SavicSourceImportResult(
-                        true,
                         false,
+                        true,
                         assetPath,
                         null,
-                        "Unity source type is registered, but the imported object is not ready yet.",
-                        true);
+                        "Unity imported no main object from the prepared source.");
                 }
 
                 if (mainObject is not GameObject)
                 {
                     return new SavicSourceImportResult(
                         false,
-                        false,
+                        true,
                         assetPath,
                         mainObject,
                         "Imported 3D source main object is not a GameObject.");
@@ -398,19 +216,19 @@ namespace BistroBuilder.Editor.Savic
 
                 return new SavicSourceImportResult(
                     true,
-                    false,
+                    true,
                     assetPath,
                     mainObject,
-                    "Prepared Unity source mirror import is ready.");
+                    "Prepared Unity source mirror imported successfully.");
             }
             catch (Exception exception)
             {
                 return new SavicSourceImportResult(
                     false,
-                    false,
+                    true,
                     assetPath,
                     null,
-                    "Unity source import readiness check failed: " +
+                    "Unity source import failed: " +
                     exception.Message);
             }
         }
@@ -422,36 +240,19 @@ namespace BistroBuilder.Editor.Savic
                 Materialize(
                     manifest);
 
-            if (!materialized.Succeeded ||
-                materialized.Pending)
-            {
+            if (!materialized.Succeeded)
                 return materialized;
-            }
-
-            SavicSourceImportResult requested =
-                RequestImport(
-                    manifest);
-
-            if (!requested.Succeeded)
-                return requested;
-
-            if (requested.MainObject is GameObject)
-                return requested;
 
             SavicSourceImportResult imported =
                 ImportPrepared(
                     manifest);
 
-            if (!imported.Succeeded ||
-                imported.Pending)
-            {
+            if (!imported.Succeeded)
                 return imported;
-            }
 
             return new SavicSourceImportResult(
                 true,
                 materialized.Changed ||
-                requested.Changed ||
                 imported.Changed,
                 imported.AssetPath,
                 imported.MainObject,
@@ -556,11 +357,10 @@ namespace BistroBuilder.Editor.Savic
                 throw new InvalidOperationException("Manifest has no archived source path.");
         }
 
-        private static MirrorMaterializationResult
-            EnsureMirrorMaterialized(
-                string archivedPath,
-                string mirrorAbsolutePath,
-                string expectedHash)
+        private bool EnsureMirrorMaterialized(
+            string archivedPath,
+            string mirrorAbsolutePath,
+            string expectedHash)
         {
             string mirrorDirectory =
                 Path.GetDirectoryName(
@@ -583,10 +383,7 @@ namespace BistroBuilder.Editor.Savic
                         expectedHash,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return new MirrorMaterializationResult(
-                        true,
-                        false,
-                        "Existing hash-addressed Unity source mirror verified on background I/O.");
+                    return false;
                 }
             }
 
@@ -597,11 +394,7 @@ namespace BistroBuilder.Editor.Savic
                     Path.GetFileName(
                         mirrorAbsolutePath) +
                     ".savic-" +
-                    expectedHash.Substring(
-                        0,
-                        Math.Min(
-                            12,
-                            expectedHash.Length)) +
+                    Guid.NewGuid().ToString("N") +
                     ".tmp");
 
             string backupPath =
@@ -610,13 +403,6 @@ namespace BistroBuilder.Editor.Savic
 
             try
             {
-                if (File.Exists(
-                        tempPath))
-                {
-                    File.Delete(
-                        tempPath);
-                }
-
                 string tempHash =
                     CopyFileAndComputeSha256(
                         archivedPath,
@@ -627,9 +413,7 @@ namespace BistroBuilder.Editor.Savic
                         expectedHash,
                         StringComparison.OrdinalIgnoreCase))
                 {
-                    return new MirrorMaterializationResult(
-                        false,
-                        false,
+                    throw new IOException(
                         "Archived source failed SHA-256 integrity validation while materializing the Unity mirror.");
                 }
 
@@ -663,10 +447,7 @@ namespace BistroBuilder.Editor.Savic
                         mirrorAbsolutePath);
                 }
 
-                return new MirrorMaterializationResult(
-                    true,
-                    true,
-                    "Unity source mirror materialized and hash-verified on background I/O.");
+                return true;
             }
             finally
             {
@@ -753,23 +534,6 @@ namespace BistroBuilder.Editor.Savic
                     hash,
                     value =>
                         value.ToString("x2")));
-        }
-
-        private readonly struct MirrorMaterializationResult
-        {
-            internal MirrorMaterializationResult(
-                bool succeeded,
-                bool changed,
-                string message)
-            {
-                Succeeded = succeeded;
-                Changed = changed;
-                Message = message ?? string.Empty;
-            }
-
-            internal bool Succeeded { get; }
-            internal bool Changed { get; }
-            internal string Message { get; }
         }
 
     }
