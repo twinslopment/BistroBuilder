@@ -158,7 +158,75 @@ La cámara profesional actual pasa a considerarse el núcleo del sistema global 
 
 La ampliación debe respetar el comportamiento estable ya conseguido en 369A/369B/369C. Se amplía el sistema; no se rehace gratuitamente.
 
-## 8. Registro de próximas decisiones
+## 8. Decisión aprobada 005 — BB Universal Preview System
 
-Las nuevas decisiones aprobadas se añadirán como secciones numeradas `005`, `006`, etc.
+**Estado:** APROBADO  
+**Viabilidad técnica:** CONFIRMADA.  
+**Implementación:** fundación V1 creada en `feature/bb-universal-preview-v1`.
+
+### Objetivo
+
+Bistro Builder tendrá un único sistema transversal de preview para edición y construcción. Los sistemas funcionales siguen siendo autoridad sobre sus reglas; el sistema universal es la autoridad sobre cómo se representa cualquier estado provisional al jugador.
+
+### Alcance
+
+El mismo núcleo visual debe servir para:
+
+- mobiliario y equipamiento;
+- paredes;
+- habitaciones;
+- puertas y ventanas;
+- superficies;
+- módulos estructurales;
+- zonas y futuras herramientas de edición que necesiten previsualización.
+
+No se crearán sistemas visuales independientes por familia salvo un adaptador especializado que publique sus datos en el núcleo universal.
+
+### Principios visuales
+
+- Aspecto elegante, sobrio y de juego comercial.
+- Objeto real o representación visual fiel; no hologramas genéricos.
+- Elevación visual suave al transportar mobiliario.
+- Huella/contorno de colocación limpia y discreta.
+- Ghost tenue de la posición anterior cuando aporte información.
+- Snapping con guías breves y pulso suave.
+- Posición válida con confirmación visual contenida.
+- Posición inválida mostrando el conflicto de forma localizada siempre que los datos existentes lo permitan.
+- Confirmación con asentamiento suave y retirada de ayudas.
+- Sin tintar por defecto el objeto completo de verde/rojo.
+- Sin cuadrículas, flechas o líneas técnicas permanentes cuando no sean necesarias.
+
+### Arquitectura aprobada
+
+- `BistroBuilderUniversalPreviewService` mantiene el estado visual provisional común.
+- `BistroBuilderUniversalPreviewRenderer` representa guías, huellas, ghost, conflicto y snap.
+- `BistroBuilderFurniturePreviewProxyRenderer` separa la presentación visual del mobiliario mientras se transporta, permitiendo elevación y asentamiento sin trasladar esa animación a las reglas espaciales.
+- El controlador de mobiliario publica su validación y snapping existentes en el sistema universal.
+- La herramienta de construcción publica paredes, habitaciones y huecos en el mismo núcleo.
+- Los previews anteriores de `feature/18n-construction-authoring-v1` se conservan como referencia y fuente de comportamiento válido; no se descartan sin motivo.
+
+### Sistemas existentes que conservan autoridad
+
+- BBSIS decide viabilidad y requisitos espaciales cuando corresponda.
+- Navigation & Crowd Flow conserva la autoridad sobre circulación.
+- Placement Validation conserva la autoridad de colocación.
+- Snapping propone posiciones, pero no confirma.
+- Las transacciones de edición siguen separando provisional y confirmado.
+- Undo/Redo, Save/Load y gameplay solo consideran definitivos los cambios confirmados.
+- Construction Authoring conserva su modelo de borrador, geometría y materialización.
+- SAVIC aporta identidad y datos de los assets; no decide la presentación de preview.
+
+### Regla de extensibilidad
+
+Una futura herramienta de superficies, módulos, BBPLFS u otra familia no debe crear otra estética de preview. Debe publicar su candidato, validez, snap, ghost y conflictos en BB Universal Preview System.
+
+### Criterio de aceptación
+
+El sistema se considerará definitivo cuando una operación equivalente tenga el mismo lenguaje visual en muebles y construcción, mantenga intactas las reglas existentes y permita cancelar, confirmar, deshacer, rehacer, guardar y recargar sin divergencias.
+
+**Fundación técnica inicial:** commit `62bd2f2c`.
+
+## 9. Registro de próximas decisiones
+
+Las nuevas decisiones aprobadas se añadirán como secciones numeradas `006`, `007`, etc.
 Cada sección deberá incluir comportamiento visible, reglas, integración con sistemas existentes y criterio de aceptación.
