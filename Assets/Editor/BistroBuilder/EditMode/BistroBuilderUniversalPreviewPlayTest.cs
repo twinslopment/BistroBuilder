@@ -369,6 +369,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
     private static void ConfigureFurnitureCamera()
     {
         EnsureCamera();
+        EnsureDiagnosticMouse();
 
         testCamera.orthographic = true;
         testCamera.orthographicSize = 5f;
@@ -377,6 +378,12 @@ public static class BistroBuilderUniversalPreviewPlayTest
         testCamera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         SetPrivateField(edit, "interactionCamera", testCamera);
+
+        // Mantiene el puntero diagnóstico exactamente sobre la pose
+        // original antes de abrir Move. En el siguiente frame el
+        // Update real del controlador publicará esa misma pose válida
+        // en lugar de leer la posición física del ratón del usuario.
+        QueuePointerAtWorld(originalPosition, false);
     }
 
     private static void PrepareConstructionTest()
@@ -390,13 +397,7 @@ public static class BistroBuilderUniversalPreviewPlayTest
 
         SetPrivateField(construction, "interactionCamera", testCamera);
 
-        if (diagnosticMouse == null)
-            diagnosticMouse = InputSystem.AddDevice<Mouse>();
-
-        InputSystem.settings.backgroundBehavior =
-            InputSettings.BackgroundBehavior.IgnoreFocus;
-        InputSystem.settings.editorInputBehaviorInPlayMode =
-            InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+        EnsureDiagnosticMouse();
 
         construction.SetRoomZone("zone.dining");
         construction.SetMode(BistroBuilderConstructionRuntimeMode.Room);
@@ -442,10 +443,27 @@ public static class BistroBuilderUniversalPreviewPlayTest
 
     private static void Pointer(float x, float z, bool down)
     {
-        Vector2 screen =
-            testCamera.WorldToScreenPoint(new Vector3(x, 0f, z));
+        QueuePointerAtWorld(new Vector3(x, 0f, z), down);
+    }
 
+    private static void EnsureDiagnosticMouse()
+    {
+        if (diagnosticMouse == null)
+            diagnosticMouse = InputSystem.AddDevice<Mouse>();
+
+        InputSystem.settings.backgroundBehavior =
+            InputSettings.BackgroundBehavior.IgnoreFocus;
+        InputSystem.settings.editorInputBehaviorInPlayMode =
+            InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+    }
+
+    private static void QueuePointerAtWorld(Vector3 worldPosition, bool down)
+    {
+        EnsureDiagnosticMouse();
+
+        Vector2 screen = testCamera.WorldToScreenPoint(worldPosition);
         MouseState state = new MouseState { position = screen };
+
         if (down)
             state = state.WithButton(MouseButton.Left);
 
