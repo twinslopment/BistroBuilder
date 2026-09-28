@@ -2,15 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Proporciona feedback visual durante la colocación de objetos.
+/// Puente entre la validación de colocación y BB Universal Preview.
 ///
-/// Comportamiento:
-/// - Colocación válida: aplica el color válido.
-/// - Colocación inválida: aplica el color inválido.
-/// - Confirmación o cancelación: restaura el estado visual previo.
-///
-/// Utiliza MaterialPropertyBlock para no crear copias de
-/// materiales ni modificar materiales compartidos.
+/// El comportamiento principal publica huella, ghost, snap y conflicto
+/// en el sistema universal. El antiguo tintado completo verde/rojo se
+/// conserva únicamente como fallback de diagnóstico opcional.
 ///
 /// No utiliza Update. Reacciona exclusivamente a eventos del
 /// controlador de interacción.
@@ -40,7 +36,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
     [SerializeField]
     private bool useLegacyFullObjectTint;
 
-    [Header("Renderizadores")]
+    [Header("Fallback legacy de renderizadores")]
 
     [Tooltip(
         "Incluye renderizadores de hijos inactivos del objeto."
