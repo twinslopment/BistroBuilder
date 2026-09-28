@@ -3,27 +3,25 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
 
 /// <summary>
-/// Regresión independiente del preview universal de construcción.
-/// Reutiliza el patrón de Mouse/InputSystem ya empleado por la regresión
-/// de construcción del proyecto, sin reflection ni modificación de estado privado.
+/// Regresión determinista del preview universal de construcción.
+/// No simula ratón, no usa reflection y no toca estado privado.
+/// La entrada de ratón tiene su propia regresión consolidada en el proyecto.
 /// </summary>
 [InitializeOnLoad]
 public static class BistroBuilderUniversalPreviewConstructionRegression
 {
-    private const string Armed = "BB.UniversalPreviewV3.Construction";
-    private const string ScenePath = "Assets/Scenes/Prototype_Restaurant.unity";
+    private const string Armed =
+        "BB.UniversalPreviewV3.Construction";
+
+    private const string ScenePath =
+        "Assets/Scenes/Prototype_Restaurant.unity";
 
     private static BistroBuilderConstructionAuthoringRuntimeTool tool;
     private static BistroBuilderEditRuntimeCoordinator coordinator;
     private static RestaurantEditInteractionController editController;
     private static BistroBuilderUniversalPreviewService preview;
-
-    private static Mouse mouse;
-    private static Camera camera;
 
     private static int baselineWalls;
     private static int stage;
@@ -34,7 +32,8 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
 
     static BistroBuilderUniversalPreviewConstructionRegression()
     {
-        EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        EditorApplication.playModeStateChanged +=
+            HandlePlayModeStateChanged;
     }
 
     [MenuItem(
@@ -43,10 +42,19 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         52061)]
     public static void Run()
     {
-        SessionState.SetBool(Armed, true);
-        SessionState.SetBool(Armed + ".Pass", false);
-        EditorSceneManager.OpenScene(ScenePath);
-        EditorApplication.isPlaying = true;
+        SessionState.SetBool(
+            Armed,
+            true);
+
+        SessionState.SetBool(
+            Armed + ".Pass",
+            false);
+
+        EditorSceneManager.OpenScene(
+            ScenePath);
+
+        EditorApplication.isPlaying =
+            true;
     }
 
     public static void RunBatch()
@@ -57,36 +65,61 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
     private static void HandlePlayModeStateChanged(
         PlayModeStateChange state)
     {
-        if (!SessionState.GetBool(Armed, false))
+        if (!SessionState.GetBool(
+                Armed,
+                false))
+        {
             return;
+        }
 
-        if (state == PlayModeStateChange.EnteredPlayMode)
+        if (state ==
+            PlayModeStateChange.EnteredPlayMode)
         {
             stage = 0;
             lastFrame = -1;
             failure = null;
-            next = EditorApplication.timeSinceStartup + 3d;
-            deadline = EditorApplication.timeSinceStartup + 90d;
-            EditorApplication.update += Tick;
-            Application.logMessageReceived += HandleLog;
+
+            next =
+                EditorApplication.timeSinceStartup + 3d;
+
+            deadline =
+                EditorApplication.timeSinceStartup + 90d;
+
+            EditorApplication.update +=
+                Tick;
+
+            Application.logMessageReceived +=
+                HandleLog;
+
             return;
         }
 
-        if (state != PlayModeStateChange.EnteredEditMode)
+        if (state !=
+            PlayModeStateChange.EnteredEditMode)
+        {
             return;
+        }
 
-        EditorApplication.update -= Tick;
-        Application.logMessageReceived -= HandleLog;
+        EditorApplication.update -=
+            Tick;
+
+        Application.logMessageReceived -=
+            HandleLog;
 
         bool passed =
             SessionState.GetBool(
                 Armed + ".Pass",
                 false);
 
-        SessionState.SetBool(Armed, false);
+        SessionState.SetBool(
+            Armed,
+            false);
 
         if (Application.isBatchMode)
-            EditorApplication.Exit(passed ? 0 : 1);
+        {
+            EditorApplication.Exit(
+                passed ? 0 : 1);
+        }
     }
 
     private static void HandleLog(
@@ -98,7 +131,9 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
             type == LogType.Assert)
         {
             failure =
-                message + "\n" + stackTrace;
+                message +
+                "\n" +
+                stackTrace;
         }
     }
 
@@ -112,7 +147,7 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         }
 
         next =
-            EditorApplication.timeSinceStartup + 0.25d;
+            EditorApplication.timeSinceStartup + 0.15d;
 
         lastFrame =
             Time.frameCount;
@@ -120,11 +155,17 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         try
         {
             if (failure != null)
-                throw new InvalidOperationException(failure);
+            {
+                throw new InvalidOperationException(
+                    failure);
+            }
 
-            if (EditorApplication.timeSinceStartup > deadline)
+            if (EditorApplication.timeSinceStartup >
+                deadline)
+            {
                 throw new TimeoutException(
                     "Construction preview regression timed out.");
+            }
 
             switch (stage)
             {
@@ -143,34 +184,33 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                         editController.TryEnterEditMode(),
                         "No se pudo entrar en modo edición.");
 
-                    ConfigureInputAndCamera();
-
-                    tool.SetRoomZone("zone.dining");
-                    tool.SetMode(
-                        BistroBuilderConstructionRuntimeMode.Room);
-
                     break;
 
                 case 1:
                     Check(
+                        coordinator.HasSession ||
+                        !tool.HasDraftSession,
+                        "Estado de Draft Session incoherente.");
+
+                    Check(
+                        tool.TryPreviewRoomAtPlanPoints(
+                            new Vector2(30f, 30f),
+                            new Vector2(36f, 34f),
+                            "zone.dining",
+                            out string previewError),
+                        "No se pudo crear la preview de habitación: " +
+                        previewError);
+
+                    Check(
                         coordinator.HasSession,
-                        "Construction no inicializó Draft Session.");
+                        "La preview no inicializó Draft Session.");
 
                     baselineWalls =
                         coordinator.Session.Draft.walls.Count;
 
-                    Pointer(30f, 30f, true);
                     break;
 
                 case 2:
-                    Pointer(36f, 34f, true);
-                    break;
-
-                case 3:
-                    Check(
-                        tool.HasActiveGesture,
-                        "La habitación no mantiene gesto activo.");
-
                     Check(
                         coordinator.Session.Draft.walls.Count ==
                             baselineWalls,
@@ -178,38 +218,34 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
 
                     AssertConstructionPreview();
 
-                    Pointer(36f, 34f, false);
+                    Check(
+                        tool.TryCancelDraft(
+                            out string cancelError),
+                        "No se pudo cancelar el borrador de preview: " +
+                        cancelError);
+
                     break;
 
-                case 4:
+                case 3:
                     Check(
-                        coordinator.Session.Draft.walls.Count ==
-                            baselineWalls + 4,
-                        "Soltar la habitación no creó cuatro paredes.");
+                        !coordinator.HasSession,
+                        "Cancelar no cerró la Draft Session.");
 
                     Check(
-                        tool.TryUndo(out string undoError),
-                        "Undo falló: " + undoError);
-
-                    Check(
-                        coordinator.Session.Draft.walls.Count ==
-                            baselineWalls,
-                        "Undo no restauró el borrador inicial.");
-
-                    Check(
-                        tool.TryCancelDraft(out string cancelError),
-                        "No se pudo cerrar el borrador de prueba: " +
-                        cancelError);
+                        !preview.Current.IsVisible,
+                        "La preview siguió visible tras cancelar.");
 
                     tool.SetMode(
                         BistroBuilderConstructionRuntimeMode.Furniture);
 
-                    editController.TryExitEditMode(true);
+                    editController.TryExitEditMode(
+                        true);
 
                     Finish(
                         true,
-                        "room preview aislada / 4 segmentos / " +
-                        "4 volúmenes / confirmación / undo");
+                        "preview aislada / 4 segmentos / " +
+                        "4 volúmenes / dimensiones configuradas / " +
+                        "cancelación limpia");
 
                     return;
             }
@@ -220,26 +256,33 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         {
             Finish(
                 false,
-                "Stage " + stage + ": " + error);
+                "Stage " +
+                stage +
+                ": " +
+                error);
         }
     }
 
     private static void ResolveDependencies()
     {
         tool =
-            UnityEngine.Object.FindFirstObjectByType<
-                BistroBuilderConstructionAuthoringRuntimeTool>();
+            UnityEngine.Object
+                .FindFirstObjectByType<
+                    BistroBuilderConstructionAuthoringRuntimeTool>();
 
         coordinator =
-            UnityEngine.Object.FindFirstObjectByType<
-                BistroBuilderEditRuntimeCoordinator>();
+            UnityEngine.Object
+                .FindFirstObjectByType<
+                    BistroBuilderEditRuntimeCoordinator>();
 
         editController =
-            UnityEngine.Object.FindFirstObjectByType<
-                RestaurantEditInteractionController>();
+            UnityEngine.Object
+                .FindFirstObjectByType<
+                    RestaurantEditInteractionController>();
 
         preview =
-            BistroBuilderUniversalPreviewService.GetOrCreate();
+            BistroBuilderUniversalPreviewService
+                .GetOrCreate();
     }
 
     private static bool DependenciesReady()
@@ -254,39 +297,6 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                    BistroBuilderUniversalPreviewRenderer>() != null;
     }
 
-    private static void ConfigureInputAndCamera()
-    {
-        if (mouse != null)
-            InputSystem.RemoveDevice(mouse);
-
-        mouse =
-            InputSystem.AddDevice<Mouse>();
-
-        InputSystem.settings.backgroundBehavior =
-            InputSettings.BackgroundBehavior.IgnoreFocus;
-
-        InputSystem.settings.editorInputBehaviorInPlayMode =
-            InputSettings.EditorInputBehaviorInPlayMode
-                .AllDeviceInputAlwaysGoesToGameView;
-
-        camera =
-            new GameObject(
-                "BB_UniversalPreview_ConstructionRegressionCamera")
-            .AddComponent<Camera>();
-
-        camera.orthographic = true;
-        camera.orthographicSize = 12f;
-        camera.transform.position =
-            new Vector3(33f, 30f, 32f);
-        camera.transform.rotation =
-            Quaternion.Euler(90f, 0f, 0f);
-        camera.depth = 100f;
-
-        Check(
-            tool.TrySetInteractionCamera(camera),
-            "Construction rechazó la cámara de interacción.");
-    }
-
     private static void AssertConstructionPreview()
     {
         BistroBuilderUniversalPreviewState state =
@@ -298,7 +308,8 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
 
         Check(
             state.OwnerId ==
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                BistroBuilderUniversalPreviewService
+                    .ConstructionOwner,
             "La preview activa no pertenece a Construction.");
 
         Check(
@@ -327,74 +338,49 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                 state.Volumes[i];
 
             Check(
-                Mathf.Abs(box.Size.y - tool.WallHeight) <= 0.001f,
+                Mathf.Abs(
+                    box.Size.y -
+                    tool.WallHeight) <= 0.001f,
                 "El volumen no conserva la altura configurada.");
 
             Check(
-                Mathf.Abs(box.Size.z - tool.WallThickness) <= 0.001f,
+                Mathf.Abs(
+                    box.Size.z -
+                    tool.WallThickness) <= 0.001f,
                 "El volumen no conserva el grosor configurado.");
         }
-    }
-
-    private static void Pointer(
-        float x,
-        float z,
-        bool down)
-    {
-        Vector2 screen =
-            camera.WorldToScreenPoint(
-                new Vector3(x, 0f, z));
-
-        MouseState state =
-            new MouseState
-            {
-                position = screen
-            };
-
-        if (down)
-        {
-            state =
-                state.WithButton(
-                    MouseButton.Left);
-        }
-
-        InputSystem.QueueStateEvent(
-            mouse,
-            state);
     }
 
     private static void Finish(
         bool passed,
         string message)
     {
-        EditorApplication.update -= Tick;
-        Application.logMessageReceived -= HandleLog;
+        EditorApplication.update -=
+            Tick;
 
-        if (mouse != null)
-        {
-            InputSystem.RemoveDevice(mouse);
-            mouse = null;
-        }
+        Application.logMessageReceived -=
+            HandleLog;
 
         if (tool != null)
         {
             if (tool.HasDraftSession)
-                tool.TryCancelDraft(out _);
+            {
+                tool.TryCancelDraft(
+                    out _);
+            }
 
             tool.SetMode(
                 BistroBuilderConstructionRuntimeMode.Furniture);
         }
 
         if (editController != null)
-            editController.TryExitEditMode(true);
-
-        if (camera != null)
         {
-            UnityEngine.Object.Destroy(camera.gameObject);
-            camera = null;
+            editController.TryExitEditMode(
+                true);
         }
 
-        Directory.CreateDirectory("Logs");
+        Directory.CreateDirectory(
+            "Logs");
 
         string report =
             (passed ? "PASS " : "FAIL ") +
@@ -421,6 +407,9 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         string message)
     {
         if (!condition)
-            throw new InvalidOperationException(message);
+        {
+            throw new InvalidOperationException(
+                message);
+        }
     }
 }
