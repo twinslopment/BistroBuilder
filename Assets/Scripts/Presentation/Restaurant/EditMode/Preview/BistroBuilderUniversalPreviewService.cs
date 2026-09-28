@@ -177,13 +177,6 @@ public sealed class BistroBuilderUniversalPreviewService : MonoBehaviour
         Publish();
     }
 
-    public void MarkConfirmed(string ownerId)
-    {
-        if (!IsOwner(ownerId)) return;
-        current.Phase = BistroBuilderPreviewPhase.Confirmed;
-        Publish();
-    }
-
     public void ClearOwner(string ownerId)
     {
         if (!IsOwner(ownerId)) return;
