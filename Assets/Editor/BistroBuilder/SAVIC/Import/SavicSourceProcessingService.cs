@@ -986,7 +986,7 @@ namespace BistroBuilder.Editor.Savic
                     trace);
             }
 
-            bool planned =
+            ImagePlanResult imagePlan =
                 trace.Measure(
                     "IMAGE_PLAN",
                     () =>
@@ -1006,24 +1006,12 @@ namespace BistroBuilder.Editor.Savic
                                 reasonCode,
                                 planningError),
                     result => result.Succeeded,
-                    result => result.Message)
-                .Succeeded;
-
-            SavicImageAuthoringRecord resolvedPlan;
-            string resolvedReason;
-            string resolvedError;
-
-            bool resolved =
-                SavicImageAuthoringPlanner.TryPlan(
-                    manifest,
-                    out resolvedPlan,
-                    out resolvedReason,
-                    out resolvedError);
+                    result => result.Message);
 
             manifest.imageAuthoring =
-                resolvedPlan;
+                imagePlan.Plan;
 
-            if (!resolved || !planned)
+            if (!imagePlan.Succeeded)
             {
                 manifest.status = "NEEDS_REVIEW";
 
@@ -1032,7 +1020,7 @@ namespace BistroBuilder.Editor.Savic
                     "Image.AuthoringPlan",
                     "REVIEW",
                     "WARNING",
-                    resolvedError,
+                    imagePlan.Message,
                     SavicImageAuthoringPlanner.Version);
 
                 manifests.Save(manifest);
@@ -1040,10 +1028,10 @@ namespace BistroBuilder.Editor.Savic
                 return ReturnFailure(
                     previousPublishedSnapshot,
                     manifest,
-                    resolvedError,
-                    string.IsNullOrWhiteSpace(resolvedReason)
+                    imagePlan.Message,
+                    string.IsNullOrWhiteSpace(imagePlan.ReasonCode)
                         ? "IMAGE_REQUIRES_REVIEW"
-                        : resolvedReason,
+                        : imagePlan.ReasonCode,
                     "IMAGE_PLAN",
                     trace);
             }
@@ -1053,7 +1041,7 @@ namespace BistroBuilder.Editor.Savic
                 "Image.AuthoringPlan",
                 "PASS",
                 "INFO",
-                resolvedPlan.planReason,
+                imagePlan.Plan.planReason,
                 SavicImageAuthoringPlanner.Version);
 
             SavicImagePublicationOutcome publication =
