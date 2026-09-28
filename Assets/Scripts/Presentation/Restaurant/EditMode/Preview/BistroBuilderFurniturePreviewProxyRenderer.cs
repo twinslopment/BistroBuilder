@@ -32,6 +32,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     private readonly HashSet<int> lod0RendererIds =
         new HashSet<int>();
 
+    private readonly List<MeshRenderer> suppressedLodRenderers =
+        new List<MeshRenderer>(16);
+
     private RestaurantAreaMember activeRoot;
     private float currentLift;
     private bool settling;
@@ -156,13 +159,16 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             int rendererId =
                 renderer.GetInstanceID();
 
+            if (!rendererIds.Add(rendererId))
+                continue;
+
             if (lodRendererIds.Contains(rendererId) &&
                 !lod0RendererIds.Contains(rendererId))
             {
+                suppressedLodRenderers.Add(renderer);
+                renderer.enabled = false;
                 continue;
             }
-
-            if (!rendererIds.Add(rendererId)) continue;
 
             MeshFilter filter = renderer.GetComponent<MeshFilter>();
             if (filter == null || filter.sharedMesh == null) continue;
@@ -282,6 +288,17 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             if (entry.Renderer != null)
                 entry.Renderer.enabled = true;
         }
+
+        for (int i = 0;
+             i < suppressedLodRenderers.Count;
+             i++)
+        {
+            MeshRenderer renderer =
+                suppressedLodRenderers[i];
+
+            if (renderer != null)
+                renderer.enabled = true;
+        }
     }
 
     private void ResetState()
@@ -291,6 +308,7 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         rendererIds.Clear();
         lodRendererIds.Clear();
         lod0RendererIds.Clear();
+        suppressedLodRenderers.Clear();
         activeRoot = null;
         currentLift = 0f;
         settling = false;
