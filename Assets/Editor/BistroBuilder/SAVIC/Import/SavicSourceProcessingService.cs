@@ -80,6 +80,18 @@ namespace BistroBuilder.Editor.Savic
                     new SavicGenericPlaceableFamilyModule(
                         "ServiceEquipment",
                         layout,
+                        this.manifests),
+                    new SavicConstructionFamilyModule(
+                        "Wall",
+                        layout,
+                        this.manifests),
+                    new SavicConstructionFamilyModule(
+                        "Door",
+                        layout,
+                        this.manifests),
+                    new SavicConstructionFamilyModule(
+                        "Window",
+                        layout,
                         this.manifests));
 
             adapters.Add(
