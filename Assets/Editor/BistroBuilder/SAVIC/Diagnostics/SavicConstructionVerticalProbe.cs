@@ -553,17 +553,50 @@ namespace BistroBuilder.Editor.Savic
                 parent.GetChild(
                     parent.childCount - 1);
 
+            BistroBuilderConstructionAssetKit kit =
+                BistroBuilderConstructionAssetKit.Load();
+
+            Require(
+                kit != null &&
+                kit.TryResolveOpening(
+                    openingType,
+                    manifest.canonicalContentId,
+                    out GameObject expectedPrefab,
+                    out Vector3 expectedNominalSize) &&
+                expectedPrefab != null,
+                "Construction opening definition is no longer resolvable from the canonical kit.");
+
             Require(
                 fill != null &&
-                string.Equals(
-                    fill.name.Replace("(Clone)", string.Empty).Trim(),
-                    manifest.canonicalContentId,
-                    StringComparison.Ordinal),
-                "Construction opening resolved the wrong definition prefab.");
+                fill.GetComponentsInChildren<Renderer>(true).Length > 0,
+                "Construction opening did not instantiate a renderable registered fill.");
+
+            Vector3 expectedScale =
+                new Vector3(
+                    opening.width / Mathf.Max(0.001f, expectedNominalSize.x),
+                    opening.height / Mathf.Max(0.001f, expectedNominalSize.y),
+                    wall.thickness / Mathf.Max(0.001f, expectedNominalSize.z));
+
+            Require(
+                Approximately(
+                    fill.localScale,
+                    expectedScale,
+                    0.001f),
+                "Construction opening instance does not use the nominal dimensions registered for its definition.");
 
             Require(
                 fill.GetComponentsInChildren<Collider>(true).Length == 0,
                 "Construction opening prefab introduced collider authority into the passage.");
+        }
+
+        private static bool Approximately(
+            Vector3 a,
+            Vector3 b,
+            float tolerance)
+        {
+            return Mathf.Abs(a.x - b.x) <= tolerance &&
+                   Mathf.Abs(a.y - b.y) <= tolerance &&
+                   Mathf.Abs(a.z - b.z) <= tolerance;
         }
 
         private static void CleanupGeneratedFolder(
