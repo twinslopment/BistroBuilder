@@ -116,7 +116,23 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     public bool HasDraftChanges => coordinator != null && coordinator.IsDirty;
     public bool CanUndo => coordinator != null && coordinator.CanUndo;
     public bool CanRedo => coordinator != null && coordinator.CanRedo;
+    public Camera InteractionCamera => interactionCamera;
     public static int InputConsumedFrame { get; private set; } = -1;
+
+    public bool TrySetInteractionCamera(
+        Camera camera)
+    {
+        if (camera == null)
+            return false;
+
+        interactionCamera =
+            camera;
+
+        hasLastPointerScreen =
+            false;
+
+        return true;
+    }
 
     private void Awake()
     {
