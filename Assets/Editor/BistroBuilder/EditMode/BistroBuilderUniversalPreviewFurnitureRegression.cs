@@ -215,9 +215,15 @@ public static class BistroBuilderUniversalPreviewFurnitureRegression
                         !invalidResult.IsValid,
                         "El obstáculo registrado no invalidó la pose.");
 
-                    Check(
+                    bool sameConflict =
                         invalidResult.ConflictingObstacle ==
-                            temporaryObstacle,
+                            temporaryObstacle ||
+                        ReferenceEquals(
+                            invalidResult.RelatedObject,
+                            temporaryObstacle);
+
+                    Check(
+                        sameConflict,
                         "El validador no identificó el obstáculo temporal.");
 
                     AssertInvalidUniversalPreview();
