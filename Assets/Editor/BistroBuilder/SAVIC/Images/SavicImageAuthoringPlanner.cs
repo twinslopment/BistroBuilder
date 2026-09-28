@@ -183,6 +183,14 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
+            int suffixIndex =
+                candidate.IndexOf(
+                    "__",
+                    StringComparison.Ordinal);
+
+            if (suffixIndex > 0)
+                candidate = candidate.Substring(0, suffixIndex);
+
             return Enum.TryParse(
                 candidate,
                 true,
