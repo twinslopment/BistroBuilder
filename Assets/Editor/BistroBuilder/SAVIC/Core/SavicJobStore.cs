@@ -412,10 +412,8 @@ namespace BistroBuilder.Editor.Savic
                         SavicSourcePreparationStage.SourceImported;
 
                     job.checkpoint =
-                        preparationStage ==
-                        SavicSourcePreparationStage.MirrorMaterialized
-                            ? "MIRROR_MATERIALIZED"
-                            : "SOURCE_PREPARED";
+                        GetPreparationCheckpoint(
+                            preparationStage);
 
                     job.completedUtc =
                         string.Empty;
@@ -649,6 +647,32 @@ namespace BistroBuilder.Editor.Savic
             {
                 job.stageTimings =
                     new List<SavicProcessingStageRecord>();
+            }
+        }
+
+        private static string GetPreparationCheckpoint(
+            SavicSourcePreparationStage preparationStage)
+        {
+            switch (preparationStage)
+            {
+                case SavicSourcePreparationStage
+                    .MirrorMaterializing:
+                    return "MIRROR_MATERIALIZING";
+
+                case SavicSourcePreparationStage
+                    .MirrorMaterialized:
+                    return "MIRROR_MATERIALIZED";
+
+                case SavicSourcePreparationStage
+                    .ImportRequested:
+                    return "SOURCE_IMPORT_REQUESTED";
+
+                case SavicSourcePreparationStage
+                    .SourceImported:
+                    return "SOURCE_PREPARED";
+
+                default:
+                    return "INGESTED";
             }
         }
 
