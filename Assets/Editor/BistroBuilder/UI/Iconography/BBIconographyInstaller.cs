@@ -238,14 +238,43 @@ namespace BistroBuilder.Editor.UI.Iconography
             EnsureFolder(ResourceRoot);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-            var definitions = new List<BBIconDefinition>(Specs.Length);            var unresolved = new List<string>();
+            var catalog = AssetDatabase.LoadAssetAtPath<BBIconCatalog>(CatalogPath);
+            var definitions = new List<BBIconDefinition>(Specs.Length);
+            var unresolved = new List<string>();
+
             foreach (var spec in Specs)
             {
+                Sprite sprite;
+                string sourceName;
+
+                if (TryGetSavicOverride(
+                        catalog,
+                        spec.Id,
+                        out sprite,
+                        out sourceName))
+                {
+                    definitions.Add(
+                        new BBIconDefinition(
+                            spec.Id,
+                            sprite,
+                            spec.Role,
+                            sourceName));
+                    continue;
+                }
+
                 var assetPath = $"{IconRoot}/{spec.Source}.svg";
-                var sprite = LoadSprite(assetPath);
+                sprite = LoadSprite(assetPath);
+                sourceName = spec.Source;
+
                 if (sprite == null)
                     unresolved.Add($"{spec.Id} -> {assetPath}");
-                definitions.Add(new BBIconDefinition(spec.Id, sprite, spec.Role, spec.Source));
+
+                definitions.Add(
+                    new BBIconDefinition(
+                        spec.Id,
+                        sprite,
+                        spec.Role,
+                        sourceName));
             }
 
             if (unresolved.Count > 0)
@@ -253,7 +282,6 @@ namespace BistroBuilder.Editor.UI.Iconography
                     "BB Iconography 21B: faltan sprites SVG importables.\n - " +
                     string.Join("\n - ", unresolved));
 
-            var catalog = AssetDatabase.LoadAssetAtPath<BBIconCatalog>(CatalogPath);
             if (catalog == null)
             {
                 catalog = ScriptableObject.CreateInstance<BBIconCatalog>();
@@ -265,9 +293,11 @@ namespace BistroBuilder.Editor.UI.Iconography
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             if (!IsCatalogReady())
-                throw new InvalidOperationException("BB Iconography 21B: catÃ¡logo incompleto tras reconstrucciÃ³n.");
+                throw new InvalidOperationException(
+                    "BB Iconography 21B: catálogo incompleto tras reconstrucción.");
 
-            Debug.Log($"[BB Iconography 21B] LOCAL PASS â€” {definitions.Count} usos canÃ³nicos listos para build.");
+            Debug.Log(
+                $"[BB Iconography 21B] LOCAL PASS — {definitions.Count} usos canónicos listos para build.");
         }
 
         public static void PrepareForBatch()
@@ -287,13 +317,19 @@ namespace BistroBuilder.Editor.UI.Iconography
             using (var http = new HttpClient())
             {
                 http.Timeout = TimeSpan.FromSeconds(20);
-                http.DefaultRequestHeaders.UserAgent.ParseAdd("BistroBuilder-Iconography/21B");
+                http.DefaultRequestHeaders.UserAgent.ParseAdd(
+                    "BistroBuilder-Iconography/21B");
 
                 var index = 0;
                 foreach (var source in uniqueSources)
                 {
-                    // Original Bistro Builder artwork is maintained locally, outside Lucide.
-                    if (source.StartsWith("bb-options-", StringComparison.Ordinal)) continue;
+                    if (source.StartsWith(
+                            "bb-options-",
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
                     index++;
                     EditorUtility.DisplayProgressBar(
                         "Bistro Builder — Iconografía",
@@ -302,34 +338,87 @@ namespace BistroBuilder.Editor.UI.Iconography
 
                     var assetPath = $"{IconRoot}/{source}.svg";
                     var absolutePath = Path.GetFullPath(assetPath);
-                    var svg = await http.GetStringAsync(RawBaseUrl + source + ".svg");
+                    var svg =
+                        await http.GetStringAsync(
+                            RawBaseUrl + source + ".svg");
+
                     svg = NormalizeSvg(svg);
 
-                    Directory.CreateDirectory(Path.GetDirectoryName(absolutePath) ?? IconRoot);
-                    if (!File.Exists(absolutePath) || !string.Equals(File.ReadAllText(absolutePath), svg, StringComparison.Ordinal))
-                        File.WriteAllText(absolutePath, svg);
+                    Directory.CreateDirectory(
+                        Path.GetDirectoryName(absolutePath) ?? IconRoot);
+
+                    if (!File.Exists(absolutePath) ||
+                        !string.Equals(
+                            File.ReadAllText(absolutePath),
+                            svg,
+                            StringComparison.Ordinal))
+                    {
+                        File.WriteAllText(
+                            absolutePath,
+                            svg);
+                    }
                 }
             }
 
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.Refresh(
+                ImportAssetOptions.ForceSynchronousImport);
 
-            var definitions = new List<BBIconDefinition>(Specs.Length);
-            var unresolved = new List<string>();
+            var catalog =
+                AssetDatabase.LoadAssetAtPath<BBIconCatalog>(
+                    CatalogPath);
+
+            var definitions =
+                new List<BBIconDefinition>(Specs.Length);
+
+            var unresolved =
+                new List<string>();
+
             foreach (var spec in Specs)
             {
-                var assetPath = $"{IconRoot}/{spec.Source}.svg";
-                var sprite = LoadSprite(assetPath);
-                if (sprite == null)
-                    unresolved.Add($"{spec.Id} -> {assetPath}");
+                Sprite sprite;
+                string sourceName;
 
-                definitions.Add(new BBIconDefinition(spec.Id, sprite, spec.Role, spec.Source));
+                if (TryGetSavicOverride(
+                        catalog,
+                        spec.Id,
+                        out sprite,
+                        out sourceName))
+                {
+                    definitions.Add(
+                        new BBIconDefinition(
+                            spec.Id,
+                            sprite,
+                            spec.Role,
+                            sourceName));
+                    continue;
+                }
+
+                var assetPath =
+                    $"{IconRoot}/{spec.Source}.svg";
+
+                sprite = LoadSprite(assetPath);
+                sourceName = spec.Source;
+
+                if (sprite == null)
+                    unresolved.Add(
+                        $"{spec.Id} -> {assetPath}");
+
+                definitions.Add(
+                    new BBIconDefinition(
+                        spec.Id,
+                        sprite,
+                        spec.Role,
+                        sourceName));
             }
 
-            var catalog = AssetDatabase.LoadAssetAtPath<BBIconCatalog>(CatalogPath);
             if (catalog == null)
             {
-                catalog = ScriptableObject.CreateInstance<BBIconCatalog>();
-                AssetDatabase.CreateAsset(catalog, CatalogPath);
+                catalog =
+                    ScriptableObject.CreateInstance<BBIconCatalog>();
+
+                AssetDatabase.CreateAsset(
+                    catalog,
+                    CatalogPath);
             }
 
             catalog.EditorSetEntries(definitions);
@@ -340,8 +429,52 @@ namespace BistroBuilder.Editor.UI.Iconography
             {
                 Debug.LogWarning(
                     "[BB Iconography 21B] SVG sincronizados, pero Unity no expuso Sprite para algunas fuentes. " +
-                    "Comprueba el importador SVG/Vector Graphics.\n - " + string.Join("\n - ", unresolved));
+                    "Comprueba el importador SVG/Vector Graphics.\n - " +
+                    string.Join("\n - ", unresolved));
             }
+        }
+
+        private static bool TryGetSavicOverride(
+            BBIconCatalog catalog,
+            BBIconId id,
+            out Sprite sprite,
+            out string sourceName)
+        {
+            sprite = null;
+            sourceName = string.Empty;
+
+            if (catalog == null ||
+                !catalog.TryGet(
+                    id,
+                    out BBIconDefinition existing) ||
+                existing.sprite == null)
+            {
+                return false;
+            }
+
+            string[] labels =
+                AssetDatabase.GetLabels(
+                    existing.sprite);
+
+            bool managed =
+                Array.IndexOf(
+                    labels,
+                    "SAVIC.Managed") >= 0 &&
+                Array.IndexOf(
+                    labels,
+                    "SAVIC.UIIcon") >= 0;
+
+            if (!managed)
+                return false;
+
+            sprite = existing.sprite;
+            sourceName =
+                string.IsNullOrWhiteSpace(
+                    existing.sourceName)
+                    ? "SAVIC"
+                    : existing.sourceName;
+
+            return true;
         }
 
         private static Sprite LoadSprite(string assetPath)
