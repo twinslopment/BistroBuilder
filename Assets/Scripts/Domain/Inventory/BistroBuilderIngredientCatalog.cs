@@ -141,6 +141,42 @@ public sealed class BistroBuilderIngredientCatalog : ScriptableObject
     }
 
 #if UNITY_EDITOR
+    public void EditorUpsert(
+        BistroBuilderIngredientDefinition definition)
+    {
+        if (definition == null)
+            throw new ArgumentNullException(nameof(definition));
+
+        if (!definition.TryValidate(out string error))
+            throw new InvalidOperationException(error);
+
+        if (definitions == null)
+            definitions = new List<BistroBuilderIngredientDefinition>();
+
+        for (int index = 0; index < definitions.Count; index++)
+        {
+            BistroBuilderIngredientDefinition current = definitions[index];
+            if (current != null &&
+                string.Equals(
+                    current.IngredientId,
+                    definition.IngredientId,
+                    StringComparison.Ordinal))
+            {
+                definitions[index] = definition;
+                if (!TryRebuildIndex(out error))
+                    throw new InvalidOperationException(error);
+                return;
+            }
+        }
+
+        definitions.Add(definition);
+        if (!TryRebuildIndex(out error))
+            throw new InvalidOperationException(error);
+    }
+
+#endif
+
+#if UNITY_EDITOR
     private void OnValidate()
     {
         TryRebuildIndex(out _);
