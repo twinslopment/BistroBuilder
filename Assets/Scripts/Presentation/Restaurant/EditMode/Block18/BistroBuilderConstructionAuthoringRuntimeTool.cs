@@ -644,18 +644,20 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                 universalPreviewSegments,
                 0.075f);
 
-            universalPreviewService.PublishSegments(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
+            universalPreviewService.PublishConstruction(
                 BistroBuilderPreviewDomain.Opening,
-                ok ? BistroBuilderPreviewValidity.Valid : BistroBuilderPreviewValidity.Invalid,
-                ok ? BistroBuilderPreviewPhase.Ready : BistroBuilderPreviewPhase.Previewing,
+                ok
+                    ? BistroBuilderPreviewValidity.Valid
+                    : BistroBuilderPreviewValidity.Invalid,
+                ok
+                    ? BistroBuilderPreviewPhase.Ready
+                    : BistroBuilderPreviewPhase.Previewing,
                 universalPreviewSegments,
-                ok ? string.Empty : TranslateDiagnostic(error));
-
-            universalPreviewService.SetSnapPoint(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
+                null,
+                null,
+                true,
                 new Vector3(center.x, 0.07f, center.y),
-                true);
+                ok ? string.Empty : TranslateDiagnostic(error));
 
             HideUnusedPreviewLines(0);
         }
@@ -770,25 +772,19 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                     ? BistroBuilderPreviewPhase.Ready
                     : BistroBuilderPreviewPhase.Previewing;
 
-            universalPreviewService.PublishSegments(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
+            universalPreviewService.PublishConstruction(
                 domain,
                 validity,
                 phase,
                 universalPreviewSegments,
-                status,
-                universalPreviewVolumes);
-
-            if (universalGhostSegments.Count > 0)
-                universalPreviewService.SetGhostSegments(
-                    BistroBuilderUniversalPreviewService.ConstructionOwner,
-                    universalGhostSegments);
-
-            if (observedSnapKind != SnapKind.None)
-                universalPreviewService.SetSnapPoint(
-                    BistroBuilderUniversalPreviewService.ConstructionOwner,
-                    new Vector3(observedSnapPoint.x, 0.07f, observedSnapPoint.y),
-                    true);
+                universalGhostSegments,
+                universalPreviewVolumes,
+                observedSnapKind != SnapKind.None,
+                new Vector3(
+                    observedSnapPoint.x,
+                    0.07f,
+                    observedSnapPoint.y),
+                status);
 
             HideUnusedPreviewLines(0);
             return;
@@ -1032,10 +1028,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     {
         if (universalPreviewService != null)
         {
-            universalPreviewService.SetSnapPoint(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
-                new Vector3(point.x, 0.07f, point.y),
-                kind != SnapKind.None);
             observedSnapKind = kind;
             observedSnapPoint = point;
             return;
@@ -1067,14 +1059,9 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void HideSnapMarker()
     {
-        if (universalPreviewService != null)
-            universalPreviewService.SetSnapPoint(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
-                Vector3.zero,
-                false);
-
         if (snapMarker != null) snapMarker.enabled = false;
         observedSnapKind = SnapKind.None;
+        observedSnapPoint = default;
     }
     private void TickMicroFeedback()
     {
@@ -1289,9 +1276,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
         if (universalPreviewService != null)
         {
-            universalPreviewService.SetGhostSegments(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
-                universalGhostSegments);
             for (int i = 0; i < moveGhostLines.Length; i++)
                 if (moveGhostLines[i] != null) moveGhostLines[i].enabled = false;
             return;
@@ -1304,10 +1288,6 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private void ClearMoveGhost()
     {
         universalGhostSegments.Clear();
-        if (universalPreviewService != null)
-            universalPreviewService.SetGhostSegments(
-                BistroBuilderUniversalPreviewService.ConstructionOwner,
-                universalGhostSegments);
 
         for (int i = 0; i < moveGhostLines.Length; i++)
             if (moveGhostLines[i] != null) moveGhostLines[i].enabled = false;
