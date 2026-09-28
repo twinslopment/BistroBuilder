@@ -11,15 +11,12 @@ if (!(Test-Path -LiteralPath $runner)) {
 }
 
 $method = 'BistroBuilder.Editor.Savic.SavicV1ClosureGate.RunFromCommandLine'
+$unityArguments = @('-nographics', '-accept-apiupdate')
 
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner -ExecuteMethod $method -LogName 'SAVIC_V1_ClosureGate.log' -TimeoutSeconds $TimeoutSeconds -AdditionalUnityArguments '-nographics','-accept-apiupdate'
-$exitCode = $LASTEXITCODE
+Write-Output 'SAVIC_V1_HEADLESS|START'
 
-if ($exitCode -eq 0) {
-    Write-Output 'SAVIC_V1_HEADLESS|PASS'
-}
-else {
-    [Console]::Error.WriteLine('SAVIC_V1_HEADLESS|FAIL|EXIT=' + $exitCode)
-}
-
-exit $exitCode
+& $runner `
+    -ExecuteMethod $method `
+    -LogName 'SAVIC_V1_ClosureGate.log' `
+    -TimeoutSeconds $TimeoutSeconds `
+    -AdditionalUnityArguments $unityArguments
