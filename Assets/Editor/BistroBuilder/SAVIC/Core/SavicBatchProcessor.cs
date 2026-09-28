@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal sealed class SavicBatchProcessor
     {
-        internal const string Version = "1.2.0";
+        internal const string Version = "1.3.0";
 
         // Individual mutation stages remain atomic. High-confidence generic
         // assets may yield after source preparation so import and publication
@@ -110,7 +110,10 @@ namespace BistroBuilder.Editor.Savic
                         routedOutcome;
                 }
                 else if (preparationStage ==
-                         SavicSourcePreparationStage.None)
+                         SavicSourcePreparationStage.None ||
+                         preparationStage ==
+                         SavicSourcePreparationStage
+                             .MirrorMaterializing)
                 {
                     outcome =
                         processing.MaterializeSourceMirrorBySavicId(
@@ -118,18 +121,57 @@ namespace BistroBuilder.Editor.Savic
 
                     yieldedAfterPreparation =
                         outcome.Succeeded &&
+                        (string.Equals(
+                             outcome.Status,
+                             "SOURCE_MATERIALIZATION_PENDING",
+                             StringComparison.Ordinal) ||
+                         string.Equals(
+                             outcome.Status,
+                             "SOURCE_MATERIALIZED",
+                             StringComparison.Ordinal));
+
+                    yieldedStage =
                         string.Equals(
                             outcome.Status,
                             "SOURCE_MATERIALIZED",
-                            StringComparison.Ordinal);
-
-                    yieldedStage =
-                        SavicSourcePreparationStage
-                            .MirrorMaterialized;
+                            StringComparison.Ordinal)
+                            ? SavicSourcePreparationStage
+                                .MirrorMaterialized
+                            : SavicSourcePreparationStage
+                                .MirrorMaterializing;
                 }
                 else if (preparationStage ==
                          SavicSourcePreparationStage
                              .MirrorMaterialized)
+                {
+                    outcome =
+                        processing.RequestSourceImportBySavicId(
+                            job.manifestSavicId);
+
+                    yieldedAfterPreparation =
+                        outcome.Succeeded &&
+                        (string.Equals(
+                             outcome.Status,
+                             "SOURCE_IMPORT_REQUESTED",
+                             StringComparison.Ordinal) ||
+                         string.Equals(
+                             outcome.Status,
+                             "SOURCE_PREPARED",
+                             StringComparison.Ordinal));
+
+                    yieldedStage =
+                        string.Equals(
+                            outcome.Status,
+                            "SOURCE_PREPARED",
+                            StringComparison.Ordinal)
+                            ? SavicSourcePreparationStage
+                                .SourceImported
+                            : SavicSourcePreparationStage
+                                .ImportRequested;
+                }
+                else if (preparationStage ==
+                         SavicSourcePreparationStage
+                             .ImportRequested)
                 {
                     outcome =
                         processing.PrepareSourceImportBySavicId(
@@ -137,14 +179,24 @@ namespace BistroBuilder.Editor.Savic
 
                     yieldedAfterPreparation =
                         outcome.Succeeded &&
+                        (string.Equals(
+                             outcome.Status,
+                             "SOURCE_IMPORT_PENDING",
+                             StringComparison.Ordinal) ||
+                         string.Equals(
+                             outcome.Status,
+                             "SOURCE_PREPARED",
+                             StringComparison.Ordinal));
+
+                    yieldedStage =
                         string.Equals(
                             outcome.Status,
                             "SOURCE_PREPARED",
-                            StringComparison.Ordinal);
-
-                    yieldedStage =
-                        SavicSourcePreparationStage
-                            .SourceImported;
+                            StringComparison.Ordinal)
+                            ? SavicSourcePreparationStage
+                                .SourceImported
+                            : SavicSourcePreparationStage
+                                .ImportRequested;
                 }
                 else
                 {
