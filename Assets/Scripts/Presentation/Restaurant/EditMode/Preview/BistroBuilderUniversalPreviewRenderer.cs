@@ -41,16 +41,6 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private bool hadSnapPoint;
     private Vector3 lastSnapPoint;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void EnsureRuntimeRenderer()
-    {
-        BistroBuilderUniversalPreviewService service =
-            BistroBuilderUniversalPreviewService.GetOrCreate();
-        if (service == null) return;
-        if (service.GetComponent<BistroBuilderUniversalPreviewRenderer>() == null)
-            service.gameObject.AddComponent<BistroBuilderUniversalPreviewRenderer>();
-    }
-
     private void Awake()
     {
         ResolveService();
