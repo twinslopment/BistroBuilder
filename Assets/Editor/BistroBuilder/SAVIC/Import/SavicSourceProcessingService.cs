@@ -218,6 +218,25 @@ namespace BistroBuilder.Editor.Savic
                     trace);
             }
 
+            if (materialized.Pending)
+            {
+                manifest.status =
+                    "SOURCE_MATERIALIZATION_PENDING";
+
+                manifests.Save(
+                    manifest);
+
+                return new SavicSourceProcessingOutcome(
+                    true,
+                    "SOURCE_MATERIALIZATION_PENDING",
+                    materialized.Message,
+                    manifest,
+                    trace.Finish(
+                        "SOURCE_MATERIALIZATION_PENDING",
+                        "MATERIALIZE_SOURCE_MIRROR",
+                        materialized.Message));
+            }
+
             SavicManifestMutations.UpsertArtifact(
                 manifest,
                 SourceMirrorRole,
@@ -248,6 +267,133 @@ namespace BistroBuilder.Editor.Savic
                     "SOURCE_MATERIALIZED",
                     "MATERIALIZE_SOURCE_MIRROR",
                     materialized.Message));
+        }
+
+        internal SavicSourceProcessingOutcome
+            RequestSourceImportBySavicId(
+                string savicId)
+        {
+            if (!manifests.TryGetBySavicId(
+                    savicId,
+                    out SavicManifest manifest))
+            {
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    "NOT_FOUND",
+                    "No SAVIC manifest exists for the requested identity.",
+                    null);
+            }
+
+            if (manifest?.source == null)
+            {
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    "INVALID_MANIFEST",
+                    "Manifest or source record is missing.",
+                    manifest);
+            }
+
+            SavicProcessingTrace trace =
+                new SavicProcessingTrace();
+
+            ISavicSourceImportAdapter adapter =
+                ResolveAdapter(
+                    manifest);
+
+            if (adapter == null)
+            {
+                RecordFailure(
+                    manifest,
+                    ImportValidationId,
+                    "ERROR",
+                    "No compatible source import adapter is available.");
+
+                return ReturnFailure(
+                    null,
+                    manifest,
+                    "No compatible source import adapter is available.",
+                    "NO_IMPORT_ADAPTER",
+                    "REQUEST_SOURCE_IMPORT",
+                    trace);
+            }
+
+            SavicSourceImportResult request =
+                trace.Measure(
+                    "REQUEST_SOURCE_IMPORT",
+                    () =>
+                        adapter.RequestImport(
+                            manifest),
+                    result =>
+                        result.Succeeded,
+                    result =>
+                        result.Message);
+
+            if (!request.Succeeded)
+            {
+                RecordFailure(
+                    manifest,
+                    ImportValidationId,
+                    "ERROR",
+                    request.Message);
+
+                return ReturnFailure(
+                    null,
+                    manifest,
+                    request.Message,
+                    "SOURCE_IMPORT_REQUEST_FAILED",
+                    "REQUEST_SOURCE_IMPORT",
+                    trace);
+            }
+
+            if (request.MainObject is GameObject)
+            {
+                SavicManifestMutations.UpsertArtifact(
+                    manifest,
+                    SourceMirrorRole,
+                    request.AssetPath,
+                    SavicUnityModelSourceImportAdapter.BuilderId,
+                    SavicUnityModelSourceImportAdapter.BuilderVersion);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    ImportValidationId,
+                    "PASS",
+                    "INFO",
+                    request.Message,
+                    SavicUnityModelSourceImportAdapter.BuilderVersion);
+
+                manifest.status =
+                    "SOURCE_READY";
+
+                manifests.Save(
+                    manifest);
+
+                return new SavicSourceProcessingOutcome(
+                    true,
+                    "SOURCE_PREPARED",
+                    request.Message,
+                    manifest,
+                    trace.Finish(
+                        "SOURCE_PREPARED",
+                        "REQUEST_SOURCE_IMPORT",
+                        request.Message));
+            }
+
+            manifest.status =
+                "SOURCE_IMPORT_REQUESTED";
+
+            manifests.Save(
+                manifest);
+
+            return new SavicSourceProcessingOutcome(
+                true,
+                "SOURCE_IMPORT_REQUESTED",
+                request.Message,
+                manifest,
+                trace.Finish(
+                    "SOURCE_IMPORT_REQUESTED",
+                    "REQUEST_SOURCE_IMPORT",
+                    request.Message));
         }
 
         internal SavicSourceProcessingOutcome
@@ -324,6 +470,26 @@ namespace BistroBuilder.Editor.Savic
                     "SOURCE_IMPORT_FAILED",
                     "PREPARE_IMPORT_SOURCE",
                     trace);
+            }
+
+            if (import.Pending ||
+                import.MainObject == null)
+            {
+                manifest.status =
+                    "SOURCE_IMPORT_PENDING";
+
+                manifests.Save(
+                    manifest);
+
+                return new SavicSourceProcessingOutcome(
+                    true,
+                    "SOURCE_IMPORT_PENDING",
+                    import.Message,
+                    manifest,
+                    trace.Finish(
+                        "SOURCE_IMPORT_PENDING",
+                        "PREPARE_IMPORT_SOURCE",
+                        import.Message));
             }
 
             SavicManifestMutations.UpsertArtifact(
@@ -453,6 +619,26 @@ namespace BistroBuilder.Editor.Savic
                     "SOURCE_IMPORT_FAILED",
                     "IMPORT_SOURCE",
                     trace);
+            }
+
+            if (import.Pending ||
+                import.MainObject == null)
+            {
+                manifest.status =
+                    "SOURCE_IMPORT_PENDING";
+
+                manifests.Save(
+                    manifest);
+
+                return new SavicSourceProcessingOutcome(
+                    false,
+                    "SOURCE_IMPORT_PENDING",
+                    import.Message,
+                    manifest,
+                    trace.Finish(
+                        "SOURCE_IMPORT_PENDING",
+                        "IMPORT_SOURCE",
+                        import.Message));
             }
 
             SavicManifestMutations.UpsertArtifact(
