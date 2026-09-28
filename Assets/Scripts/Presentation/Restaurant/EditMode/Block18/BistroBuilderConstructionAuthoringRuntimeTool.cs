@@ -355,15 +355,21 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         if (!queries.Matches(coordinator.Session))
             RefreshQueries();
 
-        CancelGesture(string.Empty);
-
         zoneDefinitionId =
             definitionId;
 
-        mode =
-            BistroBuilderConstructionRuntimeMode.Room;
+        SetMode(
+            BistroBuilderConstructionRuntimeMode.Room);
 
-        SuspendFurnitureInput();
+        if (mode !=
+            BistroBuilderConstructionRuntimeMode.Room)
+        {
+            error =
+                "No se pudo activar la herramienta de habitación.";
+
+            SetStatus(error);
+            return false;
+        }
 
         gesture =
             new ConstructionGesture();
