@@ -25,9 +25,7 @@ public enum BistroBuilderPreviewPhase
     Hidden = 0,
     Previewing = 1,
     Snapped = 2,
-    Ready = 3,
-    Confirmed = 4,
-    Cancelled = 5
+    Ready = 3
 }
 
 public readonly struct BistroBuilderPreviewBox
