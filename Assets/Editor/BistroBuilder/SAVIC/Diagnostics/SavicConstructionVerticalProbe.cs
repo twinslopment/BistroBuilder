@@ -556,13 +556,19 @@ namespace BistroBuilder.Editor.Savic
             BistroBuilderConstructionAssetKit kit =
                 BistroBuilderConstructionAssetKit.Load();
 
-            Require(
+            GameObject expectedPrefab = null;
+            Vector3 expectedNominalSize = Vector3.zero;
+
+            bool definitionResolved =
                 kit != null &&
                 kit.TryResolveOpening(
                     openingType,
                     manifest.canonicalContentId,
-                    out GameObject expectedPrefab,
-                    out Vector3 expectedNominalSize) &&
+                    out expectedPrefab,
+                    out expectedNominalSize);
+
+            Require(
+                definitionResolved &&
                 expectedPrefab != null,
                 "Construction opening definition is no longer resolvable from the canonical kit.");
 
