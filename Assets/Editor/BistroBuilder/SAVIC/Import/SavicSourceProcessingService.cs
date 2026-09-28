@@ -49,6 +49,7 @@ namespace BistroBuilder.Editor.Savic
         private readonly SavicManifestRepository manifests;
         private readonly SavicModelFamilyRegistry familyRegistry;
         private readonly SavicImagePublisher imagePublisher;
+        private readonly SavicContentBundlePublisher contentBundlePublisher;
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
@@ -100,11 +101,19 @@ namespace BistroBuilder.Editor.Savic
                     layout,
                     this.manifests);
 
+            contentBundlePublisher =
+                new SavicContentBundlePublisher(
+                    layout,
+                    this.manifests);
+
             adapters.Add(
                 new SavicUnityModelSourceImportAdapter(layout));
 
             adapters.Add(
                 new SavicUnityImageSourceImportAdapter(layout));
+
+            adapters.Add(
+                new SavicUnityStructuredDataSourceImportAdapter(layout));
         }
 
         internal SavicSourceProcessingOutcome ProcessBySavicId(
@@ -420,12 +429,20 @@ namespace BistroBuilder.Editor.Savic
                     SavicSourceKind.Image.ToString(),
                     StringComparison.Ordinal);
 
-            if (!isModel3D && !isImage)
+            bool isStructuredData =
+                string.Equals(
+                    manifest.source.sourceKind,
+                    SavicSourceKind.StructuredData.ToString(),
+                    StringComparison.Ordinal);
+
+            if (!isModel3D &&
+                !isImage &&
+                !isStructuredData)
             {
                 return new SavicSourceProcessingOutcome(
                     false,
                     "UNSUPPORTED_SOURCE_KIND",
-                    "This processing service currently accepts 3D models and images.",
+                    "This processing service currently accepts 3D models, images and structured content bundles.",
                     manifest,
                     trace.Finish(
                         "UNSUPPORTED_SOURCE_KIND",
@@ -511,6 +528,15 @@ namespace BistroBuilder.Editor.Savic
             if (isImage)
             {
                 return ProcessImage(
+                    previousPublishedSnapshot,
+                    manifest,
+                    import,
+                    trace);
+            }
+
+            if (isStructuredData)
+            {
+                return ProcessContentBundle(
                     previousPublishedSnapshot,
                     manifest,
                     import,
@@ -963,6 +989,146 @@ namespace BistroBuilder.Editor.Savic
             }
         }
 
+        private SavicSourceProcessingOutcome ProcessContentBundle(
+            SavicManifest previousPublishedSnapshot,
+            SavicManifest manifest,
+            SavicSourceImportResult import,
+            SavicProcessingTrace trace)
+        {
+            if (import.MainObject is not TextAsset textAsset)
+            {
+                RecordFailure(
+                    manifest,
+                    "ContentBundle.UnityImport",
+                    "ERROR",
+                    "Imported structured-data main object is not a TextAsset.");
+
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    "Imported structured-data main object is not a TextAsset.",
+                    "INVALID_IMPORTED_STRUCTURED_DATA",
+                    "IMPORT_SOURCE",
+                    trace);
+            }
+
+            ContentBundlePlanResult bundlePlan =
+                trace.Measure(
+                    "CONTENT_BUNDLE_PLAN",
+                    () =>
+                        SavicContentBundlePlanner.TryParseAndPlan(
+                            manifest,
+                            textAsset.text,
+                            out SavicContentBundleDocument document,
+                            out SavicContentBundleAuthoringRecord plan,
+                            out string reasonCode,
+                            out string planningError)
+                            ? new ContentBundlePlanResult(
+                                true,
+                                document,
+                                plan,
+                                string.Empty,
+                                string.Empty)
+                            : new ContentBundlePlanResult(
+                                false,
+                                document,
+                                plan,
+                                reasonCode,
+                                planningError),
+                    result => result.Succeeded,
+                    result => result.Message);
+
+            manifest.contentBundle =
+                bundlePlan.Plan;
+
+            if (!bundlePlan.Succeeded)
+            {
+                manifest.status = "NEEDS_REVIEW";
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "ContentBundle.AuthoringPlan",
+                    "REVIEW",
+                    "WARNING",
+                    bundlePlan.Message,
+                    SavicContentBundlePlanner.Version);
+
+                manifests.Save(manifest);
+
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    bundlePlan.Message,
+                    string.IsNullOrWhiteSpace(bundlePlan.ReasonCode)
+                        ? "CONTENT_BUNDLE_REQUIRES_REVIEW"
+                        : bundlePlan.ReasonCode,
+                    "CONTENT_BUNDLE_PLAN",
+                    trace);
+            }
+
+            SavicManifestMutations.UpsertValidation(
+                manifest,
+                "ContentBundle.AuthoringPlan",
+                "PASS",
+                "INFO",
+                bundlePlan.Plan.planReason,
+                SavicContentBundlePlanner.Version);
+
+            SavicContentBundlePublicationOutcome publication =
+                trace.Measure(
+                    "CONTENT_BUNDLE_PUBLICATION",
+                    () =>
+                        contentBundlePublisher.Publish(
+                            manifest,
+                            bundlePlan.Document),
+                    result => result.Succeeded,
+                    result => result.Message);
+
+            if (!publication.Succeeded)
+            {
+                return ReturnFailure(
+                    previousPublishedSnapshot,
+                    manifest,
+                    publication.Message,
+                    "CONTENT_BUNDLE_PUBLICATION_FAILED",
+                    "CONTENT_BUNDLE_PUBLICATION",
+                    trace);
+            }
+
+            return new SavicSourceProcessingOutcome(
+                true,
+                manifest.status,
+                publication.Message,
+                manifest,
+                trace.Finish(
+                    "PUBLISHED",
+                    "CONTENT_BUNDLE_PUBLICATION",
+                    publication.Message));
+        }
+
+        private readonly struct ContentBundlePlanResult
+        {
+            internal ContentBundlePlanResult(
+                bool succeeded,
+                SavicContentBundleDocument document,
+                SavicContentBundleAuthoringRecord plan,
+                string reasonCode,
+                string message)
+            {
+                Succeeded = succeeded;
+                Document = document;
+                Plan = plan;
+                ReasonCode = reasonCode ?? string.Empty;
+                Message = message ?? string.Empty;
+            }
+
+            internal bool Succeeded { get; }
+            internal SavicContentBundleDocument Document { get; }
+            internal SavicContentBundleAuthoringRecord Plan { get; }
+            internal string ReasonCode { get; }
+            internal string Message { get; }
+        }
+
         private SavicSourceProcessingOutcome ProcessImage(
             SavicManifest previousPublishedSnapshot,
             SavicManifest manifest,
@@ -1235,6 +1401,51 @@ namespace BistroBuilder.Editor.Savic
         {
             outcome =
                 default;
+
+            if (string.Equals(
+                    manifest.source.sourceKind,
+                    SavicSourceKind.StructuredData.ToString(),
+                    StringComparison.Ordinal))
+            {
+                if (!string.Equals(
+                        manifest.source.extension,
+                        ".json",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    const string message =
+                        "Structured content bundle V1 accepts JSON only; CSV/TSV remain archived for explicit conversion.";
+
+                    manifest.family = "Content";
+                    manifest.type = "ContentBundle";
+                    manifest.category = "GameData";
+                    manifest.status = "NEEDS_REVIEW";
+
+                    SavicManifestMutations.UpsertValidation(
+                        manifest,
+                        "Pipeline.PreImportRouting",
+                        "REVIEW",
+                        "WARNING",
+                        message,
+                        SavicContentBundlePlanner.Version);
+
+                    manifests.Save(manifest);
+
+                    outcome =
+                        new SavicSourceProcessingOutcome(
+                            false,
+                            manifest.status,
+                            message,
+                            manifest,
+                            trace.Finish(
+                                "STRUCTURED_FORMAT_UNSUPPORTED",
+                                "PREIMPORT_ROUTE",
+                                message));
+
+                    return true;
+                }
+
+                return false;
+            }
 
             if (string.Equals(
                     manifest.source.sourceKind,
