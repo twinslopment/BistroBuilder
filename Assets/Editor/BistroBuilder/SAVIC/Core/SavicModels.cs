@@ -511,6 +511,7 @@ namespace BistroBuilder.Editor.Savic
         public float nominalWidthMeters;
         public float nominalHeightMeters;
         public float nominalDepthMeters;
+        public float visualYawDegrees;
         public string prefabAssetPath = string.Empty;
         public string planReason = string.Empty;
         public string plannedUtc = string.Empty;
