@@ -133,7 +133,6 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
     private RestaurantAreaMember activeMember;
 
-    private bool hasActiveFeedback;
     private bool hasOriginalPose;
     private Vector3 originalWorldPosition;
     private Quaternion originalWorldRotation = Quaternion.identity;
@@ -262,10 +261,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         rendererSnapshots.Clear();
 
         if (!useLegacyFullObjectTint)
-        {
-            hasActiveFeedback = false;
             return;
-        }
 
         member.GetComponentsInChildren(
             includeInactiveRenderers,
@@ -296,10 +292,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         rendererBuffer.Clear();
 
-        hasActiveFeedback =
-            rendererSnapshots.Count > 0;
-
-        if (!hasActiveFeedback &&
+        if (rendererSnapshots.Count == 0 &&
             logMissingRenderers)
         {
             Debug.LogWarning(
@@ -524,7 +517,6 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         );
 
         activeMember = null;
-        hasActiveFeedback = false;
         hasOriginalPose = false;
         originalWorldPosition = Vector3.zero;
         originalWorldRotation = Quaternion.identity;
