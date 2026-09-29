@@ -17,6 +17,7 @@ public sealed partial class BistroBuilderUiShell
     RestaurantPlaceableDeletionService editChromeDeletion;
     RestaurantPlacementHistoryService editChromeHistory;
     BistroBuilderEditGridOverlay editChromeGrid;
+    BistroBuilderConstructionPlayerPanel editConstructionPanel;
     bool editModeChromeBuilt;
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
     readonly Dictionary<string, BistroBuilderEditChromeControl> editChromeControls = new Dictionary<string, BistroBuilderEditChromeControl>();
@@ -52,6 +53,7 @@ public sealed partial class BistroBuilderUiShell
         if(editChromeHistory==null)editChromeHistory=FindScene<RestaurantPlacementHistoryService>();
         if(editChromeDeletion==null)editChromeDeletion=FindScene<RestaurantPlaceableDeletionService>();
         if(editChromeGrid==null)editChromeGrid=FindScene<BistroBuilderEditGridOverlay>();
+        if(editConstructionPanel==null)editConstructionPanel=FindScene<BistroBuilderConstructionPlayerPanel>();
     }
     RectTransform EditBar(string name,bool top,float side,float edge,float height)
     {
@@ -111,9 +113,35 @@ public sealed partial class BistroBuilderUiShell
         ChromeTool(root,"EditServices",Symbol.Settings,"Servicios",Mode.Furniture,RestaurantPlaceableItemCategory.ServiceEquipment);
         ChromeTool(root,"EditOther",Symbol.More,"Otro",Mode.Furniture,RestaurantPlaceableItemCategory.Other);
         ChromeSpacer(root,"EditBottomSpacer");
+
+        // Diseño inicial y construcción comparten esta misma franja.
+        // Los controles aparecen solo cuando su contexto existe; no se apilan
+        // paneles flotantes sobre el viewport.
+        ChromeButton(root,"EditInitialSave",Symbol.Save,"Guardar",136,58,
+            "Guardar un punto de recuperación del diseño inicial",
+            SaveInitialFromChrome,true);
+        ChromeButton(root,"EditInitialContinue",Symbol.Play,"Validar y continuar",196,58,
+            "Validar el restaurante y comenzar la partida",
+            CompleteInitialFromChrome,true,false,EditChromeOlive);
+
+        ChromeButton(root,"EditDiscardDraft",Symbol.Undo,"Descartar",132,58,
+            "Descartar los cambios de construcción aún no aplicados",
+            DiscardConstructionDraft,true);
+        ChromeButton(root,"EditApplyDraft",Symbol.Confirm,"Aplicar cambios",162,58,
+            "Aplicar los cambios de construcción pendientes",
+            ApplyConstructionDraft,true,false,EditChromeOlive);
+
         ChromeButton(root,"EditDelete",Symbol.Delete,"Eliminar",127,58,"Eliminar la selección; aplica la devolución o coste indicado en el inspector",DeleteChromeSelection,true);
         ChromeButton(root,"EditRotate",Symbol.Rotate,"Rotar",118,58,"Girar artículo, pared o módulo. Paredes y módulos: 90° (R)",RotateChromeSelection,true);
         ChromeButton(root,"EditDuplicate",Symbol.Duplicate,"Duplicar",131,58,"Preparar otra unidad para colocar; se cobra al confirmar",DuplicateChromeSelection,true);
+
+        SetChromeVisible("EditInitialSave",false);
+        SetChromeVisible("EditInitialContinue",false);
+        SetChromeVisible("EditDiscardDraft",false);
+        SetChromeVisible("EditApplyDraft",false);
+        SetChromeVisible("EditDelete",false);
+        SetChromeVisible("EditRotate",false);
+        SetChromeVisible("EditDuplicate",false);
     }
     string EditPlotDimensions()
     {
@@ -123,6 +151,34 @@ public sealed partial class BistroBuilderUiShell
     bool IsFurnitureTool()=>editModeConstructionTool==null||editModeConstructionTool.Mode==Mode.Furniture;
     RestaurantPlaceableObject SelectedChromePlaceable()
     {var editable=editModeFurnitureController!=null?editModeFurnitureController.SelectedEditableObject:null;return editable!=null?editable.GetComponent<RestaurantPlaceableObject>():null;}
+    void SaveInitialFromChrome()
+    {
+        ResolveEditChrome();
+        if(editConstructionPanel==null)return;
+        editConstructionPanel.TryRequestInitialSaveFromChrome(out var message);
+        ChromeMessage(message);
+    }
+    void CompleteInitialFromChrome()
+    {
+        ResolveEditChrome();
+        if(editConstructionPanel==null)return;
+        editConstructionPanel.TryCompleteInitialDesignFromChrome(out var message);
+        ChromeMessage(message);
+    }
+    void ApplyConstructionDraft()
+    {
+        ResolveEditChrome();
+        if(editConstructionPanel==null)return;
+        editConstructionPanel.TryApplyDraftFromChrome(out var message);
+        ChromeMessage(message);
+    }
+    void DiscardConstructionDraft()
+    {
+        ResolveEditChrome();
+        if(editConstructionPanel==null)return;
+        editConstructionPanel.TryDiscardDraftFromChrome(out var message);
+        ChromeMessage(message);
+    }
     void DeleteChromeSelection()
     {
         var selected=SelectedChromePlaceable();
@@ -174,12 +230,44 @@ public sealed partial class BistroBuilderUiShell
         bool selected=editModeFurnitureController!=null&&editModeFurnitureController.HasSelection;
         bool placement=editModeFurnitureController!=null&&editModeFurnitureController.HasActivePlacement;
         bool structure=editModeConstructionTool!=null&&(editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Wall||editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Opening);
+        bool initial=editConstructionPanel!=null&&editConstructionPanel.IsInitialDesignPhase;
+        bool draft=!furniture&&editConstructionPanel!=null&&editConstructionPanel.HasDraftChanges;
+
         editChromeButtons["EditMove"].interactable=furniture&&selected&&!placement;
         editChromeButtons["EditDelete"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
         editChromeButtons["EditRotate"].interactable=furniture?(placement||selected):editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture;
         editChromeButtons["EditDuplicate"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
         editChromeButtons["EditUndo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo;
         editChromeButtons["EditRedo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo;
+
+        // Acciones contextuales: no ocupan espacio cuando no aportan nada.
+        SetChromeVisible("EditMove",furniture&&selected&&!placement);
+        bool showSelectionActions=!initial&&(placement||selected||structure);
+        SetChromeVisible("EditDelete",showSelectionActions&&!placement&&(furniture?SelectedChromePlaceable()!=null:structure));
+        SetChromeVisible("EditRotate",showSelectionActions&&(furniture?(placement||selected):editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture));
+        SetChromeVisible("EditDuplicate",showSelectionActions&&!placement&&(furniture?SelectedChromePlaceable()!=null:structure));
+
+        SetChromeVisible("EditInitialSave",initial);
+        SetChromeVisible("EditInitialContinue",initial);
+        if(initial)
+        {
+            bool saveReady=editConstructionPanel!=null&&!editConstructionPanel.IsInitialSaveBusy;
+            editChromeButtons["EditInitialSave"].interactable=saveReady;
+            editChromeButtons["EditInitialContinue"].interactable=saveReady;
+        }
+
+        SetChromeVisible("EditDiscardDraft",!initial&&draft);
+        SetChromeVisible("EditApplyDraft",!initial&&draft);
+        if(!initial&&draft)
+        {
+            editChromeButtons["EditDiscardDraft"].interactable=true;
+            editChromeButtons["EditApplyDraft"].interactable=true;
+        }
+
+        // En anchuras reducidas el bloque de terreno cede espacio al viewport y
+        // a las acciones activas. No se escalan textos hasta volverlos ilegibles.
+        Transform venue=editModeBottomBar!=null?editModeBottomBar.Find("EditVenue"):null;
+        if(venue!=null)venue.gameObject.SetActive(Screen.width>=1540);
     }
     string EditChromeClock()
     {
@@ -195,6 +283,11 @@ public sealed partial class BistroBuilderUiShell
         return topClock!=null?day+$"{topClock.Hour:00}:{topClock.Minute:00}":"—";
     }
     void ChromeSelected(string key,bool value)=>editChromeControls[key].SetSelected(value);
+    void SetChromeVisible(string key,bool visible)
+    {
+        if(editChromeButtons.TryGetValue(key,out var button)&&button!=null)
+            button.gameObject.SetActive(visible);
+    }
     void ChromeTool(Transform root,string key,Symbol symbol,string title,Mode mode,RestaurantPlaceableItemCategory? category)
     {
         RestaurantEditCatalogSection section = key switch
