@@ -81,6 +81,8 @@ public sealed partial class BistroBuilderUiShell
             var frame=NewUi("ApprovedFrame",root).AddComponent<BistroBuilderTopBarPlate>();
             frame.raycastTarget=false;
             StretchChrome(frame.rectTransform,0,0,0,0);
+            var frameLayout=frame.gameObject.AddComponent<LayoutElement>();
+            frameLayout.ignoreLayout=true;
             frame.transform.SetAsFirstSibling();
         }
         else
