@@ -15,7 +15,7 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
     private RestaurantEditInteractionController furniture;
     private BistroBuilderNewGameOpeningService opening;
     private BistroBuilderUiShell shell;
-    private RectTransform root, inspector, moduleControls, openingControls, initialControls, modal;
+    private RectTransform root, constructionCatalog, inspector, moduleControls, openingControls, initialControls, bottomActions, modal;
     private TMP_Text status, selection, dimensions, moduleLabel, summary;
     private Button undo, redo, copy, remove, apply, saveInitial, completeInitial;
     private readonly Dictionary<BistroBuilderConstructionRuntimeMode, Button> modes = new Dictionary<BistroBuilderConstructionRuntimeMode, Button>();
@@ -26,6 +26,18 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
     private string lastToolStatus;
 
     public bool IsReady => root != null;
+    public bool IsInitialDesignPhase =>
+        opening != null && opening.IsInitialDesignPhase;
+    public bool IsInitialSaveBusy =>
+        opening != null && opening.IsSaveBusy;
+    public bool HasDraftChanges =>
+        tool != null && tool.HasDraftChanges;
+    public string CurrentStatus =>
+        !string.IsNullOrWhiteSpace(actionStatus)
+            ? actionStatus
+            : tool != null
+                ? tool.StatusMessage
+                : string.Empty;
     public bool BlocksWorldInput => (modal != null && modal.gameObject.activeInHierarchy) || (shell != null && shell.HasManagementScreenOpen);
     public static bool InterceptExit()
     {
@@ -67,6 +79,18 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
             entry.Value.colors = BistroBuilderUiTokens.ButtonColors(normal,Color.Lerp(normal,Color.white,0.1f),Color.Lerp(normal,Color.black,0.15f));
         }
         bool furnitureMode = tool.Mode == BistroBuilderConstructionRuntimeMode.Furniture;
+
+        // La franja inferior y los controles de diseño inicial pertenecen ahora
+        // al chrome canónico del modo edición. Conservamos estos objetos legacy
+        // desactivados únicamente para compatibilidad de escena.
+        if (bottomActions != null)
+            bottomActions.gameObject.SetActive(false);
+        if (initialControls != null)
+            initialControls.gameObject.SetActive(false);
+
+        if (constructionCatalog != null)
+            constructionCatalog.gameObject.SetActive(!furnitureMode);
+
         inspector.gameObject.SetActive(false);
         moduleControls.gameObject.SetActive(tool.Mode == BistroBuilderConstructionRuntimeMode.WallModule);
         openingControls.gameObject.SetActive(tool.SelectedKind == EntityKind.Opening);
@@ -82,8 +106,8 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         apply.interactable = tool.HasDraftChanges;
         bool initial = opening != null && opening.IsInitialDesignPhase &&
             FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>() == null;
-        initialControls.gameObject.SetActive(initial);
-        if (initial) saveInitial.interactable = completeInitial.interactable = !opening.IsSaveBusy;
+        if (saveInitial != null) saveInitial.interactable = initial && !opening.IsSaveBusy;
+        if (completeInitial != null) completeInitial.interactable = initial && !opening.IsSaveBusy;
     }
 
     private void Build()
@@ -92,7 +116,8 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         if (canvas == null || tool == null) return;
         root = Node("BB_ConstructionWorkspace", canvas.transform);
         Stretch(root);
-        var catalogue = Panel("Catálogo de construcción", root, new Vector2(0,1), new Vector2(12,-82), new Vector2(252,760));
+        constructionCatalog = Panel("Catálogo de construcción", root, new Vector2(0,1), new Vector2(12,-82), new Vector2(252,760));
+        var catalogue = constructionCatalog;
         Text(catalogue, "Diseña tu local", 25, 40);
         Text(catalogue, "HERRAMIENTAS", 12, 24);
         Mode(catalogue, "Pared continua", BistroBuilderConstructionRuntimeMode.Wall, "wall");
@@ -132,7 +157,8 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         saveInitial = Button(initialControls, "Guardar recuperación", SaveInitial);
         completeInitial = Button(initialControls, "Validar restaurante y continuar", CompleteInitial, 52);
 
-        var bottom = Panel("Acciones de construcción", root, new Vector2(0.5f,0), new Vector2(0,82), new Vector2(990,104));
+        bottomActions = Panel("Acciones de construcción", root, new Vector2(0.5f,0), new Vector2(0,82), new Vector2(990,104));
+        var bottom = bottomActions;
         status = Text(bottom, "", 15, 30);
         var actions = Row(bottom);
         dimensions = Text(actions, "", 13, 38);
@@ -179,21 +205,148 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         try { if (furniture != null) furniture.TryExitEditMode(false); }
         finally { bypassExit = false; }
     }
+    public bool TryApplyDraftFromChrome(out string message)
+    {
+        Cache();
+        message = string.Empty;
+
+        if (tool == null)
+        {
+            message = "No está disponible la herramienta de construcción.";
+            actionStatus = message;
+            return false;
+        }
+
+        bool applied =
+            tool.TryCommitDraft(out string error);
+
+        message = applied
+            ? "Cambios de construcción aplicados."
+            : error;
+
+        actionStatus = message;
+        return applied;
+    }
+
+    public bool TryDiscardDraftFromChrome(out string message)
+    {
+        Cache();
+        message = string.Empty;
+
+        if (tool == null)
+        {
+            message = "No está disponible la herramienta de construcción.";
+            actionStatus = message;
+            return false;
+        }
+
+        bool discarded =
+            tool.TryCancelDraft(out string error);
+
+        message = discarded
+            ? "Cambios de construcción descartados."
+            : error;
+
+        actionStatus = message;
+        return discarded;
+    }
+
+    public bool TryRequestInitialSaveFromChrome(out string message)
+    {
+        Cache();
+        message = string.Empty;
+
+        if (opening == null || !opening.IsInitialDesignPhase)
+        {
+            message = "El diseño inicial ya no está activo.";
+            actionStatus = message;
+            return false;
+        }
+
+        if (opening.IsSaveBusy)
+        {
+            message = "Ya hay un guardado en curso.";
+            actionStatus = message;
+            return false;
+        }
+
+        if (tool != null &&
+            tool.HasDraftChanges &&
+            !tool.TryCommitDraft(out string commitError))
+        {
+            message = commitError;
+            actionStatus = message;
+            return false;
+        }
+
+        bool requested =
+            opening.TryRequestInitialSave(out string error);
+
+        message = requested
+            ? "Guardado de recuperación iniciado."
+            : error;
+
+        actionStatus = message;
+        return requested;
+    }
+
+    public bool TryCompleteInitialDesignFromChrome(out string message)
+    {
+        Cache();
+        message = string.Empty;
+
+        if (opening == null || !opening.IsInitialDesignPhase)
+        {
+            message = "El diseño inicial ya no está activo.";
+            actionStatus = message;
+            return false;
+        }
+
+        if (opening.IsSaveBusy)
+        {
+            message = "Espera a que termine el guardado en curso.";
+            actionStatus = message;
+            return false;
+        }
+
+        if (tool != null &&
+            tool.HasDraftChanges &&
+            !tool.TryCommitDraft(out string commitError))
+        {
+            message = commitError;
+            actionStatus = message;
+            return false;
+        }
+
+        if (!opening.TryCompleteInitialDesign(out string error) ||
+            !opening.TryAcknowledgeBriefing(out error) ||
+            !opening.TryOpenFirstService(out error) ||
+            !opening.TryTransitionToNormalPlay(out error))
+        {
+            message = error;
+            actionStatus = message;
+            return false;
+        }
+
+        if (tool != null)
+            tool.SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
+
+        FindFirstObjectByType<
+            BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
+
+        actionStatus = string.Empty;
+        message = "Diseño inicial validado.";
+        return true;
+    }
+
     private void SaveInitial()
     {
-        if (!tool.TryCommitDraft(out var error)) { actionStatus = error; return; }
-        actionStatus = opening.TryRequestInitialSave(out error) ? "Guardando punto de recuperación…" : error;
+        TryRequestInitialSaveFromChrome(out _);
     }
+
     private void CompleteInitial()
     {
-        if (!tool.TryCommitDraft(out var error) || !opening.TryCompleteInitialDesign(out error))
-        { actionStatus = error; return; }
-        // Continue through the existing opening flow only after its validation succeeds.
-        if (!opening.TryAcknowledgeBriefing(out error) || !opening.TryOpenFirstService(out error) ||
-            !opening.TryTransitionToNormalPlay(out error)) { actionStatus = error; return; }
-        tool.SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
-        FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
-        actionStatus = string.Empty;
+        TryCompleteInitialDesignFromChrome(out _);
     }
     private void Mode(Transform parent, string label, BistroBuilderConstructionRuntimeMode mode, string icon)
     {
