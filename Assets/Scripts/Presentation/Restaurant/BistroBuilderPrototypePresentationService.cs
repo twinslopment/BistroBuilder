@@ -20,6 +20,9 @@ public sealed class BistroBuilderPrototypePresentationService :
     private const string TableVisualRootName =
         "BB_Presentation_TableVisual";
 
+    private const string FloorPlinthName =
+        "BB_Presentation_FloorPlinth";
+
     [RuntimeInitializeOnLoadMethod(
         RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterRuntimeInstallation()
@@ -197,6 +200,7 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (calmExplicitTestGeometry)
             CalmExplicitPlaceholders();
 
+        EnsureFloorPlinth();
         RefreshActorVisibility();
     }
 
@@ -784,6 +788,130 @@ public sealed class BistroBuilderPrototypePresentationService :
                     serviceMaterial;
             }
         }
+    }
+
+    private void EnsureFloorPlinth()
+    {
+        GameObject floor =
+            GameObject.Find(
+                "Floor_Test");
+
+        if (floor == null ||
+            serviceMaterial == null ||
+            floor.transform.Find(
+                FloorPlinthName) != null)
+        {
+            return;
+        }
+
+        MeshFilter filter =
+            floor.GetComponent<MeshFilter>();
+
+        MeshRenderer renderer =
+            floor.GetComponent<MeshRenderer>();
+
+        if (filter == null ||
+            renderer == null ||
+            filter.sharedMesh == null ||
+            !IsPrimitiveRenderer(renderer))
+        {
+            return;
+        }
+
+        Bounds bounds =
+            renderer.bounds;
+
+        const float worldThickness =
+            0.16f;
+
+        Vector3 worldCenter =
+            bounds.center;
+
+        worldCenter.y =
+            bounds.min.y -
+            worldThickness * 0.5f;
+
+        Vector3 scale =
+            floor.transform.lossyScale;
+
+        float safeX =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.x));
+
+        float safeY =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.y));
+
+        float safeZ =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.z));
+
+        Vector3 localCenter =
+            floor.transform
+                .InverseTransformPoint(
+                    worldCenter);
+
+        Vector3 localSize =
+            new Vector3(
+                bounds.size.x * 1.018f /
+                    safeX,
+                worldThickness /
+                    safeY,
+                bounds.size.z * 1.018f /
+                    safeZ);
+
+        GameObject plinth =
+            new GameObject(
+                FloorPlinthName,
+                typeof(MeshFilter),
+                typeof(MeshRenderer));
+
+        plinth.layer =
+            floor.layer;
+
+        plinth.transform.SetParent(
+            floor.transform,
+            false);
+
+        plinth.transform.localPosition =
+            localCenter;
+
+        plinth.transform.localRotation =
+            Quaternion.identity;
+
+        plinth.transform.localScale =
+            localSize;
+
+        MeshFilter plinthFilter =
+            plinth.GetComponent<MeshFilter>();
+
+        plinthFilter.sharedMesh =
+            filter.sharedMesh;
+
+        MeshRenderer plinthRenderer =
+            plinth.GetComponent<MeshRenderer>();
+
+        plinthRenderer.sharedMaterial =
+            serviceMaterial;
+
+        plinthRenderer.shadowCastingMode =
+            ShadowCastingMode.On;
+
+        plinthRenderer.receiveShadows =
+            true;
+
+        plinthRenderer.lightProbeUsage =
+            LightProbeUsage.BlendProbes;
+
+        plinthRenderer.reflectionProbeUsage =
+            ReflectionProbeUsage.BlendProbes;
+
+        /*
+         * No se añade Collider: el tablero inferior es puramente visual.
+         */
     }
 
     private void CalmExplicitPlaceholders()
