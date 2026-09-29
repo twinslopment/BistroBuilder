@@ -570,7 +570,8 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             HandlePlacementValidationChanged;
     }
 
-    private void CacheDependenciesIfNeeded()
+    private void CacheDependenciesIfNeeded(
+        bool allowRuntimeCreation = true)
     {
         if (interactionController == null)
         {
@@ -581,7 +582,13 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         if (universalPreviewService == null)
         {
+            /*
+             * OnValidate/Reset nunca pueden crear componentes, incluso si
+             * Unity ya ha elevado Application.isPlaying durante la transición
+             * a Play Mode. Solo Awake/OnEnable pueden materializar el servicio.
+             */
             universalPreviewService =
+                allowRuntimeCreation &&
                 Application.isPlaying
                     ? BistroBuilderUniversalPreviewService.GetOrCreate()
                     : FindFirstObjectByType<
@@ -618,12 +625,14 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 #if UNITY_EDITOR
     private void Reset()
     {
-        CacheDependenciesIfNeeded();
+        CacheDependenciesIfNeeded(
+            false);
     }
 
     private void OnValidate()
     {
-        CacheDependenciesIfNeeded();
+        CacheDependenciesIfNeeded(
+            false);
     }
 #endif
 
