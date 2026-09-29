@@ -39,10 +39,9 @@ foreach ($restoreRoot in $restoreRoots) {
         foreach ($path in $trackedPaths) {
             $parent = Split-Path -Parent $path
             if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
-            $spec = $stashRef + ':' + $path
-            $bytes = git.exe show $spec
+            & git.exe checkout $stashRef -- $path
             if ($LASTEXITCODE -ne 0) { throw ('Failed to restore tracked SAVIC file: ' + $path) }
-            [System.IO.File]::WriteAllLines((Join-Path $root $path), $bytes)
+            & git.exe restore --staged -- $path 2>$null
             Write-Output ('RESTORED_TRACKED|' + $path)
         }
     }
@@ -55,10 +54,9 @@ foreach ($restoreRoot in $restoreRoots) {
             foreach ($path in $untrackedPaths) {
                 $parent = Split-Path -Parent $path
                 if ($parent) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
-                $spec = $untrackedParent + ':' + $path
-                $bytes = git.exe show $spec
+                & git.exe checkout $untrackedParent -- $path
                 if ($LASTEXITCODE -ne 0) { throw ('Failed to restore untracked SAVIC file: ' + $path) }
-                [System.IO.File]::WriteAllLines((Join-Path $root $path), $bytes)
+                & git.exe restore --staged -- $path 2>$null
                 Write-Output ('RESTORED_UNTRACKED|' + $path)
             }
         }
