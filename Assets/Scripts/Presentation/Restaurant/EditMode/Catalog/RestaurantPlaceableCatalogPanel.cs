@@ -299,8 +299,23 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
         bool shouldBeVisible =
             editModeService != null &&
             editModeService.IsEditModeActive;
-        shouldBeVisible &= uiShell == null || !uiShell.HasManagementScreenOpen;
-        shouldBeVisible &= !RestaurantEditCatalogSections.IsArchitecture(CurrentSection);
+
+        shouldBeVisible &=
+            uiShell == null ||
+            !uiShell.HasManagementScreenOpen;
+
+        shouldBeVisible &=
+            !RestaurantEditCatalogSections.IsArchitecture(
+                CurrentSection);
+
+        /*
+         * Durante una colocación el catálogo ya no es interactuable. Ocultarlo
+         * temporalmente libera viewport y mantiene el foco sobre el mundo.
+         * Al confirmar o cancelar reaparece automáticamente.
+         */
+        shouldBeVisible &=
+            interactionController == null ||
+            !interactionController.HasActivePlacement;
         var construction = BistroBuilderConstructionPlayerPanel.Instance;
         if (construction != null)
         {
