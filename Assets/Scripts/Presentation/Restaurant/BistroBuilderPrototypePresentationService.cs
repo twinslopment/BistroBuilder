@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Capa de presentación para contenido whitebox que todavía conserva
@@ -22,6 +23,56 @@ public sealed class BistroBuilderPrototypePresentationService :
 {
     private const string TableVisualRootName =
         "BB_Presentation_TableVisual";
+
+    [RuntimeInitializeOnLoadMethod(
+        RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void RegisterRuntimeInstallation()
+    {
+        SceneManager.sceneLoaded -=
+            HandleRuntimeSceneLoaded;
+
+        SceneManager.sceneLoaded +=
+            HandleRuntimeSceneLoaded;
+    }
+
+    private static void HandleRuntimeSceneLoaded(
+        Scene scene,
+        LoadSceneMode mode)
+    {
+        EnsureRuntimeInstallation();
+    }
+
+    private static void EnsureRuntimeInstallation()
+    {
+        if (FindFirstObjectByType<
+                BistroBuilderPrototypePresentationService>() != null)
+        {
+            return;
+        }
+
+        RestaurantPlaceableCreationService creation =
+            FindFirstObjectByType<
+                RestaurantPlaceableCreationService>(
+                FindObjectsInactive.Include);
+
+        BistroBuilderNewGameOpeningService opening =
+            FindFirstObjectByType<
+                BistroBuilderNewGameOpeningService>(
+                FindObjectsInactive.Include);
+
+        GameObject host =
+            creation != null
+                ? creation.gameObject
+                : opening != null
+                    ? opening.gameObject
+                    : null;
+
+        if (host == null)
+            return;
+
+        host.AddComponent<
+            BistroBuilderPrototypePresentationService>();
+    }
 
     [Header("Ámbito")]
     [SerializeField] private bool skinPrimitiveTables = true;
