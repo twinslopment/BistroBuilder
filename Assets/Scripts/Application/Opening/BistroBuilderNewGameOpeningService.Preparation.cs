@@ -40,4 +40,71 @@ public sealed partial class BistroBuilderNewGameOpeningService
         Physics.SyncTransforms();
         return true;
     }
+
+    private bool TryPrepareStartingPremises(
+        BistroBuilderStartingPremisesProfile profile,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (profile == BistroBuilderStartingPremisesProfile.Empty)
+        {
+            if (!TryPrepareEmptyPremises(out error))
+                return false;
+        }
+        else if (profile == BistroBuilderStartingPremisesProfile.Essentials)
+        {
+            if (!TryPrepareEssentials(out error))
+                return false;
+        }
+
+        if (!TryPrepareStartingArchitecture(profile, out error))
+            return false;
+
+        if (!BistroBuilderPremisesPresentationRuntime.Apply(profile, out error))
+            return false;
+
+        Physics.SyncTransforms();
+        return true;
+    }
+
+    private bool TryPrepareStartingArchitecture(
+        BistroBuilderStartingPremisesProfile profile,
+        out string error)
+    {
+        error = string.Empty;
+        if (editDocumentService == null)
+        {
+            error = "No está disponible el documento canónico de edición.";
+            return false;
+        }
+
+        GameObject floor = GameObject.Find("Floor_Test");
+        Renderer floorRenderer = floor != null
+            ? floor.GetComponent<Renderer>()
+            : null;
+        if (floorRenderer == null)
+        {
+            error = "No se encontró la envolvente física del local inicial.";
+            return false;
+        }
+
+        GameObject entrance = GameObject.Find("RestaurantEntrancePoint");
+        Vector3 entrancePosition = entrance != null
+            ? entrance.transform.position
+            : floorRenderer.bounds.center;
+
+        if (!BistroBuilderPreparedPremisesLayout.TryBuild(
+                profile,
+                floorRenderer.bounds,
+                entrancePosition,
+                out BistroBuilderEditDocument prepared,
+                out error))
+            return false;
+
+        return editDocumentService.ReplaceCommittedForLoad(
+            prepared,
+            out error);
+    }
+
 }
