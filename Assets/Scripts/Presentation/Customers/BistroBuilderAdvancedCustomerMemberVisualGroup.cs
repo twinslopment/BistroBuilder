@@ -12,7 +12,22 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
     [SerializeField] private CustomerGroup customerGroup;
     [SerializeField] private MeshRenderer groupPlaceholderRenderer;
     [SerializeField, Min(0.15f)] private float memberSpacing = 0.42f;
-    [SerializeField] private Vector3 memberScale = new Vector3(0.32f, 0.55f, 0.32f);
+    [SerializeField] private Vector3 memberScale = new Vector3(0.30f, 0.72f, 0.30f);
+
+    private static readonly int BaseColorPropertyId =
+        Shader.PropertyToID("_BaseColor");
+
+    private static readonly int ColorPropertyId =
+        Shader.PropertyToID("_Color");
+
+    private static readonly Color[] PresentationPalette =
+    {
+        new Color32(111, 128, 92, 255),
+        new Color32(151, 115, 83, 255),
+        new Color32(92, 119, 128, 255),
+        new Color32(136, 106, 122, 255),
+        new Color32(119, 112, 91, 255)
+    };
 
     private readonly List<GameObject> visuals = new List<GameObject>(8);
     private int builtForSize;
@@ -88,8 +103,33 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
         visual.layer = gameObject.layer;
 
         MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
-        if (renderer != null && sharedMaterial != null)
-            renderer.sharedMaterial = sharedMaterial;
+        if (renderer != null)
+        {
+            if (sharedMaterial != null)
+                renderer.sharedMaterial = sharedMaterial;
+
+            MaterialPropertyBlock block =
+                new MaterialPropertyBlock();
+
+            Color presentationColor =
+                PresentationPalette[
+                    Mathf.Abs(
+                        memberIndex +
+                        (customerGroup != null
+                            ? customerGroup.GroupId
+                            : 0)) %
+                    PresentationPalette.Length];
+
+            block.SetColor(
+                BaseColorPropertyId,
+                presentationColor);
+
+            block.SetColor(
+                ColorPropertyId,
+                presentationColor);
+
+            renderer.SetPropertyBlock(block);
+        }
         Collider collider = visual.GetComponent<Collider>();
         if (collider != null) collider.isTrigger = true;
         var target = visual.AddComponent<BistroBuilderAdvancedCustomerMemberHitTarget>();
