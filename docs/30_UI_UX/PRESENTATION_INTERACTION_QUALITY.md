@@ -98,7 +98,7 @@ Mientras existan primitivas funcionales:
 - Presentation puede sustituir solo su renderer.
 
 ### Política runtime
-`BistroBuilderPresentationQualityDirector`:
+`BistroBuilderPrototypePresentationService`:
 - aplica materiales canónicos a primitivas de mobiliario/equipamiento;
 - aplica acabado cálido/arquitectónico a obstáculos whitebox;
 - instala proxies visuales de mesa cuando una mesa funcional sigue siendo un cubo;
@@ -106,7 +106,7 @@ Mientras existan primitivas funcionales:
 - al salir de edición restaura exactamente sus renderers.
 
 ### Mesa provisional
-`BistroBuilderPrimitiveTablePresentationProxy`:
+Proxy interno de mesa del `BistroBuilderPrototypePresentationService`:
 - conserva la mesa funcional original;
 - no crea colliders;
 - dibuja tablero, cuatro patas y faldón mediante mesh runtime propio;
