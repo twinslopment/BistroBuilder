@@ -14,21 +14,26 @@ public sealed partial class BistroBuilderUiShell
 
     private void EnsureModeSelector()
     {
-        if (shellRoot == null) return;
+        /*
+         * El selector flotante fue útil durante la transición del HUD, pero
+         * ahora duplica dos controles canónicos:
+         * - la navegación normal ya expone "Edición del local";
+         * - la barra superior de Modo Edición ya expone la salida al juego.
+         *
+         * No se destruye por compatibilidad con escenas antiguas, pero nunca
+         * se crea de nuevo y cualquier instancia heredada queda desactivada.
+         */
+        if (shellRoot == null)
+            return;
 
-        Transform existing = shellRoot.Find(ModeSelectorName);
-        modeSelectorRoot = existing as RectTransform;
-        if (modeSelectorRoot == null)
-        {
-            modeSelectorRoot = NewUi(ModeSelectorName, shellRoot).GetComponent<RectTransform>();
-            BuildModeSelector();
-        }
+        Transform existing =
+            shellRoot.Find(ModeSelectorName);
 
-        modeSelectorRoot.anchorMin = new Vector2(0.5f, 1f);
-        modeSelectorRoot.anchorMax = new Vector2(0.5f, 1f);
-        modeSelectorRoot.pivot = new Vector2(0.5f, 1f);
-        modeSelectorRoot.sizeDelta = new Vector2(248f, 48f);
-        modeSelectorRoot.SetAsLastSibling();
+        modeSelectorRoot =
+            existing as RectTransform;
+
+        if (modeSelectorRoot != null)
+            modeSelectorRoot.gameObject.SetActive(false);
     }    private void BuildModeSelector()
     {
         Image background = modeSelectorRoot.gameObject.AddComponent<Image>();
@@ -153,27 +158,9 @@ public sealed partial class BistroBuilderUiShell
     }    private void RefreshModeSelector(bool editing, bool managing)
     {
         EnsureModeSelector();
-        if (modeSelectorRoot == null) return;
 
-        float topOffset = editing
-            ? 84f
-            : (topNavigation != null ? 18f + topNavigation.rect.height : 72f);
-        modeSelectorRoot.anchoredPosition = new Vector2(0f, -topOffset);
-        modeSelectorRoot.gameObject.SetActive(true);
-        modeSelectorRoot.SetAsLastSibling();
-
-        ApplyModeSelectorState(normalModeSelectorButton, !editing);
-        ApplyModeSelectorState(editModeSelectorButton, editing);
-
-        normalModeSelectorButton.interactable = editing;
-        editModeSelectorButton.interactable = !editing;
-
-        if (modeSelectorStatus != null &&
-            modeSelectorStatus.gameObject.activeSelf &&
-            Time.unscaledTime >= modeSelectorStatusUntil)
-        {
-            modeSelectorStatus.gameObject.SetActive(false);
-        }
+        if (modeSelectorRoot != null)
+            modeSelectorRoot.gameObject.SetActive(false);
     }
 
     private static void ApplyModeSelectorState(Button button, bool selected)
