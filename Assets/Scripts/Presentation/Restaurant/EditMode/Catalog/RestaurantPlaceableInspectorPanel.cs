@@ -339,7 +339,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             Card,
             TextMuted,
             24f);
-        close.onClick.AddListener(Hide);
+        close.onClick.AddListener(HandleCloseClicked);
     }
 
     private void BuildPreview()
@@ -440,7 +440,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         TMP_Text label = CreateTmp(
             "Label",
             variantsSection.transform,
-            "Variantes de color",
+            "Acabados disponibles",
             semiBoldFont,
             14f,
             TextPrimary,
@@ -1215,6 +1215,21 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     {
         RefreshActionInteractivity();
         RefreshContextStatus();
+    }
+
+    private void HandleCloseClicked()
+    {
+        // Cerrar una ficha de un objeto ya colocado también libera su selección.
+        // Así un clic posterior sobre el mismo objeto vuelve a publicar el evento
+        // de selección y puede reabrir el inspector de forma determinista.
+        if (selectedPlaceable != null &&
+            interactionController != null &&
+            !interactionController.HasActivePlacement)
+        {
+            interactionController.ClearSelection();
+        }
+
+        Hide();
     }
 
     private void HandleFocusClicked()
