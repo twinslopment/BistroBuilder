@@ -19,6 +19,9 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
     private List<RestaurantPlaceableItemDefinition> definitions =
         new List<RestaurantPlaceableItemDefinition>();
 
+    [SerializeField]
+    private RestaurantPlaceableCatalogService playableCatalogService;
+
     private readonly Dictionary<
         string,
         RestaurantPlaceableItemDefinition
@@ -29,6 +32,8 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
         >(StringComparer.Ordinal);
 
     private bool indexBuilt;
+    private bool catalogSubscribed;
+    private bool synchronizing;
 
     public IReadOnlyList<RestaurantPlaceableItemDefinition>
         Definitions => definitions;
@@ -44,7 +49,32 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
 
     private void Awake()
     {
+        CachePlayableCatalog();
+        SynchronizePlayableDefinitions();
         RebuildIndex();
+    }
+
+    private void OnEnable()
+    {
+        CachePlayableCatalog();
+        SubscribePlayableCatalog();
+        SynchronizePlayableDefinitions();
+        RebuildIndex();
+    }
+
+    private void Start()
+    {
+        /*
+         * Cubre cualquier orden de Awake entre servicios. El catálogo jugable
+         * ya está materializado antes de la primera operación de partida.
+         */
+        SynchronizePlayableDefinitions();
+        RebuildIndex();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribePlayableCatalog();
     }
 
     public void RebuildIndex()
@@ -80,6 +110,7 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
         out RestaurantPlaceableItemDefinition definition
     )
     {
+        SynchronizePlayableDefinitions();
         EnsureIndex();
 
         definition = null;
@@ -97,6 +128,7 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
 
     public bool ValidateConfiguration(out string error)
     {
+        SynchronizePlayableDefinitions();
         error = string.Empty;
 
         if (definitions == null || definitions.Count == 0)
@@ -144,6 +176,131 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
         }
 
         return true;
+    }
+
+    private void CachePlayableCatalog()
+    {
+        if (playableCatalogService == null)
+        {
+            playableCatalogService =
+                FindFirstObjectByType<RestaurantPlaceableCatalogService>();
+        }
+    }
+
+    private void SubscribePlayableCatalog()
+    {
+        if (catalogSubscribed ||
+            playableCatalogService == null)
+        {
+            return;
+        }
+
+        playableCatalogService.CatalogChanged +=
+            HandlePlayableCatalogChanged;
+
+        catalogSubscribed = true;
+    }
+
+    private void UnsubscribePlayableCatalog()
+    {
+        if (!catalogSubscribed ||
+            playableCatalogService == null)
+        {
+            catalogSubscribed = false;
+            return;
+        }
+
+        playableCatalogService.CatalogChanged -=
+            HandlePlayableCatalogChanged;
+
+        catalogSubscribed = false;
+    }
+
+    private void HandlePlayableCatalogChanged()
+    {
+        SynchronizePlayableDefinitions();
+        RebuildIndex();
+    }
+
+    /// <summary>
+    /// Adopta en runtime cualquier definición que el catálogo jugable ya
+    /// considera canónica. Conserva referencias legacy de guardado para no
+    /// romper partidas antiguas y evita hardcodes por asset concreto.
+    /// </summary>
+    private void SynchronizePlayableDefinitions()
+    {
+        if (synchronizing)
+            return;
+
+        CachePlayableCatalog();
+
+        if (playableCatalogService == null)
+            return;
+
+        synchronizing = true;
+
+        try
+        {
+            HashSet<string> knownIds =
+                new HashSet<string>(
+                    StringComparer.Ordinal);
+
+            for (int index = 0;
+                 index < definitions.Count;
+                 index++)
+            {
+                RestaurantPlaceableItemDefinition definition =
+                    definitions[index];
+
+                if (definition == null ||
+                    string.IsNullOrWhiteSpace(
+                        definition.ItemId))
+                {
+                    continue;
+                }
+
+                knownIds.Add(
+                    NormalizeItemId(
+                        definition.ItemId));
+            }
+
+            IReadOnlyList<RestaurantPlaceableItemDefinition> playable =
+                playableCatalogService.AvailableItems;
+
+            bool changed = false;
+
+            for (int index = 0;
+                 index < playable.Count;
+                 index++)
+            {
+                RestaurantPlaceableItemDefinition definition =
+                    playable[index];
+
+                if (definition == null ||
+                    string.IsNullOrWhiteSpace(
+                        definition.ItemId))
+                {
+                    continue;
+                }
+
+                string itemId =
+                    NormalizeItemId(
+                        definition.ItemId);
+
+                if (!knownIds.Add(itemId))
+                    continue;
+
+                definitions.Add(definition);
+                changed = true;
+            }
+
+            if (changed)
+                indexBuilt = false;
+        }
+        finally
+        {
+            synchronizing = false;
+        }
     }
 
     private void EnsureIndex()
