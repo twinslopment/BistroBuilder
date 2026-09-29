@@ -359,7 +359,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildDetails()
     {
-        RectTransform section = CreateLayoutRow("Details", 100f);
+        RectTransform section = CreateLayoutRow("Details", 128f);
         detailsSection = section;
 
         nameText = CreateTmp(
@@ -427,6 +427,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             13f,
             TextPrimary,
             TextAlignmentOptions.Center);
+        scopeText.enableAutoSizing = true;
+        scopeText.fontSizeMin = 9.5f;
+        scopeText.fontSizeMax = 13f;
         Stretch(scopeText.rectTransform, 5f, 5f, 2f, 2f);
     }
 
@@ -592,6 +595,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             11.5f,
             Olive,
             TextAlignmentOptions.TopLeft);
+        statusMessage.textWrappingMode = TextWrappingModes.Normal;
         SetAnchors(
             statusMessage.rectTransform,
             new Vector2(0f, 0f),
