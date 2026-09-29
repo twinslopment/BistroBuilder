@@ -769,9 +769,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (priceText != null)
         {
             priceText.text =
-                data.Price > 0
-                    ? data.Price.ToString("N0") + " €"
-                    : "Disponible";
+                data.Price.ToString("N0") + " €";
         }
 
         if (scopeText != null)
