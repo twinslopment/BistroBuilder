@@ -164,55 +164,7 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen : MonoBehavi
         GUI.enabled = true;
     }
 
-    private void DrawInitialDesignOverlay()
-    {
-        if (constructionTool == null)
-            constructionTool = FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
 
-        float width = Mathf.Min(420f, Screen.width - 24f);
-        float height = 176f;
-        Rect panel = new Rect(Screen.width - width - 12f, 88f, width, height);
-        BistroBuilderRuntimePointerUiGuard.PublishBlockedGuiRect(panel);
-        GUI.Box(panel, GUIContent.none, boxStyle);
-        GUILayout.BeginArea(new Rect(panel.x + 14f, panel.y + 10f, panel.width - 28f, panel.height - 20f));
-        GUILayout.Label("DISEÑO INICIAL", titleStyle);
-        GUILayout.Label(openingService.RestaurantName + " - " + PremisesLabel(openingService.PremisesProfile), textStyle);
-
-        if (!openingService.IsInitialEditModeActive)
-        {
-            if (GUILayout.Button("ACTIVAR MODO EDICION", GUILayout.Height(32f)))
-            {
-                initialEditEntryAttempted = false;
-                if (openingService.TryEnterInitialEditMode(out statusMessage)) statusMessage = string.Empty;
-            }
-        }
-        else
-        {
-            string liveStatus = ResolveLiveStatus();
-            if (!string.IsNullOrWhiteSpace(liveStatus)) GUILayout.Label(liveStatus, textStyle);
-            GUILayout.BeginHorizontal();
-            GUI.enabled = !openingService.IsSaveBusy;
-            if (GUILayout.Button("GUARDAR", GUILayout.Height(34f)))
-            {
-                if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO - " + e;
-                else statusMessage = openingService.TryRequestInitialSave(out e) ? "Guardado iniciado..." : "ERROR - " + e;
-            }
-            GUI.enabled = true;
-            if (GUILayout.Button("VALIDAR Y CONTINUAR", GUILayout.Height(34f)))
-            {
-                if (!TryCommitArchitectureBeforeTransition(out string e)) statusMessage = "BLOQUEO - " + e;
-                else if (TryValidateAndEnterGame(out e))
-                {
-                    constructionTool?.SetMode(BistroBuilderConstructionRuntimeMode.Furniture);
-                    statusMessage = string.Empty;
-                    Hide();
-                }
-                else statusMessage = "BLOQUEO - " + e;
-            }
-            GUILayout.EndHorizontal();
-        }
-        GUILayout.EndArea();
-    }
     private bool TryCommitArchitectureBeforeTransition(out string error)
     {
         error = string.Empty;
