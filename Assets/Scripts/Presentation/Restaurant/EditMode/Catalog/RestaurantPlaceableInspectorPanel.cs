@@ -971,6 +971,10 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Cierra el inspector contextual y libera los datos mostrados.
+    /// Forma parte del contrato de coordinación con el catálogo.
+    /// </summary>
     public void Hide()
     {
         currentData = null;

@@ -70,7 +70,8 @@ public static class BistroBuilderOpeningIvorySelfTest
                 // RuntimeInitializeOnLoadMethod runs only at play entry; restore that composition after each diagnostic scene reload.
                 typeof(BistroBuilderConstructionAuthoringRuntimeBootstrap).GetMethod("Install", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, null);
                 var construction = UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
-                Assert(construction != null && !construction.IsPlaytestPanelVisible, "Construction bar hidden on new game");
+                Assert(construction != null && GameObject.Find("BB_ConstructionWorkspace") == null,
+                    "Construction workspace hidden on new game");
                 Assert(Find<BistroBuilderOpeningActionIcon>("Arrow") != null && Find<BistroBuilderOpeningActionIcon>("Bell") != null && Find<RawImage>("Arrow") == null && Find<RawImage>("Bell") == null, "Action icons use native silhouettes without image rectangles");
                 var choices = Enumerable.Range(0,3).Select(i => (RectTransform)Find<Button>("Choice" + i).transform).ToArray();
                 Assert(choices.All(r => r.rect.size == choices[0].rect.size), "Three equal cards");
@@ -84,7 +85,8 @@ public static class BistroBuilderOpeningIvorySelfTest
                 Assert(!Find<Button>("CreateRestaurant").interactable, "Empty name cannot create");
                 Find<Button>("Back").onClick.Invoke();
                 Assert(Find<Button>("NewGame").gameObject.activeInHierarchy, "Back returns to main menu");
-                Assert(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>().IsPlaytestPanelVisible, "Construction bar stays hidden after Back");
+                Assert(GameObject.Find("BB_ConstructionWorkspace") == null,
+                    "Construction workspace stays hidden after Back");
                 Find<Button>("NewGame").onClick.Invoke();
                 Assert(Find<Button>("Choice0").gameObject.activeInHierarchy, "New game reopens");
                 Find<TMP_InputField>("RestaurantName").text = "Ivory QA " + Index;

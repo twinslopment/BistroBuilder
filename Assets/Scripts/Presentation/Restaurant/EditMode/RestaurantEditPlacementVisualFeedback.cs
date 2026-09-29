@@ -2,15 +2,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Proporciona feedback visual durante la colocación de objetos.
+/// Puente entre la validación de colocación y BB Universal Preview.
 ///
-/// Comportamiento:
-/// - Colocación válida: aplica el color válido.
-/// - Colocación inválida: aplica el color inválido.
-/// - Confirmación o cancelación: restaura el estado visual previo.
-///
-/// Utiliza MaterialPropertyBlock para no crear copias de
-/// materiales ni modificar materiales compartidos.
+/// El comportamiento principal publica huella, ghost, snap y conflicto
+/// en el sistema universal. El antiguo tintado completo verde/rojo se
+/// conserva únicamente como fallback de diagnóstico opcional.
 ///
 /// No utiliza Update. Reacciona exclusivamente a eventos del
 /// controlador de interacción.
@@ -32,7 +28,15 @@ public sealed class RestaurantEditPlacementVisualFeedback :
     private RestaurantEditInteractionController
         interactionController;
 
-    [Header("Renderizadores")]
+    [SerializeField]
+    private BistroBuilderUniversalPreviewService
+        universalPreviewService;
+
+    [Tooltip("Mantiene el tintado verde/rojo antiguo solo como fallback de diagnóstico.")]
+    [SerializeField]
+    private bool useLegacyFullObjectTint;
+
+    [Header("Fallback legacy de renderizadores")]
 
     [Tooltip(
         "Incluye renderizadores de hijos inactivos del objeto."
@@ -125,7 +129,9 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
     private RestaurantAreaMember activeMember;
 
-    private bool hasActiveFeedback;
+    private bool hasOriginalPose;
+    private Vector3 originalWorldPosition;
+    private Quaternion originalWorldRotation = Quaternion.identity;
 
     private void Awake()
     {
@@ -178,6 +184,10 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             return;
         }
 
+        CaptureOriginalPose(
+            currentMember
+        );
+
         BeginVisualFeedback(
             currentMember
         );
@@ -201,6 +211,10 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             return;
         }
 
+        CaptureOriginalPose(
+            member
+        );
+
         BeginVisualFeedback(
             member
         );
@@ -213,8 +227,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         RestaurantPlacementValidationResult result
     )
     {
-        if (!hasActiveFeedback ||
-            activeMember == null)
+        if (activeMember == null)
         {
             return;
         }
@@ -242,6 +255,9 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         rendererBuffer.Clear();
         rendererSnapshots.Clear();
+
+        if (!useLegacyFullObjectTint)
+            return;
 
         member.GetComponentsInChildren(
             includeInactiveRenderers,
@@ -272,10 +288,7 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         rendererBuffer.Clear();
 
-        hasActiveFeedback =
-            rendererSnapshots.Count > 0;
-
-        if (!hasActiveFeedback &&
+        if (rendererSnapshots.Count == 0 &&
             logMissingRenderers)
         {
             Debug.LogWarning(
@@ -287,6 +300,48 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         }
     }
 
+    private void CaptureOriginalPose(
+        RestaurantAreaMember member)
+    {
+        if (member == null)
+        {
+            hasOriginalPose = false;
+            originalWorldPosition = Vector3.zero;
+            originalWorldRotation =
+                Quaternion.identity;
+            return;
+        }
+
+        RestaurantPlacementTransactionService
+            transactionService =
+                interactionController != null
+                    ? interactionController
+                        .PlacementTransactionService
+                    : null;
+
+        if (transactionService != null &&
+            transactionService.TryGetOriginalWorldPose(
+                out Vector3 capturedPosition,
+                out Quaternion capturedRotation))
+        {
+            originalWorldPosition =
+                capturedPosition;
+
+            originalWorldRotation =
+                capturedRotation;
+        }
+        else
+        {
+            originalWorldPosition =
+                member.transform.position;
+
+            originalWorldRotation =
+                member.transform.rotation;
+        }
+
+        hasOriginalPose = true;
+    }
+
     /// <summary>
     /// Aplica el color correspondiente al resultado actual.
     /// </summary>
@@ -294,6 +349,13 @@ public sealed class RestaurantEditPlacementVisualFeedback :
         RestaurantPlacementValidationResult result
     )
     {
+        PublishUniversalPreview(result);
+
+        if (!useLegacyFullObjectTint)
+        {
+            return;
+        }
+
         Color targetColor;
 
         if (result.IsValid)
@@ -309,6 +371,48 @@ public sealed class RestaurantEditPlacementVisualFeedback :
 
         ApplyColorToCapturedRenderers(
             targetColor
+        );
+    }
+
+    private void PublishUniversalPreview(
+        RestaurantPlacementValidationResult result
+    )
+    {
+        if (universalPreviewService == null ||
+            activeMember == null)
+        {
+            return;
+        }
+
+        if (!hasOriginalPose)
+        {
+            originalWorldPosition = activeMember.transform.position;
+            originalWorldRotation = activeMember.transform.rotation;
+            hasOriginalPose = true;
+        }
+
+        RestaurantPlacementSnapResult snapResult =
+            interactionController != null &&
+            interactionController.PlacementSnapService != null
+                ? interactionController.PlacementSnapService.CurrentResult
+                : RestaurantPlacementSnapResult.Unsnapped(
+                    activeMember.transform.position,
+                    activeMember.transform.rotation
+                );
+
+        bool showOriginalGhost =
+            interactionController == null ||
+            interactionController.PlacementTransactionService == null ||
+            interactionController.PlacementTransactionService.ActiveTransactionKind !=
+                RestaurantPlacementTransactionKind.CreateNew;
+
+        universalPreviewService.PublishFurniture(
+            activeMember,
+            originalWorldPosition,
+            originalWorldRotation,
+            result,
+            snapResult,
+            showOriginalGhost
         );
     }
 
@@ -404,8 +508,14 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             workingBlock.Clear();
         }
 
+        universalPreviewService?.ClearOwner(
+            BistroBuilderUniversalPreviewService.FurnitureOwner
+        );
+
         activeMember = null;
-        hasActiveFeedback = false;
+        hasOriginalPose = false;
+        originalWorldPosition = Vector3.zero;
+        originalWorldRotation = Quaternion.identity;
     }
 
     /// <summary>
@@ -467,6 +577,15 @@ public sealed class RestaurantEditPlacementVisualFeedback :
             TryGetComponent(
                 out interactionController
             );
+        }
+
+        if (universalPreviewService == null)
+        {
+            universalPreviewService =
+                Application.isPlaying
+                    ? BistroBuilderUniversalPreviewService.GetOrCreate()
+                    : FindFirstObjectByType<
+                        BistroBuilderUniversalPreviewService>();
         }
     }
 
