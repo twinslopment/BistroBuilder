@@ -47,7 +47,7 @@ public static class BistroBuilderUniversalPreviewFurnitureRegression
     }
 
     [MenuItem(
-        "Tools/Bistro Builder/Validation/Universal Preview V3/Furniture",
+        "Tools/Bistro Builder/Validation/Universal Preview V4/Furniture",
         false,
         52060)]
     public static void Run()
