@@ -813,7 +813,7 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (filter == null ||
             renderer == null ||
             filter.sharedMesh == null ||
-            !IsPrimitiveRenderer(renderer))
+            !IsCubeRenderer(renderer))
         {
             return;
         }
@@ -1125,7 +1125,7 @@ public sealed class BistroBuilderPrototypePresentationService :
             MeshRenderer renderer =
                 renderers[index];
 
-            if (!IsPrimitiveRenderer(renderer))
+            if (!IsCubeRenderer(renderer))
                 continue;
 
             Bounds bounds =
@@ -1218,6 +1218,23 @@ public sealed class BistroBuilderPrototypePresentationService :
                 renderer.sharedMaterial =
                     material;
         }
+    }
+
+    private static bool IsCubeRenderer(
+        MeshRenderer renderer)
+    {
+        if (renderer == null)
+            return false;
+
+        MeshFilter filter =
+            renderer.GetComponent<MeshFilter>();
+
+        return filter != null &&
+               filter.sharedMesh != null &&
+               string.Equals(
+                   filter.sharedMesh.name,
+                   "Cube",
+                   StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsPrimitiveRenderer(
