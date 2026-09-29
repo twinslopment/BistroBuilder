@@ -247,7 +247,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(316f, 560f);
+        root.sizeDelta = new Vector2(342f, 640f);
 
         Image panelImage = rootObject.AddComponent<Image>();
         panelImage.color = Panel;
@@ -323,9 +323,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         titleText = CreateTmp(
             "Title",
             row,
-            "Artículo",
+            "Inspector",
             semiBoldFont,
-            23f,
+            18f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
         AddLayout(titleText.gameObject, 0f, 1f);
@@ -367,7 +367,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             section,
             "Artículo",
             semiBoldFont,
-            16f,
+            20f,
             TextPrimary,
             TextAlignmentOptions.TopLeft);
         SetAnchors(
@@ -747,10 +747,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             return;
 
         if (titleText != null)
-            titleText.text = ResolveCategoryLabel(
-                data.Definition != null
-                    ? data.Definition.Category
-                    : RestaurantPlaceableItemCategory.Other);
+            titleText.text = "Inspector";
         if (nameText != null) nameText.text = data.DisplayName;
         if (descriptionText != null) descriptionText.text = data.Description;
 
@@ -773,7 +770,16 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
 
         if (scopeText != null)
-            scopeText.text = data.ScopeLabel;
+        {
+            string category =
+                ResolveCategoryLabel(
+                    data.Definition != null
+                        ? data.Definition.Category
+                        : RestaurantPlaceableItemCategory.Other);
+
+            scopeText.text =
+                category + " · " + data.ScopeLabel;
+        }
 
         Vector3 dimensions = data.DimensionsCentimeters;
         if (dimensionsText != null)
@@ -1620,7 +1626,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             Mathf.Clamp(
                 preferredHeight,
                 360f,
-                Mathf.Min(590f, available));
+                Mathf.Min(720f, available));
 
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
@@ -1628,8 +1634,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.sizeDelta =
             new Vector2(
                 compactPlacementMode
-                    ? 286f
-                    : 316f,
+                    ? 298f
+                    : 342f,
                 resolvedHeight);
         root.anchoredPosition = new Vector2(-18f, -topInset);
     }
