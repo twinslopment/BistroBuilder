@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using BistroBuilder.UI.Iconography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -415,9 +416,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             new Color32(57, 86, 43, 255), new Color32(168, 212, 126, 255));
         Place(tableStatus.rectTransform.parent as RectTransform, 196f, -2f, 118f, 34f);
 
-        TMP_Text more = CreateText(selectedRoot, "More", "⋮", 22f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.Center);
-        Place(more.rectTransform, 324f, -2f, 36f, 34f);
+        Image more = CreateCatalogIcon(
+            selectedRoot,
+            "More",
+            BBIconId.GeneralMore,
+            BistroBuilderUiTokens.TextSecondary);
+        Place(more.rectTransform, 330f, 4f, 22f, 22f);
 
         tablePeople = CreateText(selectedRoot, "People", "0 personas", 13f,
             BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
@@ -460,10 +464,26 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         clientBreakdown = CreateText(details, "ClientBreakdown", "0 personas", 11.5f,
             BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
         Place(clientBreakdown.rectTransform, 46f, -34f, 280f, 22f);
-        AddInfoIcon(details, "👥", -10f);
+        AddInfoIcon(
+            details,
+            BBIconId.CustomerGroup,
+            -10f);
 
-        arrivalText = CreateDetailRow(details, "Arrival", "Llegada", "—", 68f, "◷");
-        stateText = CreateDetailRow(details, "State", "Estado", "Libre", 103f, "🍴");
+        arrivalText = CreateDetailRow(
+            details,
+            "Arrival",
+            "Llegada",
+            "—",
+            68f,
+            BBIconId.StatusWaiting);
+
+        stateText = CreateDetailRow(
+            details,
+            "State",
+            "Estado",
+            "Libre",
+            103f,
+            BBIconId.StatusInformation);
 
         TMP_Text satisfactionLabel = CreateText(details, "SatisfactionLabel", "Satisfacción", 12.5f,
             BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
@@ -502,17 +522,41 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         orderList.childForceExpandHeight = false;
         orderList.childForceExpandWidth = true;
 
-        addOrderButton = CreateButton(selectedRoot, "AddOrder", "⊕   Añadir al pedido", BistroBuilderUiTokens.Surface2);
+        addOrderButton = CreateButton(
+            selectedRoot,
+            "AddOrder",
+            "Añadir al pedido",
+            BistroBuilderUiTokens.Surface2);
         Place(addOrderButton.GetComponent<RectTransform>(), 0f, -544f, 360f, 42f);
         addOrderButton.onClick.AddListener(OpenOrders);
+        BBIconographyRuntime.Decorate(
+            addOrderButton,
+            BBIconId.ActionAdd,
+            false);
 
-        splitBillButton = CreateButton(selectedRoot, "SplitBill", "▤   Dividir cuenta", BistroBuilderUiTokens.Surface1);
+        splitBillButton = CreateButton(
+            selectedRoot,
+            "SplitBill",
+            "Dividir cuenta",
+            BistroBuilderUiTokens.Surface1);
         Place(splitBillButton.GetComponent<RectTransform>(), 0f, -594f, 172f, 42f);
         splitBillButton.interactable = false;
+        BBIconographyRuntime.Decorate(
+            splitBillButton,
+            BBIconId.EconomyInvoice,
+            false);
 
-        closeTableButton = CreateButton(selectedRoot, "CloseTable", "▣   Cerrar mesa", BistroBuilderUiTokens.Primary);
+        closeTableButton = CreateButton(
+            selectedRoot,
+            "CloseTable",
+            "Cerrar mesa",
+            BistroBuilderUiTokens.Primary);
         Place(closeTableButton.GetComponent<RectTransform>(), 188f, -594f, 172f, 42f);
         closeTableButton.interactable = false;
+        BBIconographyRuntime.Decorate(
+            closeTableButton,
+            BBIconId.ActionConfirm,
+            false);
 
         selectedRoot.gameObject.SetActive(false);
     }
@@ -825,9 +869,11 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         if (dish != null) dish.text = data.DishName;
         if (status != null)
         {
-            status.text = (data.Status == "Servido" ? "●  " :
-                data.Status == "En cocina" ? "◷  " : "○  ") + data.Status;
-            status.color = data.Status == "Servido" ? BistroBuilderUiTokens.Success : BistroBuilderUiTokens.Attention;
+            status.text = data.Status;
+            status.color =
+                data.Status == "Servido"
+                    ? BistroBuilderUiTokens.Success
+                    : BistroBuilderUiTokens.Attention;
         }
     }
 
@@ -865,23 +911,76 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         }
     }
 
-    private static TMP_Text CreateDetailRow(RectTransform parent, string name, string label, string value, float top, string symbol)
+    private static TMP_Text CreateDetailRow(
+        RectTransform parent,
+        string name,
+        string label,
+        string value,
+        float top,
+        BBIconId iconId)
     {
         RectTransform row = NewRect(name, parent);
         Place(row, 0f, -top, 360f, 30f);
-        TMP_Text icon = CreateText(row, "Icon", symbol, 17f, BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.Center);
-        Place(icon.rectTransform, 8f, -2f, 26f, 26f);
-        TMP_Text caption = CreateText(row, "Caption", label, 12.5f, BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+
+        Image icon = CreateCatalogIcon(
+            row,
+            "Icon",
+            iconId,
+            BistroBuilderUiTokens.TextSecondary);
+        Place(icon.rectTransform, 10f, -5f, 20f, 20f);
+
+        TMP_Text caption = CreateText(
+            row,
+            "Caption",
+            label,
+            12.5f,
+            BistroBuilderUiTokens.ContentLight,
+            TextAlignmentOptions.MidlineLeft);
         Place(caption.rectTransform, 46f, -2f, 104f, 26f);
-        TMP_Text text = CreateText(row, "Value", value, 12.5f, BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineRight);
+
+        TMP_Text text = CreateText(
+            row,
+            "Value",
+            value,
+            12.5f,
+            BistroBuilderUiTokens.ContentLight,
+            TextAlignmentOptions.MidlineRight);
         Place(text.rectTransform, 176f, -2f, 160f, 26f);
         return text;
     }
 
-    private static void AddInfoIcon(RectTransform parent, string value, float y)
+    private static void AddInfoIcon(
+        RectTransform parent,
+        BBIconId iconId,
+        float y)
     {
-        TMP_Text icon = CreateText(parent, "ClientsIcon", value, 17f, BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.Center);
-        Place(icon.rectTransform, 8f, y, 26f, 34f);
+        Image icon = CreateCatalogIcon(
+            parent,
+            "ClientsIcon",
+            iconId,
+            BistroBuilderUiTokens.TextSecondary);
+        Place(icon.rectTransform, 10f, y + 7f, 20f, 20f);
+    }
+
+    private static Image CreateCatalogIcon(
+        RectTransform parent,
+        string name,
+        BBIconId iconId,
+        Color color)
+    {
+        Image image =
+            NewRect(name, parent)
+                .gameObject
+                .AddComponent<Image>();
+
+        image.sprite =
+            BBIconCatalog.LoadDefault()
+                ?.GetSprite(iconId);
+
+        image.color = color;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        return image;
     }
 
     private static TMP_Text CreatePill(RectTransform parent, string name, string value, Color background, Color foreground)
