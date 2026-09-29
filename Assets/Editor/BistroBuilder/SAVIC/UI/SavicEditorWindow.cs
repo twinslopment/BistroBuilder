@@ -444,7 +444,7 @@ namespace BistroBuilder.Editor.Savic
             AddNavigationButton(
                 rail,
                 SavicEditorSection.Library,
-                "Biblioteca");
+                "Inventario");
 
             AddNavigationButton(
                 rail,
@@ -997,34 +997,66 @@ namespace BistroBuilder.Editor.Savic
         private void RenderLibrary()
         {
             VisualElement page = CreatePage();
+
+            SavicCanonicalContentInventorySnapshot inventory =
+                SavicCanonicalContentInventoryService.Build(
+                    context.Layout,
+                    context.Manifests.GetAll(),
+                    context.Jobs.Jobs,
+                    snapshot.Inventory);
+
             AddSectionTitle(
                 page,
-                "Biblioteca",
-                "Inventario canónico de contenido gestionado por SAVIC.");
+                "Inventario completo",
+                "Ciclo real de cada contenido entregado a SAVIC: entrada, archivo, proceso, publicación y catálogo.");
+
+            VisualElement cards = new VisualElement();
+            cards.style.flexDirection = FlexDirection.Row;
+            cards.style.flexWrap = Wrap.Wrap;
+            cards.style.marginTop = 12f;
+            cards.style.marginBottom = 10f;
+            cards.Add(CreateMetricCard("Total único", inventory.Total, Accent));
+            cards.Add(CreateMetricCard("En catálogo", inventory.InCatalog, Pass));
+            cards.Add(CreateMetricCard("Publicados", inventory.Published, Pass));
+            cards.Add(CreateMetricCard("Revisión", inventory.NeedsReview, Warning));
+            cards.Add(CreateMetricCard("Errores", inventory.Failed, Error));
+            cards.Add(CreateMetricCard("En DropHere", inventory.InboxPending, Warning));
+            cards.Add(CreateMetricCard("Huérfanos", inventory.Orphaned, Error));
+            page.Add(cards);
+
+            if (inventory.Orphaned > 0)
+            {
+                page.Add(
+                    CreateNotice(
+                        "Contenido desconectado detectado",
+                        inventory.Orphaned +
+                        " contenido(s) existen como trabajo o fuente archivada sin un manifest canónico enlazado.",
+                        Error));
+            }
 
             VisualElement filters = CreateFilterBar();
             TextField search = CreateSearchField(librarySearch);
 
             List<string> familyChoices =
-                BuildChoices(snapshot.Assets, row => row.Family);
+                BuildChoices(inventory.Rows, row => row.Family);
 
             List<string> categoryChoices =
-                BuildChoices(snapshot.Assets, row => row.Category);
+                BuildChoices(inventory.Rows, row => row.Category);
 
             List<string> statusChoices =
-                BuildChoices(snapshot.Assets, row => row.Status);
+                BuildChoices(inventory.Rows, row => row.Lifecycle);
 
             List<string> originChoices =
-                BuildChoices(snapshot.Assets, row => row.Origin);
+                BuildChoices(inventory.Rows, row => row.SourceLocation);
 
-            List<string> versionChoices =
-                BuildChoices(snapshot.Assets, row => row.Version);
+            List<string> catalogChoices =
+                BuildChoices(inventory.Rows, row => row.CatalogState);
 
             libraryFamily = NormalizeChoice(libraryFamily, familyChoices);
             libraryCategory = NormalizeChoice(libraryCategory, categoryChoices);
             libraryStatus = NormalizeChoice(libraryStatus, statusChoices);
             libraryOrigin = NormalizeChoice(libraryOrigin, originChoices);
-            libraryVersion = NormalizeChoice(libraryVersion, versionChoices);
+            libraryVersion = NormalizeChoice(libraryVersion, catalogChoices);
 
             DropdownField family =
                 CreateDropdown("Familia", familyChoices, libraryFamily);
@@ -1033,103 +1065,359 @@ namespace BistroBuilder.Editor.Savic
                 CreateDropdown("Categoría", categoryChoices, libraryCategory);
 
             DropdownField status =
-                CreateDropdown("Estado", statusChoices, libraryStatus);
+                CreateDropdown("Etapa", statusChoices, libraryStatus);
 
             DropdownField origin =
-                CreateDropdown("Origen", originChoices, libraryOrigin);
+                CreateDropdown("Ubicación", originChoices, libraryOrigin);
 
-            DropdownField version =
-                CreateDropdown("Versión", versionChoices, libraryVersion);
+            DropdownField catalog =
+                CreateDropdown("Catálogo", catalogChoices, libraryVersion);
 
             filters.Add(search);
             filters.Add(family);
             filters.Add(category);
             filters.Add(status);
             filters.Add(origin);
-            filters.Add(version);
+            filters.Add(catalog);
             page.Add(filters);
 
-            List<SavicEditorAssetRow> visible =
-                FilterLibrary();
+            List<SavicCanonicalContentInventoryRow> visible =
+                FilterInventory();
 
             VisualElement detail = CreateDetailScroll();
             ListView list =
                 CreateListView(
                     visible,
                     CreateStandardRow,
-                    BindAssetRow);
+                    BindInventoryRow);
 
             list.selectionChanged +=
                 selection =>
-                    RenderAssetDetail(
+                    RenderInventoryDetail(
                         detail,
-                        FirstSelection<SavicEditorAssetRow>(selection));
+                        FirstSelection<SavicCanonicalContentInventoryRow>(
+                            selection));
 
             page.Add(CreateSplit(list, detail));
             contentHost.Add(page);
 
-            List<SavicEditorAssetRow> FilterLibrary()
+            List<SavicCanonicalContentInventoryRow> FilterInventory()
             {
-                return SavicEditorReadModel.FilterAssets(
-                    snapshot.Assets,
-                    librarySearch,
-                    libraryFamily,
-                    libraryCategory,
-                    libraryStatus,
-                    libraryOrigin,
-                    libraryVersion);
+                return inventory.Rows
+                    .Where(
+                        row =>
+                            row != null &&
+                            MatchesSearch(row) &&
+                            MatchesChoice(row.Family, libraryFamily) &&
+                            MatchesChoice(row.Category, libraryCategory) &&
+                            MatchesChoice(row.Lifecycle, libraryStatus) &&
+                            MatchesChoice(row.SourceLocation, libraryOrigin) &&
+                            MatchesChoice(row.CatalogState, libraryVersion))
+                    .ToList();
+            }
+
+            bool MatchesChoice(
+                string value,
+                string selected)
+            {
+                return string.IsNullOrWhiteSpace(selected) ||
+                       string.Equals(
+                           selected,
+                           "Todos",
+                           StringComparison.OrdinalIgnoreCase) ||
+                       string.Equals(
+                           value ?? string.Empty,
+                           selected,
+                           StringComparison.OrdinalIgnoreCase);
+            }
+
+            bool MatchesSearch(
+                SavicCanonicalContentInventoryRow row)
+            {
+                if (string.IsNullOrWhiteSpace(librarySearch))
+                    return true;
+
+                string needle =
+                    librarySearch.Trim();
+
+                string[] values =
+                {
+                    row.DisplayName,
+                    row.SavicId,
+                    row.SourceHash,
+                    row.CanonicalContentId,
+                    row.Family,
+                    row.Type,
+                    row.Category,
+                    row.Lifecycle,
+                    row.PipelineStatus,
+                    row.SourceLocation,
+                    row.CatalogState,
+                    row.Reason
+                };
+
+                for (int index = 0;
+                     index < values.Length;
+                     index++)
+                {
+                    if (!string.IsNullOrWhiteSpace(values[index]) &&
+                        values[index].IndexOf(
+                            needle,
+                            StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             void ApplyFilters()
             {
-                visible = FilterLibrary();
+                visible = FilterInventory();
                 SetItems(list, visible);
-                SelectFirstOrClear(list, visible, detail, RenderAssetDetail);
+                SelectFirstOrClear(
+                    list,
+                    visible,
+                    detail,
+                    RenderInventoryDetail);
             }
 
             search.RegisterValueChangedCallback(
                 change =>
                 {
-                    librarySearch = change.newValue ?? string.Empty;
+                    librarySearch =
+                        change.newValue ?? string.Empty;
                     ApplyFilters();
                 });
 
             family.RegisterValueChangedCallback(
                 change =>
                 {
-                    libraryFamily = change.newValue ?? "Todos";
+                    libraryFamily =
+                        change.newValue ?? "Todos";
                     ApplyFilters();
                 });
 
             category.RegisterValueChangedCallback(
                 change =>
                 {
-                    libraryCategory = change.newValue ?? "Todos";
+                    libraryCategory =
+                        change.newValue ?? "Todos";
                     ApplyFilters();
                 });
 
             status.RegisterValueChangedCallback(
                 change =>
                 {
-                    libraryStatus = change.newValue ?? "Todos";
+                    libraryStatus =
+                        change.newValue ?? "Todos";
                     ApplyFilters();
                 });
 
             origin.RegisterValueChangedCallback(
                 change =>
                 {
-                    libraryOrigin = change.newValue ?? "Todos";
+                    libraryOrigin =
+                        change.newValue ?? "Todos";
                     ApplyFilters();
                 });
 
-            version.RegisterValueChangedCallback(
+            catalog.RegisterValueChangedCallback(
                 change =>
                 {
-                    libraryVersion = change.newValue ?? "Todos";
+                    libraryVersion =
+                        change.newValue ?? "Todos";
                     ApplyFilters();
                 });
 
-            SelectFirstOrClear(list, visible, detail, RenderAssetDetail);
+            SelectFirstOrClear(
+                list,
+                visible,
+                detail,
+                RenderInventoryDetail);
+
+            void BindInventoryRow(
+                VisualElement element,
+                SavicCanonicalContentInventoryRow row)
+            {
+                string subtitle =
+                    row.Type +
+                    " · " +
+                    row.SourceLocation +
+                    " · " +
+                    row.CatalogState;
+
+                BindStandardRow(
+                    element,
+                    row.DisplayName,
+                    subtitle,
+                    row.Lifecycle);
+            }
+
+            void RenderInventoryDetail(
+                VisualElement host,
+                SavicCanonicalContentInventoryRow row)
+            {
+                host.Clear();
+
+                if (row == null)
+                {
+                    host.Add(
+                        CreateEmptyState(
+                            "No hay contenido para mostrar."));
+                    return;
+                }
+
+                AddDetailTitle(
+                    host,
+                    row.DisplayName,
+                    row.Lifecycle);
+
+                if (!string.IsNullOrWhiteSpace(
+                        row.Reason))
+                {
+                    host.Add(
+                        CreateNotice(
+                            row.Lifecycle,
+                            row.Reason,
+                            StatusColor(
+                                row.Lifecycle)));
+                }
+
+                VisualElement lifecycle = CreatePanel();
+                AddGroupTitle(lifecycle, "Ciclo de vida");
+                AddField(lifecycle, "Etapa", row.Lifecycle);
+                AddField(lifecycle, "Pipeline", row.PipelineStatus);
+                AddField(lifecycle, "Ubicación", row.SourceLocation);
+                AddField(lifecycle, "Catálogo", row.CatalogState);
+                AddField(
+                    lifecycle,
+                    "Fuente archivada",
+                    row.SourceArchivedExists
+                        ? "SÍ"
+                        : "NO");
+                AddField(
+                    lifecycle,
+                    "Artefactos publicados",
+                    row.ArtifactPaths.Count.ToString());
+                host.Add(lifecycle);
+
+                VisualElement identity = CreatePanel();
+                AddGroupTitle(identity, "Identidad");
+                AddField(identity, "SavicId", row.SavicId);
+                AddField(identity, "SourceHash", row.SourceHash);
+                AddField(identity, "ContentId", row.CanonicalContentId);
+                AddField(identity, "Familia", row.Family);
+                AddField(identity, "Tipo", row.Type);
+                AddField(identity, "Categoría", row.Category);
+                AddField(
+                    identity,
+                    "Actualizado",
+                    FormatTimestamp(row.UpdatedUtc));
+                host.Add(identity);
+
+                if (row.LatestJob != null)
+                {
+                    VisualElement job = CreatePanel();
+                    AddGroupTitle(job, "Último trabajo");
+                    AddField(job, "Estado", row.LatestJob.state);
+                    AddField(job, "Checkpoint", row.LatestJob.checkpoint);
+                    AddField(job, "Reason code", row.LatestJob.reasonCode);
+                    AddField(job, "Etapa principal", row.LatestJob.primaryStage);
+                    AddField(job, "Mensaje", row.LatestJob.message);
+                    host.Add(job);
+                }
+
+                VisualElement paths = CreatePanel();
+                AddGroupTitle(paths, "Rutas");
+                AddField(
+                    paths,
+                    "Archivado",
+                    row.ArchivedRelativePath);
+                AddField(
+                    paths,
+                    "Inbox",
+                    row.InboxRelativePath);
+
+                for (int index = 0;
+                     index < row.ArtifactPaths.Count;
+                     index++)
+                {
+                    AddField(
+                        paths,
+                        "Artefacto " + (index + 1),
+                        row.ArtifactPaths[index]);
+                }
+
+                host.Add(paths);
+
+                VisualElement actions = new VisualElement();
+                actions.style.flexDirection = FlexDirection.Row;
+                actions.style.flexWrap = Wrap.Wrap;
+                actions.style.marginTop = 8f;
+
+                if (!string.IsNullOrWhiteSpace(
+                        row.ArchivedRelativePath))
+                {
+                    string archivedAbsolute =
+                        context.Layout.FromProjectRelativePath(
+                            row.ArchivedRelativePath);
+
+                    if (File.Exists(archivedAbsolute))
+                    {
+                        actions.Add(
+                            CreateSecondaryButton(
+                                "Mostrar fuente original",
+                                () => EditorUtility.RevealInFinder(
+                                    archivedAbsolute)));
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(
+                        row.InboxRelativePath))
+                {
+                    string inboxAbsolute =
+                        context.Layout.FromProjectRelativePath(
+                            row.InboxRelativePath);
+
+                    if (File.Exists(inboxAbsolute))
+                    {
+                        actions.Add(
+                            CreateSecondaryButton(
+                                "Mostrar en DropHere",
+                                () => EditorUtility.RevealInFinder(
+                                    inboxAbsolute)));
+                    }
+                }
+
+                if (row.Manifest != null)
+                {
+                    AddRevealActions(
+                        actions,
+                        row.Manifest,
+                        string.Empty);
+                }
+
+                host.Add(actions);
+
+                if (row.Manifest != null)
+                {
+                    Foldout technical = new Foldout
+                    {
+                        text = "Detalles técnicos avanzados",
+                        value = false
+                    };
+
+                    AddCompactManifestContext(
+                        technical,
+                        row.Manifest);
+                    AddArtifacts(
+                        technical,
+                        row.Manifest);
+                    host.Add(technical);
+                }
+            }
         }
 
         private void RenderAdoption()
@@ -2909,6 +3197,8 @@ namespace BistroBuilder.Editor.Savic
                     value,
                     "PASS",
                     "PUBLISHED",
+                    "CATALOG",
+                    "DONE",
                     "AUTO_CORRECTED",
                     "INGESTED",
                     "MANAGED_BY_SAVIC"))
@@ -2921,7 +3211,8 @@ namespace BistroBuilder.Editor.Savic
                     "FAIL",
                     "ERROR",
                     "QUARANTINED",
-                    "BLOCKER"))
+                    "BLOCKER",
+                    "ORPHAN"))
             {
                 return Error;
             }
@@ -2931,7 +3222,8 @@ namespace BistroBuilder.Editor.Savic
                     "REVIEW",
                     "WARNING",
                     "STALE",
-                    "WAITING"))
+                    "WAITING",
+                    "INBOX_PENDING"))
             {
                 return Warning;
             }
