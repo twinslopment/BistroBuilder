@@ -1,0 +1,470 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Presentation-only premises pass for the starting restaurant.
+/// Uses approved construction materials/assets and keeps gameplay authorities intact.
+/// It never creates placeables or mutates SAVIC/BBSIS ownership.
+/// </summary>
+public static class BistroBuilderPremisesPresentationRuntime
+{
+    public const string RootName = "BB_PremisesPresentation";
+
+    private const float FullWallHeight = 2.8f;
+    private const float CutawayWallHeight = 0.9f;
+    private const float WallThickness = 0.12f;
+
+    public static bool Apply(
+        BistroBuilderStartingPremisesProfile profile,
+        out string error)
+    {
+        error = string.Empty;
+
+        GameObject floor = GameObject.Find("Floor_Test");
+        Renderer floorRenderer = floor != null ? floor.GetComponent<Renderer>() : null;
+        if (floorRenderer == null)
+        {
+            error = "No se encontró el suelo canónico del local para presentar la nueva partida.";
+            return false;
+        }
+
+        BistroBuilderConstructionAssetKit kit = BistroBuilderConstructionAssetKit.Load();
+        if (kit == null || kit.wallMaterial == null || kit.floorMaterial == null)
+        {
+            error = "Falta el kit visual de construcción aprobado.";
+            return false;
+        }
+
+        Clear();
+
+        floorRenderer.enabled = true;
+        floorRenderer.sharedMaterial = kit.floorMaterial;
+
+        var root = new GameObject(RootName);
+        BuildEnvelope(root.transform, floorRenderer.bounds, kit);
+
+        SetDebugPlacementObstacleVisible(false);
+
+        if (profile != BistroBuilderStartingPremisesProfile.Empty)
+        {
+            UpgradeKitchenAuthorityVisual(kit);
+            UpgradeLegacyBarVisuals(kit);
+        }
+
+        return true;
+    }
+
+    public static void Clear()
+    {
+        GameObject existing = GameObject.Find(RootName);
+        if (existing != null)
+            DestroyPresentationObject(existing);
+    }
+
+    private static void BuildEnvelope(
+        Transform root,
+        Bounds bounds,
+        BistroBuilderConstructionAssetKit kit)
+    {
+        float minX = bounds.min.x;
+        float maxX = bounds.max.x;
+        float minZ = bounds.min.z;
+        float maxZ = bounds.max.z;
+        float baseY = bounds.max.y;
+
+        GameObject entranceObject = GameObject.Find("RestaurantEntrancePoint");
+        float entranceX = entranceObject != null
+            ? Mathf.Clamp(entranceObject.transform.position.x, minX + 1.2f, maxX - 1.2f)
+            : Mathf.Lerp(minX, maxX, 0.30f);
+
+        CreateWall(
+            root,
+            "NorthWall",
+            new Vector2(minX, maxZ),
+            new Vector2(maxX, maxZ),
+            baseY,
+            FullWallHeight,
+            kit.wallMaterial,
+            Windows("north", 0.22f, 0.50f, 0.78f));
+
+        CreateWall(
+            root,
+            "WestWall",
+            new Vector2(minX, minZ),
+            new Vector2(minX, maxZ),
+            baseY,
+            FullWallHeight,
+            kit.wallMaterial,
+            Windows("west", 0.38f, 0.72f));
+
+        CreateWall(
+            root,
+            "EastWall",
+            new Vector2(maxX, maxZ),
+            new Vector2(maxX, minZ),
+            baseY,
+            FullWallHeight,
+            kit.wallMaterial,
+            Windows("east", 0.30f, 0.64f));
+
+        float halfPortal = 0.92f;
+        if (entranceX - halfPortal > minX + 0.15f)
+        {
+            CreateWall(
+                root,
+                "SouthCutawayLeft",
+                new Vector2(minX, minZ),
+                new Vector2(entranceX - halfPortal, minZ),
+                baseY,
+                CutawayWallHeight,
+                kit.wallMaterial,
+                null);
+        }
+
+        if (entranceX + halfPortal < maxX - 0.15f)
+        {
+            CreateWall(
+                root,
+                "SouthCutawayRight",
+                new Vector2(entranceX + halfPortal, minZ),
+                new Vector2(maxX, minZ),
+                baseY,
+                CutawayWallHeight,
+                kit.wallMaterial,
+                null);
+        }
+
+        var portalOpening = new List<BistroBuilderOpeningRecord>
+        {
+            new BistroBuilderOpeningRecord
+            {
+                openingId = new BistroBuilderEditId("presentation-entrance-door"),
+                hostWallId = new BistroBuilderEditId("presentation-south-portal"),
+                axisPosition01 = 0.5f,
+                width = 1.25f,
+                bottomElevation = 0f,
+                height = 2.15f,
+                openingType = "door",
+                fillDefinitionId = "door.oak"
+            }
+        };
+
+        CreateWall(
+            root,
+            "SouthEntrancePortal",
+            new Vector2(entranceX - halfPortal, minZ),
+            new Vector2(entranceX + halfPortal, minZ),
+            baseY,
+            FullWallHeight,
+            kit.wallMaterial,
+            portalOpening,
+            new BistroBuilderEditId("presentation-south-portal"));
+    }
+
+    private static List<BistroBuilderOpeningRecord> Windows(
+        string side,
+        params float[] positions)
+    {
+        var openings = new List<BistroBuilderOpeningRecord>();
+        var host = new BistroBuilderEditId("presentation-" + side);
+        for (int i = 0; i < positions.Length; i++)
+        {
+            openings.Add(new BistroBuilderOpeningRecord
+            {
+                openingId = new BistroBuilderEditId(
+                    "presentation-" + side + "-window-" + i.ToString("D2")),
+                hostWallId = host,
+                axisPosition01 = positions[i],
+                width = 1.65f,
+                bottomElevation = 0.82f,
+                height = 1.28f,
+                openingType = "window",
+                fillDefinitionId = "window.graphite"
+            });
+        }
+        return openings;
+    }
+
+    private static void CreateWall(
+        Transform parent,
+        string name,
+        Vector2 start,
+        Vector2 end,
+        float baseElevation,
+        float height,
+        Material material,
+        IReadOnlyList<BistroBuilderOpeningRecord> openings,
+        BistroBuilderEditId explicitId = default)
+    {
+        BistroBuilderEditId wallId = explicitId.IsValid
+            ? explicitId
+            : new BistroBuilderEditId(
+                "presentation-" + name.Replace(" ", string.Empty).ToLowerInvariant());
+
+        if (openings is List<BistroBuilderOpeningRecord> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+                list[i].hostWallId = wallId;
+        }
+
+        var wall = new BistroBuilderWallRecord
+        {
+            wallId = wallId,
+            buildPlaneId = "default",
+            axisStart = start,
+            axisEnd = end,
+            baseElevation = baseElevation,
+            height = height,
+            thickness = WallThickness,
+            wallDefinitionId = "wall.premises-presentation"
+        };
+
+        Mesh mesh = BistroBuilderWallGeometryBuilder.Build(wall, openings);
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+
+        Vector2 axis = end - start;
+        Vector3 direction = new Vector3(axis.x, 0f, axis.y).normalized;
+        go.transform.position = new Vector3(start.x, baseElevation, start.y);
+        go.transform.rotation = Quaternion.FromToRotation(Vector3.right, direction);
+
+        MeshFilter filter = go.AddComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+
+        MeshRenderer renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = material;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        renderer.receiveShadows = true;
+
+        BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
+    }
+
+    private static void SetDebugPlacementObstacleVisible(bool visible)
+    {
+        GameObject obstacle = GameObject.Find("PlacementObstacle_Test");
+        if (obstacle != null)
+            obstacle.SetActive(visible);
+    }
+
+    private static void UpgradeKitchenAuthorityVisual(
+        BistroBuilderConstructionAssetKit kit)
+    {
+        GameObject kitchen = GameObject.Find("Kitchen_Test");
+        if (kitchen == null) return;
+
+        MeshRenderer legacyRenderer = kitchen.GetComponent<MeshRenderer>();
+        if (legacyRenderer != null) legacyRenderer.enabled = false;
+
+        Transform old = kitchen.transform.Find("BB_PresentationKitchen");
+        if (old != null) DestroyPresentationObject(old.gameObject);
+
+        var visual = new GameObject("BB_PresentationKitchen");
+        visual.transform.SetParent(kitchen.transform, false);
+
+        Material metal = Resources.Load<Material>(
+            "BistroBuilder/Construction/Materials/Metal_grafito");
+
+        CreateBox(
+            visual.transform,
+            "KitchenBase",
+            new Vector3(0f, 0f, 0f),
+            new Vector3(3.00f, 0.76f, 1.42f),
+            metal != null ? metal : kit.wallMaterial);
+
+        CreateBox(
+            visual.transform,
+            "KitchenWorktop",
+            new Vector3(0f, 0.43f, 0f),
+            new Vector3(3.10f, 0.10f, 1.52f),
+            kit.floorMaterial);
+
+        CreateBox(
+            visual.transform,
+            "KitchenFrontRail",
+            new Vector3(0f, 0.12f, -0.73f),
+            new Vector3(3.02f, 0.13f, 0.08f),
+            kit.trimMaterial != null ? kit.trimMaterial : kit.wallMaterial);
+    }
+
+    private static void UpgradeLegacyBarVisuals(
+        BistroBuilderConstructionAssetKit kit)
+    {
+        BistroBuilder367HInstalledFixture[] fixtures =
+            UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.InstanceID);
+
+        BistroBuilder367HInstalledFixture bar = null;
+        for (int i = 0; i < fixtures.Length; i++)
+        {
+            if (fixtures[i] != null &&
+                string.Equals(
+                    fixtures[i].FixtureId,
+                    "fixture_367h_bar",
+                    StringComparison.Ordinal))
+            {
+                bar = fixtures[i];
+                break;
+            }
+        }
+
+        if (bar == null) return;
+
+        HideLegacyPrimitive(bar.transform, "ProvisionalCounter");
+        HideLegacyPrimitive(bar.transform, "ProvisionalStool");
+
+        Transform previous = bar.transform.Find("BB_PresentationBar");
+        if (previous != null) DestroyPresentationObject(previous.gameObject);
+
+        var visual = new GameObject("BB_PresentationBar");
+        visual.transform.SetParent(bar.transform, false);
+
+        Material metal = Resources.Load<Material>(
+            "BistroBuilder/Construction/Materials/Metal_grafito");
+        Material timber = kit.trimMaterial != null ? kit.trimMaterial : kit.wallMaterial;
+
+        CreateBox(
+            visual.transform,
+            "CounterBase",
+            new Vector3(0f, 0.38f, 0f),
+            new Vector3(5.20f, 0.72f, 0.78f),
+            timber);
+
+        CreateBox(
+            visual.transform,
+            "CounterTop",
+            new Vector3(0f, 0.80f, 0f),
+            new Vector3(5.45f, 0.12f, 1.02f),
+            kit.floorMaterial);
+
+        Material accent = metal != null ? metal : kit.wallMaterial;
+        for (int i = 0; i < 6; i++)
+        {
+            float x = Mathf.Lerp(-2.25f, 2.25f, i / 5f);
+            CreateBox(
+                visual.transform,
+                "FrontSlat_" + i.ToString("D2"),
+                new Vector3(x, 0.38f, -0.43f),
+                new Vector3(0.055f, 0.62f, 0.06f),
+                accent);
+        }
+
+        BistroBuilderBarServiceSpot[] spots =
+            bar.GetComponentsInChildren<BistroBuilderBarServiceSpot>(true);
+        for (int i = 0; i < spots.Length; i++)
+        {
+            if (spots[i] == null) continue;
+            Transform oldStool = spots[i].transform.Find("BB_PresentationStool");
+            if (oldStool != null) DestroyPresentationObject(oldStool.gameObject);
+
+            var stool = new GameObject("BB_PresentationStool");
+            stool.transform.SetParent(spots[i].transform, false);
+
+            CreateCylinder(
+                stool.transform,
+                "Base",
+                new Vector3(0f, 0.055f, -1f),
+                new Vector3(0.28f, 0.055f, 0.28f),
+                accent);
+
+            CreateCylinder(
+                stool.transform,
+                "Stem",
+                new Vector3(0f, 0.37f, -1f),
+                new Vector3(0.065f, 0.31f, 0.065f),
+                accent);
+
+            CreateCylinder(
+                stool.transform,
+                "Seat",
+                new Vector3(0f, 0.72f, -1f),
+                new Vector3(0.34f, 0.075f, 0.34f),
+                timber);
+        }
+    }
+
+    private static void HideLegacyPrimitive(
+        Transform root,
+        string name)
+    {
+        Transform[] all = root.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            Transform child = all[i];
+            if (child == null ||
+                !string.Equals(child.name, name, StringComparison.Ordinal))
+                continue;
+
+            Renderer renderer = child.GetComponent<Renderer>();
+            if (renderer != null) renderer.enabled = false;
+
+            Collider collider = child.GetComponent<Collider>();
+            if (collider != null) collider.enabled = false;
+        }
+    }
+
+    private static void CreateBox(
+        Transform parent,
+        string name,
+        Vector3 localPosition,
+        Vector3 localScale,
+        Material material)
+    {
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        go.name = name;
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPosition;
+        go.transform.localScale = localScale;
+
+        Collider collider = go.GetComponent<Collider>();
+        if (collider != null) collider.enabled = false;
+
+        Renderer renderer = go.GetComponent<Renderer>();
+        if (renderer != null) renderer.sharedMaterial = material;
+    }
+
+    private static void CreateCylinder(
+        Transform parent,
+        string name,
+        Vector3 localPosition,
+        Vector3 localScale,
+        Material material)
+    {
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        go.name = name;
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPosition;
+        go.transform.localScale = localScale;
+
+        Collider collider = go.GetComponent<Collider>();
+        if (collider != null) collider.enabled = false;
+
+        Renderer renderer = go.GetComponent<Renderer>();
+        if (renderer != null) renderer.sharedMaterial = material;
+    }
+
+    private static void DestroyPresentationObject(GameObject go)
+    {
+        if (go == null) return;
+
+        MeshFilter[] filters = go.GetComponentsInChildren<MeshFilter>(true);
+        for (int i = 0; i < filters.Length; i++)
+        {
+            Mesh mesh = filters[i] != null ? filters[i].sharedMesh : null;
+            if (mesh == null || !mesh.name.StartsWith("BB_WallMesh_", StringComparison.Ordinal))
+                continue;
+
+            filters[i].sharedMesh = null;
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(mesh);
+            else
+                UnityEngine.Object.DestroyImmediate(mesh);
+        }
+
+        if (Application.isPlaying)
+            UnityEngine.Object.Destroy(go);
+        else
+            UnityEngine.Object.DestroyImmediate(go);
+    }
+}
