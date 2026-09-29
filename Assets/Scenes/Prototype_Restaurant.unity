@@ -11158,22 +11158,22 @@ MonoBehaviour:
   maximumIndicators: 32
   surfaceOffset: 0.018
   outlineRelativeThickness: 0.14
-  inactiveOpacity: 0.78
-  capturedFillOpacity: 0.24
-  capturedScaleMultiplier: 1.05
+  inactiveOpacity: 0.42
+  capturedFillOpacity: 0.34
+  capturedScaleMultiplier: 1.18
   visualizationCamera: {fileID: 330585545}
   compensateForScreenSize: 1
-  minimumInactiveDiameterPixels: 16
-  minimumCapturedDiameterPixels: 28
-  capturedWorldPadding: 0.16
+  minimumInactiveDiameterPixels: 15
+  minimumCapturedDiameterPixels: 34
+  capturedWorldPadding: 0.22
   maximumScreenScaleMultiplier: 2.25
   contrastScaleMultiplier: 1.16
-  contrastOpacity: 0.82
-  arrowScaleMultiplier: 1.22
-  availableColor: {r: 0.2, g: 0.9, b: 0.35, a: 0.95}
-  occupiedColor: {r: 1, g: 0.55, b: 0.1, a: 0.95}
-  blockedColor: {r: 0.95, g: 0.15, b: 0.15, a: 0.98}
-  capturedPendingColor: {r: 1, g: 0.85, b: 0.1, a: 1}
+  contrastOpacity: 0.58
+  arrowScaleMultiplier: 1.16
+  availableColor: {r: 0.36, g: 0.74, b: 0.63, a: 1}
+  occupiedColor: {r: 0.88, g: 0.61, b: 0.24, a: 1}
+  blockedColor: {r: 0.9, g: 0.39, b: 0.32, a: 1}
+  capturedPendingColor: {r: 0.38, g: 0.72, b: 0.88, a: 1}
   contrastColor: {r: 0.025, g: 0.03, b: 0.035, a: 1}
   orientationColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &263644945
