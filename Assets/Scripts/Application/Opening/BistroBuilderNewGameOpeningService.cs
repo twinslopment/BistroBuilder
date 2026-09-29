@@ -155,15 +155,7 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             !endOfDayService.TryResetForLegacyLoad(out error))
             return false;
 
-        /*
-         * Los objetos técnicos siguen activos para conservar colisiones,
-         * cocina y validación, pero sus primitivas de whitebox no forman parte
-         * de la presentación del jugador.
-         */
-        SetLegacyTestGeometryVisuals(false);
-        ApplyLegacyFixturePresentation();
         SetWaiterScenePresence(true);
-        SetWaiterSceneVisuals(false);
         SetPremisesFloorVisual(true);
         if (editDocumentService != null &&
             !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
@@ -328,7 +320,6 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             return false;
         }
         SetWaiterScenePresence(true);
-        SetWaiterSceneVisuals(true);
         if (serviceStateService.IsClosed && !serviceStateService.TryBeginPreparation())
         {
             error = "No pudo comenzar la preparacion del primer servicio.";
@@ -578,128 +569,9 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         return true;
     }
 
-    private static void SetLegacyTestGeometryVisuals(bool visible)
-    {
-        string[] names =
-        {
-            "PlacementObstacle_Test",
-            "Kitchen_Test"
-        };
 
-        GameObject[] all =
-            UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
 
-        for (int i = 0; i < all.Length; i++)
-        {
-            GameObject go = all[i];
-            if (go == null)
-                continue;
 
-            bool target = false;
-
-            for (int n = 0;
-                 n < names.Length;
-                 n++)
-            {
-                if (!string.Equals(
-                        go.name,
-                        names[n],
-                        StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                target = true;
-                break;
-            }
-
-            if (!target)
-                continue;
-
-            Renderer[] renderers =
-                go.GetComponentsInChildren<Renderer>(
-                    true);
-
-            for (int r = 0;
-                 r < renderers.Length;
-                 r++)
-            {
-                if (renderers[r] != null)
-                    renderers[r].enabled = visible;
-            }
-        }
-    }
-
-    private static void ApplyLegacyFixturePresentation()
-    {
-        Material counterMaterial =
-            Resources.Load<Material>(
-                "BistroBuilder/Construction/Materials/Roble_marcos");
-
-        Material stoolMaterial =
-            Resources.Load<Material>(
-                "BistroBuilder/Construction/Materials/Metal_grafito");
-
-        if (counterMaterial == null &&
-            stoolMaterial == null)
-        {
-            return;
-        }
-
-        GameObject[] all =
-            UnityEngine.Object.FindObjectsByType<GameObject>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-        for (int i = 0; i < all.Length; i++)
-        {
-            GameObject go = all[i];
-
-            if (go == null)
-                continue;
-
-            Material targetMaterial = null;
-
-            if (counterMaterial != null &&
-                string.Equals(
-                    go.name,
-                    "ProvisionalCounter",
-                    StringComparison.Ordinal))
-            {
-                targetMaterial =
-                    counterMaterial;
-            }
-            else if (stoolMaterial != null &&
-                     string.Equals(
-                         go.name,
-                         "ProvisionalStool",
-                         StringComparison.Ordinal))
-            {
-                targetMaterial =
-                    stoolMaterial;
-            }
-
-            if (targetMaterial == null)
-                continue;
-
-            Renderer[] renderers =
-                go.GetComponentsInChildren<Renderer>(
-                    true);
-
-            for (int r = 0;
-                 r < renderers.Length;
-                 r++)
-            {
-                if (renderers[r] != null)
-                {
-                    renderers[r].sharedMaterial =
-                        targetMaterial;
-                }
-            }
-        }
-    }
 
     private static void SetPremisesFloorVisual(bool visible)
     {
@@ -721,36 +593,7 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             if (waiters[i] != null) waiters[i].gameObject.SetActive(visible);
     }
 
-    private static void SetWaiterSceneVisuals(bool visible)
-    {
-        Waiter[] waiters =
-            UnityEngine.Object.FindObjectsByType<Waiter>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
 
-        for (int i = 0;
-             i < waiters.Length;
-             i++)
-        {
-            Waiter waiter =
-                waiters[i];
-
-            if (waiter == null)
-                continue;
-
-            Renderer[] renderers =
-                waiter.GetComponentsInChildren<Renderer>(
-                    true);
-
-            for (int r = 0;
-                 r < renderers.Length;
-                 r++)
-            {
-                if (renderers[r] != null)
-                    renderers[r].enabled = visible;
-            }
-        }
-    }
 
     private static bool HasFunctionalZone(BistroBuilderEditDocument document, string zoneDefinitionId)
     {
