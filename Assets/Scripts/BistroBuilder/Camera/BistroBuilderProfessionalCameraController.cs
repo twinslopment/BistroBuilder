@@ -177,7 +177,7 @@ namespace BistroBuilder.CameraSystem
             data.antialiasingQuality =
                 AntialiasingQuality.High;
             data.dithering = true;
-            data.stopNaN = true;
+            data.stopNaN = false;
         }
 
         private void LateUpdate()
