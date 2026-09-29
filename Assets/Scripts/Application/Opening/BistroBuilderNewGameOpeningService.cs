@@ -638,8 +638,15 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             Resources.Load<Material>(
                 "BistroBuilder/Construction/Materials/Roble_marcos");
 
-        if (counterMaterial == null)
+        Material stoolMaterial =
+            Resources.Load<Material>(
+                "BistroBuilder/Construction/Materials/Metal_grafito");
+
+        if (counterMaterial == null &&
+            stoolMaterial == null)
+        {
             return;
+        }
 
         GameObject[] all =
             UnityEngine.Object.FindObjectsByType<GameObject>(
@@ -650,14 +657,32 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         {
             GameObject go = all[i];
 
-            if (go == null ||
-                !string.Equals(
+            if (go == null)
+                continue;
+
+            Material targetMaterial = null;
+
+            if (counterMaterial != null &&
+                string.Equals(
                     go.name,
                     "ProvisionalCounter",
                     StringComparison.Ordinal))
             {
-                continue;
+                targetMaterial =
+                    counterMaterial;
             }
+            else if (stoolMaterial != null &&
+                     string.Equals(
+                         go.name,
+                         "ProvisionalStool",
+                         StringComparison.Ordinal))
+            {
+                targetMaterial =
+                    stoolMaterial;
+            }
+
+            if (targetMaterial == null)
+                continue;
 
             Renderer[] renderers =
                 go.GetComponentsInChildren<Renderer>(
@@ -668,11 +693,11 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
                  r++)
             {
                 if (renderers[r] != null)
+                {
                     renderers[r].sharedMaterial =
-                        counterMaterial;
+                        targetMaterial;
+                }
             }
-
-            break;
         }
     }
 
