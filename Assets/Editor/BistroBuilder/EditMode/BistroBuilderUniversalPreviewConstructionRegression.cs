@@ -34,7 +34,7 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
     }
 
     [MenuItem(
-        "Tools/Bistro Builder/Validation/Universal Preview V3/Construction",
+        "Tools/Bistro Builder/Validation/Universal Preview V4/Construction",
         false,
         52061)]
     public static void Run()
