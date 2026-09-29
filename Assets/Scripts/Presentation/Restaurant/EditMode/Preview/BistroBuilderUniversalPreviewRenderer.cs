@@ -11,15 +11,15 @@ using UnityEngine.Rendering;
 public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 {
     [SerializeField] private BistroBuilderUniversalPreviewService previewService;
-    [SerializeField, Min(0.004f)] private float candidateWidth = 0.024f;
-    [SerializeField, Min(0.004f)] private float ghostWidth = 0.012f;
-    [SerializeField, Min(0.004f)] private float conflictWidth = 0.032f;
+    [SerializeField, Min(0.004f)] private float candidateWidth = 0.032f;
+    [SerializeField, Min(0.004f)] private float ghostWidth = 0.011f;
+    [SerializeField, Min(0.004f)] private float conflictWidth = 0.042f;
 
     [Header("Presencia en suelo")]
     [SerializeField] private bool showContactFill = true;
-    [SerializeField, Range(0.01f, 0.20f)] private float validFillAlpha = 0.055f;
-    [SerializeField, Range(0.01f, 0.20f)] private float invalidFillAlpha = 0.045f;
-    [SerializeField, Range(0.01f, 0.20f)] private float neutralFillAlpha = 0.035f;
+    [SerializeField, Range(0.01f, 0.20f)] private float validFillAlpha = 0.090f;
+    [SerializeField, Range(0.01f, 0.20f)] private float invalidFillAlpha = 0.078f;
+    [SerializeField, Range(0.01f, 0.20f)] private float neutralFillAlpha = 0.050f;
     [SerializeField, Min(0f)] private float contactFillDrop = 0.008f;
 
     [Header("Escala adaptativa")]
@@ -30,16 +30,16 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
     [Header("Microanimación")]
     [SerializeField, Min(0.05f)] private float conflictPulseDuration = 0.72f;
-    [SerializeField, Range(0f, 1f)] private float conflictPulseStrength = 0.34f;
-    [SerializeField, Min(0.05f)] private float snapHaloDuration = 0.34f;
+    [SerializeField, Range(0f, 1f)] private float conflictPulseStrength = 0.52f;
+    [SerializeField, Min(0.05f)] private float snapHaloDuration = 0.42f;
     [SerializeField, Min(0.05f)] private float rotationCueDuration = 0.34f;
 
     [SerializeField] private Color neutralColor = new Color(0.90f, 0.89f, 0.84f, 0.70f);
-    [SerializeField] private Color validColor = new Color(0.36f, 0.72f, 0.64f, 0.92f);
-    [SerializeField] private Color invalidColor = new Color(0.88f, 0.43f, 0.36f, 0.92f);
+    [SerializeField] private Color validColor = new Color(0.36f, 0.74f, 0.63f, 0.96f);
+    [SerializeField] private Color invalidColor = new Color(0.90f, 0.39f, 0.32f, 0.96f);
     [SerializeField] private Color ghostColor = new Color(0.66f, 0.73f, 0.79f, 0.22f);
-    [SerializeField] private Color conflictColor = new Color(0.94f, 0.48f, 0.36f, 0.86f);
-    [SerializeField] private Color snapColor = new Color(0.46f, 0.69f, 0.90f, 0.90f);
+    [SerializeField] private Color conflictColor = new Color(0.95f, 0.42f, 0.32f, 0.94f);
+    [SerializeField] private Color snapColor = new Color(0.38f, 0.72f, 0.88f, 0.98f);
     [SerializeField] private Color rotationCueColor = new Color(0.82f, 0.77f, 0.62f, 0.82f);
 
     private readonly List<LineRenderer> candidateLines = new List<LineRenderer>(16);
@@ -230,9 +230,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
             EnsureSnapLines();
             DrawSnapDiamond(
                 state.SnapPoint,
-                0.11f,
+                0.13f,
                 snapColor,
-                0.026f);
+                0.030f);
 
             if (snapChanged)
             {
@@ -241,9 +241,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
                 DrawSnapHalo(
                     state.SnapPoint,
-                    0.11f,
+                    0.13f,
                     snapColor,
-                    0.018f);
+                    0.020f);
             }
 
             hadSnapPoint = true;
@@ -636,8 +636,8 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         {
             float radius =
                 Mathf.Lerp(
-                    0.11f,
-                    0.28f,
+                    0.13f,
+                    0.36f,
                     t);
 
             Color halo =
