@@ -1,6 +1,6 @@
 # UI — revisión del vídeo del 28/09/2026
 
-Candidata en `codex/topbar-responsive-approved`, sobre `477e00de`, incorporando la integración `f86f97da`. Pendiente de revisión visual del usuario antes de subir a `integration/master-current-20260918`.
+Cambios de `codex/topbar-responsive-approved` aprobados por el usuario para subir a `integration/master-current-20260918` el 29/09/2026. El commit `9b70eafc` se integra con `702b7175` (Universal Preview V2) mediante `f7708bb1`, conservando ambas líneas de trabajo.
 
 ## Correcciones
 
@@ -29,3 +29,9 @@ El editor emitió una excepción de indexación de UnityEditor.Search.SearchData
 Capturas: [barra 1920](../Images/UIAudit20260929/bar-1920.png), [Carta 1280](../Images/UIAudit20260929/Carta-1280.png), [Reputación 1280](../Images/UIAudit20260929/Reputación-1280.png). Resultados: [UI](../Images/UIAudit20260929/ui-results.txt), [construcción](../Images/UIAudit20260929/construction-results.txt).
 
 Build Windows final: **PASS**, Unity 6000.3.19f1, 29/09/2026 11:49 UTC, 181311838 bytes; 13 avisos del build. Log: Logs/ui_verified_windows_build.log. Salida: Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe; arranque a resolución nativa y pantalla completa sin bordes.
+
+## Integración aprobada — 29/09/2026
+
+La versión combinada vuelve a superar las 305 comprobaciones de interfaz (`Logs/ui_integration_20260929.log`). El núcleo de Universal Preview V2 y sus adaptadores de mobiliario permanecen idénticos a `702b7175`. Los conflictos se limitaban a la prueba del menú aprobado y un comentario del inspector; se conservan las tres tarjetas iguales y la API pública de cierre.
+La build descrita arriba corresponde a la candidata anterior a esta fusión; estos resultados de integración no se presentan como una nueva build.
+Regresión de edición tras la fusión: PASS en las siete secciones, previsualizaciones, puertas/ventanas, cierre/reapertura, rotación, trazado ortogonal, cruces y uniones. Log: Logs/ui_integration_edit_20260929.log.
