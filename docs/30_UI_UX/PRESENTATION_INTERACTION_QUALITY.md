@@ -149,8 +149,13 @@ Render PC:
 ## 8. UI de Modo Edición
 
 ### Chrome
-- una sola barra superior canónica;
-- una sola barra inferior de herramientas/acciones;
+- una sola barra superior canónica por contexto y una sola barra inferior de herramientas/acciones;
+- la navegación normal y la barra superior de Modo Edición comparten la misma geometría responsive, placa marfil/latón, identidad visual y artwork aprobado de Bistro Builder;
+- cambiar Normal ↔ Edición no debe producir saltos de altura, margen o identidad de marca;
+- en edición, las herramientas rápidas se reducen por prioridad en anchuras estrechas antes de comprimir texto/iconos hasta volverlos ilegibles;
+- si se abre una pantalla de gestión desde Modo Edición, el chrome de herramientas cede temporalmente a la navegación global; al cerrar la gestión vuelve el chrome de edición sin duplicar barras;
+- `ContentTopInset` se calcula sobre la barra superior realmente activa, normal o edición;
+- una selección de mobiliario usa el inspector derecho como autoridad de acciones; la barra inferior no duplica sus acciones;
 - el antiguo selector flotante Normal/Edición queda retirado.
 
 ### Diseño inicial
