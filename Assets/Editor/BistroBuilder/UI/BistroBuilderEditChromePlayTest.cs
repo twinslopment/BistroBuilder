@@ -74,7 +74,9 @@ public static class BistroBuilderEditChromePlayTest
                     Check(inspector.transform.Find("Viewport/Content/Preview/Favorite")==null,"Inspector must not expose non-persistent fake favorites");
                     var legacy=GameObject.Find("PlaceableContextContent");
                     Check(legacy==null||!legacy.activeInHierarchy,"Legacy context panel suppressed");
-                    Check(B("EditDuplicate").interactable,"Duplicate enabled for furniture");B("EditDuplicate").onClick.Invoke();Check(edit.HasActivePlacement,"Duplicate uses creation preview");edit.CancelActivePlacement();
+                    var inspectorDuplicate=inspector.transform.Find("Viewport/Content/Actions/Secondary/Duplicate")?.GetComponent<Button>();
+                    Check(inspectorDuplicate!=null&&inspectorDuplicate.interactable,"Inspector duplicate enabled for furniture");
+                    inspectorDuplicate.onClick.Invoke();Check(edit.HasActivePlacement,"Inspector duplicate uses creation preview");edit.CancelActivePlacement();
                     Capture("BarrasEdicion1920.png",1920,1080);
                     Capture("BarrasEdicion1280.png",1280,720);
                     Capture("BarrasEdicionUltrawide.png",3440,1440);
