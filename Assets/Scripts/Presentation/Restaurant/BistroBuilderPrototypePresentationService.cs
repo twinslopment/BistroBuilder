@@ -122,6 +122,9 @@ public sealed class BistroBuilderPrototypePresentationService :
     {
         CacheDependencies();
         Subscribe();
+
+        if (tableBindings.Count > 0)
+            ReactivateTableBindings();
     }
 
     private void Start()
@@ -231,13 +234,16 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (tableBindings.ContainsKey(instanceId))
             return;
 
-        MeshFilter sourceFilter =
-            table.GetComponent<MeshFilter>();
-
         MeshRenderer sourceRenderer =
-            table.GetComponent<MeshRenderer>();
+            FindPrimitiveTableSource(
+                table);
 
-        if (!IsPrimitiveRenderer(sourceRenderer) ||
+        MeshFilter sourceFilter =
+            sourceRenderer != null
+                ? sourceRenderer.GetComponent<MeshFilter>()
+                : null;
+
+        if (sourceRenderer == null ||
             sourceFilter == null ||
             sourceFilter.sharedMesh == null)
         {
@@ -655,6 +661,10 @@ public sealed class BistroBuilderPrototypePresentationService :
             placeable.GetComponentsInChildren<
                 MeshRenderer>(true);
 
+        Transform tableVisualRoot =
+            placeable.transform.Find(
+                TableVisualRootName);
+
         for (int index = 0;
              index < renderers.Length;
              index++)
@@ -663,9 +673,9 @@ public sealed class BistroBuilderPrototypePresentationService :
                 renderers[index];
 
             if (!IsPrimitiveRenderer(renderer) ||
-                renderer.transform.IsChildOf(
-                    placeable.transform.Find(
-                        TableVisualRootName)))
+                (tableVisualRoot != null &&
+                 renderer.transform.IsChildOf(
+                     tableVisualRoot)))
             {
                 continue;
             }
@@ -938,6 +948,77 @@ public sealed class BistroBuilderPrototypePresentationService :
                     false);
             }
         }
+    }
+
+    private void ReactivateTableBindings()
+    {
+        foreach (
+            KeyValuePair<int, TablePresentationBinding>
+                pair in tableBindings)
+        {
+            TablePresentationBinding binding =
+                pair.Value;
+
+            if (binding == null ||
+                binding.Source == null ||
+                binding.Root == null)
+            {
+                continue;
+            }
+
+            binding.Source.enabled =
+                false;
+
+            binding.Root.SetActive(
+                true);
+        }
+    }
+
+    private static MeshRenderer FindPrimitiveTableSource(
+        RestaurantTable table)
+    {
+        if (table == null)
+            return null;
+
+        MeshRenderer[] renderers =
+            table.GetComponentsInChildren<
+                MeshRenderer>(true);
+
+        MeshRenderer best =
+            null;
+
+        float bestVolume =
+            0f;
+
+        for (int index = 0;
+             index < renderers.Length;
+             index++)
+        {
+            MeshRenderer renderer =
+                renderers[index];
+
+            if (!IsPrimitiveRenderer(renderer))
+                continue;
+
+            Bounds bounds =
+                renderer.bounds;
+
+            float volume =
+                bounds.size.x *
+                bounds.size.y *
+                bounds.size.z;
+
+            if (volume <= bestVolume)
+                continue;
+
+            best =
+                renderer;
+
+            bestVolume =
+                volume;
+        }
+
+        return best;
     }
 
     private void HandleOpeningStateChanged()
