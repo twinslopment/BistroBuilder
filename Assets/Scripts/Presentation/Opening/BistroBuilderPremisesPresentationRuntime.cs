@@ -78,6 +78,22 @@ public static class BistroBuilderPremisesPresentationRuntime
             ? Mathf.Clamp(entranceObject.transform.position.x, minX + 1.2f, maxX - 1.2f)
             : Mathf.Lerp(minX, maxX, 0.30f);
 
+        Material exterior = Resources.Load<Material>(
+            "BistroBuilder/Construction/Materials/Metal_grafito");
+        CreateBox(
+            root,
+            "ExteriorApron",
+            new Vector3(bounds.center.x, bounds.min.y - 0.09f, bounds.center.z),
+            new Vector3(bounds.size.x + 3.0f, 0.12f, bounds.size.z + 3.0f),
+            exterior != null ? exterior : kit.wallMaterial);
+
+        CreateBox(
+            root,
+            "EntranceApron",
+            new Vector3(entranceX, bounds.min.y - 0.025f, minZ - 1.35f),
+            new Vector3(3.0f, 0.07f, 2.7f),
+            kit.floorMaterial);
+
         CreateWall(
             root,
             "NorthWall",
