@@ -75,6 +75,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private bool wasInvalid;
     private BistroBuilderUniversalPreviewState renderedState;
     private Camera cachedCamera;
+    private float nextCameraResolveAt;
 
     private bool hasLastCandidateRotation;
     private Quaternion lastCandidateRotation =
@@ -1255,9 +1256,21 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
             return cachedCamera;
         }
 
+        if (Time.unscaledTime <
+            nextCameraResolveAt)
+        {
+            return null;
+        }
+
+        nextCameraResolveAt =
+            Time.unscaledTime + 1f;
+
+        Camera main =
+            Camera.main;
+
         cachedCamera =
-            Camera.main != null
-                ? Camera.main
+            main != null
+                ? main
                 : FindFirstObjectByType<Camera>();
 
         return cachedCamera;
