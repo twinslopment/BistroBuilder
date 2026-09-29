@@ -20,6 +20,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
     private RestaurantPlaceableCatalogPanel panel;
     private RestaurantEditInteractionController interactionController;
     private RestaurantPlaceableCatalogService catalogService;
+    private BistroBuilderUiShell uiShell;
     private GameObject contentRoot;
     private RectTransform categoryBar;
     private RectTransform itemContainer;
@@ -87,6 +88,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
             RefreshDynamicViews(true);
         }
 
+        ApplyResponsivePanelBounds();
         RefreshPlacementStrip();
         ApplyCollapsedState();
     }
@@ -102,6 +104,9 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         catalogService = catalogService != null
             ? catalogService
             : FindFirstObjectByType<RestaurantPlaceableCatalogService>();
+        uiShell = uiShell != null
+            ? uiShell
+            : FindFirstObjectByType<BistroBuilderUiShell>(FindObjectsInactive.Include);
 
         titleFont = titleFont != null
             ? titleFont
@@ -401,8 +406,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         root.anchorMin = new Vector2(0f, 0f);
         root.anchorMax = new Vector2(0f, 1f);
         root.pivot = new Vector2(0f, 0.5f);
-        root.offsetMin = new Vector2(18f, 150f);
-        root.offsetMax = new Vector2(448f, -86f);
+        ApplyResponsivePanelBounds();
 
         Transform header = contentRoot.transform.Find("Header");        if (header is RectTransform headerRect)
         {
@@ -453,6 +457,54 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         }
 
         ApplyScrollBounds();
+    }
+
+    private void ApplyResponsivePanelBounds()
+    {
+        if (contentRoot == null)
+            return;
+
+        RectTransform root =
+            contentRoot.transform as RectTransform;
+        if (root == null)
+            return;
+
+        if (uiShell == null)
+        {
+            uiShell =
+                FindFirstObjectByType<BistroBuilderUiShell>(
+                    FindObjectsInactive.Include);
+        }
+
+        Canvas targetCanvas =
+            contentRoot.GetComponentInParent<Canvas>();
+
+        float topInset =
+            uiShell != null
+                ? uiShell.ContentTopInset(targetCanvas)
+                : 86f;
+
+        topInset =
+            Mathf.Max(
+                86f,
+                topInset);
+
+        Vector2 wantedMin =
+            new Vector2(
+                18f,
+                150f);
+        Vector2 wantedMax =
+            new Vector2(
+                448f,
+                -topInset);
+
+        if ((root.offsetMin - wantedMin).sqrMagnitude > .01f)
+            root.offsetMin =
+                wantedMin;
+
+        if ((root.offsetMax - wantedMax).sqrMagnitude > .01f)
+            root.offsetMax =
+                wantedMax;
     }
 
     private void ApplyScrollBounds()
