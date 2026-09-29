@@ -385,6 +385,21 @@ public sealed class BistroBuilderDeliveryRun
         return item.TryMarkInTransit();
     }
 
+    public bool TryMarkLineFailed(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        if ((State != BistroBuilderDeliveryRunState.PickingUp &&
+             State != BistroBuilderDeliveryRunState.InTransit) ||
+            !TryGetItem(order, orderLineId, out var item))
+        {
+            return false;
+        }
+
+        return item.TryMarkFailed();
+    }
+
     public bool TryBeginDelivery()
     {
         if (State != BistroBuilderDeliveryRunState.PickingUp)
@@ -392,16 +407,41 @@ public sealed class BistroBuilderDeliveryRun
             return false;
         }
 
+        bool hasLineInTransit = false;
+
         for (int index = 0; index < items.Count; index++)
         {
-            if (items[index].State !=
+            BistroBuilderDeliveryRunItem item =
+                items[index];
+
+            if (item.State ==
                 BistroBuilderDeliveryRunItemState.InTransit)
             {
-                return false;
+                hasLineInTransit = true;
+                continue;
             }
+
+            if (item.IsFinished)
+            {
+                continue;
+            }
+
+            return false;
         }
 
-        CurrentStopIndex = 0;
+        if (!hasLineInTransit)
+        {
+            return false;
+        }
+
+        CurrentStopIndex =
+            FindNextPendingStopIndex(0);
+
+        if (CurrentStopIndex < 0)
+        {
+            return false;
+        }
+
         State = BistroBuilderDeliveryRunState.InTransit;
         return true;
     }
@@ -426,14 +466,42 @@ public sealed class BistroBuilderDeliveryRun
     {
         if (State != BistroBuilderDeliveryRunState.InTransit ||
             CurrentStop == null ||
-            CurrentStop.RemainingLineCount > 0 ||
-            CurrentStopIndex + 1 >= stops.Count)
+            CurrentStop.RemainingLineCount > 0)
         {
             return false;
         }
 
-        CurrentStopIndex++;
+        int nextStopIndex =
+            FindNextPendingStopIndex(
+                CurrentStopIndex + 1);
+
+        if (nextStopIndex < 0)
+        {
+            return false;
+        }
+
+        CurrentStopIndex =
+            nextStopIndex;
+
         return true;
+    }
+
+    private int FindNextPendingStopIndex(
+        int startIndex)
+    {
+        for (int index =
+                 Mathf.Max(0, startIndex);
+             index < stops.Count;
+             index++)
+        {
+            if (stops[index] != null &&
+                stops[index].RemainingLineCount > 0)
+            {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     public bool TryComplete()
