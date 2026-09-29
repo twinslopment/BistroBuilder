@@ -222,6 +222,21 @@ public sealed class RestaurantPlaceableContextPanel : MonoBehaviour
 
     private void Refresh()
     {
+        // El inspector unificado moderno es la única autoridad visual cuando
+        // está disponible. Este panel legacy queda como fallback de escenas
+        // antiguas para no duplicar información ni acciones en el lateral.
+        RestaurantPlaceableInspectorPanel unifiedInspector =
+            FindFirstObjectByType<RestaurantPlaceableInspectorPanel>(
+                FindObjectsInactive.Include);
+
+        if (unifiedInspector != null)
+        {
+            if (contentRoot != null)
+                contentRoot.SetActive(false);
+
+            return;
+        }
+
         bool shouldShow =
             editModeService != null && editModeService.IsEditModeActive &&
             interactionController != null && interactionController.HasSelection;
