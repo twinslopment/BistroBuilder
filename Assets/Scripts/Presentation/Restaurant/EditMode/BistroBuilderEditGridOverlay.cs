@@ -14,6 +14,11 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private Renderer editableFloorRenderer;
     [SerializeField] private MeshFilter editableFloorMeshFilter;
+
+    [Header("Suelo de presentación")]
+    [SerializeField] private bool applyPresentationFloorMaterial = true;
+    [SerializeField] private string presentationFloorMaterialResource =
+        "BistroBuilder/Construction/Materials/Suelo_caliza";
     [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.085f);
     [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.17f);
     [SerializeField, Min(0.002f)] private float minorLineWidth = 0.006f;
@@ -119,6 +124,34 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
                 if (editableFloorMeshFilter == null) editableFloorMeshFilter = floor.GetComponent<MeshFilter>();
             }
         }
+
+        ApplyPresentationFloorMaterialIfNeeded();
+    }
+
+    private void ApplyPresentationFloorMaterialIfNeeded()
+    {
+        if (!applyPresentationFloorMaterial ||
+            editableFloorRenderer == null ||
+            string.IsNullOrWhiteSpace(
+                presentationFloorMaterialResource))
+        {
+            return;
+        }
+
+        Material material =
+            Resources.Load<Material>(
+                presentationFloorMaterialResource);
+
+        if (material == null ||
+            ReferenceEquals(
+                editableFloorRenderer.sharedMaterial,
+                material))
+        {
+            return;
+        }
+
+        editableFloorRenderer.sharedMaterial =
+            material;
     }
 
     private void Subscribe()
