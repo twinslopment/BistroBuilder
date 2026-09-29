@@ -69,6 +69,8 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
          * Cubre cualquier orden de Awake entre servicios. El catálogo jugable
          * ya está materializado antes de la primera operación de partida.
          */
+        CachePlayableCatalog();
+        SubscribePlayableCatalog();
         SynchronizePlayableDefinitions();
         RebuildIndex();
     }
@@ -235,6 +237,7 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
             return;
 
         CachePlayableCatalog();
+        SubscribePlayableCatalog();
 
         if (playableCatalogService == null)
             return;
