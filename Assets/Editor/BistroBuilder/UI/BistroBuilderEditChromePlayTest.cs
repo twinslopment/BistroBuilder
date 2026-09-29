@@ -68,6 +68,12 @@ public static class BistroBuilderEditChromePlayTest
                     var item=Object.FindObjectsByType<RestaurantPlaceableObject>(FindObjectsSortMode.None).FirstOrDefault(p=>p.ItemDefinition!=null);
                     Check(item!=null&&edit.TrySelectPlaceable(item),"Select real furniture");break;
                 case 4:
+                    var inspector=GameObject.Find("BB_UIUX_PlaceableInspector");
+                    Check(inspector!=null&&inspector.activeInHierarchy,"Unified contextual inspector visible for world selection");
+                    Check(inspector.transform.Find("Viewport/Content/Actions")!=null,"Unified inspector exposes contextual actions");
+                    Check(inspector.transform.Find("Viewport/Content/Preview/Favorite")==null,"Inspector must not expose non-persistent fake favorites");
+                    var legacy=GameObject.Find("PlaceableContextContent");
+                    Check(legacy==null||!legacy.activeInHierarchy,"Legacy context panel suppressed");
                     Check(B("EditDuplicate").interactable,"Duplicate enabled for furniture");B("EditDuplicate").onClick.Invoke();Check(edit.HasActivePlacement,"Duplicate uses creation preview");edit.CancelActivePlacement();
                     Capture("BarrasEdicion1920.png",1920,1080);
                     Capture("BarrasEdicion1280.png",1280,720);
@@ -76,7 +82,7 @@ public static class BistroBuilderEditChromePlayTest
                 case 5:
                     Check(shell.GetComponent<BistroBuilderOptionsScreen>().IsOpen,"Home exposes safe game menu");
                     shell.GetComponent<BistroBuilderOptionsScreen>().Close();break;
-                case 6: Finish(true,"Vector icons, theme isolation, category states, real tools, grid toggle, duplicate preview, game menu and 1920/1280/ultrawide captures.");break;
+                case 6: Finish(true,"Vector icons, unified contextual inspector, no fake favorite state, legacy panel suppression, category states, real tools, grid toggle, duplicate preview, game menu and 1920/1280/ultrawide captures.");break;
             }
         }catch(Exception e){Finish(false,e.ToString());}
     }
