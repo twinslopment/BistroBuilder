@@ -5,15 +5,11 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Capa de presentación para contenido whitebox que todavía conserva
-/// geometría primitiva.
+/// Capa única de presentación para contenido whitebox.
 ///
-/// Principios:
-/// - Nunca altera colliders, huellas, BBSIS, Seat Bays, navegación ni Save/Load.
-/// - Solo actúa sobre placeholders inequívocos (malla Cube + RestaurantTable
-///   o nombres explícitos *_Test / Provisional*).
-/// - Cuando un asset posee geometría autorada real, no interviene.
-/// - Todo visual generado cuelga del objeto lógico y desaparece con él.
+/// No altera colliders, footprints, BBSIS, Seat Bays, navegación, economía
+/// ni Save/Load. Solo reemplaza o calma la representación visual de
+/// placeholders inequívocos mientras sigan siendo necesarios.
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu(
@@ -76,8 +72,10 @@ public sealed class BistroBuilderPrototypePresentationService :
 
     [Header("Ámbito")]
     [SerializeField] private bool skinPrimitiveTables = true;
+    [SerializeField] private bool skinPrimitivePlaceables = true;
     [SerializeField] private bool calmExplicitTestGeometry = true;
     [SerializeField] private bool skinPrimitiveWaiters = true;
+    [SerializeField] private bool suppressPrimitiveActorsDuringEdit = true;
 
     [Header("Materiales canónicos")]
     [SerializeField] private string tableMaterialResource =
@@ -86,20 +84,36 @@ public sealed class BistroBuilderPrototypePresentationService :
     [SerializeField] private string serviceMaterialResource =
         "BistroBuilder/Construction/Materials/Metal_grafito";
 
+    [SerializeField] private string architectureMaterialResource =
+        "BistroBuilder/Construction/Materials/Enlucido_calido";
+
     [SerializeField] private RestaurantPlaceableCreationService
         creationService;
 
     [SerializeField] private BistroBuilderNewGameOpeningService
         openingService;
 
-    private readonly HashSet<int> skinnedTableIds =
-        new HashSet<int>();
+    [SerializeField] private RestaurantEditModeService
+        editModeService;
+
+    private readonly Dictionary<int, TablePresentationBinding>
+        tableBindings =
+            new Dictionary<int, TablePresentationBinding>();
+
+    private readonly Dictionary<Renderer, bool>
+        actorRendererStates =
+            new Dictionary<Renderer, bool>();
 
     private Material tableMaterial;
     private Material serviceMaterial;
+    private Material architectureMaterial;
+    private MaterialPropertyBlock sourceBlock;
 
     private void Awake()
     {
+        sourceBlock =
+            new MaterialPropertyBlock();
+
         CacheDependencies();
         LoadMaterials();
     }
@@ -115,9 +129,22 @@ public sealed class BistroBuilderPrototypePresentationService :
         ApplyScenePresentation();
     }
 
+    private void LateUpdate()
+    {
+        SynchronizeTableVisualState();
+    }
+
     private void OnDisable()
     {
         Unsubscribe();
+        RestoreActorRenderers();
+        RestoreTableSources();
+    }
+
+    private void OnDestroy()
+    {
+        RestoreActorRenderers();
+        RestoreTableSources();
     }
 
     public void ApplyScenePresentation()
@@ -131,10 +158,19 @@ public sealed class BistroBuilderPrototypePresentationService :
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
 
-            for (int index = 0; index < tables.Length; index++)
+            for (int index = 0;
+                 index < tables.Length;
+                 index++)
             {
-                TrySkinPrimitiveTable(tables[index]);
+                TrySkinPrimitiveTable(
+                    tables[index]);
             }
+        }
+
+        if (skinPrimitivePlaceables)
+        {
+            SkinPrimitivePlaceables();
+            SkinPrimitiveObstacles();
         }
 
         if (skinPrimitiveWaiters)
@@ -144,7 +180,9 @@ public sealed class BistroBuilderPrototypePresentationService :
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
 
-            for (int index = 0; index < waiters.Length; index++)
+            for (int index = 0;
+                 index < waiters.Length;
+                 index++)
             {
                 StylePrimitiveActor(
                     waiters[index] != null
@@ -156,7 +194,7 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (calmExplicitTestGeometry)
             CalmExplicitPlaceholders();
 
-        ApplyOpeningPhasePresentation();
+        RefreshActorVisibility();
     }
 
     private void HandleCreationCommitted(
@@ -169,7 +207,16 @@ public sealed class BistroBuilderPrototypePresentationService :
             placeable.GetComponent<RestaurantTable>();
 
         if (table != null)
-            TrySkinPrimitiveTable(table);
+        {
+            TrySkinPrimitiveTable(
+                table);
+        }
+
+        if (skinPrimitivePlaceables)
+        {
+            SkinPrimitivePlaceable(
+                placeable);
+        }
     }
 
     private void TrySkinPrimitiveTable(
@@ -181,17 +228,8 @@ public sealed class BistroBuilderPrototypePresentationService :
         int instanceId =
             table.GetInstanceID();
 
-        if (skinnedTableIds.Contains(instanceId))
+        if (tableBindings.ContainsKey(instanceId))
             return;
-
-        Transform existing =
-            table.transform.Find(TableVisualRootName);
-
-        if (existing != null)
-        {
-            skinnedTableIds.Add(instanceId);
-            return;
-        }
 
         MeshFilter sourceFilter =
             table.GetComponent<MeshFilter>();
@@ -199,13 +237,9 @@ public sealed class BistroBuilderPrototypePresentationService :
         MeshRenderer sourceRenderer =
             table.GetComponent<MeshRenderer>();
 
-        if (sourceFilter == null ||
-            sourceRenderer == null ||
-            sourceFilter.sharedMesh == null ||
-            !string.Equals(
-                sourceFilter.sharedMesh.name,
-                "Cube",
-                StringComparison.OrdinalIgnoreCase))
+        if (!IsPrimitiveRenderer(sourceRenderer) ||
+            sourceFilter == null ||
+            sourceFilter.sharedMesh == null)
         {
             return;
         }
@@ -218,8 +252,19 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (material == null)
             return;
 
+        Transform existing =
+            table.transform.Find(
+                TableVisualRootName);
+
+        if (existing != null)
+        {
+            Destroy(
+                existing.gameObject);
+        }
+
         GameObject root =
-            new GameObject(TableVisualRootName);
+            new GameObject(
+                TableVisualRootName);
 
         root.layer =
             table.gameObject.layer;
@@ -228,54 +273,246 @@ public sealed class BistroBuilderPrototypePresentationService :
             table.transform,
             false);
 
+        Bounds bounds =
+            sourceRenderer.bounds;
+
+        Vector3 scale =
+            table.transform.lossyScale;
+
+        float safeX =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.x));
+
+        float safeY =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.y));
+
+        float safeZ =
+            Mathf.Max(
+                0.0001f,
+                Mathf.Abs(scale.z));
+
+        Vector3 localSize =
+            new Vector3(
+                bounds.size.x / safeX,
+                bounds.size.y / safeY,
+                bounds.size.z / safeZ);
+
+        localSize.x =
+            Mathf.Max(
+                0.55f,
+                localSize.x);
+
+        localSize.y =
+            Mathf.Max(
+                0.58f,
+                localSize.y);
+
+        localSize.z =
+            Mathf.Max(
+                0.55f,
+                localSize.z);
+
+        Vector3 localCenter =
+            table.transform
+                .InverseTransformPoint(
+                    bounds.center);
+
+        float topThickness =
+            Mathf.Clamp(
+                localSize.y * 0.105f,
+                0.055f,
+                0.085f);
+
+        float legHeight =
+            Mathf.Max(
+                0.46f,
+                localSize.y -
+                topThickness);
+
+        float shortestSide =
+            Mathf.Min(
+                localSize.x,
+                localSize.z);
+
+        float legWidth =
+            Mathf.Clamp(
+                shortestSide * 0.065f,
+                0.045f,
+                0.075f);
+
+        float insetX =
+            Mathf.Clamp(
+                localSize.x * 0.105f,
+                0.08f,
+                0.14f);
+
+        float insetZ =
+            Mathf.Clamp(
+                localSize.z * 0.105f,
+                0.08f,
+                0.14f);
+
+        float topY =
+            localCenter.y +
+            localSize.y * 0.5f -
+            topThickness * 0.5f;
+
+        var generated =
+            new List<MeshRenderer>(6);
+
         AddTablePart(
             root.transform,
             "Top",
             sourceFilter.sharedMesh,
             material,
-            new Vector3(0f, 0.28f, 0f),
-            new Vector3(0.96f, 0.085f, 0.90f));
+            new Vector3(
+                localCenter.x,
+                topY,
+                localCenter.z),
+            new Vector3(
+                localSize.x,
+                topThickness,
+                localSize.z),
+            generated);
+
+        float legCenterY =
+            topY -
+            topThickness * 0.5f -
+            legHeight * 0.5f;
+
+        float halfX =
+            Mathf.Max(
+                0.12f,
+                localSize.x * 0.5f -
+                insetX);
+
+        float halfZ =
+            Mathf.Max(
+                0.12f,
+                localSize.z * 0.5f -
+                insetZ);
+
+        AddLeg(
+            root.transform,
+            sourceFilter.sharedMesh,
+            material,
+            localCenter,
+            -halfX,
+            legCenterY,
+            -halfZ,
+            legWidth,
+            legHeight,
+            generated);
+
+        AddLeg(
+            root.transform,
+            sourceFilter.sharedMesh,
+            material,
+            localCenter,
+            halfX,
+            legCenterY,
+            -halfZ,
+            legWidth,
+            legHeight,
+            generated);
+
+        AddLeg(
+            root.transform,
+            sourceFilter.sharedMesh,
+            material,
+            localCenter,
+            -halfX,
+            legCenterY,
+            halfZ,
+            legWidth,
+            legHeight,
+            generated);
+
+        AddLeg(
+            root.transform,
+            sourceFilter.sharedMesh,
+            material,
+            localCenter,
+            halfX,
+            legCenterY,
+            halfZ,
+            legWidth,
+            legHeight,
+            generated);
+
+        float apronHeight =
+            Mathf.Clamp(
+                localSize.y * 0.075f,
+                0.045f,
+                0.065f);
 
         AddTablePart(
             root.transform,
-            "Leg_FL",
+            "Apron",
             sourceFilter.sharedMesh,
             material,
-            new Vector3(-0.40f, -0.09f, 0.35f),
-            new Vector3(0.055f, 0.66f, 0.11f));
+            new Vector3(
+                localCenter.x,
+                topY -
+                topThickness * 0.5f -
+                apronHeight * 0.5f,
+                localCenter.z),
+            new Vector3(
+                Mathf.Max(
+                    0.20f,
+                    localSize.x -
+                    insetX * 1.05f),
+                apronHeight,
+                Mathf.Max(
+                    0.20f,
+                    localSize.z -
+                    insetZ * 1.05f)),
+            generated);
 
+        bool sourceWasEnabled =
+            sourceRenderer.enabled;
+
+        sourceRenderer.enabled =
+            false;
+
+        tableBindings.Add(
+            instanceId,
+            new TablePresentationBinding(
+                sourceRenderer,
+                sourceWasEnabled,
+                root,
+                generated));
+    }
+
+    private static void AddLeg(
+        Transform parent,
+        Mesh mesh,
+        Material material,
+        Vector3 localCenter,
+        float offsetX,
+        float centerY,
+        float offsetZ,
+        float width,
+        float height,
+        List<MeshRenderer> generated)
+    {
         AddTablePart(
-            root.transform,
-            "Leg_FR",
-            sourceFilter.sharedMesh,
+            parent,
+            "Leg",
+            mesh,
             material,
-            new Vector3(0.40f, -0.09f, 0.35f),
-            new Vector3(0.055f, 0.66f, 0.11f));
-
-        AddTablePart(
-            root.transform,
-            "Leg_BL",
-            sourceFilter.sharedMesh,
-            material,
-            new Vector3(-0.40f, -0.09f, -0.35f),
-            new Vector3(0.055f, 0.66f, 0.11f));
-
-        AddTablePart(
-            root.transform,
-            "Leg_BR",
-            sourceFilter.sharedMesh,
-            material,
-            new Vector3(0.40f, -0.09f, -0.35f),
-            new Vector3(0.055f, 0.66f, 0.11f));
-
-        /*
-         * El collider y el MeshFilter originales siguen intactos porque son
-         * parte del contrato lógico del placeholder. Solo se oculta su cubo
-         * visual monolítico.
-         */
-        sourceRenderer.enabled = false;
-
-        skinnedTableIds.Add(instanceId);
+            new Vector3(
+                localCenter.x + offsetX,
+                centerY,
+                localCenter.z + offsetZ),
+            new Vector3(
+                width,
+                height,
+                width),
+            generated);
     }
 
     private static void AddTablePart(
@@ -284,7 +521,8 @@ public sealed class BistroBuilderPrototypePresentationService :
         Mesh mesh,
         Material material,
         Vector3 localPosition,
-        Vector3 localScale)
+        Vector3 localScale,
+        List<MeshRenderer> generated)
     {
         GameObject part =
             new GameObject(
@@ -325,6 +563,189 @@ public sealed class BistroBuilderPrototypePresentationService :
 
         renderer.receiveShadows =
             true;
+
+        renderer.lightProbeUsage =
+            LightProbeUsage.BlendProbes;
+
+        renderer.reflectionProbeUsage =
+            ReflectionProbeUsage.BlendProbes;
+
+        generated?.Add(
+            renderer);
+
+        /*
+         * No se añade Collider: toda la autoridad física permanece
+         * en el placeholder funcional original.
+         */
+    }
+
+    private void SynchronizeTableVisualState()
+    {
+        if (sourceBlock == null ||
+            tableBindings.Count == 0)
+        {
+            return;
+        }
+
+        foreach (
+            KeyValuePair<int, TablePresentationBinding>
+                pair in tableBindings)
+        {
+            TablePresentationBinding binding =
+                pair.Value;
+
+            if (binding == null ||
+                binding.Source == null)
+            {
+                continue;
+            }
+
+            sourceBlock.Clear();
+
+            binding.Source.GetPropertyBlock(
+                sourceBlock);
+
+            for (int index = 0;
+                 index < binding.Generated.Count;
+                 index++)
+            {
+                MeshRenderer renderer =
+                    binding.Generated[index];
+
+                if (renderer != null)
+                {
+                    renderer.SetPropertyBlock(
+                        sourceBlock);
+                }
+            }
+        }
+    }
+
+    private void SkinPrimitivePlaceables()
+    {
+        RestaurantPlaceableObject[] placeables =
+            FindObjectsByType<
+                RestaurantPlaceableObject>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int index = 0;
+             index < placeables.Length;
+             index++)
+        {
+            SkinPrimitivePlaceable(
+                placeables[index]);
+        }
+    }
+
+    private void SkinPrimitivePlaceable(
+        RestaurantPlaceableObject placeable)
+    {
+        if (placeable == null)
+            return;
+
+        Material target =
+            ResolvePlaceableMaterial(
+                placeable);
+
+        if (target == null)
+            return;
+
+        MeshRenderer[] renderers =
+            placeable.GetComponentsInChildren<
+                MeshRenderer>(true);
+
+        for (int index = 0;
+             index < renderers.Length;
+             index++)
+        {
+            MeshRenderer renderer =
+                renderers[index];
+
+            if (!IsPrimitiveRenderer(renderer) ||
+                renderer.transform.IsChildOf(
+                    placeable.transform.Find(
+                        TableVisualRootName)))
+            {
+                continue;
+            }
+
+            renderer.sharedMaterial =
+                target;
+        }
+    }
+
+    private void SkinPrimitiveObstacles()
+    {
+        if (architectureMaterial == null)
+            return;
+
+        RestaurantPlacementObstacle[] obstacles =
+            FindObjectsByType<
+                RestaurantPlacementObstacle>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int index = 0;
+             index < obstacles.Length;
+             index++)
+        {
+            RestaurantPlacementObstacle obstacle =
+                obstacles[index];
+
+            if (obstacle == null ||
+                obstacle.GetComponentInParent<
+                    RestaurantPlaceableObject>() != null)
+            {
+                continue;
+            }
+
+            MeshRenderer[] renderers =
+                obstacle.GetComponentsInChildren<
+                    MeshRenderer>(true);
+
+            for (int rendererIndex = 0;
+                 rendererIndex < renderers.Length;
+                 rendererIndex++)
+            {
+                MeshRenderer renderer =
+                    renderers[rendererIndex];
+
+                if (IsPrimitiveRenderer(renderer))
+                {
+                    renderer.sharedMaterial =
+                        architectureMaterial;
+                }
+            }
+        }
+    }
+
+    private Material ResolvePlaceableMaterial(
+        RestaurantPlaceableObject placeable)
+    {
+        if (placeable == null ||
+            placeable.ItemDefinition == null)
+        {
+            return tableMaterial;
+        }
+
+        switch (placeable.ItemDefinition.Category)
+        {
+            case RestaurantPlaceableItemCategory.KitchenEquipment:
+            case RestaurantPlaceableItemCategory.ServiceEquipment:
+            case RestaurantPlaceableItemCategory.Lighting:
+                return serviceMaterial != null
+                    ? serviceMaterial
+                    : tableMaterial;
+
+            case RestaurantPlaceableItemCategory.Structural:
+                return architectureMaterial != null
+                    ? architectureMaterial
+                    : tableMaterial;
+
+            default:
+                return tableMaterial;
+        }
     }
 
     private void StylePrimitiveActor(
@@ -336,34 +757,34 @@ public sealed class BistroBuilderPrototypePresentationService :
             return;
         }
 
-        MeshFilter filter =
-            actor.GetComponent<MeshFilter>();
+        MeshRenderer[] renderers =
+            actor.GetComponentsInChildren<
+                MeshRenderer>(true);
 
-        MeshRenderer renderer =
-            actor.GetComponent<MeshRenderer>();
-
-        if (filter == null ||
-            renderer == null ||
-            filter.sharedMesh == null ||
-            !string.Equals(
-                filter.sharedMesh.name,
-                "Capsule",
-                StringComparison.OrdinalIgnoreCase))
+        for (int index = 0;
+             index < renderers.Length;
+             index++)
         {
-            return;
-        }
+            MeshRenderer renderer =
+                renderers[index];
 
-        renderer.sharedMaterial =
-            serviceMaterial;
+            if (IsPrimitiveRenderer(renderer))
+            {
+                renderer.sharedMaterial =
+                    serviceMaterial;
+            }
+        }
     }
 
     private void CalmExplicitPlaceholders()
     {
         HideRendererOnly(
-            GameObject.Find("PlacementObstacle_Test"));
+            GameObject.Find(
+                "PlacementObstacle_Test"));
 
         HideRendererOnly(
-            GameObject.Find("Kitchen_Test"));
+            GameObject.Find(
+                "Kitchen_Test"));
 
         ApplyMaterialToNamedObject(
             "ProvisionalCounter",
@@ -374,7 +795,9 @@ public sealed class BistroBuilderPrototypePresentationService :
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
 
-        for (int index = 0; index < all.Length; index++)
+        for (int index = 0;
+             index < all.Length;
+             index++)
         {
             GameObject candidate =
                 all[index];
@@ -395,51 +818,134 @@ public sealed class BistroBuilderPrototypePresentationService :
         }
     }
 
-    private void ApplyOpeningPhasePresentation()
+    private void RefreshActorVisibility()
     {
-        if (openingService == null)
+        RestoreActorRenderers();
+
+        bool initialSetup =
+            openingService != null &&
+            (openingService.Phase ==
+                 BistroBuilderNewGamePhase.StartMenu ||
+             openingService.Phase ==
+                 BistroBuilderNewGamePhase.InitialSetup);
+
+        bool editing =
+            suppressPrimitiveActorsDuringEdit &&
+            editModeService != null &&
+            editModeService.IsEditModeActive;
+
+        if (!initialSetup &&
+            !editing)
+        {
+            return;
+        }
+
+        HidePrimitiveActorRenderers(
+            FindObjectsByType<
+                WaiterMovementView>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None));
+
+        HidePrimitiveActorRenderers(
+            FindObjectsByType<
+                CustomerMovementView>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None));
+    }
+
+    private void HidePrimitiveActorRenderers<T>(
+        T[] owners)
+        where T : Component
+    {
+        if (owners == null)
             return;
 
-        bool showWaiterVisuals =
-            openingService.Phase !=
-                BistroBuilderNewGamePhase.StartMenu &&
-            openingService.Phase !=
-                BistroBuilderNewGamePhase.InitialSetup;
-
-        Waiter[] waiters =
-            FindObjectsByType<Waiter>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-        for (int index = 0;
-             index < waiters.Length;
-             index++)
+        for (int ownerIndex = 0;
+             ownerIndex < owners.Length;
+             ownerIndex++)
         {
-            Waiter waiter =
-                waiters[index];
+            T owner =
+                owners[ownerIndex];
 
-            if (waiter == null)
+            if (owner == null)
                 continue;
 
-            Renderer[] renderers =
-                waiter.GetComponentsInChildren<Renderer>(
-                    true);
+            MeshRenderer[] renderers =
+                owner.GetComponentsInChildren<
+                    MeshRenderer>(true);
 
             for (int rendererIndex = 0;
                  rendererIndex < renderers.Length;
                  rendererIndex++)
             {
-                Renderer renderer =
+                MeshRenderer renderer =
                     renderers[rendererIndex];
 
-                if (renderer != null)
-                    renderer.enabled =
-                        showWaiterVisuals;
+                if (!IsPrimitiveRenderer(renderer) ||
+                    actorRendererStates.ContainsKey(
+                        renderer))
+                {
+                    continue;
+                }
+
+                actorRendererStates.Add(
+                    renderer,
+                    renderer.enabled);
+
+                renderer.enabled =
+                    false;
+            }
+        }
+    }
+
+    private void RestoreActorRenderers()
+    {
+        foreach (
+            KeyValuePair<Renderer, bool> pair
+            in actorRendererStates)
+        {
+            if (pair.Key != null)
+            {
+                pair.Key.enabled =
+                    pair.Value;
+            }
+        }
+
+        actorRendererStates.Clear();
+    }
+
+    private void RestoreTableSources()
+    {
+        foreach (
+            KeyValuePair<int, TablePresentationBinding>
+                pair in tableBindings)
+        {
+            TablePresentationBinding binding =
+                pair.Value;
+
+            if (binding == null)
+                continue;
+
+            if (binding.Source != null)
+            {
+                binding.Source.enabled =
+                    binding.SourceWasEnabled;
+            }
+
+            if (binding.Root != null)
+            {
+                binding.Root.SetActive(
+                    false);
             }
         }
     }
 
     private void HandleOpeningStateChanged()
+    {
+        ApplyScenePresentation();
+    }
+
+    private void HandleEditModeChanged()
     {
         ApplyScenePresentation();
     }
@@ -454,7 +960,9 @@ public sealed class BistroBuilderPrototypePresentationService :
             target.GetComponentsInChildren<Renderer>(
                 true);
 
-        for (int index = 0; index < renderers.Length; index++)
+        for (int index = 0;
+             index < renderers.Length;
+             index++)
         {
             if (renderers[index] != null)
                 renderers[index].enabled = false;
@@ -490,14 +998,61 @@ public sealed class BistroBuilderPrototypePresentationService :
             target.GetComponentsInChildren<Renderer>(
                 true);
 
-        for (int index = 0; index < renderers.Length; index++)
+        for (int index = 0;
+             index < renderers.Length;
+             index++)
         {
             Renderer renderer =
                 renderers[index];
 
             if (renderer != null)
-                renderer.sharedMaterial = material;
+                renderer.sharedMaterial =
+                    material;
         }
+    }
+
+    private static bool IsPrimitiveRenderer(
+        MeshRenderer renderer)
+    {
+        if (renderer == null)
+            return false;
+
+        MeshFilter filter =
+            renderer.GetComponent<MeshFilter>();
+
+        if (filter == null ||
+            filter.sharedMesh == null)
+        {
+            return false;
+        }
+
+        string name =
+            filter.sharedMesh.name;
+
+        return string.Equals(
+                   name,
+                   "Cube",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   name,
+                   "Sphere",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   name,
+                   "Capsule",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   name,
+                   "Cylinder",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   name,
+                   "Plane",
+                   StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(
+                   name,
+                   "Quad",
+                   StringComparison.OrdinalIgnoreCase);
     }
 
     private void CacheDependencies()
@@ -505,7 +1060,8 @@ public sealed class BistroBuilderPrototypePresentationService :
         if (creationService == null)
         {
             creationService =
-                GetComponent<RestaurantPlaceableCreationService>();
+                GetComponent<
+                    RestaurantPlaceableCreationService>();
         }
 
         if (creationService == null)
@@ -521,6 +1077,14 @@ public sealed class BistroBuilderPrototypePresentationService :
             openingService =
                 FindFirstObjectByType<
                     BistroBuilderNewGameOpeningService>(
+                    FindObjectsInactive.Include);
+        }
+
+        if (editModeService == null)
+        {
+            editModeService =
+                FindFirstObjectByType<
+                    RestaurantEditModeService>(
                     FindObjectsInactive.Include);
         }
     }
@@ -544,6 +1108,21 @@ public sealed class BistroBuilderPrototypePresentationService :
             openingService.StateChanged +=
                 HandleOpeningStateChanged;
         }
+
+        if (editModeService != null)
+        {
+            editModeService.EditModeEntered -=
+                HandleEditModeChanged;
+
+            editModeService.EditModeExited -=
+                HandleEditModeChanged;
+
+            editModeService.EditModeEntered +=
+                HandleEditModeChanged;
+
+            editModeService.EditModeExited +=
+                HandleEditModeChanged;
+        }
     }
 
     private void Unsubscribe()
@@ -558,6 +1137,15 @@ public sealed class BistroBuilderPrototypePresentationService :
         {
             openingService.StateChanged -=
                 HandleOpeningStateChanged;
+        }
+
+        if (editModeService != null)
+        {
+            editModeService.EditModeEntered -=
+                HandleEditModeChanged;
+
+            editModeService.EditModeExited -=
+                HandleEditModeChanged;
         }
     }
 
@@ -575,6 +1163,34 @@ public sealed class BistroBuilderPrototypePresentationService :
             serviceMaterial =
                 Resources.Load<Material>(
                     serviceMaterialResource);
+        }
+
+        if (architectureMaterial == null)
+        {
+            architectureMaterial =
+                Resources.Load<Material>(
+                    architectureMaterialResource);
+        }
+    }
+
+    private sealed class TablePresentationBinding
+    {
+        public MeshRenderer Source { get; }
+        public bool SourceWasEnabled { get; }
+        public GameObject Root { get; }
+        public List<MeshRenderer> Generated { get; }
+
+        public TablePresentationBinding(
+            MeshRenderer source,
+            bool sourceWasEnabled,
+            GameObject root,
+            List<MeshRenderer> generated)
+        {
+            Source = source;
+            SourceWasEnabled = sourceWasEnabled;
+            Root = root;
+            Generated = generated ??
+                new List<MeshRenderer>();
         }
     }
 }
