@@ -715,9 +715,56 @@ public sealed partial class BistroBuilderNavigationService
         BistroBuilderNavigationReplanLevel level, out BistroBuilderNavigationRoute route)
     {
         route = null;
+        InitializeV1();
+
         if (string.IsNullOrWhiteSpace(ownerId) ||
-            !v1Trips.TryGetValue(ownerId, out NavigationTripRuntime trip) || trip == null)
+            !v1Trips.TryGetValue(ownerId, out NavigationTripRuntime trip) ||
+            trip == null ||
+            trip.request == null ||
+            trip.trace == null)
+        {
             return false;
+        }
+
+        /*
+         * Un segundo cambio de destino puede llegar mientras el Path Query
+         * Scheduler todavía está resolviendo el plan inicial. En ese estado
+         * el viaje es válido, pero trip.plan aún es null: no es un fallo y
+         * nunca debemos dereferenciarlo. Retargeteamos la petición pendiente
+         * y la mantenemos en la cola canónica.
+         */
+        if (trip.plan == null)
+        {
+            float pendingNow = Time.unscaledTime;
+
+            trip.request.origin = origin;
+            trip.request.destination = destination;
+
+            trip.trace.state =
+                BistroBuilderNavigationTravelState.RequestingRoute;
+
+            trip.trace.waitingReason =
+                BistroBuilderNavigationWaitingReason.AwaitingCorridor;
+
+            trip.trace.blockerId = string.Empty;
+            trip.trace.yieldingTo = string.Empty;
+            trip.trace.lastDecision =
+                "Pending route request retargeted before initial plan resolution.";
+
+            trip.lastObservedAt = pendingNow;
+            trip.lastProgressAt = pendingNow;
+            trip.lastPosition = origin;
+            trip.lastProgressMeters = 0f;
+
+            v1PathScheduler.Enqueue(
+                ownerId,
+                BistroBuilderNavigationQueryPriority.NewTrip,
+                trip.request.externalUrgency);
+
+            SyncPathSchedulerMetricsV1();
+            return false;
+        }
+
         if (level == BistroBuilderNavigationReplanLevel.CorridorRepair &&
             TryRepairCurrentCorridorV1(ownerId, trip, origin, destination, out route))
             return true;
