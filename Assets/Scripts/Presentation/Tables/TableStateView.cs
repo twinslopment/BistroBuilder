@@ -16,32 +16,37 @@ public sealed class TableStateView : MonoBehaviour
     [SerializeField]
     private Renderer tableRenderer;
 
-    [Header("Colores provisionales")]
-    [SerializeField]
-    private Color freeColor = Color.green;
+    [Header("Acentos operativos")]
+    [SerializeField, Range(0f, 0.35f)]
+    private float stateTintStrength = 0.12f;
 
     [SerializeField]
-    private Color waitingForWaiterColor = Color.yellow;
+    private Color waitingForWaiterColor =
+        new Color(0.82f, 0.69f, 0.30f, 1f);
 
     [SerializeField]
     private Color takingOrderColor =
-        new Color(1f, 0.5f, 0f);
+        new Color(0.84f, 0.55f, 0.28f, 1f);
 
     [SerializeField]
-    private Color waitingForFoodColor = Color.red;
+    private Color waitingForFoodColor =
+        new Color(0.72f, 0.36f, 0.31f, 1f);
 
     [SerializeField]
-    private Color eatingColor = Color.cyan;
+    private Color eatingColor =
+        new Color(0.32f, 0.58f, 0.52f, 1f);
 
     [SerializeField]
-    private Color waitingForBillColor = Color.magenta;
+    private Color waitingForBillColor =
+        new Color(0.50f, 0.48f, 0.68f, 1f);
 
     [SerializeField]
     private Color payingColor =
-        new Color(0.6f, 0.2f, 0.8f);
+        new Color(0.55f, 0.42f, 0.66f, 1f);
 
     [SerializeField]
-    private Color dirtyColor = Color.gray;
+    private Color dirtyColor =
+        new Color(0.42f, 0.42f, 0.40f, 1f);
 
     // Identificadores de las propiedades de color utilizadas
     // por los shaders habituales de Unity.
@@ -54,11 +59,14 @@ public sealed class TableStateView : MonoBehaviour
     // Permite modificar el color del Renderer sin crear
     // una copia independiente del material para cada mesa.
     private MaterialPropertyBlock propertyBlock;
+    private Color originalBaseColor = Color.white;
+    private bool originalColorCaptured;
 
     private void Awake()
     {
         FindRequiredComponents();
         EnsurePropertyBlockExists();
+        CaptureOriginalColor();
     }
 
     private void OnEnable()
@@ -68,6 +76,7 @@ public sealed class TableStateView : MonoBehaviour
         // Por eso garantizamos aquí que propertyBlock vuelva a existir.
         FindRequiredComponents();
         EnsurePropertyBlockExists();
+        CaptureOriginalColor();
 
         if (restaurantTable == null)
         {
@@ -109,6 +118,8 @@ public sealed class TableStateView : MonoBehaviour
             restaurantTable.StateChanged -=
                 HandleStateChanged;
         }
+
+        RestoreOriginalColor();
     }
 
     /// <summary>
@@ -156,6 +167,87 @@ public sealed class TableStateView : MonoBehaviour
         UpdateVisualState(newState);
     }
 
+    private void CaptureOriginalColor()
+    {
+        if (originalColorCaptured ||
+            tableRenderer == null)
+        {
+            return;
+        }
+
+        Material material =
+            tableRenderer.sharedMaterial;
+
+        if (material == null)
+        {
+            originalBaseColor =
+                Color.white;
+
+            originalColorCaptured =
+                true;
+
+            return;
+        }
+
+        if (material.HasProperty(
+                BaseColorProperty))
+        {
+            originalBaseColor =
+                material.GetColor(
+                    BaseColorProperty);
+        }
+        else if (material.HasProperty(
+                     ColorProperty))
+        {
+            originalBaseColor =
+                material.GetColor(
+                    ColorProperty);
+        }
+        else
+        {
+            originalBaseColor =
+                Color.white;
+        }
+
+        originalColorCaptured =
+            true;
+    }
+
+    private void RestoreOriginalColor()
+    {
+        if (!originalColorCaptured ||
+            tableRenderer == null)
+        {
+            return;
+        }
+
+        EnsurePropertyBlockExists();
+
+        tableRenderer.GetPropertyBlock(
+            propertyBlock);
+
+        Material material =
+            tableRenderer.sharedMaterial;
+
+        if (material != null &&
+            material.HasProperty(
+                BaseColorProperty))
+        {
+            propertyBlock.SetColor(
+                BaseColorProperty,
+                originalBaseColor);
+        }
+        else
+        {
+            propertyBlock.SetColor(
+                ColorProperty,
+                originalBaseColor);
+        }
+
+        tableRenderer.SetPropertyBlock(
+            propertyBlock);
+    }
+
     /// <summary>
     /// Selecciona y aplica el color correspondiente al estado actual
     /// de la mesa.
@@ -174,11 +266,10 @@ public sealed class TableStateView : MonoBehaviour
 
         EnsurePropertyBlockExists();
 
-        Color targetColor = state switch
-        {
-            TableState.Free =>
-                freeColor,
+        CaptureOriginalColor();
 
+        Color accentColor = state switch
+        {
             TableState.WaitingForWaiter =>
                 waitingForWaiterColor,
 
@@ -201,8 +292,23 @@ public sealed class TableStateView : MonoBehaviour
                 dirtyColor,
 
             _ =>
-                Color.white
+                originalBaseColor
         };
+
+        float blend =
+            state == TableState.Free
+                ? 0f
+                : Mathf.Clamp01(
+                    stateTintStrength);
+
+        Color targetColor =
+            Color.Lerp(
+                originalBaseColor,
+                accentColor,
+                blend);
+
+        targetColor.a =
+            originalBaseColor.a;
 
         // Recuperamos primero las propiedades ya aplicadas al Renderer
         // para no sobrescribir otros valores visuales.
