@@ -36,6 +36,9 @@ namespace BistroBuilder.CameraSystem
 
         [Header("Presentación PC")]
         [SerializeField] private bool enforceHighQualityPresentation = true;
+        [SerializeField] private bool usePresentationBackdrop = true;
+        [SerializeField] private Color presentationBackdrop =
+            new Color(0.075f, 0.082f, 0.078f, 1f);
 
         private bool initialized;
         private Vector3 targetFocusPoint;
@@ -162,6 +165,15 @@ namespace BistroBuilder.CameraSystem
 
             controlledCamera.allowHDR = true;
             controlledCamera.allowMSAA = true;
+
+            if (usePresentationBackdrop)
+            {
+                controlledCamera.clearFlags =
+                    CameraClearFlags.SolidColor;
+
+                controlledCamera.backgroundColor =
+                    presentationBackdrop;
+            }
 
             UniversalAdditionalCameraData data =
                 controlledCamera.GetUniversalAdditionalCameraData();
