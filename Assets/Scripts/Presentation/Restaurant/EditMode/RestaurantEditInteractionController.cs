@@ -230,6 +230,20 @@ public sealed class RestaurantEditInteractionController :
     private Quaternion candidateRotation =
         Quaternion.identity;
 
+    /*
+     * Pose exclusivamente de presentación. Conserva la intención continua
+     * del puntero mientras candidatePosition/candidateRotation siguen siendo
+     * la pose lógica exacta que valida y confirma el sistema.
+     */
+    private Vector3 presentationPosition;
+
+    private Quaternion presentationRotation =
+        Quaternion.identity;
+
+    private bool hasPresentationPose;
+
+    private bool presentationPoseIsFunctionallySnapped;
+
     private float originalWorldHeight;
 
     private float effectiveGridSize = 0.25f;
@@ -358,6 +372,29 @@ public sealed class RestaurantEditInteractionController :
 
     public RestaurantPlacementSnapService PlacementSnapService =>
         placementSnapService;
+
+    /// <summary>
+    /// Devuelve la pose que debe representar Presentation durante una
+    /// colocación. No modifica ni sustituye la pose candidata transaccional.
+    ///
+    /// Fuera de un snap funcional, la posición sigue el puntero sin cuantizar
+    /// para que el objeto transportado se mueva con continuidad mientras la
+    /// huella del suelo conserva el destino lógico sobre cuadrícula.
+    /// </summary>
+    public bool TryGetPresentationPlacementPose(
+        out Vector3 worldPosition,
+        out Quaternion worldRotation,
+        out bool isFunctionallySnapped)
+    {
+        worldPosition = presentationPosition;
+        worldRotation = presentationRotation;
+        isFunctionallySnapped =
+            presentationPoseIsFunctionallySnapped;
+
+        return HasActivePlacement &&
+               activeMember != null &&
+               hasPresentationPose;
+    }
 
     public RestaurantPlacementTransactionService PlacementTransactionService =>
         transactionService;
@@ -1558,6 +1595,18 @@ public sealed class RestaurantEditInteractionController :
         candidateRotation =
             member.transform.rotation;
 
+        presentationPosition =
+            memberPosition;
+
+        presentationRotation =
+            candidateRotation;
+
+        hasPresentationPose =
+            true;
+
+        presentationPoseIsFunctionallySnapped =
+            false;
+
         hasCandidatePose = true;
         hasPublishedPreviewPose = false;
 
@@ -1619,6 +1668,15 @@ public sealed class RestaurantEditInteractionController :
             yawRotation *
             candidateRotation;
 
+        presentationRotation =
+            candidateRotation;
+
+        hasPresentationPose =
+            true;
+
+        presentationPoseIsFunctionallySnapped =
+            false;
+
         LastRotationFeedbackTime = Time.unscaledTime;
 
         placementSnapService?.ReleaseCurrentCapture();
@@ -1636,35 +1694,26 @@ public sealed class RestaurantEditInteractionController :
             return;
         }
 
-        Vector3 nextPosition =
+        Vector3 freePosition =
             surfacePoint +
             grabOffset;
 
         if (preserveOriginalWorldHeight)
         {
-            nextPosition.y =
+            freePosition.y =
                 originalWorldHeight;
         }
 
-        if (useGridSnapping)
-        {
-            nextPosition.x =
-                SnapValue(
-                    nextPosition.x,
-                    effectiveGridSize
-                );
-
-            nextPosition.z =
-                SnapValue(
-                    nextPosition.z,
-                    effectiveGridSize
-                );
-        }
-
+        /*
+         * El snapping funcional consume la intención continua del puntero,
+         * no una posición previamente cuantizada. Así Seat Bays y futuros
+         * sockets capturan de forma natural y siguen conservando autoridad
+         * sobre su pose exacta.
+         */
         if (placementSnapService != null &&
             placementSnapService.TryResolveSnap(
                 activeMember,
-                nextPosition,
+                freePosition,
                 candidateRotation,
                 out RestaurantPlacementSnapResult snapResult
             ))
@@ -1674,12 +1723,56 @@ public sealed class RestaurantEditInteractionController :
 
             candidateRotation =
                 snapResult.RootRotation;
+
+            presentationPosition =
+                snapResult.RootPosition;
+
+            presentationRotation =
+                snapResult.RootRotation;
+
+            presentationPoseIsFunctionallySnapped =
+                true;
         }
         else
         {
+            Vector3 logicalPosition =
+                freePosition;
+
+            if (useGridSnapping)
+            {
+                logicalPosition.x =
+                    SnapValue(
+                        logicalPosition.x,
+                        effectiveGridSize
+                    );
+
+                logicalPosition.z =
+                    SnapValue(
+                        logicalPosition.z,
+                        effectiveGridSize
+                    );
+            }
+
             candidatePosition =
-                nextPosition;
+                logicalPosition;
+
+            /*
+             * El objeto elevado sigue la mano de forma continua; la huella
+             * universal permanece en candidatePosition y enseña exactamente
+             * dónde aterrizará si se confirma.
+             */
+            presentationPosition =
+                freePosition;
+
+            presentationRotation =
+                candidateRotation;
+
+            presentationPoseIsFunctionallySnapped =
+                false;
         }
+
+        hasPresentationPose =
+            true;
 
         hasCandidatePose = true;
     }
@@ -1713,6 +1806,18 @@ public sealed class RestaurantEditInteractionController :
 
         candidateRotation =
             worldRotation;
+
+        presentationPosition =
+            worldPosition;
+
+        presentationRotation =
+            worldRotation;
+
+        hasPresentationPose =
+            true;
+
+        presentationPoseIsFunctionallySnapped =
+            false;
 
         hasCandidatePose =
             true;
@@ -2507,6 +2612,18 @@ public sealed class RestaurantEditInteractionController :
         grabOffset = Vector3.zero;
         candidatePosition = Vector3.zero;
         candidateRotation = Quaternion.identity;
+
+        presentationPosition =
+            Vector3.zero;
+
+        presentationRotation =
+            Quaternion.identity;
+
+        hasPresentationPose =
+            false;
+
+        presentationPoseIsFunctionallySnapped =
+            false;
 
         originalWorldHeight = 0f;
 
