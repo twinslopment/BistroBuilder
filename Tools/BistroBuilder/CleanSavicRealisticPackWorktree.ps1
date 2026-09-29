@@ -31,6 +31,11 @@ $keepPatterns = @(
     'Assets/Editor/BistroBuilder/SAVIC/Diagnostics/SavicCanonicalContentInventoryProbe.cs.meta'
 )
 
+$preservePatterns = @(
+    'SAVIC/Manifests/*.json',
+    'ContentSource/SHA256/*'
+)
+
 $status = git status --porcelain=v1
 if ($LASTEXITCODE -ne 0) { throw 'git status failed.' }
 
@@ -55,10 +60,16 @@ function MatchesAny([string]$Path, [string[]]$Patterns) {
 Invoke-GitNative @('restore','--staged','.')
 
 $keep = @($changed | Where-Object { MatchesAny $_ $keepPatterns })
-$safety = @($changed | Where-Object { -not (MatchesAny $_ $keepPatterns) })
+$preserve = @($changed | Where-Object { MatchesAny $_ $preservePatterns })
+$safety = @($changed | Where-Object {
+    -not (MatchesAny $_ $keepPatterns) -and
+    -not (MatchesAny $_ $preservePatterns)
+})
 
 Write-Output ('SAVIC_CLEANUP|KEEP=' + $keep.Count)
 $keep | ForEach-Object { Write-Output ('KEEP|' + $_) }
+Write-Output ('SAVIC_CLEANUP|PRESERVE_CANONICAL=' + $preserve.Count)
+$preserve | ForEach-Object { Write-Output ('PRESERVE|' + $_) }
 Write-Output ('SAVIC_CLEANUP|SAFETY_BACKUP=' + $safety.Count)
 
 $stashCreated = $false
