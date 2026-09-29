@@ -17,18 +17,18 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     [SerializeField] private BistroBuilderUniversalPreviewService previewService;
 
     [Header("Sensación de transporte")]
-    [SerializeField, Min(0f)] private float liftHeight = 0.085f;
+    [SerializeField, Min(0f)] private float liftHeight = 0.115f;
     [SerializeField] private bool useAdaptiveLift = true;
-    [SerializeField, Range(0.01f, 0.25f)] private float liftHeightFraction = 0.08f;
-    [SerializeField, Min(0f)] private float maximumLiftHeight = 0.14f;
-    [SerializeField, Min(0.01f)] private float liftDuration = 0.11f;
-    [SerializeField, Min(0.01f)] private float settleDuration = 0.10f;
+    [SerializeField, Range(0.01f, 0.25f)] private float liftHeightFraction = 0.10f;
+    [SerializeField, Min(0f)] private float maximumLiftHeight = 0.18f;
+    [SerializeField, Min(0.01f)] private float liftDuration = 0.13f;
+    [SerializeField, Min(0.01f)] private float settleDuration = 0.14f;
 
     [Header("Seguimiento visual")]
-    [SerializeField, Min(1f)] private float positionFollowSharpness = 20f;
-    [SerializeField, Min(1f)] private float rotationFollowSharpness = 24f;
-    [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.55f;
-    [SerializeField, Min(1f)] private float settleFollowMultiplier = 1.65f;
+    [SerializeField, Min(1f)] private float positionFollowSharpness = 22f;
+    [SerializeField, Min(1f)] private float rotationFollowSharpness = 20f;
+    [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.34f;
+    [SerializeField, Min(1f)] private float settleFollowMultiplier = 1.85f;
 
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
@@ -379,6 +379,20 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
         Quaternion targetRotation =
             activeRoot.transform.rotation;
+
+        if (!settling &&
+            interactionController != null &&
+            interactionController.TryGetPresentationPlacementPose(
+                out Vector3 presentationTargetPosition,
+                out Quaternion presentationTargetRotation,
+                out _))
+        {
+            targetPosition =
+                presentationTargetPosition;
+
+            targetRotation =
+                presentationTargetRotation;
+        }
 
         if (!visualPoseInitialized)
         {
