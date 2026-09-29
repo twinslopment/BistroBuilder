@@ -42,15 +42,15 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
     [SerializeField]
     [Range(0.10f, 1f)]
-    private float inactiveOpacity = 0.70f;
+    private float inactiveOpacity = 0.42f;
 
     [SerializeField]
     [Range(0.05f, 0.60f)]
-    private float capturedFillOpacity = 0.20f;
+    private float capturedFillOpacity = 0.34f;
 
     [SerializeField]
     [Range(0.25f, 1.50f)]
-    private float capturedScaleMultiplier = 1.08f;
+    private float capturedScaleMultiplier = 1.18f;
 
     [Header("Legibilidad multirresolución")]
 
@@ -69,14 +69,14 @@ public sealed class RestaurantPlacementSnapVisualizer :
     )]
     [SerializeField]
     [Range(8f, 64f)]
-    private float minimumInactiveDiameterPixels = 16f;
+    private float minimumInactiveDiameterPixels = 15f;
 
     [Tooltip(
         "Diámetro mínimo del destino capturado en píxeles."
     )]
     [SerializeField]
     [Range(12f, 96f)]
-    private float minimumCapturedDiameterPixels = 28f;
+    private float minimumCapturedDiameterPixels = 34f;
 
     [Tooltip(
         "Margen mundial añadido alrededor del destino capturado para " +
@@ -84,7 +84,7 @@ public sealed class RestaurantPlacementSnapVisualizer :
     )]
     [SerializeField]
     [Min(0f)]
-    private float capturedWorldPadding = 0.16f;
+    private float capturedWorldPadding = 0.22f;
 
     [Tooltip(
         "Límite de compensación para evitar indicadores gigantes en " +
@@ -104,29 +104,29 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
     [SerializeField]
     [Range(0.10f, 1f)]
-    private float contrastOpacity = 0.82f;
+    private float contrastOpacity = 0.58f;
 
     [SerializeField]
     [Range(1f, 2f)]
-    private float arrowScaleMultiplier = 1.22f;
+    private float arrowScaleMultiplier = 1.16f;
 
     [Header("Estados")]
 
     [SerializeField]
     private Color availableColor =
-        new Color(0.18f, 0.88f, 0.36f, 1f);
+        new Color(0.36f, 0.74f, 0.63f, 1f);
 
     [SerializeField]
     private Color occupiedColor =
-        new Color(1.00f, 0.58f, 0.10f, 1f);
+        new Color(0.88f, 0.61f, 0.24f, 1f);
 
     [SerializeField]
     private Color blockedColor =
-        new Color(0.95f, 0.18f, 0.18f, 1f);
+        new Color(0.90f, 0.39f, 0.32f, 1f);
 
     [SerializeField]
     private Color capturedPendingColor =
-        new Color(1.00f, 0.82f, 0.12f, 1f);
+        new Color(0.38f, 0.72f, 0.88f, 1f);
 
     [SerializeField]
     private Color contrastColor =
