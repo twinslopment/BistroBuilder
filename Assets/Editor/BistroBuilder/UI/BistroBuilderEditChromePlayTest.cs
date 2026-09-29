@@ -31,6 +31,13 @@ public static class BistroBuilderEditChromePlayTest
     static void Log(string message,string stack,LogType type){if(stack.Contains("UnityEditor.Search.SearchDatabase")){Debug.LogWarning("Editor Search indexing exception (outside game runtime): "+message);return;}if(type==LogType.Exception||type==LogType.Error||type==LogType.Assert)failure=message;}
     static void Check(bool value,string reason){if(!value)throw new Exception(reason);}
     static Button B(string name){var go=GameObject.Find(name);Check(go!=null,"Missing "+name);return go.GetComponent<Button>();}
+    static GameObject AnyObject(string name)
+    {
+        return Object.FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None)
+            .FirstOrDefault(t=>t!=null&&t.name==name)?.gameObject;
+    }
     static void Tick()
     {
         if(!EditorApplication.isPlaying||EditorApplication.timeSinceStartup<next)return;
@@ -76,6 +83,12 @@ public static class BistroBuilderEditChromePlayTest
                     Check(legacy==null||!legacy.activeInHierarchy,"Legacy context panel suppressed");
                     var inspectorDuplicate=inspector.transform.Find("Viewport/Content/Actions/Secondary/Duplicate")?.GetComponent<Button>();
                     Check(inspectorDuplicate!=null&&inspectorDuplicate.interactable,"Inspector duplicate enabled for furniture");
+                    var bottomDuplicate=AnyObject("EditDuplicate");
+                    Check(bottomDuplicate!=null&&!bottomDuplicate.activeSelf,"Bottom duplicate hidden when inspector owns furniture actions");
+                    var legacyInitial=AnyObject("Diseño inicial");
+                    var legacyBottom=AnyObject("Acciones de construcción");
+                    Check(legacyInitial==null||!legacyInitial.activeInHierarchy,"Legacy initial-design overlay remains suppressed");
+                    Check(legacyBottom==null||!legacyBottom.activeInHierarchy,"Legacy construction bottom overlay remains suppressed");
                     inspectorDuplicate.onClick.Invoke();Check(edit.HasActivePlacement,"Inspector duplicate uses creation preview");edit.CancelActivePlacement();
                     Capture("BarrasEdicion1920.png",1920,1080);
                     Capture("BarrasEdicion1280.png",1280,720);
@@ -84,7 +97,7 @@ public static class BistroBuilderEditChromePlayTest
                 case 5:
                     Check(shell.GetComponent<BistroBuilderOptionsScreen>().IsOpen,"Home exposes safe game menu");
                     shell.GetComponent<BistroBuilderOptionsScreen>().Close();break;
-                case 6: Finish(true,"Vector icons, unified contextual inspector, no fake favorite state, legacy panel suppression, category states, real tools, grid toggle, duplicate preview, game menu and 1920/1280/ultrawide captures.");break;
+                case 6: Finish(true,"Vector icons, unified contextual inspector as furniture action authority, no fake favorite state, legacy context/initial/bottom overlays suppressed, category states, real tools, grid toggle, duplicate preview, game menu and 1920/1280/ultrawide captures.");break;
             }
         }catch(Exception e){Finish(false,e.ToString());}
     }
