@@ -36,6 +36,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private TMP_Text titleText;
     private RectTransform previewSection;
+    private RectTransform detailsSection;
+    private RectTransform dimensionsSection;
+    private RectTransform rulesSection;
     private Image previewImage;
     private TMP_Text nameText;
     private TMP_Text descriptionText;
@@ -56,6 +59,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private string lastInteractionMessage = string.Empty;
     private bool favorite;
     private bool built;
+    private bool variantsAvailable;
+    private bool compactPlacementMode;
 
     private readonly List<GameObject> dynamicVariants =
         new List<GameObject>(8);
@@ -110,6 +115,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 root.gameObject.SetActive(true);
 
             root.SetAsLastSibling();
+            ApplyContextualDensity();
         }
 
         ApplyScreenBounds();
@@ -341,6 +347,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private void BuildDetails()
     {
         RectTransform section = CreateLayoutRow("Details", 100f);
+        detailsSection = section;
 
         nameText = CreateTmp(
             "Name",
@@ -449,6 +456,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private void BuildDimensions()
     {
         RectTransform section = CreateLayoutRow("Dimensions", 48f);
+        dimensionsSection = section;
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -485,6 +493,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private void BuildRules()
     {
         RectTransform section = CreateLayoutRow("Rules", 96f);
+        rulesSection = section;
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -674,8 +683,13 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             profile.Variants != null &&
             profile.Variants.Count > 0;
 
+        variantsAvailable =
+            hasVariants;
+
         if (variantsSection != null)
-            variantsSection.SetActive(hasVariants);
+            variantsSection.SetActive(
+                hasVariants &&
+                !compactPlacementMode);
 
         if (!hasVariants || variantsRow == null)
             return;
@@ -991,8 +1005,70 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     public void Hide()
     {
         currentData = null;
+        compactPlacementMode = false;
+        variantsAvailable = false;
+
         if (root != null)
             root.gameObject.SetActive(false);
+    }
+
+    private void ApplyContextualDensity()
+    {
+        bool shouldCompact =
+            interactionController != null &&
+            interactionController.HasActivePlacement;
+
+        if (compactPlacementMode ==
+            shouldCompact)
+        {
+            return;
+        }
+
+        compactPlacementMode =
+            shouldCompact;
+
+        if (previewSection != null)
+        {
+            previewSection.gameObject.SetActive(
+                !compactPlacementMode &&
+                currentData != null &&
+                currentData.Preview != null);
+        }
+
+        if (detailsSection != null)
+        {
+            detailsSection.gameObject.SetActive(
+                !compactPlacementMode);
+        }
+
+        if (variantsSection != null)
+        {
+            variantsSection.SetActive(
+                !compactPlacementMode &&
+                variantsAvailable);
+        }
+
+        if (dimensionsSection != null)
+        {
+            dimensionsSection.gameObject.SetActive(
+                !compactPlacementMode);
+        }
+
+        if (rulesSection != null)
+        {
+            rulesSection.gameObject.SetActive(
+                !compactPlacementMode);
+        }
+
+        if (root != null)
+        {
+            root.sizeDelta =
+                new Vector2(
+                    compactPlacementMode
+                        ? 286f
+                        : 316f,
+                    root.sizeDelta.y);
+        }
     }
 
     private void ApplyScreenBounds()
@@ -1052,7 +1128,12 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(316f, resolvedHeight);
+        root.sizeDelta =
+            new Vector2(
+                compactPlacementMode
+                    ? 286f
+                    : 316f,
+                resolvedHeight);
         root.anchoredPosition = new Vector2(-18f, -topInset);
     }
 
