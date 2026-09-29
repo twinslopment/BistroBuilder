@@ -26,12 +26,45 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     public float ContentTopInset(Canvas targetCanvas)
     {
-        float scale = targetCanvas != null ? Mathf.Max(.01f, targetCanvas.scaleFactor) : 1f;
-        if (topNavigation == null || !topNavigation.gameObject.activeInHierarchy) return 86f;
-        var corners = new Vector3[4]; topNavigation.GetWorldCorners(corners);
-        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
-        float bottom = RectTransformUtility.WorldToScreenPoint(camera, corners[0]).y;
-        return ((canvas != null ? canvas.pixelRect.height : Screen.height) - bottom) / scale + 12f;
+        float scale =
+            targetCanvas != null
+                ? Mathf.Max(.01f, targetCanvas.scaleFactor)
+                : 1f;
+
+        RectTransform activeTopBar =
+            editModeTopBar != null &&
+            editModeTopBar.gameObject.activeInHierarchy
+                ? editModeTopBar
+                : topNavigation != null &&
+                  topNavigation.gameObject.activeInHierarchy
+                    ? topNavigation
+                    : null;
+
+        if (activeTopBar == null)
+            return 86f;
+
+        var corners = new Vector3[4];
+        activeTopBar.GetWorldCorners(corners);
+
+        Camera camera =
+            targetCanvas != null &&
+            targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? targetCanvas.worldCamera
+                : null;
+
+        float bottom =
+            RectTransformUtility.WorldToScreenPoint(
+                camera,
+                corners[0]).y;
+
+        float pixelHeight =
+            targetCanvas != null
+                ? targetCanvas.pixelRect.height
+                : Screen.height;
+
+        return
+            (pixelHeight - bottom) / scale +
+            12f;
     }
 
     private RestaurantEditModeService overlayEditMode;
