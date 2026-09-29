@@ -45,6 +45,7 @@ Secuencia canónica:
 - elevación corta y perceptible;
 - altura adaptativa al tamaño del asset;
 - easing de salida;
+- sombra de contacto de Presentation, suave y sin collider, para hacer perceptible la elevación y el settle;
 - el objeto original deja de dibujarse y Presentation usa un proxy visual.
 
 ### Movimiento libre
@@ -88,6 +89,7 @@ Reglas:
 - footprint y contact fill suaves;
 - conflicto más visible que validez normal;
 - snap más perceptible que movimiento libre;
+- cuando el snap expone `RelatedObject`, una línea de intención breve hace legible la relación semántica (por ejemplo silla → mesa);
 - grosor adaptativo a distancia de cámara;
 - construcción y mobiliario deben parecer partes del mismo sistema.
 
@@ -103,16 +105,18 @@ Mientras existan primitivas funcionales:
 - aplica acabado cálido/arquitectónico a obstáculos whitebox;
 - instala proxies visuales de mesa cuando una mesa funcional sigue siendo un cubo;
 - durante Modo Edición oculta primitivas visuales de clientes/camareros para que un banco técnico no contamine la evaluación del editor;
+- añade un plinto visual oscuro bajo `Floor_Test` para que el local no se lea como una lámina flotante sobre el vacío;
 - al salir de edición restaura exactamente sus renderers.
 
 ### Mesa provisional
 Proxy interno de mesa del `BistroBuilderPrototypePresentationService`:
 - conserva la mesa funcional original;
 - no crea colliders;
-- dibuja tablero, cuatro patas y faldón mediante mesh runtime propio;
+- dibuja tablero, cuatro patas y faldón con la malla cúbica funcional como fuente, sin crear primitivas/colliders nuevos;
 - usa material canónico de madera;
 - proyecta/recibe sombras;
-- no altera plazas, TableId, seat bays, footprint ni persistencia.
+- no altera plazas, TableId, seat bays, footprint ni persistencia;
+- replica el `MaterialPropertyBlock` de la mesa funcional para conservar acentos de estado.
 
 Esta política es temporal: cuando un asset real sustituya al whitebox, el proxy deja de ser necesario.
 
@@ -157,6 +161,7 @@ Render PC:
 - ancho contenido;
 - altura calculada por contenido;
 - preview se oculta si el artículo no dispone de imagen;
+- durante una colocación activa el inspector entra en modo compacto (título + estado) para devolver espacio al viewport;
 - no reservar grandes zonas vacías;
 - reglas y estado de placement permanecen visibles;
 - catálogo e inspector no deben reducir innecesariamente el viewport.
