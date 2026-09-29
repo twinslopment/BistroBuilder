@@ -237,7 +237,8 @@ public static class BistroBuilderPremisesPresentationRuntime
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
         renderer.receiveShadows = true;
 
-        BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
+        if (openings != null && openings.Count > 0)
+            BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
     }
 
     private static void SetDebugPlacementObstacleVisible(bool visible)
@@ -262,27 +263,35 @@ public static class BistroBuilderPremisesPresentationRuntime
         var visual = new GameObject("BB_PresentationKitchen");
         visual.transform.SetParent(kitchen.transform, false);
 
+        // Kitchen_Test is scaled legacy geometry. Neutralise that inherited scale so
+        // the replacement is authored in real world metres instead of becoming 3x wider.
+        Vector3 inherited = kitchen.transform.lossyScale;
+        visual.transform.localScale = new Vector3(
+            SafeInverse(inherited.x),
+            SafeInverse(inherited.y),
+            SafeInverse(inherited.z));
+
         Material metal = Resources.Load<Material>(
             "BistroBuilder/Construction/Materials/Metal_grafito");
 
         CreateBox(
             visual.transform,
             "KitchenBase",
-            new Vector3(0f, 0f, 0f),
+            new Vector3(0f, 0.38f, 0f),
             new Vector3(3.00f, 0.76f, 1.42f),
             metal != null ? metal : kit.wallMaterial);
 
         CreateBox(
             visual.transform,
             "KitchenWorktop",
-            new Vector3(0f, 0.43f, 0f),
+            new Vector3(0f, 0.81f, 0f),
             new Vector3(3.10f, 0.10f, 1.52f),
             kit.floorMaterial);
 
         CreateBox(
             visual.transform,
             "KitchenFrontRail",
-            new Vector3(0f, 0.12f, -0.73f),
+            new Vector3(0f, 0.38f, -0.73f),
             new Vector3(3.02f, 0.13f, 0.08f),
             kit.trimMaterial != null ? kit.trimMaterial : kit.wallMaterial);
     }
@@ -442,6 +451,11 @@ public static class BistroBuilderPremisesPresentationRuntime
 
         Renderer renderer = go.GetComponent<Renderer>();
         if (renderer != null) renderer.sharedMaterial = material;
+    }
+
+    private static float SafeInverse(float value)
+    {
+        return Mathf.Abs(value) > 0.0001f ? 1f / value : 1f;
     }
 
     private static void DestroyPresentationObject(GameObject go)
