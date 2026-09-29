@@ -573,6 +573,19 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
 
 
 
+    private static void SetLegacyTestGeometryPresence(bool visible)
+    {
+        string[] names = { "PlacementObstacle_Test", "Kitchen_Test" };
+        GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < all.Length; i++)
+        {
+            GameObject go = all[i];
+            if (go == null) continue;
+            for (int n = 0; n < names.Length; n++)
+                if (string.Equals(go.name, names[n], StringComparison.Ordinal)) { go.SetActive(visible); break; }
+        }
+    }
+
     private static void SetPremisesFloorVisual(bool visible)
     {
         GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
