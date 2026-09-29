@@ -341,7 +341,7 @@ public sealed class BistroBuilderEditCameraFocusCoordinator : MonoBehaviour
             desiredDistance * 1.22f;
     }
 
-    internal static bool TryProjectViewportBounds(
+    public static bool TryProjectViewportBounds(
         Camera camera,
         Vector3[] worldPoints,
         out Vector2 min,
@@ -404,7 +404,7 @@ public sealed class BistroBuilderEditCameraFocusCoordinator : MonoBehaviour
         return any;
     }
 
-    internal static bool IsViewportFramingComfortable(
+    public static bool IsViewportFramingComfortable(
         Vector2 projectedMin,
         Vector2 projectedMax,
         Vector2 comfortableMin,
