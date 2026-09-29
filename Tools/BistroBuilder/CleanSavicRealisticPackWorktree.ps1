@@ -8,10 +8,10 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 Set-Location $root
 
-function Invoke-GitNative([string[]]$Args) {
-    & git.exe @Args
+function Invoke-GitNative([string[]]$GitArgs) {
+    & git.exe @GitArgs
     if ($LASTEXITCODE -ne 0) {
-        throw "git $($Args -join ' ') failed with exit code $LASTEXITCODE"
+        throw "git $($GitArgs -join ' ') failed with exit code $LASTEXITCODE"
     }
 }
 
@@ -29,13 +29,6 @@ $keepPatterns = @(
     'Assets/Editor/BistroBuilder/SAVIC/Packs/SavicRealisticTestPackV1Installer.cs.meta',
     'Assets/Editor/BistroBuilder/SAVIC/Inventory/SavicCanonicalContentInventoryService.cs.meta',
     'Assets/Editor/BistroBuilder/SAVIC/Diagnostics/SavicCanonicalContentInventoryProbe.cs.meta'
-)
-
-$knownNoisePatterns = @(
-    'Assets/BistroBuilder/UI/Iconography/Icons/*.svg.meta',
-    'Assets/Resources/BistroBuilder/UI/Typography/*.asset',
-    'Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Fallback.asset',
-    '*.slnx'
 )
 
 $status = git status --porcelain=v1
@@ -56,34 +49,46 @@ function MatchesAny([string]$Path, [string[]]$Patterns) {
     return $false
 }
 
+# Never assume that an unrelated local change is disposable.
+# Only explicitly recognised pack outputs are committed. Everything
+# else is preserved automatically in a safety stash.
+Invoke-GitNative @('restore','--staged','.')
+
 $keep = @($changed | Where-Object { MatchesAny $_ $keepPatterns })
-$noise = @($changed | Where-Object { MatchesAny $_ $knownNoisePatterns })
-$unknown = @($changed | Where-Object {
-    -not (MatchesAny $_ $keepPatterns) -and
-    -not (MatchesAny $_ $knownNoisePatterns)
-})
+$safety = @($changed | Where-Object { -not (MatchesAny $_ $keepPatterns) })
 
 Write-Output ('SAVIC_CLEANUP|KEEP=' + $keep.Count)
 $keep | ForEach-Object { Write-Output ('KEEP|' + $_) }
-Write-Output ('SAVIC_CLEANUP|NOISE=' + $noise.Count)
-$noise | ForEach-Object { Write-Output ('NOISE|' + $_) }
-Write-Output ('SAVIC_CLEANUP|UNKNOWN=' + $unknown.Count)
-$unknown | ForEach-Object { Write-Output ('UNKNOWN|' + $_) }
+Write-Output ('SAVIC_CLEANUP|SAFETY_BACKUP=' + $safety.Count)
 
-foreach ($path in $noise) {
-    $tracked = git ls-files --error-unmatch -- $path 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Invoke-GitNative @('restore','--worktree','--',$path)
-    }
+$stashCreated = $false
+$stashName = ''
+
+if ($safety.Count -gt 0) {
+    $stashName =
+        'SAVIC cleanup safety backup ' +
+        (Get-Date -Format 'yyyyMMdd-HHmmss')
+
+    $stashArgs =
+        @(
+            'stash',
+            'push',
+            '--include-untracked',
+            '--message',
+            $stashName,
+            '--'
+        ) + $safety
+
+    Invoke-GitNative $stashArgs
+    $stashCreated = $true
+
+    Write-Output (
+        'SAVIC_CLEANUP|SAFETY_STASH|' +
+        $stashName)
 }
 
 if ($keep.Count -gt 0) {
     Invoke-GitNative (@('add','--') + $keep)
-}
-
-if ($unknown.Count -gt 0) {
-    Write-Output 'SAVIC_CLEANUP|SAFE_STOP|Unknown changes were preserved and left unstaged.'
-    exit 2
 }
 
 if (-not $Commit) {
@@ -101,4 +106,9 @@ if (-not $staged) {
 
 Invoke-GitNative @('commit','-m','feat: materialize SAVIC realistic test pack v1')
 Write-Output 'SAVIC_CLEANUP|COMMITTED'
+if ($stashCreated) {
+    Write-Output (
+        'SAVIC_CLEANUP|PRESERVED_UNRELATED_CHANGES|' +
+        $stashName)
+}
 exit 0
