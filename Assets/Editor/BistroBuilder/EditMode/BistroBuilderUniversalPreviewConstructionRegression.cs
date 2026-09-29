@@ -258,7 +258,7 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
             "Volver a Furniture reabrió la Draft Session.");
 
         Check(
-            tool.CurrentMode ==
+            tool.Mode ==
                 BistroBuilderConstructionRuntimeMode.Furniture,
             "La herramienta no volvió a modo Furniture.");
 
