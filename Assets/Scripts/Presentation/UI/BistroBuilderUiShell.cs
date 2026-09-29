@@ -71,6 +71,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     }
 
     private RestaurantEditModeService overlayEditMode;
+    private bool editModePresentationSubscribed;
     private CanvasGroup normalTimeDockGroup;
 
     private void ReconcileOverlayVisibility()
@@ -1713,6 +1714,19 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             tableSelection.TableActivated += HandleTableActivated;
             tableSelectionSubscribed = true;
         }
+
+        if (!editModePresentationSubscribed)
+        {
+            if (overlayEditMode == null)
+                overlayEditMode = FindScene<RestaurantEditModeService>();
+
+            if (overlayEditMode != null)
+            {
+                overlayEditMode.EditModeEntered += HandleEditModePresentationChanged;
+                overlayEditMode.EditModeExited += HandleEditModePresentationChanged;
+                editModePresentationSubscribed = true;
+            }
+        }
     }
 
     private void Unsubscribe()
@@ -1734,6 +1748,23 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             tableSelection.TableActivated -= HandleTableActivated;
         }
         tableSelectionSubscribed = false;
+
+        if (editModePresentationSubscribed && overlayEditMode != null)
+        {
+            overlayEditMode.EditModeEntered -= HandleEditModePresentationChanged;
+            overlayEditMode.EditModeExited -= HandleEditModePresentationChanged;
+        }
+        editModePresentationSubscribed = false;
+    }
+
+    private void HandleEditModePresentationChanged()
+    {
+        // El cambio Normal ↔ Edición debe ser visualmente atómico; no espera
+        // al siguiente refresco periódico del HUD.
+        nextRefreshAt = 0f;
+        ResolveDependencies();
+        RefreshReadModels();
+        RefreshIconNavigation();
     }
 
     private void HandleInventoryAlertActivated(BistroBuilderInventoryAlertSnapshot alert)
