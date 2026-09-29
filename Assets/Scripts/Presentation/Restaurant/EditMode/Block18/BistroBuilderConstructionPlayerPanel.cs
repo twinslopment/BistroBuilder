@@ -89,7 +89,11 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
             initialControls.gameObject.SetActive(false);
 
         if (constructionCatalog != null)
+        {
             constructionCatalog.gameObject.SetActive(!furnitureMode);
+            if (!furnitureMode)
+                ApplyConstructionCatalogBounds();
+        }
 
         inspector.gameObject.SetActive(false);
         moduleControls.gameObject.SetActive(tool.Mode == BistroBuilderConstructionRuntimeMode.WallModule);
@@ -108,6 +112,55 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
             FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>() == null;
         if (saveInitial != null) saveInitial.interactable = initial && !opening.IsSaveBusy;
         if (completeInitial != null) completeInitial.interactable = initial && !opening.IsSaveBusy;
+    }
+
+    private void ApplyConstructionCatalogBounds()
+    {
+        if (constructionCatalog == null)
+            return;
+
+        Canvas targetCanvas =
+            shell != null
+                ? shell.GetComponentInParent<Canvas>()
+                : null;
+
+        float topInset =
+            shell != null
+                ? shell.ContentTopInset(targetCanvas)
+                : 94f;
+
+        RectTransform canvasRect =
+            targetCanvas != null
+                ? targetCanvas.transform as RectTransform
+                : null;
+
+        float canvasHeight =
+            canvasRect != null &&
+            canvasRect.rect.height > 1f
+                ? canvasRect.rect.height
+                : 1080f;
+
+        float availableHeight =
+            Mathf.Max(
+                360f,
+                canvasHeight - topInset - 118f);
+
+        constructionCatalog.anchorMin =
+            constructionCatalog.anchorMax =
+            constructionCatalog.pivot =
+                new Vector2(0f, 1f);
+
+        constructionCatalog.anchoredPosition =
+            new Vector2(
+                18f,
+                -topInset);
+
+        constructionCatalog.sizeDelta =
+            new Vector2(
+                252f,
+                Mathf.Min(
+                    760f,
+                    availableHeight));
     }
 
     private void Build()
