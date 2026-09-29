@@ -147,6 +147,7 @@ public sealed class BistroBuilderMarketingPlayerScreen : MonoBehaviour
     public void Show()
     {
         if (panelRoot == null) return;
+        BistroBuilderManagementSafeArea.Install(panelRoot.transform as RectTransform);
         panelRoot.SetActive(true);
         canvasGroup.alpha = 1f;
         canvasGroup.interactable = true;

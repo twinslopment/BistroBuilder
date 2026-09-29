@@ -168,7 +168,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
 
     private bool Begin(Component component, bool force)
     {
-        if (component == null || component.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null) return false;
+        if (component == null || component.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null || component.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null) return false;
+        if (component.GetComponentInParent<BistroBuilderUiStyleTag>(true)?.Role == BistroBuilderUiStyleRole.InputOnly) return false;
         int id = component.GetInstanceID();
         if (!force && styledIds.Contains(id)) return false;
         styledIds.Add(id);
@@ -285,8 +286,8 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
             else if (role != BistroBuilderUiStyleRole.Title && role != BistroBuilderUiStyleRole.Heading && role != BistroBuilderUiStyleRole.Label && role != BistroBuilderUiStyleRole.Subheading && role != BistroBuilderUiStyleRole.Kpi) ApplyBodyFont(text);
         }
 
-        text.color = ResolveTextColor(role);
-        if (role != BistroBuilderUiStyleRole.StatusCritical && role != BistroBuilderUiStyleRole.StatusAttention && role != BistroBuilderUiStyleRole.StatusSuccess && role != BistroBuilderUiStyleRole.StatusInfo && IsOnLightSurface(text.transform)) text.color = BistroBuilderUiTokens.TextOnLight;
+        if (tag == null || !tag.PreserveGraphicColor) text.color = ResolveTextColor(role);
+        if ((tag == null || !tag.PreserveGraphicColor) && role != BistroBuilderUiStyleRole.StatusCritical && role != BistroBuilderUiStyleRole.StatusAttention && role != BistroBuilderUiStyleRole.StatusSuccess && role != BistroBuilderUiStyleRole.StatusInfo && IsOnLightSurface(text.transform)) text.color = BistroBuilderUiTokens.TextOnLight;
         if (tag == null || !tag.PreserveFontSize) ApplyTextSizePolicy(text, role);
     }
 

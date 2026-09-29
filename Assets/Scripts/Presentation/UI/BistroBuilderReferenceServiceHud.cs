@@ -15,7 +15,6 @@ using UnityEngine.UI;
 public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 {
     public const string RuntimeRevision = "21A-REFERENCE-SERVICE-HUD-V1.0";
-    private const float ActivityWidth = 360f;
     private const float ContextWidth = 390f;
     private const int MaxActivityRows = 8;
     private const int MaxOrderRows = 5;
@@ -207,11 +206,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 
     private void EnsureActivityPanel()
     {
-        activityPanel.anchorMin = new Vector2(0f, 0f);
-        activityPanel.anchorMax = new Vector2(0f, 1f);
-        activityPanel.pivot = new Vector2(0f, 0.5f);
-        activityPanel.anchoredPosition = new Vector2(12f, 0f);
-        activityPanel.sizeDelta = new Vector2(ActivityWidth, -152f);
+        ActivityPanelResponsiveLayout responsiveLayout =
+            activityPanel.GetComponent<ActivityPanelResponsiveLayout>();
+        if (responsiveLayout == null)
+            responsiveLayout =
+                activityPanel.gameObject.AddComponent<ActivityPanelResponsiveLayout>();
+        responsiveLayout.Apply(true);
 
         legacyActivityText = activityPanel.Find("ActivityText")?.GetComponent<TMP_Text>();
         if (legacyActivityText != null)
@@ -249,10 +249,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         filters.anchoredPosition = Vector2.zero;
         filters.sizeDelta = new Vector2(0f, 38f);
 
-        CreateActivityFilterButton(filters, "Today", "Hoy", 0f, 0.19f, true);
-        CreateActivityFilterButton(filters, "Incidents", "Incidencias", 0.20f, 0.47f, false);
-        CreateActivityFilterButton(filters, "Opportunities", "Oportunidades", 0.48f, 0.77f, false);
-        CreateActivityFilterButton(filters, "Reservations", "Reservas", 0.78f, 1f, false);
+        CreateActivityFilterButton(filters, "Today", "Hoy", 0f, 0.15f, true);
+        CreateActivityFilterButton(filters, "Incidents", "Incidencias", 0.15f, 0.43f, false);
+        CreateActivityFilterButton(filters, "Opportunities", "Oportunidades", 0.43f, 0.76f, false);
+        CreateActivityFilterButton(filters, "Reservations", "Reservas", 0.76f, 1f, false);
 
         TMP_Text sectionTitle = CreateText(
             root,
@@ -262,7 +262,11 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             ActivityPanelVisualStyle.Ink,
             TextAlignmentOptions.MidlineLeft);
         BistroBuilderTypography.Apply(sectionTitle, BistroBuilderUiStyleRole.Heading, true);
-        Place(sectionTitle.rectTransform, 4f, -44f, 190f, 28f);
+        sectionTitle.rectTransform.anchorMin = new Vector2(0f, 1f);
+        sectionTitle.rectTransform.anchorMax = new Vector2(0.68f, 1f);
+        sectionTitle.rectTransform.pivot = new Vector2(0f, 1f);
+        sectionTitle.rectTransform.anchoredPosition = new Vector2(4f, -44f);
+        sectionTitle.rectTransform.sizeDelta = new Vector2(-8f, 28f);
 
         TMP_Text visibleCount = CreateText(
             root,
@@ -272,7 +276,11 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             ActivityPanelVisualStyle.Muted,
             TextAlignmentOptions.MidlineRight);
         BistroBuilderTypography.Apply(visibleCount, BistroBuilderUiStyleRole.Caption, true);
-        Place(visibleCount.rectTransform, 208f, -44f, 120f, 28f);
+        visibleCount.rectTransform.anchorMin = new Vector2(0.68f, 1f);
+        visibleCount.rectTransform.anchorMax = new Vector2(1f, 1f);
+        visibleCount.rectTransform.pivot = new Vector2(1f, 1f);
+        visibleCount.rectTransform.anchoredPosition = new Vector2(-4f, -44f);
+        visibleCount.rectTransform.sizeDelta = new Vector2(-8f, 28f);
 
         BuildActivityScrollArea(root);
         BuildActivityFooter(root);
@@ -337,7 +345,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         TMP_Text footer = CreateText(
             root,
             "FooterText",
-            "Crítico · Atención · Oportunidad · cronología",
+            "Ordenado por prioridad y hora",
             8.6f,
             ActivityPanelVisualStyle.Muted,
             TextAlignmentOptions.MidlineLeft);

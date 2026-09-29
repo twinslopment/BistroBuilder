@@ -38,6 +38,30 @@ namespace BistroBuilder.ConstructionAuthoring
             t = axis.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(point - start, axis) / axis.sqrMagnitude) : 0f;
             return start + axis * t;
         }
+        // Resolve every moved wall to its final pose before testing neighbours.
+        // Existing crossing layouts remain editable; only changed candidates are tested here.
+        public static bool HasCrossing(ArchitectureQueryCache cache, IReadOnlyList<WallPose> poses,
+            string plane, float elevation, float height)
+        {
+            for(int i=0;i<poses.Count;i++)
+            {
+                var a=poses[i]; var source=a.WallId.IsValid?cache.Wall(a.WallId):null;
+                string aPlane=source!=null?source.buildPlaneId:plane;
+                float low=source!=null?source.baseElevation:elevation, high=low+(source!=null?source.height:height);
+                foreach(var existing in cache.Walls)
+                {
+                    if(a.WallId.IsValid&&a.WallId==existing.wallId||existing.buildPlaneId!=aPlane||
+                        Mathf.Min(high,existing.baseElevation+existing.height)-Mathf.Max(low,existing.baseElevation)<=Tolerance)continue;
+                    Vector2 start=existing.axisStart,end=existing.axisEnd;
+                    for(int j=0;j<poses.Count;j++)if(poses[j].WallId==existing.wallId){start=poses[j].Start;end=poses[j].End;break;}
+                    if(BistroBuilderWallCrossingPolicy.Crosses(a.Start,a.End,start,end))return true;
+                }
+                for(int j=i+1;j<poses.Count;j++)
+                    if(!a.WallId.IsValid&&!poses[j].WallId.IsValid&&BistroBuilderWallCrossingPolicy.Crosses(a.Start,a.End,poses[j].Start,poses[j].End))return true;
+            }
+            return false;
+        }
+
         public static bool TryWall(Vector2 start, Vector2 end, out WallPose preview, out string error)
         {
             preview = new WallPose(default, start, end); error = string.Empty;

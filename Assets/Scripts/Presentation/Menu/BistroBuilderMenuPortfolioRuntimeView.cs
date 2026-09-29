@@ -391,9 +391,9 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         priorityInput = CreateField(root, "Priority", "Prioridad (-1000..1000)", 0.71f, 0.84f, 0.97f, 0.90f);
 
         Button typeButton = MakeButton(root, "Tipo", CycleRuleType, 0.03f, 0.76f, 0.48f, 0.82f, false);
-        ruleTypeText = typeButton.GetComponentInChildren<Text>();
+        ruleTypeText = typeButton.GetComponentInChildren<Text>(true);
         Button targetButton = MakeButton(root, "Carta destino", CycleTargetMenu, 0.52f, 0.76f, 0.97f, 0.82f, false);
-        targetMenuText = targetButton.GetComponentInChildren<Text>();
+        targetMenuText = targetButton.GetComponentInChildren<Text>(true);
 
         enabledToggle = MakeToggle(root, "Enabled", "Regla activa", 0.03f, 0.70f, 0.35f, 0.74f);
         breakfastToggle = MakeToggle(root, "Breakfast", "Desayuno", 0.36f, 0.70f, 0.56f, 0.74f);
@@ -546,7 +546,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             out _,
             out _
         );
-        headerText.text = "Cartas y reglas · " + snapshot.MenuCount + " cartas · " + snapshot.RuleCount + " reglas";
+        headerText.text = "Cartas y reglas · " + snapshot.MenuCount + (snapshot.MenuCount == 1 ? " carta · " : " cartas · ") + snapshot.RuleCount + (snapshot.RuleCount == 1 ? " regla" : " reglas");
         resolutionText.text = "Efectiva: " + GetMenuName(snapshot.ActiveMenuId) +
             "\n" + resolution.Description;
     }
@@ -908,6 +908,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     {
         if (modalRoot != null)
         {
+            if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
             modalRoot.gameObject.SetActive(visible);
             if (visible) modalRoot.SetAsLastSibling();
         }

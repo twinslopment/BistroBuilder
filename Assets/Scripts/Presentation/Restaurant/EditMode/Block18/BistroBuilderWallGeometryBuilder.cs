@@ -11,7 +11,7 @@ public static class BistroBuilderWallGeometryBuilder
         { this.x0 = x0; this.x1 = x1; this.y0 = y0; this.y1 = y1; }
     }
 
-    public static Mesh Build(BistroBuilderWallRecord wall, IReadOnlyList<BistroBuilderOpeningRecord> hostedOpenings)
+    public static Mesh Build(BistroBuilderWallRecord wall, IReadOnlyList<BistroBuilderOpeningRecord> hostedOpenings, IReadOnlyList<BistroBuilderWallRecord> neighbours = null)
     {
         if (wall == null) throw new ArgumentNullException(nameof(wall));
         float length = wall.Length;
@@ -33,9 +33,11 @@ public static class BistroBuilderWallGeometryBuilder
             if (x1 - x0 <= 0.00001f) continue;
             AddSolidVerticalIntervals(x0, x1, height, thickness, openings, vertices, normals, uv, triangles);
         }
+        BistroBuilderWallJoins.Apply(wall, neighbours, vertices);
         var mesh = new Mesh { name = "BB_WallMesh_" + wall.wallId.Value };
         if (vertices.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.SetVertices(vertices); mesh.SetNormals(normals); mesh.SetUVs(0, uv); mesh.SetTriangles(triangles, 0, true);
+        if (neighbours != null) mesh.RecalculateNormals();
         mesh.RecalculateBounds(); return mesh;
     }
 

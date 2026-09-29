@@ -10,7 +10,10 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
 
     private void RefreshInitialActions()
     {
-        bool show = openingService != null && openingService.Phase == BistroBuilderNewGamePhase.InitialSetup;
+        var shell = FindFirstObjectByType<BistroBuilderUiShell>();
+        bool show = isActiveAndEnabled && openingService != null && openingService.Phase == BistroBuilderNewGamePhase.InitialSetup &&
+            !IsOpeningMenuBlocking && (shell == null || !shell.HasManagementScreenOpen) &&
+            BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true;
         if (show && initialActionsCanvas == null)
         {
             if (roundedIvory == null) roundedIvory = CreateIvoryRound();

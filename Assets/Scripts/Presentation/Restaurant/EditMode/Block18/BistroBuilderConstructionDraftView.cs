@@ -31,7 +31,7 @@ public sealed class BistroBuilderConstructionDraftView : MonoBehaviour
             go.transform.position = new Vector3(wall.axisStart.x, wall.baseElevation, wall.axisStart.y);
             var axis = wall.axisEnd-wall.axisStart;
             go.transform.rotation = Quaternion.FromToRotation(Vector3.right, new Vector3(axis.x, 0, axis.y).normalized);
-            go.AddComponent<MeshFilter>().sharedMesh = BistroBuilderWallGeometryBuilder.Build(wall, openings);
+            go.AddComponent<MeshFilter>().sharedMesh = BistroBuilderWallGeometryBuilder.Build(wall, openings, document.walls);
             go.AddComponent<MeshRenderer>().sharedMaterial = material;
             BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
         }
@@ -59,6 +59,7 @@ public sealed class BistroBuilderConstructionDraftView : MonoBehaviour
                 floor.AddComponent<MeshRenderer>().sharedMaterial = kit != null ? kit.floorMaterial : material;
             }
         }
+        BistroBuilderSurfaceFinishVisuals.Build(root.transform, document);
     }
 
     public void Clear()
@@ -68,7 +69,7 @@ public sealed class BistroBuilderConstructionDraftView : MonoBehaviour
         if (root == null) return;
         root.SetActive(false);
         foreach (var filter in root.GetComponentsInChildren<MeshFilter>())
-            if (filter.sharedMesh != null && (filter.gameObject.name == "DraftWall" || filter.gameObject.name == "DraftFloor")) Destroy(filter.sharedMesh);
+            if (filter.sharedMesh != null && (filter.gameObject.name == "DraftWall" || filter.gameObject.name == "DraftFloor" || filter.gameObject.name.StartsWith("SurfaceFloor_", System.StringComparison.Ordinal))) Destroy(filter.sharedMesh);
         Destroy(root); root = null;
     }
     private void OnDisable() => Clear();

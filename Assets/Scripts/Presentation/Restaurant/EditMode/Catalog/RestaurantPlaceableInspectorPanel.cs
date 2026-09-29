@@ -971,7 +971,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
     }
 
-    private void Hide()
+    public void Hide()
     {
         currentData = null;
         if (root != null)

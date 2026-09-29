@@ -1375,6 +1375,8 @@ public sealed class BistroBuilderScrollableSelectorTrigger : MonoBehaviour
             rect.SetAsLastSibling();
         }
 
+        var style = target.GetComponent<BistroBuilderUiStyleTag>() ?? target.AddComponent<BistroBuilderUiStyleTag>();
+        style.Configure(BistroBuilderUiStyleRole.InputOnly, true);
         hitImage = target.GetComponent<Image>();
         hitImage.color = new Color(0f, 0f, 0f, 0.001f);
         hitImage.raycastTarget = true;

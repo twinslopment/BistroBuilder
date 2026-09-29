@@ -58,7 +58,7 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen : MonoBehavi
         RestoreModalInputState();
     }
 
-    private void OnDisable() { RestoreModalInputState(); if (ivoryCanvas != null) ivoryCanvas.gameObject.SetActive(false); }
+    private void OnDisable() { if (initialActionsCanvas != null) initialActionsCanvas.gameObject.SetActive(false); RestoreModalInputState(); if (ivoryCanvas != null) ivoryCanvas.gameObject.SetActive(false); }
 
     private void OnGUI()
     {

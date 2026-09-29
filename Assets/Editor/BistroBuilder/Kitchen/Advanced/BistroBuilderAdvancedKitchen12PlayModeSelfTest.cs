@@ -13,6 +13,8 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
     private const string StageKey = "BB.Kitchen12.Play.Stage";
     private const string SuccessKey = "BB.Kitchen12.Play.Success";
     private const string ReportPath = "AdvancedKitchen12PlayModeReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
 
     private static BistroBuilderAdvancedKitchenService advanced;
     private static KitchenSystem kitchen;
@@ -66,6 +68,7 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
         {
             bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
             SessionState.SetString(StageKey, cli ? "run_cli" : "run_menu");
+            playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
@@ -78,10 +81,18 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
 
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying || Time.frameCount < 5) return;
+        if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
         if (string.IsNullOrEmpty(stage) || stage.StartsWith("exit_", StringComparison.Ordinal)) return;
         bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (cli)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            if (!EditorApplication.isPaused) EditorApplication.isPaused = true;
+            EditorApplication.Step();
+        }
+        if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+        if (EditorApplication.timeSinceStartup < playReadyAt) return;
         try
         {
             if (stage.StartsWith("run_", StringComparison.Ordinal))
@@ -298,9 +309,35 @@ public static class BistroBuilderAdvancedKitchen12PlayModeSelfTest
         if (string.IsNullOrWhiteSpace(stationId))
             throw new InvalidOperationException("La línea no aparece en una estación real.");
         if (!facade.Prioritize(lineIds[0], out string priorityError))
-            throw new InvalidOperationException("No pudo priorizarse una línea en espera: " + priorityError);
-        if (facade.Prioritize(lineIds[1], out _))
-            throw new InvalidOperationException("La estación aceptó dos prioridades manuales simultáneas.");
+            throw new InvalidOperationException("No pudo priorizarse la comanda en espera: " + priorityError);
+        if (!facade.Prioritize(lineIds[1], out string repeatedPriorityError))
+            throw new InvalidOperationException(
+                "Reaplicar prioridad a la misma comanda debe ser idempotente: " +
+                repeatedPriorityError);
+        if (advanced.PlayerPriorityOrderCount != 1)
+            throw new InvalidOperationException(
+                "Una misma comanda se contabilizó más de una vez como prioridad manual.");
+        if (!facade.TryBuildSnapshot(
+                out BistroBuilderAdvancedKitchenSnapshot prioritized,
+                out string prioritizedError))
+            throw new InvalidOperationException(prioritizedError);
+        for (int i = 0; i < prioritized.stations.Count; i++)
+        {
+            for (int j = 0; j < prioritized.stations[i].tasks.Count; j++)
+            {
+                BistroBuilderKitchenTaskSnapshot task = prioritized.stations[i].tasks[j];
+                if (string.Equals(
+                        task.canonicalOrderId,
+                        legacy.CanonicalOrderId,
+                        StringComparison.Ordinal) &&
+                    !task.active &&
+                    task.priority != BistroBuilderKitchenPriorityKind.PlayerPriority)
+                {
+                    throw new InvalidOperationException(
+                        "Priorizar comanda no elevó todas sus preparaciones pendientes.");
+                }
+            }
+        }
         if (!facade.SetIntakeMode(BistroBuilderKitchenIntakeMode.Reduced, out string reducedError) ||
             advanced.IntakeMode != BistroBuilderKitchenIntakeMode.Reduced)
             throw new InvalidOperationException("El modo reducido no quedó operativo: " + reducedError);

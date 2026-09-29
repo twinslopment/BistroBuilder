@@ -1848,7 +1848,9 @@ public sealed class BistroBuilderSupplierPlayerRuntimeView : MonoBehaviour
 
     private void SetVisible(bool visible)
     {
-        if (modalRoot != null) modalRoot.gameObject.SetActive(visible);
+        if (modalRoot == null) return;
+        if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
+        modalRoot.gameObject.SetActive(visible);
     }
 
     private static void ClearChildren(RectTransform root)

@@ -12,6 +12,8 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
     private const string StageKey = "BB.Kitchen12.SaveLoad.Stage";
     private const string SuccessKey = "BB.Kitchen12.SaveLoad.Success";
     private const string ReportPath = "AdvancedKitchen12SaveLoadReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
     private const double TimeoutSeconds = 270d;
 
     private static BistroBuilderActiveServicePersistenceFunctionalTestWindow window;
@@ -20,6 +22,7 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
     private static FieldInfo phaseField;
     private static FieldInfo reportField;
     private static double startedAt;
+    private static double nextBatchSimulationStepAt;
 
     static BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest()
     {
@@ -52,6 +55,7 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
         {
             bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
             SessionState.SetString(StageKey, cli ? "run_cli" : "run_menu");
+            playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
             startedAt = EditorApplication.timeSinceStartup;
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
@@ -66,8 +70,12 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
 
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying || Time.frameCount < 5) return;
+        if (!EditorApplication.isPlaying) return;
         string stage = SessionState.GetString(StageKey, string.Empty);
+        bool batchCli = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (batchCli) EditorApplication.QueuePlayerLoopUpdate();
+        if (playReadyAt <= 0d) playReadyAt = EditorApplication.timeSinceStartup + PlayReadyDelaySeconds;
+        if (EditorApplication.timeSinceStartup < playReadyAt) return;
         if (stage.StartsWith("run_", StringComparison.Ordinal))
         {
             bool cli = stage.EndsWith("cli", StringComparison.Ordinal);
@@ -87,6 +95,17 @@ public static class BistroBuilderAdvancedKitchen12SaveLoadPlayModeSelfTest
 
         if (!stage.StartsWith("monitor_", StringComparison.Ordinal)) return;
         bool commandLine = stage.EndsWith("cli", StringComparison.Ordinal);
+        if (commandLine && window != null && phaseField != null)
+        {
+            string innerPhase = Convert.ToString(phaseField.GetValue(window));
+            double now = EditorApplication.timeSinceStartup;
+            if (string.Equals(innerPhase, "WaitingForPreparingOrder", StringComparison.Ordinal) && now >= nextBatchSimulationStepAt)
+            {
+                if (!EditorApplication.isPaused) EditorApplication.isPaused = true;
+                EditorApplication.Step();
+                nextBatchSimulationStepAt = now + 0.02d;
+            }
+        }
         if (EditorApplication.timeSinceStartup - startedAt > TimeoutSeconds)
         {
             Finish(false, "Timeout del Save/Load real 12.", commandLine);

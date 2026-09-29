@@ -160,7 +160,7 @@ public sealed partial class BistroBuilderUiShell
             ? 84f
             : (topNavigation != null ? 18f + topNavigation.rect.height : 72f);
         modeSelectorRoot.anchoredPosition = new Vector2(0f, -topOffset);
-        modeSelectorRoot.gameObject.SetActive(!BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
+        modeSelectorRoot.gameObject.SetActive(!managing && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
         modeSelectorRoot.SetAsLastSibling();
 
         ApplyModeSelectorState(normalModeSelectorButton, !editing);

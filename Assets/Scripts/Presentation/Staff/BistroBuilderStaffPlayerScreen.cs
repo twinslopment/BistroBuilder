@@ -177,6 +177,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
             return;
         }
 
+        BistroBuilderManagementSafeArea.Install(panelRoot.transform as RectTransform);
         panelRoot.SetActive(true);
         if (canvasGroup != null)
         {
@@ -470,8 +471,8 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
 
         if (!hasEmployee)
         {
-            employeeNameText.text = "Selecciona un empleado";
-            employeeRoleText.text = string.Empty;
+            employeeNameText.text = currentSnapshot != null && currentSnapshot.employees.Count == 0 ? "Tu equipo empieza aquí" : "Selecciona un empleado";
+            employeeRoleText.text = currentSnapshot != null && currentSnapshot.employees.Count == 0 ? "Abre Candidatos para contratar a tu primer empleado." : string.Empty;
             employeeContractText.text = string.Empty;
             employeeProgressText.text = string.Empty;
             employeeSkillsText.text = string.Empty;

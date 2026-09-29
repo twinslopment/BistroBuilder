@@ -16,7 +16,7 @@ using UnityEngine.UI;
 /// No contiene reglas de validación espacial, economía ni ciclo de vida.
 /// </summary>
 [DisallowMultipleComponent]
-public sealed class RestaurantPlaceableCatalogPanel :
+public sealed partial class RestaurantPlaceableCatalogPanel :
     MonoBehaviour
 {
     private const int AllCategoriesCode = -1;
@@ -123,6 +123,8 @@ public sealed class RestaurantPlaceableCatalogPanel :
         {
             gameObject.AddComponent<RestaurantPlaceableCatalogPreviewSkin>();
         }
+
+        if (GetComponent<RestaurantArchitectureCatalogPanel>() == null) gameObject.AddComponent<RestaurantArchitectureCatalogPanel>();
 
         if (GetComponent<RestaurantPlaceableInspectorPanel>() == null)
         {
@@ -298,6 +300,7 @@ public sealed class RestaurantPlaceableCatalogPanel :
             editModeService != null &&
             editModeService.IsEditModeActive;
         shouldBeVisible &= uiShell == null || !uiShell.HasManagementScreenOpen;
+        shouldBeVisible &= !RestaurantEditCatalogSections.IsArchitecture(CurrentSection);
         var construction = BistroBuilderConstructionPlayerPanel.Instance;
         if (construction != null)
         {
@@ -359,6 +362,11 @@ public sealed class RestaurantPlaceableCatalogPanel :
                     item.Category
                 );
             }
+        }
+
+        if (CurrentSection != RestaurantEditCatalogSection.Build)
+        {
+            CreateSectionCategories(); RebuildItemViews(); RefreshInteractivity(); return;
         }
 
         CreateCategoryView(
@@ -626,9 +634,7 @@ public sealed class RestaurantPlaceableCatalogPanel :
         RestaurantPlaceableItemDefinition item
     )
     {
-        return
-            selectedCategoryCode == AllCategoriesCode ||
-            (int)item.Category == selectedCategoryCode;
+        return RestaurantEditCatalogSections.Matches(CurrentSection, selectedCategoryCode, item);
     }
 
     private void ClearGeneratedViews()

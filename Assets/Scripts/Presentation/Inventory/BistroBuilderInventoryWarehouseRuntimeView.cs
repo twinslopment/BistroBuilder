@@ -1684,6 +1684,7 @@ public sealed class BistroBuilderInventoryWarehouseRuntimeView : MonoBehaviour
     {
         if (modalRoot != null)
         {
+            if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
             modalRoot.gameObject.SetActive(visible);
         }
         if (openButton != null)

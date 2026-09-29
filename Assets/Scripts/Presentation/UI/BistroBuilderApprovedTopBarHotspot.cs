@@ -16,7 +16,7 @@ public sealed class BistroBuilderApprovedTopBarHotspot : MonoBehaviour,
     private float amount, clock;
     public float HoverAmount => amount;
 
-    public void Configure(Button target, RectTransform artwork, BistroBuilderTopBarArtEntry animation)
+    public void Configure(Button target, RectTransform artwork, BistroBuilderTopBarArtEntry animation = null)
     {
         button=target; icon=artwork; motion=animation; canvas=GetComponentInParent<Canvas>();
         var surface=new GameObject("ApprovedCell",typeof(RectTransform),typeof(CanvasRenderer));surface.transform.SetParent(transform,false);surface.transform.SetAsFirstSibling();
@@ -37,7 +37,7 @@ public sealed class BistroBuilderApprovedTopBarHotspot : MonoBehaviour,
         if(button==null||!button.IsInteractable())return;
         clock=0;
         // Visible feedback in the pointer event's frame, before the settling animation.
-        amount=Mathf.Max(amount,.4f);
+        amount=Mathf.Max(amount,.65f);
         ApplyState();
     }
     private void Update()
@@ -63,7 +63,7 @@ public sealed class BistroBuilderApprovedTopBarHotspot : MonoBehaviour,
         icon.localScale=new Vector3(scale,scale,1);
         icon.localRotation=Quaternion.Euler(0,0,-motion.rotation*wave);
         float pixelScale=canvas!=null?Mathf.Max(.01f,canvas.scaleFactor):1;
-        icon.anchoredPosition=new Vector2(motion.dx,-motion.dy)*wave*.65f/pixelScale;
+        icon.anchoredPosition=new Vector2(motion.dx,-motion.dy)*wave/pixelScale;
     }
     private void OnDisable()
     {

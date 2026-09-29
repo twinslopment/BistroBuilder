@@ -9,6 +9,7 @@ public sealed class BistroBuilderAtomicEditCommand : BistroBuilderEditCommandBas
     private readonly IBistroBuilderEditCommand[] commands;
     private readonly string description;
     private bool executed;
+    private HashSet<string> inheritedCrossings;
     public override string Description => description;
 
     public BistroBuilderAtomicEditCommand(string description, params IBistroBuilderEditCommand[] commands)
@@ -26,6 +27,7 @@ public sealed class BistroBuilderAtomicEditCommand : BistroBuilderEditCommandBas
         try
         {
             var candidate = document.DeepClone();
+            inheritedCrossings = BistroBuilderWallCrossingPolicy.CaptureExisting(document);
             var combined = new BistroBuilderEditChangeSet();
             var ids = new HashSet<string>(StringComparer.Ordinal);
             foreach (var command in commands)
@@ -73,12 +75,14 @@ public sealed class BistroBuilderAtomicEditCommand : BistroBuilderEditCommandBas
         { error = "Atomic inverse rejected: " + exception.Message; return false; }
     }
 
-    private static bool Validate(BistroBuilderEditDocument candidate, out string error)
+    private bool Validate(BistroBuilderEditDocument candidate, out string error)
     {
+        if (BistroBuilderWallCrossingPolicy.HasNewCrossing(candidate, inheritedCrossings))
+        { error = BistroBuilderWallCrossingPolicy.Message; return false; }
         var diagnostics = new List<BistroBuilderEditDiagnostic>();
         new BistroBuilderIntrinsicEditValidationProvider().Validate(candidate, candidate.revision, diagnostics);
         foreach (var d in diagnostics)
-            if (d.severity == BistroBuilderEditDiagnosticSeverity.Blocking)
+            if (d.severity == BistroBuilderEditDiagnosticSeverity.Blocking && d.code != BistroBuilderWallCrossingPolicy.Code)
             { error = d.code + ": " + d.message; return false; }
         error = string.Empty;
         return true;

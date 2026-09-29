@@ -52,3 +52,6 @@ Los PNG de `Resources/BistroBuilder/UI/TopBar/Parts` son los recursos originales
 
 ## Nitidez del player — 26/09/2026
 Pantalla completa sin bordes utiliza la resolución real del monitor. Una preferencia antigua de ventana no debe reducir y estirar el framebuffer. El ajuste se aplica al arrancar y desde Opciones; se conserva la resolución explícita de línea de comandos para pruebas y el modo ventana. El dock de Construcción IMGUI de playtest no se muestra si existe el shell definitivo.
+
+## Revisión de paneles — 29/09/2026
+Los paneles de gestión respetan la altura renderizada de la navegación normal y el espacio del HUD inferior. Actividad y las acciones de diseño inicial no se superponen a gestión. El reloj del modo normal no se muestra durante edición ni Nueva partida. Las capas transparentes que captan clics en selectores conservan su transparencia frente al tema genérico. Evidencia y alcance: [revisión del vídeo](../40_TESTING/UI_VIDEO_AUDIT_2026-09-29.md).

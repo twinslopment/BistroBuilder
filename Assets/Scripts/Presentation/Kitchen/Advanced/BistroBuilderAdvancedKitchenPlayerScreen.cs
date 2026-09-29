@@ -82,6 +82,78 @@ public sealed class BistroBuilderAdvancedKitchenPlayerScreen : MonoBehaviour
         if (panelRoot != null) panelRoot.SetActive(false);
     }
 
+    public bool TryGetContextSelection(
+        out BistroBuilderAdvancedKitchenSnapshot kitchenSnapshot,
+        out BistroBuilderKitchenTaskSnapshot selectedTask)
+    {
+        kitchenSnapshot = null;
+        selectedTask = null;
+        if (!IsOpen || facade == null ||
+            !facade.TryBuildSnapshot(out snapshot, out _))
+        {
+            return false;
+        }
+
+        stationIndex = Mathf.Clamp(
+            stationIndex, 0, Mathf.Max(0, snapshot.stations.Count - 1));
+        BistroBuilderKitchenStationSnapshot station = SelectedStation();
+        taskIndex = Mathf.Clamp(
+            taskIndex, 0, Mathf.Max(0, station != null ? station.tasks.Count - 1 : 0));
+
+        kitchenSnapshot = snapshot;
+        selectedTask = SelectedTask();
+        return true;
+    }
+
+    public bool TryReduceIntake(out string error)
+    {
+        if (facade == null)
+        {
+            error = "La fachada de Cocina no está disponible.";
+            return false;
+        }
+
+        bool ok = facade.SetIntakeMode(
+            BistroBuilderKitchenIntakeMode.Reduced,
+            out error);
+        if (ok) Refresh();
+        return ok;
+    }
+
+    public bool TryPauseSelectedDish(out string error)
+    {
+        BistroBuilderKitchenTaskSnapshot task = SelectedTask();
+        if (facade == null || task == null)
+        {
+            error = "Selecciona una preparación para pausar nuevas comandas de ese plato.";
+            return false;
+        }
+
+        bool ok = facade.TrySetDishPaused(task.dishId, true, out error);
+        if (ok) Refresh();
+        return ok;
+    }
+
+    public bool IsSelectedDishPaused()
+    {
+        BistroBuilderKitchenTaskSnapshot task = SelectedTask();
+        return facade != null && task != null && facade.IsDishPaused(task.dishId);
+    }
+
+    public bool TryPrioritizeSelectedOrder(out string error)
+    {
+        BistroBuilderKitchenTaskSnapshot task = SelectedTask();
+        if (facade == null || task == null || task.active)
+        {
+            error = "Selecciona una preparación en espera para priorizar su comanda.";
+            return false;
+        }
+
+        bool ok = facade.PrioritizeOrder(task.canonicalOrderId, out error);
+        if (ok) Refresh();
+        return ok;
+    }
+
     public void Refresh()
     {
         if (!IsOpen || facade == null) return;

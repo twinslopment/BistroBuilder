@@ -31,6 +31,7 @@ public static class ActivityPanelVisualStyle
         if (image == null)
             return;
 
+        image.material = null;
         image.sprite = RoundedSprite;
         image.type = Image.Type.Sliced;
         image.color = color;
@@ -94,7 +95,7 @@ public static class ActivityPanelVisualStyle
         if (label != null)
         {
             label.color = Ink;
-            label.fontSize = 10.6f;
+            label.fontSize = 12.5f;
             label.fontStyle = FontStyles.Normal;
             BistroBuilderTypography.Apply(label, BistroBuilderUiStyleRole.Label, true);
         }
@@ -180,7 +181,7 @@ public static class ActivityPanelVisualStyle
         gold.a = 0.62f;
         outline.effectColor = gold;
         outline.effectDistance = new Vector2(1f, -1f);
-        outline.useGraphicAlpha = false;
+        outline.useGraphicAlpha = true;
     }
 
     private static void EnsureHeadingPlaque(RectTransform panel, TMP_Text heading)

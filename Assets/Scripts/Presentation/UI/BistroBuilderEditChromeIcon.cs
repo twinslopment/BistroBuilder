@@ -10,6 +10,7 @@ public enum BistroBuilderEditChromeSymbol
 /// <summary>Original, resolution-independent silhouettes from the approved edit-mode reference.
 /// Geometry uses a 32-unit design grid; no font glyphs, textures or per-frame allocations.</summary>
 [DisallowMultipleComponent]
+[RequireComponent(typeof(CanvasRenderer))]
 public sealed class BistroBuilderEditChromeIcon : MaskableGraphic
 {
     public BistroBuilderEditChromeSymbol Symbol { get; private set; }

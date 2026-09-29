@@ -1,0 +1,8 @@
+Bistro Builder - Windows Playtest
+Scene: Assets/Scenes/Prototype_Restaurant.unity
+Unity: 6000.3.19f1
+UTC: 2026-09-29T11:49:21.3922536Z
+Size: 181311838 bytes
+Display: FullScreenWindow
+Native resolution: true
+Launcher: Launch_Fullscreen.cmd

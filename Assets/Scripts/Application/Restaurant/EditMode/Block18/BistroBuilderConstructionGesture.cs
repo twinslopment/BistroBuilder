@@ -162,6 +162,9 @@ namespace BistroBuilder.ConstructionAuthoring
                     break;
                 default: ok = false; error = "NO_GESTURE"; break;
             }
+            if (ok && walls.Count > 0 && ConstructionGeometry.HasCrossing(queries, walls, plane,
+                wallTemplate != null ? wallTemplate.baseElevation : 0f, wallTemplate != null ? wallTemplate.height : 2.8f))
+            { ok = false; error = BistroBuilderWallCrossingPolicy.Code; }
             State = ok ? ConstructionGestureState.Ready : ConstructionGestureState.Invalid;
             Diagnostic = error; return ok;
         }

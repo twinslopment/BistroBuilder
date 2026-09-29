@@ -13,7 +13,7 @@ public sealed class ActivityPanelController : MonoBehaviour
 {
     private const string RuntimeRootName = "BB_ActivityRuntime";
     private const float RowHeight = 82f;
-    private const int VisibleRows = 8;
+    private const float RowSpacing = 6f;
 
     public static ActivityPanelController ActiveInstance { get; private set; }
     public static bool HasActiveController =>
@@ -34,6 +34,8 @@ public sealed class ActivityPanelController : MonoBehaviour
     private ScrollRect scrollRect;
     private bool usingReferencePresentation;
 
+    public int VisibleEntryCount => displayEntries.Count;
+
     private readonly List<ActivityDisplayEntry> displayEntries =
         new List<ActivityDisplayEntry>(128);
     private readonly ActivityFeedAggregator aggregator =
@@ -47,6 +49,7 @@ public sealed class ActivityPanelController : MonoBehaviour
     private bool subscribed;
     private bool dirty = true;
     private float nextResolveAt;
+    private float lastViewportHeight = -1f;
 
     public bool HasEntries => feed != null && feed.Count > 0;
     public ActivityFilter ActiveFilter => activeFilter;
@@ -86,6 +89,16 @@ public sealed class ActivityPanelController : MonoBehaviour
             Subscribe();
             EnsurePresentation();
             nextResolveAt = Time.unscaledTime + 0.5f;
+        }
+
+        if (scrollRect != null && scrollRect.viewport != null)
+        {
+            float height = scrollRect.viewport.rect.height;
+            if (Mathf.Abs(height - lastViewportHeight) > 0.5f)
+            {
+                lastViewportHeight = height;
+                dirty = true;
+            }
         }
 
         if (dirty)
@@ -168,6 +181,13 @@ public sealed class ActivityPanelController : MonoBehaviour
             filterButtons.Clear();
             dirty = true;
         }
+
+        ActivityPanelResponsiveLayout responsiveLayout =
+            activityPanel.GetComponent<ActivityPanelResponsiveLayout>();
+        if (responsiveLayout == null)
+            responsiveLayout =
+                activityPanel.gameObject.AddComponent<ActivityPanelResponsiveLayout>();
+        responsiveLayout.Apply(false);
 
         TMP_Text legacyText =
             activityPanel.Find("ActivityText")?.GetComponent<TMP_Text>();
@@ -435,11 +455,12 @@ public sealed class ActivityPanelController : MonoBehaviour
             emptyText.gameObject.SetActive(displayEntries.Count == 0);
 
         if (visibleCountText != null)
-            visibleCountText.text = displayEntries.Count + " visibles";
+            visibleCountText.text = displayEntries.Count + (displayEntries.Count == 1 ? " visible" : " visibles");
 
         if (footerText != null)
         {
-            int hiddenBelowFold = Math.Max(0, displayEntries.Count - VisibleRows);
+            int visibleCapacity = GetVisibleRowCapacity();
+            int hiddenBelowFold = Math.Max(0, displayEntries.Count - visibleCapacity);
             footerText.text = hiddenBelowFold > 0
                 ? hiddenBelowFold + " más · scroll"
                 : string.Empty;
@@ -447,6 +468,20 @@ public sealed class ActivityPanelController : MonoBehaviour
 
         RefreshFilterButtons();
         Canvas.ForceUpdateCanvases();
+    }
+
+    private int GetVisibleRowCapacity()
+    {
+        if (scrollRect == null || scrollRect.viewport == null)
+            return 8;
+
+        float viewportHeight = Mathf.Max(0f, scrollRect.viewport.rect.height);
+        float rowPitch = RowHeight + RowSpacing;
+        if (rowPitch <= 0f)
+            return 8;
+
+        return Mathf.Max(1, Mathf.FloorToInt(
+            (viewportHeight + RowSpacing) / rowPitch));
     }
 
     private void EnsureRowCount(int count)
@@ -531,7 +566,7 @@ public sealed class ActivityPanelController : MonoBehaviour
         title.color = ActivityPanelVisualStyle.Ink;
         title.fontSize = 13.5f;
         ApplyTypographyRole(title, BistroBuilderUiStyleRole.Heading);
-        Place(title.rectTransform, 78f, -8f, 146f, 23f);
+        PlaceStretchTop(title.rectTransform, 78f, 108f, 8f, 23f);
 
         TMP_Text subtitle = row.Find("Subtitle")?.GetComponent<TMP_Text>();
         if (subtitle == null)
@@ -540,7 +575,7 @@ public sealed class ActivityPanelController : MonoBehaviour
         subtitle.color = ActivityPanelVisualStyle.Brown;
         subtitle.fontSize = 10.5f;
         ApplyTypographyRole(subtitle, BistroBuilderUiStyleRole.Body);
-        Place(subtitle.rectTransform, 78f, -31f, 146f, 20f);
+        PlaceStretchTop(subtitle.rectTransform, 78f, 108f, 31f, 20f);
 
         EnsureTargetChip(row);
         EnsureSeverityBadge(row);
@@ -552,7 +587,7 @@ public sealed class ActivityPanelController : MonoBehaviour
         time.color = ActivityPanelVisualStyle.Muted;
         time.fontSize = 9.5f;
         ApplyTypographyRole(time, BistroBuilderUiStyleRole.Caption);
-        Place(time.rectTransform, 226f, -7f, 58f, 19f);
+        PlaceRight(time.rectTransform, 42f, 7f, 58f, 19f);
 
         TMP_Text chevron = row.Find("Chevron")?.GetComponent<TMP_Text>();
         if (chevron == null)
@@ -560,7 +595,7 @@ public sealed class ActivityPanelController : MonoBehaviour
                 ActivityPanelVisualStyle.GoldDark, TextAlignmentOptions.Center);
         chevron.color = ActivityPanelVisualStyle.GoldDark;
         ApplyTypographyRole(chevron, BistroBuilderUiStyleRole.Heading);
-        Place(chevron.rectTransform, 307f, -25f, 18f, 30f);
+        PlaceRight(chevron.rectTransform, 5f, 25f, 18f, 30f);
 
         TMP_Text state = row.Find("State")?.GetComponent<TMP_Text>();
         if (state == null)
@@ -618,7 +653,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             badge,
             new Color32(234, 223, 206, 255));
         badge.raycastTarget = false;
-        Place(badge.rectTransform, 226f, -31f, 76f, 20f);
+        PlaceRight(badge.rectTransform, 28f, 31f, 76f, 20f);
 
         TMP_Text label = row.Find("SeverityLabel")?.GetComponent<TMP_Text>();
         if (label == null)
@@ -626,7 +661,7 @@ public sealed class ActivityPanelController : MonoBehaviour
                 ActivityPanelVisualStyle.Brown,
                 TextAlignmentOptions.Center);
         ApplyTypographyRole(label, BistroBuilderUiStyleRole.Caption);
-        Place(label.rectTransform, 228f, -31f, 72f, 20f);
+        PlaceRight(label.rectTransform, 30f, 31f, 72f, 20f);
     }
 
     private void CreateRow(RectTransform parent)
@@ -740,7 +775,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             case ActivityTargetType.Employee: prefix = "Personal"; break;
             case ActivityTargetType.Reputation: prefix = "Reputación"; break;
             case ActivityTargetType.Marketing: prefix = "Marketing"; break;
-            case ActivityTargetType.Entrance: prefix = "Entrada"; break;
+            case ActivityTargetType.Entrance: if (target.targetId == "main") return "Entrada principal"; prefix = "Entrada"; break;
             case ActivityTargetType.Group: prefix = "Grupo"; break;
             case ActivityTargetType.Dish: prefix = "Plato"; break;
             default: prefix = target.targetType.ToString(); break;
@@ -882,6 +917,33 @@ public sealed class ActivityPanelController : MonoBehaviour
         rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
         rect.pivot = new Vector2(0f, 1f);
         rect.anchoredPosition = new Vector2(x, y);
+        rect.sizeDelta = new Vector2(width, height);
+    }
+
+    private static void PlaceStretchTop(
+        RectTransform rect,
+        float left,
+        float right,
+        float top,
+        float height)
+    {
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.offsetMin = new Vector2(left, -top - height);
+        rect.offsetMax = new Vector2(-right, -top);
+    }
+
+    private static void PlaceRight(
+        RectTransform rect,
+        float right,
+        float top,
+        float width,
+        float height)
+    {
+        rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(1f, 1f);
+        rect.anchoredPosition = new Vector2(-right, -top);
         rect.sizeDelta = new Vector2(width, height);
     }
 }

@@ -175,6 +175,15 @@ public readonly struct BistroBuilderKitchenIncidentEvent
 public static class BistroBuilderAdvancedKitchenPolicy
 {
     public const int BasisPoints = 10000;
+    public const int MaxPlayerPriorityOrders = 3;
+
+    public static bool CanAddPlayerPriorityOrder(
+        int currentPriorityOrderCount,
+        bool orderAlreadyPrioritized)
+    {
+        return orderAlreadyPrioritized ||
+            Math.Max(0, currentPriorityOrderCount) < MaxPlayerPriorityOrders;
+    }
 
     public static BistroBuilderKitchenLoadState ResolveLoad(
         int active,

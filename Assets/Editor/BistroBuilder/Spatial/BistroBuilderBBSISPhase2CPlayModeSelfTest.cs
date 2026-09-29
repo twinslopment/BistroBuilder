@@ -17,6 +17,8 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
         "BB.BBSIS.Phase2C.Play.Success";
     private const string ReportPath =
         "BBSISPhase2CPlayModeReport.txt";
+    private const double PlayReadyDelaySeconds = 0.25d;
+    private static double playReadyAt;
 
     static BistroBuilderBBSISPhase2CPlayModeSelfTest()
     {
@@ -36,6 +38,7 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
             throw new InvalidOperationException(
                 "El PlayMode BBSIS 2C ya está ejecutándose.");
         File.Delete(Path.GetFullPath(ReportPath));
+        playReadyAt = 0d;
         SessionState.SetBool(SuccessKey, false);
         SessionState.SetString(
             StageKey,
@@ -61,6 +64,8 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
             SessionState.SetString(
                 StageKey,
                 cli ? "run_cli" : "run_menu");
+            playReadyAt = EditorApplication.timeSinceStartup +
+                PlayReadyDelaySeconds;
         }
         else if (state == PlayModeStateChange.EnteredEditMode)
         {
@@ -68,6 +73,7 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
                 "cli", StringComparison.Ordinal);
             bool ok = SessionState.GetBool(SuccessKey, false);
             SessionState.EraseString(StageKey);
+            playReadyAt = 0d;
             if (cli)
                 EditorApplication.Exit(ok ? 0 : 1);
         }
@@ -75,14 +81,19 @@ public static class BistroBuilderBBSISPhase2CPlayModeSelfTest
 
     private static void OnUpdate()
     {
-        if (!EditorApplication.isPlaying ||
-            Time.frameCount < 10)
+        if (!EditorApplication.isPlaying)
             return;
         string stage =
             SessionState.GetString(StageKey, string.Empty);
         if (!stage.StartsWith(
                 "run_", StringComparison.Ordinal))
             return;
+        if (playReadyAt <= 0d)
+            playReadyAt = EditorApplication.timeSinceStartup +
+                PlayReadyDelaySeconds;
+        if (EditorApplication.timeSinceStartup < playReadyAt)
+            return;
+        playReadyAt = double.MaxValue;
         bool cli = stage.EndsWith(
             "cli", StringComparison.Ordinal);
         try

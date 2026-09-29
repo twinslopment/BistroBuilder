@@ -24,6 +24,42 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     public const string TertiaryContextActionName = "BB_UIUX_TertiaryContextAction";
     public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf) || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
 
+    public float ContentTopInset(Canvas targetCanvas)
+    {
+        float scale = targetCanvas != null ? Mathf.Max(.01f, targetCanvas.scaleFactor) : 1f;
+        if (topNavigation == null || !topNavigation.gameObject.activeInHierarchy) return 86f;
+        var corners = new Vector3[4]; topNavigation.GetWorldCorners(corners);
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        float bottom = RectTransformUtility.WorldToScreenPoint(camera, corners[0]).y;
+        return ((canvas != null ? canvas.pixelRect.height : Screen.height) - bottom) / scale + 12f;
+    }
+
+    private RestaurantEditModeService overlayEditMode;
+    private CanvasGroup normalTimeDockGroup;
+
+    private void ReconcileOverlayVisibility()
+    {
+        if (overlayEditMode == null) overlayEditMode = FindScene<RestaurantEditModeService>();
+        if (normalTimeDockGroup == null)
+        {
+            var dock = GameObject.Find("BB_368B_TimeControlsDock");
+            if (dock != null)
+            {
+                normalTimeDockGroup = dock.GetComponent<CanvasGroup>();
+                if (normalTimeDockGroup == null) normalTimeDockGroup = dock.AddComponent<CanvasGroup>();
+            }
+        }
+        if (normalTimeDockGroup != null)
+        {
+            bool visible = !(overlayEditMode != null && overlayEditMode.IsEditModeActive) && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking;
+            normalTimeDockGroup.alpha = visible ? 1f : 0f;
+            normalTimeDockGroup.interactable = normalTimeDockGroup.blocksRaycasts = visible;
+        }
+        // Panel owners may refresh later than navigation; enforce visibility at the end of the frame.
+        if (activityPanel != null && (HasManagementScreenOpen || BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking))
+            activityPanel.gameObject.SetActive(false);
+    }
+
     private static readonly NavSpec[] Navigation =
     {
         new NavSpec("Actividad", null),
@@ -73,6 +109,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private BistroBuilderFinanceService finance;
     private BistroBuilderInventoryPlanningService inventoryPlanning;
     private BistroBuilderAdvancedKitchenService kitchen;
+    private BistroBuilderAdvancedKitchenPlayerScreen kitchenScreen;
     private BistroBuilderAdvancedFrontOfHouseService frontOfHouse;
     private BistroBuilderCustomerExperienceTrackingService experience;
     private BistroBuilderTableContextActionService tableContextActions;
@@ -192,6 +229,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         EnsureSecondaryContextAction();
         EnsureTertiaryContextAction();
         EnsureEditModeChrome();
+        EnsureModeSelector();
         ReconcileTimeDock();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
         {
@@ -313,7 +351,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (bottomDateTimeText == null) bottomDateTimeText = go.AddComponent<TextMeshProUGUI>();
         RectTransform rect = go.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
-        rect.anchoredPosition = new Vector2(-356f, 0f);
+        rect.anchoredPosition = new Vector2(-418f, 0f);
         rect.sizeDelta = new Vector2(220f, 44f);
         bottomDateTimeText.fontSize = 13f;
         bottomDateTimeText.color = BistroBuilderUiTokens.TextPrimary;
@@ -912,6 +950,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         bool editing = editMode != null && editMode.IsEditModeActive;
         bool managing = IsAnyManagementScreenOpen() || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
         RefreshEditModeChrome(editing, managing);
+        RefreshModeSelector(editing, managing);
         bool hasActivity = HasMeaningfulActivity();
         if (activityPanel != null) activityPanel.gameObject.SetActive(!editing && !managing && activityVisible && hasActivity);
         RestaurantTable selectedTable = !editing && !managing && tableSelection != null ? tableSelection.SelectedTable : null;
@@ -990,6 +1029,13 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
         bool editing = editMode != null && editMode.IsEditModeActive;
+
+        if (!editing && TryRefreshKitchenContextActions())
+        {
+            if (contextPanel != null) contextPanel.gameObject.SetActive(false);
+            return;
+        }
+
         RestaurantTable selected = !editing && !HasManagementScreenOpen && tableSelection != null ? tableSelection.SelectedTable : null;
         if (contextPanel != null) contextPanel.gameObject.SetActive(selected != null);
 
@@ -1127,6 +1173,77 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         serviceActionLabel.text = state == RestaurantServiceState.Open ? "FIN DE SERVICIO" :
             state == RestaurantServiceState.Closing ? "CIERRE EN CURSO" :
             state == RestaurantServiceState.Preparing ? "PREPARANDO SERVICIO" : "RESTAURANTE CERRADO";
+    }
+
+    private bool TryRefreshKitchenContextActions()
+    {
+        if (kitchenScreen == null || !kitchenScreen.IsOpen)
+            return false;
+
+        bool hasSnapshot = kitchenScreen.TryGetContextSelection(
+            out BistroBuilderAdvancedKitchenSnapshot snapshot,
+            out BistroBuilderKitchenTaskSnapshot task);
+
+        if (!hasSnapshot || snapshot == null)
+        {
+            if (serviceActionButton != null)
+                serviceActionButton.gameObject.SetActive(false);
+            if (secondaryContextActionButton != null)
+                secondaryContextActionButton.gameObject.SetActive(false);
+            if (tertiaryContextActionButton != null)
+                tertiaryContextActionButton.gameObject.SetActive(false);
+            return true;
+        }
+
+        bool showReduceIntake =
+            snapshot.intakeMode == BistroBuilderKitchenIntakeMode.Normal &&
+            snapshot.loadState != BistroBuilderKitchenLoadState.Fluid;
+        bool showPauseDish =
+            task != null &&
+            !kitchenScreen.IsSelectedDishPaused();
+        bool showPrioritizeOrder =
+            task != null &&
+            !task.active &&
+            task.priority != BistroBuilderKitchenPriorityKind.PlayerPriority &&
+            kitchen != null &&
+            kitchen.PlayerPriorityOrderCount <
+                BistroBuilderAdvancedKitchenPolicy.MaxPlayerPriorityOrders;
+
+        LayoutContextActions(
+            showReduceIntake,
+            showPauseDish,
+            showPrioritizeOrder);
+
+        if (serviceActionButton != null && serviceActionLabel != null)
+        {
+            serviceActionButton.gameObject.SetActive(showReduceIntake);
+            serviceActionButton.interactable = showReduceIntake;
+            serviceActionLabel.text = "REDUCIR ENTRADA";
+            Image image = serviceActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Attention;
+        }
+
+        if (secondaryContextActionButton != null &&
+            secondaryContextActionLabel != null)
+        {
+            secondaryContextActionButton.gameObject.SetActive(showPauseDish);
+            secondaryContextActionButton.interactable = showPauseDish;
+            secondaryContextActionLabel.text = "PAUSAR PLATO";
+            Image image = secondaryContextActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Critical;
+        }
+
+        if (tertiaryContextActionButton != null &&
+            tertiaryContextActionLabel != null)
+        {
+            tertiaryContextActionButton.gameObject.SetActive(showPrioritizeOrder);
+            tertiaryContextActionButton.interactable = showPrioritizeOrder;
+            tertiaryContextActionLabel.text = "PRIORIZAR COMANDA";
+            Image image = tertiaryContextActionButton.targetGraphic as Image;
+            if (image != null) image.color = BistroBuilderUiTokens.Primary;
+        }
+
+        return true;
     }
 
     private string BuildSelectedTableContext(
@@ -1375,6 +1492,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleServiceActionClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryReduceIntake(out string kitchenError))
+                AddActivity("Cocina · entrada reducida.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected = tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected != null)
         {
@@ -1406,6 +1533,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleExplainDelayClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryPauseSelectedDish(out string kitchenError))
+                AddActivity("Cocina · nuevas comandas del plato pausadas.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected =
             tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected == null)
@@ -1428,6 +1565,16 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private void HandleApologyClicked()
     {
         ResolveDependencies();
+        if (kitchenScreen != null && kitchenScreen.IsOpen)
+        {
+            if (kitchenScreen.TryPrioritizeSelectedOrder(out string kitchenError))
+                AddActivity("Cocina · comanda priorizada.");
+            else if (!string.IsNullOrWhiteSpace(kitchenError))
+                AddActivity("Cocina · " + kitchenError);
+            RefreshReadModels();
+            return;
+        }
+
         RestaurantTable selected =
             tableSelection != null ? tableSelection.SelectedTable : null;
         if (selected == null)
@@ -1498,6 +1645,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (finance == null) finance = FindScene<BistroBuilderFinanceService>();
         if (inventoryPlanning == null) inventoryPlanning = FindScene<BistroBuilderInventoryPlanningService>();
         if (kitchen == null) kitchen = FindScene<BistroBuilderAdvancedKitchenService>();
+        if (kitchenScreen == null) kitchenScreen = FindScene<BistroBuilderAdvancedKitchenPlayerScreen>();
         if (frontOfHouse == null) frontOfHouse = FindScene<BistroBuilderAdvancedFrontOfHouseService>();
         if (experience == null) experience = FindScene<BistroBuilderCustomerExperienceTrackingService>();
         if (tableContextActions == null) tableContextActions = FindScene<BistroBuilderTableContextActionService>();
@@ -1612,7 +1760,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 bool editing =
                     editMode != null && editMode.IsEditModeActive;
                 activityPanel.gameObject.SetActive(
-                    !editing &&
+                    !editing && !HasManagementScreenOpen && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking &&
                     activityVisible &&
                     ActivityPanelController.ActiveInstance.HasEntries
                 );
@@ -1654,7 +1802,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             activityPanel.sizeDelta = new Vector2(284f, Mathf.Clamp(88f + lineCount * 28f, 120f, 300f));
             RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
             bool editing = editMode != null && editMode.IsEditModeActive;
-            activityPanel.gameObject.SetActive(!editing && activityVisible);
+            activityPanel.gameObject.SetActive(!editing && activityVisible && !HasManagementScreenOpen && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
         }
     }
 
@@ -1679,7 +1827,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
         rect.anchoredPosition = new Vector2(-16f, 9f);
-        rect.sizeDelta = new Vector2(324f, 46f);
+        rect.sizeDelta = new Vector2(390f, 46f);
         rect.SetAsLastSibling();
     }
 

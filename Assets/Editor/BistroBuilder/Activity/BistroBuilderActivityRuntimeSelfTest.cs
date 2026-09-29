@@ -66,6 +66,11 @@ public static class BistroBuilderActivityRuntimeSelfTest
                 "Marco y tarjetas redondeadas runtime disponibles",
                 ref passed, ref failed, log);
 
+            Check(
+                ValidateResponsiveLayouts(),
+                "Layout responsive validado en 720p, 1080p, 1440p, 4K, 16:10, 4:3 y ultrawide",
+                ref passed, ref failed, log);
+
             first = new GameObject("__BB_ACTIVITY_SELF_TEST_A__");
             ActivityFeedService feed = first.AddComponent<ActivityFeedService>();
 
@@ -205,6 +210,57 @@ public static class BistroBuilderActivityRuntimeSelfTest
             Debug.Log(summary);
         else
             Debug.LogError(summary);
+    }
+
+    private static bool ValidateResponsiveLayouts()
+    {
+        int[,] resolutions =
+        {
+            { 1280, 720 },
+            { 1920, 1080 },
+            { 2560, 1440 },
+            { 3840, 2160 },
+            { 1920, 1200 },
+            { 1280, 1024 },
+            { 3440, 1440 }
+        };
+
+        for (int i = 0; i < resolutions.GetLength(0); i++)
+        {
+            ActivityPanelResponsiveLayout.LayoutPlan plan =
+                ActivityPanelResponsiveLayout.EvaluatePixelResolution(
+                    resolutions[i, 0],
+                    resolutions[i, 1]);
+
+            if (plan.panelWidth <
+                    ActivityPanelResponsiveLayout.MinimumWidth - 0.1f ||
+                plan.panelWidth >
+                    ActivityPanelResponsiveLayout.MaximumWidth + 0.1f ||
+                plan.panelHeight < 560f)
+                return false;
+        }
+
+        ActivityPanelResponsiveLayout.LayoutPlan baseline =
+            ActivityPanelResponsiveLayout.EvaluatePixelResolution(
+                1920,
+                1080);
+        ActivityPanelResponsiveLayout.LayoutPlan hd =
+            ActivityPanelResponsiveLayout.EvaluatePixelResolution(
+                1280,
+                720);
+        ActivityPanelResponsiveLayout.LayoutPlan fourK =
+            ActivityPanelResponsiveLayout.EvaluatePixelResolution(
+                3840,
+                2160);
+
+        return
+            Mathf.Abs(
+                baseline.panelWidth -
+                ActivityPanelResponsiveLayout.BaselineWidth) < 0.1f &&
+            Mathf.Abs(hd.panelWidth - baseline.panelWidth) < 0.1f &&
+            Mathf.Abs(hd.panelHeight - baseline.panelHeight) < 0.1f &&
+            Mathf.Abs(fourK.panelWidth - baseline.panelWidth) < 0.1f &&
+            Mathf.Abs(fourK.panelHeight - baseline.panelHeight) < 0.1f;
     }
 
     private static void Check(
