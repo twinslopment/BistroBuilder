@@ -19,6 +19,7 @@ public sealed partial class BistroBuilderUiShell
     BistroBuilderEditGridOverlay editChromeGrid;
     BistroBuilderConstructionPlayerPanel editConstructionPanel;
     bool editModeChromeBuilt;
+    float editChromeMessageUntil;
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
     readonly Dictionary<string, BistroBuilderEditChromeControl> editChromeControls = new Dictionary<string, BistroBuilderEditChromeControl>();
     static readonly Color EditChromeSurface = new Color32(250,248,244,250);
@@ -202,7 +203,13 @@ public sealed partial class BistroBuilderUiShell
         if(IsFurnitureTool()&&selected!=null&&selected.ItemDefinition!=null)editModeFurnitureController.TryBeginPlaceableCreation(selected.ItemDefinition);
         else if(editModeConstructionTool!=null&&!editModeConstructionTool.TryCopySelection(out var error))ChromeMessage(error);
     }
-    void ChromeMessage(string message){if(editModeToolStatusText==null||string.IsNullOrEmpty(message))return;editModeToolStatusText.text=message;editModeToolStatusText.transform.parent.gameObject.SetActive(true);}
+    void ChromeMessage(string message)
+    {
+        if(editModeToolStatusText==null||string.IsNullOrWhiteSpace(message))return;
+        editModeToolStatusText.text=message;
+        editModeToolStatusText.transform.parent.gameObject.SetActive(true);
+        editChromeMessageUntil=Time.unscaledTime+2.8f;
+    }
     void RefreshEditModeChrome(bool editing,bool managing)
     {
         EnsureEditModeChrome();bool visible=editing&&!managing;
@@ -218,6 +225,20 @@ public sealed partial class BistroBuilderUiShell
         var mode=editModeConstructionTool!=null?editModeConstructionTool.Mode:Mode.Furniture;
         var section=editModeCatalogPanel!=null?editModeCatalogPanel.CurrentSection:RestaurantEditCatalogSection.Build;
         bool furniture=mode==Mode.Furniture;
+
+        string constructionStatus=
+            !furniture&&editModeConstructionTool!=null
+                ? editModeConstructionTool.StatusMessage
+                : string.Empty;
+        if(!string.IsNullOrWhiteSpace(constructionStatus)&&editModeToolStatusText!=null)
+        {
+            editModeToolStatusText.text=constructionStatus;
+            editModeToolStatusText.transform.parent.gameObject.SetActive(true);
+        }
+        else if(editModeToolStatusText!=null&&Time.unscaledTime>editChromeMessageUntil)
+        {
+            editModeToolStatusText.transform.parent.gameObject.SetActive(false);
+        }
         ChromeSelected("EditBuild",section==RestaurantEditCatalogSection.Build);
         ChromeSelected("EditSurfaces",section==RestaurantEditCatalogSection.Surfaces);
         ChromeSelected("EditWalls",section==RestaurantEditCatalogSection.Walls);
