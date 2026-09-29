@@ -294,6 +294,28 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
         {
             BistroBuilderDeliveryRunItem item = deliveryRun.Items[index];
 
+            if (IsLineTerminalForDelivery(
+                    item.Order,
+                    item.OrderLineId))
+            {
+                deliveryRun.TryMarkLineFailed(
+                    item.Order,
+                    item.OrderLineId);
+
+                CompleteDeliveryTaskWithoutRetry(
+                    item);
+
+                Debug.Log(
+                    "La ronda " + deliveryRun.RunId +
+                    " descarta la línea " +
+                    item.OrderLineId +
+                    " porque dejó de ser entregable durante la recogida.",
+                    this
+                );
+
+                continue;
+            }
+
             if (!lineExecutionService.TryMarkLineInTransit(
                     item.Order,
                     item.OrderLineId,
@@ -312,6 +334,21 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
                 AbortDeliveryRun(deliveryRun, true);
                 yield break;
             }
+        }
+
+        if (deliveryRun.RemainingLineCount == 0)
+        {
+            Debug.Log(
+                "La ronda " + deliveryRun.RunId +
+                " quedó sin líneas entregables durante la recogida.",
+                this
+            );
+
+            AbortDeliveryRun(
+                deliveryRun,
+                true);
+
+            yield break;
         }
 
         if (!waiter.TryBeginDeliveryRunStops())
@@ -412,6 +449,29 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
                     item.Order,
                     item.OrderLineId
                 );
+
+                if (!alreadyServed &&
+                    IsLineTerminalForDelivery(
+                        item.Order,
+                        item.OrderLineId))
+                {
+                    deliveryRun.TryMarkLineFailed(
+                        item.Order,
+                        item.OrderLineId);
+
+                    CompleteDeliveryTaskWithoutRetry(
+                        item);
+
+                    Debug.Log(
+                        "La ronda " + deliveryRun.RunId +
+                        " descarta la línea " +
+                        item.OrderLineId +
+                        " porque dejó de ser entregable durante el servicio.",
+                        this
+                    );
+
+                    continue;
+                }
 
                 Debug.LogError(
                     "La línea " + item.OrderLineId +
@@ -765,6 +825,32 @@ public sealed class FoodDeliveryServiceFlow : MonoBehaviour
                    BistroBuilderOrderIdUtility.Normalize(orderLineId),
                    StringComparison.Ordinal
                );
+    }
+
+    private bool IsLineTerminalForDelivery(
+        RestaurantOrder order,
+        string orderLineId
+    )
+    {
+        if (lineExecutionService == null ||
+            !lineExecutionService.TryGetLineSnapshot(
+                order,
+                orderLineId,
+                out _,
+                out BistroBuilderCanonicalOrderLine line,
+                out _))
+        {
+            return false;
+        }
+
+        return line.State ==
+                   BistroBuilderCanonicalOrderLineState.Cancelled ||
+               line.State ==
+                   BistroBuilderCanonicalOrderLineState.Failed ||
+               line.State ==
+                   BistroBuilderCanonicalOrderLineState.Served ||
+               line.State ==
+                   BistroBuilderCanonicalOrderLineState.Consumed;
     }
 
     private bool IsLineServedOrConsumed(
