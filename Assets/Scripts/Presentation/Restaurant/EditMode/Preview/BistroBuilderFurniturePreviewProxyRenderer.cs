@@ -25,10 +25,13 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     [SerializeField, Min(0.01f)] private float settleDuration = 0.14f;
 
     [Header("Seguimiento visual")]
-    [SerializeField, Min(1f)] private float positionFollowSharpness = 22f;
-    [SerializeField, Min(1f)] private float rotationFollowSharpness = 20f;
-    [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.34f;
-    [SerializeField, Min(1f)] private float settleFollowMultiplier = 1.85f;
+    [SerializeField, Min(0.01f)] private float freeMoveSmoothTime = 0.060f;
+    [SerializeField, Min(0.01f)] private float snapMoveSmoothTime = 0.038f;
+    [SerializeField, Min(0.01f)] private float settleMoveSmoothTime = 0.048f;
+    [SerializeField, Min(0.5f)] private float maximumVisualSpeed = 18f;
+    [SerializeField, Min(1f)] private float rotationFollowSharpness = 16f;
+    [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.30f;
+    [SerializeField, Range(0f, 1f)] private float snapVelocityRetention = 0.28f;
 
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
@@ -56,7 +59,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     private Vector3 visualRootPosition;
     private Quaternion visualRootRotation = Quaternion.identity;
+    private Vector3 visualPositionVelocity;
     private bool visualPoseInitialized;
+    private bool wasFunctionallySnapped;
 
     private void Awake()
     {
@@ -171,6 +176,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
         visualRootRotation =
             root.transform.rotation;
+
+        visualPositionVelocity =
+            Vector3.zero;
+
+        wasFunctionallySnapped =
+            false;
 
         visualPoseInitialized =
             true;
@@ -380,18 +391,24 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         Quaternion targetRotation =
             activeRoot.transform.rotation;
 
+        bool functionallySnapped =
+            false;
+
         if (!settling &&
             interactionController != null &&
             interactionController.TryGetPresentationPlacementPose(
                 out Vector3 presentationTargetPosition,
                 out Quaternion presentationTargetRotation,
-                out _))
+                out bool snapped))
         {
             targetPosition =
                 presentationTargetPosition;
 
             targetRotation =
                 presentationTargetRotation;
+
+            functionallySnapped =
+                snapped;
         }
 
         if (!visualPoseInitialized)
@@ -402,6 +419,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             visualRootRotation =
                 targetRotation;
 
+            visualPositionVelocity =
+                Vector3.zero;
+
+            wasFunctionallySnapped =
+                functionallySnapped;
+
             visualPoseInitialized =
                 true;
 
@@ -410,39 +433,45 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
         float delta =
             Mathf.Max(
-                0f,
+                0.0001f,
                 Time.unscaledDeltaTime);
 
-        float multiplier =
+        /*
+         * Al capturar un socket funcional reducimos la inercia previa.
+         * El objeto no se teletransporta al Seat Bay, pero el jugador siente
+         * un enganche más decidido que el seguimiento libre.
+         */
+        if (functionallySnapped &&
+            !wasFunctionallySnapped)
+        {
+            visualPositionVelocity *=
+                Mathf.Clamp01(
+                    snapVelocityRetention);
+        }
+
+        float smoothTime =
             settling
                 ? Mathf.Max(
-                    1f,
-                    settleFollowMultiplier)
-                : 1f;
-
-        float positionBlend =
-            1f -
-            Mathf.Exp(
-                -Mathf.Max(
-                    1f,
-                    positionFollowSharpness) *
-                multiplier *
-                delta);
-
-        float rotationBlend =
-            1f -
-            Mathf.Exp(
-                -Mathf.Max(
-                    1f,
-                    rotationFollowSharpness) *
-                multiplier *
-                delta);
+                    0.01f,
+                    settleMoveSmoothTime)
+                : functionallySnapped
+                    ? Mathf.Max(
+                        0.01f,
+                        snapMoveSmoothTime)
+                    : Mathf.Max(
+                        0.01f,
+                        freeMoveSmoothTime);
 
         visualRootPosition =
-            Vector3.Lerp(
+            Vector3.SmoothDamp(
                 visualRootPosition,
                 targetPosition,
-                positionBlend);
+                ref visualPositionVelocity,
+                smoothTime,
+                Mathf.Max(
+                    0.5f,
+                    maximumVisualSpeed),
+                delta);
 
         Vector3 lag =
             visualRootPosition -
@@ -463,11 +492,22 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
                 maximumLag;
         }
 
+        float rotationBlend =
+            1f -
+            Mathf.Exp(
+                -Mathf.Max(
+                    1f,
+                    rotationFollowSharpness) *
+                delta);
+
         visualRootRotation =
             Quaternion.Slerp(
                 visualRootRotation,
                 targetRotation,
                 rotationBlend);
+
+        wasFunctionallySnapped =
+            functionallySnapped;
     }
 
     private bool VisualPoseSettled()
@@ -630,7 +670,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         transitionActive = false;
         visualRootPosition = Vector3.zero;
         visualRootRotation = Quaternion.identity;
+        visualPositionVelocity = Vector3.zero;
         visualPoseInitialized = false;
+        wasFunctionallySnapped = false;
         settling = false;
     }
 
