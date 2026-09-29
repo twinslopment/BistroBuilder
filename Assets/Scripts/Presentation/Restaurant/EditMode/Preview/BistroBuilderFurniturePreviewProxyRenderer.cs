@@ -39,6 +39,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     [SerializeField, Range(1f, 1.35f)] private float liftedShadowExpansion = 1.08f;
     [SerializeField, Min(0f)] private float contactShadowSurfaceOffset = 0.012f;
 
+    private static readonly int ColorPropertyId =
+        Shader.PropertyToID("_Color");
+
+    private static readonly int BaseColorPropertyId =
+        Shader.PropertyToID("_BaseColor");
+
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
     private readonly HashSet<int> rendererIds =
@@ -690,11 +696,11 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
                 alpha);
 
         contactShadowBlock.SetColor(
-            Shader.PropertyToID("_Color"),
+            ColorPropertyId,
             color);
 
         contactShadowBlock.SetColor(
-            Shader.PropertyToID("_BaseColor"),
+            BaseColorPropertyId,
             color);
 
         MeshRenderer renderer =
@@ -761,9 +767,14 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             new GameObject(
                 "BB_FurnitureContactShadow");
 
-        go.layer =
+        int ignoreRaycast =
             LayerMask.NameToLayer(
                 "Ignore Raycast");
+
+        go.layer =
+            ignoreRaycast >= 0
+                ? ignoreRaycast
+                : 2;
 
         go.transform.SetParent(
             transform,
@@ -860,10 +871,10 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
                 0;
 
             triangles[index * 3 + 1] =
-                index + 1;
+                next + 1;
 
             triangles[index * 3 + 2] =
-                next + 1;
+                index + 1;
         }
 
         Mesh mesh =
