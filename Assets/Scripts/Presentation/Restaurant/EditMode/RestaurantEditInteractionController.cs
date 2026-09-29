@@ -248,6 +248,14 @@ public sealed class RestaurantEditInteractionController :
     private RestaurantPlacementValidationResult
         lastValidationResult;
 
+    /*
+     * Bloquea únicamente la lectura automática de teclado/ratón.
+     * La transacción y las APIs públicas siguen activas para que
+     * una UI, una herramienta o una validación determinista puedan
+     * conducir la colocación sin competir con el dispositivo físico.
+     */
+    private bool worldInputSuppressed;
+
     /// <summary>
     /// Se ejecuta cuando cambia el miembro espacial editado.
     /// </summary>
@@ -351,9 +359,22 @@ public sealed class RestaurantEditInteractionController :
     public RestaurantPlacementSnapService PlacementSnapService =>
         placementSnapService;
 
+    public RestaurantPlacementTransactionService PlacementTransactionService =>
+        transactionService;
+
     public RestaurantPlacementLinkedGroupService
         PlacementLinkedGroupService =>
             linkedGroupService;
+
+    public bool IsWorldInputSuppressed =>
+        worldInputSuppressed;
+
+    public void SetWorldInputSuppressed(
+        bool suppressed)
+    {
+        worldInputSuppressed =
+            suppressed;
+    }
 
     private void Awake()
     {
@@ -368,6 +389,7 @@ public sealed class RestaurantEditInteractionController :
 
     private void OnDisable()
     {
+        worldInputSuppressed = false;
         CancelActivePlacementIfNeeded();
         ClearLocalPlacementState();
         ClearSelection();
@@ -388,6 +410,16 @@ public sealed class RestaurantEditInteractionController :
          * bloqueado si otra acción cancela o restaura la colocación.
          */
         SynchronizeLocalPlacementState();
+
+        /*
+         * Un consumidor externo puede conducir la colocación mediante
+         * las APIs públicas sin que el ratón o teclado físicos compitan
+         * con esa operación. El estado transaccional sigue sincronizado.
+         */
+        if (worldInputSuppressed)
+        {
+            return;
+        }
 
         /*
          * Los comandos modificados con Control tienen prioridad sobre
@@ -1652,15 +1684,109 @@ public sealed class RestaurantEditInteractionController :
         hasCandidatePose = true;
     }
 
+    public bool TryPreviewActivePlacementAtWorldPose(
+        Vector3 worldPosition,
+        Quaternion worldRotation,
+        out RestaurantPlacementValidationResult result,
+        out RestaurantPlacementTransactionFailureReason
+            failureReason)
+    {
+        result =
+            default;
+
+        failureReason =
+            RestaurantPlacementTransactionFailureReason.None;
+
+        if (activeMember == null ||
+            transactionService == null ||
+            !transactionService.HasActiveTransaction)
+        {
+            failureReason =
+                RestaurantPlacementTransactionFailureReason
+                    .NoActiveOperation;
+
+            return false;
+        }
+
+        candidatePosition =
+            worldPosition;
+
+        candidateRotation =
+            worldRotation;
+
+        hasCandidatePose =
+            true;
+
+        hasPublishedPreviewPose =
+            false;
+
+        return TryPublishCandidatePose(
+            true,
+            out result,
+            out failureReason
+        );
+    }
+
     private void PublishPreviewIfChanged()
     {
-        if (!hasCandidatePose ||
-            activeMember == null)
+        if (TryPublishCandidatePose(
+                false,
+                out _,
+                out RestaurantPlacementTransactionFailureReason
+                    failureReason))
         {
             return;
         }
 
-        if (hasPublishedPreviewPose &&
+        if (failureReason ==
+            RestaurantPlacementTransactionFailureReason.None)
+        {
+            return;
+        }
+
+        string message =
+            "No se pudo actualizar la previsualización. " +
+            "Motivo: " +
+            failureReason +
+            ".";
+
+        PublishMessage(message);
+        LogEvent(message);
+    }
+
+    private bool TryPublishCandidatePose(
+        bool force,
+        out RestaurantPlacementValidationResult result,
+        out RestaurantPlacementTransactionFailureReason
+            failureReason)
+    {
+        result =
+            default;
+
+        failureReason =
+            RestaurantPlacementTransactionFailureReason.None;
+
+        if (!hasCandidatePose ||
+            activeMember == null)
+        {
+            failureReason =
+                RestaurantPlacementTransactionFailureReason
+                    .NoActiveOperation;
+
+            return false;
+        }
+
+        if (transactionService == null)
+        {
+            failureReason =
+                RestaurantPlacementTransactionFailureReason
+                    .ValidationSystemUnavailable;
+
+            return false;
+        }
+
+        if (!force &&
+            hasPublishedPreviewPose &&
             ArePositionsEquivalent(
                 candidatePosition,
                 lastPublishedPosition
@@ -1670,13 +1796,11 @@ public sealed class RestaurantEditInteractionController :
                 lastPublishedRotation
             ))
         {
-            return;
+            result =
+                lastValidationResult;
+
+            return true;
         }
-
-        RestaurantPlacementValidationResult result;
-
-        RestaurantPlacementTransactionFailureReason
-            failureReason;
 
         linkedGroupService?.PreparePreviewPose(
             activeMember,
@@ -1694,17 +1818,11 @@ public sealed class RestaurantEditInteractionController :
 
         if (!previewed)
         {
-            string message =
-                "No se pudo actualizar la previsualización. " +
-                "Motivo: " +
-                failureReason +
-                ".";
+            placementSnapService?.SetCurrentSnapValidation(
+                false
+            );
 
-            PublishMessage(message);
-            LogEvent(message);
-
-            placementSnapService?.SetCurrentSnapValidation(false);
-            return;
+            return false;
         }
 
         lastPublishedPosition =
@@ -1713,7 +1831,8 @@ public sealed class RestaurantEditInteractionController :
         lastPublishedRotation =
             candidateRotation;
 
-        hasPublishedPreviewPose = true;
+        hasPublishedPreviewPose =
+            true;
 
         lastValidationResult =
             result;
@@ -1742,6 +1861,8 @@ public sealed class RestaurantEditInteractionController :
                 )
             );
         }
+
+        return true;
     }
 
     private void CommitActivePlacement()
