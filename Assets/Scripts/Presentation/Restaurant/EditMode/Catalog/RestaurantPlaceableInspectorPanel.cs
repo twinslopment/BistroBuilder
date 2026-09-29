@@ -35,6 +35,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private TMP_FontAsset semiBoldFont;
 
     private TMP_Text titleText;
+    private RectTransform previewSection;
     private Image previewImage;
     private TMP_Text nameText;
     private TMP_Text descriptionText;
@@ -199,7 +200,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(344f, 680f);
+        root.sizeDelta = new Vector2(316f, 560f);
 
         Image panelImage = rootObject.AddComponent<Image>();
         panelImage.color = Panel;
@@ -295,7 +296,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildPreview()
     {
-        RectTransform shell = CreateLayoutRow("Preview", 164f);
+        RectTransform shell = CreateLayoutRow("Preview", 132f);
+        previewSection = shell;
         Image background = shell.gameObject.AddComponent<Image>();
         background.color = new Color32(246, 242, 236, 255);
         ApplyRounded(background, 14);
@@ -303,7 +305,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         previewImage = CreateImage("Image", shell);
         previewImage.preserveAspect = true;
         previewImage.raycastTarget = false;
-        Stretch(previewImage.rectTransform, 18f, 18f, 10f, 10f);
+        Stretch(previewImage.rectTransform, 16f, 16f, 10f, 10f);
 
         Button favoriteButton = CreateTextButton(
             "Favorite",
@@ -338,7 +340,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildDetails()
     {
-        RectTransform section = CreateLayoutRow("Details", 116f);
+        RectTransform section = CreateLayoutRow("Details", 100f);
 
         nameText = CreateTmp(
             "Name",
@@ -446,7 +448,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildDimensions()
     {
-        RectTransform section = CreateLayoutRow("Dimensions", 56f);
+        RectTransform section = CreateLayoutRow("Dimensions", 48f);
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -482,7 +484,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildRules()
     {
-        RectTransform section = CreateLayoutRow("Rules", 108f);
+        RectTransform section = CreateLayoutRow("Rules", 96f);
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -518,7 +520,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildStatus()
     {
-        RectTransform box = CreateLayoutRow("Status", 60f);
+        RectTransform box = CreateLayoutRow("Status", 58f);
         statusBackground = box.gameObject.AddComponent<Image>();
         statusBackground.color = OliveSoft;
         ApplyRounded(statusBackground, 12);
@@ -615,6 +617,12 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         {
             previewImage.sprite = data.Preview;
             previewImage.enabled = data.Preview != null;
+        }
+
+        if (previewSection != null)
+        {
+            previewSection.gameObject.SetActive(
+                data.Preview != null);
         }
 
         if (priceText != null)
@@ -1022,12 +1030,29 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 : 1080f;
 
         float available =
-            Mathf.Max(420f, canvasHeight - topInset - bottomInset);
+            Mathf.Max(360f, canvasHeight - topInset - bottomInset);
+
+        if (content != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(
+                content);
+        }
+
+        float preferredHeight =
+            content != null
+                ? LayoutUtility.GetPreferredHeight(content) + 16f
+                : 520f;
+
+        float resolvedHeight =
+            Mathf.Clamp(
+                preferredHeight,
+                360f,
+                Mathf.Min(590f, available));
 
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(344f, Mathf.Min(690f, available));
+        root.sizeDelta = new Vector2(316f, resolvedHeight);
         root.anchoredPosition = new Vector2(-18f, -topInset);
     }
 
