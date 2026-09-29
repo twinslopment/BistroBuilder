@@ -32,6 +32,7 @@ public sealed class BistroBuilderEditChromeControl : MonoBehaviour,
         lastEnabled=button.interactable;Refresh();
     }
     public void SetSelected(bool value) {if(selected==value)return;selected=value;Refresh();}
+    void OnEnable(){Refresh();}
     void LateUpdate(){if(button!=null && lastEnabled!=button.IsInteractable()){lastEnabled=button.IsInteractable();Refresh();}}
     void Refresh()
     {
