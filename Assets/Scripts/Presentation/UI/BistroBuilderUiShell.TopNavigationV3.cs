@@ -81,12 +81,15 @@ public sealed partial class BistroBuilderUiShell
     private void LayoutApprovedTopBar(bool force=false)
     {
         if(topNavigation==null||approvedCells.Count!=10||shellRoot==null)return;
-        Vector2 viewport=shellRoot.rect.size;float scale=canvas!=null?Mathf.Max(.01f,canvas.scaleFactor):1;
+        Vector2 viewport=shellRoot.rect.size;
+        ResolveApprovedTopBarMetrics(
+            out float scale,
+            out float h,
+            out float margin,
+            out _);
+
         if(!force&&viewport==approvedLayoutSize&&Mathf.Abs(scale-approvedLayoutScale)<.001f)return;
         approvedLayoutSize=viewport;approvedLayoutScale=scale;
-        float physicalHeight=viewport.y*scale;
-        float h=Mathf.Clamp(physicalHeight*.089f,76,144)/scale;
-        float margin=Mathf.Clamp(viewport.x*.012f,8,24);
         topNavigation.anchorMin=new Vector2(0,1);topNavigation.anchorMax=new Vector2(1,1);topNavigation.pivot=new Vector2(.5f,1);
         topNavigation.anchoredPosition=new Vector2(0,-8/scale);topNavigation.sizeDelta=new Vector2(-margin*2,h);
         float width=viewport.x-margin*2;
@@ -110,6 +113,50 @@ public sealed partial class BistroBuilderUiShell
         }
         if(activityPanel!=null)activityPanel.anchoredPosition=new Vector2(activityPanel.anchoredPosition.x,-h-20/scale);
     }
+    /// <summary>
+    /// Métricas compartidas por la navegación normal y el chrome de edición.
+    /// Mantiene exactamente la misma altura física, margen lateral y escala
+    /// para que cambiar de modo no produzca un salto visual.
+    /// </summary>
+    private void ResolveApprovedTopBarMetrics(
+        out float scale,
+        out float height,
+        out float margin,
+        out float physicalWidth)
+    {
+        Vector2 viewport =
+            shellRoot != null && shellRoot.rect.size.sqrMagnitude > 1f
+                ? shellRoot.rect.size
+                : new Vector2(
+                    Mathf.Max(1f, Screen.width),
+                    Mathf.Max(1f, Screen.height));
+
+        scale =
+            canvas != null
+                ? Mathf.Max(.01f, canvas.scaleFactor)
+                : 1f;
+
+        float physicalHeight =
+            viewport.y * scale;
+
+        height =
+            Mathf.Clamp(
+                physicalHeight * .089f,
+                76f,
+                144f) / scale;
+
+        margin =
+            Mathf.Clamp(
+                viewport.x * .012f,
+                8f,
+                24f);
+
+        physicalWidth =
+            Mathf.Max(
+                1f,
+                (viewport.x - margin * 2f) * scale);
+    }
+
     private static TMP_Text EnsureApprovedHiddenText(Transform parent,string name,string initial)
     {
         var go=NewUi(name,parent);var text=go.AddComponent<TextMeshProUGUI>();text.text=initial;text.raycastTarget=false;go.SetActive(false);return text;
