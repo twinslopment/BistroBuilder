@@ -155,16 +155,12 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             !endOfDayService.TryResetForLegacyLoad(out error))
             return false;
 
-        SetWaiterScenePresence(true);
+        // Diseño inicial: el mundo debe estar limpio de personajes de servicio
+        // y preparado visual/arquitectónicamente según el perfil elegido.
+        SetWaiterScenePresence(false);
         SetPremisesFloorVisual(true);
-        if (editDocumentService != null &&
-            !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
+        if (!TryPrepareStartingPremises(premisesProfile, out error))
             return false;
-        if (premisesProfile == BistroBuilderStartingPremisesProfile.Empty &&
-            !TryPrepareEmptyPremises(out error))
-            return false;
-
-        if (premisesProfile == BistroBuilderStartingPremisesProfile.Essentials && !TryPrepareEssentials(out error)) return false;
 
         state = new BistroBuilderNewGameStateSnapshot
         {
@@ -631,6 +627,17 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
     {
         if (!BistroBuilderNewGameEngine.TryValidateSnapshot(snapshot, out error)) return false;
         state = snapshot.DeepClone();
+
+        if (state.setupCompleted)
+        {
+            // Presentation is derived from canonical state. It is safe to rebuild after
+            // a load and does not mutate saved placeables, BBSIS or the edit document.
+            BistroBuilderPremisesPresentationRuntime.Apply(
+                state.premisesProfile,
+                out _);
+            SetWaiterScenePresence(state.firstServiceStarted);
+        }
+
         StateChanged?.Invoke();
         return true;
     }
@@ -639,6 +646,7 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
     {
         state = new BistroBuilderNewGameStateSnapshot { initialSaveSlot = EffectiveSaveSlot };
         lastPreflight = new BistroBuilderOpeningPreflightReport();
+        BistroBuilderPremisesPresentationRuntime.Clear();
         error = string.Empty;
         StateChanged?.Invoke();
         return true;
