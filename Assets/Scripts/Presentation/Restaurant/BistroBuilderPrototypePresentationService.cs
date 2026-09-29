@@ -32,20 +32,19 @@ public sealed class BistroBuilderPrototypePresentationService :
     [SerializeField] private string tableMaterialResource =
         "BistroBuilder/Construction/Materials/Roble_marcos";
 
-    [SerializeField] private string neutralArchitectureMaterialResource =
-        "BistroBuilder/Construction/Materials/Enlucido_calido";
-
     [SerializeField] private string serviceMaterialResource =
         "BistroBuilder/Construction/Materials/Metal_grafito";
 
     [SerializeField] private RestaurantPlaceableCreationService
         creationService;
 
+    [SerializeField] private BistroBuilderNewGameOpeningService
+        openingService;
+
     private readonly HashSet<int> skinnedTableIds =
         new HashSet<int>();
 
     private Material tableMaterial;
-    private Material neutralArchitectureMaterial;
     private Material serviceMaterial;
 
     private void Awake()
@@ -105,6 +104,8 @@ public sealed class BistroBuilderPrototypePresentationService :
 
         if (calmExplicitTestGeometry)
             CalmExplicitPlaceholders();
+
+        ApplyOpeningPhasePresentation();
     }
 
     private void HandleCreationCommitted(
@@ -310,9 +311,8 @@ public sealed class BistroBuilderPrototypePresentationService :
         HideRendererOnly(
             GameObject.Find("PlacementObstacle_Test"));
 
-        ApplyMaterialToNamedObject(
-            "Kitchen_Test",
-            neutralArchitectureMaterial);
+        HideRendererOnly(
+            GameObject.Find("Kitchen_Test"));
 
         ApplyMaterialToNamedObject(
             "ProvisionalCounter",
@@ -337,9 +337,60 @@ public sealed class BistroBuilderPrototypePresentationService :
             {
                 ApplyMaterial(
                     candidate,
-                    tableMaterial);
+                    serviceMaterial != null
+                        ? serviceMaterial
+                        : tableMaterial);
             }
         }
+    }
+
+    private void ApplyOpeningPhasePresentation()
+    {
+        if (openingService == null)
+            return;
+
+        bool showWaiterVisuals =
+            openingService.Phase !=
+                BistroBuilderNewGamePhase.StartMenu &&
+            openingService.Phase !=
+                BistroBuilderNewGamePhase.InitialSetup;
+
+        Waiter[] waiters =
+            FindObjectsByType<Waiter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int index = 0;
+             index < waiters.Length;
+             index++)
+        {
+            Waiter waiter =
+                waiters[index];
+
+            if (waiter == null)
+                continue;
+
+            Renderer[] renderers =
+                waiter.GetComponentsInChildren<Renderer>(
+                    true);
+
+            for (int rendererIndex = 0;
+                 rendererIndex < renderers.Length;
+                 rendererIndex++)
+            {
+                Renderer renderer =
+                    renderers[rendererIndex];
+
+                if (renderer != null)
+                    renderer.enabled =
+                        showWaiterVisuals;
+            }
+        }
+    }
+
+    private void HandleOpeningStateChanged()
+    {
+        ApplyScenePresentation();
     }
 
     private static void HideRendererOnly(
@@ -413,27 +464,50 @@ public sealed class BistroBuilderPrototypePresentationService :
                     RestaurantPlaceableCreationService>(
                     FindObjectsInactive.Include);
         }
+
+        if (openingService == null)
+        {
+            openingService =
+                FindFirstObjectByType<
+                    BistroBuilderNewGameOpeningService>(
+                    FindObjectsInactive.Include);
+        }
     }
 
     private void Subscribe()
     {
-        if (creationService == null)
-            return;
+        if (creationService != null)
+        {
+            creationService.CreationCommitted -=
+                HandleCreationCommitted;
 
-        creationService.CreationCommitted -=
-            HandleCreationCommitted;
+            creationService.CreationCommitted +=
+                HandleCreationCommitted;
+        }
 
-        creationService.CreationCommitted +=
-            HandleCreationCommitted;
+        if (openingService != null)
+        {
+            openingService.StateChanged -=
+                HandleOpeningStateChanged;
+
+            openingService.StateChanged +=
+                HandleOpeningStateChanged;
+        }
     }
 
     private void Unsubscribe()
     {
-        if (creationService == null)
-            return;
+        if (creationService != null)
+        {
+            creationService.CreationCommitted -=
+                HandleCreationCommitted;
+        }
 
-        creationService.CreationCommitted -=
-            HandleCreationCommitted;
+        if (openingService != null)
+        {
+            openingService.StateChanged -=
+                HandleOpeningStateChanged;
+        }
     }
 
     private void LoadMaterials()
@@ -443,13 +517,6 @@ public sealed class BistroBuilderPrototypePresentationService :
             tableMaterial =
                 Resources.Load<Material>(
                     tableMaterialResource);
-        }
-
-        if (neutralArchitectureMaterial == null)
-        {
-            neutralArchitectureMaterial =
-                Resources.Load<Material>(
-                    neutralArchitectureMaterialResource);
         }
 
         if (serviceMaterial == null)
