@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.Rendering;
 
 /// <summary>
@@ -19,6 +20,14 @@ public sealed class BistroBuilderPrimitiveTablePresentationProxy : MonoBehaviour
     private Material presentationMaterial;
     private bool sourceWasEnabled;
     private Transform proxyRoot;
+
+    private readonly List<MeshRenderer>
+        proxyRenderers =
+            new List<MeshRenderer>(8);
+
+    private readonly MaterialPropertyBlock
+        sourcePropertyBlock =
+            new MaterialPropertyBlock();
 
     private static Mesh unitCubeMesh;
 
@@ -54,6 +63,11 @@ public sealed class BistroBuilderPrimitiveTablePresentationProxy : MonoBehaviour
         {
             BuildOrRefreshProxy();
         }
+    }
+
+    private void LateUpdate()
+    {
+        SynchronizeSourceVisualState();
     }
 
     private void OnDisable()
@@ -127,6 +141,7 @@ public sealed class BistroBuilderPrimitiveTablePresentationProxy : MonoBehaviour
 
         EnsureProxyRoot();
         ClearProxyChildren();
+        proxyRenderers.Clear();
 
         float tabletopThickness =
             Mathf.Clamp(
@@ -396,10 +411,41 @@ public sealed class BistroBuilderPrimitiveTablePresentationProxy : MonoBehaviour
         renderer.reflectionProbeUsage =
             ReflectionProbeUsage.BlendProbes;
 
+        proxyRenderers.Add(
+            renderer);
+
         /*
          * Intencionadamente no se añade ningún Collider.
          * El whitebox original conserva toda la autoridad física/espacial.
          */
+    }
+
+    private void SynchronizeSourceVisualState()
+    {
+        if (sourceRenderer == null ||
+            proxyRenderers.Count == 0)
+        {
+            return;
+        }
+
+        sourcePropertyBlock.Clear();
+
+        sourceRenderer.GetPropertyBlock(
+            sourcePropertyBlock);
+
+        for (int index = 0;
+             index < proxyRenderers.Count;
+             index++)
+        {
+            MeshRenderer renderer =
+                proxyRenderers[index];
+
+            if (renderer != null)
+            {
+                renderer.SetPropertyBlock(
+                    sourcePropertyBlock);
+            }
+        }
     }
 
     private void RestoreSource()
@@ -428,6 +474,7 @@ public sealed class BistroBuilderPrimitiveTablePresentationProxy : MonoBehaviour
             proxyRoot.gameObject;
 
         proxyRoot = null;
+        proxyRenderers.Clear();
 
         if (Application.isPlaying)
             Destroy(target);
