@@ -76,6 +76,16 @@ namespace BistroBuilder.Editor.Savic
         [MenuItem(InstallMenu, false, 151)]
         public static void InstallOrRepairFromMenu()
         {
+            InstallOrRepair();
+        }
+
+        public static void InstallOrRepairFromCommandLine()
+        {
+            InstallOrRepair();
+        }
+
+        private static void InstallOrRepair()
+        {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 throw new InvalidOperationException(
@@ -119,6 +129,16 @@ namespace BistroBuilder.Editor.Savic
 
         [MenuItem(ValidateMenu, false, 152)]
         public static void ValidateFromMenu()
+        {
+            ValidateOrThrow();
+        }
+
+        public static void ValidateFromCommandLine()
+        {
+            ValidateOrThrow();
+        }
+
+        private static void ValidateOrThrow()
         {
             if (!TryValidate(
                     out string message))
