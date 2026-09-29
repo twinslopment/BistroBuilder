@@ -30,7 +30,7 @@ public sealed partial class BistroBuilderUiShell
     static readonly Color EditChromeText = new Color32(36,39,35,255);
     static readonly Color EditChromeMuted = new Color32(110,109,105,255);
     static readonly Color EditChromeOlive = new Color32(103,128,70,255);
-    static readonly Color EditChromeLine = new Color32(226,221,212,255);
+    static readonly Color EditChromeLine = new Color(0.49f,0.34f,0.19f,0.22f);
     static Sprite editChromeRounded;
 
     void EnsureEditModeChrome()
