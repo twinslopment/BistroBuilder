@@ -10,6 +10,9 @@ public sealed partial class BistroBuilderUiShell
     public const string EditModeTopBarName = "BB_UIUX_EditModeTopBar";
     public const string EditModeBottomBarName = "BB_UIUX_EditModeBottomBar";
     RectTransform editModeTopBar, editModeBottomBar;
+    RectTransform editModeBrandBlock, editModeModeBlock, editModeClockBlock;
+    BistroBuilderTopBarArtwork editModeBrandArtwork;
+    TMP_Text editModeBrandFallback, editModeModeTitleText, editModeModeSubtitleText;
     TMP_Text editModeMoneyText, editModeClockText, editModeToolStatusText;
     BistroBuilderConstructionAuthoringRuntimeTool editModeConstructionTool;
     RestaurantPlaceableCatalogPanel editModeCatalogPanel;
@@ -44,6 +47,7 @@ public sealed partial class BistroBuilderUiShell
         editModeToolStatusText=ChromeText(hintRoot,"Hint","",13,EditChromeMuted);StretchChrome(editModeToolStatusText.rectTransform,12,4,12,4);
         hintRoot.gameObject.SetActive(false);
         BuildEditTopChrome(editModeTopBar);BuildEditBottomChrome(editModeBottomBar);
+        LayoutEditModeChrome();
         editModeTopBar.gameObject.SetActive(false);editModeBottomBar.gameObject.SetActive(false);
         editModeChromeBuilt=true;
     }
@@ -65,42 +69,528 @@ public sealed partial class BistroBuilderUiShell
         root.anchorMin=new Vector2(0,top?1:0);root.anchorMax=new Vector2(1,top?1:0);
         root.pivot=new Vector2(.5f,top?1:0);
         root.offsetMin=new Vector2(side,top?-edge-height:edge);root.offsetMax=new Vector2(-side,top?-edge:edge+height);
-        var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=EditChromeSurface;
-        var shadow=root.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.08f);shadow.effectDistance=new Vector2(0,-2);
-        var layout=root.gameObject.AddComponent<HorizontalLayoutGroup>();layout.padding=new RectOffset(14,14,6,6);layout.spacing=8;
-        layout.childAlignment=TextAnchor.MiddleCenter;layout.childControlWidth=layout.childControlHeight=true;
-        layout.childForceExpandWidth=false;layout.childForceExpandHeight=false;
+
+        if(top)
+        {
+            // Mismo soporte marfil/latón que la TopBar aprobada normal.
+            // El Image transparente solo captura el puntero en los huecos.
+            var hit=root.gameObject.AddComponent<Image>();
+            hit.color=Color.clear;
+            hit.raycastTarget=true;
+
+            var frame=NewUi("ApprovedFrame",root).AddComponent<BistroBuilderTopBarPlate>();
+            frame.raycastTarget=false;
+            StretchChrome(frame.rectTransform,0,0,0,0);
+            frame.transform.SetAsFirstSibling();
+        }
+        else
+        {
+            var bg=root.gameObject.AddComponent<Image>();
+            bg.sprite=EditChromeRoundedSprite();
+            bg.type=Image.Type.Sliced;
+            bg.color=EditChromeSurface;
+
+            var shadow=root.gameObject.AddComponent<Shadow>();
+            shadow.effectColor=new Color(0,0,0,.08f);
+            shadow.effectDistance=new Vector2(0,-2);
+        }
+
+        var layout=root.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.padding=new RectOffset(14,14,6,6);
+        layout.spacing=8;
+        layout.childAlignment=TextAnchor.MiddleCenter;
+        layout.childControlWidth=layout.childControlHeight=true;
+        layout.childForceExpandWidth=false;
+        layout.childForceExpandHeight=false;
         return root;
     }
+
     void BuildEditTopChrome(RectTransform root)
     {
-        ChromeButton(root,"EditHome",Symbol.Home,"",44,46,"Menú de partida: guardar, cargar y volver al inicio",()=>GetComponent<BistroBuilderOptionsScreen>()?.Open());
+        ChromeButton(root,"EditHome",Symbol.Home,"",44,46,
+            "Menú de partida: guardar, cargar y volver al inicio",
+            ()=>GetComponent<BistroBuilderOptionsScreen>()?.Open());
+
         ChromeDivider(root,34);
-        var brand=ChromeText(root,"EditBrand","Bistro<color=#5E7D44>Builder</color>",30,EditChromeText);
-        brand.font=BistroBuilderTypography.Title;brand.richText=true;ChromeWidth(brand.gameObject,221,48);
+
+        editModeBrandBlock=ChromeBlock(root,"EditBrand",221,50);
+        BuildEditModeBrand();
+
         ChromeDivider(root,34);
-        var mode=ChromeBlock(root,"EditModeTitle",278,50);
-        ChromeIcon(mode,"Pencil",Symbol.Pencil,EditChromeOlive,new Vector2(22,25),30);
-        var title=ChromeText(mode,"Title","Modo Edición",21,EditChromeText);ChromeBox(title.rectTransform,48,0,230,29);
-        var subtitle=ChromeText(mode,"Subtitle","Diseña el restaurante de tus sueños",12,EditChromeMuted);ChromeBox(subtitle.rectTransform,48,28,230,20);
+
+        editModeModeBlock=ChromeBlock(root,"EditModeTitle",278,50);
+        AddApprovedCellSurface(editModeModeBlock,true);
+        ChromeIcon(editModeModeBlock,"Pencil",Symbol.Pencil,EditChromeOlive,new Vector2(22,25),30);
+        editModeModeTitleText=ChromeText(editModeModeBlock,"Title","Modo Edición",21,EditChromeText);
+        ChromeBox(editModeModeTitleText.rectTransform,48,0,230,29);
+        editModeModeSubtitleText=ChromeText(
+            editModeModeBlock,
+            "Subtitle",
+            "Diseña el restaurante de tus sueños",
+            12,
+            EditChromeMuted);
+        ChromeBox(editModeModeSubtitleText.rectTransform,48,28,230,20);
+
         ChromeSpacer(root,"EditTopSpacerA");
-        ChromeButton(root,"EditUndo",Symbol.Undo,"",46,46,"Deshacer el último cambio",()=>{if(IsFurnitureTool())editModeFurnitureController?.TryUndoLastPlacement();else editModeConstructionTool?.TryUndo(out _);});
-        ChromeButton(root,"EditRedo",Symbol.Redo,"",46,46,"Rehacer el último cambio",()=>{if(IsFurnitureTool())editModeFurnitureController?.TryRedoLastPlacement();else editModeConstructionTool?.TryRedo(out _);});
-        ChromeButton(root,"EditPan",Symbol.Hand,"",48,46,"Explorar: arrastra con el botón central del ratón",()=>{editModeFurnitureController?.CancelActivePlacement();editModeConstructionTool?.SetMode(Mode.Select);});
-        ChromeButton(root,"EditMove",Symbol.Move,"",44,46,"Mover el artículo seleccionado",()=>editModeFurnitureController?.TryBeginMoveSelected());
+
+        ChromeButton(root,"EditUndo",Symbol.Undo,"",46,46,
+            "Deshacer el último cambio",
+            ()=>{if(IsFurnitureTool())editModeFurnitureController?.TryUndoLastPlacement();else editModeConstructionTool?.TryUndo(out _);});
+        ChromeButton(root,"EditRedo",Symbol.Redo,"",46,46,
+            "Rehacer el último cambio",
+            ()=>{if(IsFurnitureTool())editModeFurnitureController?.TryRedoLastPlacement();else editModeConstructionTool?.TryRedo(out _);});
+        ChromeButton(root,"EditPan",Symbol.Hand,"",48,46,
+            "Explorar: arrastra con el botón central del ratón",
+            ()=>{editModeFurnitureController?.CancelActivePlacement();editModeConstructionTool?.SetMode(Mode.Select);});
+        ChromeButton(root,"EditMove",Symbol.Move,"",44,46,
+            "Mover el artículo seleccionado",
+            ()=>editModeFurnitureController?.TryBeginMoveSelected());
+
         ChromeDivider(root,30);
-        ChromeButton(root,"EditGrid",Symbol.Grid,"",44,46,"Mostrar u ocultar la cuadrícula",()=>{if(editChromeGrid!=null)editChromeGrid.enabled=!editChromeGrid.enabled;});
+
+        ChromeButton(root,"EditGrid",Symbol.Grid,"",44,46,
+            "Mostrar u ocultar la cuadrícula",
+            ()=>{if(editChromeGrid!=null)editChromeGrid.enabled=!editChromeGrid.enabled;});
+
         ChromeDivider(root,30);
-        ChromeButton(root,"EditTerrain",Symbol.Terrain,"",44,46,"Dibujar una habitación arrastrando sobre el terreno",()=>{editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Walls);editModeConstructionTool?.SetMode(Mode.Room);});
-        var paint=ChromeButton(root,"EditPaint",Symbol.Paint,"",48,46,"Abrir catálogo de superficies",()=>editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Surfaces));
+
+        ChromeButton(root,"EditTerrain",Symbol.Terrain,"",44,46,
+            "Dibujar una habitación arrastrando sobre el terreno",
+            ()=>{editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Walls);editModeConstructionTool?.SetMode(Mode.Room);});
+        ChromeButton(root,"EditPaint",Symbol.Paint,"",48,46,
+            "Abrir catálogo de superficies",
+            ()=>editModeCatalogPanel?.SelectSection(RestaurantEditCatalogSection.Surfaces));
+
         ChromeSpacer(root,"EditTopSpacerB");
-        var clock=ChromeBlock(root,"EditClock",132,46);ChromeIcon(clock,"Sun",Symbol.Sun,new Color32(246,171,40,255),new Vector2(17,23),31);
-        editModeClockText=ChromeText(clock,"Time","—",16,EditChromeMuted);ChromeBox(editModeClockText.rectTransform,39,0,93,46);
+
+        editModeClockBlock=ChromeBlock(root,"EditClock",132,46);
+        ChromeIcon(editModeClockBlock,"Sun",Symbol.Sun,new Color32(196,132,42,255),new Vector2(17,23),31);
+        editModeClockText=ChromeText(editModeClockBlock,"Time","—",16,EditChromeMuted);
+        ChromeBox(editModeClockText.rectTransform,39,0,93,46);
+
         ChromeDivider(root,34);
-        editModeMoneyText=ChromeText(root,"EditMoney","—",22,EditChromeOlive);editModeMoneyText.font=BistroBuilderTypography.Emphasis;ChromeWidth(editModeMoneyText.gameObject,135,46);
+
+        editModeMoneyText=ChromeText(root,"EditMoney","—",22,EditChromeOlive);
+        editModeMoneyText.font=BistroBuilderTypography.Emphasis;
+        ChromeWidth(editModeMoneyText.gameObject,135,46);
+
         ChromeDivider(root,34);
-        ChromeButton(root,"EditPlay",Symbol.Play,"",49,46,"Terminar la edición y volver al restaurante",HandleEditModeClicked,false,false,EditChromeOlive);
+
+        ChromeButton(root,"EditPlay",Symbol.Play,"",49,46,
+            "Terminar la edición y volver al restaurante",
+            HandleEditModeClicked,false,false,EditChromeOlive);
     }
+
+    void BuildEditModeBrand()
+    {
+        if(editModeBrandBlock==null)return;
+
+        if(approvedArt==null)
+        {
+            TextAsset catalog=
+                Resources.Load<TextAsset>(
+                    "BistroBuilder/UI/TopBar/Parts/catalog");
+            if(catalog!=null)
+                approvedArt=
+                    JsonUtility.FromJson<BistroBuilderTopBarArtCatalog>(
+                        catalog.text);
+        }
+
+        if(approvedArt!=null &&
+            approvedArt.entries!=null &&
+            approvedArt.entries.Length>10)
+        {
+            editModeBrandArtwork=
+                CreateApprovedArtwork(
+                    editModeBrandBlock,
+                    "EditBrandArtwork",
+                    10);
+            return;
+        }
+
+        // Fallback únicamente si el arte aprobado no puede resolverse.
+        editModeBrandFallback=
+            ChromeText(
+                editModeBrandBlock,
+                "EditBrandFallback",
+                "BistroBuilder",
+                24,
+                new Color32(73,62,47,255));
+        editModeBrandFallback.font=
+            BistroBuilderTypography.Title;
+        editModeBrandFallback.alignment=
+            TextAlignmentOptions.Center;
+        StretchChrome(
+            editModeBrandFallback.rectTransform,
+            4,2,4,2);
+    }
+
+    BistroBuilderTopBarPlate AddApprovedCellSurface(
+        RectTransform host,
+        bool selected=false)
+    {
+        if(host==null)return null;
+
+        var go=NewUi("ApprovedCell",host);
+        var plate=go.AddComponent<BistroBuilderTopBarPlate>();
+        plate.Cell=true;
+        plate.raycastTarget=false;
+        StretchChrome(plate.rectTransform,0,0,0,0);
+        plate.transform.SetAsFirstSibling();
+        plate.State(0f,selected?1f:0f,0f);
+        return plate;
+    }
+
+    void LayoutEditModeChrome()
+    {
+        if(editModeTopBar==null||shellRoot==null)return;
+
+        ResolveApprovedTopBarMetrics(
+            out float scale,
+            out float height,
+            out float margin,
+            out float physicalWidth);
+
+        editModeTopBar.anchorMin=new Vector2(0,1);
+        editModeTopBar.anchorMax=new Vector2(1,1);
+        editModeTopBar.pivot=new Vector2(.5f,1);
+        editModeTopBar.anchoredPosition=
+            new Vector2(0,-8f/scale);
+        editModeTopBar.sizeDelta=
+            new Vector2(-margin*2f,height);
+
+        HorizontalLayoutGroup layout=
+            editModeTopBar.GetComponent<HorizontalLayoutGroup>();
+        if(layout!=null)
+        {
+            int horizontal=Mathf.Max(4,Mathf.RoundToInt(8f/scale));
+            int vertical=Mathf.Max(3,Mathf.RoundToInt(6f/scale));
+            layout.padding=
+                new RectOffset(
+                    horizontal,
+                    horizontal,
+                    vertical,
+                    vertical);
+            layout.spacing=
+                Mathf.Max(2f,5f/scale);
+        }
+
+        bool medium=physicalWidth<1500f;
+        bool compact=physicalWidth<1120f;
+        bool veryCompact=physicalWidth<900f;
+
+        float brandWidth=
+            veryCompact?112f:
+            compact?146f:
+            medium?182f:
+            221f;
+
+        float modeWidth=
+            veryCompact?142f:
+            compact?174f:
+            medium?220f:
+            278f;
+
+        LayoutEditBrand(
+            brandWidth,
+            50f,
+            scale);
+
+        LayoutEditModeIdentity(
+            modeWidth,
+            50f,
+            scale,
+            compact);
+
+        LayoutEditTopIconButton("EditHome",44f,28f,scale);
+        LayoutEditTopIconButton("EditUndo",46f,28f,scale);
+        LayoutEditTopIconButton("EditRedo",46f,28f,scale);
+        LayoutEditTopIconButton("EditPan",48f,28f,scale);
+        LayoutEditTopIconButton("EditMove",44f,28f,scale);
+        LayoutEditTopIconButton("EditGrid",44f,28f,scale);
+        LayoutEditTopIconButton("EditTerrain",44f,28f,scale);
+        LayoutEditTopIconButton("EditPaint",48f,28f,scale);
+        LayoutEditTopIconButton("EditPlay",49f,28f,scale);
+
+        SetChromeVisible(
+            "EditPan",
+            !medium);
+        SetChromeVisible(
+            "EditTerrain",
+            !medium);
+        SetChromeVisible(
+            "EditPaint",
+            physicalWidth>=1320f);
+
+        // En anchuras compactas la acción Mover vive en el inspector derecho.
+        if(compact)
+            SetChromeVisible(
+                "EditMove",
+                false);
+
+        if(editModeClockBlock!=null)
+        {
+            bool showClock=
+                physicalWidth>=1260f;
+
+            editModeClockBlock.gameObject.SetActive(
+                showClock);
+
+            if(showClock)
+                LayoutEditClock(
+                    scale);
+        }
+
+        if(editModeMoneyText!=null)
+        {
+            float moneyWidth=
+                veryCompact?96f:
+                compact?110f:
+                135f;
+
+            ChromeResize(
+                editModeMoneyText.gameObject,
+                moneyWidth/scale,
+                46f/scale);
+
+            editModeMoneyText.fontSize=
+                Mathf.Clamp(
+                    20f/scale,
+                    18f,
+                    28f);
+        }
+
+        // La barra inferior sigue siendo funcional; solo ajustamos el bloque
+        // informativo para no competir con acciones en resoluciones estrechas.
+        Transform venue=
+            editModeBottomBar!=null
+                ? editModeBottomBar.Find("EditVenue")
+                : null;
+
+        if(venue!=null)
+            venue.gameObject.SetActive(
+                physicalWidth>=1540f);
+    }
+
+    void LayoutEditBrand(
+        float physicalWidth,
+        float physicalHeight,
+        float scale)
+    {
+        if(editModeBrandBlock==null)return;
+
+        ChromeResize(
+            editModeBrandBlock.gameObject,
+            physicalWidth/scale,
+            physicalHeight/scale);
+
+        if(editModeBrandArtwork!=null)
+        {
+            float availableW=
+                Mathf.Max(
+                    20f,
+                    physicalWidth-12f);
+            float availableH=
+                Mathf.Max(
+                    18f,
+                    physicalHeight-8f);
+            float artH=
+                Mathf.Min(
+                    availableH,
+                    availableW/
+                    Mathf.Max(.01f,editModeBrandArtwork.Aspect));
+            float artW=
+                artH*editModeBrandArtwork.Aspect;
+
+            PlaceHeader(
+                editModeBrandArtwork.rectTransform,
+                (physicalWidth-artW)/(2f*scale),
+                (physicalHeight-artH)/(2f*scale),
+                artW/scale,
+                artH/scale);
+        }
+
+        if(editModeBrandFallback!=null)
+            editModeBrandFallback.fontSize=
+                Mathf.Clamp(
+                    22f/scale,
+                    18f,
+                    30f);
+    }
+
+    void LayoutEditModeIdentity(
+        float physicalWidth,
+        float physicalHeight,
+        float scale,
+        bool compact)
+    {
+        if(editModeModeBlock==null)return;
+
+        ChromeResize(
+            editModeModeBlock.gameObject,
+            physicalWidth/scale,
+            physicalHeight/scale);
+
+        RectTransform pencil=
+            editModeModeBlock.Find("Pencil")
+                as RectTransform;
+
+        if(pencil!=null)
+        {
+            float size=compact?24f:28f;
+            ChromeBox(
+                pencil,
+                10f/scale,
+                (physicalHeight-size)/(2f*scale),
+                size/scale,
+                size/scale);
+        }
+
+        float textLeft=
+            compact?40f:46f;
+
+        if(editModeModeTitleText!=null)
+        {
+            editModeModeTitleText.fontSize=
+                Mathf.Clamp(
+                    (compact?17f:19f)/scale,
+                    15f,
+                    27f);
+
+            ChromeBox(
+                editModeModeTitleText.rectTransform,
+                textLeft/scale,
+                (compact?10f:5f)/scale,
+                Mathf.Max(
+                    30f,
+                    physicalWidth-textLeft-8f)/scale,
+                (compact?30f:24f)/scale);
+        }
+
+        if(editModeModeSubtitleText!=null)
+        {
+            editModeModeSubtitleText.gameObject.SetActive(
+                !compact);
+
+            if(!compact)
+            {
+                editModeModeSubtitleText.fontSize=
+                    Mathf.Clamp(
+                        11f/scale,
+                        10f,
+                        17f);
+
+                ChromeBox(
+                    editModeModeSubtitleText.rectTransform,
+                    textLeft/scale,
+                    27f/scale,
+                    Mathf.Max(
+                        30f,
+                        physicalWidth-textLeft-8f)/scale,
+                    18f/scale);
+            }
+        }
+    }
+
+    void LayoutEditClock(float scale)
+    {
+        if(editModeClockBlock==null)return;
+
+        ChromeResize(
+            editModeClockBlock.gameObject,
+            126f/scale,
+            46f/scale);
+
+        RectTransform sun=
+            editModeClockBlock.Find("Sun")
+                as RectTransform;
+
+        if(sun!=null)
+            ChromeBox(
+                sun,
+                5f/scale,
+                8f/scale,
+                30f/scale,
+                30f/scale);
+
+        if(editModeClockText!=null)
+        {
+            editModeClockText.fontSize=
+                Mathf.Clamp(
+                    15f/scale,
+                    13f,
+                    22f);
+
+            ChromeBox(
+                editModeClockText.rectTransform,
+                39f/scale,
+                0,
+                82f/scale,
+                46f/scale);
+        }
+    }
+
+    void LayoutEditTopIconButton(
+        string key,
+        float physicalWidth,
+        float physicalIconSize,
+        float scale)
+    {
+        if(!editChromeButtons.TryGetValue(
+                key,
+                out Button button)||
+            button==null)
+        {
+            return;
+        }
+
+        ChromeResize(
+            button.gameObject,
+            physicalWidth/scale,
+            46f/scale);
+
+        RectTransform icon=
+            button.transform.Find("Icon")
+                as RectTransform;
+
+        if(icon==null)return;
+
+        icon.anchorMin=
+            icon.anchorMax=
+            icon.pivot=
+                new Vector2(.5f,.5f);
+        icon.anchoredPosition=
+            Vector2.zero;
+        icon.sizeDelta=
+            new Vector2(
+                physicalIconSize/scale,
+                physicalIconSize/scale);
+    }
+
+    static void ChromeResize(
+        GameObject go,
+        float width,
+        float height)
+    {
+        if(go==null)return;
+
+        LayoutElement element=
+            go.GetComponent<LayoutElement>();
+
+        if(element==null)
+            element=
+                go.AddComponent<LayoutElement>();
+
+        element.minWidth=
+            element.preferredWidth=
+                Mathf.Max(1f,width);
+        element.minHeight=
+            element.preferredHeight=
+                Mathf.Max(1f,height);
+        element.flexibleWidth=0f;
+        element.flexibleHeight=0f;
+    }
+
     void BuildEditBottomChrome(RectTransform root)
     {
         var venue=ChromeBlock(root,"EditVenue",330,64);
@@ -214,13 +704,42 @@ public sealed partial class BistroBuilderUiShell
     }
     void RefreshEditModeChrome(bool editing,bool managing)
     {
-        EnsureEditModeChrome();bool visible=editing&&!managing;
+        EnsureEditModeChrome();
+        bool visible=editing&&!managing;
         ReconcileOverlayVisibility();
-        if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
-        if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
-        if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);
-        if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!editing);
-        if(!visible){if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
+
+        if(editModeTopBar!=null)
+            editModeTopBar.gameObject.SetActive(
+                visible);
+
+        if(editModeBottomBar!=null)
+            editModeBottomBar.gameObject.SetActive(
+                visible);
+
+        // Las pantallas de gestión conservan la navegación global incluso si se
+        // abrieron desde Modo Edición. Al volver al viewport reaparece el chrome
+        // de edición sin duplicar barras ni dejar al jugador sin navegación.
+        if(topNavigation!=null)
+            topNavigation.gameObject.SetActive(
+                !editing||managing);
+
+        if(bottomOperations!=null)
+            bottomOperations.gameObject.SetActive(
+                !editing);
+
+        if(visible&&editModeTopBar!=null)
+            editModeTopBar.SetAsLastSibling();
+        else if(topNavigation!=null&&topNavigation.gameObject.activeSelf)
+            topNavigation.SetAsLastSibling();
+
+        LayoutEditModeChrome();
+
+        if(!visible)
+        {
+            if(editModeToolStatusText!=null)
+                editModeToolStatusText.transform.parent.gameObject.SetActive(false);
+            return;
+        }
         ResolveEditChrome();
         editModeMoneyText.text=finance!=null?BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents):"—";
         editModeClockText.text=EditChromeClock();
@@ -306,10 +825,7 @@ public sealed partial class BistroBuilderUiShell
             editChromeButtons["EditApplyDraft"].interactable=true;
         }
 
-        // En anchuras reducidas el bloque de terreno cede espacio al viewport y
-        // a las acciones activas. No se escalan textos hasta volverlos ilegibles.
-        Transform venue=editModeBottomBar!=null?editModeBottomBar.Find("EditVenue"):null;
-        if(venue!=null)venue.gameObject.SetActive(Screen.width>=1540);
+        LayoutEditModeChrome();
     }
     string EditChromeClock()
     {
@@ -346,7 +862,18 @@ public sealed partial class BistroBuilderUiShell
     }
     Button ChromeButton(Transform parent,string key,Symbol symbol,string title,float width,float height,string help,UnityEngine.Events.UnityAction action,bool outlined=false,bool vertical=false,Color? tint=null)
     {
-        var root=ChromeBlock(parent,key,width,height);var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=Color.clear;
+        var root=ChromeBlock(parent,key,width,height);
+        var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=Color.clear;
+
+        bool topBarControl=
+            editModeTopBar!=null&&
+            parent==editModeTopBar;
+
+        if(topBarControl)
+            AddApprovedCellSurface(
+                root,
+                false);
+
         var button=root.gameObject.AddComponent<Button>();button.targetGraphic=bg;button.transition=Selectable.Transition.None;
         button.navigation=new UnityEngine.UI.Navigation{mode=UnityEngine.UI.Navigation.Mode.Automatic};if(action!=null)button.onClick.AddListener(action);
         var icon=ChromeIcon(root,"Icon",symbol,tint??EditChromeMuted,vertical?new Vector2(width/2,23):string.IsNullOrEmpty(title)?new Vector2(width/2,height/2):new Vector2(26,height/2),vertical?28:outlined?26:30);
@@ -359,7 +886,7 @@ public sealed partial class BistroBuilderUiShell
     TMP_Text ChromeText(Transform parent,string name,string value,float size,Color color)
     {var text=NewUi(name,parent).AddComponent<TextMeshProUGUI>();text.font=BistroBuilderTypography.Body;text.text=value;text.fontSize=size;text.color=color;text.alignment=TextAlignmentOptions.MidlineLeft;text.raycastTarget=false;text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Ellipsis;return text;}
     RectTransform ChromeBlock(Transform parent,string name,float width,float height){var r=NewUi(name,parent).GetComponent<RectTransform>();ChromeWidth(r.gameObject,width,height);return r;}
-    static void ChromeWidth(GameObject go,float width,float height){var e=go.AddComponent<LayoutElement>();e.minWidth=e.preferredWidth=width;e.minHeight=e.preferredHeight=height;e.flexibleWidth=0;e.flexibleHeight=0;}
+    static void ChromeWidth(GameObject go,float width,float height){var e=go.GetComponent<LayoutElement>()??go.AddComponent<LayoutElement>();e.minWidth=e.preferredWidth=width;e.minHeight=e.preferredHeight=height;e.flexibleWidth=0;e.flexibleHeight=0;}
     static void ChromeBox(RectTransform r,float x,float y,float w,float h){r.anchorMin=r.anchorMax=new Vector2(0,1);r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);}
     static void StretchChrome(RectTransform r,float left,float bottom,float right,float top){r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;r.offsetMin=new Vector2(left,bottom);r.offsetMax=new Vector2(-right,-top);}
     void ChromeSpacer(Transform parent,string name){var e=NewUi(name,parent).AddComponent<LayoutElement>();e.minWidth=0;e.preferredWidth=0;e.flexibleWidth=1;}
