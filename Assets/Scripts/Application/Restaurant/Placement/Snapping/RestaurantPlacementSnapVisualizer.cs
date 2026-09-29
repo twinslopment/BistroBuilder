@@ -42,15 +42,15 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
     [SerializeField]
     [Range(0.10f, 1f)]
-    private float inactiveOpacity = 0.42f;
+    private float inactiveOpacity = 0.30f;
 
     [SerializeField]
-    [Range(0.05f, 0.60f)]
-    private float capturedFillOpacity = 0.34f;
+    [Range(0.05f, 0.70f)]
+    private float capturedFillOpacity = 0.52f;
 
     [SerializeField]
-    [Range(0.25f, 1.50f)]
-    private float capturedScaleMultiplier = 1.18f;
+    [Range(0.25f, 1.60f)]
+    private float capturedScaleMultiplier = 1.30f;
 
     [Header("Legibilidad multirresolución")]
 
@@ -76,7 +76,7 @@ public sealed class RestaurantPlacementSnapVisualizer :
     )]
     [SerializeField]
     [Range(12f, 96f)]
-    private float minimumCapturedDiameterPixels = 34f;
+    private float minimumCapturedDiameterPixels = 42f;
 
     [Tooltip(
         "Margen mundial añadido alrededor del destino capturado para " +
@@ -84,7 +84,7 @@ public sealed class RestaurantPlacementSnapVisualizer :
     )]
     [SerializeField]
     [Min(0f)]
-    private float capturedWorldPadding = 0.22f;
+    private float capturedWorldPadding = 0.26f;
 
     [Tooltip(
         "Límite de compensación para evitar indicadores gigantes en " +
@@ -104,7 +104,7 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
     [SerializeField]
     [Range(0.10f, 1f)]
-    private float contrastOpacity = 0.58f;
+    private float contrastOpacity = 0.66f;
 
     [SerializeField]
     [Range(1f, 2f)]
@@ -178,10 +178,49 @@ public sealed class RestaurantPlacementSnapVisualizer :
 
     private void Awake()
     {
+        ApplyCommercialPresentationFloor();
         CacheVisualizationCameraIfNeeded();
         EnsureResources();
         EnsurePool();
         HideAll();
+    }
+
+    private void ApplyCommercialPresentationFloor()
+    {
+        /*
+         * Escenas antiguas pueden conservar valores serializados previos.
+         * Estos límites son de Presentation exclusivamente: no alteran radios
+         * de captura, prioridades ni la pose que decide el SnapService.
+         */
+        inactiveOpacity =
+            Mathf.Min(
+                inactiveOpacity,
+                0.30f);
+
+        capturedFillOpacity =
+            Mathf.Max(
+                capturedFillOpacity,
+                0.52f);
+
+        capturedScaleMultiplier =
+            Mathf.Max(
+                capturedScaleMultiplier,
+                1.30f);
+
+        minimumCapturedDiameterPixels =
+            Mathf.Max(
+                minimumCapturedDiameterPixels,
+                42f);
+
+        capturedWorldPadding =
+            Mathf.Max(
+                capturedWorldPadding,
+                0.26f);
+
+        contrastOpacity =
+            Mathf.Max(
+                contrastOpacity,
+                0.66f);
     }
 
     private void OnDisable()
