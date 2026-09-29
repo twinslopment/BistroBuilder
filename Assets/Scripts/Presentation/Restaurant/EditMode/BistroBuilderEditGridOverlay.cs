@@ -14,10 +14,18 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private Renderer editableFloorRenderer;
     [SerializeField] private MeshFilter editableFloorMeshFilter;
-    [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.20f);
-    [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.34f);
-    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.014f;
-    [SerializeField, Min(0.002f)] private float majorLineWidth = 0.016f;
+    [SerializeField] private Color minorColor = new Color(0.92f, 0.94f, 0.92f, 0.085f);
+    [SerializeField] private Color majorColor = new Color(0.92f, 0.94f, 0.92f, 0.17f);
+    [SerializeField, Min(0.002f)] private float minorLineWidth = 0.006f;
+    [SerializeField, Min(0.002f)] private float majorLineWidth = 0.009f;
+
+    [Header("Lectura adaptativa")]
+    [SerializeField] private bool adaptToCamera = true;
+    [SerializeField, Min(0.1f)] private float referenceOrthographicSize = 7f;
+    [SerializeField, Min(0.1f)] private float referencePerspectiveDistance = 12f;
+    [SerializeField, Range(0f, 1f)] private float farMinorOpacity = 0.18f;
+    [SerializeField, Range(0f, 1f)] private float farMajorOpacity = 0.62f;
+    [SerializeField, Min(0.05f)] private float refreshInterval = 0.12f;
 
     private GameObject gridRoot;
     private Mesh minorMesh;
@@ -26,6 +34,11 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     private Material majorMaterial;
     private int minorLineCount;
     private int majorLineCount;
+    private Camera cachedCamera;
+    private float nextCameraResolveAt;
+    private float nextVisualRefreshAt;
+    private float appliedMinorOpacity = -1f;
+    private float appliedMajorOpacity = -1f;
 
     public bool IsGridVisible => gridRoot != null && gridRoot.activeSelf;
     public float GridSpacing => MinorSpacing;
@@ -61,6 +74,27 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
     {
         Unsubscribe();
         if (gridRoot != null) gridRoot.SetActive(false);
+        appliedMinorOpacity = -1f;
+        appliedMajorOpacity = -1f;
+    }
+
+    private void Update()
+    {
+        if (!adaptToCamera ||
+            gridRoot == null ||
+            !gridRoot.activeSelf ||
+            Time.unscaledTime < nextVisualRefreshAt)
+        {
+            return;
+        }
+
+        nextVisualRefreshAt =
+            Time.unscaledTime +
+            Mathf.Max(
+                0.05f,
+                refreshInterval);
+
+        ApplyAdaptiveGridPresentation();
     }
 
     private void OnDestroy()
@@ -148,7 +182,10 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
 
         ConfigureLayer("Minor", minorMesh, ref minorMaterial, minorColor, -5);
         ConfigureLayer("Major", majorMesh, ref majorMaterial, majorColor, -4);
+        appliedMinorOpacity = -1f;
+        appliedMajorOpacity = -1f;
         SyncVisibility();
+        ApplyAdaptiveGridPresentation();
     }
 
     private void EnsureRootOnly()
@@ -323,6 +360,127 @@ public sealed class BistroBuilderEditGridOverlay : MonoBehaviour
         renderer.lightProbeUsage = LightProbeUsage.Off;
         renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
         renderer.sortingOrder = sortingOrder;
+    }
+
+    private void ApplyAdaptiveGridPresentation()
+    {
+        float minorMultiplier = 1f;
+        float majorMultiplier = 1f;
+
+        Camera camera =
+            ResolveCamera();
+
+        if (adaptToCamera &&
+            camera != null)
+        {
+            float scale;
+
+            if (camera.orthographic)
+            {
+                scale =
+                    camera.orthographicSize /
+                    Mathf.Max(
+                        0.1f,
+                        referenceOrthographicSize);
+            }
+            else
+            {
+                Vector3 focus =
+                    editableFloorRenderer != null
+                        ? editableFloorRenderer.bounds.center
+                        : transform.position;
+
+                float distance =
+                    Vector3.Distance(
+                        camera.transform.position,
+                        focus);
+
+                scale =
+                    distance /
+                    Mathf.Max(
+                        0.1f,
+                        referencePerspectiveDistance);
+            }
+
+            float farFactor =
+                Mathf.InverseLerp(
+                    1f,
+                    2.4f,
+                    scale);
+
+            minorMultiplier =
+                Mathf.Lerp(
+                    1f,
+                    farMinorOpacity,
+                    farFactor);
+
+            majorMultiplier =
+                Mathf.Lerp(
+                    1f,
+                    farMajorOpacity,
+                    farFactor);
+        }
+
+        if (!Mathf.Approximately(
+                appliedMinorOpacity,
+                minorMultiplier))
+        {
+            Color color =
+                minorColor;
+
+            color.a *=
+                minorMultiplier;
+
+            SetMaterialColor(
+                minorMaterial,
+                color);
+
+            appliedMinorOpacity =
+                minorMultiplier;
+        }
+
+        if (!Mathf.Approximately(
+                appliedMajorOpacity,
+                majorMultiplier))
+        {
+            Color color =
+                majorColor;
+
+            color.a *=
+                majorMultiplier;
+
+            SetMaterialColor(
+                majorMaterial,
+                color);
+
+            appliedMajorOpacity =
+                majorMultiplier;
+        }
+    }
+
+    private Camera ResolveCamera()
+    {
+        if (cachedCamera != null &&
+            cachedCamera.isActiveAndEnabled)
+        {
+            return cachedCamera;
+        }
+
+        if (Time.unscaledTime <
+            nextCameraResolveAt)
+        {
+            return null;
+        }
+
+        nextCameraResolveAt =
+            Time.unscaledTime + 1f;
+
+        cachedCamera =
+            Camera.main != null
+                ? Camera.main
+                : FindFirstObjectByType<Camera>();
+
+        return cachedCamera;
     }
 
     private static Material CreateGridMaterial(string name, Color color)
