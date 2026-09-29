@@ -163,6 +163,7 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         SetLegacyTestGeometryVisuals(false);
         ApplyLegacyFixturePresentation();
         SetWaiterScenePresence(true);
+        SetWaiterSceneVisuals(false);
         SetPremisesFloorVisual(true);
         if (editDocumentService != null &&
             !editDocumentService.ReplaceCommittedForLoad(new BistroBuilderEditDocument(), out error))
@@ -327,6 +328,7 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             return false;
         }
         SetWaiterScenePresence(true);
+        SetWaiterSceneVisuals(true);
         if (serviceStateService.IsClosed && !serviceStateService.TryBeginPreparation())
         {
             error = "No pudo comenzar la preparacion del primer servicio.";
@@ -692,6 +694,37 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         Waiter[] waiters = UnityEngine.Object.FindObjectsByType<Waiter>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         for (int i = 0; i < waiters.Length; i++)
             if (waiters[i] != null) waiters[i].gameObject.SetActive(visible);
+    }
+
+    private static void SetWaiterSceneVisuals(bool visible)
+    {
+        Waiter[] waiters =
+            UnityEngine.Object.FindObjectsByType<Waiter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int i = 0;
+             i < waiters.Length;
+             i++)
+        {
+            Waiter waiter =
+                waiters[i];
+
+            if (waiter == null)
+                continue;
+
+            Renderer[] renderers =
+                waiter.GetComponentsInChildren<Renderer>(
+                    true);
+
+            for (int r = 0;
+                 r < renderers.Length;
+                 r++)
+            {
+                if (renderers[r] != null)
+                    renderers[r].enabled = visible;
+            }
+        }
     }
 
     private static bool HasFunctionalZone(BistroBuilderEditDocument document, string zoneDefinitionId)
