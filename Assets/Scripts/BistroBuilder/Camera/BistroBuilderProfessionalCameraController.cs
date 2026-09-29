@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace BistroBuilder.CameraSystem
 {
@@ -32,6 +33,9 @@ namespace BistroBuilder.CameraSystem
         [SerializeField] private bool inputEnabled = true;
         [SerializeField] private bool initializeFromCurrentCamera = true;
         [SerializeField] private float fallbackGroundHeight = 0.0f;
+
+        [Header("Presentación PC")]
+        [SerializeField] private bool enforceHighQualityPresentation = true;
 
         private bool initialized;
         private Vector3 targetFocusPoint;
@@ -138,12 +142,42 @@ namespace BistroBuilder.CameraSystem
         private void Awake()
         {
             ResolveReferences();
+            ConfigurePresentationQuality();
         }
 
         private void OnEnable()
         {
             ResolveReferences();
+            ConfigurePresentationQuality();
             InitializeIfPossible();
+        }
+
+        private void ConfigurePresentationQuality()
+        {
+            if (!enforceHighQualityPresentation ||
+                controlledCamera == null)
+            {
+                return;
+            }
+
+            controlledCamera.allowHDR = true;
+            controlledCamera.allowMSAA = true;
+
+            UniversalAdditionalCameraData data =
+                controlledCamera.GetUniversalAdditionalCameraData();
+
+            if (data == null)
+            {
+                return;
+            }
+
+            data.renderPostProcessing = true;
+            data.antialiasing =
+                AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+            data.antialiasingQuality =
+                AntialiasingQuality.High;
+            data.dithering = true;
+            data.stopNaN = true;
         }
 
         private void LateUpdate()
