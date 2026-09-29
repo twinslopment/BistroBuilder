@@ -18,6 +18,7 @@ public sealed partial class BistroBuilderUiShell
     RestaurantPlacementHistoryService editChromeHistory;
     BistroBuilderEditGridOverlay editChromeGrid;
     BistroBuilderConstructionPlayerPanel editConstructionPanel;
+    RestaurantPlaceableInspectorPanel editPlaceableInspector;
     bool editModeChromeBuilt;
     float editChromeMessageUntil;
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
@@ -55,6 +56,7 @@ public sealed partial class BistroBuilderUiShell
         if(editChromeDeletion==null)editChromeDeletion=FindScene<RestaurantPlaceableDeletionService>();
         if(editChromeGrid==null)editChromeGrid=FindScene<BistroBuilderEditGridOverlay>();
         if(editConstructionPanel==null)editConstructionPanel=FindScene<BistroBuilderConstructionPlayerPanel>();
+        if(editPlaceableInspector==null)editPlaceableInspector=FindScene<RestaurantPlaceableInspectorPanel>();
     }
     RectTransform EditBar(string name,bool top,float side,float edge,float height)
     {
@@ -261,12 +263,31 @@ public sealed partial class BistroBuilderUiShell
         editChromeButtons["EditUndo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo;
         editChromeButtons["EditRedo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo;
 
-        // Acciones contextuales: no ocupan espacio cuando no aportan nada.
-        SetChromeVisible("EditMove",furniture&&selected&&!placement);
-        bool showSelectionActions=!initial&&(placement||selected||structure);
-        SetChromeVisible("EditDelete",showSelectionActions&&!placement&&(furniture?SelectedChromePlaceable()!=null:structure));
-        SetChromeVisible("EditRotate",showSelectionActions&&(furniture?(placement||selected):editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture));
-        SetChromeVisible("EditDuplicate",showSelectionActions&&!placement&&(furniture?SelectedChromePlaceable()!=null:structure));
+        // Una selección de mobiliario tiene una sola autoridad visible: el
+        // inspector derecho. La franja inferior conserva acciones estructurales
+        // y Rotar durante una colocación activa, cuando el inspector se compacta.
+        bool unifiedFurnitureInspector=editPlaceableInspector!=null;
+        SetChromeVisible(
+            "EditMove",
+            furniture&&selected&&!placement&&!unifiedFurnitureInspector);
+
+        bool structureActions=
+            !initial&&!furniture&&structure;
+
+        SetChromeVisible(
+            "EditDelete",
+            structureActions);
+
+        SetChromeVisible(
+            "EditDuplicate",
+            structureActions);
+
+        SetChromeVisible(
+            "EditRotate",
+            !initial&&(
+                structureActions&&editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture ||
+                furniture&&placement ||
+                furniture&&selected&&!unifiedFurnitureInspector));
 
         SetChromeVisible("EditInitialSave",initial);
         SetChromeVisible("EditInitialContinue",initial);
