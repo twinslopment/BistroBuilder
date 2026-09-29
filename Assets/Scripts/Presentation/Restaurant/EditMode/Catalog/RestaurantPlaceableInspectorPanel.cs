@@ -618,10 +618,15 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
 
         if (priceText != null)
-            priceText.text = data.Price.ToString("N0") + " €";
+        {
+            priceText.text =
+                data.Price > 0
+                    ? data.Price.ToString("N0") + " €"
+                    : "Disponible";
+        }
 
         if (scopeText != null)
-            scopeText.text = "⌂  " + data.ScopeLabel;
+            scopeText.text = data.ScopeLabel;
 
         Vector3 dimensions = data.DimensionsCentimeters;
         if (dimensionsText != null)
