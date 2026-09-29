@@ -15,6 +15,24 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     [SerializeField, Min(0.004f)] private float ghostWidth = 0.012f;
     [SerializeField, Min(0.004f)] private float conflictWidth = 0.032f;
 
+    [Header("Presencia en suelo")]
+    [SerializeField] private bool showContactFill = true;
+    [SerializeField, Range(0.01f, 0.20f)] private float validFillAlpha = 0.055f;
+    [SerializeField, Range(0.01f, 0.20f)] private float invalidFillAlpha = 0.045f;
+    [SerializeField, Range(0.01f, 0.20f)] private float neutralFillAlpha = 0.035f;
+    [SerializeField, Min(0f)] private float contactFillDrop = 0.008f;
+
+    [Header("Escala adaptativa")]
+    [SerializeField, Min(0.1f)] private float referenceOrthographicSize = 7f;
+    [SerializeField, Min(0.1f)] private float referencePerspectiveDistance = 12f;
+    [SerializeField, Range(0.25f, 1f)] private float minimumWidthScale = 0.72f;
+    [SerializeField, Range(1f, 3f)] private float maximumWidthScale = 1.75f;
+
+    [Header("Microanimación")]
+    [SerializeField, Min(0.05f)] private float conflictPulseDuration = 0.72f;
+    [SerializeField, Range(0f, 1f)] private float conflictPulseStrength = 0.34f;
+    [SerializeField, Min(0.05f)] private float snapHaloDuration = 0.34f;
+
     [SerializeField] private Color neutralColor = new Color(0.90f, 0.89f, 0.84f, 0.70f);
     [SerializeField] private Color validColor = new Color(0.36f, 0.72f, 0.64f, 0.92f);
     [SerializeField] private Color invalidColor = new Color(0.88f, 0.43f, 0.36f, 0.92f);
@@ -30,6 +48,10 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private Material lineMaterial;
     private Material volumeMaterial;
     private Mesh volumeMesh;
+    private Mesh contactFillMesh;
+    private MeshFilter contactFillFilter;
+    private MeshRenderer contactFillRenderer;
+    private MaterialPropertyBlock contactFillPropertyBlock;
 
     private static readonly int ColorPropertyId =
         Shader.PropertyToID("_Color");
@@ -39,15 +61,23 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
     private MaterialPropertyBlock volumePropertyBlock;
     private LineRenderer snapLine;
+    private LineRenderer snapHaloLine;
     private float snapPulseStartedAt = -1f;
     private bool hadSnapPoint;
     private Vector3 lastSnapPoint;
+
+    private float conflictPulseStartedAt = -1f;
+    private Object lastConflictObject;
+    private bool wasInvalid;
+    private BistroBuilderUniversalPreviewState renderedState;
+    private Camera cachedCamera;
 
     private void Awake()
     {
         ResolveService();
         EnsureVisualRoot();
         volumePropertyBlock = new MaterialPropertyBlock();
+        contactFillPropertyBlock = new MaterialPropertyBlock();
 
         if (lineMaterial == null ||
             volumeMaterial == null)
@@ -95,11 +125,19 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
             if (Application.isPlaying) Destroy(volumeMesh);
             else DestroyImmediate(volumeMesh);
         }
+
+        if (contactFillMesh != null)
+        {
+            if (Application.isPlaying) Destroy(contactFillMesh);
+            else DestroyImmediate(contactFillMesh);
+        }
     }
 
     private void Update()
     {
         TickSnapPulse();
+        TickConflictPulse();
+        ApplyAdaptivePresentation();
     }
 
     private void ResolveService()
@@ -131,17 +169,40 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private void Render(BistroBuilderUniversalPreviewState state)
     {
         EnsureVisualRoot();
+        renderedState = state;
+
         if (state == null || !state.IsVisible)
         {
             HideAll();
             return;
         }
 
+        bool isInvalid =
+            state.Validity ==
+                BistroBuilderPreviewValidity.Invalid;
+
+        if (isInvalid &&
+            (!wasInvalid ||
+             !ReferenceEquals(
+                 lastConflictObject,
+                 state.ConflictObject)))
+        {
+            conflictPulseStartedAt =
+                Time.unscaledTime;
+        }
+
+        wasInvalid =
+            isInvalid;
+
+        lastConflictObject =
+            state.ConflictObject;
+
         Color candidateColor = ResolveCandidateColor(state.Validity);
         RenderSegments(state.CandidateSegments, candidateLines, candidateColor, candidateWidth, "Candidate");
         RenderSegments(state.GhostSegments, ghostLines, ghostColor, ghostWidth, "Ghost");
         RenderSegments(state.ConflictSegments, conflictLines, conflictColor, conflictWidth, "Conflict");
         RenderVolumes(state.Volumes, state.Validity);
+        RenderContactFill(state);
 
         if (state.HasSnapPoint)
         {
@@ -150,7 +211,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                 (state.SnapPoint - lastSnapPoint).sqrMagnitude >
                     0.0004f;
 
-            EnsureSnapLine();
+            EnsureSnapLines();
             DrawSnapDiamond(
                 state.SnapPoint,
                 0.11f,
@@ -158,7 +219,16 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                 0.026f);
 
             if (snapChanged)
-                snapPulseStartedAt = Time.unscaledTime;
+            {
+                snapPulseStartedAt =
+                    Time.unscaledTime;
+
+                DrawSnapHalo(
+                    state.SnapPoint,
+                    0.11f,
+                    snapColor,
+                    0.018f);
+            }
 
             hadSnapPoint = true;
             lastSnapPoint = state.SnapPoint;
@@ -167,6 +237,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         {
             if (snapLine != null)
                 snapLine.enabled = false;
+
+            if (snapHaloLine != null)
+                snapHaloLine.enabled = false;
 
             snapPulseStartedAt = -1f;
             hadSnapPoint = false;
@@ -437,10 +510,13 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         return line;
     }
 
-    private void EnsureSnapLine()
+    private void EnsureSnapLines()
     {
         if (snapLine == null)
             snapLine = CreateLine("Snap");
+
+        if (snapHaloLine == null)
+            snapHaloLine = CreateLine("SnapHalo");
     }
 
     private void DrawSnapDiamond(Vector3 center, float radius, Color color, float width)
@@ -457,24 +533,119 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         snapLine.SetPosition(3, center + new Vector3(0f, 0f, -radius));
     }
 
-    private void TickSnapPulse()
+    private void DrawSnapHalo(
+        Vector3 center,
+        float radius,
+        Color color,
+        float width)
     {
-        if (snapLine == null || !snapLine.enabled || snapPulseStartedAt < 0f)
+        if (snapHaloLine == null)
             return;
 
-        const float duration = 0.28f;
-        float t = Mathf.Clamp01((Time.unscaledTime - snapPulseStartedAt) / duration);
-        if (t >= 1f)
+        center.y += 0.044f;
+
+        const int points = 16;
+
+        snapHaloLine.enabled = true;
+        snapHaloLine.loop = true;
+        snapHaloLine.positionCount = points;
+        snapHaloLine.startWidth =
+            snapHaloLine.endWidth =
+                width;
+        snapHaloLine.startColor =
+            snapHaloLine.endColor =
+                color;
+
+        for (int i = 0; i < points; i++)
         {
-            snapPulseStartedAt = -1f;
+            float angle =
+                (Mathf.PI * 2f * i) /
+                points;
+
+            snapHaloLine.SetPosition(
+                i,
+                center +
+                new Vector3(
+                    Mathf.Cos(angle) * radius,
+                    0f,
+                    Mathf.Sin(angle) * radius));
+        }
+    }
+
+    private void TickSnapPulse()
+    {
+        if (snapLine == null ||
+            !snapLine.enabled ||
+            snapPulseStartedAt < 0f)
+        {
             return;
         }
 
-        Color pulse = snapColor;
-        pulse.a *= 0.55f + (1f - t) * 0.45f;
-        float width = Mathf.Lerp(0.052f, 0.026f, t);
-        snapLine.startWidth = snapLine.endWidth = width;
-        snapLine.startColor = snapLine.endColor = pulse;
+        float t =
+            Mathf.Clamp01(
+                (Time.unscaledTime -
+                 snapPulseStartedAt) /
+                Mathf.Max(
+                    0.05f,
+                    snapHaloDuration));
+
+        Color pulse =
+            snapColor;
+
+        pulse.a *=
+            0.58f +
+            (1f - t) *
+            0.42f;
+
+        float widthScale =
+            GetAdaptiveWidthScale();
+
+        float width =
+            Mathf.Lerp(
+                0.048f,
+                0.026f,
+                t) *
+            widthScale;
+
+        snapLine.startWidth =
+            snapLine.endWidth =
+                width;
+
+        snapLine.startColor =
+            snapLine.endColor =
+                pulse;
+
+        if (snapHaloLine != null &&
+            snapHaloLine.enabled)
+        {
+            float radius =
+                Mathf.Lerp(
+                    0.11f,
+                    0.28f,
+                    t);
+
+            Color halo =
+                snapColor;
+
+            halo.a *=
+                (1f - t) *
+                0.52f;
+
+            DrawSnapHalo(
+                lastSnapPoint,
+                radius,
+                halo,
+                0.016f *
+                widthScale);
+        }
+
+        if (t >= 1f)
+        {
+            snapPulseStartedAt = -1f;
+
+            if (snapHaloLine != null)
+                snapHaloLine.enabled = false;
+        }
     }
 
     private void HideAll()
@@ -488,9 +659,392 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                 volumeRenderers[i].enabled = false;
 
         if (snapLine != null) snapLine.enabled = false;
+        if (snapHaloLine != null) snapHaloLine.enabled = false;
+        if (contactFillRenderer != null) contactFillRenderer.enabled = false;
+
         snapPulseStartedAt = -1f;
+        conflictPulseStartedAt = -1f;
         hadSnapPoint = false;
+        wasInvalid = false;
+        lastConflictObject = null;
+        renderedState = null;
         lastSnapPoint = default;
+    }
+
+    private void RenderContactFill(
+        BistroBuilderUniversalPreviewState state)
+    {
+        if (!showContactFill ||
+            state == null ||
+            state.CandidateSegments == null ||
+            state.CandidateSegments.Count != 8)
+        {
+            if (contactFillRenderer != null)
+                contactFillRenderer.enabled = false;
+
+            return;
+        }
+
+        EnsureContactFill();
+
+        if (contactFillRenderer == null ||
+            contactFillMesh == null)
+        {
+            return;
+        }
+
+        Vector3 a =
+            state.CandidateSegments[0];
+
+        Vector3 b =
+            state.CandidateSegments[2];
+
+        Vector3 c =
+            state.CandidateSegments[4];
+
+        Vector3 d =
+            state.CandidateSegments[6];
+
+        a.y -= contactFillDrop;
+        b.y -= contactFillDrop;
+        c.y -= contactFillDrop;
+        d.y -= contactFillDrop;
+
+        contactFillMesh.Clear();
+        contactFillMesh.vertices =
+            new[] { a, b, c, d };
+
+        contactFillMesh.triangles =
+            new[]
+            {
+                0, 1, 2,
+                0, 2, 3
+            };
+
+        contactFillMesh.RecalculateBounds();
+
+        Color color =
+            ResolveCandidateColor(
+                state.Validity);
+
+        switch (state.Validity)
+        {
+            case BistroBuilderPreviewValidity.Valid:
+                color.a = validFillAlpha;
+                break;
+
+            case BistroBuilderPreviewValidity.Invalid:
+                color.a = invalidFillAlpha;
+                break;
+
+            default:
+                color.a = neutralFillAlpha;
+                break;
+        }
+
+        contactFillPropertyBlock.Clear();
+        contactFillPropertyBlock.SetColor(
+            ColorPropertyId,
+            color);
+        contactFillPropertyBlock.SetColor(
+            BaseColorPropertyId,
+            color);
+
+        contactFillRenderer.SetPropertyBlock(
+            contactFillPropertyBlock);
+
+        contactFillRenderer.enabled = true;
+    }
+
+    private void EnsureContactFill()
+    {
+        EnsureVisualRoot();
+
+        if (contactFillRenderer != null)
+            return;
+
+        GameObject go =
+            new GameObject(
+                "ContactFill");
+
+        go.transform.SetParent(
+            visualRoot,
+            false);
+
+        go.layer = 2;
+
+        contactFillFilter =
+            go.AddComponent<MeshFilter>();
+
+        contactFillRenderer =
+            go.AddComponent<MeshRenderer>();
+
+        contactFillRenderer.shadowCastingMode =
+            ShadowCastingMode.Off;
+
+        contactFillRenderer.receiveShadows =
+            false;
+
+        contactFillRenderer.lightProbeUsage =
+            LightProbeUsage.Off;
+
+        contactFillRenderer.reflectionProbeUsage =
+            ReflectionProbeUsage.Off;
+
+        if (volumeMaterial != null)
+        {
+            contactFillRenderer.sharedMaterial =
+                volumeMaterial;
+        }
+
+        contactFillMesh =
+            new Mesh
+            {
+                name =
+                    "BB_UniversalPreview_ContactFill",
+                hideFlags =
+                    HideFlags.HideAndDontSave
+            };
+
+        contactFillMesh.MarkDynamic();
+
+        contactFillFilter.sharedMesh =
+            contactFillMesh;
+
+        contactFillRenderer.enabled =
+            false;
+    }
+
+    private void TickConflictPulse()
+    {
+        if (conflictLines.Count == 0)
+            return;
+
+        float widthScale =
+            GetAdaptiveWidthScale();
+
+        if (conflictPulseStartedAt < 0f)
+        {
+            ApplyConflictPresentation(
+                1f,
+                conflictColor,
+                widthScale);
+
+            return;
+        }
+
+        float t =
+            Mathf.Clamp01(
+                (Time.unscaledTime -
+                 conflictPulseStartedAt) /
+                Mathf.Max(
+                    0.05f,
+                    conflictPulseDuration));
+
+        float envelope =
+            1f - t;
+
+        float wave =
+            0.5f +
+            0.5f *
+            Mathf.Sin(
+                t *
+                Mathf.PI *
+                4f);
+
+        float pulse =
+            1f +
+            wave *
+            envelope *
+            conflictPulseStrength;
+
+        Color color =
+            conflictColor;
+
+        color.a *=
+            Mathf.Lerp(
+                0.78f,
+                1f,
+                pulse - 1f);
+
+        ApplyConflictPresentation(
+            pulse,
+            color,
+            widthScale);
+
+        if (t >= 1f)
+            conflictPulseStartedAt = -1f;
+    }
+
+    private void ApplyConflictPresentation(
+        float pulse,
+        Color color,
+        float widthScale)
+    {
+        float width =
+            conflictWidth *
+            widthScale *
+            pulse;
+
+        for (int i = 0;
+             i < conflictLines.Count;
+             i++)
+        {
+            LineRenderer line =
+                conflictLines[i];
+
+            if (line == null ||
+                !line.enabled)
+            {
+                continue;
+            }
+
+            line.startWidth =
+                line.endWidth =
+                    width;
+
+            line.startColor =
+                line.endColor =
+                    color;
+        }
+    }
+
+    private void ApplyAdaptivePresentation()
+    {
+        float widthScale =
+            GetAdaptiveWidthScale();
+
+        ApplyPoolWidth(
+            candidateLines,
+            candidateWidth *
+            widthScale);
+
+        ApplyPoolWidth(
+            ghostLines,
+            ghostWidth *
+            widthScale);
+
+        if (conflictPulseStartedAt < 0f)
+        {
+            ApplyPoolWidth(
+                conflictLines,
+                conflictWidth *
+                widthScale);
+        }
+    }
+
+    private static void ApplyPoolWidth(
+        List<LineRenderer> pool,
+        float width)
+    {
+        for (int i = 0;
+             i < pool.Count;
+             i++)
+        {
+            LineRenderer line =
+                pool[i];
+
+            if (line == null ||
+                !line.enabled)
+            {
+                continue;
+            }
+
+            line.startWidth =
+                line.endWidth =
+                    width;
+        }
+    }
+
+    private float GetAdaptiveWidthScale()
+    {
+        Camera camera =
+            ResolveCamera();
+
+        if (camera == null)
+            return 1f;
+
+        float scale;
+
+        if (camera.orthographic)
+        {
+            scale =
+                camera.orthographicSize /
+                Mathf.Max(
+                    0.1f,
+                    referenceOrthographicSize);
+        }
+        else
+        {
+            Vector3 focus =
+                ResolvePreviewFocus();
+
+            float distance =
+                Vector3.Distance(
+                    camera.transform.position,
+                    focus);
+
+            scale =
+                Mathf.Sqrt(
+                    distance /
+                    Mathf.Max(
+                        0.1f,
+                        referencePerspectiveDistance));
+        }
+
+        return Mathf.Clamp(
+            scale,
+            minimumWidthScale,
+            maximumWidthScale);
+    }
+
+    private Camera ResolveCamera()
+    {
+        if (cachedCamera != null &&
+            cachedCamera.isActiveAndEnabled)
+        {
+            return cachedCamera;
+        }
+
+        cachedCamera =
+            Camera.main != null
+                ? Camera.main
+                : FindFirstObjectByType<Camera>();
+
+        return cachedCamera;
+    }
+
+    private Vector3 ResolvePreviewFocus()
+    {
+        if (renderedState != null &&
+            renderedState.HasCandidatePose)
+        {
+            return renderedState.CandidatePosition;
+        }
+
+        if (renderedState != null &&
+            renderedState.CandidateSegments != null &&
+            renderedState.CandidateSegments.Count > 0)
+        {
+            Vector3 sum =
+                Vector3.zero;
+
+            int count =
+                renderedState.CandidateSegments.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                sum +=
+                    renderedState.CandidateSegments[i];
+            }
+
+            return sum /
+                   Mathf.Max(
+                       1,
+                       count);
+        }
+
+        return transform.position;
     }
 
     private static void HidePool(List<LineRenderer> pool)
