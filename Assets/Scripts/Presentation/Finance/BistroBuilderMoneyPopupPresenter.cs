@@ -31,7 +31,7 @@ public sealed class BistroBuilderMoneyPopupPresenter : MonoBehaviour
         riseDistance = Mathf.Max(0.05f, verticalDistance);
         elapsed = 0f;
         initialized = true;
-        transform.localScale = Vector3.one * 0.72f;
+        transform.localScale = Vector3.one * 0.82f;
         FaceCamera();
     }
 
@@ -47,16 +47,22 @@ public sealed class BistroBuilderMoneyPopupPresenter : MonoBehaviour
         float easedRise = 1f - Mathf.Pow(1f - t, 2f);
         transform.position = startPosition + Vector3.up * (riseDistance * easedRise);
 
-        float pop = t < 0.18f
-            ? Mathf.Lerp(0.72f, 1.08f, t / 0.18f)
-            : Mathf.Lerp(1.08f, 1f, Mathf.InverseLerp(0.18f, 0.40f, t));
+        float pop = t < 0.16f
+            ? Mathf.Lerp(0.82f, 1.03f, t / 0.16f)
+            : Mathf.Lerp(
+                1.03f,
+                1f,
+                Mathf.InverseLerp(
+                    0.16f,
+                    0.34f,
+                    t));
         transform.localScale = Vector3.one * pop;
 
         if (textMesh != null)
         {
-            float alpha = t < 0.62f
+            float alpha = t < 0.54f
                 ? 1f
-                : 1f - Mathf.InverseLerp(0.62f, 1f, t);
+                : 1f - Mathf.InverseLerp(0.54f, 1f, t);
             Color color = baseColor;
             color.a = alpha;
             textMesh.color = color;
