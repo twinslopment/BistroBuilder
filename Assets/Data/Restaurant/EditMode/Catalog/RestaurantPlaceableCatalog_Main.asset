@@ -14,6 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableCatalogDefinition
   items:
   - {fileID: 11400000, guid: 7a381e1b474d2644a9eb15e6c0ac1052, type: 2}
+  - {fileID: 11400000, guid: 33a718e8ef0c5564b9b771681ec5ce97, type: 2}
+  - {fileID: 11400000, guid: 2c7c6dab35bb59e4e8ca3875b183a5cf, type: 2}
+  - {fileID: 11400000, guid: 7ae2b47c926d48346872e5bd86eb6645, type: 2}
+  - {fileID: 11400000, guid: d62537ab7f8796144b8508b53afc374f, type: 2}
+  - {fileID: 11400000, guid: 78c3bc5db79087b45b0110118767f203, type: 2}
+  - {fileID: 11400000, guid: e2381bea2503330469389ecb00d40550, type: 2}
+  - {fileID: 11400000, guid: f180d3044587d2d479e5a7f389853128, type: 2}
   - {fileID: 11400000, guid: ad38939693dd4f14c8b6836329f9639c, type: 2}
   - {fileID: 11400000, guid: 1b86be0e1088ef6468e0dbf68a8b7f23, type: 2}
   - {fileID: 11400000, guid: 8178885e6dffaf6428ddf65e58fb8715, type: 2}
@@ -21,5 +28,3 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c747c083c153b6c4caf38147bbe43efd, type: 2}
   - {fileID: 11400000, guid: cdbd8fa0f6f0e434d86304ad8cf1eead, type: 2}
   - {fileID: 11400000, guid: 2654b218b67bdf64caf6740750c31967, type: 2}
-  - {fileID: 11400000, guid: 33a718e8ef0c5564b9b771681ec5ce97, type: 2}
-  - {fileID: 11400000, guid: 2c7c6dab35bb59e4e8ca3875b183a5cf, type: 2}
