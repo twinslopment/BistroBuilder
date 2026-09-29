@@ -64,6 +64,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private MaterialPropertyBlock volumePropertyBlock;
     private LineRenderer snapLine;
     private LineRenderer snapHaloLine;
+    private LineRenderer snapIntentLine;
     private LineRenderer rotationCueLine;
     private float snapPulseStartedAt = -1f;
     private float rotationCueStartedAt = -1f;
@@ -285,6 +286,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
                     0.024f);
             }
 
+            RenderSnapIntent(
+                state);
+
             hadSnapPoint = true;
             lastSnapPoint = state.SnapPoint;
         }
@@ -295,6 +299,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
             if (snapHaloLine != null)
                 snapHaloLine.enabled = false;
+
+            if (snapIntentLine != null)
+                snapIntentLine.enabled = false;
 
             snapPulseStartedAt = -1f;
             hadSnapPoint = false;
@@ -572,6 +579,111 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         if (snapHaloLine == null)
             snapHaloLine = CreateLine("SnapHalo");
+
+        if (snapIntentLine == null)
+            snapIntentLine = CreateLine("SnapIntent");
+    }
+
+    private void RenderSnapIntent(
+        BistroBuilderUniversalPreviewState state)
+    {
+        if (snapIntentLine == null ||
+            state == null ||
+            state.RelatedObject == null ||
+            !TryResolveRelatedPosition(
+                state.RelatedObject,
+                out Vector3 relatedPosition))
+        {
+            if (snapIntentLine != null)
+                snapIntentLine.enabled = false;
+
+            return;
+        }
+
+        Vector3 start =
+            state.HasCandidatePose
+                ? state.CandidatePosition
+                : state.SnapPoint;
+
+        Vector3 delta =
+            relatedPosition - start;
+
+        delta.y = 0f;
+
+        float distance =
+            delta.magnitude;
+
+        if (distance < 0.08f ||
+            distance > 1.6f)
+        {
+            snapIntentLine.enabled = false;
+            return;
+        }
+
+        Vector3 direction =
+            delta / distance;
+
+        start.y += 0.035f;
+        relatedPosition.y =
+            start.y;
+
+        start +=
+            direction * 0.12f;
+
+        relatedPosition -=
+            direction * 0.12f;
+
+        Color color =
+            snapColor;
+
+        color.a *= 0.52f;
+
+        snapIntentLine.enabled = true;
+        snapIntentLine.loop = false;
+        snapIntentLine.positionCount = 2;
+        snapIntentLine.startWidth =
+            snapIntentLine.endWidth =
+                0.016f *
+                GetAdaptiveWidthScale();
+        snapIntentLine.startColor =
+            new Color(
+                color.r,
+                color.g,
+                color.b,
+                0.12f);
+        snapIntentLine.endColor =
+            color;
+        snapIntentLine.SetPosition(
+            0,
+            start);
+        snapIntentLine.SetPosition(
+            1,
+            relatedPosition);
+    }
+
+    private static bool TryResolveRelatedPosition(
+        Object relatedObject,
+        out Vector3 worldPosition)
+    {
+        worldPosition = Vector3.zero;
+
+        if (relatedObject is Component component &&
+            component != null)
+        {
+            worldPosition =
+                component.transform.position;
+            return true;
+        }
+
+        if (relatedObject is GameObject gameObject &&
+            gameObject != null)
+        {
+            worldPosition =
+                gameObject.transform.position;
+            return true;
+        }
+
+        return false;
     }
 
     private void DrawSnapDiamond(Vector3 center, float radius, Color color, float width)
@@ -715,6 +827,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         if (snapLine != null) snapLine.enabled = false;
         if (snapHaloLine != null) snapHaloLine.enabled = false;
+        if (snapIntentLine != null) snapIntentLine.enabled = false;
         if (contactFillRenderer != null) contactFillRenderer.enabled = false;
 
         snapPulseStartedAt = -1f;
