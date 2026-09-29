@@ -34,6 +34,7 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
     private bool indexBuilt;
     private bool catalogSubscribed;
     private bool synchronizing;
+    private int synchronizedPlayableCount = -1;
 
     public IReadOnlyList<RestaurantPlaceableItemDefinition>
         Definitions => definitions;
@@ -218,6 +219,7 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
 
     private void HandlePlayableCatalogChanged()
     {
+        synchronizedPlayableCount = -1;
         SynchronizePlayableDefinitions();
         RebuildIndex();
     }
@@ -236,6 +238,15 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
 
         if (playableCatalogService == null)
             return;
+
+        IReadOnlyList<RestaurantPlaceableItemDefinition> playable =
+            playableCatalogService.AvailableItems;
+
+        if (synchronizedPlayableCount ==
+            playable.Count)
+        {
+            return;
+        }
 
         synchronizing = true;
 
@@ -263,9 +274,6 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
                     NormalizeItemId(
                         definition.ItemId));
             }
-
-            IReadOnlyList<RestaurantPlaceableItemDefinition> playable =
-                playableCatalogService.AvailableItems;
 
             bool changed = false;
 
@@ -296,6 +304,9 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
 
             if (changed)
                 indexBuilt = false;
+
+            synchronizedPlayableCount =
+                playable.Count;
         }
         finally
         {
