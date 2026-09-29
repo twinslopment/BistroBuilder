@@ -33,6 +33,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.30f;
     [SerializeField, Range(0f, 1f)] private float snapVelocityRetention = 0.28f;
 
+    [Header("Contacto con el suelo")]
+    [SerializeField] private bool showContactShadow = true;
+    [SerializeField, Range(0.02f, 0.35f)] private float contactShadowOpacity = 0.16f;
+    [SerializeField, Range(1f, 1.35f)] private float liftedShadowExpansion = 1.08f;
+    [SerializeField, Min(0f)] private float contactShadowSurfaceOffset = 0.012f;
+
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
     private readonly HashSet<int> rendererIds =
@@ -63,9 +69,17 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     private bool visualPoseInitialized;
     private bool wasFunctionallySnapped;
 
+    private Transform contactShadowRoot;
+    private Mesh contactShadowMesh;
+    private Material contactShadowMaterial;
+    private MaterialPropertyBlock contactShadowBlock;
+    private Vector2 contactShadowBaseSize;
+    private float contactShadowGroundHeight;
+
     private void Awake()
     {
         ResolveDependencies();
+        EnsureContactShadowResources();
     }
 
     private void OnEnable()
@@ -85,7 +99,13 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     {
         Unsubscribe();
         RestoreSourceRenderers();
+        HideContactShadow();
         ResetState();
+    }
+
+    private void OnDestroy()
+    {
+        DestroyContactShadowResources();
     }
 
     private void LateUpdate()
@@ -103,6 +123,7 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         TickLiftTransition();
         TickVisualPose();
         DrawProxyMeshes(currentLift);
+        UpdateContactShadow();
 
         if (settling &&
             !transitionActive &&
@@ -187,6 +208,8 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             true;
 
         settling = false;
+
+        ResolveContactShadowBounds();
 
         BeginLiftTransition(
             effectiveLiftHeight,
@@ -528,6 +551,387 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
                0.35f;
     }
 
+    private void ResolveContactShadowBounds()
+    {
+        if (!showContactShadow ||
+            activeRoot == null ||
+            entries.Count == 0)
+        {
+            contactShadowBaseSize =
+                Vector2.zero;
+            return;
+        }
+
+        bool hasBounds =
+            false;
+
+        Bounds combined =
+            default;
+
+        for (int index = 0;
+             index < entries.Count;
+             index++)
+        {
+            PreviewMeshEntry entry =
+                entries[index];
+
+            if (entry.Renderer == null)
+                continue;
+
+            if (!hasBounds)
+            {
+                combined =
+                    entry.Renderer.bounds;
+                hasBounds =
+                    true;
+            }
+            else
+            {
+                combined.Encapsulate(
+                    entry.Renderer.bounds);
+            }
+        }
+
+        if (!hasBounds)
+        {
+            contactShadowBaseSize =
+                Vector2.zero;
+            return;
+        }
+
+        contactShadowBaseSize =
+            new Vector2(
+                Mathf.Max(
+                    0.28f,
+                    combined.size.x * 0.82f),
+                Mathf.Max(
+                    0.28f,
+                    combined.size.z * 0.82f));
+
+        contactShadowGroundHeight =
+            activeRoot.transform.position.y +
+            contactShadowSurfaceOffset;
+    }
+
+    private void UpdateContactShadow()
+    {
+        if (!showContactShadow ||
+            activeRoot == null ||
+            contactShadowBaseSize.x <= 0f ||
+            contactShadowBaseSize.y <= 0f)
+        {
+            HideContactShadow();
+            return;
+        }
+
+        EnsureContactShadowResources();
+
+        if (contactShadowRoot == null)
+            return;
+
+        float liftRatio =
+            effectiveLiftHeight > 0.0001f
+                ? Mathf.Clamp01(
+                    currentLift /
+                    effectiveLiftHeight)
+                : 0f;
+
+        float expansion =
+            Mathf.Lerp(
+                1f,
+                Mathf.Max(
+                    1f,
+                    liftedShadowExpansion),
+                liftRatio);
+
+        Vector3 position =
+            visualRootPosition;
+
+        position.y =
+            contactShadowGroundHeight;
+
+        contactShadowRoot.position =
+            position;
+
+        contactShadowRoot.rotation =
+            Quaternion.identity;
+
+        contactShadowRoot.localScale =
+            new Vector3(
+                contactShadowBaseSize.x *
+                    expansion,
+                1f,
+                contactShadowBaseSize.y *
+                    expansion);
+
+        float alpha =
+            contactShadowOpacity *
+            Mathf.Lerp(
+                1f,
+                0.58f,
+                liftRatio);
+
+        if (settling)
+        {
+            alpha *=
+                Mathf.Lerp(
+                    0.45f,
+                    1f,
+                    liftRatio);
+        }
+
+        contactShadowBlock.Clear();
+
+        Color color =
+            new Color(
+                0.035f,
+                0.038f,
+                0.035f,
+                alpha);
+
+        contactShadowBlock.SetColor(
+            Shader.PropertyToID("_Color"),
+            color);
+
+        contactShadowBlock.SetColor(
+            Shader.PropertyToID("_BaseColor"),
+            color);
+
+        MeshRenderer renderer =
+            contactShadowRoot.GetComponent<
+                MeshRenderer>();
+
+        if (renderer != null)
+        {
+            renderer.SetPropertyBlock(
+                contactShadowBlock);
+
+            renderer.enabled =
+                alpha > 0.002f;
+        }
+
+        contactShadowRoot.gameObject.SetActive(
+            true);
+    }
+
+    private void EnsureContactShadowResources()
+    {
+        if (!showContactShadow)
+            return;
+
+        if (contactShadowBlock == null)
+        {
+            contactShadowBlock =
+                new MaterialPropertyBlock();
+        }
+
+        if (contactShadowMesh == null)
+        {
+            contactShadowMesh =
+                CreateContactShadowMesh();
+        }
+
+        if (contactShadowMaterial == null)
+        {
+            Shader shader =
+                Shader.Find(
+                    "Sprites/Default");
+
+            if (shader != null)
+            {
+                contactShadowMaterial =
+                    new Material(shader)
+                    {
+                        name =
+                            "BB_FurnitureContactShadow",
+                        hideFlags =
+                            HideFlags.HideAndDontSave
+                    };
+            }
+        }
+
+        if (contactShadowRoot != null ||
+            contactShadowMesh == null ||
+            contactShadowMaterial == null)
+        {
+            return;
+        }
+
+        GameObject go =
+            new GameObject(
+                "BB_FurnitureContactShadow");
+
+        go.layer =
+            LayerMask.NameToLayer(
+                "Ignore Raycast");
+
+        go.transform.SetParent(
+            transform,
+            false);
+
+        MeshFilter filter =
+            go.AddComponent<MeshFilter>();
+
+        filter.sharedMesh =
+            contactShadowMesh;
+
+        MeshRenderer renderer =
+            go.AddComponent<MeshRenderer>();
+
+        renderer.sharedMaterial =
+            contactShadowMaterial;
+
+        renderer.shadowCastingMode =
+            ShadowCastingMode.Off;
+
+        renderer.receiveShadows =
+            false;
+
+        renderer.lightProbeUsage =
+            LightProbeUsage.Off;
+
+        renderer.reflectionProbeUsage =
+            ReflectionProbeUsage.Off;
+
+        renderer.sortingOrder =
+            31800;
+
+        contactShadowRoot =
+            go.transform;
+
+        go.SetActive(false);
+    }
+
+    private static Mesh CreateContactShadowMesh()
+    {
+        const int segments =
+            32;
+
+        Vector3[] vertices =
+            new Vector3[
+                segments + 1];
+
+        Color[] colors =
+            new Color[
+                segments + 1];
+
+        int[] triangles =
+            new int[
+                segments * 3];
+
+        vertices[0] =
+            Vector3.zero;
+
+        colors[0] =
+            new Color(
+                1f,
+                1f,
+                1f,
+                1f);
+
+        for (int index = 0;
+             index < segments;
+             index++)
+        {
+            float angle =
+                index *
+                Mathf.PI *
+                2f /
+                segments;
+
+            vertices[index + 1] =
+                new Vector3(
+                    Mathf.Cos(angle) * 0.5f,
+                    0f,
+                    Mathf.Sin(angle) * 0.5f);
+
+            colors[index + 1] =
+                new Color(
+                    1f,
+                    1f,
+                    1f,
+                    0f);
+
+            int next =
+                (index + 1) %
+                segments;
+
+            triangles[index * 3] =
+                0;
+
+            triangles[index * 3 + 1] =
+                index + 1;
+
+            triangles[index * 3 + 2] =
+                next + 1;
+        }
+
+        Mesh mesh =
+            new Mesh
+            {
+                name =
+                    "BB_FurnitureContactShadowMesh",
+                hideFlags =
+                    HideFlags.HideAndDontSave
+            };
+
+        mesh.vertices =
+            vertices;
+
+        mesh.colors =
+            colors;
+
+        mesh.triangles =
+            triangles;
+
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+
+        return mesh;
+    }
+
+    private void HideContactShadow()
+    {
+        if (contactShadowRoot != null)
+            contactShadowRoot.gameObject.SetActive(false);
+    }
+
+    private void DestroyContactShadowResources()
+    {
+        if (contactShadowRoot != null)
+        {
+            if (Application.isPlaying)
+                Destroy(contactShadowRoot.gameObject);
+            else
+                DestroyImmediate(contactShadowRoot.gameObject);
+
+            contactShadowRoot =
+                null;
+        }
+
+        if (contactShadowMaterial != null)
+        {
+            if (Application.isPlaying)
+                Destroy(contactShadowMaterial);
+            else
+                DestroyImmediate(contactShadowMaterial);
+
+            contactShadowMaterial =
+                null;
+        }
+
+        if (contactShadowMesh != null)
+        {
+            if (Application.isPlaying)
+                Destroy(contactShadowMesh);
+            else
+                DestroyImmediate(contactShadowMesh);
+
+            contactShadowMesh =
+                null;
+        }
+    }
+
     private void DrawProxyMeshes(float verticalOffset)
     {
         if (activeRoot == null)
@@ -673,6 +1077,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         visualPositionVelocity = Vector3.zero;
         visualPoseInitialized = false;
         wasFunctionallySnapped = false;
+        contactShadowBaseSize = Vector2.zero;
+        contactShadowGroundHeight = 0f;
+        HideContactShadow();
         settling = false;
     }
 
