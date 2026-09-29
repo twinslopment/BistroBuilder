@@ -391,12 +391,11 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                 BistroBuilderConstructionRuntimeMode.Furniture);
         }
 
-        if (editController != null)
-        {
-            editController.TryExitEditMode(
-                true);
-        }
-
+        /*
+         * ExecuteRegression cierra explícitamente el modo edición en PASS.
+         * En FAIL no forzamos una segunda salida aquí: el cambio de Play Mode
+         * ya restaura la escena y evitamos mensajes NotActive engañosos.
+         */
         Directory.CreateDirectory(
             "Logs");
 
