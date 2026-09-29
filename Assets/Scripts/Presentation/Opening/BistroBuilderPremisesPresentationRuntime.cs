@@ -15,6 +15,9 @@ public static class BistroBuilderPremisesPresentationRuntime
     private const float CutawayWallHeight = 0.9f;
     private const float WallThickness = 0.12f;
 
+    private static Material originalFloorMaterial;
+    private static bool originalFloorMaterialCaptured;
+
     public static bool Apply(
         BistroBuilderStartingPremisesProfile profile,
         out string error)
@@ -38,13 +41,20 @@ public static class BistroBuilderPremisesPresentationRuntime
 
         Clear();
 
+        originalFloorMaterial = floorRenderer.sharedMaterial;
+        originalFloorMaterialCaptured = true;
+
         floorRenderer.enabled = true;
         floorRenderer.sharedMaterial = kit.floorMaterial;
 
         var root = new GameObject(RootName);
         BuildEnvelope(root.transform, floorRenderer.bounds, kit);
 
-        SetDebugPlacementObstacleVisible(false);
+        // El obstáculo técnico sigue activo y participando en validación.
+        // Solo se elimina su cubo de depuración visible.
+        SetTechnicalRendererVisible(
+            "PlacementObstacle_Test",
+            false);
 
         if (profile != BistroBuilderStartingPremisesProfile.Empty)
         {
@@ -60,6 +70,25 @@ public static class BistroBuilderPremisesPresentationRuntime
         GameObject existing = GameObject.Find(RootName);
         if (existing != null)
             DestroyPresentationObject(existing);
+
+        RemovePresentationChild("Kitchen_Test", "BB_PresentationKitchen");
+        RemoveBarPresentationChildren();
+
+        SetTechnicalRendererVisible("PlacementObstacle_Test", true);
+        SetTechnicalRendererVisible("Kitchen_Test", true);
+        SetLegacyPrimitiveVisible("ProvisionalCounter", true);
+        SetLegacyPrimitiveVisible("ProvisionalStool", true);
+
+        if (originalFloorMaterialCaptured)
+        {
+            GameObject floor = GameObject.Find("Floor_Test");
+            Renderer renderer = floor != null ? floor.GetComponent<Renderer>() : null;
+            if (renderer != null)
+                renderer.sharedMaterial = originalFloorMaterial;
+
+            originalFloorMaterial = null;
+            originalFloorMaterialCaptured = false;
+        }
     }
 
     private static void BuildEnvelope(
@@ -104,15 +133,17 @@ public static class BistroBuilderPremisesPresentationRuntime
             kit.wallMaterial,
             Windows("north", 0.22f, 0.50f, 0.78f));
 
+        // Mantiene el lateral oeste en cutaway: la envolvente existe, pero
+        // no tapa el comedor desde la cámara isométrica principal.
         CreateWall(
             root,
-            "WestWall",
+            "WestCutaway",
             new Vector2(minX, minZ),
             new Vector2(minX, maxZ),
             baseY,
-            FullWallHeight,
+            CutawayWallHeight,
             kit.wallMaterial,
-            Windows("west", 0.38f, 0.72f));
+            null);
 
         CreateWall(
             root,
@@ -254,14 +285,24 @@ public static class BistroBuilderPremisesPresentationRuntime
         renderer.receiveShadows = true;
 
         if (openings != null && openings.Count > 0)
+        {
             BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, material);
+            DisablePresentationColliders(go.transform);
+        }
     }
 
-    private static void SetDebugPlacementObstacleVisible(bool visible)
+    private static void SetTechnicalRendererVisible(
+        string objectName,
+        bool visible)
     {
-        GameObject obstacle = GameObject.Find("PlacementObstacle_Test");
-        if (obstacle != null)
-            obstacle.SetActive(visible);
+        GameObject target = GameObject.Find(objectName);
+        if (target == null) return;
+
+        Renderer[] renderers =
+            target.GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null)
+                renderers[i].enabled = visible;
     }
 
     private static void UpgradeKitchenAuthorityVisual(
@@ -423,10 +464,85 @@ public static class BistroBuilderPremisesPresentationRuntime
 
             Renderer renderer = child.GetComponent<Renderer>();
             if (renderer != null) renderer.enabled = false;
-
-            Collider collider = child.GetComponent<Collider>();
-            if (collider != null) collider.enabled = false;
         }
+    }
+
+    private static void SetLegacyPrimitiveVisible(
+        string name,
+        bool visible)
+    {
+        GameObject[] all =
+            UnityEngine.Object.FindObjectsByType<GameObject>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int i = 0; i < all.Length; i++)
+        {
+            GameObject go = all[i];
+            if (go == null ||
+                !string.Equals(go.name, name, StringComparison.Ordinal))
+                continue;
+
+            Renderer renderer = go.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.enabled = visible;
+        }
+    }
+
+    private static void RemovePresentationChild(
+        string parentName,
+        string childName)
+    {
+        GameObject parent = GameObject.Find(parentName);
+        if (parent == null) return;
+
+        Transform child = parent.transform.Find(childName);
+        if (child != null)
+            DestroyPresentationObject(child.gameObject);
+    }
+
+    private static void RemoveBarPresentationChildren()
+    {
+        BistroBuilder367HInstalledFixture[] fixtures =
+            UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.InstanceID);
+
+        for (int i = 0; i < fixtures.Length; i++)
+        {
+            BistroBuilder367HInstalledFixture fixture = fixtures[i];
+            if (fixture == null) continue;
+
+            Transform barVisual =
+                fixture.transform.Find("BB_PresentationBar");
+            if (barVisual != null)
+                DestroyPresentationObject(barVisual.gameObject);
+
+            Transform[] children =
+                fixture.GetComponentsInChildren<Transform>(true);
+            for (int childIndex = 0; childIndex < children.Length; childIndex++)
+            {
+                Transform child = children[childIndex];
+                if (child != null &&
+                    string.Equals(
+                        child.name,
+                        "BB_PresentationStool",
+                        StringComparison.Ordinal))
+                    DestroyPresentationObject(child.gameObject);
+            }
+        }
+    }
+
+    private static void DisablePresentationColliders(
+        Transform root)
+    {
+        if (root == null) return;
+
+        Collider[] colliders =
+            root.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+            if (colliders[i] != null)
+                colliders[i].enabled = false;
     }
 
     private static void CreateBox(
