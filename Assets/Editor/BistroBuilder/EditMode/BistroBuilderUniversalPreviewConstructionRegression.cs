@@ -5,9 +5,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 
 /// <summary>
-/// Regresión determinista del preview universal de construcción.
-/// No simula ratón, no usa reflection y no toca estado privado.
-/// La entrada de ratón tiene su propia regresión consolidada en el proyecto.
+/// Regresión determinista y atómica del Universal Preview de construcción.
+/// No simula ratón, no usa reflection y no depende de temporización entre frames.
 /// </summary>
 [InitializeOnLoad]
 public static class BistroBuilderUniversalPreviewConstructionRegression
@@ -23,8 +22,6 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
     private static RestaurantEditInteractionController editController;
     private static BistroBuilderUniversalPreviewService preview;
 
-    private static int baselineWalls;
-    private static int stage;
     private static int lastFrame;
     private static double next;
     private static double deadline;
@@ -75,7 +72,6 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
         if (state ==
             PlayModeStateChange.EnteredPlayMode)
         {
-            stage = 0;
             lastFrame = -1;
             failure = null;
 
@@ -83,10 +79,16 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                 EditorApplication.timeSinceStartup + 3d;
 
             deadline =
-                EditorApplication.timeSinceStartup + 90d;
+                EditorApplication.timeSinceStartup + 30d;
+
+            EditorApplication.update -=
+                Tick;
 
             EditorApplication.update +=
                 Tick;
+
+            Application.logMessageReceived -=
+                HandleLog;
 
             Application.logMessageReceived +=
                 HandleLog;
@@ -146,9 +148,6 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
             return;
         }
 
-        next =
-            EditorApplication.timeSinceStartup + 0.15d;
-
         lastFrame =
             Time.frameCount;
 
@@ -164,119 +163,113 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                 deadline)
             {
                 throw new TimeoutException(
-                    "Construction preview regression timed out.");
+                    "Construction preview regression no encontró sus dependencias a tiempo.");
             }
 
-            switch (stage)
+            ResolveDependencies();
+
+            if (!DependenciesReady())
             {
-                case 0:
-                    ResolveDependencies();
+                next =
+                    EditorApplication.timeSinceStartup + 0.10d;
 
-                    if (!DependenciesReady())
-                        return;
-
-                    UnityEngine.Object
-                        .FindFirstObjectByType<
-                            BistroBuilderNewGameOpeningPlayerScreen>()
-                        ?.Hide();
-
-                    Check(
-                        editController.TryEnterEditMode(),
-                        "No se pudo entrar en modo edición.");
-
-                    break;
-
-                case 1:
-                    if (!coordinator.HasSession)
-                    {
-                        Check(
-                            coordinator.TryBeginSession(
-                                out string sessionError),
-                            "No se pudo abrir Draft Session: " +
-                            sessionError);
-                    }
-
-                    baselineWalls =
-                        coordinator.Session.Draft.walls.Count;
-
-                    Check(
-                        tool.TryPreviewRoomAtPlanPoints(
-                            new Vector2(30f, 30f),
-                            new Vector2(36f, 34f),
-                            "zone.dining",
-                            out string previewError),
-                        "No se pudo crear la preview de habitación: " +
-                        previewError);
-
-                    Check(
-                        coordinator.HasSession,
-                        "La preview perdió la Draft Session.");
-
-                    Check(
-                        coordinator.Session.Draft.walls.Count ==
-                            baselineWalls,
-                        "La preview modificó el borrador durante su creación.");
-
-                    break;
-
-                case 2:
-                    Check(
-                        coordinator.Session.Draft.walls.Count ==
-                            baselineWalls,
-                        "La preview modificó el borrador antes de cancelar.");
-
-                    AssertConstructionPreview();
-
-                    Check(
-                        tool.TryCancelDraft(
-                            out string cancelError),
-                        "No se pudo cancelar el borrador de preview: " +
-                        cancelError);
-
-                    /*
-                     * La herramienta Room abre una Draft Session cuando su
-                     * Update detecta que sigue activa. Por eso la cancelación
-                     * y el retorno a Furniture forman una única operación de
-                     * cierre de la regresión y se validan en este mismo frame.
-                     */
-                    Check(
-                        !coordinator.HasSession,
-                        "Cancelar no cerró inmediatamente la Draft Session.");
-
-                    Check(
-                        !preview.Current.IsVisible,
-                        "La preview siguió visible tras cancelar.");
-
-                    tool.SetMode(
-                        BistroBuilderConstructionRuntimeMode.Furniture);
-
-                    Check(
-                        !coordinator.HasSession,
-                        "Cambiar a Furniture reabrió la Draft Session.");
-
-                    editController.TryExitEditMode(
-                        true);
-
-                    Finish(
-                        true,
-                        "preview aislada / 4 segmentos / " +
-                        "4 volúmenes / dimensiones configuradas / " +
-                        "cancelación limpia");
-
-                    return;
+                return;
             }
 
-            stage++;
+            EditorApplication.update -=
+                Tick;
+
+            ExecuteRegression();
         }
         catch (Exception error)
         {
             Finish(
                 false,
-                "Stage " +
-                stage +
-                ": " +
-                error);
+                error.ToString());
         }
+    }
+
+    private static void ExecuteRegression()
+    {
+        UnityEngine.Object
+            .FindFirstObjectByType<
+                BistroBuilderNewGameOpeningPlayerScreen>()
+            ?.Hide();
+
+        Check(
+            editController.TryEnterEditMode(),
+            "No se pudo entrar en modo edición.");
+
+        if (!coordinator.HasSession)
+        {
+            Check(
+                coordinator.TryBeginSession(
+                    out string sessionError),
+                "No se pudo abrir Draft Session: " +
+                sessionError);
+        }
+
+        Check(
+            coordinator.HasSession,
+            "Construction no dispone de Draft Session.");
+
+        int baselineWalls =
+            coordinator.Session.Draft.walls.Count;
+
+        Check(
+            tool.TryPreviewRoomAtPlanPoints(
+                new Vector2(30f, 30f),
+                new Vector2(36f, 34f),
+                "zone.dining",
+                out string previewError),
+            "No se pudo crear la preview de habitación: " +
+            previewError);
+
+        Check(
+            coordinator.HasSession,
+            "La preview perdió la Draft Session.");
+
+        Check(
+            coordinator.Session.Draft.walls.Count ==
+                baselineWalls,
+            "La preview modificó el borrador.");
+
+        AssertConstructionPreview();
+
+        Check(
+            tool.TryCancelDraft(
+                out string cancelError),
+            "No se pudo cancelar el borrador de preview: " +
+            cancelError);
+
+        Check(
+            !coordinator.HasSession,
+            "Cancelar no cerró inmediatamente la Draft Session.");
+
+        Check(
+            !preview.Current.IsVisible,
+            "La preview siguió visible tras cancelar.");
+
+        tool.SetMode(
+            BistroBuilderConstructionRuntimeMode.Furniture);
+
+        Check(
+            !coordinator.HasSession,
+            "Volver a Furniture reabrió la Draft Session.");
+
+        Check(
+            tool.CurrentMode ==
+                BistroBuilderConstructionRuntimeMode.Furniture,
+            "La herramienta no volvió a modo Furniture.");
+
+        editController.TryExitEditMode(
+            true);
+
+        Finish(
+            true,
+            "preview aislada / borrador intacto / " +
+            "4 segmentos / 4 volúmenes / " +
+            "dimensiones configuradas / cancelación limpia");
     }
 
     private static void ResolveDependencies()
@@ -359,9 +352,18 @@ public static class BistroBuilderUniversalPreviewConstructionRegression
                     tool.WallHeight) <= 0.001f,
                 "El volumen no conserva la altura configurada.");
 
+            /*
+             * Dos lados de la habitación están orientados 90 grados.
+             * El espesor puede aparecer en X o Z según la rotación del box.
+             */
+            float horizontalThickness =
+                Mathf.Min(
+                    box.Size.x,
+                    box.Size.z);
+
             Check(
                 Mathf.Abs(
-                    box.Size.z -
+                    horizontalThickness -
                     tool.WallThickness) <= 0.001f,
                 "El volumen no conserva el grosor configurado.");
         }
