@@ -199,7 +199,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(388f, 820f);
+        root.sizeDelta = new Vector2(344f, 680f);
 
         Image panelImage = rootObject.AddComponent<Image>();
         panelImage.color = Panel;
@@ -276,7 +276,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             row,
             "Artículo",
             semiBoldFont,
-            26f,
+            23f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
         AddLayout(titleText.gameObject, 0f, 1f);
@@ -295,7 +295,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildPreview()
     {
-        RectTransform shell = CreateLayoutRow("Preview", 232f);
+        RectTransform shell = CreateLayoutRow("Preview", 164f);
         Image background = shell.gameObject.AddComponent<Image>();
         background.color = new Color32(246, 242, 236, 255);
         ApplyRounded(background, 14);
@@ -303,7 +303,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         previewImage = CreateImage("Image", shell);
         previewImage.preserveAspect = true;
         previewImage.raycastTarget = false;
-        Stretch(previewImage.rectTransform, 14f, 14f, 12f, 12f);
+        Stretch(previewImage.rectTransform, 18f, 18f, 10f, 10f);
 
         Button favoriteButton = CreateTextButton(
             "Favorite",
@@ -338,14 +338,14 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildDetails()
     {
-        RectTransform section = CreateLayoutRow("Details", 140f);
+        RectTransform section = CreateLayoutRow("Details", 116f);
 
         nameText = CreateTmp(
             "Name",
             section,
             "Artículo",
             semiBoldFont,
-            17f,
+            16f,
             TextPrimary,
             TextAlignmentOptions.TopLeft);
         SetAnchors(
@@ -376,7 +376,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             section,
             "0 €",
             semiBoldFont,
-            28f,
+            24f,
             Olive,
             TextAlignmentOptions.MidlineLeft);
         SetAnchors(
@@ -410,7 +410,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildVariants()
     {
-        variantsSection = CreateLayoutRow("Variants", 82f).gameObject;
+        variantsSection = CreateLayoutRow("Variants", 68f).gameObject;
 
         TMP_Text label = CreateTmp(
             "Label",
@@ -446,7 +446,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildDimensions()
     {
-        RectTransform section = CreateLayoutRow("Dimensions", 64f);
+        RectTransform section = CreateLayoutRow("Dimensions", 56f);
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -482,7 +482,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildRules()
     {
-        RectTransform section = CreateLayoutRow("Rules", 132f);
+        RectTransform section = CreateLayoutRow("Rules", 108f);
         AddTopLine(section);
 
         TMP_Text label = CreateTmp(
@@ -518,7 +518,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
     private void BuildStatus()
     {
-        RectTransform box = CreateLayoutRow("Status", 66f);
+        RectTransform box = CreateLayoutRow("Status", 60f);
         statusBackground = box.gameObject.AddComponent<Image>();
         statusBackground.color = OliveSoft;
         ApplyRounded(statusBackground, 12);
@@ -1022,8 +1022,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(388f, Mathf.Min(830f, available));
-        root.anchoredPosition = new Vector2(-24f, -topInset);
+        root.sizeDelta = new Vector2(344f, Mathf.Min(690f, available));
+        root.anchoredPosition = new Vector2(-18f, -topInset);
     }
 
     private RectTransform CreateLayoutRow(string name, float height)
