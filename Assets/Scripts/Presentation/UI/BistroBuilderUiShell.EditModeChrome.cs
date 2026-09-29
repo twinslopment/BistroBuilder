@@ -734,8 +734,6 @@ public sealed partial class BistroBuilderUiShell
         else if(topNavigation!=null&&topNavigation.gameObject.activeSelf)
             topNavigation.SetAsLastSibling();
 
-        LayoutEditModeChrome();
-
         if(!visible)
         {
             if(editModeToolStatusText!=null)
