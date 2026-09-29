@@ -28,6 +28,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private RestaurantEditInteractionController interactionController;
     private RestaurantEditModeService editModeService;
     private BistroBuilderUiShell uiShell;
+    private RestaurantPlaceableDeletionService deletionService;
+    private BistroBuilderPlaceableFinanceBridge financeBridge;
+    private BistroBuilderEditCameraFocusCoordinator cameraFocus;
 
     private RectTransform root;
     private RectTransform content;
@@ -53,11 +56,19 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private TMP_Text statusIcon;
     private TMP_Text statusTitle;
     private TMP_Text statusMessage;
-    private TMP_Text favoriteText;
+
+    private RectTransform actionsSection;
+    private Button focusButton;
+    private Button moveButton;
+    private Button rotateButton;
+    private Button duplicateButton;
+    private Button deleteButton;
+    private TMP_Text deleteButtonText;
 
     private RestaurantPlaceableInspectorData currentData;
+    private RestaurantPlaceableObject selectedPlaceable;
     private string lastInteractionMessage = string.Empty;
-    private bool favorite;
+    private bool catalogPlacementContext;
     private bool built;
     private bool variantsAvailable;
     private bool compactPlacementMode;
@@ -116,6 +127,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
             root.SetAsLastSibling();
             ApplyContextualDensity();
+            RefreshActionInteractivity();
         }
 
         ApplyScreenBounds();
@@ -136,6 +148,21 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (uiShell == null)
             uiShell =
                 FindFirstObjectByType<BistroBuilderUiShell>(
+                    FindObjectsInactive.Include);
+
+        if (deletionService == null)
+            deletionService =
+                FindFirstObjectByType<RestaurantPlaceableDeletionService>(
+                    FindObjectsInactive.Include);
+
+        if (financeBridge == null)
+            financeBridge =
+                FindFirstObjectByType<BistroBuilderPlaceableFinanceBridge>(
+                    FindObjectsInactive.Include);
+
+        if (cameraFocus == null)
+            cameraFocus =
+                FindFirstObjectByType<BistroBuilderEditCameraFocusCoordinator>(
                     FindObjectsInactive.Include);
     }
 
@@ -170,6 +197,16 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 HandleInteractionMessageChanged;
             interactionController.InteractionMessageChanged +=
                 HandleInteractionMessageChanged;
+
+            interactionController.SelectedEditableObjectChanged -=
+                HandleWorldSelectionChanged;
+            interactionController.SelectedEditableObjectChanged +=
+                HandleWorldSelectionChanged;
+
+            interactionController.ActiveEditableObjectChanged -=
+                HandleActivePlacementChanged;
+            interactionController.ActiveEditableObjectChanged +=
+                HandleActivePlacementChanged;
         }
     }
 
@@ -184,6 +221,10 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 HandleValidationChanged;
             interactionController.InteractionMessageChanged -=
                 HandleInteractionMessageChanged;
+            interactionController.SelectedEditableObjectChanged -=
+                HandleWorldSelectionChanged;
+            interactionController.ActiveEditableObjectChanged -=
+                HandleActivePlacementChanged;
         }
     }
 
@@ -260,6 +301,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         BuildDimensions();
         BuildRules();
         BuildStatus();
+        BuildActions();
 
         built = true;
         ApplyScreenBounds();
@@ -313,35 +355,6 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         previewImage.raycastTarget = false;
         Stretch(previewImage.rectTransform, 16f, 16f, 10f, 10f);
 
-        Button favoriteButton = CreateTextButton(
-            "Favorite",
-            shell,
-            "♡",
-            44f,
-            44f,
-            Card,
-            TextMuted,
-            27f);
-
-        RectTransform favoriteRect =
-            favoriteButton.GetComponent<RectTransform>();
-        favoriteRect.anchorMin = new Vector2(1f, 1f);
-        favoriteRect.anchorMax = new Vector2(1f, 1f);
-        favoriteRect.pivot = new Vector2(1f, 1f);
-        favoriteRect.anchoredPosition = new Vector2(-9f, -9f);
-        favoriteRect.sizeDelta = new Vector2(44f, 44f);
-
-        favoriteText =
-            favoriteButton.GetComponentInChildren<TMP_Text>(true);
-        favoriteButton.onClick.AddListener(() =>
-        {
-            favorite = !favorite;
-            if (favoriteText != null)
-            {
-                favoriteText.text = favorite ? "♥" : "♡";
-                favoriteText.color = favorite ? Olive : TextMuted;
-            }
-        });
     }
 
     private void BuildDetails()
@@ -587,24 +600,139 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             new Vector2(-8f, 0f));
     }
 
+    private void BuildActions()
+    {
+        actionsSection = CreateLayoutRow("Actions", 98f);
+        AddTopLine(actionsSection);
+
+        TMP_Text label = CreateTmp(
+            "Label",
+            actionsSection,
+            "Acciones",
+            semiBoldFont,
+            14f,
+            TextPrimary,
+            TextAlignmentOptions.TopLeft);
+        SetAnchors(
+            label.rectTransform,
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, -22f),
+            new Vector2(0f, -4f));
+
+        RectTransform rowA = CreateRect("Primary", actionsSection);
+        rowA.anchorMin = new Vector2(0f, 0f);
+        rowA.anchorMax = new Vector2(1f, 0f);
+        rowA.pivot = new Vector2(0.5f, 0f);
+        rowA.offsetMin = new Vector2(0f, 42f);
+        rowA.offsetMax = new Vector2(0f, 76f);
+        HorizontalLayoutGroup layoutA = rowA.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layoutA.spacing = 6f;
+        layoutA.childControlWidth = true;
+        layoutA.childControlHeight = true;
+        layoutA.childForceExpandWidth = true;
+        layoutA.childForceExpandHeight = true;
+
+        focusButton = CreateActionButton("Focus", rowA, "Centrar", Card, TextPrimary);
+        moveButton = CreateActionButton("Move", rowA, "Mover", OliveSoft, Olive);
+        rotateButton = CreateActionButton("Rotate", rowA, "Rotar", Card, TextPrimary);
+
+        RectTransform rowB = CreateRect("Secondary", actionsSection);
+        rowB.anchorMin = new Vector2(0f, 0f);
+        rowB.anchorMax = new Vector2(1f, 0f);
+        rowB.pivot = new Vector2(0.5f, 0f);
+        rowB.offsetMin = new Vector2(0f, 2f);
+        rowB.offsetMax = new Vector2(0f, 36f);
+        HorizontalLayoutGroup layoutB = rowB.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layoutB.spacing = 6f;
+        layoutB.childControlWidth = true;
+        layoutB.childControlHeight = true;
+        layoutB.childForceExpandWidth = true;
+        layoutB.childForceExpandHeight = true;
+
+        duplicateButton = CreateActionButton("Duplicate", rowB, "Duplicar", Card, TextPrimary);
+        deleteButton = CreateActionButton("Delete", rowB, "Eliminar", InvalidSoft, InvalidText);
+        deleteButtonText = deleteButton.GetComponentInChildren<TMP_Text>(true);
+
+        focusButton.onClick.AddListener(HandleFocusClicked);
+        moveButton.onClick.AddListener(HandleMoveClicked);
+        rotateButton.onClick.AddListener(HandleRotateClicked);
+        duplicateButton.onClick.AddListener(HandleDuplicateClicked);
+        deleteButton.onClick.AddListener(HandleDeleteClicked);
+    }
+
+    private Button CreateActionButton(
+        string name,
+        Transform parent,
+        string label,
+        Color background,
+        Color foreground)
+    {
+        Button button = CreateTextButton(
+            name,
+            parent,
+            label,
+            110f,
+            34f,
+            background,
+            foreground,
+            12.5f);
+
+        LayoutElement layout =
+            button.gameObject.GetComponent<LayoutElement>() ??
+            button.gameObject.AddComponent<LayoutElement>();
+        layout.minWidth = 70f;
+        layout.preferredWidth = 100f;
+        layout.flexibleWidth = 1f;
+        layout.minHeight = 34f;
+        layout.preferredHeight = 34f;
+
+        return button;
+    }
+
     private void HandleItemSelected(
         RestaurantPlaceableItemDefinition definition)
     {
-        ShowForDefinition(definition);
+        ShowForDefinitionInternal(
+            definition,
+            null,
+            true);
     }
 
     public void ShowForDefinition(
         RestaurantPlaceableItemDefinition definition)
     {
+        ShowForDefinitionInternal(
+            definition,
+            null,
+            true);
+    }
+
+    private void ShowForDefinitionInternal(
+        RestaurantPlaceableItemDefinition definition,
+        RestaurantPlaceableObject placeable,
+        bool fromCatalog)
+    {
         if (definition == null)
             return;
 
-        currentData = RestaurantPlaceableInspectorData.From(definition);
-        favorite = false;
-        lastInteractionMessage = string.Empty;
+        currentData =
+            RestaurantPlaceableInspectorData.From(
+                definition);
+
+        selectedPlaceable =
+            placeable;
+
+        catalogPlacementContext =
+            fromCatalog;
+
+        lastInteractionMessage =
+            string.Empty;
 
         BuildIfNeeded();
         BindData(currentData);
+        RefreshActionInteractivity();
+        RefreshContextStatus();
 
         if (root != null)
         {
@@ -618,7 +746,11 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (data == null)
             return;
 
-        if (titleText != null) titleText.text = data.DisplayName;
+        if (titleText != null)
+            titleText.text = ResolveCategoryLabel(
+                data.Definition != null
+                    ? data.Definition.Category
+                    : RestaurantPlaceableItemCategory.Other);
         if (nameText != null) nameText.text = data.DisplayName;
         if (descriptionText != null) descriptionText.text = data.Description;
 
@@ -648,22 +780,18 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         Vector3 dimensions = data.DimensionsCentimeters;
         if (dimensionsText != null)
         {
-            dimensionsText.text = string.Format(
-                "Ancho {0:0.#} cm  |  Fondo {1:0.#} cm  |  Alto {2:0.#} cm",
-                dimensions.x,
-                dimensions.z,
-                dimensions.y);
-        }
-
-        if (favoriteText != null)
-        {
-            favoriteText.text = "♡";
-            favoriteText.color = TextMuted;
+            dimensionsText.text =
+                dimensions.sqrMagnitude > 0.001f
+                    ? string.Format(
+                        "Ancho {0:0.#} cm  |  Fondo {1:0.#} cm  |  Alto {2:0.#} cm",
+                        dimensions.x,
+                        dimensions.z,
+                        dimensions.y)
+                    : "Dimensiones no autoradas";
         }
 
         RebuildVariants(data);
         RebuildRules(data);
-        SetStatusNeutral();
     }
 
     private void RebuildVariants(RestaurantPlaceableInspectorData data)
@@ -706,7 +834,6 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 "Variant_" + variant.Id,
                 typeof(RectTransform),
                 typeof(Image),
-                typeof(Button),
                 typeof(LayoutElement));
 
             go.transform.SetParent(variantsRow, false);
@@ -721,30 +848,24 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             image.color = ResolveVariantColor(variant);
             image.sprite = GetRoundedSprite(18);
             image.type = Image.Type.Sliced;
+            image.raycastTarget = false;
 
             Outline outline = go.AddComponent<Outline>();
             outline.effectColor = new Color32(211, 205, 195, 255);
             outline.effectDistance = new Vector2(1.2f, -1.2f);
             outline.useGraphicAlpha = true;
 
-            Button button = go.GetComponent<Button>();
-            button.targetGraphic = image;
-            button.transition = Selectable.Transition.ColorTint;
-
-            string variantId = variant.Id;
-            button.onClick.AddListener(() =>
-            {
-                if (TryApplyVariant(variantId))
-                {
-                    MarkSelectedVariant(variantId);
-                }
-            });
-
             dynamicVariants.Add(go);
         }
 
-        if (!string.IsNullOrWhiteSpace(profile.DefaultVariantId))
-            MarkSelectedVariant(profile.DefaultVariantId);
+        string visibleVariantId =
+            ResolveCurrentVariantId();
+
+        if (string.IsNullOrWhiteSpace(visibleVariantId))
+            visibleVariantId = profile.DefaultVariantId;
+
+        if (!string.IsNullOrWhiteSpace(visibleVariantId))
+            MarkSelectedVariant(visibleVariantId);
     }
 
     private void MarkSelectedVariant(string variantId)
@@ -769,28 +890,6 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                     : new Vector2(1.2f, -1.2f);
             }
         }
-    }
-
-    private bool TryApplyVariant(string variantId)
-    {
-        if (interactionController == null ||
-            interactionController.ActiveMember == null)
-        {
-            return false;
-        }
-
-        FurnitureFinishRuntimeBinding binding =
-            interactionController.ActiveMember.GetComponentInParent<
-                FurnitureFinishRuntimeBinding>();
-
-        if (binding == null)
-        {
-            binding = interactionController.ActiveMember.GetComponentInChildren<
-                FurnitureFinishRuntimeBinding>(true);
-        }
-
-        return binding != null &&
-            binding.ApplyVariant(variantId);
     }
 
     private static Color ResolveVariantColor(
@@ -897,7 +996,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private void HandleValidationChanged(
         RestaurantPlacementValidationResult result)
     {
-        if (currentData == null)
+        if (currentData == null ||
+            interactionController == null ||
+            !interactionController.HasActivePlacement)
             return;
 
         if (result.IsValid)
@@ -927,6 +1028,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         if (currentData == null ||
             interactionController == null ||
+            !interactionController.HasActivePlacement ||
             interactionController.LastValidationResult.IsValid)
         {
             return;
@@ -941,12 +1043,79 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
     }
 
-    private void SetStatusNeutral()
+    private void RefreshContextStatus()
     {
+        if (currentData == null)
+            return;
+
+        if (interactionController != null &&
+            interactionController.HasActivePlacement)
+        {
+            RestaurantPlacementValidationResult validation =
+                interactionController.LastValidationResult;
+
+            if (validation.IsValid)
+            {
+                SetStatus(
+                    true,
+                    "Listo para colocar",
+                    "La posición actual es válida.");
+            }
+            else
+            {
+                string message =
+                    !string.IsNullOrWhiteSpace(lastInteractionMessage)
+                        ? lastInteractionMessage
+                        : ResolveValidationMessage(validation.Status);
+
+                SetStatus(
+                    false,
+                    "No se puede colocar aquí",
+                    message);
+            }
+
+            return;
+        }
+
+        if (selectedPlaceable != null)
+        {
+            if (TryResolveDisposal(
+                    selectedPlaceable,
+                    out BistroBuilderPlaceableDisposalPreview preview))
+            {
+                string message =
+                    preview.NetCashCents > 0L
+                        ? "Valor neto de reventa: +" +
+                          FormatMoney(preview.NetCashCents) + "."
+                        : preview.NetCashCents < 0L
+                            ? "Coste neto de retirada: -" +
+                              FormatMoney(-preview.NetCashCents) + "."
+                            : "Elige una acción para este artículo.";
+
+                SetStatus(
+                    true,
+                    "Artículo seleccionado",
+                    message);
+            }
+            else
+            {
+                SetStatus(
+                    true,
+                    "Artículo seleccionado",
+                    "Elige una acción para este artículo.");
+            }
+
+            return;
+        }
+
         SetStatus(
             true,
-            "Listo para colocar",
-            "Mueve el artículo para comprobar su posición.");
+            catalogPlacementContext
+                ? "Listo para colocar"
+                : "Artículo",
+            catalogPlacementContext
+                ? "Selecciona una posición en el restaurante."
+                : "Selecciona un artículo del restaurante.");
     }
 
     private void SetStatus(
@@ -998,6 +1167,327 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
     }
 
+    private void HandleWorldSelectionChanged(
+        RestaurantEditableObject editableObject)
+    {
+        if (editableObject == null)
+        {
+            if (interactionController == null ||
+                !interactionController.HasActivePlacement)
+            {
+                selectedPlaceable = null;
+
+                if (!catalogPlacementContext)
+                    Hide();
+            }
+
+            RefreshActionInteractivity();
+            return;
+        }
+
+        RestaurantPlaceableObject placeable =
+            editableObject.GetComponent<RestaurantPlaceableObject>();
+
+        if (placeable == null ||
+            placeable.ItemDefinition == null)
+        {
+            selectedPlaceable = null;
+            Hide();
+            return;
+        }
+
+        ShowForDefinitionInternal(
+            placeable.ItemDefinition,
+            placeable,
+            false);
+    }
+
+    private void HandleActivePlacementChanged(
+        RestaurantEditableObject editableObject)
+    {
+        RefreshActionInteractivity();
+        RefreshContextStatus();
+    }
+
+    private void HandleFocusClicked()
+    {
+        CacheDependencies();
+
+        if (cameraFocus == null)
+            return;
+
+        cameraFocus.TryFocusSelected(true);
+    }
+
+    private void HandleMoveClicked()
+    {
+        if (interactionController == null ||
+            selectedPlaceable == null)
+            return;
+
+        interactionController.TryBeginMoveSelected();
+        RefreshActionInteractivity();
+        RefreshContextStatus();
+    }
+
+    private void HandleRotateClicked()
+    {
+        if (interactionController == null)
+            return;
+
+        if (!interactionController.HasActivePlacement &&
+            !interactionController.TryBeginMoveSelected())
+        {
+            return;
+        }
+
+        interactionController.RotateActiveCandidateFromInterface();
+        RefreshActionInteractivity();
+        RefreshContextStatus();
+    }
+
+    private void HandleDuplicateClicked()
+    {
+        if (interactionController == null ||
+            selectedPlaceable == null ||
+            selectedPlaceable.ItemDefinition == null ||
+            interactionController.HasActivePlacement)
+        {
+            return;
+        }
+
+        RestaurantPlaceableItemDefinition definition =
+            selectedPlaceable.ItemDefinition;
+
+        bool began =
+            interactionController.TryBeginPlaceableCreation(
+                definition);
+
+        if (began)
+        {
+            ShowForDefinitionInternal(
+                definition,
+                null,
+                true);
+        }
+
+        RefreshActionInteractivity();
+        RefreshContextStatus();
+    }
+
+    private void HandleDeleteClicked()
+    {
+        if (interactionController == null ||
+            deletionService == null ||
+            selectedPlaceable == null ||
+            interactionController.HasActivePlacement)
+        {
+            return;
+        }
+
+        RestaurantPlaceableObject deleting =
+            selectedPlaceable;
+
+        if (!deletionService.TryDelete(
+                deleting,
+                out RestaurantPlaceableDeletionResult result))
+        {
+            lastInteractionMessage =
+                result.Message ?? string.Empty;
+
+            SetStatus(
+                false,
+                "No se puede retirar",
+                string.IsNullOrWhiteSpace(lastInteractionMessage)
+                    ? "La operación ha sido rechazada."
+                    : lastInteractionMessage);
+
+            return;
+        }
+
+        interactionController.ClearSelection();
+        Hide();
+    }
+
+    private void RefreshActionInteractivity()
+    {
+        bool hasPlacement =
+            interactionController != null &&
+            interactionController.HasActivePlacement;
+
+        RestaurantEditableObject editable =
+            interactionController != null
+                ? interactionController.SelectedEditableObject
+                : null;
+
+        bool hasSelection =
+            selectedPlaceable != null &&
+            editable != null;
+
+        if (focusButton != null)
+            focusButton.interactable =
+                hasSelection ||
+                (interactionController != null &&
+                 interactionController.ActiveMember != null);
+
+        if (moveButton != null)
+            moveButton.interactable =
+                hasSelection &&
+                !hasPlacement &&
+                editable.CanMove;
+
+        if (rotateButton != null)
+            rotateButton.interactable =
+                (hasPlacement &&
+                 interactionController.ActiveEditableObject != null &&
+                 interactionController.ActiveEditableObject.CanRotate) ||
+                (hasSelection &&
+                 editable.CanRotate);
+
+        if (duplicateButton != null)
+            duplicateButton.interactable =
+                hasSelection &&
+                !hasPlacement &&
+                selectedPlaceable.ItemDefinition != null;
+
+        if (deleteButton != null)
+            deleteButton.interactable =
+                hasSelection &&
+                !hasPlacement &&
+                deletionService != null;
+
+        RefreshDeleteLabel();
+
+        if (actionsSection != null)
+        {
+            actionsSection.gameObject.SetActive(
+                !compactPlacementMode &&
+                hasSelection);
+        }
+    }
+
+    private void RefreshDeleteLabel()
+    {
+        if (deleteButtonText == null)
+            return;
+
+        deleteButtonText.text =
+            "Eliminar";
+
+        if (!TryResolveDisposal(
+                selectedPlaceable,
+                out BistroBuilderPlaceableDisposalPreview preview))
+        {
+            return;
+        }
+
+        if (preview.Mode ==
+            RestaurantPlaceableDisposalMode.Demolition)
+        {
+            deleteButtonText.text =
+                preview.RemovalCostCents > 0L
+                    ? "Demoler " +
+                      FormatSigned(-preview.RemovalCostCents)
+                    : "Demoler";
+            return;
+        }
+
+        if (preview.NetCashCents > 0L)
+            deleteButtonText.text =
+                "Vender " +
+                FormatSigned(preview.NetCashCents);
+        else if (preview.NetCashCents < 0L)
+            deleteButtonText.text =
+                "Retirar " +
+                FormatSigned(preview.NetCashCents);
+        else
+            deleteButtonText.text =
+                preview.Mode ==
+                    RestaurantPlaceableDisposalMode.None
+                    ? "Eliminar"
+                    : "Retirar";
+    }
+
+    private bool TryResolveDisposal(
+        RestaurantPlaceableObject placeable,
+        out BistroBuilderPlaceableDisposalPreview preview)
+    {
+        preview = default;
+
+        return placeable != null &&
+            financeBridge != null &&
+            financeBridge.TryGetDeletionPreview(
+                placeable,
+                out preview,
+                out _);
+    }
+
+    private string ResolveCurrentVariantId()
+    {
+        RestaurantAreaMember member =
+            interactionController != null &&
+            interactionController.ActiveMember != null
+                ? interactionController.ActiveMember
+                : selectedPlaceable != null
+                    ? selectedPlaceable.GetComponent<RestaurantAreaMember>()
+                    : null;
+
+        if (member == null)
+            return string.Empty;
+
+        FurnitureFinishRuntimeBinding binding =
+            member.GetComponentInParent<FurnitureFinishRuntimeBinding>();
+
+        if (binding == null)
+            binding =
+                member.GetComponentInChildren<FurnitureFinishRuntimeBinding>(
+                    true);
+
+        return binding != null
+            ? binding.VariantId
+            : string.Empty;
+    }
+
+    private static string ResolveCategoryLabel(
+        RestaurantPlaceableItemCategory category)
+    {
+        switch (category)
+        {
+            case RestaurantPlaceableItemCategory.Furniture:
+                return "Mobiliario";
+            case RestaurantPlaceableItemCategory.Seating:
+                return "Asientos";
+            case RestaurantPlaceableItemCategory.Lighting:
+                return "Iluminación";
+            case RestaurantPlaceableItemCategory.Decoration:
+                return "Decoración";
+            case RestaurantPlaceableItemCategory.KitchenEquipment:
+                return "Equipamiento de cocina";
+            case RestaurantPlaceableItemCategory.ServiceEquipment:
+                return "Equipamiento de servicio";
+            case RestaurantPlaceableItemCategory.Structural:
+                return "Estructura";
+            default:
+                return "Otros";
+        }
+    }
+
+    private static string FormatSigned(long signedCents)
+    {
+        return (signedCents > 0L ? "+" : "-") +
+            FormatMoney(Math.Abs(signedCents));
+    }
+
+    private static string FormatMoney(long cents)
+    {
+        decimal euros =
+            cents / 100m;
+
+        return cents % 100L == 0L
+            ? euros.ToString("N0") + " €"
+            : euros.ToString("N2") + " €";
+    }
+
     /// <summary>
     /// Cierra el inspector contextual y libera los datos mostrados.
     /// Forma parte del contrato de coordinación con el catálogo.
@@ -1005,6 +1495,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     public void Hide()
     {
         currentData = null;
+        selectedPlaceable = null;
+        catalogPlacementContext = false;
         compactPlacementMode = false;
         variantsAvailable = false;
 
@@ -1058,6 +1550,13 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         {
             rulesSection.gameObject.SetActive(
                 !compactPlacementMode);
+        }
+
+        if (actionsSection != null)
+        {
+            actionsSection.gameObject.SetActive(
+                !compactPlacementMode &&
+                selectedPlaceable != null);
         }
 
         if (root != null)
