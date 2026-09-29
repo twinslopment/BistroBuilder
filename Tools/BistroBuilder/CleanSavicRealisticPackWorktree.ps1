@@ -8,8 +8,8 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 Set-Location $root
 
-function Git([string[]]$Args) {
-    & git @Args
+function Invoke-GitNative([string[]]$Args) {
+    & git.exe @Args
     if ($LASTEXITCODE -ne 0) {
         throw "git $($Args -join ' ') failed with exit code $LASTEXITCODE"
     }
@@ -73,12 +73,12 @@ $unknown | ForEach-Object { Write-Output ('UNKNOWN|' + $_) }
 foreach ($path in $noise) {
     $tracked = git ls-files --error-unmatch -- $path 2>$null
     if ($LASTEXITCODE -eq 0) {
-        Git @('restore','--worktree','--',$path)
+        Invoke-GitNative @('restore','--worktree','--',$path)
     }
 }
 
 if ($keep.Count -gt 0) {
-    Git (@('add','--') + $keep)
+    Invoke-GitNative (@('add','--') + $keep)
 }
 
 if ($unknown.Count -gt 0) {
@@ -99,6 +99,6 @@ if (-not $staged) {
     exit 0
 }
 
-Git @('commit','-m','feat: materialize SAVIC realistic test pack v1')
+Invoke-GitNative @('commit','-m','feat: materialize SAVIC realistic test pack v1')
 Write-Output 'SAVIC_CLEANUP|COMMITTED'
 exit 0
