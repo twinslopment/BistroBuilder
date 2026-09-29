@@ -248,6 +248,14 @@ public sealed class RestaurantEditInteractionController :
     private RestaurantPlacementValidationResult
         lastValidationResult;
 
+    /*
+     * Bloquea únicamente la lectura automática de teclado/ratón.
+     * La transacción y las APIs públicas siguen activas para que
+     * una UI, una herramienta o una validación determinista puedan
+     * conducir la colocación sin competir con el dispositivo físico.
+     */
+    private bool worldInputSuppressed;
+
     /// <summary>
     /// Se ejecuta cuando cambia el miembro espacial editado.
     /// </summary>
@@ -358,6 +366,16 @@ public sealed class RestaurantEditInteractionController :
         PlacementLinkedGroupService =>
             linkedGroupService;
 
+    public bool IsWorldInputSuppressed =>
+        worldInputSuppressed;
+
+    public void SetWorldInputSuppressed(
+        bool suppressed)
+    {
+        worldInputSuppressed =
+            suppressed;
+    }
+
     private void Awake()
     {
         CacheDependenciesIfNeeded();
@@ -371,6 +389,7 @@ public sealed class RestaurantEditInteractionController :
 
     private void OnDisable()
     {
+        worldInputSuppressed = false;
         CancelActivePlacementIfNeeded();
         ClearLocalPlacementState();
         ClearSelection();
@@ -391,6 +410,16 @@ public sealed class RestaurantEditInteractionController :
          * bloqueado si otra acción cancela o restaura la colocación.
          */
         SynchronizeLocalPlacementState();
+
+        /*
+         * Un consumidor externo puede conducir la colocación mediante
+         * las APIs públicas sin que el ratón o teclado físicos compitan
+         * con esa operación. El estado transaccional sigue sincronizado.
+         */
+        if (worldInputSuppressed)
+        {
+            return;
+        }
 
         /*
          * Los comandos modificados con Control tienen prioridad sobre
