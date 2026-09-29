@@ -10,13 +10,13 @@ using UnityEngine;
 public sealed class BistroBuilderMoneyPopupService : MonoBehaviour
 {
     [SerializeField] private Camera targetCamera;
-    [SerializeField, Min(0.1f)] private float durationSeconds = 1.05f;
-    [SerializeField, Min(0.05f)] private float riseDistance = 0.72f;
-    [SerializeField, Min(0.001f)] private float characterSize = 0.045f;
+    [SerializeField, Min(0.1f)] private float durationSeconds = 0.88f;
+    [SerializeField, Min(0.05f)] private float riseDistance = 0.46f;
+    [SerializeField, Min(0.001f)] private float characterSize = 0.036f;
     [SerializeField] private Color positiveColor =
-        new Color(0.34f, 0.72f, 0.48f, 1f);
+        new Color(0.36f, 0.66f, 0.42f, 1f);
     [SerializeField] private Color negativeColor =
-        new Color(0.92f, 0.38f, 0.32f, 1f);
+        new Color(0.82f, 0.34f, 0.28f, 1f);
 
     private int activePopupCount;
 
@@ -55,13 +55,27 @@ public sealed class BistroBuilderMoneyPopupService : MonoBehaviour
         text.text = FormatSignedMoney(signedCents);
         text.anchor = TextAnchor.MiddleCenter;
         text.alignment = TextAlignment.Center;
-        text.fontSize = 64;
+        text.fontSize = 58;
         text.characterSize = characterSize;
+        text.fontStyle = FontStyle.Bold;
         text.color = signedCents > 0L ? positiveColor : negativeColor;
+
+        Font presentationFont =
+            BistroBuilderTypography.LegacyBody;
+
+        if (presentationFont != null)
+            text.font = presentationFont;
 
         MeshRenderer renderer = text.GetComponent<MeshRenderer>();
         if (renderer != null)
         {
+            if (presentationFont != null &&
+                presentationFont.material != null)
+            {
+                renderer.sharedMaterial =
+                    presentationFont.material;
+            }
+
             renderer.sortingOrder = 32700;
         }
 
