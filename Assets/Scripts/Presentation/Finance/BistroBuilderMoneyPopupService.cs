@@ -10,13 +10,13 @@ using UnityEngine;
 public sealed class BistroBuilderMoneyPopupService : MonoBehaviour
 {
     [SerializeField] private Camera targetCamera;
-    [SerializeField, Min(0.1f)] private float durationSeconds = 0.88f;
-    [SerializeField, Min(0.05f)] private float riseDistance = 0.46f;
-    [SerializeField, Min(0.001f)] private float characterSize = 0.036f;
+    [SerializeField, Min(0.1f)] private float durationSeconds = 0.72f;
+    [SerializeField, Min(0.05f)] private float riseDistance = 0.30f;
+    [SerializeField, Min(0.001f)] private float characterSize = 0.030f;
     [SerializeField] private Color positiveColor =
-        new Color(0.36f, 0.66f, 0.42f, 1f);
+        new Color(0.30f, 0.59f, 0.39f, 1f);
     [SerializeField] private Color negativeColor =
-        new Color(0.82f, 0.34f, 0.28f, 1f);
+        new Color(0.72f, 0.31f, 0.25f, 1f);
 
     private int activePopupCount;
 
