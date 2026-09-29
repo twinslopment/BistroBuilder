@@ -1,7 +1,7 @@
 param()
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 Set-Location $root
@@ -57,15 +57,6 @@ if ($LASTEXITCODE -eq 0) {
 $normalRefs = @(git.exe for-each-ref --format='%(refname)' refs/heads refs/remotes refs/tags)
 if ($LASTEXITCODE -eq 0) {
     foreach ($ref in $normalRefs) {
-        if (-not [string]::IsNullOrWhiteSpace($ref)) {
-            $gitRefs.Add($ref)
-        }
-    }
-}
-
-$reflogRefs = @(git.exe reflog --all --format='%H')
-if ($LASTEXITCODE -eq 0) {
-    foreach ($ref in $reflogRefs) {
         if (-not [string]::IsNullOrWhiteSpace($ref)) {
             $gitRefs.Add($ref)
         }
