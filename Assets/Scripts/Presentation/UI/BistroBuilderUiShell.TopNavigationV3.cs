@@ -87,6 +87,7 @@ public sealed partial class BistroBuilderUiShell
             out float h,
             out float margin,
             out _);
+        float physicalHeight=viewport.y*scale;
 
         if(!force&&viewport==approvedLayoutSize&&Mathf.Abs(scale-approvedLayoutScale)<.001f)return;
         approvedLayoutSize=viewport;approvedLayoutScale=scale;
