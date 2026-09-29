@@ -148,6 +148,13 @@ public static class BistroBuilderUniversalPreviewFurnitureRegression
                             BistroBuilderNewGameOpeningPlayerScreen>()
                         ?.Hide();
 
+                    controller.SetWorldInputSuppressed(
+                        true);
+
+                    Check(
+                        controller.IsWorldInputSuppressed,
+                        "No se pudo suspender el input físico del editor.");
+
                     Check(
                         controller.TryEnterEditMode(),
                         "No se pudo entrar en modo edición.");
@@ -542,10 +549,15 @@ public static class BistroBuilderUniversalPreviewFurnitureRegression
 
         RemoveTemporaryObstacle();
 
-        if (controller != null &&
-            controller.HasActivePlacement)
+        if (controller != null)
         {
-            controller.CancelActivePlacement();
+            if (controller.HasActivePlacement)
+            {
+                controller.CancelActivePlacement();
+            }
+
+            controller.SetWorldInputSuppressed(
+                false);
         }
 
         Directory.CreateDirectory("Logs");
