@@ -16,6 +16,11 @@ public sealed class TableStateView : MonoBehaviour
     [SerializeField]
     private Renderer tableRenderer;
 
+    [Header("Material de presentación")]
+    [SerializeField] private bool replacePrimitivePlaceholderMaterial = true;
+    [SerializeField] private string primitiveTableMaterialResource =
+        "BistroBuilder/Construction/Materials/Roble_marcos";
+
     [Header("Acentos operativos")]
     [SerializeField, Range(0f, 0.35f)]
     private float stateTintStrength = 0.12f;
@@ -66,6 +71,7 @@ public sealed class TableStateView : MonoBehaviour
     {
         FindRequiredComponents();
         EnsurePropertyBlockExists();
+        ApplyPresentationMaterialIfPlaceholder();
         CaptureOriginalColor();
     }
 
@@ -76,6 +82,7 @@ public sealed class TableStateView : MonoBehaviour
         // Por eso garantizamos aquí que propertyBlock vuelva a existir.
         FindRequiredComponents();
         EnsurePropertyBlockExists();
+        ApplyPresentationMaterialIfPlaceholder();
         CaptureOriginalColor();
 
         if (restaurantTable == null)
@@ -165,6 +172,48 @@ public sealed class TableStateView : MonoBehaviour
     )
     {
         UpdateVisualState(newState);
+    }
+
+    private void ApplyPresentationMaterialIfPlaceholder()
+    {
+        if (!replacePrimitivePlaceholderMaterial ||
+            tableRenderer == null ||
+            string.IsNullOrWhiteSpace(
+                primitiveTableMaterialResource))
+        {
+            return;
+        }
+
+        MeshFilter filter =
+            tableRenderer.GetComponent<MeshFilter>();
+
+        if (filter == null ||
+            filter.sharedMesh == null ||
+            !string.Equals(
+                filter.sharedMesh.name,
+                "Cube",
+                System.StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        Material presentationMaterial =
+            Resources.Load<Material>(
+                primitiveTableMaterialResource);
+
+        if (presentationMaterial == null ||
+            ReferenceEquals(
+                tableRenderer.sharedMaterial,
+                presentationMaterial))
+        {
+            return;
+        }
+
+        tableRenderer.sharedMaterial =
+            presentationMaterial;
+
+        originalColorCaptured =
+            false;
     }
 
     private void CaptureOriginalColor()
