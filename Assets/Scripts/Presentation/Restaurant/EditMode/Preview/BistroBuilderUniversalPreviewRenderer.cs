@@ -32,6 +32,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     [SerializeField, Min(0.05f)] private float conflictPulseDuration = 0.72f;
     [SerializeField, Range(0f, 1f)] private float conflictPulseStrength = 0.34f;
     [SerializeField, Min(0.05f)] private float snapHaloDuration = 0.34f;
+    [SerializeField, Min(0.05f)] private float rotationCueDuration = 0.34f;
 
     [SerializeField] private Color neutralColor = new Color(0.90f, 0.89f, 0.84f, 0.70f);
     [SerializeField] private Color validColor = new Color(0.36f, 0.72f, 0.64f, 0.92f);
@@ -39,6 +40,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     [SerializeField] private Color ghostColor = new Color(0.66f, 0.73f, 0.79f, 0.22f);
     [SerializeField] private Color conflictColor = new Color(0.94f, 0.48f, 0.36f, 0.86f);
     [SerializeField] private Color snapColor = new Color(0.46f, 0.69f, 0.90f, 0.90f);
+    [SerializeField] private Color rotationCueColor = new Color(0.82f, 0.77f, 0.62f, 0.82f);
 
     private readonly List<LineRenderer> candidateLines = new List<LineRenderer>(16);
     private readonly List<LineRenderer> ghostLines = new List<LineRenderer>(16);
@@ -62,7 +64,9 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private MaterialPropertyBlock volumePropertyBlock;
     private LineRenderer snapLine;
     private LineRenderer snapHaloLine;
+    private LineRenderer rotationCueLine;
     private float snapPulseStartedAt = -1f;
+    private float rotationCueStartedAt = -1f;
     private bool hadSnapPoint;
     private Vector3 lastSnapPoint;
 
@@ -71,6 +75,14 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     private bool wasInvalid;
     private BistroBuilderUniversalPreviewState renderedState;
     private Camera cachedCamera;
+
+    private bool hasLastCandidateRotation;
+    private Quaternion lastCandidateRotation =
+        Quaternion.identity;
+    private float rotationCueFromYaw;
+    private float rotationCueDeltaYaw;
+    private Vector3 rotationCueCenter;
+    private float rotationCueRadius;
 
     private void Awake()
     {
@@ -137,6 +149,7 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
     {
         TickSnapPulse();
         TickConflictPulse();
+        TickRotationCue();
         ApplyAdaptivePresentation();
     }
 
@@ -196,6 +209,8 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         lastConflictObject =
             state.ConflictObject;
+
+        UpdateRotationCueState(state);
 
         Color candidateColor = ResolveCandidateColor(state.Validity);
         RenderSegments(state.CandidateSegments, candidateLines, candidateColor, candidateWidth, "Candidate");
@@ -664,11 +679,17 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         snapPulseStartedAt = -1f;
         conflictPulseStartedAt = -1f;
+        rotationCueStartedAt = -1f;
         hadSnapPoint = false;
         wasInvalid = false;
+        hasLastCandidateRotation = false;
+        lastCandidateRotation = Quaternion.identity;
         lastConflictObject = null;
         renderedState = null;
         lastSnapPoint = default;
+
+        if (rotationCueLine != null)
+            rotationCueLine.enabled = false;
     }
 
     private void RenderContactFill(
@@ -709,6 +730,14 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
         b.y -= contactFillDrop;
         c.y -= contactFillDrop;
         d.y -= contactFillDrop;
+
+        Transform fillTransform =
+            contactFillRenderer.transform;
+
+        a = fillTransform.InverseTransformPoint(a);
+        b = fillTransform.InverseTransformPoint(b);
+        c = fillTransform.InverseTransformPoint(c);
+        d = fillTransform.InverseTransformPoint(d);
 
         contactFillMesh.Clear();
         contactFillMesh.vertices =
@@ -813,6 +842,226 @@ public sealed class BistroBuilderUniversalPreviewRenderer : MonoBehaviour
 
         contactFillRenderer.enabled =
             false;
+    }
+
+    private void UpdateRotationCueState(
+        BistroBuilderUniversalPreviewState state)
+    {
+        if (state == null ||
+            !state.HasCandidatePose)
+        {
+            hasLastCandidateRotation = false;
+
+            if (rotationCueLine != null)
+                rotationCueLine.enabled = false;
+
+            rotationCueStartedAt = -1f;
+            return;
+        }
+
+        Quaternion current =
+            state.CandidateRotation;
+
+        if (!hasLastCandidateRotation)
+        {
+            lastCandidateRotation =
+                current;
+
+            hasLastCandidateRotation =
+                true;
+
+            return;
+        }
+
+        float previousYaw =
+            lastCandidateRotation.eulerAngles.y;
+
+        float currentYaw =
+            current.eulerAngles.y;
+
+        float delta =
+            Mathf.DeltaAngle(
+                previousYaw,
+                currentYaw);
+
+        lastCandidateRotation =
+            current;
+
+        if (Mathf.Abs(delta) < 1f)
+            return;
+
+        rotationCueFromYaw =
+            previousYaw;
+
+        rotationCueDeltaYaw =
+            Mathf.Clamp(
+                delta,
+                -180f,
+                180f);
+
+        rotationCueCenter =
+            state.CandidatePosition +
+            Vector3.up *
+            0.055f;
+
+        rotationCueRadius =
+            ResolveRotationCueRadius(state);
+
+        rotationCueStartedAt =
+            Time.unscaledTime;
+
+        EnsureRotationCueLine();
+        DrawRotationCue(
+            0f);
+    }
+
+    private float ResolveRotationCueRadius(
+        BistroBuilderUniversalPreviewState state)
+    {
+        float radius =
+            0.38f;
+
+        if (state.CandidateSegments != null)
+        {
+            for (int i = 0;
+                 i < state.CandidateSegments.Count;
+                 i++)
+            {
+                Vector3 delta =
+                    state.CandidateSegments[i] -
+                    state.CandidatePosition;
+
+                delta.y = 0f;
+
+                radius =
+                    Mathf.Max(
+                        radius,
+                        delta.magnitude *
+                        0.72f);
+            }
+        }
+
+        return Mathf.Clamp(
+            radius,
+            0.34f,
+            1.10f);
+    }
+
+    private void EnsureRotationCueLine()
+    {
+        if (rotationCueLine == null)
+        {
+            rotationCueLine =
+                CreateLine(
+                    "RotationCue");
+        }
+    }
+
+    private void TickRotationCue()
+    {
+        if (rotationCueLine == null ||
+            !rotationCueLine.enabled ||
+            rotationCueStartedAt < 0f)
+        {
+            return;
+        }
+
+        float t =
+            Mathf.Clamp01(
+                (Time.unscaledTime -
+                 rotationCueStartedAt) /
+                Mathf.Max(
+                    0.05f,
+                    rotationCueDuration));
+
+        DrawRotationCue(t);
+
+        if (t >= 1f)
+        {
+            rotationCueLine.enabled =
+                false;
+
+            rotationCueStartedAt =
+                -1f;
+        }
+    }
+
+    private void DrawRotationCue(
+        float normalizedTime)
+    {
+        EnsureRotationCueLine();
+
+        const int pointCount = 20;
+
+        rotationCueLine.enabled = true;
+        rotationCueLine.loop = false;
+        rotationCueLine.positionCount =
+            pointCount;
+
+        float reveal =
+            1f -
+            Mathf.Pow(
+                1f - normalizedTime,
+                3f);
+
+        float visibleDelta =
+            Mathf.Lerp(
+                rotationCueDeltaYaw *
+                0.32f,
+                rotationCueDeltaYaw,
+                reveal);
+
+        for (int i = 0;
+             i < pointCount;
+             i++)
+        {
+            float ratio =
+                i /
+                (float)(pointCount - 1);
+
+            float yaw =
+                rotationCueFromYaw +
+                visibleDelta *
+                ratio;
+
+            float radians =
+                yaw *
+                Mathf.Deg2Rad;
+
+            Vector3 direction =
+                new Vector3(
+                    Mathf.Sin(radians),
+                    0f,
+                    Mathf.Cos(radians));
+
+            rotationCueLine.SetPosition(
+                i,
+                rotationCueCenter +
+                direction *
+                rotationCueRadius);
+        }
+
+        Color color =
+            rotationCueColor;
+
+        color.a *=
+            1f -
+            Mathf.SmoothStep(
+                0f,
+                1f,
+                normalizedTime);
+
+        float width =
+            0.018f *
+            GetAdaptiveWidthScale();
+
+        rotationCueLine.startWidth =
+            rotationCueLine.endWidth =
+                width;
+
+        rotationCueLine.startColor =
+            rotationCueLine.endColor =
+                color;
     }
 
     private void TickConflictPulse()
