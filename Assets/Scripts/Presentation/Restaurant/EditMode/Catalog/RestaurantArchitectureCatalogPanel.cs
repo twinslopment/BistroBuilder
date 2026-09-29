@@ -18,14 +18,14 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     static readonly Color Paper=new Color32(250,248,244,255), Ink=new Color32(31,35,29,255), Muted=new Color32(111,115,108,255), Olive=new Color32(103,128,70,255), Field=new Color32(240,237,231,255);
     public static readonly Entry[] WallEntries = {
         new Entry{Id="wall-interior",Name="Pared",Description="Divide espacios y define ambientes. Arrastra sobre el suelo para trazar una pared.",Tariff="wall.default",Mode=BistroBuilderConstructionRuntimeMode.Wall},
-        new Entry{Id="door",Name="Puerta",Description="Inserta una puerta sobre una pared existente. La abertura respeta los lÃ­mites y otros huecos.",Tariff="door",Mode=BistroBuilderConstructionRuntimeMode.Door},
+        new Entry{Id="door",Name="Puerta",Description="Inserta una puerta sobre una pared existente. La abertura respeta los límites y otros huecos.",Tariff="door",Mode=BistroBuilderConstructionRuntimeMode.Door},
         new Entry{Id="window",Name="Ventana",Description="Inserta una ventana en una pared existente.",Tariff="window",Mode=BistroBuilderConstructionRuntimeMode.Window},
         new Entry{Id="divider",Name="Separador",Description="Delimita ambientes con un tabique bajo. Arrastra para definir su longitud.",Tariff="wall.default",Mode=BistroBuilderConstructionRuntimeMode.Wall,Height=1.2f,Thickness=.1f},
-        new Entry{Id="wall-module",Name="MÃ³dulo de pared",Description="Coloca tramos sueltos de pared con longitud y orientaciÃ³n ajustables.",Tariff="wall.default",Mode=BistroBuilderConstructionRuntimeMode.WallModule,Length=1}
+        new Entry{Id="wall-module",Name="Módulo de pared",Description="Coloca tramos sueltos de pared con longitud y orientación ajustables.",Tariff="wall.default",Mode=BistroBuilderConstructionRuntimeMode.WallModule,Length=1}
     };
     public static readonly Entry[] SurfaceEntries = {
-        new Entry{Id="floor-limestone",Name="Suelo de caliza",Description="Acabado de suelo del kit de construcciÃ³n integrado. Selecciona una habitaciÃ³n cerrada para aplicar el acabado.",Tariff="finish.floor.default",Role="floor",Mode=BistroBuilderConstructionRuntimeMode.Select},
-        new Entry{Id="wall-plaster",Name="Enlucido cÃ¡lido",Description="Acabado de pared del kit integrado. La aplicaciÃ³n independiente sobre las caras de pared todavÃ­a no estÃ¡ disponible.",Tariff="finish.wall.default",Role="wall",Mode=BistroBuilderConstructionRuntimeMode.Select,Available=false}
+        new Entry{Id="floor-limestone",Name="Suelo de caliza",Description="Acabado de suelo del kit de construcción integrado. Selecciona una habitación cerrada para aplicar el acabado.",Tariff="finish.floor.default",Role="floor",Mode=BistroBuilderConstructionRuntimeMode.Select},
+        new Entry{Id="wall-plaster",Name="Enlucido cálido",Description="Acabado de pared del kit integrado. La aplicación independiente sobre las caras de pared todavía no está disponible.",Tariff="finish.wall.default",Role="wall",Mode=BistroBuilderConstructionRuntimeMode.Select,Available=false}
     };
     RestaurantPlaceableCatalogPanel catalog;
     BistroBuilderConstructionAuthoringRuntimeTool tool;
@@ -63,7 +63,7 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         left=Panel("BB_ArchitectureCatalog",canvas.transform,false);
         right=Panel("BB_ArchitectureInspector",canvas.transform,true);
         title=Text(left,"Title","",27,42);At(title.rectTransform,22,14,365,42);
-        ButtonAt(left,"Close","Ã—",377,17,30,32,()=>{closed=true;});
+        ButtonAt(left,"Close","×",377,17,30,32,()=>{closed=true;});
         var input=Node("Search",left);At(input,20,66,387,46);Background(input,Color.white);
         search=input.gameObject.AddComponent<TMP_InputField>();
         var searchText=Text(input,"Text","",15,46);Stretch(searchText.rectTransform,15,0,15,0);
@@ -81,13 +81,13 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         grid=Node("Cards",viewport);grid.anchorMin=new Vector2(0,1);grid.anchorMax=new Vector2(1,1);grid.pivot=new Vector2(.5f,1);grid.sizeDelta=Vector2.zero;
         var layout=grid.gameObject.AddComponent<GridLayoutGroup>();layout.cellSize=new Vector2(185,228);layout.spacing=new Vector2(10,12);layout.constraint=GridLayoutGroup.Constraint.FixedColumnCount;layout.constraintCount=2;
         grid.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;scroll.viewport=viewport;scroll.content=grid;
-        empty=Text(viewport,"Empty","No hay materiales disponibles en esta categorÃ­a.",16,120);At(empty.rectTransform,14,16,355,120);empty.alignment=TextAlignmentOptions.Center;
+        empty=Text(viewport,"Empty","No hay materiales disponibles en esta categoría.",16,120);At(empty.rectTransform,14,16,355,120);empty.alignment=TextAlignmentOptions.Center;
         var foot=Node("ConstructionActions",left);foot.anchorMin=new Vector2(0,0);foot.anchorMax=new Vector2(1,0);foot.pivot=new Vector2(.5f,0);foot.offsetMin=new Vector2(20,14);foot.offsetMax=new Vector2(-20,65);
         commit=ButtonAt(foot,"ApplyDraft","Aplicar cambios",0,0,235,48,()=>{tool.TryCommitDraft(out var error);status.text=error;});
         ButtonAt(foot,"Discard","Descartar",245,0,140,48,()=>{tool.TryCancelDraft(out var error);status.text=error;});
         // The inspector scrolls on shorter viewports; its close control stays outside the scrolling content.
         inspectorTitle=Text(right,"Title","",26,44);At(inspectorTitle.rectTransform,20,14,310,44);
-        ButtonAt(right,"Close","Ã—",342,18,30,30,()=>inspectorClosed=true);
+        ButtonAt(right,"Close","×",342,18,30,30,()=>inspectorClosed=true);
         var detailViewport=Node("Viewport",right);Stretch(detailViewport,16,14,16,64);detailViewport.gameObject.AddComponent<RectMask2D>();
         var detailScroll=detailViewport.gameObject.AddComponent<ScrollRect>();detailScroll.horizontal=false;detailScroll.scrollSensitivity=25;detailScroll.movementType=ScrollRect.MovementType.Clamped;
         details=Node("Content",detailViewport);details.anchorMin=new Vector2(0,1);details.anchorMax=new Vector2(1,1);details.pivot=new Vector2(.5f,1);details.sizeDelta=Vector2.zero;
@@ -101,13 +101,13 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         selectionText=Text(details,"Selection","",14,75);selectionText.color=Muted;
         apply=ButtonAt(details,"Choose","",0,0,350,48,ExecuteSelected);Height((RectTransform)apply.transform,48);
         status=Text(details,"Status","",15,70);status.color=Olive;
-        var room=ButtonAt(details,"CreateRoom","Dibujar habitaciÃ³n",0,0,350,42,()=>tool.SetMode(BistroBuilderConstructionRuntimeMode.Room));Height((RectTransform)room.transform,42);
-        var module=ButtonAt(details,"ModuleLength","Longitud de mÃ³dulo: 1 / 2 / 3 / 4 m",0,0,350,42,()=>tool.ConfigureModule(tool.ModuleLength>=4?1:tool.ModuleLength+1,tool.ModuleAngle));Height((RectTransform)module.transform,42);
-        var rotate=ButtonAt(details,"ModuleRotate","Girar mÃ³dulo 90Â°",0,0,350,42,()=>tool.ConfigureModule(tool.ModuleLength,tool.ModuleAngle+90));Height((RectTransform)rotate.transform,42);
+        var room=ButtonAt(details,"CreateRoom","Dibujar habitación",0,0,350,42,()=>tool.SetMode(BistroBuilderConstructionRuntimeMode.Room));Height((RectTransform)room.transform,42);
+        var module=ButtonAt(details,"ModuleLength","Longitud de módulo: 1 / 2 / 3 / 4 m",0,0,350,42,()=>tool.ConfigureModule(tool.ModuleLength>=4?1:tool.ModuleLength+1,tool.ModuleAngle));Height((RectTransform)module.transform,42);
+        var rotate=ButtonAt(details,"ModuleRotate","Girar módulo 90°",0,0,350,42,()=>tool.ConfigureModule(tool.ModuleLength,tool.ModuleAngle+90));Height((RectTransform)rotate.transform,42);
         var previous=ButtonAt(details,"OpeningLeft","Mover hueco âˆ’10 cm",0,0,350,42,()=>{tool.TryAdjustOpening(-.1f,false,out var e);status.text=e;});Height((RectTransform)previous.transform,42);
         var following=ButtonAt(details,"OpeningRight","Mover hueco +10 cm",0,0,350,42,()=>{tool.TryAdjustOpening(.1f,false,out var e);status.text=e;});Height((RectTransform)following.transform,42);
         var flip=ButtonAt(details,"OpeningFlip","Invertir apertura",0,0,350,42,()=>{tool.TryAdjustOpening(0,true,out var e);status.text=e;});Height((RectTransform)flip.transform,42);
-        foreach(var zone in new[]{new[]{"SalÃ³n","zone.dining"},new[]{"Cocina","zone.kitchen"},new[]{"BaÃ±o","zone.bathroom"},new[]{"Barra","zone.bar"},new[]{"Terraza","zone.terrace"}}){string id=zone[1];var z=ButtonAt(details,"Zone_"+id,zone[0],0,0,350,38,()=>tool.SetRoomZone(id));Height((RectTransform)z.transform,38);}
+        foreach(var zone in new[]{new[]{"Salón","zone.dining"},new[]{"Cocina","zone.kitchen"},new[]{"Baño","zone.bathroom"},new[]{"Barra","zone.bar"},new[]{"Terraza","zone.terrace"}}){string id=zone[1];var z=ButtonAt(details,"Zone_"+id,zone[0],0,0,350,38,()=>tool.SetRoomZone(id));Height((RectTransform)z.transform,38);}
         left.gameObject.SetActive(false);right.gameObject.SetActive(false);
     }
     public void OpenSection(RestaurantEditCatalogSection value)
@@ -154,10 +154,10 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         selected=entry;inspectorClosed=false;inspectorTitle.text=entry.Name;description.text=entry.Description;price.text=Price(entry);
         preview.sprite=Resources.Load<Sprite>(entry.PreviewResource);preview.enabled=preview.sprite!=null;
         bool surface=section==RestaurantEditCatalogSection.Surfaces;
-        dimensions.text=surface?"Dimensiones\nCobertura continua Â· precio por mÂ²":entry.Mode==BistroBuilderConstructionRuntimeMode.Door||entry.Mode==BistroBuilderConstructionRuntimeMode.Window?"Dimensiones\nSe ajusta al hueco y a la pared de destino":$"Dimensiones\nGrosor {entry.Thickness*100:0} cm  |  Altura {entry.Height*100:0} cm";
-        rules.text=surface?"Reglas de aplicaciÃ³n\nâ€¢ Selecciona una habitaciÃ³n cerrada\nâ€¢ El acabado respeta su contorno\nâ€¢ Confirma el borrador para aplicar el coste":"Reglas de colocaciÃ³n\nâ€¢ Encaja con la construcciÃ³n existente\nâ€¢ Respeta paredes y otros huecos\nâ€¢ Confirma el borrador para construir";
-        apply.GetComponentInChildren<TMP_Text>().text=surface?"Aplicar a la habitaciÃ³n":selectedTab==1?"Editar en el restaurante":"Usar herramienta";
-        status.text=entry.Available?(surface?"Selecciona una habitaciÃ³n en el restaurante.":"Lista para trazar. Usa la herramienta sobre la escena."):"AplicaciÃ³n en paredes pendiente de integraciÃ³n.";
+        dimensions.text=surface?"Dimensiones\nCobertura continua · precio por m²":entry.Mode==BistroBuilderConstructionRuntimeMode.Door||entry.Mode==BistroBuilderConstructionRuntimeMode.Window?"Dimensiones\nSe ajusta al hueco y a la pared de destino":$"Dimensiones\nGrosor {entry.Thickness*100:0} cm  |  Altura {entry.Height*100:0} cm";
+        rules.text=surface?"Reglas de aplicación\n• Selecciona una habitación cerrada\n• El acabado respeta su contorno\n• Confirma el borrador para aplicar el coste":"Reglas de colocación\n• Encaja con la construcción existente\n• Respeta paredes y otros huecos\n• Confirma el borrador para construir";
+        apply.GetComponentInChildren<TMP_Text>().text=surface?"Aplicar a la habitación":selectedTab==1?"Editar en el restaurante":"Usar herramienta";
+        status.text=entry.Available?(surface?"Selecciona una habitación en el restaurante.":"Lista para trazar. Usa la herramienta sobre la escena."):"Aplicación en paredes pendiente de integración.";
         foreach(var pair in cardImages)pair.Value.GetComponent<Outline>().effectColor=pair.Key==entry?Olive:new Color32(225,221,212,255);
         if(!surface)ExecuteSelected();
     }
@@ -183,7 +183,7 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     static string Price(Entry entry)
     {
         var tariffs=Resources.Load<BistroBuilderEditFinanceTariffTable>("BistroBuilder/Finance/BB_EditMode_PlaytestTariffs");
-        if(tariffs!=null)foreach(var rate in tariffs.Rates)if(rate.definitionId==entry.Tariff)return BistroBuilderFinanceUiFormat.Money(rate.addedSignedCentsPerUnit)+(rate.unit==BistroBuilderEditFinanceRateUnit.Area?" / mÂ²":rate.unit==BistroBuilderEditFinanceRateUnit.Length?" / m":"");
+        if(tariffs!=null)foreach(var rate in tariffs.Rates)if(rate.definitionId==entry.Tariff)return BistroBuilderFinanceUiFormat.Money(rate.addedSignedCentsPerUnit)+(rate.unit==BistroBuilderEditFinanceRateUnit.Area?" / m²":rate.unit==BistroBuilderEditFinanceRateUnit.Length?" / m":"");
         return "Precio no disponible";
     }
     static RectTransform Node(string name,Transform parent){var go=new GameObject(name,typeof(RectTransform));go.transform.SetParent(parent,false);return(RectTransform)go.transform;}

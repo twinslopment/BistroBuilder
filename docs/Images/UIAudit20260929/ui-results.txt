@@ -1,0 +1,306 @@
+PASS Legacy construction panel hidden in normal mode
+PASS Ten complete icons and original logo
+PASS Hover target active and interactable
+PASS Visible hover feedback in pointer-enter frame
+PASS Immediate press feedback
+PASS Immediate release feedback
+PASS 90ms hover settling; amount=1 active=True
+PASS Independent icon animation
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Bar fits 1024
+PASS Compact height 1024
+PASS Full available width 1024
+PASS All ten destinations reachable 1024
+PASS No generic button styling 1024
+PASS Legible dark labels without clipping 1024
+PASS Stable filtered icon detail 1024
+PASS Logo and icons never stretched 1024
+PASS Rendered ivory pixels present 1024
+PASS Bar fits 800
+PASS Compact height 800
+PASS Full available width 800
+PASS All ten destinations reachable 800
+PASS No generic button styling 800
+PASS Legible dark labels without clipping 800
+PASS Stable filtered icon detail 800
+PASS Logo and icons never stretched 800
+PASS Rendered ivory pixels present 800
+PASS Bar fits 2560
+PASS Compact height 2560
+PASS Full available width 2560
+PASS All ten destinations reachable 2560
+PASS No generic button styling 2560
+PASS Legible dark labels without clipping 2560
+PASS Stable filtered icon detail 2560
+PASS Logo and icons never stretched 2560
+PASS Rendered ivory pixels present 2560
+PASS Bar fits 3440
+PASS Compact height 3440
+PASS Full available width 3440
+PASS All ten destinations reachable 3440
+PASS No generic button styling 3440
+PASS Legible dark labels without clipping 3440
+PASS Stable filtered icon detail 3440
+PASS Logo and icons never stretched 3440
+PASS Rendered ivory pixels present 3440
+PASS Bar fits 3840
+PASS Compact height 3840
+PASS Full available width 3840
+PASS All ten destinations reachable 3840
+PASS No generic button styling 3840
+PASS Legible dark labels without clipping 3840
+PASS Stable filtered icon detail 3840
+PASS Logo and icons never stretched 3840
+PASS Rendered ivory pixels present 3840
+PASS Personal opens its real panel
+PASS Hover clears on exit
+PASS Inventario navigation
+PASS Previous management panel closes
+PASS Actividad returns to scene
+PASS Opciones opens settings
+PASS Open Personal:
+PASS Management destination active: Personal
+PASS Activity stays hidden throughout management refresh: Personal
+PASS No initial-design overlay in Personal
+PASS Management content below navigation: Personal 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Personal 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Carta:
+PASS Management destination active: Carta
+PASS Rule type and destination captions visible
+PASS Activity stays hidden throughout management refresh: Carta
+PASS No initial-design overlay in Carta
+PASS Selector hit surface remains transparent: Cartadestino
+PASS Selector hit surface remains transparent: Tipo
+PASS Management content below navigation: Carta 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Carta 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Inventario:
+PASS Management destination active: Inventario
+PASS Activity stays hidden throughout management refresh: Inventario
+PASS No initial-design overlay in Inventario
+PASS Selector hit surface remains transparent: Filter
+PASS Selector hit surface remains transparent: Sort
+PASS Selector hit surface remains transparent: Reason
+PASS Management content below navigation: Inventario 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Inventario 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Proveedores:
+PASS Management destination active: Proveedores
+PASS Activity stays hidden throughout management refresh: Proveedores
+PASS No initial-design overlay in Proveedores
+PASS Management content below navigation: Proveedores 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Proveedores 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Reservas:
+PASS Management destination active: Reservas
+PASS Activity stays hidden throughout management refresh: Reservas
+PASS No initial-design overlay in Reservas
+PASS Management content below navigation: Reservas 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Reservas 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Economía:
+PASS Management destination active: Economía
+PASS Activity stays hidden throughout management refresh: Economía
+PASS No initial-design overlay in Economía
+PASS Management content below navigation: Economía 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Economía 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Marketing:
+PASS Management destination active: Marketing
+PASS Activity stays hidden throughout management refresh: Marketing
+PASS No initial-design overlay in Marketing
+PASS Management content below navigation: Marketing 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Marketing 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Open Reputación:
+PASS Management destination active: Reputación
+PASS Equal reputation aspect typography
+PASS Activity stays hidden throughout management refresh: Reputación
+PASS No initial-design overlay in Reputación
+PASS Management content below navigation: Reputación 1920
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Management content below navigation: Reputación 1280
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Complete placeable catalog: 9
+PASS Every placeable item has an authored thumbnail
+PASS Activity fixture accepted by feed
+PASS Activity returns to scene with real feed entries; managing=False editing=False opening=False controller=True entries=True
+PASS Activity keeps its authored ivory surface
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS All ten destinations reachable 1920
+PASS No generic button styling 1920
+PASS Legible dark labels without clipping 1920
+PASS Stable filtered icon detail 1920
+PASS Logo and icons never stretched 1920
+PASS Rendered ivory pixels present 1920
+PASS Bar fits 1280
+PASS Compact height 1280
+PASS Full available width 1280
+PASS All ten destinations reachable 1280
+PASS No generic button styling 1280
+PASS Legible dark labels without clipping 1280
+PASS Stable filtered icon detail 1280
+PASS Logo and icons never stretched 1280
+PASS Rendered ivory pixels present 1280
+PASS Initial setup fixture without writing saves:
+PASS Enter initial editing:
+PASS Exactly one initial design save action
+PASS Normal time dock hidden during editing
+PASS Management opens during initial setup:
+PASS Initial-design controls hidden over management in initial setup
+BB_TOPBAR_RESPONSIVE_PASS

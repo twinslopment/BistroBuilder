@@ -5,6 +5,11 @@ using UnityEngine.UI;
 
 public sealed partial class BistroBuilderUiShell
 {
+    // Retained legacy renderer; the approved V3 path uses independent native artwork.
+    private const string ApprovedTopBarResource = "BistroBuilder/UI/TopBar/BistroBuilder_NormalTopBar_v3";
+    private Sprite approvedTopBarSprite;
+    private static readonly float[] ApprovedHotspotLeft = { .2729554f,.3411942f,.4134471f,.4872052f,.5604616f,.6342197f,.7054692f,.7787255f,.8494731f };
+    private static readonly float[] ApprovedHotspotWidth = { .0682388f,.0722529f,.0737581f,.0732564f,.0737581f,.0712493f,.0732564f,.0707477f,.0717511f };
     private const float CompactTopBarHeightFraction = 0.09f;
     private const float CompactTopBarMinHeight = 84f;
     private const float CompactTopBarMaxHeight = 102f;

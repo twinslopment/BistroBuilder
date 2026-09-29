@@ -150,8 +150,7 @@ public sealed partial class BistroBuilderUiShell
     void RefreshEditModeChrome(bool editing,bool managing)
     {
         EnsureEditModeChrome();bool visible=editing&&!managing;
-        var timeDock = canvas != null ? canvas.transform.Find("BB_368B_TimeControlsDock") : null;
-        if(timeDock != null){var group=timeDock.GetComponent<CanvasGroup>();if(group==null)group=timeDock.gameObject.AddComponent<CanvasGroup>();group.alpha=editing?0:1;group.interactable=group.blocksRaycasts=!editing;}
+        ReconcileOverlayVisibility();
         if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
         if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);

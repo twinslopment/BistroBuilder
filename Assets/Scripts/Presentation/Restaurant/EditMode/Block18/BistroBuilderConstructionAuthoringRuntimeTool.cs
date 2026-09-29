@@ -1816,9 +1816,12 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
         return new Rect(left, y, width, height);
     }
 
+    public bool IsPlaytestPanelVisible => Application.isPlaying && showPlaytestPanel &&
+        FindFirstObjectByType<BistroBuilderUiShell>() == null && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking;
+
     private void OnGUI()
     {
-        if (!Application.isPlaying || !showPlaytestPanel) return;
+        if (!IsPlaytestPanelVisible) return;
 
         // El HUD definitivo ya ofrece una entrada explícita a Normal/Edición.
         // Este panel IMGUI queda solo como fallback de desarrollo cuando el shell no existe.

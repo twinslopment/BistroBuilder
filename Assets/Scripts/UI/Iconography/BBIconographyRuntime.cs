@@ -135,6 +135,7 @@ namespace BistroBuilder.UI.Iconography
         {
             if (button == null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
+                button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null)
                 return false;
 
@@ -164,6 +165,7 @@ namespace BistroBuilder.UI.Iconography
         {
             if (button == null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
+                button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null ||
                 !EnsureCatalog())
                 return false;
@@ -247,6 +249,7 @@ namespace BistroBuilder.UI.Iconography
             semantic = false;
             if (button == null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
+                button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null)
                 return false;
 

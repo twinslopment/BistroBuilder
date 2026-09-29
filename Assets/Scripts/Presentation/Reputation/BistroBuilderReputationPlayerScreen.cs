@@ -78,6 +78,7 @@ public sealed class BistroBuilderReputationPlayerScreen : MonoBehaviour
     public void Show()
     {
         if (panelRoot == null) return;
+        BistroBuilderManagementSafeArea.Install(panelRoot.transform as RectTransform);
         panelRoot.SetActive(true);
         canvasGroup.alpha = 1f;
         canvasGroup.interactable = true;
@@ -132,7 +133,17 @@ public sealed class BistroBuilderReputationPlayerScreen : MonoBehaviour
             " · Habituales " + snapshot.returningGuestDiscoveries +
             " · Reservas " + snapshot.reservationDiscoveries;
         reviewsText.text = BuildReviews(snapshot);
-        feedbackText.text = string.Empty;
+        feedbackText.text = snapshot.totalExperiences == 0 ? "Valoración inicial: todavía no hay experiencias ni opiniones de clientes." : string.Empty;
+        foreach (var label in new[] { globalScoreText, satisfactionText, demandText }) PreserveLabel(label, label == globalScoreText ? 24 : 16);
+        foreach (var label in new[] { serviceAspectText, waitingAspectText, foodAspectText, valueAspectText, ambienceAspectText }) PreserveLabel(label, 18);
+    }
+
+    private static void PreserveLabel(TMP_Text label, float size)
+    {
+        var tag = label.GetComponent<BistroBuilderUiStyleTag>() ?? label.gameObject.AddComponent<BistroBuilderUiStyleTag>();
+        tag.Configure(BistroBuilderUiStyleRole.Body, true, true, true);
+        label.font = BistroBuilderTypography.Body; label.enableAutoSizing = false; label.fontSize = size;
+        label.color = new Color32(247, 234, 212, 255);
     }
 
     private static string BuildReviews(BistroBuilderReputationPlayerUiSnapshot snapshot)

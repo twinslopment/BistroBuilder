@@ -77,7 +77,7 @@ public sealed class BistroBuilderInteractionSurface : MonoBehaviour, IPointerEnt
             unavailable = new GameObject("Unavailable badge", typeof(RectTransform), typeof(LayoutElement), typeof(CanvasRenderer), typeof(Image));
             unavailable.transform.SetParent(transform,false); unavailable.GetComponent<LayoutElement>().ignoreLayout=true;
             var background=unavailable.GetComponent<Image>();background.color=new Color(0.30f,0.31f,0.29f,0.96f); background.raycastTarget=false;
-            var rect=(RectTransform)unavailable.transform;rect.anchorMin=new Vector2(0,0);rect.anchorMax=new Vector2(1,0);rect.offsetMin=new Vector2(6,6);rect.offsetMax=new Vector2(-6,27);
+            var rect=(RectTransform)unavailable.transform;rect.anchorMin=new Vector2(0,1);rect.anchorMax=new Vector2(1,1);rect.offsetMin=new Vector2(6,-29);rect.offsetMax=new Vector2(-6,-6);
             var labelObject=new GameObject("Label",typeof(RectTransform));labelObject.transform.SetParent(unavailable.transform,false);
             var label=labelObject.AddComponent<TextMeshProUGUI>();label.text="× No disponible";label.fontSize=12;label.color=Color.white;label.alignment=TextAlignmentOptions.Center;label.raycastTarget=false;
             var labelRect=(RectTransform)label.transform;labelRect.anchorMin=Vector2.zero;labelRect.anchorMax=Vector2.one;labelRect.offsetMin=labelRect.offsetMax=Vector2.zero;

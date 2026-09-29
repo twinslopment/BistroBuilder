@@ -107,6 +107,7 @@ public sealed class BistroBuilderReservationPlayerScreen : MonoBehaviour
         }
 
         selectedDayIndex = facade.CurrentDayIndex;
+        BistroBuilderManagementSafeArea.Install(panelRoot.transform as RectTransform);
         panelRoot.SetActive(true);
         BeginNewReservation();
         Refresh();

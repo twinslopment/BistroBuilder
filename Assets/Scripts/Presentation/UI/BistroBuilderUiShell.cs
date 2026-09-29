@@ -24,6 +24,42 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     public const string TertiaryContextActionName = "BB_UIUX_TertiaryContextAction";
     public bool HasManagementScreenOpen => IsAnyManagementScreenOpen() || (topPopup != null && topPopup.gameObject.activeSelf) || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
 
+    public float ContentTopInset(Canvas targetCanvas)
+    {
+        float scale = targetCanvas != null ? Mathf.Max(.01f, targetCanvas.scaleFactor) : 1f;
+        if (topNavigation == null || !topNavigation.gameObject.activeInHierarchy) return 86f;
+        var corners = new Vector3[4]; topNavigation.GetWorldCorners(corners);
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        float bottom = RectTransformUtility.WorldToScreenPoint(camera, corners[0]).y;
+        return ((canvas != null ? canvas.pixelRect.height : Screen.height) - bottom) / scale + 12f;
+    }
+
+    private RestaurantEditModeService overlayEditMode;
+    private CanvasGroup normalTimeDockGroup;
+
+    private void ReconcileOverlayVisibility()
+    {
+        if (overlayEditMode == null) overlayEditMode = FindScene<RestaurantEditModeService>();
+        if (normalTimeDockGroup == null)
+        {
+            var dock = GameObject.Find("BB_368B_TimeControlsDock");
+            if (dock != null)
+            {
+                normalTimeDockGroup = dock.GetComponent<CanvasGroup>();
+                if (normalTimeDockGroup == null) normalTimeDockGroup = dock.AddComponent<CanvasGroup>();
+            }
+        }
+        if (normalTimeDockGroup != null)
+        {
+            bool visible = !(overlayEditMode != null && overlayEditMode.IsEditModeActive) && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking;
+            normalTimeDockGroup.alpha = visible ? 1f : 0f;
+            normalTimeDockGroup.interactable = normalTimeDockGroup.blocksRaycasts = visible;
+        }
+        // Panel owners may refresh later than navigation; enforce visibility at the end of the frame.
+        if (activityPanel != null && (HasManagementScreenOpen || BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking))
+            activityPanel.gameObject.SetActive(false);
+    }
+
     private static readonly NavSpec[] Navigation =
     {
         new NavSpec("Actividad", null),
@@ -197,6 +233,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         ReconcileTimeDock();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
         {
+            if (panel == topNavigation) continue;
             var image = panel.GetComponent<Image>();
             image.color = panel == topNavigation ? BistroBuilderUiTokens.Background : BistroBuilderUiTokens.Surface1;
             BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Panel, true);
@@ -314,7 +351,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (bottomDateTimeText == null) bottomDateTimeText = go.AddComponent<TextMeshProUGUI>();
         RectTransform rect = go.GetComponent<RectTransform>();
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
-        rect.anchoredPosition = new Vector2(-356f, 0f);
+        rect.anchoredPosition = new Vector2(-418f, 0f);
         rect.sizeDelta = new Vector2(220f, 44f);
         bottomDateTimeText.fontSize = 13f;
         bottomDateTimeText.color = BistroBuilderUiTokens.TextPrimary;
@@ -1723,7 +1760,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 bool editing =
                     editMode != null && editMode.IsEditModeActive;
                 activityPanel.gameObject.SetActive(
-                    !editing &&
+                    !editing && !HasManagementScreenOpen && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking &&
                     activityVisible &&
                     ActivityPanelController.ActiveInstance.HasEntries
                 );
@@ -1765,7 +1802,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
             activityPanel.sizeDelta = new Vector2(284f, Mathf.Clamp(88f + lineCount * 28f, 120f, 300f));
             RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
             bool editing = editMode != null && editMode.IsEditModeActive;
-            activityPanel.gameObject.SetActive(!editing && activityVisible);
+            activityPanel.gameObject.SetActive(!editing && activityVisible && !HasManagementScreenOpen && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
         }
     }
 
@@ -1790,7 +1827,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
         rect.anchoredPosition = new Vector2(-16f, 9f);
-        rect.sizeDelta = new Vector2(324f, 46f);
+        rect.sizeDelta = new Vector2(390f, 46f);
         rect.SetAsLastSibling();
     }
 

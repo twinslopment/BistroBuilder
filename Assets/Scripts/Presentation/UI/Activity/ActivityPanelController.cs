@@ -34,6 +34,8 @@ public sealed class ActivityPanelController : MonoBehaviour
     private ScrollRect scrollRect;
     private bool usingReferencePresentation;
 
+    public int VisibleEntryCount => displayEntries.Count;
+
     private readonly List<ActivityDisplayEntry> displayEntries =
         new List<ActivityDisplayEntry>(128);
     private readonly ActivityFeedAggregator aggregator =
@@ -453,7 +455,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             emptyText.gameObject.SetActive(displayEntries.Count == 0);
 
         if (visibleCountText != null)
-            visibleCountText.text = displayEntries.Count + " visibles";
+            visibleCountText.text = displayEntries.Count + (displayEntries.Count == 1 ? " visible" : " visibles");
 
         if (footerText != null)
         {
@@ -773,7 +775,7 @@ public sealed class ActivityPanelController : MonoBehaviour
             case ActivityTargetType.Employee: prefix = "Personal"; break;
             case ActivityTargetType.Reputation: prefix = "Reputación"; break;
             case ActivityTargetType.Marketing: prefix = "Marketing"; break;
-            case ActivityTargetType.Entrance: prefix = "Entrada"; break;
+            case ActivityTargetType.Entrance: if (target.targetId == "main") return "Entrada principal"; prefix = "Entrada"; break;
             case ActivityTargetType.Group: prefix = "Grupo"; break;
             case ActivityTargetType.Dish: prefix = "Plato"; break;
             default: prefix = target.targetType.ToString(); break;

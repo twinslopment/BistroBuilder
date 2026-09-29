@@ -24,42 +24,25 @@ public static class BistroBuilderOpeningAndWallJoinsPlayTest
     public static void Menu()
     {
         var screen=Object.FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>();screen.Show();
-        typeof(BistroBuilderNewGameOpeningPlayerScreen).GetMethod("LateUpdate",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(screen,null);
-        var menu=GameObject.Find("BB_NewGameMenu");Check(menu!=null,"menu visible");
-        var panel=menu.transform.Find("NewGameCard");Check(panel.GetComponent<Image>().color.a==1,"opaque main card");
-        Check(((RectTransform)panel).rect.width==640&&((RectTransform)panel).rect.height==544,"compact card");
-        Check(panel.Find("Title").GetComponent<TMP_Text>().font==BistroBuilderTypography.Title,"Recoleta title");
-        Check(panel.Find("Subtitle").GetComponent<TMP_Text>().font==BistroBuilderTypography.Body,"Inter text");
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;
-        var expectedProfiles=new[]{
-            BistroBuilderStartingPremisesProfile.Empty,
-            BistroBuilderStartingPremisesProfile.Essentials,
-            BistroBuilderStartingPremisesProfile.FinishingTouches
-        };
-        for(int i=0;i<expectedProfiles.Length;i++)
-        {
-            var choice=Find<Button>("Choice"+i);
-            Check(choice!=null,"choice card "+i+" exists");
-            choice.onClick.Invoke();Canvas.ForceUpdateCanvases();
-            Check((BistroBuilderStartingPremisesProfile)typeof(BistroBuilderNewGameOpeningPlayerScreen)
-                .GetField("premises",flags).GetValue(screen)==expectedProfiles[i],
-                "select profile "+expectedProfiles[i]);
-            var preview=choice.transform.Find("PremisesPreview")?.GetComponent<RawImage>();
-            Check(preview!=null&&preview.texture!=null,"premises preview "+expectedProfiles[i]);
+        typeof(BistroBuilderNewGameOpeningPlayerScreen).GetMethod("Update",flags).Invoke(screen,null);
+        var menu=GameObject.Find("NewGameIvoryCanvas");Check(menu!=null,"approved menu visible");
+        var panel=menu.transform.Find("IvoryFrame");Check(panel.Find("OpaquePanel").GetComponent<Image>().color.a==1,"opaque main card");
+        var page=panel.Find("NewGamePage");
+        Check(page.Find("NewGameTitle").GetComponent<TMP_Text>().font==BistroBuilderTypography.Title,"Recoleta title");
+        Check(page.Find("Subtitle").GetComponent<TMP_Text>().font==BistroBuilderTypography.Body,"Inter body");
+        var profiles=new[]{BistroBuilderStartingPremisesProfile.Empty,BistroBuilderStartingPremisesProfile.Essentials,BistroBuilderStartingPremisesProfile.FinishingTouches};
+        for(int i=0;i<3;i++){
+            var choice=page.Find("Choice"+i);choice.GetComponent<Button>().onClick.Invoke();Canvas.ForceUpdateCanvases();
+            Check((BistroBuilderStartingPremisesProfile)typeof(BistroBuilderNewGameOpeningPlayerScreen).GetField("premises",flags).GetValue(screen)==profiles[i],"preparation selection "+profiles[i]);
+            Check(((RectTransform)choice).rect.size==((RectTransform)page.Find("Choice0")).rect.size,"equal preparation cards");
+            Check(choice.Find("PremisesPreview").GetComponent<RawImage>().texture!=null,"preparation artwork");
         }
-        Check(Enumerable.Range(0,3).All(i=>Find<Button>("Choice"+i)!=null),
-            "three current preparation choices");
         var input=menu.GetComponentInChildren<TMP_InputField>();string previous=input.text;input.text="La Esquina";
-        Check((string)typeof(BistroBuilderNewGameOpeningPlayerScreen).GetField("restaurantName",flags).GetValue(screen)=="La Esquina","restaurant name input works");input.text=previous;
+        Check((string)typeof(BistroBuilderNewGameOpeningPlayerScreen).GetField("restaurantName",flags).GetValue(screen)=="La Esquina","restaurant name input");input.text=previous;
         Check(EventSystem.current!=null&&EventSystem.current.enabled,"UI input enabled");
-        menu.GetComponent<CanvasScaler>().scaleFactor=1.15f;
-        BistroBuilderOptionsPlayTest.Capture("NewGame_1920.png",1920,1080);
-        menu.GetComponent<CanvasScaler>().scaleFactor=1f;
-        BistroBuilderOptionsPlayTest.Capture("NewGame_1280.png",1280,720);
-        menu.GetComponent<CanvasScaler>().scaleFactor=1.15f;
-        BistroBuilderOptionsPlayTest.Capture("NewGame_Ultrawide.png",3440,1440);
-        Check(RestaurantArchitectureCatalogPanel.WallEntries.Count(e=>e.Name=="Pared")==1&&!RestaurantArchitectureCatalogPanel.WallEntries.Any(e=>e.Id=="wall-exterior"),"single Pared catalogue entry");
-        screen.Hide();Check(!menu.activeSelf,"menu closes without leaving overlay");
+        Check(RestaurantArchitectureCatalogPanel.WallEntries.Count(e=>e.Name=="Pared")==1&&!RestaurantArchitectureCatalogPanel.WallEntries.Any(e=>e.Id=="wall-exterior"),"single Pared entry");
+        screen.Hide();typeof(BistroBuilderNewGameOpeningPlayerScreen).GetMethod("Update",flags).Invoke(screen,null);Check(!menu.activeSelf,"opening closes cleanly");
         Debug.Log("BB_NEW_GAME_UI_PASS");
     }
 
@@ -109,7 +92,7 @@ public static class BistroBuilderOpeningAndWallJoinsPlayTest
             camera.transform.SetPositionAndRotation(position,rotation);camera.cullingMask=mask;camera.orthographic=ortho;camera.orthographicSize=size;
             materializer.ClearGenerated();Object.DestroyImmediate(root);
         }
-        System.IO.File.WriteAllText("Logs/OpeningAndWallJoinsTest.txt","PASS: opaque compact menu, Recoleta/Inter, 3 selectable preparation previews, name input, menu closure, one wall choice; shared inner/outer mitres, reverse orientation, straight joins, T joins, continuous committed mesh, door collider aperture, draft parity. Captures 1280/1920/ultrawide.");
+        System.IO.File.WriteAllText("Logs/OpeningAndWallJoinsTest.txt","PASS: opaque approved menu, Recoleta/Inter, 3 equal preparation cards with artwork, name input, menu closure, one wall choice; shared inner/outer mitres, reverse orientation, straight joins, T joins, continuous committed mesh, door collider aperture, draft parity. Captures 1280/1920/ultrawide.");
         Debug.Log("BB_WALL_JOINS_PASS");
     }
 }

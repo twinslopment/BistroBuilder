@@ -1729,6 +1729,7 @@ public sealed class BistroBuilderFinanceRuntimeView : MonoBehaviour
     {
         if (modalRoot != null)
         {
+            if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
             modalRoot.gameObject.SetActive(visible);
         }
     }

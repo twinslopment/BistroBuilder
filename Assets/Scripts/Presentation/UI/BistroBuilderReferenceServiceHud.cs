@@ -250,10 +250,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         filters.anchoredPosition = Vector2.zero;
         filters.sizeDelta = new Vector2(0f, 38f);
 
-        CreateActivityFilterButton(filters, "Today", "Hoy", 0f, 0.19f, true);
-        CreateActivityFilterButton(filters, "Incidents", "Incidencias", 0.20f, 0.47f, false);
-        CreateActivityFilterButton(filters, "Opportunities", "Oportunidades", 0.48f, 0.77f, false);
-        CreateActivityFilterButton(filters, "Reservations", "Reservas", 0.78f, 1f, false);
+        CreateActivityFilterButton(filters, "Today", "Hoy", 0f, 0.15f, true);
+        CreateActivityFilterButton(filters, "Incidents", "Incidencias", 0.15f, 0.43f, false);
+        CreateActivityFilterButton(filters, "Opportunities", "Oportunidades", 0.43f, 0.76f, false);
+        CreateActivityFilterButton(filters, "Reservations", "Reservas", 0.76f, 1f, false);
 
         TMP_Text sectionTitle = CreateText(
             root,
@@ -346,7 +346,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         TMP_Text footer = CreateText(
             root,
             "FooterText",
-            "Crítico · Atención · Oportunidad · cronología",
+            "Ordenado por prioridad y hora",
             8.6f,
             ActivityPanelVisualStyle.Muted,
             TextAlignmentOptions.MidlineLeft);

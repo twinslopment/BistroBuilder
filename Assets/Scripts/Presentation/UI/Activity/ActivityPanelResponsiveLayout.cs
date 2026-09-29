@@ -14,6 +14,8 @@ public sealed class ActivityPanelResponsiveLayout : MonoBehaviour
     private RectTransform panel;
     private Canvas canvas;
     private Vector2 lastCanvasSize;
+    private BistroBuilderUiShell shell;
+    private float topInset;
 
     public struct LayoutPlan
     {
@@ -58,6 +60,10 @@ public sealed class ActivityPanelResponsiveLayout : MonoBehaviour
 
         Vector2 canvasSize = canvasRect.rect.size;
         LayoutPlan plan = EvaluateLogicalCanvas(canvasSize);
+        if (shell == null) shell = FindFirstObjectByType<BistroBuilderUiShell>();
+        topInset = shell != null ? shell.ContentTopInset(canvas) : TopClearance;
+        int rows = ActivityPanelController.ActiveInstance != null ? ActivityPanelController.ActiveInstance.VisibleEntryCount : 1;
+        plan.panelHeight = Mathf.Min(Mathf.Max(0, canvasSize.y - topInset - BottomClearance), 198f + Mathf.Clamp(rows, 1, 5) * 88f);
         bool canvasUnchanged =
             (canvasSize - lastCanvasSize).sqrMagnitude < 0.25f;
 
@@ -69,34 +75,15 @@ public sealed class ActivityPanelResponsiveLayout : MonoBehaviour
     }
     private void ApplyPlan(LayoutPlan plan)
     {
-        panel.anchorMin = new Vector2(0f, 0f);
-        panel.anchorMax = new Vector2(0f, 1f);
-        panel.pivot = new Vector2(0f, 0.5f);
-        panel.anchoredPosition = new Vector2(
-            LeftMargin,
-            (BottomClearance - TopClearance) * 0.5f);
-        panel.sizeDelta = new Vector2(
-            plan.panelWidth,
-            -(TopClearance + BottomClearance));
+        panel.anchorMin = panel.anchorMax = new Vector2(0, 1);
+        panel.pivot = new Vector2(0, 1);
+        panel.anchoredPosition = new Vector2(LeftMargin, -topInset);
+        panel.sizeDelta = new Vector2(plan.panelWidth, plan.panelHeight);
     }
-
-    private bool MatchesPlan(LayoutPlan plan)
-    {
-        if (panel == null)
-            return false;
-
-        return
-            Vector2.Distance(panel.anchorMin, new Vector2(0f, 0f)) < 0.001f &&
-            Vector2.Distance(panel.anchorMax, new Vector2(0f, 1f)) < 0.001f &&
-            Vector2.Distance(panel.pivot, new Vector2(0f, 0.5f)) < 0.001f &&
-            Mathf.Abs(panel.anchoredPosition.x - LeftMargin) < 0.25f &&
-            Mathf.Abs(panel.anchoredPosition.y) < 0.25f &&
-            Mathf.Abs(panel.sizeDelta.x - plan.panelWidth) < 0.25f &&
-            Mathf.Abs(
-                panel.sizeDelta.y +
-                TopClearance +
-                BottomClearance) < 0.25f;
-    }
+    private bool MatchesPlan(LayoutPlan plan) =>
+        panel.anchorMin == new Vector2(0,1) && panel.anchorMax == new Vector2(0,1) &&
+        (panel.sizeDelta - new Vector2(plan.panelWidth, plan.panelHeight)).sqrMagnitude < .01f &&
+        Mathf.Abs(panel.anchoredPosition.y + topInset) < .1f;
 
     public static LayoutPlan EvaluateLogicalCanvas(Vector2 logicalCanvasSize)
     {

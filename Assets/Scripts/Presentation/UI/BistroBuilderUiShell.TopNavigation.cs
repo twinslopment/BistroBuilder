@@ -196,6 +196,8 @@ public sealed partial class BistroBuilderUiShell
     }
     private void LateUpdate()
     {
+        ReconcileOverlayVisibility();
+        LayoutApprovedTopBar();
         if (!dismissTopPopup) return;
         dismissTopPopup = false;
         if (topPopup != null) topPopup.gameObject.SetActive(false);
@@ -229,7 +231,7 @@ public sealed partial class BistroBuilderUiShell
             dateText = date.ToString("ddd, d MMM", CultureInfo.GetCultureInfo("es-ES"));
         }
         string clockText = topClock != null ? $"{topClock.Hour:00}:{topClock.Minute:00}" : "-";
-        if (bottomDateTimeText != null) bottomDateTimeText.text = string.IsNullOrEmpty(dateText) ? clockText : dateText + "  ?  " + clockText;
+        if (bottomDateTimeText != null) bottomDateTimeText.text = dateText;
         if (!IsAnyManagementScreenOpen()) selectedNavigation = "Actividad";
         foreach (var pair in topPresenters)
         {

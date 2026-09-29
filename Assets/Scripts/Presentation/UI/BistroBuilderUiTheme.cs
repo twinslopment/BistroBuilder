@@ -45,7 +45,8 @@ public enum BistroBuilderUiStyleRole
     StatusInfo = 43,
     StatusDisabled = 44,
     BottomDock = 50,
-    Toast = 51
+    Toast = 51,
+    InputOnly = 60
 }
 
 [DisallowMultipleComponent]

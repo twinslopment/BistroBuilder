@@ -10,7 +10,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private static readonly Color32 Card = new Color32(253, 249, 245, 255);
     private static readonly Color32 Field = new Color32(240, 237, 230, 255);
     private static readonly Color32 TextPrimary = new Color32(31, 35, 29, 255);
-    private static readonly Color32 TextMuted = new Color32(138, 138, 132, 255);
+    private static readonly Color32 TextMuted = new Color32(96, 98, 90, 255);
     private static readonly Color32 Olive = new Color32(107, 128, 74, 255);
     private static readonly Color32 OliveSoft = new Color32(235, 241, 226, 255);
     private static readonly Color32 Gold = new Color32(240, 171, 34, 255);
@@ -766,7 +766,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             new Vector2(0.54f, 0f),
             new Vector2(10f, 6f),
             new Vector2(-2f, 34f));
-        price.text = definition.PurchasePrice.ToString("N0") + " €";
+        price.text = definition.PurchasePrice > 0 ? definition.PurchasePrice.ToString("N0") + " €" : "Incluido";
 
         RectTransform scopePill =
             CreateChildRect(card, "PreviewScopePill");
@@ -938,7 +938,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             if (price != null)
             {
                 price.text =
-                    view.Definition.PurchasePrice.ToString("N0") + " €";
+                    view.Definition.PurchasePrice > 0 ? view.Definition.PurchasePrice.ToString("N0") + " €" : "Incluido";
             }
             if (scope != null)
             {

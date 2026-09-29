@@ -1,0 +1,86 @@
+BB EDIT MODE BLOCK 18 - CORE SELF TEST
+OK - 18A comando entra en Draft
+OK - 18A Baseline aislada del Draft
+OK - 18D WallId estable en Draft
+OK - 18D T-junction vÃ¡lida
+OK - 18D T-junction deriva spans sin partir WallId
+OK - 18D X-junction vÃ¡lida
+OK - 18D X-junction conserva ambos WallId
+OK - 18D solape colineal bloqueante
+OK - 18A CreateWall 1/4
+OK - 18A CreateWall 2/4
+OK - 18A CreateWall 3/4
+OK - 18A CreateWall 4/4
+OK - 18E recinto cerrado detecta una habitaciÃ³n
+OK - 18L Undo pared
+OK - 18E Undo abre recinto coherentemente
+OK - 18L Redo pared
+OK - 18E Redo restaura el mismo RoomId
+OK - 18D divisor interior creado
+OK - 18E split produce dos habitaciones
+OK - 18E split conserva un RoomId preexistente
+OK - 18L Undo split
+OK - 18E merge por Undo recupera habitaciÃ³n original
+OK - 18L Redo split
+OK - 18E Redo split recupera exactamente los mismos RoomIds
+OK - 18F opening ligado a WallId
+OK - 18H opening vÃ¡lido supera validaciÃ³n intrÃ­nseca
+OK - 18D pared host modificable en Draft
+OK - 18F opening fuera del host bloquea commit sin recolocaciÃ³n silenciosa
+OK - 18F DeleteWall compone cascade de openings
+OK - 18F host y opening desaparecen atÃ³micamente
+OK - 18L Undo cascade
+OK - 18F Undo restaura host/opening con mismos IDs
+OK - 18A commit vÃ¡lido
+OK - 18A commit publica N+1
+OK - 18A commit no muta Baseline original
+OK - 18A Cancel restaura Draft a Baseline
+OK - 18L JSON round-trip conserva Stable IDs
+OK - 18L fingerprint canÃ³nico estable tras persistencia
+OK - 18B catÃ¡logo universal elimina DefinitionId duplicados
+OK - 18B bÃºsqueda semÃ¡ntica/categorÃ­a determinista
+OK - 18J feedback desacoplado publica eventos sin decidir construcciÃ³n
+OK - 18I/18L CommitJournal identifica operaciÃ³n idempotente
+OK - 18I commit econÃ³mico publica documento N+1
+OK - 18I autorizaciÃ³n econÃ³mica Prepare/Finalize Ãºnica
+OK - 18L CommitJournal persiste estado Finalized
+OK - 18A baseline stale bloquea publicaciÃ³n
+OK - 18I fallo de publicaciÃ³n aborta autorizaciÃ³n y devuelve Draft a ediciÃ³n
+OK - 18E acabado de superficie entra como comando semÃ¡ntico
+OK - 18E/18L Undo de superficie
+OK - 18E/18L Redo de superficie recupera estado/fingerprint
+OK - 18G zona funcional separada de Room creada por comando
+OK - 18G/18L Undo de zona funcional
+OK - 18G/18L Redo de zona recupera estado/fingerprint
+OK - 18D/18F mesh de pared recorta opening sin partir WallId
+OK - 18D geometría derivada conserva dimensiones canónicas
+OK - 18E triangulación de habitación cóncava determinista
+OK - 18D/18E materialización runtime crea paredes y suelo derivados del documento
+OK - 18L runtime document acepta baseline cargada
+OK - 18A sesión nace desde revisión comprometida real
+OK - 18C capabilities arquitectónicas resueltas por Stable ID
+OK - 18L runtime store publica N+1
+OK - 18L publicación idempotente no duplica efectos
+OK - 18L SaveGame captura documento arquitectónico comprometido
+OK - 18L SaveGame restaura documento arquitectónico por provider real
+OK - 18E superficie económica entra en Draft
+OK - 18G zona económica entra en Draft
+OK - 18I propuesta económica incluye superficies y zonas con área
+OK - 18A coordinador runtime abre sesión real
+OK - 18K coordinador ejecuta comando semántico
+OK - 18I coordinador bloquea commit económico sin Finanzas
+OK - 18I/18L coordinador publica commit atómico con autoridad económica
+OK - 18I coordinador finaliza economía una sola vez
+OK - 18F puerta recorta obstáculo de circulación en dos segmentos
+OK - 17/18 Navigation recibe dos footprints estáticos fuera del hueco de puerta
+OK - BBSIS recibe Spatial Subjects válidos derivados de pared semántica
+OK - BBSIS bloquea pared y mantiene libre el hueco transitable de puerta
+OK - 17/18 Navigation reconstruye topología con arquitectura publicada
+OK - 18I Finanzas tarifa propuesta semántica sin mutar Draft
+OK - 18I Finanzas calcula débito/crédito determinista por longitud/área/unidad
+OK - 18I Finanzas bloquea definitionId sin tarifa en vez de construir gratis
+OK - 18H Navigation registra validación externa en la autoridad de sesión
+OK - 18H baseline de validación externa cargada
+OK - 18H Navigation bloquea Draft con paso físicamente insuficiente
+OK - 18H diagnóstico conserva autoridad de origen Navigation
+Resultado: 84 OK / 0 fallos.

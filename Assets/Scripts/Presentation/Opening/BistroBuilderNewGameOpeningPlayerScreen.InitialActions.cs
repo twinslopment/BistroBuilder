@@ -26,10 +26,17 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
 
     private void RefreshInitialActions()
     {
+        var shell =
+            FindFirstObjectByType<BistroBuilderUiShell>();
+
         bool show =
+            isActiveAndEnabled &&
             openingService != null &&
             openingService.Phase ==
-                BistroBuilderNewGamePhase.InitialSetup;
+                BistroBuilderNewGamePhase.InitialSetup &&
+            !IsOpeningMenuBlocking &&
+            (shell == null || !shell.HasManagementScreenOpen) &&
+            BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true;
 
         if (show &&
             initialActionsCanvas == null)

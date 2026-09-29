@@ -80,7 +80,8 @@ public sealed class BistroBuilderConstructionPlayerPanel : MonoBehaviour
         undo.interactable = tool.CanUndo; redo.interactable = tool.CanRedo;
         copy.interactable = remove.interactable = tool.SelectedKind == EntityKind.Wall || tool.SelectedKind == EntityKind.Opening;
         apply.interactable = tool.HasDraftChanges;
-        bool initial = opening != null && opening.IsInitialDesignPhase;
+        bool initial = opening != null && opening.IsInitialDesignPhase &&
+            FindFirstObjectByType<BistroBuilderNewGameOpeningPlayerScreen>() == null;
         initialControls.gameObject.SetActive(initial);
         if (initial) saveInitial.interactable = completeInitial.interactable = !opening.IsSaveBusy;
     }
