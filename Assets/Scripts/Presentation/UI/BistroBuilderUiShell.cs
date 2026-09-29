@@ -46,10 +46,13 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         var corners = new Vector3[4];
         activeTopBar.GetWorldCorners(corners);
 
+        // La barra pertenece al Canvas canónico del shell. Usamos su cámara
+        // para proyectarla a pantalla y después convertimos el resultado a las
+        // unidades locales del Canvas que solicita el safe-area.
         Camera camera =
-            targetCanvas != null &&
-            targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? targetCanvas.worldCamera
+            canvas != null &&
+            canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
                 : null;
 
         float bottom =
@@ -58,8 +61,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 corners[0]).y;
 
         float pixelHeight =
-            targetCanvas != null
-                ? targetCanvas.pixelRect.height
+            canvas != null
+                ? canvas.pixelRect.height
                 : Screen.height;
 
         return
