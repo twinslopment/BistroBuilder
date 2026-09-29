@@ -111,7 +111,7 @@ public sealed partial class BistroBuilderUiShell
     {
         ChromeButton(root,"EditHome",Symbol.Home,"",44,46,
             "Menú de partida: guardar, cargar y volver al inicio",
-            ()=>GetComponent<BistroBuilderOptionsScreen>()?.Open());
+            OpenEditOptionsFromChrome);
 
         ChromeDivider(root,34);
 
@@ -124,6 +124,7 @@ public sealed partial class BistroBuilderUiShell
         AddApprovedCellSurface(editModeModeBlock,true);
         ChromeIcon(editModeModeBlock,"Pencil",Symbol.Pencil,EditChromeOlive,new Vector2(22,25),30);
         editModeModeTitleText=ChromeText(editModeModeBlock,"Title","Modo Edición",21,EditChromeText);
+        editModeModeTitleText.font=BistroBuilderTypography.Title??BistroBuilderTypography.Body;
         ChromeBox(editModeModeTitleText.rectTransform,48,0,230,29);
         editModeModeSubtitleText=ChromeText(
             editModeModeBlock,
@@ -646,6 +647,18 @@ public sealed partial class BistroBuilderUiShell
     bool IsFurnitureTool()=>editModeConstructionTool==null||editModeConstructionTool.Mode==Mode.Furniture;
     RestaurantPlaceableObject SelectedChromePlaceable()
     {var editable=editModeFurnitureController!=null?editModeFurnitureController.SelectedEditableObject:null;return editable!=null?editable.GetComponent<RestaurantPlaceableObject>():null;}
+    void OpenEditOptionsFromChrome()
+    {
+        var options=
+            GetComponent<BistroBuilderOptionsScreen>();
+
+        if(options==null)
+            return;
+
+        options.Open();
+        RefreshReadModels();
+    }
+
     void SaveInitialFromChrome()
     {
         ResolveEditChrome();
