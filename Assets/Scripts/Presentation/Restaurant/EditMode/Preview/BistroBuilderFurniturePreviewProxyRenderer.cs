@@ -18,8 +18,11 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     [Header("Sensación de transporte")]
     [SerializeField, Min(0f)] private float liftHeight = 0.085f;
-    [SerializeField, Min(0.01f)] private float liftDuration = 0.09f;
-    [SerializeField, Min(0.01f)] private float settleDuration = 0.12f;
+    [SerializeField] private bool useAdaptiveLift = true;
+    [SerializeField, Range(0.01f, 0.25f)] private float liftHeightFraction = 0.08f;
+    [SerializeField, Min(0f)] private float maximumLiftHeight = 0.14f;
+    [SerializeField, Min(0.01f)] private float liftDuration = 0.11f;
+    [SerializeField, Min(0.01f)] private float settleDuration = 0.10f;
 
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
@@ -37,6 +40,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     private RestaurantAreaMember activeRoot;
     private float currentLift;
+    private float effectiveLiftHeight;
+    private float transitionFromLift;
+    private float transitionToLift;
+    private float transitionStartedAt;
+    private float transitionDuration;
+    private bool transitionActive;
     private bool settling;
 
     private void Awake()
@@ -66,23 +75,15 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (entries.Count == 0) return;
+        if (entries.Count == 0)
+            return;
 
-        float delta = Mathf.Max(0f, Time.unscaledDeltaTime);
-        if (settling)
-        {
-            float speed = liftHeight / Mathf.Max(0.01f, settleDuration);
-            currentLift = Mathf.MoveTowards(currentLift, 0f, speed * delta);
-        }
-        else
-        {
-            float speed = liftHeight / Mathf.Max(0.01f, liftDuration);
-            currentLift = Mathf.MoveTowards(currentLift, liftHeight, speed * delta);
-        }
-
+        TickLiftTransition();
         DrawProxyMeshes(currentLift);
 
-        if (settling && currentLift <= 0.0005f)
+        if (settling &&
+            !transitionActive &&
+            currentLift <= 0.0005f)
         {
             RestoreSourceRenderers();
             ResetState();
@@ -105,7 +106,11 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
         previewService?.ClearOwner(
             BistroBuilderUniversalPreviewService.FurnitureOwner);
+
         settling = true;
+        BeginLiftTransition(
+            0f,
+            settleDuration);
     }
 
     private void HandleCancelled(RestaurantAreaMember member)
@@ -139,7 +144,14 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             CaptureMember(linkedBuffer[i]);
 
         currentLift = 0f;
+        effectiveLiftHeight =
+            ResolveEffectiveLiftHeight();
+
         settling = false;
+
+        BeginLiftTransition(
+            effectiveLiftHeight,
+            liftDuration);
     }
 
     private void CaptureMember(RestaurantAreaMember member)
@@ -194,6 +206,139 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
 
             renderer.enabled = false;
         }
+    }
+
+    private float ResolveEffectiveLiftHeight()
+    {
+        float minimum =
+            Mathf.Max(
+                0f,
+                liftHeight);
+
+        if (!useAdaptiveLift ||
+            entries.Count == 0)
+        {
+            return minimum;
+        }
+
+        float maximumHeight =
+            0f;
+
+        for (int i = 0;
+             i < entries.Count;
+             i++)
+        {
+            PreviewMeshEntry entry =
+                entries[i];
+
+            if (entry.Renderer == null)
+                continue;
+
+            maximumHeight =
+                Mathf.Max(
+                    maximumHeight,
+                    entry.Renderer.bounds.size.y);
+        }
+
+        float adaptive =
+            maximumHeight *
+            Mathf.Max(
+                0.01f,
+                liftHeightFraction);
+
+        return Mathf.Clamp(
+            Mathf.Max(
+                minimum,
+                adaptive),
+            0f,
+            Mathf.Max(
+                minimum,
+                maximumLiftHeight));
+    }
+
+    private void BeginLiftTransition(
+        float targetLift,
+        float duration)
+    {
+        transitionFromLift =
+            currentLift;
+
+        transitionToLift =
+            Mathf.Max(
+                0f,
+                targetLift);
+
+        transitionStartedAt =
+            Time.unscaledTime;
+
+        transitionDuration =
+            Mathf.Max(
+                0.01f,
+                duration);
+
+        transitionActive =
+            !Mathf.Approximately(
+                transitionFromLift,
+                transitionToLift);
+    }
+
+    private void TickLiftTransition()
+    {
+        if (!transitionActive)
+        {
+            currentLift =
+                transitionToLift;
+
+            return;
+        }
+
+        float t =
+            Mathf.Clamp01(
+                (Time.unscaledTime -
+                 transitionStartedAt) /
+                transitionDuration);
+
+        float eased =
+            settling
+                ? EaseInCubic(t)
+                : EaseOutCubic(t);
+
+        currentLift =
+            Mathf.LerpUnclamped(
+                transitionFromLift,
+                transitionToLift,
+                eased);
+
+        if (t >= 1f)
+        {
+            currentLift =
+                transitionToLift;
+
+            transitionActive =
+                false;
+        }
+    }
+
+    private static float EaseOutCubic(
+        float t)
+    {
+        float inverse =
+            1f - Mathf.Clamp01(t);
+
+        return 1f -
+               inverse *
+               inverse *
+               inverse;
+    }
+
+    private static float EaseInCubic(
+        float t)
+    {
+        t = Mathf.Clamp01(t);
+
+        return t *
+               t *
+               t;
     }
 
     private void DrawProxyMeshes(float verticalOffset)
@@ -311,6 +456,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         suppressedLodRenderers.Clear();
         activeRoot = null;
         currentLift = 0f;
+        effectiveLiftHeight = 0f;
+        transitionFromLift = 0f;
+        transitionToLift = 0f;
+        transitionStartedAt = 0f;
+        transitionDuration = 0f;
+        transitionActive = false;
         settling = false;
     }
 
