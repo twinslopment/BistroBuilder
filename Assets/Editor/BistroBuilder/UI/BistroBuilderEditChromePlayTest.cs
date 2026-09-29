@@ -52,12 +52,17 @@ public static class BistroBuilderEditChromePlayTest
                     edit=Object.FindFirstObjectByType<RestaurantEditInteractionController>();edit.TryEnterEditMode();
                     tool=Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();tool.SetMode(BistroBuilderConstructionRuntimeMode.Furniture);break;
                 case 1:
-                    Check(GameObject.Find(BistroBuilderUiShell.EditModeTopBarName)!=null,"Edit chrome visible");
+                    var editTopObject=GameObject.Find(BistroBuilderUiShell.EditModeTopBarName);
+                    Check(editTopObject!=null&&editTopObject.activeInHierarchy,"Edit chrome visible");
+                    var editTop=editTopObject.GetComponent<RectTransform>();
+                    Check(editTop.GetComponentsInChildren<BistroBuilderTopBarPlate>(true).Length>=8,"Edit top bar reuses approved plate language");
+                    Check(editTop.GetComponentsInChildren<BistroBuilderTopBarArtwork>(true).Length==1,"Edit top bar reuses approved Bistro Builder artwork");
+                    Check(editTop.Find("EditModeTitle")!=null,"Edit mode identity remains explicit");
                     foreach(var rootName in new[]{BistroBuilderUiShell.EditModeTopBarName,BistroBuilderUiShell.EditModeBottomBarName}){
                         var root=GameObject.Find(rootName);
-                        Check(root.GetComponentsInChildren<BistroBuilderEditChromeIcon>().Length>=10,"Vector icon coverage");
-                        Check(root.GetComponentsInChildren<BistroBuilder.UI.Iconography.BBIconButton>().Length==0,"No duplicate legacy icons");
-                        foreach(var text in root.GetComponentsInChildren<TMP_Text>())Check(!text.text.Any(c=>"☀✎✋✥▦▣↶↷⚙".Contains(c)),"No placeholder glyphs");
+                        Check(root.GetComponentsInChildren<BistroBuilderEditChromeIcon>(true).Length>=10,"Vector icon coverage");
+                        Check(root.GetComponentsInChildren<BistroBuilder.UI.Iconography.BBIconButton>(true).Length==0,"No duplicate legacy icons");
+                        foreach(var text in root.GetComponentsInChildren<TMP_Text>(true))Check(!text.text.Any(c=>"☀✎✋✥▦▣↶↷⚙".Contains(c)),"No placeholder glyphs");
                     }
                     Object.FindFirstObjectByType<BistroBuilderUiDesignSystem>().ApplyAllNow(true);
                     BistroBuilder.UI.Iconography.BBIconographyRuntime.DecorateAll();
@@ -92,12 +97,18 @@ public static class BistroBuilderEditChromePlayTest
                     inspectorDuplicate.onClick.Invoke();Check(edit.HasActivePlacement,"Inspector duplicate uses creation preview");edit.CancelActivePlacement();
                     Capture("BarrasEdicion1920.png",1920,1080);
                     Capture("BarrasEdicion1280.png",1280,720);
+                    Capture("BarrasEdicion800.png",800,600);
                     Capture("BarrasEdicionUltrawide.png",3440,1440);
                     B("EditHome").onClick.Invoke();break;
                 case 5:
                     Check(shell.GetComponent<BistroBuilderOptionsScreen>().IsOpen,"Home exposes safe game menu");
+                    Check(GameObject.Find(BistroBuilderUiShell.TopBarName)!=null,"Normal global top bar returns while management is open from edit mode");
+                    Check(GameObject.Find(BistroBuilderUiShell.EditModeTopBarName)==null,"Edit tool bar yields to global navigation during management");
                     shell.GetComponent<BistroBuilderOptionsScreen>().Close();break;
-                case 6: Finish(true,"Vector icons, unified contextual inspector as furniture action authority, no fake favorite state, legacy context/initial/bottom overlays suppressed, category states, real tools, grid toggle, duplicate preview, game menu and 1920/1280/ultrawide captures.");break;
+                case 6:
+                    Check(GameObject.Find(BistroBuilderUiShell.EditModeTopBarName)!=null,"Edit top bar returns after closing management");
+                    Check(GameObject.Find(BistroBuilderUiShell.TopBarName)==null,"Normal top bar is not duplicated over the edit viewport");
+                    Finish(true,"Approved normal/edit top-bar continuity, responsive edit captures at 1920/1280/800/ultrawide, unified contextual inspector as furniture action authority, no fake favorite state, legacy context/initial/bottom overlays suppressed, category states, real tools, grid toggle, duplicate preview and game-menu handoff.");break;
             }
         }catch(Exception e){Finish(false,e.ToString());}
     }
