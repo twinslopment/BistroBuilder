@@ -503,6 +503,14 @@ namespace BistroBuilder.Editor.Savic
                 string path =
                     paths[index];
 
+                if (string.Equals(
+                        Path.GetFileName(path),
+                        ".gitkeep",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 string relative =
                     layout.ToProjectRelativePath(
                         path);
