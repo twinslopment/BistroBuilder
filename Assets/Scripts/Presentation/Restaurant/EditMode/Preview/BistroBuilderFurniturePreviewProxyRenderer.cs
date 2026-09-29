@@ -24,6 +24,12 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     [SerializeField, Min(0.01f)] private float liftDuration = 0.11f;
     [SerializeField, Min(0.01f)] private float settleDuration = 0.10f;
 
+    [Header("Seguimiento visual")]
+    [SerializeField, Min(1f)] private float positionFollowSharpness = 20f;
+    [SerializeField, Min(1f)] private float rotationFollowSharpness = 24f;
+    [SerializeField, Min(0.05f)] private float maximumVisualLag = 0.55f;
+    [SerializeField, Min(1f)] private float settleFollowMultiplier = 1.65f;
+
     private readonly List<PreviewMeshEntry> entries = new List<PreviewMeshEntry>(24);
     private readonly List<RestaurantAreaMember> linkedBuffer = new List<RestaurantAreaMember>(16);
     private readonly HashSet<int> rendererIds =
@@ -47,6 +53,10 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
     private float transitionDuration;
     private bool transitionActive;
     private bool settling;
+
+    private Vector3 visualRootPosition;
+    private Quaternion visualRootRotation = Quaternion.identity;
+    private bool visualPoseInitialized;
 
     private void Awake()
     {
@@ -78,12 +88,21 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         if (entries.Count == 0)
             return;
 
+        if (activeRoot == null)
+        {
+            RestoreSourceRenderers();
+            ResetState();
+            return;
+        }
+
         TickLiftTransition();
+        TickVisualPose();
         DrawProxyMeshes(currentLift);
 
         if (settling &&
             !transitionActive &&
-            currentLift <= 0.0005f)
+            currentLift <= 0.0005f &&
+            VisualPoseSettled())
         {
             RestoreSourceRenderers();
             ResetState();
@@ -146,6 +165,15 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         currentLift = 0f;
         effectiveLiftHeight =
             ResolveEffectiveLiftHeight();
+
+        visualRootPosition =
+            root.transform.position;
+
+        visualRootRotation =
+            root.transform.rotation;
+
+        visualPoseInitialized =
+            true;
 
         settling = false;
 
@@ -341,10 +369,133 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
                t;
     }
 
+    private void TickVisualPose()
+    {
+        if (activeRoot == null)
+            return;
+
+        Vector3 targetPosition =
+            activeRoot.transform.position;
+
+        Quaternion targetRotation =
+            activeRoot.transform.rotation;
+
+        if (!visualPoseInitialized)
+        {
+            visualRootPosition =
+                targetPosition;
+
+            visualRootRotation =
+                targetRotation;
+
+            visualPoseInitialized =
+                true;
+
+            return;
+        }
+
+        float delta =
+            Mathf.Max(
+                0f,
+                Time.unscaledDeltaTime);
+
+        float multiplier =
+            settling
+                ? Mathf.Max(
+                    1f,
+                    settleFollowMultiplier)
+                : 1f;
+
+        float positionBlend =
+            1f -
+            Mathf.Exp(
+                -Mathf.Max(
+                    1f,
+                    positionFollowSharpness) *
+                multiplier *
+                delta);
+
+        float rotationBlend =
+            1f -
+            Mathf.Exp(
+                -Mathf.Max(
+                    1f,
+                    rotationFollowSharpness) *
+                multiplier *
+                delta);
+
+        visualRootPosition =
+            Vector3.Lerp(
+                visualRootPosition,
+                targetPosition,
+                positionBlend);
+
+        Vector3 lag =
+            visualRootPosition -
+            targetPosition;
+
+        float maximumLag =
+            Mathf.Max(
+                0.05f,
+                maximumVisualLag);
+
+        if (lag.sqrMagnitude >
+            maximumLag *
+            maximumLag)
+        {
+            visualRootPosition =
+                targetPosition +
+                lag.normalized *
+                maximumLag;
+        }
+
+        visualRootRotation =
+            Quaternion.Slerp(
+                visualRootRotation,
+                targetRotation,
+                rotationBlend);
+    }
+
+    private bool VisualPoseSettled()
+    {
+        if (activeRoot == null ||
+            !visualPoseInitialized)
+        {
+            return true;
+        }
+
+        return Vector3.Distance(
+                   visualRootPosition,
+                   activeRoot.transform.position) <=
+               0.003f &&
+               Quaternion.Angle(
+                   visualRootRotation,
+                   activeRoot.transform.rotation) <=
+               0.35f;
+    }
+
     private void DrawProxyMeshes(float verticalOffset)
     {
-        Matrix4x4 liftMatrix =
-            Matrix4x4.Translate(Vector3.up * verticalOffset);
+        if (activeRoot == null)
+            return;
+
+        Matrix4x4 actualRootPose =
+            Matrix4x4.TRS(
+                activeRoot.transform.position,
+                activeRoot.transform.rotation,
+                Vector3.one);
+
+        Matrix4x4 visualRootPose =
+            Matrix4x4.TRS(
+                visualRootPosition +
+                Vector3.up *
+                verticalOffset,
+                visualRootRotation,
+                Vector3.one);
+
+        Matrix4x4 visualDelta =
+            visualRootPose *
+            actualRootPose.inverse;
 
         for (int i = 0; i < entries.Count; i++)
         {
@@ -352,7 +503,8 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
             if (!entry.IsUsable) continue;
 
             Matrix4x4 matrix =
-                liftMatrix * entry.Renderer.transform.localToWorldMatrix;
+                visualDelta *
+                entry.Renderer.transform.localToWorldMatrix;
 
             int subMeshCount = entry.Mesh.subMeshCount;
             int materialCount = entry.Materials.Length;
@@ -462,6 +614,9 @@ public sealed class BistroBuilderFurniturePreviewProxyRenderer : MonoBehaviour
         transitionStartedAt = 0f;
         transitionDuration = 0f;
         transitionActive = false;
+        visualRootPosition = Vector3.zero;
+        visualRootRotation = Quaternion.identity;
+        visualPoseInitialized = false;
         settling = false;
     }
 
