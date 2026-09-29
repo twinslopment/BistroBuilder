@@ -49,14 +49,18 @@ public static class BistroBuilderPreparedPremisesLayout
         }
 
         float dividerZ = Mathf.Clamp(
-            Mathf.Lerp(minZ, maxZ, 0.66f),
+            Mathf.Lerp(minZ, maxZ, 0.70f),
             minZ + 2.8f,
             maxZ - 2.8f);
 
         float bathroomWidth = Mathf.Clamp(width * 0.17f, 2.6f, 3.4f);
         float bathroomWestX = maxX - bathroomWidth;
+        float doorOffset = Mathf.Min(4f, width * 0.22f);
+        float preferredKitchenDoorX = entranceWorldPosition.x <= premisesBounds.center.x
+            ? premisesBounds.center.x + doorOffset
+            : premisesBounds.center.x - doorOffset;
         float kitchenDoorX = Mathf.Clamp(
-            premisesBounds.center.x + Mathf.Min(4f, width * 0.22f),
+            preferredKitchenDoorX,
             minX + 1.6f,
             bathroomWestX - 1.6f);
 
