@@ -4,7 +4,7 @@ using UnityEngine.UI;
 public enum BistroBuilderEditChromeSymbol
 {
     Home, Pencil, Undo, Redo, Hand, Move, Grid, Terrain, Paint,
-    Sun, Play, Plot, Chair, Surfaces, Walls, Plant, Bulb, Settings, More, Delete, Rotate, Duplicate
+    Sun, Play, Plot, Chair, Surfaces, Walls, Plant, Bulb, Settings, More, Delete, Rotate, Duplicate, Save, Confirm
 }
 
 /// <summary>Original, resolution-independent silhouettes from the approved edit-mode reference.
@@ -74,6 +74,14 @@ public sealed class BistroBuilderEditChromeIcon : MaskableGraphic
                 Arc(16,16,11,205,350,1.9f);Arc(16,16,11,25,170,1.9f);Stroke(21,6,27,13,30,5);Stroke(11,26,5,19,2,27);break;
             case BistroBuilderEditChromeSymbol.Duplicate:
                 Stroke(11,10,28,10,28,29,11,29,11,10);Stroke(7,23,4,23,4,3,21,3,21,6);break;
+            case BistroBuilderEditChromeSymbol.Save:
+                Stroke(5,3,25,3,29,7,29,29,5,29,5,3);
+                Stroke(9,3,9,12,23,12,23,3);
+                Stroke(9,18,25,18,25,27,9,27,9,18);
+                Disc(21,7,1.6f);break;
+            case BistroBuilderEditChromeSymbol.Confirm:
+                Arc(16,16,13,0,360,1.8f);
+                Stroke(8,16,14,22,25,10);break;
         }
         mesh = null;
     }
