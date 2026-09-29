@@ -45,11 +45,13 @@ $stashRefs = @(git.exe stash list --format='%gd')
 if ($LASTEXITCODE -eq 0) {
     foreach ($ref in $stashRefs) {
         if (-not [string]::IsNullOrWhiteSpace($ref)) {
+            # The normal stash tree may contain tracked files.
             $gitRefs.Add($ref)
-            git.exe cat-file -e ($ref + '^3^{tree}') 2>$null
-            if ($LASTEXITCODE -eq 0) {
-                $gitRefs.Add($ref + '^3')
-            }
+
+            # The optional third parent may contain untracked files.
+            # Do not probe it here: invalid parents are ignored later
+            # per concrete path, without producing fatal PowerShell errors.
+            $gitRefs.Add($ref + '^3')
         }
     }
 }
