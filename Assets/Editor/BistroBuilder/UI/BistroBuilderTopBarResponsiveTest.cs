@@ -102,12 +102,19 @@ public static class BistroBuilderTopBarResponsiveTest
                     Check(opening.TryRestoreSnapshot(setup,out string stateError),"Initial setup fixture without writing saves: "+stateError);
                     Check(opening.TryEnterInitialEditMode(out string enterError),"Enter initial editing: "+enterError);break;
                 case 10:
-                    var saveButtons=UnityEngine.Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Where(b=>b.name=="SaveRecovery"||b.name=="Guardar recuperación").ToArray();
-                    Check(saveButtons.Length==1,"Exactly one initial design save action");
+                    var editTop=GameObject.Find(BistroBuilderUiShell.EditModeTopBarName);
+                    Check(editTop!=null&&editTop.activeInHierarchy,"Edit top bar replaces normal navigation in edit viewport");
+                    Check(editTop.GetComponentsInChildren<BistroBuilderTopBarArtwork>(true).Length==1,"Normal/edit modes share approved brand artwork");
+                    Check(editTop.GetComponentsInChildren<BistroBuilderTopBarPlate>(true).Length>=8,"Normal/edit modes share approved plate language");
+                    var saveButtons=UnityEngine.Object.FindObjectsByType<Button>(FindObjectsInactive.Include,FindObjectsSortMode.None).Where(b=>b.name=="EditInitialSave"&&b.gameObject.activeInHierarchy).ToArray();
+                    Check(saveButtons.Length==1,"Exactly one canonical initial design save action");
+                    Check(GameObject.Find("Diseño inicial")==null,"Legacy initial design panel remains suppressed");
                     var clockDock=GameObject.Find("BB_368B_TimeControlsDock");Check(clockDock==null||clockDock.GetComponent<CanvasGroup>().alpha==0,"Normal time dock hidden during editing");
                     Check(shell.TryOpenNavigationFromInterface("Reputación",out string openError),"Management opens during initial setup: "+openError);break;
                 case 11:
                     Check(GameObject.Find("InitialDesignActions")==null,"Initial-design controls hidden over management in initial setup");
+                    Check(GameObject.Find(BistroBuilderUiShell.TopBarName)!=null,"Global navigation returns above management opened from edit mode");
+                    Check(GameObject.Find(BistroBuilderUiShell.EditModeTopBarName)==null,"Edit chrome yields while management is open");
                     UnityEngine.Object.FindFirstObjectByType<BistroBuilderNewGameOpeningService>().TryRestoreSnapshot(originalOpeningState,out _);
                     Finish(true,"BB_TOPBAR_RESPONSIVE_PASS");break;
             }
