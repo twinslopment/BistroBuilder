@@ -1,3 +1,4 @@
+using BistroBuilder.UI.Iconography;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -225,8 +226,38 @@ public sealed partial class BistroBuilderUiShell
         layout.flexibleWidth = 1f;
 
         Image icon = EnsureCompactChildImage(go.transform, "CompactIcon");
-        icon.sprite = GetCompactNavigationSprite(
-            spriteIndex, sourceLeft, sourceWidth, name);
+
+        BBIconCatalog iconCatalog =
+            BBIconCatalog.LoadDefault();
+
+        BBIconId iconId =
+            spriteIndex >= 0 &&
+            spriteIndex < TopIcons.Length
+                ? TopIcons[spriteIndex]
+                : BBIconId.NavOptions;
+
+        icon.sprite =
+            iconCatalog != null
+                ? iconCatalog.GetSprite(iconId)
+                : null;
+
+        if (icon.sprite == null)
+        {
+            icon.sprite =
+                GetCompactNavigationSprite(
+                    spriteIndex,
+                    sourceLeft,
+                    sourceWidth,
+                    name);
+        }
+
+        icon.color =
+            new Color(
+                0.25f,
+                0.25f,
+                0.20f,
+                0.96f);
+
         icon.preserveAspect = true;
         RectTransform iconRect = icon.rectTransform;
         iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 1f);
