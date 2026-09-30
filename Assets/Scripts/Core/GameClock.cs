@@ -26,6 +26,13 @@ public sealed class GameClock : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float gameMinutesPerRealSecond = 1f;
 
+    [Header("Diagnóstico")]
+    [Tooltip(
+        "Escribe cada cambio de minuto en Console. Desactivado por defecto " +
+        "para no degradar Play Mode cuando la simulación está acelerada.")]
+    [SerializeField]
+    private bool logTimeChanges;
+
     public event Action<int, int> TimeChanged;
     public event Action<float> SpeedChanged;
     public event Action<bool> PauseChanged;
@@ -268,7 +275,13 @@ public sealed class GameClock : MonoBehaviour
 
     private void NotifyTimeChanged()
     {
-        Debug.Log($"Hora del juego: {Hour:00}:{Minute:00}");
+        if (logTimeChanges)
+        {
+            Debug.Log(
+                $"Hora del juego: {Hour:00}:{Minute:00}",
+                this);
+        }
+
         TimeChanged?.Invoke(Hour, Minute);
     }
 
