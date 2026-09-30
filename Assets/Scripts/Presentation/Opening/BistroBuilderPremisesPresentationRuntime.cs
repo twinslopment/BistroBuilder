@@ -17,6 +17,8 @@ public static class BistroBuilderPremisesPresentationRuntime
 
     private static Material originalFloorMaterial;
     private static bool originalFloorMaterialCaptured;
+    private static Mesh cachedCubeMesh;
+    private static Mesh cachedCylinderMesh;
 
     public static bool Apply(
         BistroBuilderStartingPremisesProfile profile,
@@ -686,6 +688,24 @@ public static class BistroBuilderPremisesPresentationRuntime
     private static Mesh ResolvePrimitiveMesh(
         string meshName)
     {
+        if (string.Equals(
+                meshName,
+                "Cube",
+                StringComparison.OrdinalIgnoreCase) &&
+            cachedCubeMesh != null)
+        {
+            return cachedCubeMesh;
+        }
+
+        if (string.Equals(
+                meshName,
+                "Cylinder",
+                StringComparison.OrdinalIgnoreCase) &&
+            cachedCylinderMesh != null)
+        {
+            return cachedCylinderMesh;
+        }
+
         MeshFilter[] filters =
             UnityEngine.Object.FindObjectsByType<MeshFilter>(
                 FindObjectsInactive.Include,
@@ -698,15 +718,37 @@ public static class BistroBuilderPremisesPresentationRuntime
             MeshFilter filter =
                 filters[index];
 
-            if (filter != null &&
-                filter.sharedMesh != null &&
-                string.Equals(
+            if (filter == null ||
+                filter.sharedMesh == null ||
+                !string.Equals(
                     filter.sharedMesh.name,
                     meshName,
                     StringComparison.OrdinalIgnoreCase))
             {
-                return filter.sharedMesh;
+                continue;
             }
+
+            Mesh resolved =
+                filter.sharedMesh;
+
+            if (string.Equals(
+                    meshName,
+                    "Cube",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                cachedCubeMesh =
+                    resolved;
+            }
+            else if (string.Equals(
+                         meshName,
+                         "Cylinder",
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                cachedCylinderMesh =
+                    resolved;
+            }
+
+            return resolved;
         }
 
         return null;
