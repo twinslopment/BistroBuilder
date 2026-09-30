@@ -2168,7 +2168,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
             bottomIdentityBlock.gameObject.SetActive(
                 normalViewport &&
-                (!contextActionVisible || physicalWidth >= 1500f));
+                (!contextActionVisible || physicalWidth >= 1100f));
         }
 
         if (bottomRestaurantNameText != null)
