@@ -29,6 +29,10 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
         var shell =
             FindFirstObjectByType<BistroBuilderUiShell>();
 
+        RestaurantEditInteractionController editInteraction =
+            FindFirstObjectByType<
+                RestaurantEditInteractionController>();
+
         bool show =
             isActiveAndEnabled &&
             openingService != null &&
@@ -36,7 +40,9 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 BistroBuilderNewGamePhase.InitialSetup &&
             !IsOpeningMenuBlocking &&
             (shell == null || !shell.HasManagementScreenOpen) &&
-            BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true;
+            BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true &&
+            (editInteraction == null ||
+             !editInteraction.HasActivePlacement);
 
         if (show &&
             initialActionsCanvas == null)
@@ -114,10 +120,10 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
             new Vector2(0.5f, 0f);
 
         rect.anchoredPosition =
-            new Vector2(0f, 104f);
+            new Vector2(0f, 96f);
 
         rect.sizeDelta =
-            new Vector2(760f, 76f);
+            new Vector2(640f, 64f);
 
         Outline outline =
             panel.gameObject.AddComponent<Outline>();
@@ -142,11 +148,11 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 rect,
                 "Heading",
                 "Diseño inicial",
-                20f,
-                10f,
-                210f,
-                28f,
-                20f,
+                18f,
+                7f,
+                176f,
+                24f,
+                17f,
                 true);
 
         heading.color = Ink;
@@ -156,11 +162,11 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 rect,
                 "Restaurant",
                 openingService.RestaurantName,
-                20f,
-                38f,
-                210f,
-                22f,
-                13f);
+                18f,
+                31f,
+                176f,
+                19f,
+                11.5f);
 
         restaurant.color =
             InitialRibbonMuted;
@@ -170,11 +176,11 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 rect,
                 "Status",
                 string.Empty,
-                236f,
-                14f,
-                188f,
-                48f,
-                12.5f,
+                200f,
+                9f,
+                174f,
+                44f,
+                11.5f,
                 false,
                 TextAlignmentOptions.MidlineLeft);
 
@@ -186,10 +192,10 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 rect,
                 "SaveRecovery",
                 "Guardar",
-                436f,
-                16f,
-                126f,
-                44f,
+                386f,
+                10f,
+                102f,
+                42f,
                 HandleInitialSave);
 
         initialContinue =
@@ -197,10 +203,10 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
                 rect,
                 "ValidateAndContinue",
                 "Validar y continuar",
-                572f,
-                16f,
-                168f,
-                44f,
+                498f,
+                10f,
+                124f,
+                42f,
                 HandleInitialContinue);
 
         StyleInitialSecondaryButton(
@@ -211,11 +217,11 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
 
         initialSave
             .GetComponentInChildren<TMP_Text>()
-            .fontSize = 15f;
+            .fontSize = 13.5f;
 
         initialContinue
             .GetComponentInChildren<TMP_Text>()
-            .fontSize = 15f;
+            .fontSize = 13.5f;
     }
 
     private void HandleInitialSave()
