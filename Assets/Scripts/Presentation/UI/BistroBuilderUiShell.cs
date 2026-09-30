@@ -2121,13 +2121,6 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         outline.effectDistance = new Vector2(1f, -1f);
         outline.useGraphicAlpha = true;
 
-        Shadow shadow = panel.GetComponent<Shadow>();
-        if (shadow == null)
-            shadow = panel.gameObject.AddComponent<Shadow>();
-        shadow.effectColor = new Color(0f, 0f, 0f, .10f);
-        shadow.effectDistance = new Vector2(0f, -2f);
-        shadow.useGraphicAlpha = true;
-
         if (title != null)
         {
             title.color = UnifiedHudInk;
@@ -2160,12 +2153,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (bottomIdentityBlock != null)
         {
             bool contextActionVisible =
-                serviceActionButton != null &&
-                    serviceActionButton.gameObject.activeSelf ||
-                secondaryContextActionButton != null &&
-                    secondaryContextActionButton.gameObject.activeSelf ||
-                tertiaryContextActionButton != null &&
-                    tertiaryContextActionButton.gameObject.activeSelf;
+                (serviceActionButton != null &&
+                    serviceActionButton.gameObject.activeSelf) ||
+                (secondaryContextActionButton != null &&
+                    secondaryContextActionButton.gameObject.activeSelf) ||
+                (tertiaryContextActionButton != null &&
+                    tertiaryContextActionButton.gameObject.activeSelf);
 
             ResolveApprovedTopBarMetrics(
                 out _,
@@ -2293,8 +2286,12 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         ResizeStatusV4(waitingText, 150f, scale);
 
         if (bottomDateTimeText != null)
-            bottomDateTimeText.gameObject.SetActive(
-                physicalWidth >= 1500f);
+        {
+            // El dock 368B ya contiene el reloj canónico. Este texto legacy
+            // nunca llegó a tener una fuente de datos propia y no debe
+            // convertirse en una segunda autoridad visual.
+            bottomDateTimeText.gameObject.SetActive(false);
+        }
 
         if (bottomIdentityBlock != null)
         {
@@ -2316,13 +2313,6 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 new Vector2(
                     identityPhysicalWidth / scale,
                     Mathf.Max(36f / scale, height - 12f / scale));
-
-            float identityHeight =
-                bottomIdentityBlock.rect.height > 1f
-                    ? bottomIdentityBlock.rect.height
-                    : Mathf.Max(
-                        36f / scale,
-                        height - 12f / scale);
 
             if (bottomRestaurantNameText != null)
             {
