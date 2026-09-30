@@ -6,11 +6,11 @@ using UnityEngine.UI;
 public sealed class BistroBuilderTopBarPlate : MaskableGraphic
 {
     public bool Cell;
-    private float light, selected, focus;
+    private float hoverLight, selected, focus;
     public void State(float hover, float selection, float keyboard)
     {
-        if (Mathf.Abs(light-hover)+Mathf.Abs(selected-selection)+Mathf.Abs(focus-keyboard)<.001f) return;
-        light=hover; selected=selection; focus=keyboard; SetVerticesDirty();
+        if (Mathf.Abs(hoverLight-hover)+Mathf.Abs(selected-selection)+Mathf.Abs(focus-keyboard)<.001f) return;
+        hoverLight=hover; selected=selection; focus=keyboard; SetVerticesDirty();
     }
     protected override void OnPopulateMesh(VertexHelper mesh)
     {
@@ -28,12 +28,12 @@ public sealed class BistroBuilderTopBarPlate : MaskableGraphic
         else
         {
             if(selected>0) Shape(mesh,Inset(r,1),6,new Color(.75f,.51f,.20f,.20f*selected),new Color(.81f,.59f,.28f,.10f*selected));
-            if(light>0) {
-                Shape(mesh,Inset(r,1),6,new Color(1,.90f,.62f,.20f*light),new Color(1,.97f,.86f,.08f*light));
+            if(hoverLight>0) {
+                Shape(mesh,Inset(r,1),6,new Color(1,.90f,.62f,.20f*hoverLight),new Color(1,.97f,.86f,.08f*hoverLight));
                 // Layered radial illumination, never a solid brown rectangle.
                 for(int i=6;i>=1;i--) {
                     float w=r.width*.85f*i/6f,h=r.height*.65f*i/6f;
-                    Shape(mesh,new Rect(r.center.x-w/2,r.center.y-h/2+8,w,h),Mathf.Min(w,h)*.4f,new Color(1,.96f,.78f,.022f*light),new Color(1,.89f,.55f,.015f*light));
+                    Shape(mesh,new Rect(r.center.x-w/2,r.center.y-h/2+8,w,h),Mathf.Min(w,h)*.4f,new Color(1,.96f,.78f,.022f*hoverLight),new Color(1,.89f,.55f,.015f*hoverLight));
                 }
             }
             if(focus>0) {
@@ -41,7 +41,7 @@ public sealed class BistroBuilderTopBarPlate : MaskableGraphic
                 Shape(mesh,new Rect(r.x+4,r.y+2,r.width-8,2),1,c,c);
             }
             float lineWidth=Mathf.Min(32,r.width*.32f);
-            Color line=new Color(.58f,.37f,.13f,.25f+.6f*selected+.25f*light);
+            Color line=new Color(.58f,.37f,.13f,.25f+.6f*selected+.25f*hoverLight);
             Shape(mesh,new Rect(r.center.x-lineWidth/2,r.y+5,lineWidth,2),1,line,line);
         }
     }
