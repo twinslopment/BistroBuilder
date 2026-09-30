@@ -82,6 +82,12 @@ public static class BistroBuilderEditChromePlayTest
                 case 4:
                     var inspector=GameObject.Find("BB_UIUX_PlaceableInspector");
                     Check(inspector!=null&&inspector.activeInHierarchy,"Unified contextual inspector visible for world selection");
+                    Check(inspector.GetComponent<BistroBuilderUiStyleIsolation>()!=null,"Inspector owns an isolated authored visual contract");
+                    Object.FindFirstObjectByType<BistroBuilderUiDesignSystem>().ApplyAllNow(true);
+                    var inspectorPanel=inspector.GetComponent<Image>();
+                    var inspectorTitle=inspector.transform.Find("Viewport/Content/Header/Title")?.GetComponent<TMP_Text>();
+                    Check(inspectorPanel!=null&&inspectorPanel.color.r>.9f&&inspectorPanel.color.g>.9f,"Inspector remains light after global design-system pass");
+                    Check(inspectorTitle!=null&&inspectorTitle.color.grayscale<.45f,"Inspector title remains dark and legible after global design-system pass");
                     Check(inspector.transform.Find("Viewport/Content/Actions")!=null,"Unified inspector exposes contextual actions");
                     Check(inspector.transform.Find("Viewport/Content/Preview/Favorite")==null,"Inspector must not expose non-persistent fake favorites");
                     var legacy=GameObject.Find("PlaceableContextContent");
