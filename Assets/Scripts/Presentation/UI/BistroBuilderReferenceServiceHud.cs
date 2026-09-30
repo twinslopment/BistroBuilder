@@ -20,8 +20,6 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
     private const int MaxActivityRows = 8;
     private const int MaxOrderRows = 5;
 
-    private static readonly Color ContextPanelPaper =
-        new Color32(250, 248, 244, 255);
     private static readonly Color ContextCard =
         new Color32(255, 253, 249, 255);
     private static readonly Color ContextField =
@@ -494,7 +492,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         AddSurface(details.gameObject, ContextCard);
 
         clientCount = CreateText(details, "ClientCount", "0 clientes", 14f,
-            BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+            ContextInk, TextAlignmentOptions.MidlineLeft);
         Place(clientCount.rectTransform, 46f, -12f, 280f, 25f);
         clientBreakdown = CreateText(details, "ClientBreakdown", "0 personas", 11.5f,
             ContextMuted, TextAlignmentOptions.MidlineLeft);
@@ -680,10 +678,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
         Place(title.rectTransform, 44f, -7f, 210f, 24f);
         TMP_Text subtitle = CreateText(row, "Subtitle", string.Empty, 11f,
-            ContextMuted, TextAlignmentOptions.MidlineLeft);
+            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
         Place(subtitle.rectTransform, 44f, -29f, 238f, 21f);
         TMP_Text time = CreateText(row, "Time", "--:--", 10.5f,
-            ContextMuted, TextAlignmentOptions.MidlineRight);
+            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineRight);
         Place(time.rectTransform, 258f, -7f, 50f, 24f);
         return row.gameObject;
     }
@@ -759,7 +757,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             if (text == null) continue;
 
             if (text == satisfactionText ||
-                text.gameObject.name == "Status")
+                text == tableStatus ||
+                text.gameObject.name == "Status" ||
+                text.gameObject.name == "Smile" ||
+                text.GetComponentInParent<Selectable>() != null)
             {
                 continue;
             }
