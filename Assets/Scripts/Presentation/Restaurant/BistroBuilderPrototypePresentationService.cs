@@ -796,13 +796,33 @@ public sealed class BistroBuilderPrototypePresentationService :
             GameObject.Find(
                 "Floor_Test");
 
-        if (floor == null ||
-            serviceMaterial == null ||
+        if (floor == null)
+            return;
+
+        Transform existing =
             floor.transform.Find(
-                FloorPlinthName) != null)
+                FloorPlinthName);
+
+        bool fullPremisesPresentation =
+            GameObject.Find(
+                BistroBuilderPremisesPresentationRuntime.RootName) != null;
+
+        if (fullPremisesPresentation)
         {
+            if (existing != null)
+                existing.gameObject.SetActive(false);
+
             return;
         }
+
+        if (existing != null)
+        {
+            existing.gameObject.SetActive(true);
+            return;
+        }
+
+        if (serviceMaterial == null)
+            return;
 
         MeshRenderer floorRenderer =
             floor.GetComponent<MeshRenderer>();
@@ -895,11 +915,6 @@ public sealed class BistroBuilderPrototypePresentationService :
         ConfigurePresentationRenderer(
             renderer,
             serviceMaterial);
-
-        /*
-         * No existe Collider en este objeto. El área jugable y el raycast de
-         * colocación continúan definidos exclusivamente por Floor_Test.
-         */
     }
 
     private void CalmExplicitPlaceholders()
@@ -908,13 +923,24 @@ public sealed class BistroBuilderPrototypePresentationService :
             GameObject.Find(
                 "PlacementObstacle_Test"));
 
-        SkinPrototypeKitchen(
+        /*
+         * Cuando la presentación completa del local está activa, ella es la
+         * única autoridad visual de cocina/bar/envolvente. El fallback no
+         * dibuja ni modifica una segunda versión de esos elementos.
+         */
+        if (GameObject.Find(
+                BistroBuilderPremisesPresentationRuntime.RootName) != null)
+        {
+            return;
+        }
+
+        HideRendererOnly(
             GameObject.Find(
                 "Kitchen_Test"));
 
-        SkinPrototypeCounter(
-            GameObject.Find(
-                "ProvisionalCounter"));
+        ApplyMaterialToNamedObject(
+            "ProvisionalCounter",
+            tableMaterial);
 
         GameObject[] all =
             FindObjectsByType<GameObject>(
@@ -936,309 +962,12 @@ public sealed class BistroBuilderPrototypePresentationService :
                 continue;
             }
 
-            SkinPrototypeStool(
-                candidate);
+            ApplyMaterial(
+                candidate,
+                serviceMaterial != null
+                    ? serviceMaterial
+                    : tableMaterial);
         }
-    }
-
-    private void SkinPrototypeKitchen(
-        GameObject target)
-    {
-        if (target == null ||
-            target.transform.Find(
-                "BB_Presentation_Kitchen") != null)
-        {
-            return;
-        }
-
-        MeshFilter sourceFilter =
-            target.GetComponent<MeshFilter>();
-
-        MeshRenderer sourceRenderer =
-            target.GetComponent<MeshRenderer>();
-
-        if (sourceFilter == null ||
-            sourceFilter.sharedMesh == null ||
-            sourceRenderer == null ||
-            architectureMaterial == null ||
-            serviceMaterial == null)
-        {
-            return;
-        }
-
-        GameObject root =
-            CreatePresentationRoot(
-                target.transform,
-                "BB_Presentation_Kitchen");
-
-        AddPresentationPart(
-            root.transform,
-            "Cabinet",
-            sourceFilter.sharedMesh,
-            architectureMaterial,
-            new Vector3(
-                0f,
-                -0.08f,
-                0f),
-            new Vector3(
-                0.96f,
-                0.76f,
-                0.94f));
-
-        AddPresentationPart(
-            root.transform,
-            "Worktop",
-            sourceFilter.sharedMesh,
-            serviceMaterial,
-            new Vector3(
-                0f,
-                0.36f,
-                0f),
-            new Vector3(
-                1.00f,
-                0.08f,
-                0.98f));
-
-        AddPresentationPart(
-            root.transform,
-            "Plinth",
-            sourceFilter.sharedMesh,
-            serviceMaterial,
-            new Vector3(
-                0f,
-                -0.47f,
-                0f),
-            new Vector3(
-                0.90f,
-                0.06f,
-                0.88f));
-
-        sourceRenderer.enabled =
-            false;
-    }
-
-    private void SkinPrototypeCounter(
-        GameObject target)
-    {
-        if (target == null ||
-            target.transform.Find(
-                "BB_Presentation_Counter") != null)
-        {
-            return;
-        }
-
-        MeshFilter sourceFilter =
-            target.GetComponent<MeshFilter>();
-
-        MeshRenderer sourceRenderer =
-            target.GetComponent<MeshRenderer>();
-
-        if (sourceFilter == null ||
-            sourceFilter.sharedMesh == null ||
-            sourceRenderer == null ||
-            tableMaterial == null ||
-            serviceMaterial == null)
-        {
-            return;
-        }
-
-        GameObject root =
-            CreatePresentationRoot(
-                target.transform,
-                "BB_Presentation_Counter");
-
-        AddPresentationPart(
-            root.transform,
-            "Body",
-            sourceFilter.sharedMesh,
-            serviceMaterial,
-            new Vector3(
-                0f,
-                -0.04f,
-                0f),
-            new Vector3(
-                0.96f,
-                0.84f,
-                0.90f));
-
-        AddPresentationPart(
-            root.transform,
-            "Top",
-            sourceFilter.sharedMesh,
-            tableMaterial,
-            new Vector3(
-                0f,
-                0.43f,
-                0f),
-            new Vector3(
-                1.02f,
-                0.08f,
-                1.04f));
-
-        AddPresentationPart(
-            root.transform,
-            "Foot",
-            sourceFilter.sharedMesh,
-            tableMaterial,
-            new Vector3(
-                0f,
-                -0.48f,
-                0f),
-            new Vector3(
-                0.92f,
-                0.05f,
-                0.84f));
-
-        sourceRenderer.enabled =
-            false;
-    }
-
-    private void SkinPrototypeStool(
-        GameObject target)
-    {
-        if (target == null ||
-            target.transform.Find(
-                "BB_Presentation_Stool") != null)
-        {
-            return;
-        }
-
-        MeshFilter sourceFilter =
-            target.GetComponent<MeshFilter>();
-
-        MeshRenderer sourceRenderer =
-            target.GetComponent<MeshRenderer>();
-
-        if (sourceFilter == null ||
-            sourceFilter.sharedMesh == null ||
-            sourceRenderer == null ||
-            tableMaterial == null ||
-            serviceMaterial == null)
-        {
-            return;
-        }
-
-        GameObject root =
-            CreatePresentationRoot(
-                target.transform,
-                "BB_Presentation_Stool");
-
-        AddPresentationPart(
-            root.transform,
-            "Seat",
-            sourceFilter.sharedMesh,
-            tableMaterial,
-            new Vector3(
-                0f,
-                0.44f,
-                0f),
-            new Vector3(
-                0.94f,
-                0.09f,
-                0.94f));
-
-        AddPresentationPart(
-            root.transform,
-            "Stem",
-            sourceFilter.sharedMesh,
-            serviceMaterial,
-            new Vector3(
-                0f,
-                -0.02f,
-                0f),
-            new Vector3(
-                0.18f,
-                0.38f,
-                0.18f));
-
-        AddPresentationPart(
-            root.transform,
-            "Base",
-            sourceFilter.sharedMesh,
-            serviceMaterial,
-            new Vector3(
-                0f,
-                -0.47f,
-                0f),
-            new Vector3(
-                0.58f,
-                0.045f,
-                0.58f));
-
-        sourceRenderer.enabled =
-            false;
-    }
-
-    private static GameObject CreatePresentationRoot(
-        Transform parent,
-        string name)
-    {
-        GameObject root =
-            new GameObject(name);
-
-        root.layer =
-            parent.gameObject.layer;
-
-        root.transform.SetParent(
-            parent,
-            false);
-
-        root.transform.localPosition =
-            Vector3.zero;
-
-        root.transform.localRotation =
-            Quaternion.identity;
-
-        root.transform.localScale =
-            Vector3.one;
-
-        return root;
-    }
-
-    private static MeshRenderer AddPresentationPart(
-        Transform parent,
-        string name,
-        Mesh mesh,
-        Material material,
-        Vector3 localPosition,
-        Vector3 localScale)
-    {
-        GameObject part =
-            new GameObject(
-                name,
-                typeof(MeshFilter),
-                typeof(MeshRenderer));
-
-        part.layer =
-            parent.gameObject.layer;
-
-        part.transform.SetParent(
-            parent,
-            false);
-
-        part.transform.localPosition =
-            localPosition;
-
-        part.transform.localRotation =
-            Quaternion.identity;
-
-        part.transform.localScale =
-            localScale;
-
-        MeshFilter filter =
-            part.GetComponent<MeshFilter>();
-
-        filter.sharedMesh =
-            mesh;
-
-        MeshRenderer renderer =
-            part.GetComponent<MeshRenderer>();
-
-        ConfigurePresentationRenderer(
-            renderer,
-            material);
-
-        return renderer;
     }
 
     private static void ConfigurePresentationRenderer(
