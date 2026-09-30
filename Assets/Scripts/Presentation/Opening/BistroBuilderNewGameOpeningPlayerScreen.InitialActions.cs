@@ -29,9 +29,12 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
         var shell =
             FindFirstObjectByType<BistroBuilderUiShell>();
 
-        RestaurantEditInteractionController editInteraction =
-            FindFirstObjectByType<
-                RestaurantEditInteractionController>();
+        if (initialEditInteraction == null)
+        {
+            initialEditInteraction =
+                FindFirstObjectByType<
+                    RestaurantEditInteractionController>();
+        }
 
         bool show =
             isActiveAndEnabled &&
@@ -41,8 +44,8 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
             !IsOpeningMenuBlocking &&
             (shell == null || !shell.HasManagementScreenOpen) &&
             BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true &&
-            (editInteraction == null ||
-             !editInteraction.HasActivePlacement);
+            (initialEditInteraction == null ||
+             !initialEditInteraction.HasActivePlacement);
 
         if (show &&
             initialActionsCanvas == null)
