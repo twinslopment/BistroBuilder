@@ -425,6 +425,9 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
 
+        Scene activeScene =
+            SceneManager.GetActiveScene();
+
         for (int index = 0;
              index < obstacles.Length;
              index++)
@@ -433,6 +436,7 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 obstacles[index];
 
             if (obstacle == null ||
+                obstacle.gameObject.scene != activeScene ||
                 obstacle.GetComponent<
                     RestaurantPlaceableObject>() != null)
             {
@@ -562,6 +566,9 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
 
+        Scene activeScene =
+            SceneManager.GetActiveScene();
+
         for (int index = 0;
              index < all.Length;
              index++)
@@ -570,6 +577,7 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 all[index];
 
             if (root == null ||
+                root.gameObject.scene != activeScene ||
                 !string.Equals(
                     root.name,
                     "ProvisionalStool",
@@ -756,6 +764,9 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
 
+        Scene activeScene =
+            SceneManager.GetActiveScene();
+
         for (int index = 0;
              index < waiters.Length;
              index++)
@@ -763,8 +774,11 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
             Waiter waiter =
                 waiters[index];
 
-            if (waiter == null)
+            if (waiter == null ||
+                waiter.gameObject.scene != activeScene)
+            {
                 continue;
+            }
 
             MeshFilter filter =
                 waiter.GetComponent<MeshFilter>();
