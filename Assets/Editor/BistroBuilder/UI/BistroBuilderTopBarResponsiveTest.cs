@@ -31,6 +31,7 @@ public static class BistroBuilderTopBarResponsiveTest
     public static void Run(){Directory.CreateDirectory("Logs/TopBarResponsive");File.WriteAllText("Logs/TopBarResponsive/result.txt","");SessionState.SetBool(Key,true);SessionState.SetBool(Key+".Pass",false);EditorSceneManager.OpenScene("Assets/Scenes/Prototype_Restaurant.unity");EditorApplication.EnterPlaymode();}
     static void Check(bool value,string label){if(!value)throw new Exception(label);File.AppendAllText("Logs/TopBarResponsive/result.txt","PASS "+label+"\n");}
     static Button Button(string label)=>bar.GetComponentsInChildren<Button>(true).First(x=>x.name=="BBNav_"+label);
+    static RectTransform AnyRect(string name)=>UnityEngine.Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include,FindObjectsSortMode.None).FirstOrDefault(r=>r!=null&&r.name==name);
     static void Tick()
     {
         if(!EditorApplication.isPlaying||EditorApplication.timeSinceStartup<next)return;
@@ -43,6 +44,21 @@ public static class BistroBuilderTopBarResponsiveTest
                     var edit=UnityEngine.Object.FindFirstObjectByType<RestaurantEditModeService>();if(edit.IsEditModeActive)edit.TryExitEditMode(true,out _);
                     shell=UnityEngine.Object.FindFirstObjectByType<BistroBuilderUiShell>();shell.EnsureShell();typeof(BistroBuilderUiShell).GetMethod("RefreshReadModels",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,null);
                     bar=GameObject.Find(BistroBuilderUiShell.TopBarName).GetComponent<RectTransform>();
+                    var bottom=AnyRect(BistroBuilderUiShell.BottomBarName);
+                    Check(bottom!=null&&bottom.gameObject.activeInHierarchy,"Canonical normal bottom bar visible");
+                    Check(bottom.Find("ApprovedFrame")?.GetComponent<BistroBuilderTopBarPlate>()!=null,"Normal bottom bar shares approved ivory/brass frame");
+                    var identity=bottom.Find("BottomIdentityV4");
+                    Check(identity!=null,"Normal bottom bar owns one responsive restaurant/climate identity");
+                    Check(identity.Find("BottomRestaurantName")?.GetComponent<TMP_Text>()!=null,"Bottom identity uses real restaurant-name readout");
+                    Check(identity.Find("BottomClimate")?.GetComponent<TMP_Text>()!=null,"Bottom identity uses real climate readout");
+                    var dock=AnyRect("BB_368B_TimeControlsDock");
+                    Check(dock!=null&&dock.gameObject.activeInHierarchy,"Canonical pause/speed dock remains functional in normal mode");
+                    Check(dock.GetComponent<Image>()==null||dock.GetComponent<Image>().color.a<.01f,"Time dock delegates surface styling to canonical bottom frame");
+                    var activityShell=AnyRect(BistroBuilderUiShell.ActivityPanelName);
+                    var contextShell=AnyRect(BistroBuilderUiShell.ContextPanelName);
+                    Check(activityShell!=null&&contextShell!=null,"Activity and contextual side surfaces exist");
+                    Check(activityShell.GetComponent<Image>().color.r>.8f&&contextShell.GetComponent<Image>().color.r>.8f,"Activity and context share light authored surface");
+                    Check(activityShell.GetComponent<Outline>()!=null&&contextShell.GetComponent<Outline>()!=null,"Activity and context share restrained brass boundary");
                     Check(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>().IsPlaytestPanelVisible,"Legacy construction panel hidden in normal mode");
                     Check(bar.GetComponentsInChildren<BistroBuilderTopBarArtwork>().Length==11,"Ten complete icons and original logo");
                     hover=Button("Personal").GetComponent<BistroBuilderApprovedTopBarHotspot>();
@@ -149,6 +165,22 @@ public static class BistroBuilderTopBarResponsiveTest
             Check(min.x>=0&&max.x<=width&&min.y>=0&&max.y<=height,"Bar fits "+width);
             Check(max.y-min.y<=Mathf.Clamp(height*.089f,76,144)+2,"Compact height "+width);
             Check(max.x-min.x>width*.94f,"Full available width "+width);
+            var bottom=AnyRect(BistroBuilderUiShell.BottomBarName);
+            Check(bottom!=null&&bottom.gameObject.activeInHierarchy,"Bottom bar present "+width);
+            var bottomCorners=new Vector3[4];bottom.GetWorldCorners(bottomCorners);
+            var bottomMin=camera.WorldToScreenPoint(bottomCorners[0]);var bottomMax=camera.WorldToScreenPoint(bottomCorners[2]);
+            Check(bottomMin.x>=0&&bottomMax.x<=width&&bottomMin.y>=0&&bottomMax.y<=height,"Bottom bar fits "+width);
+            Check(Mathf.Abs((bottomMax.y-bottomMin.y)-(max.y-min.y))<=2.5f,"Normal top/bottom share physical height "+width);
+            var identity=bottom.Find("BottomIdentityV4");
+            Check(identity!=null,"Responsive identity exists "+width);
+            var climate=identity.Find("BottomClimate");
+            if(width>=900)Check(climate!=null&&climate.gameObject.activeSelf,"Climate retained when width allows "+width);
+            else Check(climate!=null&&!climate.gameObject.activeSelf,"Climate yields first at narrow width "+width);
+            var dock=AnyRect("BB_368B_TimeControlsDock");
+            Check(dock!=null,"Time dock retained "+width);
+            var dockCorners=new Vector3[4];dock.GetWorldCorners(dockCorners);
+            var dockMin=camera.WorldToScreenPoint(dockCorners[0]);var dockMax=camera.WorldToScreenPoint(dockCorners[2]);
+            Check(dockMin.x>=0&&dockMax.x<=width&&dockMin.y>=0&&dockMax.y<=height,"Time controls fit bottom chrome "+width);
             var buttons=bar.GetComponentsInChildren<Button>().Where(b=>b.name.StartsWith("BBNav_")).ToArray();
             Check(buttons.Length==10,"All ten destinations reachable "+width);
             Check(buttons.All(b=>b.GetComponent<BistroBuilderInteractionSurface>()==null),"No generic button styling "+width);
@@ -163,6 +195,11 @@ public static class BistroBuilderTopBarResponsiveTest
             UnityEngine.Object.DestroyImmediate(cameraGo);rt.Release();UnityEngine.Object.DestroyImmediate(rt);if(image!=null)UnityEngine.Object.DestroyImmediate(image);Canvas.ForceUpdateCanvases();Layout();
         }
     }
-    static void Layout()=>typeof(BistroBuilderUiShell).GetMethod("LayoutApprovedTopBar",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,new object[]{true});
+    static void Layout()
+    {
+        var type=typeof(BistroBuilderUiShell);
+        type.GetMethod("LayoutApprovedTopBar",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,new object[]{true});
+        type.GetMethod("LayoutUnifiedHudChromeV4",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,null);
+    }
     static void Finish(bool pass,string message){EditorApplication.update-=Tick;File.AppendAllText("Logs/TopBarResponsive/result.txt",message+"\n");Debug.Log(message);SessionState.SetBool(Key+".Pass",pass);EditorApplication.ExitPlaymode();}
 }
