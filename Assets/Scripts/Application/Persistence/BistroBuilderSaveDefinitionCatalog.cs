@@ -113,9 +113,6 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
         out RestaurantPlaceableItemDefinition definition
     )
     {
-        SynchronizePlayableDefinitions();
-        EnsureIndex();
-
         definition = null;
 
         if (string.IsNullOrWhiteSpace(itemId))
@@ -123,10 +120,51 @@ public sealed class BistroBuilderSaveDefinitionCatalog : MonoBehaviour
             return false;
         }
 
-        return definitionByItemId.TryGetValue(
-            NormalizeItemId(itemId),
-            out definition
-        );
+        string normalizedItemId =
+            NormalizeItemId(itemId);
+
+        SynchronizePlayableDefinitions();
+        EnsureIndex();
+
+        if (definitionByItemId.TryGetValue(
+                normalizedItemId,
+                out definition))
+        {
+            return true;
+        }
+
+        /*
+         * Defensa ante catálogos mutados durante la misma sesión:
+         * una igualdad de count no garantiza que el contenido sea el mismo.
+         * Antes de rechazar un ItemId persistente reconstruimos desde la
+         * autoridad jugable actual, sin hardcodes por asset concreto.
+         */
+        synchronizedPlayableCount = -1;
+        SynchronizePlayableDefinitions();
+        RebuildIndex();
+
+        if (definitionByItemId.TryGetValue(
+                normalizedItemId,
+                out definition))
+        {
+            return true;
+        }
+
+        if (playableCatalogService != null &&
+            playableCatalogService.TryGetItem(
+                normalizedItemId,
+                out RestaurantPlaceableItemDefinition playableDefinition) &&
+            playableDefinition != null)
+        {
+            definitions.Add(playableDefinition);
+            RebuildIndex();
+
+            return definitionByItemId.TryGetValue(
+                normalizedItemId,
+                out definition);
+        }
+
+        return false;
     }
 
     public bool ValidateConfiguration(out string error)
