@@ -220,7 +220,10 @@ public sealed partial class BistroBuilderUiShell
         if (topGameState == null) topGameState = FindScene<BistroBuilderGeneralGameStateService>();
         if (topClock == null) topClock = FindScene<GameClock>();
         restaurantHeading.text = string.IsNullOrWhiteSpace(topGameState?.RestaurantName) ? "Mi restaurante" : topGameState.RestaurantName;
-        bool editing = FindScene<RestaurantEditModeService>()?.IsEditModeActive == true;
+        if (overlayEditMode == null)
+            overlayEditMode = FindScene<RestaurantEditModeService>();
+        bool editing =
+            overlayEditMode != null && overlayEditMode.IsEditModeActive;
         serviceHeading.text = editing ? "Diseño del local" : serviceState == null || serviceState.IsClosed ? "Preparación del servicio" :
             topClock != null && topClock.Hour >= 18 ? "Servicio de cena" : "Servicio de comidas";
         string dateText = string.Empty;
