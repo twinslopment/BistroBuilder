@@ -49,8 +49,6 @@ public sealed partial class BistroBuilderUiShell
     private BistroBuilderClimateService normalBottomClimate;
     private Texture2D normalBottomAtlas;
     private readonly Sprite[] normalBottomSprites = new Sprite[15];
-    private int normalBottomLastPixelWidth = -1;
-    private int normalBottomLastPixelHeight = -1;
 
     private void EnsureNormalBottomBar()
     {
@@ -110,8 +108,6 @@ public sealed partial class BistroBuilderUiShell
         // EnsureShell can run more than once (Awake + OnEnable).
         // EnsureBar resets its legacy height to 64, so force a responsive
         // reconciliation every time the definitive normal HUD is ensured.
-        normalBottomLastPixelWidth = -1;
-        normalBottomLastPixelHeight = -1;
         RefreshNormalBottomBar(false, false);
         SuppressLegacyNormalBottomAuthorities();
     }
@@ -561,9 +557,6 @@ public sealed partial class BistroBuilderUiShell
 
         int pixelWidth = Mathf.RoundToInt(canvas.pixelRect.width);
         int pixelHeight = Mathf.RoundToInt(canvas.pixelRect.height);
-        normalBottomLastPixelWidth = pixelWidth;
-        normalBottomLastPixelHeight = pixelHeight;
-
         float scale = Mathf.Max(0.01f, canvas.scaleFactor);
         float height = Mathf.Clamp(pixelHeight * 0.085f / scale, 78f, 108f);
 
@@ -742,8 +735,8 @@ public sealed partial class BistroBuilderUiShell
             {
                 label.color = new Color32(126, 88, 43, 255);
                 label.fontStyle = FontStyles.Bold;
-                label.fontSizeMin = 9f;
-                label.fontSizeMax = 13f;
+                label.fontSizeMin = 10f;
+                label.fontSizeMax = 14f;
             }
 
             TMP_Text value =
@@ -751,8 +744,8 @@ public sealed partial class BistroBuilderUiShell
             if (value != null)
             {
                 value.fontStyle = FontStyles.Bold;
-                value.fontSizeMin = 11f;
-                value.fontSizeMax = 18f;
+                value.fontSizeMin = 12f;
+                value.fontSizeMax = 19f;
             }
         }
 
