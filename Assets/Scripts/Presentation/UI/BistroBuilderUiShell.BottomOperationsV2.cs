@@ -152,7 +152,9 @@ public sealed partial class BistroBuilderUiShell
 
         EnsureBottomDiamond(normalBottomCenter, "LeftOrnament", 0.035f);
         EnsureBottomDiamond(normalBottomCenter, "RightOrnament", 0.965f);
-    }    private void EnsureBottomRightControls()
+    }
+
+    private void EnsureBottomRightControls()
     {
         HorizontalLayoutGroup layout = EnsureBottomHorizontal(normalBottomRight, 4f);
         layout.padding = new RectOffset(7, 7, 5, 5);
@@ -191,7 +193,9 @@ public sealed partial class BistroBuilderUiShell
         normalBottomSpeed1 = EnsureBottomSpeedButton(normalBottomRight, "Speed1", "1x", 1f);
         normalBottomSpeed2 = EnsureBottomSpeedButton(normalBottomRight, "Speed2", "2x", 2f);
         normalBottomSpeed3 = EnsureBottomSpeedButton(normalBottomRight, "Speed3", "3x", 3f);
-    }    private void EnsureBottomStatusTile(
+    }
+
+    private void EnsureBottomStatusTile(
         Transform parent,
         string name,
         string labelText,
@@ -234,7 +238,9 @@ public sealed partial class BistroBuilderUiShell
         accent.rectTransform.pivot = new Vector2(0.5f, 0.5f);
         accent.rectTransform.sizeDelta = new Vector2(0f, 2f);
         SetNormalBottomSprite(icon, spriteIndex);
-    }    private Button EnsureBottomIconButton(
+    }
+
+    private Button EnsureBottomIconButton(
         Transform parent,
         string name,
         int spriteIndex,
@@ -289,7 +295,9 @@ public sealed partial class BistroBuilderUiShell
         button.onClick.AddListener(() => SetNormalBottomSpeed(speed));
         ApplyNormalBottomButtonPalette(button, false);
         return button;
-    }    private void RefreshNormalBottomBar(bool editing, bool managing)
+    }
+
+    private void RefreshNormalBottomBar(bool editing, bool managing)
     {
         if (normalBottomBarRoot == null) return;
 
@@ -346,6 +354,7 @@ public sealed partial class BistroBuilderUiShell
         RefreshNormalBottomDateTime();
         RefreshNormalBottomClockControls();
         RestoreNormalBottomStatusTiles();
+        ReapplyNormalBottomBarStyle();
         SuppressLegacyNormalBottomAuthorities();
         LayoutContextPanelAboveNormalBottom();
     }
@@ -392,7 +401,9 @@ public sealed partial class BistroBuilderUiShell
             normalBottomTime.text = topClock != null
                 ? $"{topClock.Hour:00}:{topClock.Minute:00}"
                 : "—";
-    }    private void RefreshNormalBottomClockControls()
+    }
+
+    private void RefreshNormalBottomClockControls()
     {
         if (topClock == null) return;
 
@@ -534,16 +545,14 @@ public sealed partial class BistroBuilderUiShell
             topClock = FindScene<GameClock>();
         if (normalBottomClimate == null)
             normalBottomClimate = FindScene<BistroBuilderClimateService>();
-    }    private void RefreshNormalBottomBarLayout()
+    }
+
+    private void RefreshNormalBottomBarLayout()
     {
         if (canvas == null || normalBottomContent == null) return;
 
         int pixelWidth = Mathf.RoundToInt(canvas.pixelRect.width);
         int pixelHeight = Mathf.RoundToInt(canvas.pixelRect.height);
-        if (pixelWidth == normalBottomLastPixelWidth &&
-            pixelHeight == normalBottomLastPixelHeight)
-            return;
-
         normalBottomLastPixelWidth = pixelWidth;
         normalBottomLastPixelHeight = pixelHeight;
 
@@ -592,7 +601,9 @@ public sealed partial class BistroBuilderUiShell
 
         if (normalBottomRestaurantName != null)
             normalBottomRestaurantName.fontSizeMax = compact ? 21f : 27f;
-    }    private void LoadNormalBottomSprites()
+    }
+
+    private void LoadNormalBottomSprites()
     {
         if (normalBottomSprites[0] != null) return;
         if (normalBottomAtlas == null)
@@ -642,7 +653,9 @@ public sealed partial class BistroBuilderUiShell
             case BistroBuilderCustomerSatisfactionBand.Excellent: return 5;
             default: return 3;
         }
-    }    private static Color ResolveKitchenBottomColor(
+    }
+
+    private static Color ResolveKitchenBottomColor(
         BistroBuilderKitchenLoadState state)
     {
         switch (state)
@@ -700,10 +713,39 @@ public sealed partial class BistroBuilderUiShell
             "CashTile", "SatisfactionTile", "KitchenTile", "WaitingTile"
         })
         {
-            Transform tile = normalBottomBarRoot.Find("BottomBarV2_Content/StatusCluster/" + tileName);
-            TMP_Text label = tile != null ? tile.Find("Label")?.GetComponent<TMP_Text>() : null;
+            Transform tile =
+                normalBottomBarRoot.Find(
+                    "BottomBarV2_Content/StatusCluster/" + tileName);
+            if (tile == null) continue;
+
+            Image surface = tile.GetComponent<Image>();
+            if (surface != null)
+            {
+                surface.color = BottomCreamLight;
+                EnsureBottomOutline(
+                    surface,
+                    BottomGold,
+                    new Vector2(1f, -1f));
+            }
+
+            TMP_Text label =
+                tile.Find("Label")?.GetComponent<TMP_Text>();
             if (label != null)
+            {
                 label.color = new Color32(126, 88, 43, 255);
+                label.fontStyle = FontStyles.Bold;
+                label.fontSizeMin = 9f;
+                label.fontSizeMax = 13f;
+            }
+
+            TMP_Text value =
+                tile.Find("Value")?.GetComponent<TMP_Text>();
+            if (value != null)
+            {
+                value.fontStyle = FontStyles.Bold;
+                value.fontSizeMin = 11f;
+                value.fontSizeMax = 18f;
+            }
         }
 
         if (normalBottomRestaurantName != null)
@@ -732,7 +774,9 @@ public sealed partial class BistroBuilderUiShell
         layout.preferredWidth = -1f;
         layout.flexibleWidth = 1f;
         return rect;
-    }    private static RectTransform EnsureBottomRect(
+    }
+
+    private static RectTransform EnsureBottomRect(
         Transform parent, string name)
     {
         Transform found = parent.Find(name);
@@ -777,7 +821,9 @@ public sealed partial class BistroBuilderUiShell
         text.textWrappingMode = TextWrappingModes.NoWrap;
         text.raycastTarget = false;
         return text;
-    }    private static HorizontalLayoutGroup EnsureBottomHorizontal(
+    }
+
+    private static HorizontalLayoutGroup EnsureBottomHorizontal(
         Transform parent, float spacing)
     {
         HorizontalLayoutGroup layout = parent.GetComponent<HorizontalLayoutGroup>();
@@ -819,7 +865,9 @@ public sealed partial class BistroBuilderUiShell
         rect.anchorMax = new Vector2(maxX, maxY);
         rect.offsetMin = Vector2.zero;
         rect.offsetMax = Vector2.zero;
-    }    private static void StretchWithOffsets(
+    }
+
+    private static void StretchWithOffsets(
         RectTransform rect,
         float left,
         float right,
@@ -863,7 +911,9 @@ public sealed partial class BistroBuilderUiShell
         rect.anchoredPosition = position;
         rect.localRotation = Quaternion.Euler(0f, 0f, 45f);
         rivet.transform.SetAsLastSibling();
-    }    private static void SetBottomSectionWeight(
+    }
+
+    private static void SetBottomSectionWeight(
         RectTransform section, float weight)
     {
         if (section == null) return;
