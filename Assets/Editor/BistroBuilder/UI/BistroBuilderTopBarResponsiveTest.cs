@@ -66,6 +66,10 @@ public static class BistroBuilderTopBarResponsiveTest
                     Check(activityShell!=null&&contextShell!=null,"Activity and contextual side surfaces exist");
                     Check(activityShell.GetComponent<Image>().color.r>.8f&&contextShell.GetComponent<Image>().color.r>.8f,"Activity and context share light authored surface");
                     Check(activityShell.GetComponent<Outline>()!=null&&contextShell.GetComponent<Outline>()!=null,"Activity and context share restrained brass boundary");
+                    Check(bottom.GetComponent<BistroBuilderUiStyleIsolation>()!=null,"Definitive bottom bar is isolated from global restyling");
+                    var tableContext=AnyRect("BB_SelectedTableReference");
+                    Check(tableContext!=null&&tableContext.GetComponent<BistroBuilderUiStyleIsolation>()!=null,"Selected-table context owns its authored light palette");
+                    Check(tableContext.Find("DetailsCard")?.GetComponent<Image>()?.color.r>.9f,"Selected-table details card is light, not legacy dark");
                     Check(!UnityEngine.Object.FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>().IsPlaytestPanelVisible,"Legacy construction panel hidden in normal mode");
                     Check(bar.GetComponentsInChildren<BistroBuilderTopBarArtwork>().Length==11,"Ten complete icons and original logo");
                     hover=Button("Personal").GetComponent<BistroBuilderApprovedTopBarHotspot>();
@@ -178,16 +182,26 @@ public static class BistroBuilderTopBarResponsiveTest
             var bottomMin=camera.WorldToScreenPoint(bottomCorners[0]);var bottomMax=camera.WorldToScreenPoint(bottomCorners[2]);
             Check(bottomMin.x>=0&&bottomMax.x<=width&&bottomMin.y>=0&&bottomMax.y<=height,"Bottom bar fits "+width);
             Check(Mathf.Abs((bottomMax.y-bottomMin.y)-(max.y-min.y))<=2.5f,"Normal top/bottom share physical height "+width);
-            var identity=bottom.Find("BottomIdentityV4");
-            Check(identity!=null,"Responsive identity exists "+width);
-            var climate=identity.Find("BottomClimate");
-            if(width>=900)Check(climate!=null&&climate.gameObject.activeSelf,"Climate retained when width allows "+width);
-            else Check(climate!=null&&!climate.gameObject.activeSelf,"Climate yields first at narrow width "+width);
+            var bottomContent=bottom.Find("BottomBarV2_Content");
+            Check(bottomContent!=null,"Definitive bottom content exists "+width);
+            var identity=bottomContent.Find("RestaurantIdentity");
+            var timeCluster=bottomContent.Find("TimeCluster");
+            var statusCluster=bottomContent.Find("StatusCluster");
+            Check(identity!=null&&timeCluster!=null&&statusCluster!=null,"Bottom three-zone layout exists "+width);
+            foreach(var section in new[]{identity,timeCluster,statusCluster})
+            {
+                var sectionRect=section as RectTransform;
+                var sectionCorners=new Vector3[4];sectionRect.GetWorldCorners(sectionCorners);
+                var sectionMin=camera.WorldToScreenPoint(sectionCorners[0]);var sectionMax=camera.WorldToScreenPoint(sectionCorners[2]);
+                Check(sectionMin.x>=bottomMin.x-2&&sectionMax.x<=bottomMax.x+2,"Bottom section fits frame "+section.name+" "+width);
+            }
+            Check(timeCluster.Find("Pause")?.GetComponent<Button>()!=null&&
+                  timeCluster.Find("Speed1")?.GetComponent<Button>()!=null&&
+                  timeCluster.Find("Speed2")?.GetComponent<Button>()!=null&&
+                  timeCluster.Find("Speed3")?.GetComponent<Button>()!=null,
+                  "Time controls remain inside definitive bottom chrome "+width);
             var dock=AnyRect("BB_368B_TimeControlsDock");
-            Check(dock!=null,"Time dock retained "+width);
-            var dockCorners=new Vector3[4];dock.GetWorldCorners(dockCorners);
-            var dockMin=camera.WorldToScreenPoint(dockCorners[0]);var dockMax=camera.WorldToScreenPoint(dockCorners[2]);
-            Check(dockMin.x>=0&&dockMax.x<=width&&dockMin.y>=0&&dockMax.y<=height,"Time controls fit bottom chrome "+width);
+            Check(dock==null||!dock.gameObject.activeInHierarchy,"Legacy time dock remains suppressed "+width);
             var buttons=bar.GetComponentsInChildren<Button>().Where(b=>b.name.StartsWith("BBNav_")).ToArray();
             Check(buttons.Length==10,"All ten destinations reachable "+width);
             Check(buttons.All(b=>b.GetComponent<BistroBuilderInteractionSurface>()==null),"No generic button styling "+width);
