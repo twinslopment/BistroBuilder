@@ -37,6 +37,7 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
     private Mesh unitCubeMesh;
 
     private RestaurantEditModeService editModeService;
+    private RestaurantPlaceableRegistry placeableRegistry;
 
     private readonly List<MeshRenderer>
         primitiveWaiterRenderers =
@@ -96,6 +97,12 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
                 HandleEditModeExited;
         }
 
+        if (placeableRegistry != null)
+        {
+            placeableRegistry.PlaceableRegistered -=
+                HandlePlaceableRegistered;
+        }
+
         if (bootstrapRegistered)
         {
             SceneManager.sceneLoaded -=
@@ -129,6 +136,7 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
         ApplyTablePresentation();
         ApplyPrototypePresentationCleanup();
         EnsureSitePlinth();
+        BindPlaceableRegistry();
         BindEditModeVisibility();
     }
 
@@ -173,118 +181,127 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
              index < tables.Length;
              index++)
         {
-            RestaurantTable table =
-                tables[index];
-
-            if (table == null)
-                continue;
-
-            Transform root =
-                table.transform;
-
-            if (root.Find(
-                    PresentationRootName) != null)
-            {
-                continue;
-            }
-
-            MeshFilter sourceFilter =
-                root.GetComponent<MeshFilter>();
-
-            MeshRenderer sourceRenderer =
-                root.GetComponent<MeshRenderer>();
-
-            if (!IsPrimitiveCube(
-                    sourceFilter,
-                    sourceRenderer))
-            {
-                continue;
-            }
-
-            GameObject skin =
-                CreateSkinRoot(root);
-
-            MeshRenderer tabletopRenderer =
-                CreateVisualCube(
-                    skin.transform,
-                    "Top",
-                    new Vector3(
-                        0f,
-                        0.26f,
-                        0f),
-                    new Vector3(
-                        0.92f,
-                        0.08f,
-                        0.90f),
-                    woodMaterial);
-
-            BistroBuilderPresentationTableAccent accent =
-                skin.AddComponent<
-                    BistroBuilderPresentationTableAccent>();
-
-            accent.Initialize(
-                table,
-                tabletopRenderer);
-
-            float legX = 0.39f;
-            float legZ = 0.34f;
-            float legY = -0.14f;
-
-            CreateVisualCube(
-                skin.transform,
-                "Leg_FL",
-                new Vector3(
-                    -legX,
-                    legY,
-                    legZ),
-                new Vector3(
-                    0.045f,
-                    0.72f,
-                    0.07f),
-                graphiteMaterial);
-
-            CreateVisualCube(
-                skin.transform,
-                "Leg_FR",
-                new Vector3(
-                    legX,
-                    legY,
-                    legZ),
-                new Vector3(
-                    0.045f,
-                    0.72f,
-                    0.07f),
-                graphiteMaterial);
-
-            CreateVisualCube(
-                skin.transform,
-                "Leg_BL",
-                new Vector3(
-                    -legX,
-                    legY,
-                    -legZ),
-                new Vector3(
-                    0.045f,
-                    0.72f,
-                    0.07f),
-                graphiteMaterial);
-
-            CreateVisualCube(
-                skin.transform,
-                "Leg_BR",
-                new Vector3(
-                    legX,
-                    legY,
-                    -legZ),
-                new Vector3(
-                    0.045f,
-                    0.72f,
-                    0.07f),
-                graphiteMaterial);
-
-            sourceRenderer.enabled =
-                false;
+            ApplyTablePresentation(
+                tables[index]);
         }
+    }
+
+    private void ApplyTablePresentation(
+        RestaurantTable table)
+    {
+        if (table == null ||
+            woodMaterial == null ||
+            graphiteMaterial == null ||
+            unitCubeMesh == null)
+        {
+            return;
+        }
+
+        Transform root =
+            table.transform;
+
+        if (root.Find(
+                PresentationRootName) != null)
+        {
+            return;
+        }
+
+        MeshFilter sourceFilter =
+            root.GetComponent<MeshFilter>();
+
+        MeshRenderer sourceRenderer =
+            root.GetComponent<MeshRenderer>();
+
+        if (!IsPrimitiveCube(
+                sourceFilter,
+                sourceRenderer))
+        {
+            return;
+        }
+
+        GameObject skin =
+            CreateSkinRoot(root);
+
+        MeshRenderer tabletopRenderer =
+            CreateVisualCube(
+                skin.transform,
+                "Top",
+                new Vector3(
+                    0f,
+                    0.26f,
+                    0f),
+                new Vector3(
+                    0.92f,
+                    0.08f,
+                    0.90f),
+                woodMaterial);
+
+        BistroBuilderPresentationTableAccent accent =
+            skin.AddComponent<
+                BistroBuilderPresentationTableAccent>();
+
+        accent.Initialize(
+            table,
+            tabletopRenderer);
+
+        float legX = 0.39f;
+        float legZ = 0.34f;
+        float legY = -0.14f;
+
+        CreateVisualCube(
+            skin.transform,
+            "Leg_FL",
+            new Vector3(
+                -legX,
+                legY,
+                legZ),
+            new Vector3(
+                0.045f,
+                0.72f,
+                0.07f),
+            graphiteMaterial);
+
+        CreateVisualCube(
+            skin.transform,
+            "Leg_FR",
+            new Vector3(
+                legX,
+                legY,
+                legZ),
+            new Vector3(
+                0.045f,
+                0.72f,
+                0.07f),
+            graphiteMaterial);
+
+        CreateVisualCube(
+            skin.transform,
+            "Leg_BL",
+            new Vector3(
+                -legX,
+                legY,
+                -legZ),
+            new Vector3(
+                0.045f,
+                0.72f,
+                0.07f),
+            graphiteMaterial);
+
+        CreateVisualCube(
+            skin.transform,
+            "Leg_BR",
+            new Vector3(
+                legX,
+                legY,
+                -legZ),
+            new Vector3(
+                0.045f,
+                0.72f,
+                0.07f),
+            graphiteMaterial);
+
+        sourceRenderer.enabled =
+            false;
     }
 
     /// <summary>
@@ -644,6 +661,52 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
 
             sourceRenderer.enabled =
                 false;
+        }
+    }
+
+    private void BindPlaceableRegistry()
+    {
+        RestaurantPlaceableRegistry found =
+            FindFirstObjectByType<
+                RestaurantPlaceableRegistry>();
+
+        if (ReferenceEquals(
+                placeableRegistry,
+                found))
+        {
+            return;
+        }
+
+        if (placeableRegistry != null)
+        {
+            placeableRegistry.PlaceableRegistered -=
+                HandlePlaceableRegistered;
+        }
+
+        placeableRegistry =
+            found;
+
+        if (placeableRegistry != null)
+        {
+            placeableRegistry.PlaceableRegistered +=
+                HandlePlaceableRegistered;
+        }
+    }
+
+    private void HandlePlaceableRegistered(
+        RestaurantPlaceableObject placeable)
+    {
+        if (placeable == null)
+            return;
+
+        RestaurantTable table =
+            placeable.GetComponent<
+                RestaurantTable>();
+
+        if (table != null)
+        {
+            ApplyTablePresentation(
+                table);
         }
     }
 
