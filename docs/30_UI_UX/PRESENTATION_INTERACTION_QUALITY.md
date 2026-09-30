@@ -152,6 +152,11 @@ Render PC:
 - una sola barra superior canónica por contexto y una sola barra inferior de herramientas/acciones;
 - la navegación normal y la barra superior de Modo Edición comparten la misma geometría responsive, placa marfil/latón, identidad visual y artwork aprobado de Bistro Builder;
 - cambiar Normal ↔ Edición no debe producir saltos de altura, margen o identidad de marca;
+- la barra inferior normal reutiliza la misma geometría física y el mismo marco marfil/latón que la barra superior; no introduce una segunda piel visual;
+- el dock 368B conserva la autoridad de pausa, reloj y velocidades, pero su fondo propio desaparece para integrarse dentro del marco inferior canónico;
+- el centro de la barra inferior muestra identidad del restaurante y climatología consumiendo exclusivamente `BistroBuilderGeneralGameStateService` y `BistroBuilderClimateService`; no mantiene estado paralelo ni datos simulados;
+- en anchuras estrechas la información secundaria cede por prioridad: espera, cocina, satisfacción y finalmente climatología; caja y controles temporales permanecen accesibles;
+- Actividad y Contexto comparten superficie marfil, tinta oscura, borde de latón y el mismo safe-area calculado respecto a la barra superior activa;
 - en edición, las herramientas rápidas se reducen por prioridad en anchuras estrechas antes de comprimir texto/iconos hasta volverlos ilegibles;
 - si se abre una pantalla de gestión desde Modo Edición, el chrome de herramientas cede temporalmente a la navegación global; al cerrar la gestión vuelve el chrome de edición sin duplicar barras;
 - `ContentTopInset` se calcula sobre la barra superior realmente activa, normal o edición;
@@ -206,6 +211,9 @@ Debe verificarse en Game View:
 - inspector no contiene grandes vacíos;
 - no reaparecen selector flotante ni panel negro de diseño inicial;
 - salir de edición restaura presentación operativa;
-- colocar una definición jugable y guardar no falla por ItemId no resoluble.
+- colocar una definición jugable y guardar no falla por ItemId no resoluble;
+- a 800×600, 1280×720, 1920×1080, 2560×1440, 3440×1440 y 3840×2160 las barras superior/inferior permanecen dentro de pantalla, conservan la misma altura física y el dock temporal no desborda;
+- el HUD normal no muestra dos relojes ni fondos de dock superpuestos;
+- Actividad y Contexto mantienen la misma familia visual sin invadir el viewport ni las barras.
 
 Solo después de estas comprobaciones y aprobación visual del usuario se integrará esta pasada en `integration/master-current-20260918`.
