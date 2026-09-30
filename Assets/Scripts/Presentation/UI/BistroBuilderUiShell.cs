@@ -162,6 +162,22 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private bool subscribed;
     private bool tableSelectionSubscribed;
     private BistroBuilderTableSelectionController tableSelection;
+    private BistroBuilderClimateService bottomClimate;
+    private BistroBuilderGeneralGameStateService bottomGameState;
+    private RectTransform bottomIdentityBlock;
+    private TMP_Text bottomRestaurantNameText;
+    private TMP_Text bottomClimateText;
+
+    private static readonly Color UnifiedHudIvory =
+        new Color32(245, 232, 211, 250);
+    private static readonly Color UnifiedHudPaper =
+        new Color32(255, 252, 246, 220);
+    private static readonly Color UnifiedHudInk =
+        new Color32(73, 62, 47, 255);
+    private static readonly Color UnifiedHudMuted =
+        new Color32(111, 103, 92, 255);
+    private static readonly Color UnifiedHudBrass =
+        new Color32(157, 119, 73, 105);
 
     public string CurrentContextTitle => contextTitle != null ? contextTitle.text : string.Empty;
     public string CurrentContextBody => contextBody != null ? contextBody.text : string.Empty;
@@ -277,6 +293,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         }
 
         if (designSystem != null) designSystem.ApplyAllNow(true);
+        EnsureUnifiedHudChromeV4();
     }
 
     private RectTransform EnsureBar(RectTransform parent, string name, bool top)
@@ -1048,6 +1065,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         }
         RefreshActivityText();
         RefreshContextAndServiceAction();
+        RefreshUnifiedHudChromeV4(editing, managing);
     }
 
     private string ResolveEditCostText()
@@ -1692,6 +1710,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (seatRegistry == null) seatRegistry = FindScene<RestaurantSeatRegistry>();
         if (editCoordinator == null) editCoordinator = FindScene<BistroBuilderEditRuntimeCoordinator>();
         if (editTariffs == null) editTariffs = Resources.Load<BistroBuilderEditFinanceTariffTable>("BistroBuilder/Finance/BB_EditMode_PlaytestTariffs");
+        if (bottomClimate == null) bottomClimate = FindScene<BistroBuilderClimateService>();
+        if (bottomGameState == null) bottomGameState = FindScene<BistroBuilderGeneralGameStateService>();
     }
 
     private void BindRuntime()
@@ -1890,12 +1910,554 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         Transform dock = canvas.transform.Find("BB_368B_TimeControlsDock");
         RectTransform rect = dock as RectTransform;
         if (rect == null) return;
+
+        float scale = Mathf.Max(.01f, canvas.scaleFactor);
+        float height = 64f;
+        float margin = 12f;
+        if (shellRoot != null)
+        {
+            ResolveApprovedTopBarMetrics(
+                out scale,
+                out height,
+                out margin,
+                out _);
+        }
+
+        const float physicalDockWidth = 324f;
+        const float physicalDockHeight = 46f;
+        float dockWidth = physicalDockWidth / scale;
+        float dockHeight = physicalDockHeight / scale;
+
         rect.anchorMin = new Vector2(1f, 0f);
         rect.anchorMax = new Vector2(1f, 0f);
         rect.pivot = new Vector2(1f, 0f);
-        rect.anchoredPosition = new Vector2(-16f, 9f);
-        rect.sizeDelta = new Vector2(390f, 46f);
+        rect.anchoredPosition = new Vector2(
+            -(margin + 8f / scale),
+            8f / scale + Mathf.Max(0f, (height - dockHeight) * .5f));
+        rect.sizeDelta = new Vector2(dockWidth, dockHeight);
+        rect.localScale = Vector3.one;
+        rect.localRotation = Quaternion.identity;
         rect.SetAsLastSibling();
+
+        Image dockImage = dock.GetComponent<Image>();
+        if (dockImage != null)
+        {
+            // El marco canónico inferior es ahora la superficie. El dock
+            // conserva únicamente sus controles funcionales.
+            dockImage.color = Color.clear;
+            dockImage.raycastTarget = false;
+        }
+    }
+
+    private void EnsureUnifiedHudChromeV4()
+    {
+        if (shellRoot == null || bottomOperations == null) return;
+
+        Image bottomImage = bottomOperations.GetComponent<Image>();
+        if (bottomImage != null)
+        {
+            bottomImage.color = Color.clear;
+            bottomImage.raycastTarget = true;
+        }
+
+        Transform frameTransform = bottomOperations.Find("ApprovedFrame");
+        BistroBuilderTopBarPlate frame =
+            frameTransform != null
+                ? frameTransform.GetComponent<BistroBuilderTopBarPlate>()
+                : null;
+        if (frame == null)
+        {
+            GameObject frameObject = NewUi("ApprovedFrame", bottomOperations);
+            frame = frameObject.AddComponent<BistroBuilderTopBarPlate>();
+            frame.raycastTarget = false;
+            Stretch(frame.rectTransform);
+            frame.transform.SetAsFirstSibling();
+        }
+        frame.Cell = false;
+
+        EnsureBottomIdentityV4();
+        StyleBottomStatusV4();
+
+        Transform activityHeadingTransform =
+            activityPanel != null
+                ? activityPanel.Find("ActivityHeading")
+                : null;
+        TMP_Text activityHeading =
+            activityHeadingTransform != null
+                ? activityHeadingTransform.GetComponent<TMP_Text>()
+                : null;
+
+        StyleUnifiedSidePanelV4(
+            activityPanel,
+            activityHeading,
+            activityText);
+        StyleUnifiedSidePanelV4(
+            contextPanel,
+            contextTitle,
+            contextBody);
+
+        LayoutUnifiedHudChromeV4();
+        ReconcileTimeDock();
+    }
+
+    private void EnsureBottomIdentityV4()
+    {
+        if (bottomOperations == null) return;
+
+        Transform existing = bottomOperations.Find("BottomIdentityV4");
+        bottomIdentityBlock = existing as RectTransform;
+        if (bottomIdentityBlock == null)
+        {
+            GameObject root = NewUi("BottomIdentityV4", bottomOperations);
+            bottomIdentityBlock = root.GetComponent<RectTransform>();
+        }
+
+        Transform restaurantTransform =
+            bottomIdentityBlock.Find("BottomRestaurantName");
+        bottomRestaurantNameText =
+            restaurantTransform != null
+                ? restaurantTransform.GetComponent<TMP_Text>()
+                : null;
+        if (bottomRestaurantNameText == null)
+        {
+            GameObject label =
+                NewUi("BottomRestaurantName", bottomIdentityBlock);
+            bottomRestaurantNameText =
+                label.AddComponent<TextMeshProUGUI>();
+        }
+
+        Transform climateTransform =
+            bottomIdentityBlock.Find("BottomClimate");
+        bottomClimateText =
+            climateTransform != null
+                ? climateTransform.GetComponent<TMP_Text>()
+                : null;
+        if (bottomClimateText == null)
+        {
+            GameObject label =
+                NewUi("BottomClimate", bottomIdentityBlock);
+            bottomClimateText =
+                label.AddComponent<TextMeshProUGUI>();
+        }
+
+        bottomRestaurantNameText.font =
+            BistroBuilderTypography.Title ?? BistroBuilderTypography.Body;
+        bottomRestaurantNameText.fontSize = 16f;
+        bottomRestaurantNameText.enableAutoSizing = true;
+        bottomRestaurantNameText.fontSizeMin = 10f;
+        bottomRestaurantNameText.fontSizeMax = 16f;
+        bottomRestaurantNameText.fontStyle = FontStyles.Bold;
+        bottomRestaurantNameText.alignment =
+            TextAlignmentOptions.Center;
+        bottomRestaurantNameText.textWrappingMode =
+            TextWrappingModes.NoWrap;
+        bottomRestaurantNameText.color = UnifiedHudInk;
+        bottomRestaurantNameText.raycastTarget = false;
+
+        bottomClimateText.font = BistroBuilderTypography.Body;
+        bottomClimateText.fontSize = 11.5f;
+        bottomClimateText.enableAutoSizing = true;
+        bottomClimateText.fontSizeMin = 9f;
+        bottomClimateText.fontSizeMax = 12f;
+        bottomClimateText.alignment = TextAlignmentOptions.Center;
+        bottomClimateText.textWrappingMode = TextWrappingModes.NoWrap;
+        bottomClimateText.color = UnifiedHudMuted;
+        bottomClimateText.raycastTarget = false;
+    }
+
+    private void StyleBottomStatusV4()
+    {
+        if (bottomStatusContent == null) return;
+
+        TMP_Text[] texts =
+        {
+            cashText,
+            satisfactionText,
+            kitchenText,
+            waitingText
+        };
+
+        for (int index = 0; index < texts.Length; index++)
+        {
+            TMP_Text text = texts[index];
+            if (text == null) continue;
+
+            Image image = text.GetComponentInParent<Image>();
+            if (image != null &&
+                image.transform != bottomOperations)
+            {
+                image.color = UnifiedHudPaper;
+                image.raycastTarget = false;
+            }
+
+            text.color = UnifiedHudInk;
+            text.font = BistroBuilderTypography.Body;
+            text.fontStyle = FontStyles.Normal;
+            text.enableAutoSizing = true;
+            text.fontSizeMin = 10f;
+            text.fontSizeMax = 14f;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+    }
+
+    private static void StyleUnifiedSidePanelV4(
+        RectTransform panel,
+        TMP_Text title,
+        TMP_Text body)
+    {
+        if (panel == null) return;
+
+        Image image = panel.GetComponent<Image>();
+        if (image != null)
+        {
+            image.color = UnifiedHudIvory;
+            image.raycastTarget = true;
+        }
+
+        Outline outline = panel.GetComponent<Outline>();
+        if (outline == null)
+            outline = panel.gameObject.AddComponent<Outline>();
+        outline.effectColor = UnifiedHudBrass;
+        outline.effectDistance = new Vector2(1f, -1f);
+        outline.useGraphicAlpha = true;
+
+        Shadow shadow = panel.GetComponent<Shadow>();
+        if (shadow == null)
+            shadow = panel.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color(0f, 0f, 0f, .10f);
+        shadow.effectDistance = new Vector2(0f, -2f);
+        shadow.useGraphicAlpha = true;
+
+        if (title != null)
+        {
+            title.color = UnifiedHudInk;
+            title.font = BistroBuilderTypography.Title ??
+                BistroBuilderTypography.Body;
+            title.fontStyle = FontStyles.Bold;
+        }
+
+        if (body != null)
+        {
+            body.color = UnifiedHudInk;
+            body.font = BistroBuilderTypography.Body;
+        }
+    }
+
+    private void RefreshUnifiedHudChromeV4(
+        bool editing,
+        bool managing)
+    {
+        if (bottomOperations == null) return;
+
+        ResolveDependencies();
+        EnsureUnifiedHudChromeV4();
+
+        bool normalViewport =
+            !editing &&
+            !managing &&
+            !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking;
+
+        if (bottomIdentityBlock != null)
+        {
+            bool contextActionVisible =
+                serviceActionButton != null &&
+                    serviceActionButton.gameObject.activeSelf ||
+                secondaryContextActionButton != null &&
+                    secondaryContextActionButton.gameObject.activeSelf ||
+                tertiaryContextActionButton != null &&
+                    tertiaryContextActionButton.gameObject.activeSelf;
+
+            ResolveApprovedTopBarMetrics(
+                out _,
+                out _,
+                out _,
+                out float physicalWidth);
+
+            bottomIdentityBlock.gameObject.SetActive(
+                normalViewport &&
+                (!contextActionVisible || physicalWidth >= 1500f));
+        }
+
+        if (bottomRestaurantNameText != null)
+        {
+            string restaurantName =
+                bottomGameState != null
+                    ? bottomGameState.RestaurantName
+                    : string.Empty;
+            bottomRestaurantNameText.text =
+                string.IsNullOrWhiteSpace(restaurantName)
+                    ? "Mi restaurante"
+                    : restaurantName;
+        }
+
+        if (bottomClimateText != null)
+            bottomClimateText.text = BuildClimateLabelV4();
+
+        LayoutUnifiedHudChromeV4();
+        ReconcileTimeDock();
+    }
+
+    private string BuildClimateLabelV4()
+    {
+        if (bottomClimate == null)
+            return "Climatología  —";
+
+        BistroBuilderWeatherState weather =
+            bottomClimate.CurrentWeather;
+        if (weather == null)
+            return "Climatología  —";
+
+        string state;
+        if (weather.isSnowing)
+            state = "Nieve";
+        else if (weather.isRaining)
+            state = "Lluvia";
+        else if (weather.isWindy)
+            state = "Viento";
+        else
+            state =
+                weather.cloudState == BistroBuilderCloudState.Cloudy
+                    ? "Nublado"
+                    : "Despejado";
+
+        if (weather.isWindy &&
+            (weather.isRaining || weather.isSnowing))
+        {
+            state += " · viento";
+        }
+
+        return
+            "Climatología  " +
+            state +
+            " · " +
+            weather.temperatureC.ToString("0") +
+            " °C";
+    }
+
+    private void LayoutUnifiedHudChromeV4()
+    {
+        if (shellRoot == null || bottomOperations == null) return;
+
+        ResolveApprovedTopBarMetrics(
+            out float scale,
+            out float height,
+            out float margin,
+            out float physicalWidth);
+
+        bottomOperations.anchorMin = new Vector2(0f, 0f);
+        bottomOperations.anchorMax = new Vector2(1f, 0f);
+        bottomOperations.pivot = new Vector2(.5f, 0f);
+        bottomOperations.anchoredPosition =
+            new Vector2(0f, 8f / scale);
+        bottomOperations.sizeDelta =
+            new Vector2(-margin * 2f, height);
+
+        HorizontalLayoutGroup statusLayout =
+            bottomStatusContent != null
+                ? bottomStatusContent.GetComponent<HorizontalLayoutGroup>()
+                : null;
+        if (statusLayout != null)
+        {
+            int horizontal =
+                Mathf.Max(6, Mathf.RoundToInt(10f / scale));
+            int vertical =
+                Mathf.Max(3, Mathf.RoundToInt(7f / scale));
+            statusLayout.padding =
+                new RectOffset(
+                    horizontal,
+                    horizontal,
+                    vertical,
+                    vertical);
+            statusLayout.spacing =
+                Mathf.Max(3f, 6f / scale);
+        }
+
+        bool showSatisfaction = physicalWidth >= 1250f;
+        bool showKitchen = physicalWidth >= 1500f;
+        bool showWaiting = physicalWidth >= 1700f;
+
+        SetStatusVisibleV4(cashText, true);
+        SetStatusVisibleV4(
+            satisfactionText,
+            showSatisfaction);
+        SetStatusVisibleV4(
+            kitchenText,
+            showKitchen);
+        SetStatusVisibleV4(
+            waitingText,
+            showWaiting);
+
+        ResizeStatusV4(cashText, physicalWidth < 900f ? 118f : 142f, scale);
+        ResizeStatusV4(satisfactionText, 150f, scale);
+        ResizeStatusV4(kitchenText, 130f, scale);
+        ResizeStatusV4(waitingText, 150f, scale);
+
+        if (bottomDateTimeText != null)
+            bottomDateTimeText.gameObject.SetActive(
+                physicalWidth >= 1500f);
+
+        if (bottomIdentityBlock != null)
+        {
+            float identityPhysicalWidth =
+                physicalWidth < 900f
+                    ? 136f
+                    : physicalWidth < 1250f
+                        ? 220f
+                        : physicalWidth < 1600f
+                            ? 280f
+                            : 340f;
+
+            bottomIdentityBlock.anchorMin =
+                bottomIdentityBlock.anchorMax =
+                    bottomIdentityBlock.pivot =
+                        new Vector2(.5f, .5f);
+            bottomIdentityBlock.anchoredPosition = Vector2.zero;
+            bottomIdentityBlock.sizeDelta =
+                new Vector2(
+                    identityPhysicalWidth / scale,
+                    Mathf.Max(36f / scale, height - 12f / scale));
+
+            float identityHeight =
+                bottomIdentityBlock.rect.height > 1f
+                    ? bottomIdentityBlock.rect.height
+                    : Mathf.Max(
+                        36f / scale,
+                        height - 12f / scale);
+
+            if (bottomRestaurantNameText != null)
+            {
+                RectTransform nameRect =
+                    bottomRestaurantNameText.rectTransform;
+                nameRect.anchorMin =
+                    new Vector2(0f, .5f);
+                nameRect.anchorMax =
+                    new Vector2(1f, .5f);
+                nameRect.pivot =
+                    new Vector2(.5f, .5f);
+                nameRect.anchoredPosition =
+                    new Vector2(
+                        0f,
+                        physicalWidth < 900f
+                            ? 0f
+                            : 8f / scale);
+                nameRect.sizeDelta =
+                    new Vector2(
+                        -8f / scale,
+                        24f / scale);
+            }
+
+            if (bottomClimateText != null)
+            {
+                bool showClimate =
+                    physicalWidth >= 900f;
+                bottomClimateText.gameObject.SetActive(showClimate);
+
+                if (showClimate)
+                {
+                    RectTransform climateRect =
+                        bottomClimateText.rectTransform;
+                    climateRect.anchorMin =
+                        new Vector2(0f, .5f);
+                    climateRect.anchorMax =
+                        new Vector2(1f, .5f);
+                    climateRect.pivot =
+                        new Vector2(.5f, .5f);
+                    climateRect.anchoredPosition =
+                        new Vector2(
+                            0f,
+                            -11f / scale);
+                    climateRect.sizeDelta =
+                        new Vector2(
+                            -8f / scale,
+                            18f / scale);
+                }
+            }
+        }
+
+        float topInset = ContentTopInset(canvas);
+        float side =
+            margin + 4f / scale;
+        float sidePhysicalWidth =
+            physicalWidth < 900f
+                ? 232f
+                : physicalWidth < 1280f
+                    ? 264f
+                    : 296f;
+        float sideWidth =
+            sidePhysicalWidth / scale;
+
+        if (activityPanel != null)
+        {
+            activityPanel.anchorMin =
+                activityPanel.anchorMax =
+                    activityPanel.pivot =
+                        new Vector2(0f, 1f);
+            activityPanel.anchoredPosition =
+                new Vector2(side, -topInset);
+            activityPanel.sizeDelta =
+                new Vector2(
+                    sideWidth,
+                    (physicalWidth < 900f ? 160f : 176f) / scale);
+        }
+
+        if (contextPanel != null)
+        {
+            float bottomInset =
+                bottomOperations.gameObject.activeSelf
+                    ? height + 20f / scale
+                    : 12f / scale;
+            float availableHeight =
+                Mathf.Max(
+                    230f / scale,
+                    shellRoot.rect.height -
+                    topInset -
+                    bottomInset -
+                    12f / scale);
+            float contextHeight =
+                Mathf.Min(520f / scale, availableHeight);
+
+            contextPanel.anchorMin =
+                contextPanel.anchorMax =
+                    contextPanel.pivot =
+                        new Vector2(1f, 1f);
+            contextPanel.anchoredPosition =
+                new Vector2(-side, -topInset);
+            contextPanel.sizeDelta =
+                new Vector2(sideWidth, contextHeight);
+        }
+    }
+
+    private static void SetStatusVisibleV4(
+        TMP_Text text,
+        bool visible)
+    {
+        if (text == null) return;
+        Transform root = text.transform.parent;
+        if (root != null)
+            root.gameObject.SetActive(visible);
+    }
+
+    private static void ResizeStatusV4(
+        TMP_Text text,
+        float physicalWidth,
+        float scale)
+    {
+        if (text == null) return;
+        GameObject root = text.transform.parent != null
+            ? text.transform.parent.gameObject
+            : null;
+        if (root == null) return;
+
+        LayoutElement element =
+            root.GetComponent<LayoutElement>();
+        if (element == null)
+            element = root.AddComponent<LayoutElement>();
+
+        float width =
+            Mathf.Max(1f, physicalWidth / Mathf.Max(.01f, scale));
+        element.minWidth = width;
+        element.preferredWidth = width;
+        element.flexibleWidth = 0f;
     }
 
     private static string KitchenLabel(BistroBuilderKitchenLoadState state)
