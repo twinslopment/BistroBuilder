@@ -64,7 +64,8 @@ public static class BistroBuilderPcPerformanceBootstrap
         QualitySettings.vSyncCount = 0;
         QualitySettings.shadowDistance =
             Mathf.Min(QualitySettings.shadowDistance, IntegratedShadowDistance);
-        QualitySettings.shadowCascades = 1;
+        // URP uses the cloned asset's one-cascade setting. Do not force the
+        // legacy QualitySettings cascade enum to an unsupported value.
         QualitySettings.pixelLightCount =
             Mathf.Min(QualitySettings.pixelLightCount, 2);
         QualitySettings.realtimeReflectionProbes = false;
