@@ -20,6 +20,21 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
     private const int MaxActivityRows = 8;
     private const int MaxOrderRows = 5;
 
+    private static readonly Color ContextPanelPaper =
+        new Color32(250, 248, 244, 255);
+    private static readonly Color ContextCard =
+        new Color32(255, 253, 249, 255);
+    private static readonly Color ContextField =
+        new Color32(243, 240, 233, 255);
+    private static readonly Color ContextLine =
+        new Color32(226, 221, 212, 255);
+    private static readonly Color ContextInk =
+        new Color32(31, 35, 29, 255);
+    private static readonly Color ContextMuted =
+        new Color32(111, 115, 108, 255);
+    private static readonly Color ContextBrass =
+        new Color32(169, 112, 42, 255);
+
     private BistroBuilderUiShell shell;
     private BistroBuilderTableSelectionController selection;
     private TableAssignmentSystem tableAssignments;
@@ -412,17 +427,24 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         if (existing != null)
         {
             selectedRoot = existing as RectTransform;
+            if (selectedRoot != null &&
+                selectedRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
+            {
+                selectedRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
+            }
             CacheSelectedReferences();
+            ApplySelectedContextPalette();
             return;
         }
 
         selectedRoot = NewRect("BB_SelectedTableReference", contextPanel);
+        selectedRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
         Stretch(selectedRoot);
         selectedRoot.offsetMin = new Vector2(12f, 12f);
         selectedRoot.offsetMax = new Vector2(-12f, -12f);
 
         tableTitle = CreateText(selectedRoot, "TableTitle", "Mesa —", 28f,
-            BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.TopLeft);
+            ContextInk, TextAlignmentOptions.TopLeft);
         Place(tableTitle.rectTransform, 0f, -2f, 182f, 42f);
 
         tableStatus = CreatePill(selectedRoot, "TableStatus", "Libre",
@@ -433,25 +455,25 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             selectedRoot,
             "More",
             BBIconId.GeneralMore,
-            BistroBuilderUiTokens.TextSecondary);
+            ContextMuted);
         Place(more.rectTransform, 330f, 4f, 22f, 22f);
 
         tablePeople = CreateText(selectedRoot, "People", "0 personas", 13f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
+            ContextMuted, TextAlignmentOptions.MidlineLeft);
         Place(tablePeople.rectTransform, 0f, -48f, 152f, 28f);
 
         tableElapsed = CreateText(selectedRoot, "Elapsed", "Tiempo en mesa: 0 min", 13f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineRight);
+            ContextMuted, TextAlignmentOptions.MidlineRight);
         Place(tableElapsed.rectTransform, 164f, -48f, 196f, 28f);
 
         RectTransform tabs = NewRect("Tabs", selectedRoot);
         Place(tabs, 0f, -82f, 360f, 42f);
-        AddSurface(tabs.gameObject, new Color32(37, 36, 31, 255));
+        AddSurface(tabs.gameObject, ContextField);
         string[] tabNames = { "Detalles", "Pedido", "Clientes", "Historial" };
         for (int i = 0; i < tabNames.Length; i++)
         {
             TMP_Text tab = CreateText(tabs, "Tab" + i, tabNames[i], 12.5f,
-                i == 0 ? BistroBuilderUiTokens.ContentLight : BistroBuilderUiTokens.TextSecondary,
+                i == 0 ? ContextInk : ContextMuted,
                 TextAlignmentOptions.Center);
             RectTransform rect = tab.rectTransform;
             rect.anchorMin = new Vector2(i / 4f, 0f);
@@ -459,7 +481,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
         Image underline = NewRect("ActiveUnderline", tabs).gameObject.AddComponent<Image>();
-        underline.color = BistroBuilderUiTokens.Success;
+        underline.color = ContextBrass;
         RectTransform underlineRect = underline.rectTransform;
         underlineRect.anchorMin = new Vector2(0f, 0f);
         underlineRect.anchorMax = new Vector2(0.25f, 0f);
@@ -469,13 +491,13 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 
         RectTransform details = NewRect("DetailsCard", selectedRoot);
         Place(details, 0f, -132f, 360f, 168f);
-        AddSurface(details.gameObject, new Color32(42, 40, 34, 255));
+        AddSurface(details.gameObject, ContextCard);
 
         clientCount = CreateText(details, "ClientCount", "0 clientes", 14f,
             BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
         Place(clientCount.rectTransform, 46f, -12f, 280f, 25f);
         clientBreakdown = CreateText(details, "ClientBreakdown", "0 personas", 11.5f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
+            ContextMuted, TextAlignmentOptions.MidlineLeft);
         Place(clientBreakdown.rectTransform, 46f, -34f, 280f, 22f);
         AddInfoIcon(
             details,
@@ -499,7 +521,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             BBIconId.StatusInformation);
 
         TMP_Text satisfactionLabel = CreateText(details, "SatisfactionLabel", "Satisfacción", 12.5f,
-            BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+            ContextInk, TextAlignmentOptions.MidlineLeft);
         Place(satisfactionLabel.rectTransform, 46f, -138f, 120f, 22f);
         TMP_Text smile = CreateText(details, "Smile", "●", 19f,
             BistroBuilderUiTokens.Success, TextAlignmentOptions.Center);
@@ -509,7 +531,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         Place(satisfactionText.rectTransform, 188f, -134f, 150f, 20f);
         RectTransform track = NewRect("SatisfactionTrack", details);
         Place(track, 188f, -157f, 150f, 7f);
-        AddSurface(track.gameObject, new Color32(25, 25, 22, 255));
+        AddSurface(track.gameObject, ContextLine);
         satisfactionFill = NewRect("Fill", track).gameObject.AddComponent<Image>();
         satisfactionFill.color = BistroBuilderUiTokens.Success;
         RectTransform fillRect = satisfactionFill.rectTransform;
@@ -519,12 +541,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
 
         RectTransform orderCard = NewRect("OrderCard", selectedRoot);
         Place(orderCard, 0f, -310f, 360f, 224f);
-        AddSurface(orderCard.gameObject, new Color32(42, 40, 34, 255));
+        AddSurface(orderCard.gameObject, ContextCard);
         TMP_Text orderTitle = CreateText(orderCard, "OrderTitle", "Pedido actual", 15f,
-            BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+            ContextInk, TextAlignmentOptions.MidlineLeft);
         Place(orderTitle.rectTransform, 12f, -8f, 190f, 28f);
         orderSummary = CreateText(orderCard, "OrderSummary", "0 / 0 servidos", 11.5f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineRight);
+            ContextMuted, TextAlignmentOptions.MidlineRight);
         Place(orderSummary.rectTransform, 210f, -8f, 138f, 28f);
         orderRowsRoot = NewRect("OrderRows", orderCard);
         Place(orderRowsRoot, 8f, -44f, 344f, 170f);
@@ -539,7 +561,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             selectedRoot,
             "AddOrder",
             "Añadir al pedido",
-            BistroBuilderUiTokens.Surface2);
+            ContextField);
         Place(addOrderButton.GetComponent<RectTransform>(), 0f, -544f, 360f, 42f);
         addOrderButton.onClick.AddListener(OpenOrders);
         BBIconographyRuntime.Decorate(
@@ -551,7 +573,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             selectedRoot,
             "SplitBill",
             "Dividir cuenta",
-            BistroBuilderUiTokens.Surface1);
+            ContextCard);
         Place(splitBillButton.GetComponent<RectTransform>(), 0f, -594f, 172f, 42f);
         splitBillButton.interactable = false;
         BBIconographyRuntime.Decorate(
@@ -571,6 +593,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             BBIconId.ActionConfirm,
             false);
 
+        ApplySelectedContextPalette();
         selectedRoot.gameObject.SetActive(false);
     }
 
@@ -657,10 +680,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
         Place(title.rectTransform, 44f, -7f, 210f, 24f);
         TMP_Text subtitle = CreateText(row, "Subtitle", string.Empty, 11f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
+            ContextMuted, TextAlignmentOptions.MidlineLeft);
         Place(subtitle.rectTransform, 44f, -29f, 238f, 21f);
         TMP_Text time = CreateText(row, "Time", "--:--", 10.5f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineRight);
+            ContextMuted, TextAlignmentOptions.MidlineRight);
         Place(time.rectTransform, 258f, -7f, 50f, 24f);
         return row.gameObject;
     }
@@ -700,6 +723,74 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         else if (key.Contains("mesa")) color = BistroBuilderUiTokens.Success;
         else if (key.Contains("cierre") || key.Contains("incidencia")) color = BistroBuilderUiTokens.Attention;
         else color = BistroBuilderUiTokens.TextSecondary;
+    }
+
+    private void ApplySelectedContextPalette()
+    {
+        if (selectedRoot == null) return;
+
+        Image[] images =
+            selectedRoot.GetComponentsInChildren<Image>(true);
+        for (int i = 0; i < images.Length; i++)
+        {
+            Image image = images[i];
+            if (image == null) continue;
+
+            switch (image.gameObject.name)
+            {
+                case "Tabs":
+                    image.color = ContextField;
+                    break;
+                case "DetailsCard":
+                case "OrderCard":
+                    image.color = ContextCard;
+                    break;
+                case "SatisfactionTrack":
+                    image.color = ContextLine;
+                    break;
+            }
+        }
+
+        TMP_Text[] texts =
+            selectedRoot.GetComponentsInChildren<TMP_Text>(true);
+        for (int i = 0; i < texts.Length; i++)
+        {
+            TMP_Text text = texts[i];
+            if (text == null) continue;
+
+            if (text == satisfactionText ||
+                text.gameObject.name == "Status")
+            {
+                continue;
+            }
+
+            string name = text.gameObject.name;
+            bool muted =
+                name == "People" ||
+                name == "Elapsed" ||
+                name == "ClientBreakdown" ||
+                name == "OrderSummary" ||
+                name == "Quantity";
+
+            text.color = muted ? ContextMuted : ContextInk;
+        }
+
+        Transform tabs = selectedRoot.Find("Tabs");
+        if (tabs != null)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                TMP_Text tab =
+                    tabs.Find("Tab" + i)?.GetComponent<TMP_Text>();
+                if (tab != null)
+                    tab.color = i == 0 ? ContextInk : ContextMuted;
+            }
+
+            Image underline =
+                tabs.Find("ActiveUnderline")?.GetComponent<Image>();
+            if (underline != null)
+                underline.color = ContextBrass;
+        }
     }
 
     private void RefreshSelectedTable(RestaurantTable table)
@@ -862,10 +953,10 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         layout.minHeight = 29f;
         layout.preferredHeight = 29f;
         TMP_Text quantity = CreateText(row, "Quantity", "1", 11.5f,
-            BistroBuilderUiTokens.TextSecondary, TextAlignmentOptions.MidlineLeft);
+            ContextMuted, TextAlignmentOptions.MidlineLeft);
         Place(quantity.rectTransform, 4f, -2f, 24f, 25f);
         TMP_Text dish = CreateText(row, "Dish", "Plato", 11.8f,
-            BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.MidlineLeft);
+            ContextInk, TextAlignmentOptions.MidlineLeft);
         Place(dish.rectTransform, 32f, -2f, 182f, 25f);
         TMP_Text status = CreateText(row, "Status", "Pendiente", 11.3f,
             BistroBuilderUiTokens.Attention, TextAlignmentOptions.MidlineRight);
@@ -939,7 +1030,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             row,
             "Icon",
             iconId,
-            BistroBuilderUiTokens.TextSecondary);
+            ContextMuted);
         Place(icon.rectTransform, 10f, -5f, 20f, 20f);
 
         TMP_Text caption = CreateText(
@@ -947,7 +1038,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             "Caption",
             label,
             12.5f,
-            BistroBuilderUiTokens.ContentLight,
+            ContextInk,
             TextAlignmentOptions.MidlineLeft);
         Place(caption.rectTransform, 46f, -2f, 104f, 26f);
 
@@ -956,7 +1047,7 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
             "Value",
             value,
             12.5f,
-            BistroBuilderUiTokens.ContentLight,
+            ContextInk,
             TextAlignmentOptions.MidlineRight);
         Place(text.rectTransform, 176f, -2f, 160f, 26f);
         return text;
@@ -1015,7 +1106,17 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         Color hover = Color.Lerp(color, Color.white, 0.08f);
         Color pressed = Color.Lerp(color, Color.black, 0.10f);
         button.colors = BistroBuilderUiTokens.ButtonColors(color, hover, pressed);
-        TMP_Text label = CreateText(root, "Label", text, 12.5f, BistroBuilderUiTokens.ContentLight, TextAlignmentOptions.Center);
+        Color labelColor =
+            color.grayscale >= 0.62f
+                ? ContextInk
+                : BistroBuilderUiTokens.ContentLight;
+        TMP_Text label = CreateText(
+            root,
+            "Label",
+            text,
+            12.5f,
+            labelColor,
+            TextAlignmentOptions.Center);
         Stretch(label.rectTransform);
         return button;
     }
@@ -1025,7 +1126,12 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
         RectTransform rect = NewRect(name, parent);
         TextMeshProUGUI label = rect.gameObject.AddComponent<TextMeshProUGUI>();
         label.text = text;
+        label.font =
+            fontSize >= 14.5f
+                ? (BistroBuilderTypography.Emphasis ?? TMP_Settings.defaultFontAsset)
+                : (BistroBuilderTypography.Body ?? TMP_Settings.defaultFontAsset);
         label.fontSize = fontSize;
+        label.fontStyle = FontStyles.Normal;
         label.color = color;
         label.alignment = alignment;
         label.textWrappingMode = TextWrappingModes.NoWrap;

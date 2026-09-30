@@ -57,6 +57,9 @@ public sealed partial class BistroBuilderUiShell
         if (bottomOperations == null) return;
 
         normalBottomBarRoot = bottomOperations;
+        if (normalBottomBarRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
+            normalBottomBarRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
+
         Image rootImage = bottomOperations.GetComponent<Image>();
         if (rootImage == null) rootImage = bottomOperations.gameObject.AddComponent<Image>();
         rootImage.raycastTarget = true;
@@ -157,13 +160,14 @@ public sealed partial class BistroBuilderUiShell
     private void EnsureBottomRightControls()
     {
         HorizontalLayoutGroup layout = EnsureBottomHorizontal(normalBottomRight, 4f);
-        layout.padding = new RectOffset(7, 7, 5, 5);
+        layout.padding = new RectOffset(9, 9, 5, 5);
+        layout.spacing = 6f;
         layout.childForceExpandWidth = false;
 
         normalBottomWeatherTime = EnsureBottomRect(
             normalBottomRight, "WeatherAndTime");
         LayoutElement weatherLayout = EnsureBottomLayout(normalBottomWeatherTime);
-        weatherLayout.minWidth = 120f;
+        weatherLayout.minWidth = 168f;
         weatherLayout.flexibleWidth = 1f;
 
         normalBottomWeatherIcon = EnsureBottomImage(
@@ -216,8 +220,8 @@ public sealed partial class BistroBuilderUiShell
         EnsureBottomOutline(surface, BottomGold, new Vector2(1f, -1f));
 
         icon = EnsureBottomImage(tile, "Icon", Color.white);
-        icon.rectTransform.anchorMin = new Vector2(0.035f, 0.16f);
-        icon.rectTransform.anchorMax = new Vector2(0.34f, 0.86f);
+        icon.rectTransform.anchorMin = new Vector2(0.035f, 0.13f);
+        icon.rectTransform.anchorMax = new Vector2(0.38f, 0.89f);
         icon.rectTransform.offsetMin = Vector2.zero;
         icon.rectTransform.offsetMax = Vector2.zero;
         icon.preserveAspect = true;
@@ -225,12 +229,16 @@ public sealed partial class BistroBuilderUiShell
         TMP_Text label = EnsureBottomText(
             tile, "Label", labelText, 9f, 13f,
             FontStyles.Bold, TextAlignmentOptions.BottomLeft);
-        SetAnchoredArea(label.rectTransform, 0.35f, 0.51f, 0.97f, 0.91f);
+        label.fontSizeMin = 10f;
+        label.fontSizeMax = 14f;
+        SetAnchoredArea(label.rectTransform, 0.39f, 0.51f, 0.97f, 0.91f);
 
         value = EnsureBottomText(
             tile, "Value", "—", 11f, 18f,
             FontStyles.Bold, TextAlignmentOptions.TopLeft);
-        SetAnchoredArea(value.rectTransform, 0.35f, 0.08f, 0.97f, 0.57f);
+        value.fontSizeMin = 12f;
+        value.fontSizeMax = 19f;
+        SetAnchoredArea(value.rectTransform, 0.39f, 0.08f, 0.97f, 0.57f);
 
         Image accent = EnsureBottomImage(tile, "Accent", BottomGold);
         accent.rectTransform.anchorMin = new Vector2(0.40f, 0.07f);
@@ -571,21 +579,21 @@ public sealed partial class BistroBuilderUiShell
         float rightWeight;
         if (aspect < 1.60f)
         {
-            leftWeight = 0.48f;
-            centerWeight = 0.20f;
-            rightWeight = 0.32f;
+            leftWeight = 0.49f;
+            centerWeight = 0.17f;
+            rightWeight = 0.34f;
         }
         else if (aspect > 2.05f)
         {
             leftWeight = 0.40f;
-            centerWeight = 0.32f;
-            rightWeight = 0.28f;
+            centerWeight = 0.23f;
+            rightWeight = 0.37f;
         }
         else
         {
-            leftWeight = 0.44f;
-            centerWeight = 0.27f;
-            rightWeight = 0.29f;
+            leftWeight = 0.45f;
+            centerWeight = 0.20f;
+            rightWeight = 0.35f;
         }
 
         SetBottomSectionWeight(normalBottomLeft, leftWeight);
@@ -593,8 +601,8 @@ public sealed partial class BistroBuilderUiShell
         SetBottomSectionWeight(normalBottomRight, rightWeight);
 
         bool compact = pixelWidth < 1280;
-        float controlWidth = compact ? 42f : 50f;
-        SetBottomControlWidth(normalBottomPauseButton, compact ? 44f : 52f);
+        float controlWidth = compact ? 42f : 48f;
+        SetBottomControlWidth(normalBottomPauseButton, compact ? 44f : 50f);
         SetBottomControlWidth(normalBottomSpeed1, controlWidth);
         SetBottomControlWidth(normalBottomSpeed2, controlWidth);
         SetBottomControlWidth(normalBottomSpeed3, controlWidth);

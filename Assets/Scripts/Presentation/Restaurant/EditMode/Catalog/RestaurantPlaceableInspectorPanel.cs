@@ -244,6 +244,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         rootObject.transform.SetParent(canvas.transform, false);
         root = rootObject.GetComponent<RectTransform>();
+        rootObject.AddComponent<BistroBuilderUiStyleIsolation>();
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
