@@ -294,6 +294,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
         if (designSystem != null) designSystem.ApplyAllNow(true);
         EnsureUnifiedHudChromeV4();
+        EnsureNormalBottomBar();
     }
 
     private RectTransform EnsureBar(RectTransform parent, string name, bool top)
@@ -1066,6 +1067,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         RefreshActivityText();
         RefreshContextAndServiceAction();
         RefreshUnifiedHudChromeV4(editing, managing);
+        RefreshNormalBottomBar(editing, managing);
     }
 
     private string ResolveEditCostText()

@@ -46,14 +46,21 @@ public static class BistroBuilderTopBarResponsiveTest
                     bar=GameObject.Find(BistroBuilderUiShell.TopBarName).GetComponent<RectTransform>();
                     var bottom=AnyRect(BistroBuilderUiShell.BottomBarName);
                     Check(bottom!=null&&bottom.gameObject.activeInHierarchy,"Canonical normal bottom bar visible");
-                    Check(bottom.Find("ApprovedFrame")?.GetComponent<BistroBuilderTopBarPlate>()!=null,"Normal bottom bar shares approved ivory/brass frame");
-                    var identity=bottom.Find("BottomIdentityV4");
-                    Check(identity!=null,"Normal bottom bar owns one responsive restaurant/climate identity");
-                    Check(identity.Find("BottomRestaurantName")?.GetComponent<TMP_Text>()!=null,"Bottom identity uses real restaurant-name readout");
-                    Check(identity.Find("BottomClimate")?.GetComponent<TMP_Text>()!=null,"Bottom identity uses real climate readout");
+                    Check(bottom.Find("BottomBarV2_ApprovedPlate")?.GetComponent<BistroBuilderTopBarPlate>()!=null,"Normal bottom bar shares approved ivory/brass top-bar plate");
+                    var content=bottom.Find("BottomBarV2_Content");
+                    Check(content!=null,"Definitive normal bottom content exists");
+                    Check(content.Find("StatusCluster/CashTile/Icon")?.GetComponent<Image>()?.sprite!=null,"Cash uses approved icon");
+                    Check(content.Find("StatusCluster/SatisfactionTile/Icon")?.GetComponent<Image>()?.sprite!=null,"Satisfaction uses approved icon family");
+                    Check(content.Find("StatusCluster/KitchenTile/Icon")?.GetComponent<Image>()?.sprite!=null,"Kitchen uses approved icon");
+                    Check(content.Find("StatusCluster/WaitingTile/Icon")?.GetComponent<Image>()?.sprite!=null,"Waiting uses approved icon");
+                    var identity=content.Find("RestaurantIdentity");
+                    Check(identity?.Find("RestaurantName")?.GetComponent<TMP_Text>()!=null,"Bottom center uses real restaurant-name readout");
+                    var timeCluster=content.Find("TimeCluster");
+                    Check(timeCluster?.Find("WeatherAndTime/WeatherIcon")?.GetComponent<Image>()?.sprite!=null,"Bottom right uses real weather icon");
+                    Check(timeCluster?.Find("WeatherAndTime/Date")?.GetComponent<TMP_Text>()!=null&&timeCluster.Find("WeatherAndTime/Time")?.GetComponent<TMP_Text>()!=null,"Bottom right owns date/time");
+                    Check(timeCluster?.Find("Pause")?.GetComponent<Button>()!=null&&timeCluster.Find("Speed1")?.GetComponent<Button>()!=null&&timeCluster.Find("Speed2")?.GetComponent<Button>()!=null&&timeCluster.Find("Speed3")?.GetComponent<Button>()!=null,"Bottom right owns pause and speed controls");
                     var dock=AnyRect("BB_368B_TimeControlsDock");
-                    Check(dock!=null&&dock.gameObject.activeInHierarchy,"Canonical pause/speed dock remains functional in normal mode");
-                    Check(dock.GetComponent<Image>()==null||dock.GetComponent<Image>().color.a<.01f,"Time dock delegates surface styling to canonical bottom frame");
+                    Check(dock==null||!dock.gameObject.activeInHierarchy,"Legacy 368B dock suppressed to avoid duplicate controls");
                     var activityShell=AnyRect(BistroBuilderUiShell.ActivityPanelName);
                     var contextShell=AnyRect(BistroBuilderUiShell.ContextPanelName);
                     Check(activityShell!=null&&contextShell!=null,"Activity and contextual side surfaces exist");
@@ -200,6 +207,7 @@ public static class BistroBuilderTopBarResponsiveTest
         var type=typeof(BistroBuilderUiShell);
         type.GetMethod("LayoutApprovedTopBar",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,new object[]{true});
         type.GetMethod("LayoutUnifiedHudChromeV4",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,null);
+        type.GetMethod("RefreshNormalBottomBarLayout",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(shell,null);
     }
     static void Finish(bool pass,string message){EditorApplication.update-=Tick;File.AppendAllText("Logs/TopBarResponsive/result.txt",message+"\n");Debug.Log(message);SessionState.SetBool(Key+".Pass",pass);EditorApplication.ExitPlaymode();}
 }
