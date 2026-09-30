@@ -1072,8 +1072,10 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void RefreshReadModels()
     {
-        RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
-        bool editing = editMode != null && editMode.IsEditModeActive;
+        if (overlayEditMode == null)
+            overlayEditMode = FindScene<RestaurantEditModeService>();
+        bool editing =
+            overlayEditMode != null && overlayEditMode.IsEditModeActive;
         bool managing = IsAnyManagementScreenOpen() || GetComponent<BistroBuilderOptionsScreen>()?.IsOpen == true;
         RefreshEditModeChrome(editing, managing);
         RefreshModeSelector(editing, managing);
@@ -1155,8 +1157,10 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void RefreshContextAndServiceAction()
     {
-        RestaurantEditModeService editMode = FindScene<RestaurantEditModeService>();
-        bool editing = editMode != null && editMode.IsEditModeActive;
+        if (overlayEditMode == null)
+            overlayEditMode = FindScene<RestaurantEditModeService>();
+        bool editing =
+            overlayEditMode != null && overlayEditMode.IsEditModeActive;
 
         if (!editing && TryRefreshKitchenContextActions())
         {
