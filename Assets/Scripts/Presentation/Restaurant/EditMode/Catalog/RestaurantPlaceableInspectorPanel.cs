@@ -1642,10 +1642,19 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 : 520f;
 
         float resolvedHeight =
-            Mathf.Clamp(
-                preferredHeight,
-                360f,
-                Mathf.Min(720f, available));
+            compactPlacementMode
+                ? Mathf.Clamp(
+                    preferredHeight,
+                    126f,
+                    Mathf.Min(
+                        180f,
+                        available))
+                : Mathf.Clamp(
+                    preferredHeight,
+                    360f,
+                    Mathf.Min(
+                        680f,
+                        available));
 
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
@@ -1653,8 +1662,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         root.sizeDelta =
             new Vector2(
                 compactPlacementMode
-                    ? 298f
-                    : 342f,
+                    ? 274f
+                    : 326f,
                 resolvedHeight);
         root.anchoredPosition = new Vector2(-18f, -topInset);
     }
