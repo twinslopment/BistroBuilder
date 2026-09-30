@@ -158,6 +158,27 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     private BistroBuilderEditFinanceTariffTable editTariffs;
     private readonly List<BistroBuilderPricedEditEconomicLine> editPricingBuffer = new List<BistroBuilderPricedEditEconomicLine>(32);
     private float nextRefreshAt;
+    private float nextNavigationReconcileAt;
+    private float nextManagementReferenceScanAt;
+
+    private BistroBuilderAdvancedOrderPlayerScreen managementOrders;
+    private BistroBuilderAdvancedKitchenPlayerScreen managementKitchen;
+    private BistroBuilderAdvancedWaiterPlayerScreen managementWaiters;
+    private BistroBuilderAdvancedFrontOfHousePlayerScreen managementFrontOfHouse;
+    private BistroBuilderEndOfDayPlayerScreen managementEndOfDay;
+    private BistroBuilderStaffSchedulePlayerScreen managementSchedule;
+    private BistroBuilderMenuEditorRuntimeView managementMenuEditor;
+    private BistroBuilderMenuPortfolioRuntimeView managementMenuPortfolio;
+    private BistroBuilderInventoryWarehouseRuntimeView managementWarehouse;
+    private BistroBuilderInventoryPlanningRuntimeView managementInventoryPlanning;
+    private BistroBuilderSupplierPlayerRuntimeView managementSuppliers;
+    private BistroBuilderFinanceRuntimeView managementFinance;
+    private BistroBuilderStaffPlayerScreen managementStaff;
+    private BistroBuilderReservationPlayerScreen managementReservations;
+    private BistroBuilderMarketingPlayerScreen managementMarketing;
+    private BistroBuilderReputationPlayerScreen managementReputation;
+    private BistroBuilderProgressionPlayerScreen managementProgression;
+
     private bool activityVisible = true;
     private bool subscribed;
     private bool tableSelectionSubscribed;
@@ -217,7 +238,13 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         if (Time.unscaledTime < nextRefreshAt) return;
         ResolveDependencies();
         BindRuntime();
-        ReconcileNavigation();
+
+        if (Time.unscaledTime >= nextNavigationReconcileAt)
+        {
+            ReconcileNavigation();
+            nextNavigationReconcileAt = Time.unscaledTime + 1.50f;
+        }
+
         RefreshReadModels();
         nextRefreshAt = Time.unscaledTime + 0.35f;
         RefreshIconNavigation();
@@ -907,36 +934,80 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private bool IsAnyManagementScreenOpen()
     {
-        if (BistroBuilderOperationalPanel.AnyOpen || FindScene<BistroBuilderAdvancedOrderPlayerScreen>()?.IsOpen == true ||
-            FindScene<BistroBuilderAdvancedKitchenPlayerScreen>()?.IsOpen == true ||
-            FindScene<BistroBuilderAdvancedWaiterPlayerScreen>()?.IsOpen == true ||
-            FindScene<BistroBuilderAdvancedFrontOfHousePlayerScreen>()?.IsOpen == true ||
-            FindScene<BistroBuilderEndOfDayPlayerScreen>()?.IsOpen == true ||
-            FindScene<BistroBuilderStaffSchedulePlayerScreen>()?.IsVisible == true) return true;
-        var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
-        if (editor != null && editor.IsOpen) return true;
-        var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
-        if (portfolio != null && portfolio.IsOpen) return true;
-        var warehouse = FindScene<BistroBuilderInventoryWarehouseRuntimeView>();
-        if (warehouse != null && warehouse.IsOpen) return true;
-        var planning = FindScene<BistroBuilderInventoryPlanningRuntimeView>();
-        if (planning != null && planning.IsOpen) return true;
-        var suppliers = FindScene<BistroBuilderSupplierPlayerRuntimeView>();
-        if (suppliers != null && suppliers.IsOpen) return true;
-        var financeView = FindScene<BistroBuilderFinanceRuntimeView>();
-        if (financeView != null && financeView.IsOpen) return true;
-        var staff = FindScene<BistroBuilderStaffPlayerScreen>();
-        if (staff != null && staff.IsVisible) return true;
-        var reservations = FindScene<BistroBuilderReservationPlayerScreen>();
-        if (reservations != null && reservations.IsVisible) return true;
-        var marketing = FindScene<BistroBuilderMarketingPlayerScreen>();
-        if (marketing != null && marketing.IsVisible) return true;
-        var reputation = FindScene<BistroBuilderReputationPlayerScreen>();
-        if (reputation != null && reputation.IsVisible) return true;
-        var progression = FindScene<BistroBuilderProgressionPlayerScreen>();
-        return progression != null && progression.IsVisible;
+        CacheManagementScreenReferences();
+
+        if (BistroBuilderOperationalPanel.AnyOpen)
+            return true;
+
+        return
+            (managementOrders != null && managementOrders.IsOpen) ||
+            (managementKitchen != null && managementKitchen.IsOpen) ||
+            (managementWaiters != null && managementWaiters.IsOpen) ||
+            (managementFrontOfHouse != null && managementFrontOfHouse.IsOpen) ||
+            (managementEndOfDay != null && managementEndOfDay.IsOpen) ||
+            (managementSchedule != null && managementSchedule.IsVisible) ||
+            (managementMenuEditor != null && managementMenuEditor.IsOpen) ||
+            (managementMenuPortfolio != null && managementMenuPortfolio.IsOpen) ||
+            (managementWarehouse != null && managementWarehouse.IsOpen) ||
+            (managementInventoryPlanning != null && managementInventoryPlanning.IsOpen) ||
+            (managementSuppliers != null && managementSuppliers.IsOpen) ||
+            (managementFinance != null && managementFinance.IsOpen) ||
+            (managementStaff != null && managementStaff.IsVisible) ||
+            (managementReservations != null && managementReservations.IsVisible) ||
+            (managementMarketing != null && managementMarketing.IsVisible) ||
+            (managementReputation != null && managementReputation.IsVisible) ||
+            (managementProgression != null && managementProgression.IsVisible);
     }
 
+    private void CacheManagementScreenReferences(bool force = false)
+    {
+        if (Application.isPlaying &&
+            !force &&
+            Time.unscaledTime < nextManagementReferenceScanAt)
+        {
+            return;
+        }
+
+        nextManagementReferenceScanAt =
+            Application.isPlaying
+                ? Time.unscaledTime + 1.0f
+                : 0f;
+
+        if (managementOrders == null)
+            managementOrders = FindScene<BistroBuilderAdvancedOrderPlayerScreen>();
+        if (managementKitchen == null)
+            managementKitchen = FindScene<BistroBuilderAdvancedKitchenPlayerScreen>();
+        if (managementWaiters == null)
+            managementWaiters = FindScene<BistroBuilderAdvancedWaiterPlayerScreen>();
+        if (managementFrontOfHouse == null)
+            managementFrontOfHouse = FindScene<BistroBuilderAdvancedFrontOfHousePlayerScreen>();
+        if (managementEndOfDay == null)
+            managementEndOfDay = FindScene<BistroBuilderEndOfDayPlayerScreen>();
+        if (managementSchedule == null)
+            managementSchedule = FindScene<BistroBuilderStaffSchedulePlayerScreen>();
+        if (managementMenuEditor == null)
+            managementMenuEditor = FindScene<BistroBuilderMenuEditorRuntimeView>();
+        if (managementMenuPortfolio == null)
+            managementMenuPortfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
+        if (managementWarehouse == null)
+            managementWarehouse = FindScene<BistroBuilderInventoryWarehouseRuntimeView>();
+        if (managementInventoryPlanning == null)
+            managementInventoryPlanning = FindScene<BistroBuilderInventoryPlanningRuntimeView>();
+        if (managementSuppliers == null)
+            managementSuppliers = FindScene<BistroBuilderSupplierPlayerRuntimeView>();
+        if (managementFinance == null)
+            managementFinance = FindScene<BistroBuilderFinanceRuntimeView>();
+        if (managementStaff == null)
+            managementStaff = FindScene<BistroBuilderStaffPlayerScreen>();
+        if (managementReservations == null)
+            managementReservations = FindScene<BistroBuilderReservationPlayerScreen>();
+        if (managementMarketing == null)
+            managementMarketing = FindScene<BistroBuilderMarketingPlayerScreen>();
+        if (managementReputation == null)
+            managementReputation = FindScene<BistroBuilderReputationPlayerScreen>();
+        if (managementProgression == null)
+            managementProgression = FindScene<BistroBuilderProgressionPlayerScreen>();
+    }
     private void CloseCurrentManagementScreen()
     {
         var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
