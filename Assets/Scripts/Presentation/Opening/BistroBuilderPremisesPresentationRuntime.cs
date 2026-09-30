@@ -72,7 +72,14 @@ public static class BistroBuilderPremisesPresentationRuntime
     {
         GameObject existing = GameObject.Find(RootName);
         if (existing != null)
+        {
+            /*
+             * Destroy() es diferido en Play Mode. Se desactiva primero para
+             * que el fallback deje de verlo como autoridad en este mismo frame.
+             */
+            existing.SetActive(false);
             DestroyPresentationObject(existing);
+        }
 
         RemovePresentationChild("Kitchen_Test", "BB_PresentationKitchen");
         RemoveBarPresentationChildren();
