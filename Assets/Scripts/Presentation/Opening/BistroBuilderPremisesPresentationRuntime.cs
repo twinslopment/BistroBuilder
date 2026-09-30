@@ -552,17 +552,13 @@ public static class BistroBuilderPremisesPresentationRuntime
         Vector3 localScale,
         Material material)
     {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go.name = name;
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPosition;
-        go.transform.localScale = localScale;
-
-        Collider collider = go.GetComponent<Collider>();
-        if (collider != null) collider.enabled = false;
-
-        Renderer renderer = go.GetComponent<Renderer>();
-        if (renderer != null) renderer.sharedMaterial = material;
+        CreatePrimitiveVisual(
+            parent,
+            name,
+            "Cube",
+            localPosition,
+            localScale,
+            material);
     }
 
     private static void CreateCylinder(
@@ -572,17 +568,148 @@ public static class BistroBuilderPremisesPresentationRuntime
         Vector3 localScale,
         Material material)
     {
-        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        go.name = name;
-        go.transform.SetParent(parent, false);
-        go.transform.localPosition = localPosition;
-        go.transform.localScale = localScale;
+        Mesh cylinder =
+            ResolvePrimitiveMesh(
+                "Cylinder");
 
-        Collider collider = go.GetComponent<Collider>();
-        if (collider != null) collider.enabled = false;
+        if (cylinder == null)
+        {
+            CreatePrimitiveVisual(
+                parent,
+                name,
+                "Cube",
+                localPosition,
+                localScale,
+                material);
 
-        Renderer renderer = go.GetComponent<Renderer>();
-        if (renderer != null) renderer.sharedMaterial = material;
+            return;
+        }
+
+        CreatePrimitiveVisual(
+            parent,
+            name,
+            cylinder,
+            localPosition,
+            localScale,
+            material);
+    }
+
+    private static void CreatePrimitiveVisual(
+        Transform parent,
+        string name,
+        string meshName,
+        Vector3 localPosition,
+        Vector3 localScale,
+        Material material)
+    {
+        Mesh mesh =
+            ResolvePrimitiveMesh(
+                meshName);
+
+        if (mesh == null)
+            return;
+
+        CreatePrimitiveVisual(
+            parent,
+            name,
+            mesh,
+            localPosition,
+            localScale,
+            material);
+    }
+
+    private static void CreatePrimitiveVisual(
+        Transform parent,
+        string name,
+        Mesh mesh,
+        Vector3 localPosition,
+        Vector3 localScale,
+        Material material)
+    {
+        if (parent == null ||
+            mesh == null)
+        {
+            return;
+        }
+
+        GameObject go =
+            new GameObject(
+                name,
+                typeof(MeshFilter),
+                typeof(MeshRenderer));
+
+        go.layer =
+            parent.gameObject.layer;
+
+        go.transform.SetParent(
+            parent,
+            false);
+
+        go.transform.localPosition =
+            localPosition;
+
+        go.transform.localRotation =
+            Quaternion.identity;
+
+        go.transform.localScale =
+            localScale;
+
+        MeshFilter filter =
+            go.GetComponent<MeshFilter>();
+
+        filter.sharedMesh =
+            mesh;
+
+        MeshRenderer renderer =
+            go.GetComponent<MeshRenderer>();
+
+        renderer.sharedMaterial =
+            material;
+
+        renderer.shadowCastingMode =
+            UnityEngine.Rendering.ShadowCastingMode.On;
+
+        renderer.receiveShadows =
+            true;
+
+        renderer.lightProbeUsage =
+            UnityEngine.Rendering.LightProbeUsage.BlendProbes;
+
+        renderer.reflectionProbeUsage =
+            UnityEngine.Rendering.ReflectionProbeUsage.BlendProbes;
+
+        /*
+         * Deliberadamente no existe Collider: esta capa es solo Presentation.
+         */
+    }
+
+    private static Mesh ResolvePrimitiveMesh(
+        string meshName)
+    {
+        MeshFilter[] filters =
+            UnityEngine.Object.FindObjectsByType<MeshFilter>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+        for (int index = 0;
+             index < filters.Length;
+             index++)
+        {
+            MeshFilter filter =
+                filters[index];
+
+            if (filter != null &&
+                filter.sharedMesh != null &&
+                string.Equals(
+                    filter.sharedMesh.name,
+                    meshName,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return filter.sharedMesh;
+            }
+        }
+
+        return null;
     }
 
     private static float SafeInverse(float value)
