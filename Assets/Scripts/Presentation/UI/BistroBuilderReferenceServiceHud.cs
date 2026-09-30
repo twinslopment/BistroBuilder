@@ -93,12 +93,25 @@ public sealed class BistroBuilderReferenceServiceHud : MonoBehaviour
     private void Update()
     {
         if (!Application.isPlaying || Time.unscaledTime < nextRefreshAt) return;
+
         ResolveDependencies();
-        EnsurePresentation();
-        Subscribe();
+
+        // The shell/panels are persistent during normal play. Rebuilding and
+        // restyling them five times per second caused avoidable hierarchy work.
+        if (activityPanel == null ||
+            contextPanel == null ||
+            activityRowsRoot == null ||
+            selectedRoot == null)
+        {
+            EnsurePresentation();
+        }
+
+        if (!subscribed)
+            Subscribe();
+
         PrimeArrivalTracking();
         RefreshAll(false);
-        nextRefreshAt = Time.unscaledTime + 0.20f;
+        nextRefreshAt = Time.unscaledTime + 0.50f;
     }
 
     public bool ValidateConfiguration(out string error)
