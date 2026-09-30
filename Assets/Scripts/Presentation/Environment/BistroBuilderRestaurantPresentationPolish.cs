@@ -204,18 +204,27 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
             GameObject skin =
                 CreateSkinRoot(root);
 
-            CreateVisualCube(
-                skin.transform,
-                "Top",
-                new Vector3(
-                    0f,
-                    0.26f,
-                    0f),
-                new Vector3(
-                    0.92f,
-                    0.08f,
-                    0.90f),
-                woodMaterial);
+            MeshRenderer tabletopRenderer =
+                CreateVisualCube(
+                    skin.transform,
+                    "Top",
+                    new Vector3(
+                        0f,
+                        0.26f,
+                        0f),
+                    new Vector3(
+                        0.92f,
+                        0.08f,
+                        0.90f),
+                    woodMaterial);
+
+            BistroBuilderPresentationTableAccent accent =
+                skin.AddComponent<
+                    BistroBuilderPresentationTableAccent>();
+
+            accent.Initialize(
+                table,
+                tabletopRenderer);
 
             float legX = 0.39f;
             float legZ = 0.34f;
@@ -936,5 +945,230 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
             uv;
 
         unitCubeMesh.RecalculateBounds();
+    }
+}
+
+
+/// <summary>
+/// Proyección visual de estado para las mesas estilizadas de Presentation.
+/// Escucha la autoridad RestaurantTable y aplica un acento muy leve únicamente
+/// al tablero. No guarda estado ni participa en reglas de servicio.
+/// </summary>
+internal sealed class BistroBuilderPresentationTableAccent : MonoBehaviour
+{
+    private static readonly int BaseColorPropertyId =
+        Shader.PropertyToID("_BaseColor");
+
+    private static readonly int ColorPropertyId =
+        Shader.PropertyToID("_Color");
+
+    private RestaurantTable table;
+    private MeshRenderer targetRenderer;
+    private MaterialPropertyBlock block;
+    private Color baseColor = Color.white;
+
+    public void Initialize(
+        RestaurantTable sourceTable,
+        MeshRenderer renderer)
+    {
+        Unsubscribe();
+
+        table = sourceTable;
+        targetRenderer = renderer;
+
+        block ??=
+            new MaterialPropertyBlock();
+
+        CaptureBaseColor();
+        Subscribe();
+
+        if (table != null)
+        {
+            ApplyState(
+                table.CurrentState);
+        }
+    }
+
+    private void OnEnable()
+    {
+        Subscribe();
+
+        if (table != null)
+            ApplyState(table.CurrentState);
+    }
+
+    private void OnDisable()
+    {
+        Unsubscribe();
+    }
+
+    private void Subscribe()
+    {
+        if (table == null)
+            return;
+
+        table.StateChanged -=
+            HandleStateChanged;
+
+        table.StateChanged +=
+            HandleStateChanged;
+    }
+
+    private void Unsubscribe()
+    {
+        if (table != null)
+        {
+            table.StateChanged -=
+                HandleStateChanged;
+        }
+    }
+
+    private void HandleStateChanged(
+        RestaurantTable source,
+        TableState state)
+    {
+        ApplyState(state);
+    }
+
+    private void CaptureBaseColor()
+    {
+        if (targetRenderer == null ||
+            targetRenderer.sharedMaterial == null)
+        {
+            baseColor =
+                Color.white;
+
+            return;
+        }
+
+        Material material =
+            targetRenderer.sharedMaterial;
+
+        if (material.HasProperty(
+                BaseColorPropertyId))
+        {
+            baseColor =
+                material.GetColor(
+                    BaseColorPropertyId);
+        }
+        else if (material.HasProperty(
+                     ColorPropertyId))
+        {
+            baseColor =
+                material.GetColor(
+                    ColorPropertyId);
+        }
+        else
+        {
+            baseColor =
+                Color.white;
+        }
+    }
+
+    private void ApplyState(
+        TableState state)
+    {
+        if (targetRenderer == null)
+            return;
+
+        Color accent =
+            ResolveAccent(
+                state);
+
+        float strength =
+            state == TableState.Free
+                ? 0f
+                : 0.10f;
+
+        Color resolved =
+            Color.Lerp(
+                baseColor,
+                accent,
+                strength);
+
+        resolved.a =
+            baseColor.a;
+
+        block.Clear();
+
+        Material material =
+            targetRenderer.sharedMaterial;
+
+        if (material != null &&
+            material.HasProperty(
+                BaseColorPropertyId))
+        {
+            block.SetColor(
+                BaseColorPropertyId,
+                resolved);
+        }
+        else
+        {
+            block.SetColor(
+                ColorPropertyId,
+                resolved);
+        }
+
+        targetRenderer.SetPropertyBlock(
+            block);
+    }
+
+    private static Color ResolveAccent(
+        TableState state)
+    {
+        switch (state)
+        {
+            case TableState.WaitingForWaiter:
+                return new Color(
+                    0.82f,
+                    0.69f,
+                    0.30f,
+                    1f);
+
+            case TableState.TakingOrder:
+                return new Color(
+                    0.84f,
+                    0.55f,
+                    0.28f,
+                    1f);
+
+            case TableState.WaitingForFood:
+                return new Color(
+                    0.72f,
+                    0.36f,
+                    0.31f,
+                    1f);
+
+            case TableState.Eating:
+                return new Color(
+                    0.32f,
+                    0.58f,
+                    0.52f,
+                    1f);
+
+            case TableState.WaitingForBill:
+                return new Color(
+                    0.50f,
+                    0.48f,
+                    0.68f,
+                    1f);
+
+            case TableState.Paying:
+                return new Color(
+                    0.55f,
+                    0.42f,
+                    0.66f,
+                    1f);
+
+            case TableState.Dirty:
+                return new Color(
+                    0.42f,
+                    0.42f,
+                    0.40f,
+                    1f);
+
+            default:
+                return Color.white;
+        }
     }
 }
