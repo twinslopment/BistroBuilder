@@ -481,6 +481,9 @@ public sealed class BistroBuilderUiScrollRuntimeBootstrap : MonoBehaviour
         for (int i = 0; i < scrolls.Length; i++)
             if (scrolls[i] != null && scrolls[i].gameObject.activeInHierarchy)
                 BistroBuilderUiScrollRegion.Configure(scrolls[i]);
-        nextScanAt = Time.unscaledTime + 0.45f;
+        // Dynamic management screens are created infrequently. A 1.5 s
+        // discovery cadence keeps late-created ScrollRects covered without
+        // traversing the full UI hierarchy multiple times per second.
+        nextScanAt = Time.unscaledTime + 1.50f;
     }
 }
