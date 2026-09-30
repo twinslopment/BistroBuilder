@@ -770,7 +770,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (priceText != null)
         {
             priceText.text =
-                data.Price.ToString("N0") + " €";
+                data.Price > 0
+                    ? data.Price.ToString("N0") + " €"
+                    : "Incluido";
         }
 
         if (scopeText != null)
