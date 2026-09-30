@@ -64,6 +64,7 @@ public static class BistroBuilderPremisesPresentationRuntime
             UpgradeLegacyBarVisuals(kit);
         }
 
+        ReconcilePrototypeFallback();
         return true;
     }
 
@@ -90,6 +91,21 @@ public static class BistroBuilderPremisesPresentationRuntime
 
             originalFloorMaterial = null;
             originalFloorMaterialCaptured = false;
+        }
+
+        ReconcilePrototypeFallback();
+    }
+
+    private static void ReconcilePrototypeFallback()
+    {
+        BistroBuilderPrototypePresentationService fallback =
+            UnityEngine.Object.FindFirstObjectByType<
+                BistroBuilderPrototypePresentationService>(
+                FindObjectsInactive.Include);
+
+        if (fallback != null)
+        {
+            fallback.ApplyScenePresentation();
         }
     }
 
