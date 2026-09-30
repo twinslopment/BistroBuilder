@@ -2090,7 +2090,11 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 image.raycastTarget = false;
             }
 
-            text.color = UnifiedHudInk;
+            // Cocina y Espera conservan el color semántico asignado por
+            // RefreshReadModels (fluida/atención/crítica). Caja y
+            // Satisfacción son información neutra.
+            if (text == cashText || text == satisfactionText)
+                text.color = UnifiedHudInk;
             text.font = BistroBuilderTypography.Body;
             text.fontStyle = FontStyles.Normal;
             text.enableAutoSizing = true;
