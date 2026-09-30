@@ -128,6 +128,7 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
 
         ApplyTablePresentation();
         ApplyPrototypePresentationCleanup();
+        EnsureSitePlinth();
         BindEditModeVisibility();
     }
 
@@ -302,6 +303,92 @@ public sealed class BistroBuilderRestaurantPresentationPolish : MonoBehaviour
             isKitchen: false);
         SkinPrototypeStools();
         CachePrimitiveWaiterRenderers();
+    }
+
+    private void EnsureSitePlinth()
+    {
+        if (!string.Equals(
+                SceneManager.GetActiveScene().name,
+                "Prototype_Restaurant",
+                StringComparison.Ordinal) ||
+            graphiteMaterial == null ||
+            unitCubeMesh == null)
+        {
+            return;
+        }
+
+        GameObject floor =
+            GameObject.Find(
+                "Floor_Test");
+
+        if (floor == null)
+            return;
+
+        Transform existing =
+            floor.transform.Find(
+                "BB_PresentationSitePlinth");
+
+        if (existing != null)
+            return;
+
+        Renderer floorRenderer =
+            floor.GetComponent<Renderer>();
+
+        if (floorRenderer == null)
+            return;
+
+        Bounds bounds =
+            floorRenderer.bounds;
+
+        GameObject plinth =
+            new GameObject(
+                "BB_PresentationSitePlinth");
+
+        plinth.layer =
+            LayerMask.NameToLayer(
+                "Ignore Raycast") >= 0
+                ? LayerMask.NameToLayer(
+                    "Ignore Raycast")
+                : 2;
+
+        plinth.transform.position =
+            new Vector3(
+                bounds.center.x,
+                bounds.min.y - 0.035f,
+                bounds.center.z);
+
+        plinth.transform.rotation =
+            Quaternion.identity;
+
+        plinth.transform.localScale =
+            new Vector3(
+                bounds.size.x + 0.12f,
+                0.06f,
+                bounds.size.z + 0.12f);
+
+        MeshFilter filter =
+            plinth.AddComponent<MeshFilter>();
+
+        filter.sharedMesh =
+            unitCubeMesh;
+
+        MeshRenderer renderer =
+            plinth.AddComponent<MeshRenderer>();
+
+        renderer.sharedMaterial =
+            graphiteMaterial;
+
+        renderer.shadowCastingMode =
+            ShadowCastingMode.On;
+
+        renderer.receiveShadows =
+            true;
+
+        renderer.lightProbeUsage =
+            LightProbeUsage.BlendProbes;
+
+        renderer.reflectionProbeUsage =
+            ReflectionProbeUsage.BlendProbes;
     }
 
     private void HideStandaloneObstacleVisuals()
