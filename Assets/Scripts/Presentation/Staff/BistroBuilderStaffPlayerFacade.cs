@@ -203,11 +203,17 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
         BistroBuilderEmployeeRecord employee)
     {
         string roleDisplayName = employee.roleId;
+        string departmentId = employee.roleId;
+        string departmentDisplayName = roleDisplayName;
         if (staffService.TryGetRoleDefinition(
                 employee.roleId,
                 out BistroBuilderStaffRoleDefinition role) && role != null)
         {
             roleDisplayName = role.displayName;
+            departmentId = string.IsNullOrWhiteSpace(role.departmentId)
+                ? role.roleId : role.departmentId;
+            departmentDisplayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
+                ? role.displayName : role.departmentDisplayName;
         }
 
         int level = 1;
@@ -235,6 +241,8 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             fullName = employee.FullName,
             roleId = employee.roleId,
             roleDisplayName = roleDisplayName,
+            departmentId = departmentId,
+            departmentDisplayName = departmentDisplayName,
             employmentStatus = employee.employmentStatus,
             availability = employee.availability,
             salaryCentsPerService = employee.salaryCentsPerService,
@@ -258,11 +266,17 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
         BistroBuilderStaffCandidateRecord candidate)
     {
         string roleDisplayName = candidate.roleId;
+        string departmentId = candidate.roleId;
+        string departmentDisplayName = roleDisplayName;
         if (staffService.TryGetRoleDefinition(
                 candidate.roleId,
                 out BistroBuilderStaffRoleDefinition role) && role != null)
         {
             roleDisplayName = role.displayName;
+            departmentId = string.IsNullOrWhiteSpace(role.departmentId)
+                ? role.roleId : role.departmentId;
+            departmentDisplayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
+                ? role.displayName : role.departmentDisplayName;
         }
 
         return new BistroBuilderStaffPlayerCandidateRow
@@ -271,6 +285,8 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             fullName = candidate.FullName,
             roleId = candidate.roleId,
             roleDisplayName = roleDisplayName,
+            departmentId = departmentId,
+            departmentDisplayName = departmentDisplayName,
             expectedSalaryCentsPerService =
                 candidate.expectedSalaryCentsPerService,
             experiencePoints = candidate.experiencePoints,

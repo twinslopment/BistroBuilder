@@ -12,6 +12,8 @@ public sealed class BistroBuilderStaffPlayerEmployeeRow
     public string fullName = string.Empty;
     public string roleId = string.Empty;
     public string roleDisplayName = string.Empty;
+    public string departmentId = string.Empty;
+    public string departmentDisplayName = string.Empty;
     public BistroBuilderEmploymentStatus employmentStatus;
     public BistroBuilderEmployeeAvailability availability;
     public long salaryCentsPerService;
@@ -39,6 +41,8 @@ public sealed class BistroBuilderStaffPlayerCandidateRow
     public string fullName = string.Empty;
     public string roleId = string.Empty;
     public string roleDisplayName = string.Empty;
+    public string departmentId = string.Empty;
+    public string departmentDisplayName = string.Empty;
     public long expectedSalaryCentsPerService;
     public long experiencePoints;
     public BistroBuilderEmployeeSkillSet skills =

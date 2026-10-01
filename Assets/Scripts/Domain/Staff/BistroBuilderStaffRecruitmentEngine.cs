@@ -413,9 +413,16 @@ public static class BistroBuilderStaffRecruitmentEngine
                     continue;
                 }
 
+                // Guarantee representation of every enabled role when the
+                // market has enough places, then fill remaining offers at random.
+                // This prevents a valid cook role from disappearing by chance.
+                int roleIndex =
+                    profile.EnabledRoleIds.Count <= profile.CandidateCount &&
+                    index < profile.EnabledRoleIds.Count
+                        ? index
+                        : random.NextInt(profile.EnabledRoleIds.Count);
                 string roleId = BistroBuilderStaffStableIdUtility.Normalize(
-                    profile.EnabledRoleIds[
-                        random.NextInt(profile.EnabledRoleIds.Count)]);
+                    profile.EnabledRoleIds[roleIndex]);
 
                 int speed = random.NextIntInclusive(
                     profile.MinimumSkill,

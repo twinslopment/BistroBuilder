@@ -15,9 +15,13 @@ MonoBehaviour:
   roles:
   - roleId: waiter
     displayName: Camarero/a
+    departmentId: sala
+    departmentDisplayName: SALA
     active: 1
     operationalAdapterId: waiter.agent
   - roleId: cook
     displayName: Cocinero/a
+    departmentId: cocina
+    departmentDisplayName: COCINA
     active: 1
     operationalAdapterId: cook.agent

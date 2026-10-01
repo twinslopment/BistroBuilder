@@ -24,6 +24,7 @@ MonoBehaviour:
   maximumSkill: 72
   enabledRoleIds:
   - waiter
+  - cook
   firstNames:
   - Lucía
   - Marta
