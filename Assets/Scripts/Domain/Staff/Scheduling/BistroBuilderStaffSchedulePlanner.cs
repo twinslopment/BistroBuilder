@@ -161,8 +161,28 @@ public static class BistroBuilderStaffSchedulePlanner
         });
 
         int count = Math.Min(profile.MinimumRecommendedWaiters, candidates.Count);
-        var ids = new List<string>(count);
-        for (int index = 0; index < count; index++) ids.Add(candidates[index].employeeId);
+        // Auto-fill must not replace the whole service roster: that would
+        // silently discard cooks (and extra waiters) already selected by
+        // the player. Only add missing minimum waiter coverage.
+        var ids = new List<string>();
+        var planned = new HashSet<string>(StringComparer.Ordinal);
+        BistroBuilderStaffScheduleEngine.CopyScheduledEmployeeIds(
+            current, dayIndex, mealService, ids);
+        for (int index = 0; index < ids.Count; index++)
+            planned.Add(ids[index]);
+
+        int scheduledWaiters = 0;
+        for (int index = 0; index < candidates.Count; index++)
+            if (planned.Contains(candidates[index].employeeId)) scheduledWaiters++;
+
+        for (int index = 0; index < candidates.Count &&
+             scheduledWaiters < count; index++)
+        {
+            string id = candidates[index].employeeId;
+            if (!planned.Add(id)) continue;
+            ids.Add(id);
+            scheduledWaiters++;
+        }
 
         if (ids.Count == 0)
         {
