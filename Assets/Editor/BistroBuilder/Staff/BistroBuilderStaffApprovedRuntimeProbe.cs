@@ -254,7 +254,21 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
 
     private static void StartSchedule()
     {
-        schedule.ShowFromPersonal(personal);
+        // Exercise the actual PERSONAL tab wiring: it hides 4F before opening 5E.
+        // Calling ShowFromPersonal directly bypasses that navigation contract and
+        // incorrectly reports an overlap that cannot occur through the tab.
+        RectTransform root = GetRect(personal, "panelRoot");
+        Transform tabTransform = root != null
+            ? root.Find("ApprovedScheduleTab") : null;
+        Button tab = tabTransform != null
+            ? tabTransform.GetComponent<Button>() : null;
+        if (tab == null || !tab.gameObject.activeInHierarchy || !tab.IsInteractable())
+        {
+            Pass(false, "Horarios tiene una pestaña accionable en PERSONAL.");
+            Finish();
+            return;
+        }
+        tab.onClick.Invoke();
         Pass(schedule.IsVisible && !personal.IsVisible,
             "Horarios abre como tercera pestaña sin pantallas solapadas.");
         SessionState.SetInt(Prefix + "Stage", 3);

@@ -1,6 +1,6 @@
 # Bistro Builder — Personal · Presencia operativa V1 (01/10/2026)
 
-**Estado:** implementado estáticamente en `feature/bb-presentation-interaction-quality-v1`; **PENDIENTE de compilación Unity, Play Mode y Save/Load real**. No fusionar a master sin esos gates.
+**Estado a 01/10/2026:** implementación en `feature/bb-presentation-interaction-quality-v1`. Unity 6000.3.19f1 ha compilado sin errores y `BistroBuilderStaffPresenceV1SelfTest.Run` ha terminado **STATIC 10 PASS / 0 FAIL**, con advertencia `cook art PENDING`. La prueba de pantalla 4F/5E ha terminado **PLAY-MODE 11 PASS / 0 FAIL**, pero NO prueba el ciclo operativo multiagente. **PENDIENTES: Play Mode de presencia real, prefab visual de chef aprobado y Save/Load de servicio.** No fusionar a master sin esos gates.
 
 ## Problema corregido
 `staff.state` persistía contratos, pero 4D solo ligaba camareros contra el número fijo de componentes `Waiter` existentes en la escena. Contratar tres empleados nuevos no creaba tres agentes. Cocina seleccionaba cocineros disponibles lógicamente, incluso cuando no tenían turno; además no había un avatar físico reutilizable verificado.
