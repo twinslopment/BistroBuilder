@@ -467,6 +467,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
                 employeeRowPrefab, employeeListContent);
             row.gameObject.SetActive(true);
             row.Bind(source, HandleEmployeeSelected);
+            AddApprovedRoleIcon(row.gameObject, source.roleId);
             employeeRows.Add(row);
             employeeRowsById[source.employeeId] = row.gameObject;
             ApplyApprovedRowStyle(row.gameObject, source.employeeId == selectedEmployeeId);
@@ -480,6 +481,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
                 candidateRowPrefab, candidateListContent);
             row.gameObject.SetActive(true);
             row.Bind(source, HandleCandidateSelected);
+            AddApprovedRoleIcon(row.gameObject, source.roleId);
             candidateRows.Add(row);
             candidateRowsById[source.candidateId] = row.gameObject;
             candidateRolesById[source.candidateId] = source.roleId;
@@ -515,6 +517,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
     {
         BistroBuilderStaffPlayerEmployeeRow employee = FindSelectedEmployee();
         bool hasEmployee = employee != null;
+        RefreshApprovedRolePortrait(true,
+            employee != null ? employee.roleId : string.Empty);
         dismissButton.interactable = hasEmployee &&
             employee.employmentStatus == BistroBuilderEmploymentStatus.Active;
         toggleAvailabilityButton.interactable = dismissButton.interactable;
@@ -558,6 +562,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
     private void RenderSelectedCandidate()
     {
         BistroBuilderStaffPlayerCandidateRow candidate = FindSelectedCandidate();
+        RefreshApprovedRolePortrait(false,
+            candidate != null ? candidate.roleId : string.Empty);
         hireButton.interactable = candidate != null;
 
         if (candidate == null)
