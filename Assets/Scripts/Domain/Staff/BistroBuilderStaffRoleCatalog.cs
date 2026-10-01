@@ -148,9 +148,15 @@ public sealed class BistroBuilderStaffRoleCatalog : ScriptableObject
             string roleId = BistroBuilderStaffStableIdUtility.Normalize(role.roleId);
             string adapterId =
                 BistroBuilderStaffStableIdUtility.Normalize(role.operationalAdapterId);
+            string departmentId =
+                BistroBuilderStaffStableIdUtility.Normalize(role.departmentId);
             if (!BistroBuilderStaffStableIdUtility.IsValid(roleId) ||
                 string.IsNullOrWhiteSpace(role.displayName) ||
                 !BistroBuilderStaffStableIdUtility.IsValidOptional(adapterId) ||
+                !BistroBuilderStaffStableIdUtility.IsValidOptional(departmentId) ||
+                (!string.IsNullOrWhiteSpace(role.departmentDisplayName) &&
+                 role.departmentDisplayName.Length > 64) ||
+                role.departmentSortOrder < 0 ||
                 !ids.Add(roleId))
             {
                 error = "El rol de Personal " + index + " no es válido o está duplicado.";
