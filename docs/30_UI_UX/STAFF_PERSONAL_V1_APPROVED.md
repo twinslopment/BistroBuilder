@@ -43,3 +43,9 @@ Compilación Unity 0 errores; mercado waiter+cook, contratación y desaparición
 - Confirmaciones con identidad fijada, capa modal bloqueante, doble click desarmado y Cancel/Escape a través de EventSystem; hover por ColorTint 0,16 s; sin botón Ascender.
 - Autotest puro de contrato añadido en `Tools/Bistro Builder/Personal/V1 - Verificar contrato visual y mercado`.
 - **Pendiente obligatorio:** compilación/Play Mode real, inspección visual en 1920/1280/800 y regresión Save/Load. La presencia operativa ya tiene implementación estática separada en `docs/20_GAME_SYSTEMS/STAFF_OPERATIONAL_PRESENCE_V1.md` (provisionamiento real de camareros, turnos de cocina y reconciliación Save); sigue pendiente Play Mode/Save real y un prefab 3D de cocinero aprobado. No considerar esa parte PASS por añadir la nueva pantalla.
+
+## Corrección de acceso a Horarios (01/10/2026)
+- La barra normal 21A oculta los antiguos botones de servicios auxiliares, incluido `OpenScheduleButton`; por tanto, PERSONAL debe mostrar una tercera pestaña `Horarios` al lado de Plantilla/Candidatos. Esa pestaña invoca la pantalla **canónica 5E** (no un segundo planificador) y respeta su validación.
+- El panel 5E mostrará camareros y cocineros activos con rol visible, estado `EN TURNO`/`Libre`, y selección de Día + Comida/Cena. La cobertura mínima mostrada se refiere específicamente a **Sala**; `Cobertura mínima` autocompleta solo camareros (sin contratar ni programar cocineros artificialmente).
+- Solo se puede editar con servicio `Closed`. Para comprobar los agentes físicos recién contratados, seleccionar sus filas hasta `EN TURNO`, cerrar el panel y comenzar un **nuevo servicio**. No se agregan personajes a mitad de un servicio ya abierto.
+- Estado de validación: corrección de código subida; falta compilar/revisar visualmente en Unity por bloqueo del gestor de paquetes en la prueba batch aislada.
