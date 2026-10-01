@@ -442,12 +442,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
     private void ApplyApprovedTabState()
     {
         if (!approvedPresentationReady) return;
-        Image staff = staffTabButton.GetComponent<Image>();
-        Image candidates = candidatesTabButton.GetComponent<Image>();
-        if (staff != null) staff.color = viewMode == ViewMode.Staff
-            ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Inset;
-        if (candidates != null) candidates.color = viewMode == ViewMode.Candidates
-            ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Inset;
+        BistroBuilderStaffVisuals.ButtonStyle(staffTabButton, false,
+            viewMode == ViewMode.Staff);
+        BistroBuilderStaffVisuals.ButtonStyle(candidatesTabButton, false,
+            viewMode == ViewMode.Candidates);
     }
 
     private static void SetPortrait(Image image, TMP_Text caption,
@@ -618,7 +616,18 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             : new Color32(213, 194, 168, 255);
         o.effectDistance = new Vector2(0f, -1f);
         Button button = row.GetComponent<Button>();
-        if (button != null) BistroBuilderStaffVisuals.ButtonStyle(button);
+        if (button != null)
+        {
+            BistroBuilderStaffVisuals.ButtonStyle(button, false, selected);
+            ColorBlock colors = button.colors;
+            colors.normalColor = selected
+                ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Paper;
+            colors.highlightedColor = Color.Lerp(colors.normalColor,
+                BistroBuilderStaffVisuals.Amber, .32f);
+            colors.pressedColor = Color.Lerp(colors.normalColor,
+                BistroBuilderStaffVisuals.Ink, .12f);
+            button.colors = colors;
+        }
         if (bg != null) bg.color = selected
             ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Paper;
         TMP_Text[] texts = row.GetComponentsInChildren<TMP_Text>(true);
@@ -783,11 +792,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         {
             if (b == null || !candidateFilterIds.TryGetValue(b, out string id))
                 continue;
-            Image image = b.GetComponent<Image>();
-            if (image != null)
-                image.color = id == selectedCandidateRole
-                    ? BistroBuilderStaffVisuals.Amber
-                    : BistroBuilderStaffVisuals.Inset;
+            BistroBuilderStaffVisuals.ButtonStyle(b, false,
+                id == selectedCandidateRole);
         }
         RenderSelectedCandidate();
         UpdateApprovedRowSelection();
