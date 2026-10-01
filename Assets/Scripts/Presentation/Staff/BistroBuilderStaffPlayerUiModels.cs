@@ -22,6 +22,7 @@ public sealed class BistroBuilderStaffPlayerEmployeeRow
     public long experiencePoints;
     public int level;
     public long nextLevelExperience;
+    public long experienceAtLevel;
     public BistroBuilderEmployeeSkillSet skills =
         new BistroBuilderEmployeeSkillSet();
     public BistroBuilderEmployeePerformanceSummary performance =
