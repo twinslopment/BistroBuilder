@@ -43,6 +43,24 @@ public sealed class Waiter : MonoBehaviour
     public event Action<Waiter, WaiterState> StateChanged;
 
     public int WaiterId => waiterId;
+    /// <summary>
+    /// An identity is assigned only to a freshly cloned, inactive managed
+    /// operational agent. Never re-identify an existing waiter or a bound one.
+    /// </summary>
+    public bool TryConfigureGeneratedIdentity(int newWaiterId)
+    {
+        if (newWaiterId < 1 || gameObject.activeInHierarchy ||
+            GetComponent<BistroBuilderStaffGeneratedWaiter>() == null ||
+            currentState != WaiterState.Idle ||
+            assignedTable != null || assignedBarSpot != null ||
+            assignedOrder != null || !string.IsNullOrEmpty(assignedOrderLineId) ||
+            assignedDeliveryRun != null)
+            return false;
+
+        waiterId = newWaiterId;
+        return true;
+    }
+
     public int FoodDeliveryCapacity => Mathf.Max(1, foodDeliveryCapacity);
     public WaiterState CurrentState => currentState;
     public RestaurantTable AssignedTable => assignedTable;
