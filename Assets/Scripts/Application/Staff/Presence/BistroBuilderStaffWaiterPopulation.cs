@@ -284,6 +284,11 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
             // Restore the scene archetype before activating the newly configured slot.
             template.SetActive(active);
             clone.SetActive(true);
+            if (!clone.activeInHierarchy)
+            {
+                error = "El nuevo camarero depende de un padre inactivo; no puede ofrecer un agente funcional.";
+                return false;
+            }
             if (!waiterTaskCoordinator.RegisterWaiter(next))
             {
                 error = "El coordinador de servicio rechazó el nuevo camarero.";
