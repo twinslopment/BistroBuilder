@@ -35,6 +35,15 @@ public sealed partial class BistroBuilderStaffPlayerScreen
     private GameObject confirmationBlocker;
     private bool approvedPresentationReady;
 
+    // EventSystem dispatches Cancel (Escape/gamepad back) up from the
+    // selected Cancel button; no per-frame input polling is required.
+    public void OnCancel(BaseEventData eventData)
+    {
+        if (pendingConfirmation == PendingConfirmation.None) return;
+        CancelConfirmation();
+        if (eventData != null) eventData.Use();
+    }
+
     private void EnsureApprovedPresentation()
     {
         if (approvedPresentationReady || panelRoot == null ||
@@ -173,7 +182,12 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         if (title != null)
         {
             TMP_Text heading = title.GetComponent<TMP_Text>();
-            if (heading != null) heading.color = StaffInk;
+            if (heading != null)
+            {
+                heading.color = StaffInk;
+                if (BistroBuilderTypography.Title != null)
+                    heading.font = BistroBuilderTypography.Title;
+            }
         }
 
         Button[] buttons = panelRoot.GetComponentsInChildren<Button>(true);
