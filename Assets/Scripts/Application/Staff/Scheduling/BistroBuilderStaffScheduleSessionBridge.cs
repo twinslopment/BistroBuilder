@@ -109,27 +109,13 @@ public sealed class BistroBuilderStaffScheduleSessionBridge : MonoBehaviour
             return false;
         }
 
-        eligibleIds.Clear();
-        for (int index = 0; index < scheduledIds.Count; index++)
+        // Scheduling includes kitchen workers, but only waiter.agent binds
+        // to an operational WaiterId. Cook assignments stay in the kitchen.
+        if (!TryResolveScheduledWaiterIds(out error)) return false;
+        if (eligibleIds.Count == 0)
         {
-            string employeeId = scheduledIds[index];
-            if (!staffService.TryGetEmployee(employeeId, out BistroBuilderEmployeeRecord employee) ||
-                employee == null ||
-                employee.employmentStatus != BistroBuilderEmploymentStatus.Active ||
-                employee.availability != BistroBuilderEmployeeAvailability.Available ||
-                !staffService.TryGetRoleDefinition(
-                    employee.roleId,
-                    out BistroBuilderStaffRoleDefinition role) ||
-                role == null ||
-                !string.Equals(
-                    role.operationalAdapterId,
-                    BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
-                    StringComparison.Ordinal))
-            {
-                error = "Un empleado programado ya no es un camarero activo y disponible: " + employeeId;
-                return false;
-            }
-            eligibleIds.Add(employeeId);
+            error = "El turno explícito no contiene camareros disponibles.";
+            return false;
         }
         eligibleIds.Sort(StringComparer.Ordinal);
 
@@ -203,6 +189,8 @@ public sealed class BistroBuilderStaffScheduleSessionBridge : MonoBehaviour
             return true;
         }
 
+        if (!TryResolveScheduledWaiterIds(out error)) return false;
+
         BistroBuilderStaffSessionSnapshot session = sessionService.CreateSessionSnapshot();
         var bound = new HashSet<string>(StringComparer.Ordinal);
         if (session != null && session.bindings != null)
@@ -214,20 +202,51 @@ public sealed class BistroBuilderStaffScheduleSessionBridge : MonoBehaviour
             }
         }
 
-        for (int index = 0; index < scheduledIds.Count; index++)
+        for (int index = 0; index < eligibleIds.Count; index++)
         {
-            if (!bound.Contains(scheduledIds[index]))
+            if (!bound.Contains(eligibleIds[index]))
             {
-                error = "La sesión 4D no contiene todo el turno programado.";
+                error = "La sesión 4D no contiene todos los camareros programados.";
                 return false;
             }
         }
-        if (bound.Count != scheduledIds.Count)
+        if (bound.Count != eligibleIds.Count)
         {
             error = "La sesión 4D contiene empleados no programados.";
             return false;
         }
 
+        error = string.Empty;
+        return true;
+    }
+
+    private bool TryResolveScheduledWaiterIds(out string error)
+    {
+        eligibleIds.Clear();
+        for (int index = 0; index < scheduledIds.Count; index++)
+        {
+            string employeeId = scheduledIds[index];
+            if (!staffService.TryGetEmployee(employeeId, out BistroBuilderEmployeeRecord employee) ||
+                employee == null ||
+                employee.employmentStatus != BistroBuilderEmploymentStatus.Active ||
+                employee.availability != BistroBuilderEmployeeAvailability.Available ||
+                !staffService.TryGetRoleDefinition(
+                    employee.roleId, out BistroBuilderStaffRoleDefinition role) ||
+                role == null || !role.active)
+            {
+                error = "El turno contiene un empleado no disponible o un rol inválido: " +
+                    employeeId;
+                return false;
+            }
+
+            // The cook schedule remains authoritative for Kitchen; it is not a
+            // waiter slot and must never be passed to staff.session.runtime.
+            if (string.Equals(role.operationalAdapterId,
+                BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
+                StringComparison.Ordinal))
+                eligibleIds.Add(employeeId);
+        }
+        eligibleIds.Sort(StringComparer.Ordinal);
         error = string.Empty;
         return true;
     }
