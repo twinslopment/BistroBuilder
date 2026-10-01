@@ -32,7 +32,7 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
         Waiter source = FindSource();
         if (source == null)
         {
-            error = "No hay un arquetipo Waiter completo (Waiter y WaiterMovementView) que reproducir.";
+            error = "No hay un arquetipo Waiter completo con movimiento, comandas, reparto, cuenta y limpieza.";
             return false;
         }
 
@@ -206,7 +206,11 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
             Waiter source = allAgents[i];
             if (source != null &&
                 source.GetComponent<BistroBuilderStaffGeneratedWaiter>() == null &&
-                source.GetComponentInChildren<WaiterMovementView>(true) != null)
+                source.GetComponent<WaiterMovementView>() != null &&
+                source.GetComponent<WaiterTableServiceFlow>() != null &&
+                source.GetComponent<FoodDeliveryServiceFlow>() != null &&
+                source.GetComponent<BillServiceFlow>() != null &&
+                source.GetComponent<TableCleaningServiceFlow>() != null)
                 return source;
         }
         return null;
@@ -280,7 +284,11 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
             // Restore the scene archetype before activating the newly configured slot.
             template.SetActive(active);
             clone.SetActive(true);
-            waiterTaskCoordinator.RegisterWaiter(next);
+            if (!waiterTaskCoordinator.RegisterWaiter(next))
+            {
+                error = "El coordinador de servicio rechazó el nuevo camarero.";
+                return false;
+            }
             result = next;
             return true;
         }
