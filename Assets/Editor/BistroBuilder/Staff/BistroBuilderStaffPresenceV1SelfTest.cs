@@ -42,7 +42,8 @@ public static class BistroBuilderStaffPresenceV1SelfTest
             population.Contains("TableCleaningServiceFlow") &&
             population.Contains("RegisterWaiter(next)"),
             "El nuevo camarero es un agente funcional completo, no decoración.");
-        Check(session.Contains("TryEnsureMinimumSlots(employeeBuffer.Count") &&
+        Check(session.Contains("ResolveRequiredWaiterSlots(") &&
+            session.Contains("TryEnsureMinimumSlots(requestedSlots") &&
             session.Contains("ApplyBoundVisibility(sessionState)"),
             "4D obtiene suficientes slots antes del binding y oculta los no asignados.");
         Check(save.IndexOf("TryReconcileSavedIds(pendingData.waiters", StringComparison.Ordinal) >= 0 &&
