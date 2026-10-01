@@ -118,14 +118,17 @@ public static class BistroBuilderStaffVisuals
         outline.effectDistance = new Vector2(1f, -1f);
         outline.useGraphicAlpha = false;
         button.transition = Selectable.Transition.ColorTint;
+        // Unity ColorTint writes Graphic.color directly; tinting from
+        // white would erase the parchment/amber state on the first hover.
+        Color baseColor = destructive ? Danger : primary ? Amber : Inset;
         ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = destructive
-            ? new Color(1.15f, .95f, .95f, 1f)
-            : new Color(1.12f, 1.075f, 1.025f, 1f);
-        colors.pressedColor = new Color(.89f, .84f, .75f, 1f);
+        colors.normalColor = baseColor;
+        colors.highlightedColor = Color.Lerp(baseColor, Paper,
+            destructive ? .10f : .20f);
+        colors.pressedColor = Color.Lerp(baseColor, Ink, .14f);
         colors.selectedColor = colors.highlightedColor;
-        colors.disabledColor = new Color(1f, 1f, 1f, .42f);
+        colors.disabledColor = new Color(baseColor.r, baseColor.g,
+            baseColor.b, .42f);
         colors.fadeDuration = .16f;
         colors.colorMultiplier = 1f;
         button.colors = colors;
