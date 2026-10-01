@@ -32,7 +32,8 @@ public sealed class BistroBuilderStaffRecruitmentProfile : ScriptableObject
     [Header("Roles candidatos")]
     [SerializeField] private List<string> enabledRoleIds = new List<string>
     {
-        "waiter"
+        "waiter",
+        "cook"
     };
 
     [Header("Nombres")]
