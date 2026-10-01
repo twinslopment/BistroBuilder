@@ -16,6 +16,9 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     [SerializeField] private BistroBuilderCanonicalOrderService canonicalOrderService;
     [SerializeField] private BistroBuilderKitchenStationCatalog stationCatalog;
     [SerializeField] private BistroBuilderStaffService staffService;
+    private BistroBuilderStaffScheduleService cookScheduleService;
+    private BistroBuilderGeneralGameStateService cookGameStateService;
+    private BistroBuilderCanonicalOrderIntegrationService cookMealService;
     [SerializeField] private BistroBuilderKitchenInteractionCoordinator interactionCoordinator;
     [SerializeField] private bool automaticIncidents = true;
     [SerializeField, Range(2f, 60f)] private float equipmentRepairSeconds = 8f;
@@ -29,6 +32,8 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     private readonly List<string> routeBuffer = new List<string>(4);
     private readonly List<BistroBuilderEmployeeRecord> cookBuffer =
         new List<BistroBuilderEmployeeRecord>(16);
+    private readonly List<string> scheduledCookEmployeeIds =
+        new List<string>(16);
     private readonly List<WorkItem> removalBuffer = new List<WorkItem>(32);
 
     private BistroBuilderKitchenIntakeMode intakeMode;
@@ -761,13 +766,27 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
     {
         cookBuffer.Clear();
         staffService.CopyEmployeesByRole("cook", cookBuffer, true);
+        scheduledCookEmployeeIds.Clear();
+
+        // The kitchen consumes scheduled EmployeeIds; it does not own a
+        // second staff roster or grant a cook's shift on its own.
+        bool enforceKitchenShift = cookScheduleService != null &&
+            cookGameStateService != null && cookMealService != null &&
+            cookMealService.CurrentMealService != BistroBuilderMealServiceAvailability.None;
+        if (enforceKitchenShift)
+            cookScheduleService.CopyScheduledEmployeeIds(
+                Math.Max(1, cookGameStateService.DayIndex),
+                cookMealService.CurrentMealService, scheduledCookEmployeeIds);
+
         BistroBuilderEmployeeRecord best = null;
         int bestScore = int.MinValue;
         for (int i = 0; i < cookBuffer.Count; i++)
         {
             BistroBuilderEmployeeRecord cook = cookBuffer[i];
             if (cook == null ||
-                cook.availability != BistroBuilderEmployeeAvailability.Available)
+                cook.availability != BistroBuilderEmployeeAvailability.Available ||
+                (enforceKitchenShift &&
+                 !scheduledCookEmployeeIds.Contains(cook.employeeId)))
                 continue;
             int score = BistroBuilderAdvancedKitchenPolicy.ResolveCookSpeedBasisPoints(cook);
             score += BistroBuilderAdvancedKitchenPolicy.StableRoll(
@@ -1005,6 +1024,9 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
         if (canonicalOrderService == null && lineExecutionService != null)
             canonicalOrderService = lineExecutionService.CanonicalOrderService;
         if (staffService == null) TryGetComponent(out staffService);
+        if (cookScheduleService == null) TryGetComponent(out cookScheduleService);
+        if (cookGameStateService == null) TryGetComponent(out cookGameStateService);
+        if (cookMealService == null) TryGetComponent(out cookMealService);
         if (interactionCoordinator == null)
         {
             interactionCoordinator = GetComponent<BistroBuilderKitchenInteractionCoordinator>();
