@@ -81,6 +81,50 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             activeServiceBindings = sessionService.BindingCount
         };
 
+        // Role metadata is the source for playable departments, not sample
+        // names from the approved mock-up or an invented hiring cap.
+        BistroBuilderStaffRoleCatalog roleCatalog = staffService.RoleCatalog;
+        if (roleCatalog != null && roleCatalog.Roles != null)
+        {
+            foreach (BistroBuilderStaffRoleDefinition role in roleCatalog.Roles)
+            {
+                if (role == null || !role.active ||
+                    string.IsNullOrWhiteSpace(role.operationalAdapterId))
+                    continue;
+                string id = string.IsNullOrWhiteSpace(role.departmentId)
+                    ? role.roleId : role.departmentId;
+                BistroBuilderStaffPlayerDepartmentRow department = null;
+                for (int i = 0; i < built.departments.Count; i++)
+                    if (string.Equals(built.departments[i].departmentId, id,
+                        StringComparison.Ordinal))
+                    {
+                        department = built.departments[i];
+                        break;
+                    }
+                if (department == null)
+                {
+                    department = new BistroBuilderStaffPlayerDepartmentRow
+                    {
+                        departmentId = id,
+                        displayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
+                            ? role.displayName : role.departmentDisplayName,
+                        sortOrder = role.departmentSortOrder > 0
+                            ? role.departmentSortOrder : 100
+                    };
+                    built.departments.Add(department);
+                }
+                if (!department.roleIds.Contains(role.roleId))
+                    department.roleIds.Add(role.roleId);
+            }
+        }
+        built.departments.Sort((a, b) =>
+        {
+            int order = a.sortOrder.CompareTo(b.sortOrder);
+            return order != 0 ? order
+                : string.Compare(a.displayName, b.displayName,
+                    StringComparison.OrdinalIgnoreCase);
+        });
+
         employeeBuffer.Clear();
         staffService.CopyEmployees(employeeBuffer, true);
         employeeBuffer.Sort(CompareEmployees);

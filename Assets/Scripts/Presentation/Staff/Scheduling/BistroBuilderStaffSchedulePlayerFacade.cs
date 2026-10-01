@@ -63,10 +63,20 @@ public sealed class BistroBuilderStaffSchedulePlayerFacade : MonoBehaviour
 
         employees.Clear();
         staffService.CopyEmployees(employees, false);
-        employees.Sort((left, right) => string.Compare(
-            left?.FullName,
-            right?.FullName,
-            StringComparison.OrdinalIgnoreCase));
+        employees.Sort((left, right) =>
+        {
+            if (ReferenceEquals(left, right)) return 0;
+            if (left == null) return 1;
+            if (right == null) return -1;
+            int a = 100, b = 100;
+            if (staffService.TryGetRoleDefinition(left.roleId, out var leftRole) &&
+                leftRole != null) a = leftRole.departmentSortOrder;
+            if (staffService.TryGetRoleDefinition(right.roleId, out var rightRole) &&
+                rightRole != null) b = rightRole.departmentSortOrder;
+            int group = a.CompareTo(b);
+            return group != 0 ? group : string.Compare(left.FullName,
+                right.FullName, StringComparison.OrdinalIgnoreCase);
+        });
 
         for (int index = 0; index < employees.Count; index++)
         {
@@ -86,16 +96,45 @@ public sealed class BistroBuilderStaffSchedulePlayerFacade : MonoBehaviour
                     StringComparison.Ordinal)))
                 continue;
 
-            built.employees.Add(new BistroBuilderStaffSchedulePlayerRow
+            if (employee.employmentStatus != BistroBuilderEmploymentStatus.Active)
+                continue;
+
+            var row = new BistroBuilderStaffSchedulePlayerRow
             {
                 employeeId = employee.employeeId,
                 displayName = employee.FullName,
                 roleName = role.displayName,
+                departmentId = string.IsNullOrWhiteSpace(role.departmentId)
+                    ? role.roleId : role.departmentId,
+                departmentDisplayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
+                    ? role.displayName : role.departmentDisplayName,
+                departmentSortOrder = role.departmentSortOrder > 0
+                    ? role.departmentSortOrder : 100,
+                operationalAdapterId = role.operationalAdapterId,
                 salaryCentsPerService = employee.salaryCentsPerService,
                 available = employee.availability == BistroBuilderEmployeeAvailability.Available,
                 scheduled = scheduleService.IsScheduled(
                     employee.employeeId, dayIndex, mealService)
-            });
+            };
+            built.employees.Add(row);
+            if (!row.scheduled) continue;
+
+            long salary = Math.Max(0L, row.salaryCentsPerService);
+            if (string.Equals(row.operationalAdapterId,
+                BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
+                StringComparison.Ordinal))
+            {
+                built.scheduledWaiters++;
+                built.projectedWaiterSalaryCents += salary;
+            }
+            else if (string.Equals(row.operationalAdapterId,
+                BistroBuilderStaffOperationalAdapterIds.CookAgent,
+                StringComparison.Ordinal))
+            {
+                built.scheduledCooks++;
+                built.projectedCookSalaryCents += salary;
+            }
+            built.projectedTotalSalaryCents += salary;
         }
 
         snapshot = built;

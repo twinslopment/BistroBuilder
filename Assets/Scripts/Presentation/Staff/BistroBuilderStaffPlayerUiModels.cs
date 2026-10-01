@@ -77,12 +77,25 @@ public sealed class BistroBuilderStaffPlayerTrainingRow
 /// Se reconstruye desde autoridades canónicas cuando Presentation lo solicita.
 /// </summary>
 [Serializable]
+public sealed class BistroBuilderStaffPlayerDepartmentRow
+{
+    public string departmentId = string.Empty;
+    public string displayName = string.Empty;
+    public int sortOrder = 100;
+    public List<string> roleIds = new List<string>();
+}
+
+/// <summary>Single read-only snapshot, including active catalogue departments
+/// even when the current restaurant has no employees yet.</summary>
+[Serializable]
 public sealed class BistroBuilderStaffPlayerUiSnapshot
 {
     public long staffRevision;
     public long marketRevision;
     public bool hasActiveServiceSession;
     public int activeServiceBindings;
+    public List<BistroBuilderStaffPlayerDepartmentRow> departments =
+        new List<BistroBuilderStaffPlayerDepartmentRow>();
     public List<BistroBuilderStaffPlayerEmployeeRow> employees =
         new List<BistroBuilderStaffPlayerEmployeeRow>();
     public List<BistroBuilderStaffPlayerCandidateRow> candidates =
