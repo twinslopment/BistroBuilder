@@ -35,14 +35,17 @@ public static class BistroBuilderStaffScheduleAutofillPreservationSelfTest
             "public static bool TryBuildMinimumWaiterPlan(", StringComparison.Ordinal);
         string fill = fillStart >= 0 ? source.Substring(fillStart) : string.Empty;
         Check(fill.Contains("CopyScheduledEmployeeIds(") &&
-              fill.Contains("current, dayIndex, mealService, ids"),
+              fill.Contains("current, dayIndex, mealService, planned"),
             "Cobertura mínima empieza por el turno existente, incluidos cocineros.");
         Check(fill.Contains("if (!planned.Add(id)) continue;") &&
               fill.Contains("ids.Add(id);"),
             "Solo agrega camareros faltantes, sin repetir EmployeeId.");
-        Check(fill.Contains("scheduledWaiters >= profile.MinimumRecommendedWaiters") &&
+        Check(fill.Contains("waiterCount >= profile.MinimumRecommendedWaiters") &&
               fill.Contains("result = current.DeepClone();"),
             "No incrementa revisión ni sustituye turnos si Sala ya está cubierta.");
+        Check(!fill.Contains("return TryReplaceServiceAssignments(") &&
+              fill.Contains("updated = current.DeepClone();"),
+            "Auto-fill conserva exactamente ventanas y asignaciones preexistentes.");
         Check(fill.Contains("if (candidates.Count == 0)"),
             "Cocineros solos no se computan como cobertura de Sala.");
         Check(ui.Contains("projectedCookSalaryCents += salary") &&
