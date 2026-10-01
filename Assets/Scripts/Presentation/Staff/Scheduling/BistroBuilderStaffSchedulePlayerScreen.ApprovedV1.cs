@@ -150,6 +150,16 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen
             ScrollRect s = scroll.GetComponent<ScrollRect>();
             if (s != null) s.scrollSensitivity = 23f;
         }
+        // Retire the obsolete black-layout column headings. Department
+        // bands create the matching parchment headers inside the scroll.
+        foreach (string legacy in new[] {
+            "EmployeeHeader", "AvailabilityHeader", "SalaryHeader", "ShiftHeader"
+        })
+        {
+            Transform oldHeading = panelRoot.transform.Find(legacy);
+            if (oldHeading != null) oldHeading.gameObject.SetActive(false);
+        }
+
         BistroBuilderStaffVisuals.Place(emptyStateText.rectTransform,
             .15f, .30f, .85f, .60f);
         BistroBuilderStaffVisuals.TextStyle(emptyStateText, 21f, true,
