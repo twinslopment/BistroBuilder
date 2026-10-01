@@ -301,6 +301,8 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             experiencePoints = employee.experiencePoints,
             level = level,
             nextLevelExperience = nextLevelExperience,
+            experienceAtLevel = BistroBuilderStaffDevelopmentEngine.GetExperienceRequiredForLevel(
+                level, developmentService.DevelopmentProfile),
             skills = employee.skills != null
                 ? employee.skills.DeepClone()
                 : new BistroBuilderEmployeeSkillSet(),
