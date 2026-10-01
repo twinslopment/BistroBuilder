@@ -208,10 +208,18 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen
             bg.color = data.scheduled ? BistroBuilderStaffVisuals.Amber
                 : BistroBuilderStaffVisuals.Paper;
         Button button = row.GetComponent<Button>();
-        if (button != null) BistroBuilderStaffVisuals.ButtonStyle(button);
-        if (bg != null)
-            bg.color = data.scheduled ? BistroBuilderStaffVisuals.Amber
+        if (button != null)
+        {
+            BistroBuilderStaffVisuals.ButtonStyle(button, false, data.scheduled);
+            ColorBlock color = button.colors;
+            color.normalColor = data.scheduled ? BistroBuilderStaffVisuals.Amber
                 : BistroBuilderStaffVisuals.Paper;
+            color.highlightedColor = Color.Lerp(color.normalColor,
+                BistroBuilderStaffVisuals.Paper, .23f);
+            button.colors = color;
+        }
+        if (bg != null) bg.color = data.scheduled
+            ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Paper;
         void Style(string name, float a, float b, float size)
         {
             RectTransform rect = row.transform.Find(name) as RectTransform;
@@ -262,9 +270,7 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen
     private void SetApprovedMealButtonState(Button button, bool selected)
     {
         if (button == null) return;
-        Image graphic = button.GetComponent<Image>();
-        if (graphic != null) graphic.color = selected
-            ? BistroBuilderStaffVisuals.Amber : BistroBuilderStaffVisuals.Inset;
+        BistroBuilderStaffVisuals.ButtonStyle(button, false, selected);
         TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
         if (text != null) text.color = BistroBuilderStaffVisuals.Ink;
     }
