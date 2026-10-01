@@ -362,8 +362,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
                 out BistroBuilderEmployeeRecord employee,
                 out string error))
         {
-            ShowFeedback(error);
             Refresh();
+            ShowFeedback(error);
             return;
         }
 
@@ -388,8 +388,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
                 out _,
                 out string error))
         {
-            ShowFeedback(error);
             Refresh();
+            ShowFeedback(error);
             return;
         }
 
