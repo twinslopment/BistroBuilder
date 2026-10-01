@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,7 +9,7 @@ using UnityEngine.UI;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Staff/Staff Schedule Player Screen")]
-public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
+public sealed partial class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
 {
     [SerializeField] private BistroBuilderStaffSchedulePlayerFacade facade;
     [SerializeField] private GameObject panelRoot;
@@ -78,6 +80,8 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
         }
         dayIndex = facade.CurrentDayIndex;
         mealService = BistroBuilderMealServiceAvailability.Lunch;
+        BistroBuilderManagementSafeArea.Install(panelRoot.transform as RectTransform);
+        EnsureApprovedSchedulePresentation();
         panelRoot.SetActive(true);
         Refresh();
     }
@@ -85,6 +89,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
     public void Hide()
     {
         if (panelRoot != null) panelRoot.SetActive(false);
+        returnToPersonal = null;
         ShowFeedback(string.Empty);
     }
 
@@ -104,30 +109,47 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
         emptyStateText.gameObject.SetActive(!hasEmployees);
         emptyStateText.text = hasEmployees
             ? string.Empty
-            : "No hay empleados operativos en plantilla. Contrata desde Personal para planificar turnos.";
-        for (int index = 0; index < snapshot.employees.Count; index++)
+            : "No hay personal operativo contratado. Contrata desde Candidatos.";
+
+        var members = new List<BistroBuilderStaffSchedulePlayerRow>(
+            snapshot.employees);
+        members.Sort((a, b) =>
         {
+            if (ReferenceEquals(a, b)) return 0;
+            if (a == null) return 1;
+            if (b == null) return -1;
+            int order = a.departmentSortOrder.CompareTo(b.departmentSortOrder);
+            return order != 0 ? order :
+                string.Compare(a.displayName, b.displayName,
+                    StringComparison.OrdinalIgnoreCase);
+        });
+        string last = null;
+        foreach (var person in members)
+        {
+            if (person == null) continue;
+            string group = person.departmentDisplayName;
+            if (!string.Equals(group, last, StringComparison.Ordinal))
+            {
+                int count = 0;
+                foreach (var entry in members)
+                    if (entry != null && string.Equals(
+                        entry.departmentDisplayName, group,
+                        StringComparison.Ordinal))
+                        count++;
+                CreateScheduleDepartmentHeading(group, count);
+                last = group;
+            }
             BistroBuilderStaffScheduleEmployeeRowView row = Instantiate(
                 employeeRowPrefab, employeeContent);
             row.gameObject.SetActive(true);
-            row.Bind(snapshot.employees[index], HandleToggleEmployee);
+            row.Bind(person, HandleToggleEmployee);
+            StyleScheduleEmployeeRow(row.gameObject, person);
         }
 
-        headerText.text = "Día " + dayIndex + " · " +
-            (mealService == BistroBuilderMealServiceAvailability.Lunch ? "Comida" : "Cena");
-        BistroBuilderStaffScheduleCoverage coverage = snapshot.coverage;
-        coverageText.text = coverage != null
-            ? "Cobertura de sala: " + coverage.scheduledWaiters + "/" +
-              coverage.minimumRecommendedWaiters + " camareros · Coste previsto: " +
-              (coverage.projectedSalaryCents / 100m).ToString("0.00") + " € · " +
-              (coverage.isSufficient ? "SUFICIENTE" : "INSUFICIENTE")
-            : string.Empty;
-
-        coverageText.color = coverage == null
-            ? new Color(0.78f, 0.78f, 0.75f, 1f)
-            : coverage.isSufficient
-                ? new Color(0.62f, 0.82f, 0.66f, 1f)
-                : new Color(0.95f, 0.72f, 0.38f, 1f);
+        headerText.text = "DÍA " + dayIndex + "  ·  " +
+            (mealService == BistroBuilderMealServiceAvailability.Lunch
+                ? "COMIDA" : "CENA");
+        RenderApprovedScheduleTotals(snapshot);
         UpdateMealButtonState();
         previousDayButton.interactable = dayIndex > facade.CurrentDayIndex;
         nextDayButton.interactable =
@@ -193,8 +215,10 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
 
     private void UpdateMealButtonState()
     {
-        SetButtonState(lunchButton, mealService == BistroBuilderMealServiceAvailability.Lunch);
-        SetButtonState(dinnerButton, mealService == BistroBuilderMealServiceAvailability.Dinner);
+        SetApprovedMealButtonState(lunchButton,
+            mealService == BistroBuilderMealServiceAvailability.Lunch);
+        SetApprovedMealButtonState(dinnerButton,
+            mealService == BistroBuilderMealServiceAvailability.Dinner);
     }
 
     private static void SetButtonState(Button button, bool active)
@@ -214,7 +238,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
     private void Bind()
     {
         if (bound) return;
-        if (closeButton != null) closeButton.onClick.AddListener(Hide);
+        if (closeButton != null) closeButton.onClick.AddListener(HandleApprovedClose);
         if (previousDayButton != null) previousDayButton.onClick.AddListener(HandlePreviousDay);
         if (nextDayButton != null) nextDayButton.onClick.AddListener(HandleNextDay);
         if (lunchButton != null) lunchButton.onClick.AddListener(HandleLunch);
@@ -227,7 +251,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
     private void Unbind()
     {
         if (!bound) return;
-        if (closeButton != null) closeButton.onClick.RemoveListener(Hide);
+        if (closeButton != null) closeButton.onClick.RemoveListener(HandleApprovedClose);
         if (previousDayButton != null) previousDayButton.onClick.RemoveListener(HandlePreviousDay);
         if (nextDayButton != null) nextDayButton.onClick.RemoveListener(HandleNextDay);
         if (lunchButton != null) lunchButton.onClick.RemoveListener(HandleLunch);
@@ -241,7 +265,12 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
     {
         if (employeeContent == null) return;
         for (int index = employeeContent.childCount - 1; index >= 0; index--)
-            Destroy(employeeContent.GetChild(index).gameObject);
+        {
+            GameObject child = employeeContent.GetChild(index).gameObject;
+            child.SetActive(false);
+            Destroy(child);
+        }
+        approvedScheduleGroupHeadings.Clear();
     }
 
     private void HandleInvalidated() => Refresh();
