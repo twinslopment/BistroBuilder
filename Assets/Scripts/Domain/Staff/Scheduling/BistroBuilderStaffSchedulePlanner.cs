@@ -175,6 +175,18 @@ public static class BistroBuilderStaffSchedulePlanner
         for (int index = 0; index < candidates.Count; index++)
             if (planned.Contains(candidates[index].employeeId)) scheduledWaiters++;
 
+        if (candidates.Count == 0)
+        {
+            error = "No hay camareros activos y disponibles para completar la cobertura.";
+            return false;
+        }
+        if (scheduledWaiters >= profile.MinimumRecommendedWaiters)
+        {
+            result = current.DeepClone();
+            error = string.Empty;
+            return true;
+        }
+
         for (int index = 0; index < candidates.Count &&
              scheduledWaiters < count; index++)
         {
