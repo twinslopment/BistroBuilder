@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Staff/Staff Player Screen")]
-public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour
+public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, UnityEngine.EventSystems.ICancelHandler
 {
     private enum ViewMode
     {
