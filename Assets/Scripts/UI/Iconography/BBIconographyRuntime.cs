@@ -134,6 +134,7 @@ namespace BistroBuilder.UI.Iconography
         public static bool TryDecorate(Button button)
         {
             if (button == null ||
+                button.GetComponentInParent<BistroBuilderUiStyleIsolation>(true) != null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
                 button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null)
@@ -164,6 +165,7 @@ namespace BistroBuilder.UI.Iconography
             bool iconOnly = false)
         {
             if (button == null ||
+                button.GetComponentInParent<BistroBuilderUiStyleIsolation>(true) != null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
                 button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null ||
@@ -248,6 +250,7 @@ namespace BistroBuilder.UI.Iconography
             id = default;
             semantic = false;
             if (button == null ||
+                button.GetComponentInParent<BistroBuilderUiStyleIsolation>(true) != null ||
                 button.GetComponentInParent<BistroBuilderEditChromeSurface>(true) != null ||
                 button.GetComponentInParent<ActivityPanelResponsiveLayout>(true) != null ||
                 button.GetComponent<BistroBuilderApprovedTopBarHotspot>() != null)
