@@ -76,10 +76,14 @@ public sealed class BistroBuilderStaffSchedulePlayerFacade : MonoBehaviour
                     employee.roleId,
                     out BistroBuilderStaffRoleDefinition role) ||
                 role == null ||
-                !string.Equals(
+                !(string.Equals(
                     role.operationalAdapterId,
                     BistroBuilderStaffOperationalAdapterIds.WaiterAgent,
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal) ||
+                  string.Equals(
+                    role.operationalAdapterId,
+                    BistroBuilderStaffOperationalAdapterIds.CookAgent,
+                    StringComparison.Ordinal)))
                 continue;
 
             built.employees.Add(new BistroBuilderStaffSchedulePlayerRow

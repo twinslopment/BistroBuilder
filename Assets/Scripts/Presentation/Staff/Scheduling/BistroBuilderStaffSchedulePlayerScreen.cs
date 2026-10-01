@@ -104,7 +104,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
         emptyStateText.gameObject.SetActive(!hasEmployees);
         emptyStateText.text = hasEmployees
             ? string.Empty
-            : "No hay camareros en plantilla. Contrata Personal para empezar a planificar turnos.";
+            : "No hay empleados operativos en plantilla. Contrata desde Personal para planificar turnos.";
         for (int index = 0; index < snapshot.employees.Count; index++)
         {
             BistroBuilderStaffScheduleEmployeeRowView row = Instantiate(
@@ -117,7 +117,7 @@ public sealed class BistroBuilderStaffSchedulePlayerScreen : MonoBehaviour
             (mealService == BistroBuilderMealServiceAvailability.Lunch ? "Comida" : "Cena");
         BistroBuilderStaffScheduleCoverage coverage = snapshot.coverage;
         coverageText.text = coverage != null
-            ? "Cobertura: " + coverage.scheduledWaiters + "/" +
+            ? "Cobertura de sala: " + coverage.scheduledWaiters + "/" +
               coverage.minimumRecommendedWaiters + " camareros · Coste previsto: " +
               (coverage.projectedSalaryCents / 100m).ToString("0.00") + " € · " +
               (coverage.isSufficient ? "SUFICIENTE" : "INSUFICIENTE")

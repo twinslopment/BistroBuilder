@@ -69,6 +69,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         ApplyApprovedRect(closeButton.transform as RectTransform, .875f, .927f, .970f, .980f);
         ApplyApprovedRect(staffTabButton.transform as RectTransform, .035f, .867f, .172f, .918f);
         ApplyApprovedRect(candidatesTabButton.transform as RectTransform, .183f, .867f, .326f, .918f);
+        CreateApprovedScheduleTab();
         ApplyApprovedRect(staffPanel.transform as RectTransform, .025f, .048f, .975f, .846f);
         ApplyApprovedRect(candidatesPanel.transform as RectTransform, .025f, .048f, .975f, .846f);
 
@@ -328,6 +329,56 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             if (BistroBuilderTypography.Body != null)
                 label.font = BistroBuilderTypography.Body;
         }
+    }
+
+    /// <summary>
+    /// Staff and Schedule are one player workflow. The original 5E launcher is
+    /// suppressed by the normal HUD shell, so expose its REAL screen here.
+    /// No new schedule state, separate timetable, or direct snapshot mutation.
+    /// </summary>
+    private void CreateApprovedScheduleTab()
+    {
+        Transform existing = panelRoot.transform.Find("ApprovedScheduleTab");
+        if (existing != null) return;
+        RectTransform rect = NewApprovedRect("ApprovedScheduleTab", panelRoot.transform);
+        ApplyApprovedRect(rect, .338f, .867f, .481f, .918f);
+        Image background = rect.gameObject.AddComponent<Image>();
+        Button button = rect.gameObject.AddComponent<Button>();
+        button.targetGraphic = background;
+        CreateApprovedLabel(rect, "Label", "Horarios", .03f, 0f, .97f, 1f, 16f)
+            .alignment = TextAlignmentOptions.Center;
+        ApplyApprovedButtonStyle(button, StaffInset);
+        button.onClick.AddListener(OpenApprovedSchedule);
+    }
+
+    private void OpenApprovedSchedule()
+    {
+        BistroBuilderStaffSchedulePlayerScreen[] screens =
+            FindObjectsByType<BistroBuilderStaffSchedulePlayerScreen>(
+                FindObjectsInactive.Include, FindObjectsSortMode.InstanceID);
+        BistroBuilderStaffSchedulePlayerScreen target = null;
+        for (int i = 0; i < screens.Length; i++)
+            if (screens[i] != null && screens[i].gameObject.scene == gameObject.scene)
+            {
+                if (target != null)
+                {
+                    ShowFeedback("Horarios contiene más de una pantalla 5E en la escena.");
+                    return;
+                }
+                target = screens[i];
+            }
+        if (target == null)
+        {
+            ShowFeedback("No está instalada la pantalla de Horarios 5E.");
+            return;
+        }
+        if (!target.ValidateConfiguration(out string error))
+        {
+            ShowFeedback(error);
+            return;
+        }
+        Hide();
+        target.Show();
     }
 
     private void ApplyApprovedTabState()
