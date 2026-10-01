@@ -449,6 +449,19 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
 
         if (!pendingData.wasActiveService)
         {
+            // A closed checkpoint has no generated operational slots. Retire
+            // leftovers from the previously running service before 4D restores
+            // its inactive snapshot; never destroy authored scene archetypes.
+            if (waiterPopulation == null) TryGetComponent(out waiterPopulation);
+            if (waiterPopulation != null &&
+                !waiterPopulation.TryReconcileSavedIds(
+                    Array.Empty<BistroBuilderWaiterRuntimeSaveRecord>(),
+                    out string closedPresenceError))
+            {
+                context.Fail(closedPresenceError);
+                yield break;
+            }
+
             customerGroupSpawner.RestoreNextGroupId(pendingData.nextGroupId);
 
             if (!orderSystem.TryRestoreNextOrderId(
