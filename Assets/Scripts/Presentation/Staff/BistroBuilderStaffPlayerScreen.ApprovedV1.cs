@@ -199,6 +199,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] == null) continue;
+            // Remove legacy injected art, which may have run before the
+            // approved subtree was isolated on the first opening.
+            Transform injected = buttons[i].transform.Find("BB_Icon21B");
+            if (injected != null) injected.gameObject.SetActive(false);
             ApplyApprovedButtonStyle(buttons[i],
                 buttons[i] == dismissButton ? StaffDanger : StaffInset);
         }
