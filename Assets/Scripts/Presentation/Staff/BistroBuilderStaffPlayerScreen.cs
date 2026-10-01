@@ -11,7 +11,7 @@ using UnityEngine.UI;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Staff/Staff Player Screen")]
-public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
+public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour
 {
     private enum ViewMode
     {
@@ -199,6 +199,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
 
     public void Refresh()
     {
+        EnsureApprovedPresentation();
         if (!ValidateConfiguration(out string error))
         {
             ShowFeedback(error);
@@ -216,10 +217,12 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         currentSnapshot = snapshot;
         PreserveValidSelection();
         RebuildRows();
+        RebuildApprovedCandidateFilters();
         RenderHeader();
         RenderSelectedEmployee();
         RenderSelectedCandidate();
         ApplyViewMode();
+        UpdateApprovedRowSelection();
         ShowFeedback(string.Empty);
     }
 
@@ -246,11 +249,13 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
             return;
         }
 
+        if (pendingConfirmation != PendingConfirmation.None) return;
         pendingConfirmation = PendingConfirmation.Hire;
+        pendingTargetId = candidate.candidateId;
         confirmationText.text =
-            "¿Contratar a " + candidate.fullName + " por " +
-            FormatMoney(candidate.expectedSalaryCentsPerService) +
-            " por servicio?";
+            "¿Estás seguro de que quieres contratar a " + candidate.fullName +
+            " como " + candidate.roleDisplayName + "?\nSalario: " +
+            FormatMoney(candidate.expectedSalaryCentsPerService) + " por servicio.";
         SetConfirmationVisible(true);
     }
 
@@ -269,25 +274,29 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
             return;
         }
 
+        if (pendingConfirmation != PendingConfirmation.None) return;
         pendingConfirmation = PendingConfirmation.Dismiss;
+        pendingTargetId = employee.employeeId;
         confirmationText.text =
-            "¿Despedir a " + employee.fullName +
-            "? Esta acción lo retirará de futuras asignaciones.";
+            "¿Estás seguro de que quieres despedir a " + employee.fullName +
+            "?\nDejará de pertenecer a la plantilla activa.";
         SetConfirmationVisible(true);
     }
 
     public void ConfirmPendingAction()
     {
+        if (pendingConfirmation == PendingConfirmation.None) return;
         PendingConfirmation action = pendingConfirmation;
-        CancelConfirmation();
+        string targetId = pendingTargetId;
+        CancelConfirmation(); // Close and disarm *before* issuing any command.
 
         switch (action)
         {
             case PendingConfirmation.Hire:
-                ConfirmHire();
+                ConfirmHire(targetId);
                 break;
             case PendingConfirmation.Dismiss:
-                ConfirmDismiss();
+                ConfirmDismiss(targetId);
                 break;
         }
     }
@@ -295,6 +304,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
     public void CancelConfirmation()
     {
         pendingConfirmation = PendingConfirmation.None;
+        pendingTargetId = string.Empty;
         SetConfirmationVisible(false);
     }
 
@@ -337,9 +347,9 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         Refresh();
     }
 
-    private void ConfirmHire()
+    private void ConfirmHire(string candidateId)
     {
-        BistroBuilderStaffPlayerCandidateRow candidate = FindSelectedCandidate();
+        BistroBuilderStaffPlayerCandidateRow candidate = FindCandidate(candidateId);
         if (candidate == null)
         {
             ShowFeedback("El candidato seleccionado ya no está disponible.");
@@ -348,7 +358,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         }
 
         if (!facade.TryHireCandidate(
-                candidate.candidateId,
+                candidateId,
                 out BistroBuilderEmployeeRecord employee,
                 out string error))
         {
@@ -363,9 +373,9 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         Refresh();
     }
 
-    private void ConfirmDismiss()
+    private void ConfirmDismiss(string employeeId)
     {
-        BistroBuilderStaffPlayerEmployeeRow employee = FindSelectedEmployee();
+        BistroBuilderStaffPlayerEmployeeRow employee = FindEmployee(employeeId);
         if (employee == null)
         {
             ShowFeedback("El empleado seleccionado ya no existe.");
@@ -374,7 +384,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         }
 
         if (!facade.TryDismissEmployee(
-                employee.employeeId,
+                employeeId,
                 out _,
                 out string error))
         {
@@ -390,12 +400,14 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
     {
         selectedEmployeeId = employeeId ?? string.Empty;
         RenderSelectedEmployee();
+        UpdateApprovedRowSelection();
     }
 
     private void HandleCandidateSelected(string candidateId)
     {
         selectedCandidateId = candidateId ?? string.Empty;
         RenderSelectedCandidate();
+        UpdateApprovedRowSelection();
     }
 
     private void HandleViewInvalidated()
@@ -408,32 +420,70 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
 
     private void RebuildRows()
     {
+        ClearApprovedRowsAndFilters();
         ClearRows(employeeRows);
         ClearRows(candidateRows);
 
-        if (currentSnapshot == null)
-        {
-            return;
-        }
+        if (currentSnapshot == null) return;
 
-        for (int index = 0; index < currentSnapshot.employees.Count; index++)
+        // Stable presentation grouping only: Staff's canonical ordering/state
+        // is left intact. Future departments are sourced from role metadata.
+        var grouped = new List<BistroBuilderStaffPlayerEmployeeRow>(
+            currentSnapshot.employees);
+        grouped.Sort((a, b) =>
         {
+            if (ReferenceEquals(a, b)) return 0;
+            if (a == null) return 1;
+            if (b == null) return -1;
+            int group = string.Compare(a.departmentDisplayName,
+                b.departmentDisplayName, StringComparison.OrdinalIgnoreCase);
+            if (group != 0) return group;
+            return string.Compare(a.fullName, b.fullName,
+                StringComparison.OrdinalIgnoreCase);
+        });
+
+        string lastGroup = null;
+        for (int index = 0; index < grouped.Count; index++)
+        {
+            BistroBuilderStaffPlayerEmployeeRow source = grouped[index];
+            if (source == null) continue;
+            string department = string.IsNullOrWhiteSpace(source.departmentDisplayName)
+                ? source.roleDisplayName : source.departmentDisplayName;
+            if (!string.Equals(department, lastGroup, StringComparison.Ordinal))
+            {
+                int count = 0;
+                for (int j = 0; j < grouped.Count; j++)
+                    if (grouped[j] != null &&
+                        string.Equals(
+                            string.IsNullOrWhiteSpace(grouped[j].departmentDisplayName)
+                                ? grouped[j].roleDisplayName : grouped[j].departmentDisplayName,
+                            department, StringComparison.Ordinal))
+                        count++;
+                CreateApprovedDepartmentHeading(department, count);
+                lastGroup = department;
+            }
+
             BistroBuilderStaffPlayerEmployeeRowView row = Instantiate(
-                employeeRowPrefab,
-                employeeListContent);
+                employeeRowPrefab, employeeListContent);
             row.gameObject.SetActive(true);
-            row.Bind(currentSnapshot.employees[index], HandleEmployeeSelected);
+            row.Bind(source, HandleEmployeeSelected);
             employeeRows.Add(row);
+            employeeRowsById[source.employeeId] = row.gameObject;
+            ApplyApprovedRowStyle(row.gameObject, source.employeeId == selectedEmployeeId);
         }
 
         for (int index = 0; index < currentSnapshot.candidates.Count; index++)
         {
+            BistroBuilderStaffPlayerCandidateRow source = currentSnapshot.candidates[index];
+            if (source == null) continue;
             BistroBuilderStaffPlayerCandidateRowView row = Instantiate(
-                candidateRowPrefab,
-                candidateListContent);
+                candidateRowPrefab, candidateListContent);
             row.gameObject.SetActive(true);
-            row.Bind(currentSnapshot.candidates[index], HandleCandidateSelected);
+            row.Bind(source, HandleCandidateSelected);
             candidateRows.Add(row);
+            candidateRowsById[source.candidateId] = row.gameObject;
+            candidateRolesById[source.candidateId] = source.roleId;
+            ApplyApprovedRowStyle(row.gameObject, source.candidateId == selectedCandidateId);
         }
     }
 
@@ -493,8 +543,12 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         employeeSkillsText.text = BuildSkills(employee.skills);
         employeePerformanceText.text = BuildPerformance(employee.performance);
         employeeSessionText.text = employee.hasServiceAssignment
-            ? "Servicio: " + employee.sessionStatus + " · Agente " + employee.waiterId
-            : "Sin asignación de servicio";
+            ? "Departamento: " + employee.departmentDisplayName +
+              "\nEstado: " + FormatSessionStatus(employee.sessionStatus) +
+              (string.Equals(employee.roleId, "waiter", StringComparison.Ordinal)
+                  ? "\nAgente " + employee.waiterId : string.Empty)
+            : "Departamento: " + employee.departmentDisplayName +
+              "\nSin asignación de servicio";
         toggleAvailabilityButtonText.text =
             employee.availability == BistroBuilderEmployeeAvailability.Available
                 ? "Marcar no disponible"
@@ -607,6 +661,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         {
             candidatesPanel.SetActive(viewMode == ViewMode.Candidates);
         }
+        ApplyApprovedTabState();
     }
 
     private void SetConfirmationVisible(bool visible)
@@ -615,6 +670,7 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         {
             confirmationPanel.SetActive(visible);
         }
+        RefreshApprovedConfirmation(visible);
     }
 
     private void ShowFeedback(string message)
@@ -692,6 +748,19 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
         }
     }
 
+    private static string FormatSessionStatus(BistroBuilderEmployeeSessionStatus status)
+    {
+        switch (status)
+        {
+            case BistroBuilderEmployeeSessionStatus.Working:
+                return "Trabajando";
+            case BistroBuilderEmployeeSessionStatus.Assigned:
+                return "Asignado";
+            default:
+                return "Disponible";
+        }
+    }
+
     private static string BuildSkills(BistroBuilderEmployeeSkillSet skills)
     {
         if (skills == null)
@@ -699,10 +768,10 @@ public sealed class BistroBuilderStaffPlayerScreen : MonoBehaviour
             return "Habilidades no disponibles";
         }
 
-        return "Velocidad " + skills.speed +
-               " · Atención " + skills.attentiveness +
-               " · Organización " + skills.organization +
-               " · Trato " + skills.hospitality;
+        return "Velocidad   " + skills.speed +
+               "      Atención   " + skills.attentiveness +
+               "\nOrganización   " + skills.organization +
+               "      Trato   " + skills.hospitality;
     }
 
     private static string BuildPerformance(
