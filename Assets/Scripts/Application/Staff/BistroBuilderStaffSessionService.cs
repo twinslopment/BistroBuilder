@@ -33,6 +33,7 @@ public sealed class BistroBuilderStaffSessionService :
     [SerializeField] private RestaurantServiceStateService restaurantServiceStateService;
     [SerializeField] private WaiterTaskCoordinator waiterTaskCoordinator;
     [SerializeField] private BistroBuilderStaffRecruitmentProfile recruitmentProfile;
+    private BistroBuilderStaffWaiterPopulation waiterPopulation;
 
     [Header("Compatibilidad V1")]
     [Tooltip(
@@ -278,6 +279,13 @@ public sealed class BistroBuilderStaffSessionService :
         staffService.CopyEmployees(employeeBuffer, false);
         FilterAndSortWaiterEmployees(employeeBuffer);
 
+        // The session remains the authority for binding. Population only
+        // provisions a sufficient number of real Waiter slots beforehand.
+        if (employeeBuffer.Count > 0 && waiterPopulation != null &&
+            !waiterPopulation.TryEnsureMinimumSlots(employeeBuffer.Count, out error))
+            return false;
+        if (!RefreshWaiterIndex(out error)) return false;
+
         if (waitersById.Count == 0)
         {
             error = "La escena no contiene agentes Waiter operativos.";
@@ -411,6 +419,7 @@ public sealed class BistroBuilderStaffSessionService :
 
         sessionState = candidate;
         RebuildBindingDictionariesFromState();
+        waiterPopulation?.ApplyBoundVisibility(sessionState);
         EmployeeBoundToService?.Invoke(normalizedEmployee, waiterId);
         AssignmentChanged?.Invoke(normalizedEmployee);
         error = string.Empty;
@@ -475,6 +484,7 @@ public sealed class BistroBuilderStaffSessionService :
         int releasedWaiterId = binding.waiter.WaiterId;
         sessionState = candidate;
         RebuildBindingDictionariesFromState();
+        waiterPopulation?.ApplyBoundVisibility(sessionState);
         EmployeeReleasedFromService?.Invoke(normalized, releasedWaiterId);
         AssignmentChanged?.Invoke(normalized);
         error = string.Empty;
@@ -609,6 +619,7 @@ public sealed class BistroBuilderStaffSessionService :
 
         sessionState = candidate.DeepClone();
         RebuildBindingDictionariesFromState();
+        waiterPopulation?.ApplyBoundVisibility(sessionState);
         suspendedForRuntimeLoad = false;
         SessionRestored?.Invoke();
         error = string.Empty;
@@ -756,6 +767,7 @@ public sealed class BistroBuilderStaffSessionService :
         sessionState = BistroBuilderStaffSessionEngine.CreateInactiveSnapshot();
         bindingsByEmployeeId.Clear();
         bindingsByWaiterId.Clear();
+        waiterPopulation?.ApplyBoundVisibility(sessionState);
 
         for (int index = 0; index < released.Count; index++)
         {
@@ -1103,6 +1115,7 @@ public sealed class BistroBuilderStaffSessionService :
             bindingsByWaiterId.Add(pair.Key, pair.Value);
         }
 
+        waiterPopulation?.ApplyBoundVisibility(sessionState);
         if (sessionState.active)
         {
             foreach (KeyValuePair<string, RuntimeBinding> pair in nextByEmployee)
@@ -1422,6 +1435,12 @@ public sealed class BistroBuilderStaffSessionService :
             TryGetComponent(out restaurantServiceStateService);
         if (waiterTaskCoordinator == null)
             TryGetComponent(out waiterTaskCoordinator);
+        if (waiterPopulation == null)
+        {
+            TryGetComponent(out waiterPopulation);
+            if (waiterPopulation == null && Application.isPlaying)
+                waiterPopulation = gameObject.AddComponent<BistroBuilderStaffWaiterPopulation>();
+        }
         if (recruitmentProfile == null)
         {
             recruitmentProfile = Resources.Load<BistroBuilderStaffRecruitmentProfile>(
