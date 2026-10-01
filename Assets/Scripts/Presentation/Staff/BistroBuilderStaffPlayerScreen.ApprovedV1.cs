@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using BistroBuilder.UI.Iconography;
 
 /// <summary>
 /// PERSONAL V1 approved chrome. Visual-only extension of the existing 4F
@@ -34,6 +35,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
     private string pendingTargetId = string.Empty;
     private GameObject confirmationBlocker;
     private bool approvedPresentationReady;
+    private BBIconCatalog approvedStaffIcons;
 
     // EventSystem dispatches Cancel (Escape/gamepad back) up from the
     // selected Cancel button; no per-frame input polling is required.
@@ -52,6 +54,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             return;
 
         approvedPresentationReady = true;
+        approvedStaffIcons = BBIconCatalog.LoadDefault();
         if (panelRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
             panelRoot.AddComponent<BistroBuilderUiStyleIsolation>();
 
@@ -76,6 +79,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen
 
         Transform staffDetail = employeeNameText.transform.parent;
         Transform candidateDetail = candidateNameText.transform.parent;
+        CreateApprovedHeroIcon(staffDetail, "EmployeeRoleIcon");
+        CreateApprovedHeroIcon(candidateDetail, "CandidateRoleIcon");
         StyleApprovedPanel(staffDetail.gameObject, StaffPaper);
         StyleApprovedPanel(candidateDetail.gameObject, StaffPaper);
 
@@ -332,6 +337,58 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             staffImage.color = viewMode == ViewMode.Staff ? StaffBrass : StaffInset;
         if (candidatesImage != null)
             candidatesImage.color = viewMode == ViewMode.Candidates ? StaffBrass : StaffInset;
+    }
+
+    private Sprite GetApprovedRoleSprite(string roleId)
+    {
+        if (approvedStaffIcons == null) return null;
+        BBIconId roleIcon =
+            string.Equals(roleId, "waiter", StringComparison.Ordinal)
+                ? BBIconId.ObjectWaiter
+                : string.Equals(roleId, "cook", StringComparison.Ordinal)
+                    ? BBIconId.ObjectCook : BBIconId.NavStaff;
+        return approvedStaffIcons.GetSprite(roleIcon);
+    }
+
+    private static void CreateApprovedHeroIcon(Transform parent, string name)
+    {
+        RectTransform rect = NewApprovedRect(name, parent);
+        ApplyApprovedRect(rect, .845f, .851f, .948f, .971f);
+        Image icon = rect.gameObject.AddComponent<Image>();
+        icon.raycastTarget = false;
+        icon.preserveAspect = true;
+        icon.color = StaffMuted;
+        icon.enabled = false;
+    }
+
+    private void RefreshApprovedRolePortrait(bool employee, string roleId)
+    {
+        Transform detail = employee
+            ? employeeNameText.transform.parent : candidateNameText.transform.parent;
+        Image icon = detail.Find(employee ? "EmployeeRoleIcon" : "CandidateRoleIcon")
+            ?.GetComponent<Image>();
+        if (icon == null) return;
+        icon.sprite = GetApprovedRoleSprite(roleId);
+        icon.enabled = icon.sprite != null && !string.IsNullOrEmpty(roleId);
+    }
+
+    private void AddApprovedRoleIcon(GameObject row, string roleId)
+    {
+        Sprite sprite = GetApprovedRoleSprite(roleId);
+        if (sprite == null || row == null) return;
+        RectTransform imageRect = NewApprovedRect("RoleIcon", row.transform);
+        ApplyApprovedRect(imageRect, .022f, .20f, .084f, .80f);
+        Image image = imageRect.gameObject.AddComponent<Image>();
+        image.sprite = sprite;
+        image.color = StaffMuted;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        RectTransform name = row.transform.Find("Name") as RectTransform;
+        if (name != null)
+        {
+            float right = name.anchorMax.x;
+            ApplyApprovedRect(name, .095f, 0f, right, 1f);
+        }
     }
 
     private void ApplyApprovedRowStyle(GameObject row, bool selected)
