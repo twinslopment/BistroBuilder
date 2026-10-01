@@ -21,7 +21,9 @@ public sealed class BistroBuilderStaffScheduleEmployeeRowView : MonoBehaviour
     {
         employeeId = row != null ? row.employeeId : string.Empty;
         onToggle = toggle;
-        if (nameText != null) nameText.text = row != null ? row.displayName : string.Empty;
+        if (nameText != null)
+            nameText.text = row != null
+                ? row.displayName + "  ·  " + row.roleName : string.Empty;
         if (availabilityText != null)
             availabilityText.text = row != null && row.available ? "Disponible" : "No disponible";
         if (salaryText != null)
