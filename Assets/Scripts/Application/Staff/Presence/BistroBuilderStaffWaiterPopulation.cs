@@ -121,6 +121,17 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
             createdInTransaction.Clear();
         }
 
+        // An active-service checkpoint may be loaded while the authored
+        // prototype is hidden by the New Game setup. Saved agents must be
+        // activated before service.runtime indexes their identities.
+        for (int i = 0; i < allAgents.Count; i++)
+        {
+            Waiter restored = allAgents[i];
+            if (restored != null && target.Contains(restored.WaiterId) &&
+                !restored.gameObject.activeSelf)
+                restored.gameObject.SetActive(true);
+        }
+
         // Only our generated slots can be retired. An authored scene archetype
         // is never destroyed by loading an older or smaller roster.
         for (int i = 0; i < generatedToRetire.Count; i++)
