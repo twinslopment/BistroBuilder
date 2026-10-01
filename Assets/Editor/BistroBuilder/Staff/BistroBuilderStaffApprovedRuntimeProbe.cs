@@ -165,9 +165,10 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
         // solely to test real candidate -> employee bindings and populate rows.
         BistroBuilderStaffPlayerFacade facade =
             FindScene<BistroBuilderStaffPlayerFacade>();
+        string facadeError = string.Empty;
         if (facade != null && facade.TryBuildSnapshot(
                 out BistroBuilderStaffPlayerUiSnapshot before,
-                out string facadeError))
+                out facadeError))
         {
             if (before.employees.Count < 2)
             {
