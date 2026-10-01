@@ -486,7 +486,8 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
             !EnsureInitialEmployee("cook", "Sam", "Cocina", 9000, out error) ||
             !scheduleService.TryResetForLegacyLoad(out error) ||
             !scheduleService.TryAutoFillMinimumWaiters(
-                1, BistroBuilderMealServiceAvailability.Lunch, out error))
+                1, BistroBuilderMealServiceAvailability.Lunch, out error) ||
+            !TryScheduleInitialCook(out error))
             return false;
 
         if (!TryRunOpeningPreflight(out BistroBuilderOpeningPreflightReport report, out error))
@@ -650,6 +651,33 @@ public sealed partial class BistroBuilderNewGameOpeningService : MonoBehaviour
         error = string.Empty;
         StateChanged?.Invoke();
         return true;
+    }
+
+    /// <summary>
+    /// The initial kitchen employee must have a real shift, just like the
+    /// initial waiter. Otherwise assigning kitchen work would be disconnected
+    /// from the Personal/Horarios contract.
+    /// </summary>
+    private bool TryScheduleInitialCook(out string error)
+    {
+        employeeBuffer.Clear();
+        staffService.CopyEmployees(employeeBuffer, false);
+        for (int index = 0; index < employeeBuffer.Count; index++)
+        {
+            BistroBuilderEmployeeRecord employee = employeeBuffer[index];
+            if (employee == null ||
+                employee.employmentStatus != BistroBuilderEmploymentStatus.Active ||
+                employee.availability != BistroBuilderEmployeeAvailability.Available ||
+                !string.Equals(employee.roleId, "cook", StringComparison.Ordinal))
+                continue;
+
+            return scheduleService.TrySetScheduled(
+                employee.employeeId, 1,
+                BistroBuilderMealServiceAvailability.Lunch,
+                true, out error);
+        }
+        error = "La primera apertura necesita un cocinero contratable y programado.";
+        return false;
     }
 
     private bool EnsureInitialEmployee(
