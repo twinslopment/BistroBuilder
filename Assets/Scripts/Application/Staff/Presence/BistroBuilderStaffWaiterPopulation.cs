@@ -12,7 +12,7 @@ using UnityEngine;
 public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
 {
     [SerializeField] private WaiterTaskCoordinator waiterTaskCoordinator;
-    [SerializeField, Min(0.1f)] private float initialSpawnSpacing = .60f;
+    [SerializeField, Min(1f)] private float initialSpawnSpacing = 1.15f;
 
     private readonly HashSet<int> usedIds = new HashSet<int>();
     private readonly List<Waiter> allAgents = new List<Waiter>();
