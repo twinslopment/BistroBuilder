@@ -11,6 +11,7 @@ Consolidación iniciada el **12/09/2026** a partir de documentación del reposit
 6. [`30_UI_UX/UI_UX_DEFINITIVE.md`](30_UI_UX/UI_UX_DEFINITIVE.md) y [`30_UI_UX/CAMERA_369.md`](30_UI_UX/CAMERA_369.md).
 7. [`20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md`](20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md) para Modo Edición player-ready.
 8. [`40_TESTING/ACCEPTANCE_AND_VALIDATION.md`](40_TESTING/ACCEPTANCE_AND_VALIDATION.md) — definición de PASS.
+9. [`30_UI_UX/STAFF_PERSONAL_V1_APPROVED.md`](30_UI_UX/STAFF_PERSONAL_V1_APPROVED.md) — diseño aprobado, alcance V1, profesiones, mercado y confirmaciones de Personal (01/10/2026).
 
 ## Fuente de verdad
 Una decisión posterior y explícita prevalece sobre una propuesta antigua. Los documentos legacy permanecen como trazabilidad, no como autoridad cuando contradicen el Decision Register o un documento canónico más reciente.
