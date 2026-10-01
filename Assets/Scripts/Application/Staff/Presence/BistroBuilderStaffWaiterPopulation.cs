@@ -240,6 +240,20 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
                 return false;
             }
 
+            var templateVisibility =
+                source.GetComponent<BistroBuilderStaffWaiterVisualPresence>();
+            if (templateVisibility == null)
+                templateVisibility = source.gameObject.AddComponent<BistroBuilderStaffWaiterVisualPresence>();
+            var cloneVisibility =
+                clone.GetComponent<BistroBuilderStaffWaiterVisualPresence>();
+            if (cloneVisibility == null)
+                cloneVisibility = clone.AddComponent<BistroBuilderStaffWaiterVisualPresence>();
+            if (!cloneVisibility.TryAdoptBaseline(templateVisibility))
+            {
+                error = "El arquetipo visual del camarero no coincide con el clon.";
+                return false;
+            }
+
             Transform anchor = source.transform;
             Vector3 offset = anchor.right * (initialSpawnSpacing * (spawnOrdinal + 1));
             clone.transform.SetPositionAndRotation(anchor.position + offset, anchor.rotation);
