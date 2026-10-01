@@ -87,7 +87,10 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
         for (int index = 0; index < employeeBuffer.Count; index++)
         {
             BistroBuilderEmployeeRecord employee = employeeBuffer[index];
-            if (employee != null)
+            // Dismissed records remain in staff.state for history/Save,
+            // but must not be offered as current members of Plantilla.
+            if (employee != null &&
+                employee.employmentStatus != BistroBuilderEmploymentStatus.Dismissed)
             {
                 built.employees.Add(BuildEmployeeRow(employee));
             }
