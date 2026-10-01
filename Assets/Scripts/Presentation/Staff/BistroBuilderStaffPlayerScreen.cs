@@ -423,71 +423,94 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
         ClearApprovedRowsAndFilters();
         ClearRows(employeeRows);
         ClearRows(candidateRows);
-
         if (currentSnapshot == null) return;
 
-        // Stable presentation grouping only: Staff's canonical ordering/state
-        // is left intact. Future departments are sourced from role metadata.
-        var grouped = new List<BistroBuilderStaffPlayerEmployeeRow>(
+        // Never derive grouping or an imaginary 3/4 capacity from the mock-up.
+        // The active role catalogue determines every visible section, even empty.
+        var displayed = new HashSet<string>(StringComparer.Ordinal);
+        var departments = new List<BistroBuilderStaffPlayerDepartmentRow>(
+            currentSnapshot.departments);
+        var staff = new List<BistroBuilderStaffPlayerEmployeeRow>(
             currentSnapshot.employees);
-        grouped.Sort((a, b) =>
+        staff.Sort((a, b) =>
         {
             if (ReferenceEquals(a, b)) return 0;
             if (a == null) return 1;
             if (b == null) return -1;
-            int order = a.departmentSortOrder.CompareTo(b.departmentSortOrder);
-            if (order != 0) return order;
-            int group = string.Compare(a.departmentDisplayName,
-                b.departmentDisplayName, StringComparison.OrdinalIgnoreCase);
-            if (group != 0) return group;
             return string.Compare(a.fullName, b.fullName,
                 StringComparison.OrdinalIgnoreCase);
         });
 
-        string lastGroup = null;
-        for (int index = 0; index < grouped.Count; index++)
+        // Legacy employees with a role not yet in the active catalogue
+        // must not disappear silently from the management screen.
+        foreach (var person in staff)
         {
-            BistroBuilderStaffPlayerEmployeeRow source = grouped[index];
-            if (source == null) continue;
-            string department = string.IsNullOrWhiteSpace(source.departmentDisplayName)
-                ? source.roleDisplayName : source.departmentDisplayName;
-            if (!string.Equals(department, lastGroup, StringComparison.Ordinal))
-            {
-                int count = 0;
-                for (int j = 0; j < grouped.Count; j++)
-                    if (grouped[j] != null &&
-                        string.Equals(
-                            string.IsNullOrWhiteSpace(grouped[j].departmentDisplayName)
-                                ? grouped[j].roleDisplayName : grouped[j].departmentDisplayName,
-                            department, StringComparison.Ordinal))
-                        count++;
-                CreateApprovedDepartmentHeading(department, count);
-                lastGroup = department;
-            }
+            if (person == null) continue;
+            bool found = false;
+            foreach (var group in departments)
+                if (group != null && group.departmentId == person.departmentId)
+                {
+                    found = true;
+                    break;
+                }
+            if (!found)
+                departments.Add(new BistroBuilderStaffPlayerDepartmentRow
+                {
+                    departmentId = person.departmentId,
+                    displayName = person.departmentDisplayName,
+                    sortOrder = person.departmentSortOrder
+                });
+        }
+        departments.Sort((a, b) =>
+        {
+            int order = a.sortOrder.CompareTo(b.sortOrder);
+            return order != 0 ? order :
+                string.Compare(a.displayName, b.displayName,
+                    StringComparison.OrdinalIgnoreCase);
+        });
 
-            BistroBuilderStaffPlayerEmployeeRowView row = Instantiate(
-                employeeRowPrefab, employeeListContent);
-            row.gameObject.SetActive(true);
-            row.Bind(source, HandleEmployeeSelected);
-            AddApprovedRoleIcon(row.gameObject, source.roleId);
-            employeeRows.Add(row);
-            employeeRowsById[source.employeeId] = row.gameObject;
-            ApplyApprovedRowStyle(row.gameObject, source.employeeId == selectedEmployeeId);
+        foreach (var department in departments)
+        {
+            if (department == null) continue;
+            int count = 0;
+            foreach (var person in staff)
+                if (person != null && person.departmentId == department.departmentId)
+                    count++;
+            CreateApprovedDepartmentHeading(department.displayName, count);
+            foreach (var person in staff)
+            {
+                if (person == null || person.departmentId != department.departmentId ||
+                    !displayed.Add(person.employeeId)) continue;
+                BistroBuilderStaffPlayerEmployeeRowView row =
+                    Instantiate(employeeRowPrefab, employeeListContent);
+                row.gameObject.SetActive(true);
+                row.Bind(person, HandleEmployeeSelected);
+                ApprovedRowCells(row.gameObject, true,
+                    person.departmentDisplayName);
+                AddApprovedRoleIcon(row.gameObject, person.roleId);
+                employeeRows.Add(row);
+                employeeRowsById[person.employeeId] = row.gameObject;
+                ApplyApprovedRowStyle(row.gameObject,
+                    person.employeeId == selectedEmployeeId);
+            }
+            if (department.roleIds.Count > 0)
+                CreateApprovedVacancy(department);
         }
 
-        for (int index = 0; index < currentSnapshot.candidates.Count; index++)
+        foreach (var person in currentSnapshot.candidates)
         {
-            BistroBuilderStaffPlayerCandidateRow source = currentSnapshot.candidates[index];
-            if (source == null) continue;
-            BistroBuilderStaffPlayerCandidateRowView row = Instantiate(
-                candidateRowPrefab, candidateListContent);
+            if (person == null) continue;
+            BistroBuilderStaffPlayerCandidateRowView row =
+                Instantiate(candidateRowPrefab, candidateListContent);
             row.gameObject.SetActive(true);
-            row.Bind(source, HandleCandidateSelected);
-            AddApprovedRoleIcon(row.gameObject, source.roleId);
+            row.Bind(person, HandleCandidateSelected);
+            ApprovedRowCells(row.gameObject, false,
+                person.departmentDisplayName);
+            AddApprovedRoleIcon(row.gameObject, person.roleId);
             candidateRows.Add(row);
-            candidateRowsById[source.candidateId] = row.gameObject;
-            candidateRolesById[source.candidateId] = source.roleId;
-            ApplyApprovedRowStyle(row.gameObject, source.candidateId == selectedCandidateId);
+            candidateRowsById[person.candidateId] = row.gameObject;
+            ApplyApprovedRowStyle(row.gameObject,
+                person.candidateId == selectedCandidateId);
         }
     }
 
@@ -535,6 +558,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
             employeePerformanceText.text = string.Empty;
             employeeSessionText.text = string.Empty;
             toggleAvailabilityButtonText.text = "Disponibilidad";
+            UpdateApprovedEmployeeDetails(null);
             return;
         }
 
@@ -557,8 +581,9 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
               "\nSin asignación de servicio";
         toggleAvailabilityButtonText.text =
             employee.availability == BistroBuilderEmployeeAvailability.Available
-                ? "Marcar no disponible"
-                : "Marcar disponible";
+                ? "No disponible"
+                : "Disponible";
+        UpdateApprovedEmployeeDetails(employee);
     }
 
     private void RenderSelectedCandidate()
@@ -575,6 +600,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
             candidateProfileText.text = string.Empty;
             candidateSkillsText.text = string.Empty;
             candidateSalaryText.text = string.Empty;
+            UpdateApprovedCandidateDetails(null);
             return;
         }
 
@@ -586,6 +612,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
         candidateSalaryText.text =
             "Salario esperado: " +
             FormatMoney(candidate.expectedSalaryCentsPerService) + " / servicio";
+        UpdateApprovedCandidateDetails(candidate);
     }
 
     private void PreserveValidSelection()
