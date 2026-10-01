@@ -251,6 +251,15 @@ public sealed class BistroBuilderStaffWaiterPopulation : MonoBehaviour
                 return false;
             }
 
+            // Animation's persistent actor name must follow the freshly
+            // provisioned WaiterId; cloning an explicit prototype actorId
+            // would otherwise collide even though the WaiterIds are unique.
+            BistroBuilderAnimationActorBinding actor =
+                clone.GetComponent<BistroBuilderAnimationActorBinding>();
+            if (actor != null)
+                actor.ConfigureRuntime("waiter:" + waiterId,
+                    actor.Driver, actor.RecipePlayer, actor.RigAdapter, actor.CarryPresenter);
+
             var templateVisibility =
                 source.GetComponent<BistroBuilderStaffWaiterVisualPresence>();
             if (templateVisibility == null)
