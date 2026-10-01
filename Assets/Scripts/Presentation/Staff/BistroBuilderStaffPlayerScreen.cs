@@ -809,6 +809,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
         {
             if (rows[index] != null)
             {
+                rows[index].gameObject.SetActive(false);
                 Destroy(rows[index].gameObject);
             }
         }
