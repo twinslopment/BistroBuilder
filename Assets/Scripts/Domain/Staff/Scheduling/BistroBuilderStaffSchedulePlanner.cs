@@ -160,49 +160,48 @@ public static class BistroBuilderStaffSchedulePlanner
             return string.Compare(left.employeeId, right.employeeId, StringComparison.Ordinal);
         });
 
-        int count = Math.Min(profile.MinimumRecommendedWaiters, candidates.Count);
-        // Auto-fill must not replace the whole service roster: that would
-        // silently discard cooks (and extra waiters) already selected by
-        // the player. Only add missing minimum waiter coverage.
-        var ids = new List<string>();
-        var planned = new HashSet<string>(StringComparer.Ordinal);
+        // Preserve the entire original plan, including cook shifts, extra
+        // waiters, and any authored shift windows. Auto-fill only adds missing
+        // WaiterAgent employees through the canonical pure shift command.
+        var planned = new List<string>();
         BistroBuilderStaffScheduleEngine.CopyScheduledEmployeeIds(
-            current, dayIndex, mealService, ids);
-        for (int index = 0; index < ids.Count; index++)
-            planned.Add(ids[index]);
-
-        int scheduledWaiters = 0;
+            current, dayIndex, mealService, planned);
+        var scheduled = new HashSet<string>(planned, StringComparer.Ordinal);
+        int waiterCount = 0;
         for (int index = 0; index < candidates.Count; index++)
-            if (planned.Contains(candidates[index].employeeId)) scheduledWaiters++;
+            if (scheduled.Contains(candidates[index].employeeId)) waiterCount++;
 
-        if (candidates.Count == 0)
-        {
-            error = "No hay camareros activos y disponibles para completar la cobertura.";
-            return false;
-        }
-        if (scheduledWaiters >= profile.MinimumRecommendedWaiters)
+        if (waiterCount >= profile.MinimumRecommendedWaiters)
         {
             result = current.DeepClone();
             error = string.Empty;
             return true;
         }
-
-        for (int index = 0; index < candidates.Count &&
-             scheduledWaiters < count; index++)
+        if (candidates.Count == 0)
         {
-            string id = candidates[index].employeeId;
-            if (!planned.Add(id)) continue;
-            ids.Add(id);
-            scheduledWaiters++;
-        }
-
-        if (ids.Count == 0)
-        {
-            error = "No hay camareros activos y disponibles para autocompletar el turno.";
+            error = "No hay camareros activos y disponibles para completar la cobertura.";
             return false;
         }
 
-        return TryReplaceServiceAssignments(
-            current, staff, profile, dayIndex, mealService, ids, out result, out error);
+        BistroBuilderStaffScheduleSnapshot updated = current.DeepClone();
+        for (int index = 0; index < candidates.Count &&
+             waiterCount < profile.MinimumRecommendedWaiters; index++)
+        {
+            string id = candidates[index].employeeId;
+            if (!scheduled.Add(id)) continue;
+            if (!BistroBuilderStaffScheduleEngine.TrySetShift(
+                    updated, staff, profile, id, dayIndex, mealService, true,
+                    out updated, out error))
+                return false;
+            waiterCount++;
+        }
+
+        // With fewer employable waiters than the recommendation, retain the
+        // maximum available coverage without inventing a worker or a shift.
+        if (!BistroBuilderStaffScheduleEngine.TryValidateSnapshot(
+                updated, staff, out error)) return false;
+        result = updated;
+        error = string.Empty;
+        return true;
     }
 }
