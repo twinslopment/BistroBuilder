@@ -74,6 +74,7 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
         new Dictionary<int, CustomerGroup>();
     private readonly Dictionary<int, Waiter> waitersById =
         new Dictionary<int, Waiter>();
+    private BistroBuilderStaffWaiterPopulation waiterPopulation;
     private readonly Dictionary<string, RestaurantOrder> ordersByCanonicalId =
         new Dictionary<string, RestaurantOrder>(StringComparer.Ordinal);
     private readonly List<BistroBuilderBarServiceSpot> occupiedSpotBuffer =
@@ -508,6 +509,16 @@ public sealed class BistroBuilderActiveServiceSaveSectionProvider :
             {
                 yield return null;
             }
+        }
+
+        // service.runtime owns saved operational identities and must recreate
+        // those missing slots before restoring waiter positions and orders.
+        if (waiterPopulation == null) TryGetComponent(out waiterPopulation);
+        if (waiterPopulation != null &&
+            !waiterPopulation.TryReconcileSavedIds(pendingData.waiters, out error))
+        {
+            context.Fail(error);
+            yield break;
         }
 
         BuildWaiterIndexAndRestoreTransforms(pendingData, context, out error);
