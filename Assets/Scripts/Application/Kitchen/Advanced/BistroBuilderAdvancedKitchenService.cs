@@ -68,6 +68,16 @@ public sealed class BistroBuilderAdvancedKitchenService : MonoBehaviour
         RebuildStations();
     }
 
+    private void Start()
+    {
+        // Scene-only visual adapter. Kitchen retains full authority for
+        // task selection/quality and does not create or own employee records.
+        if (Application.isPlaying &&
+            GetComponent<BistroBuilderStaffScheduleService>() != null &&
+            GetComponent<BistroBuilderStaffCookPresence>() == null)
+            gameObject.AddComponent<BistroBuilderStaffCookPresence>();
+    }
+
     private void OnEnable()
     {
         CacheDependencies();
