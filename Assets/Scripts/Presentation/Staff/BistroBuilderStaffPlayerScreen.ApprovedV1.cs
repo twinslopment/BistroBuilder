@@ -458,27 +458,32 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             ? candidateListContent.parent.parent as RectTransform : null;
         if (list != null) ApplyApprovedRect(list, 0f, 0f, .445f, .895f);
 
-        var names = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        var roles = new List<BistroBuilderStaffPlayerCandidateRow>();
+        var uniqueIds = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < currentSnapshot.candidates.Count; i++)
         {
             BistroBuilderStaffPlayerCandidateRow row = currentSnapshot.candidates[i];
-            if (row != null && !names.ContainsKey(row.roleId))
-                names.Add(row.roleId, row.roleDisplayName);
+            if (row != null && uniqueIds.Add(row.roleId))
+                roles.Add(row);
         }
+        roles.Sort((a, b) =>
+        {
+            int order = a.departmentSortOrder.CompareTo(b.departmentSortOrder);
+            return order != 0 ? order : string.Compare(a.roleDisplayName,
+                b.roleDisplayName, StringComparison.OrdinalIgnoreCase);
+        });
         if (selectedCandidateRole.Length > 0 &&
-            !names.ContainsKey(selectedCandidateRole))
+            !uniqueIds.Contains(selectedCandidateRole))
             selectedCandidateRole = string.Empty;
 
-        int slots = names.Count + 1;
+        int slots = roles.Count + 1;
         CreateApprovedFilter(string.Empty, "Todos",
             0f, 1f / slots);
-        int index = 1;
-        foreach (KeyValuePair<string, string> item in names)
+        for (int index = 0; index < roles.Count; index++)
         {
-            string roleId = item.Key;
-            CreateApprovedFilter(roleId, item.Value,
-                (float)index / slots, (float)(index + 1) / slots);
-            index++;
+            BistroBuilderStaffPlayerCandidateRow role = roles[index];
+            CreateApprovedFilter(role.roleId, role.roleDisplayName,
+                (float)(index + 1) / slots, (float)(index + 2) / slots);
         }
         ApplyCandidateRoleFilter();
     }

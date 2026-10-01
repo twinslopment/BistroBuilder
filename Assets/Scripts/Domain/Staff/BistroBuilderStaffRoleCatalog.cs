@@ -9,6 +9,7 @@ public sealed class BistroBuilderStaffRoleDefinition
     public string displayName = string.Empty;
     public string departmentId = string.Empty;
     public string departmentDisplayName = string.Empty;
+    public int departmentSortOrder = 100;
     public bool active = true;
 
     /// <summary>
@@ -72,6 +73,8 @@ public sealed class BistroBuilderStaffRoleCatalog : ScriptableObject
                            string.Equals(roleId, "cook", StringComparison.Ordinal) ? "cocina" : roleId,
             departmentDisplayName = string.Equals(roleId, "waiter", StringComparison.Ordinal) ? "SALA" : 
                                     string.Equals(roleId, "cook", StringComparison.Ordinal) ? "COCINA" : displayName,
+            departmentSortOrder = string.Equals(roleId, "waiter", StringComparison.Ordinal) ? 10 :
+                                  string.Equals(roleId, "cook", StringComparison.Ordinal) ? 20 : 100,
             active = true,
             operationalAdapterId = adapterId
         };

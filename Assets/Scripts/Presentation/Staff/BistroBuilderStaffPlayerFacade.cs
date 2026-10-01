@@ -208,6 +208,7 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
         string roleDisplayName = employee.roleId;
         string departmentId = employee.roleId;
         string departmentDisplayName = roleDisplayName;
+        int departmentSortOrder = 100;
         if (staffService.TryGetRoleDefinition(
                 employee.roleId,
                 out BistroBuilderStaffRoleDefinition role) && role != null)
@@ -217,6 +218,8 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
                 ? role.roleId : role.departmentId;
             departmentDisplayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
                 ? role.displayName : role.departmentDisplayName;
+            departmentSortOrder = role.departmentSortOrder > 0
+                ? role.departmentSortOrder : 100;
         }
 
         int level = 1;
@@ -246,6 +249,7 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             roleDisplayName = roleDisplayName,
             departmentId = departmentId,
             departmentDisplayName = departmentDisplayName,
+            departmentSortOrder = departmentSortOrder,
             employmentStatus = employee.employmentStatus,
             availability = employee.availability,
             salaryCentsPerService = employee.salaryCentsPerService,
@@ -271,6 +275,7 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
         string roleDisplayName = candidate.roleId;
         string departmentId = candidate.roleId;
         string departmentDisplayName = roleDisplayName;
+        int departmentSortOrder = 100;
         if (staffService.TryGetRoleDefinition(
                 candidate.roleId,
                 out BistroBuilderStaffRoleDefinition role) && role != null)
@@ -280,6 +285,8 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
                 ? role.roleId : role.departmentId;
             departmentDisplayName = string.IsNullOrWhiteSpace(role.departmentDisplayName)
                 ? role.displayName : role.departmentDisplayName;
+            departmentSortOrder = role.departmentSortOrder > 0
+                ? role.departmentSortOrder : 100;
         }
 
         return new BistroBuilderStaffPlayerCandidateRow
@@ -290,6 +297,7 @@ public sealed class BistroBuilderStaffPlayerFacade : MonoBehaviour
             roleDisplayName = roleDisplayName,
             departmentId = departmentId,
             departmentDisplayName = departmentDisplayName,
+            departmentSortOrder = departmentSortOrder,
             expectedSalaryCentsPerService =
                 candidate.expectedSalaryCentsPerService,
             experiencePoints = candidate.experiencePoints,

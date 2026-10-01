@@ -17,11 +17,13 @@ MonoBehaviour:
     displayName: Camarero/a
     departmentId: sala
     departmentDisplayName: SALA
+    departmentSortOrder: 10
     active: 1
     operationalAdapterId: waiter.agent
   - roleId: cook
     displayName: Cocinero/a
     departmentId: cocina
     departmentDisplayName: COCINA
+    departmentSortOrder: 20
     active: 1
     operationalAdapterId: cook.agent

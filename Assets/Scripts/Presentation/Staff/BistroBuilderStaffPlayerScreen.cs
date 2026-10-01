@@ -435,6 +435,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
             if (ReferenceEquals(a, b)) return 0;
             if (a == null) return 1;
             if (b == null) return -1;
+            int order = a.departmentSortOrder.CompareTo(b.departmentSortOrder);
+            if (order != 0) return order;
             int group = string.Compare(a.departmentDisplayName,
                 b.departmentDisplayName, StringComparison.OrdinalIgnoreCase);
             if (group != 0) return group;
