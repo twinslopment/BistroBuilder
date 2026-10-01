@@ -35,3 +35,11 @@ Compilación Unity 0 errores; mercado waiter+cook, contratación y desaparición
 
 ## Referencias
 `docs/STAFF_BLOCK_4_ARCHITECTURE.md`, `docs/STAFF_4B_DESIGN.md`, `docs/STAFF_4C_DESIGN.md`, `docs/STAFF_BLOCK_5_SCHEDULING.md`, `docs/10_ARCHITECTURE/AUTHORITY_MATRIX.md`.
+
+## Estado de implementación al 01/10/2026
+- Contrato aprobado integrado en la rama `feature/bb-presentation-interaction-quality-v1`; añadido al índice canónico `docs/README.md`.
+- Presentación PC marfil/latón sobre la pantalla 4F **ya existente** (`BistroBuilderStaffPlayerScreen.ApprovedV1.cs`), agrupación y orden por metadatos del catálogo, iconos canónicos y filtros de candidatos; sin duplicar StaffService ni escenas.
+- Mercado configurado con waiter+cook y generación determinista que garantiza al menos una propuesta de cada rol si hay suficientes plazas; refresco diario/5 candidatos permanecen en 4B.
+- Confirmaciones con identidad fijada, capa modal bloqueante, doble click desarmado y Cancel/Escape a través de EventSystem; hover por ColorTint 0,16 s; sin botón Ascender.
+- Autotest puro de contrato añadido en `Tools/Bistro Builder/Personal/V1 - Verificar contrato visual y mercado`.
+- **Pendiente obligatorio:** compilación/Play Mode real, inspección visual en 1920/1280/800 y regresión Save/Load. La conversión automática de más empleados contratados en agentes físicos de sala/cocina sigue como trabajo funcional separado contra el binding de sesión: no considerar esa parte PASS por añadir la nueva pantalla.
