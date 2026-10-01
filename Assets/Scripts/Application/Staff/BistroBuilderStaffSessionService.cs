@@ -34,6 +34,8 @@ public sealed class BistroBuilderStaffSessionService :
     [SerializeField] private WaiterTaskCoordinator waiterTaskCoordinator;
     [SerializeField] private BistroBuilderStaffRecruitmentProfile recruitmentProfile;
     private BistroBuilderStaffWaiterPopulation waiterPopulation;
+    private BistroBuilderStaffScheduleService staffScheduleService;
+    private BistroBuilderCanonicalOrderIntegrationService mealService;
 
     [Header("Compatibilidad V1")]
     [Tooltip(
@@ -53,6 +55,7 @@ public sealed class BistroBuilderStaffSessionService :
         new List<BistroBuilderEmployeeRecord>();
     private readonly List<BistroBuilderStaffRoleDefinition> roleBuffer =
         new List<BistroBuilderStaffRoleDefinition>();
+    private readonly List<string> operationalScheduleIds = new List<string>(16);
     private readonly List<KeyValuePair<Waiter, bool>> eligibilityPlanBuffer =
         new List<KeyValuePair<Waiter, bool>>();
 
@@ -281,8 +284,9 @@ public sealed class BistroBuilderStaffSessionService :
 
         // The session remains the authority for binding. Population only
         // provisions a sufficient number of real Waiter slots beforehand.
-        if (employeeBuffer.Count > 0 && waiterPopulation != null &&
-            !waiterPopulation.TryEnsureMinimumSlots(employeeBuffer.Count, out error))
+        int requestedSlots = ResolveRequiredWaiterSlots();
+        if (requestedSlots > 0 && waiterPopulation != null &&
+            !waiterPopulation.TryEnsureMinimumSlots(requestedSlots, out error))
             return false;
         if (!RefreshWaiterIndex(out error)) return false;
 
@@ -1283,6 +1287,28 @@ public sealed class BistroBuilderStaffSessionService :
         return result.ToArray();
     }
 
+    private int ResolveRequiredWaiterSlots()
+    {
+        // Capacity is driven by the current explicit schedule when present.
+        // Without any plan for this service, retain the original V1 behavior.
+        if (staffScheduleService == null || mealService == null ||
+            mealService.CurrentMealService == BistroBuilderMealServiceAvailability.None)
+            return employeeBuffer.Count;
+
+        operationalScheduleIds.Clear();
+        staffScheduleService.CopyScheduledEmployeeIds(
+            Math.Max(1, generalGameStateService.DayIndex),
+            mealService.CurrentMealService, operationalScheduleIds);
+        if (operationalScheduleIds.Count == 0) return employeeBuffer.Count;
+
+        int requested = 0;
+        for (int i = 0; i < employeeBuffer.Count; i++)
+            if (employeeBuffer[i] != null &&
+                operationalScheduleIds.Contains(employeeBuffer[i].employeeId))
+                requested++;
+        return requested;
+    }
+
     private void FilterAndSortWaiterEmployees(
         List<BistroBuilderEmployeeRecord> employees)
     {
@@ -1441,6 +1467,8 @@ public sealed class BistroBuilderStaffSessionService :
             if (waiterPopulation == null && Application.isPlaying)
                 waiterPopulation = gameObject.AddComponent<BistroBuilderStaffWaiterPopulation>();
         }
+        if (staffScheduleService == null) TryGetComponent(out staffScheduleService);
+        if (mealService == null) TryGetComponent(out mealService);
         if (recruitmentProfile == null)
         {
             recruitmentProfile = Resources.Load<BistroBuilderStaffRecruitmentProfile>(
