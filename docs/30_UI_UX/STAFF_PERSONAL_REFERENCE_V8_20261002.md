@@ -1,5 +1,15 @@
 # PERSONAL V8 — tipografía serif en las zonas señaladas · 02/10/2026
 
+**ESTADO: APROBADA POR EL USUARIO — REFERENCIA VISUAL CANÓNICA DE PERSONAL.**
+
+Implementación real: `BistroBuilderStaffPlayerScreen.ApprovedV1.cs`,
+`BistroBuilderStaffVisuals.cs`, `BistroBuilderStaffPlayerScreen.cs` y
+`Scheduling/BistroBuilderStaffSchedulePlayerScreen.ApprovedV1.cs`.
+La preview HTML es una herramienta de comparación, no una pantalla alternativa
+ni una dependencia del juego. No regresar a V5/V6/V7 ni sustituir Recoleta por Georgia.
+Integrada en `feature/bb-presentation-interaction-quality-v1`; no fusionar a
+master sin los gates generales del proyecto.
+
 ## Encargo y referencia
 La captura marcada en rojo por el usuario es vinculante: **títulos de columnas, nombres y todos los datos de Sala/Cocina, bloque de habilidades y botones inferiores** deben mostrar el carácter editorial serif, no Inter. La composición aprobada de dos columnas y la lógica real de Personal se conservan.
 
