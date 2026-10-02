@@ -247,6 +247,19 @@ public static class BistroBuilderStaffVisuals
         return icons != null ? icons.GetSprite(id) : null;
     }
 
+    public static Sprite StaffFactIcon(int index)
+    {
+        string[] paths = { "role", "salary", "assignment", "state" };
+        if (index < 0 || index >= paths.Length) return null;
+        Sprite authored = Resources.Load<Sprite>(
+            "BistroBuilder/UI/StaffIcons/" + paths[index]);
+        if (authored != null) return authored;
+        BBIconId[] fallbacks = { BBIconId.ObjectEquipment,
+            BBIconId.EconomyIncome, BBIconId.AreaDining,
+            BBIconId.StatusCorrect };
+        return Icon(fallbacks[index]);
+    }
+
     public static void DecorativeIcon(string name, Transform parent,
         BBIconId id, float x0, float y0, float x1, float y1)
     {

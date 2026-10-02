@@ -247,6 +247,30 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             p.Find("ApprovedPersonalFrame") != null &&
             p.Find("ApprovedPersonalPaper") != null,
             "Navegación y marco marfil/latón únicos.");
+        Transform contextualMenu = p.Find("ApprovedViewMenu");
+        Transform scheduleTab = p.Find("ApprovedScheduleTab");
+        Transform viewSwitcher = p.Find("ApprovedViewSwitcher");
+        Pass(contextualMenu != null && scheduleTab != null &&
+            viewSwitcher != null && !contextualMenu.gameObject.activeSelf &&
+            !scheduleTab.gameObject.activeSelf &&
+            staff.anchorMax.y > .89f,
+            "Referencia V5: sin pestañas permanentes, tablas bajo cabecera y selector PERSONAL.");
+        bool realIcons = true;
+        foreach (string name in new[] {"role", "salary", "assignment", "state"})
+            realIcons &= Resources.Load<Sprite>(
+                "BistroBuilder/UI/StaffIcons/" + name) != null;
+        Pass(realIcons && inspector.Find("InfoIcon_0") != null &&
+            inspector.Find("InfoIcon_1") != null &&
+            inspector.Find("InfoIcon_2") != null &&
+            inspector.Find("InfoIcon_3") != null,
+            "Ficha con los cuatro iconos específicos, no símbolos tipográficos.");
+        Pass(Resources.LoadAll<Sprite>(
+                 "BistroBuilder/UI/StaffPortraits/waiter").Length >= 3 &&
+             Resources.LoadAll<Sprite>(
+                 "BistroBuilder/UI/StaffPortraits/cook").Length >= 2 &&
+             BistroBuilderStaffVisuals.Portrait("waiter", "Laura Torres") != null &&
+             BistroBuilderStaffVisuals.Portrait("cook", "Marco Ruiz") != null,
+             "Los cinco retratos originales están importados como Sprite en Personal.");
 
         TMP_Text mainTitle = p.Find("Title")?.GetComponent<TMP_Text>();
         TMP_Text rowName = null;
@@ -278,8 +302,18 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
         // Calling ShowFromPersonal directly bypasses that navigation contract and
         // incorrectly reports an overlap that cannot occur through the tab.
         RectTransform root = GetRect(personal, "panelRoot");
-        Transform tabTransform = root != null
-            ? root.Find("ApprovedScheduleTab") : null;
+        Button menu = root != null
+            ? root.Find("ApprovedViewSwitcher")?.GetComponent<Button>()
+            : null;
+        if (menu == null || !menu.gameObject.activeInHierarchy ||
+            !menu.IsInteractable())
+        {
+            Pass(false, "PERSONAL dispone de selector contextual accionable.");
+            Finish();
+            return;
+        }
+        menu.onClick.Invoke();
+        Transform tabTransform = root.Find("ApprovedScheduleTab");
         Button tab = tabTransform != null
             ? tabTransform.GetComponent<Button>() : null;
         if (tab == null || !tab.gameObject.activeInHierarchy || !tab.IsInteractable())
