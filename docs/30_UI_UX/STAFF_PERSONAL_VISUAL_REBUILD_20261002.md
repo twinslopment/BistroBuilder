@@ -13,6 +13,7 @@
 - `BistroBuilderStaffVisuals.cs`: paleta de marfil/latón revisada, sombras sutiles de controles y misma identidad visual para Candidatos/Horarios.
 - Corrección importante: las filas de empleados no pasan por el estilo de botón genérico, que centraba indebidamente la primera etiqueta.
 - `BistroBuilderStaffPortraitImporter.cs`: importa como Sprite únicamente las imágenes ubicadas en `Assets/Resources/BistroBuilder/UI/StaffPortraits/{waiter,cook}/`.
+- La selección de Sprite se ordena explícitamente por nombre y usa colecciones de avatar coherentes con los nombres simulados del catálogo de contratación (variantes `waiter_f_`, `waiter_m_`, `cook_f_`, `cook_m_`); conserva la misma imagen entre candidatura y plantilla.
 
 ## Validación obtenida
 - Unity 6000.3.19f1: compilación correcta, `BistroBuilderStaffApprovedRuntimeProbe.RunBatch` **11 PASS / 0 FAIL**, proceso EXIT 0.

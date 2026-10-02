@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,6 +26,17 @@ public static class BistroBuilderStaffVisuals
     public static readonly Color Empty = new Color32(236, 223, 202, 255);
 
     private static BBIconCatalog icons;
+
+    // The simulated first names are curated by StaffRecruitmentProfile. These
+    // sets choose the appropriate portrait-art collection, not an employee rule.
+    private static readonly HashSet<string> PortraitFamilyF = new HashSet<string>(
+        StringComparer.OrdinalIgnoreCase)
+        { "Lucía", "Marta", "Claudia", "Irene", "Paula", "Sara",
+          "Nerea", "Aitana", "Carmen" };
+    private static readonly HashSet<string> PortraitFamilyM = new HashSet<string>(
+        StringComparer.OrdinalIgnoreCase)
+        { "Daniel", "Álvaro", "Marcos", "Hugo", "Javier", "Diego",
+          "Adrián", "Pablo", "Bruno" };
 
     public static void Place(RectTransform rect, float x0, float y0, float x1, float y1)
     {
@@ -218,14 +230,40 @@ public static class BistroBuilderStaffVisuals
         string prefix = string.Equals(roleId, "waiter", StringComparison.Ordinal)
             ? "waiter" : string.Equals(roleId, "cook", StringComparison.Ordinal)
                 ? "cook" : roleId;
+        if (string.IsNullOrWhiteSpace(prefix)) return null;
         Sprite[] variants = Resources.LoadAll<Sprite>(
             "BistroBuilder/UI/StaffPortraits/" + prefix);
         if (variants == null || variants.Length == 0) return null;
+
+        string firstName = (fullName ?? string.Empty).Trim();
+        int separator = firstName.IndexOf(' ');
+        if (separator >= 0) firstName = firstName.Substring(0, separator);
+        string family = PortraitFamilyF.Contains(firstName) ? "_f_"
+            : PortraitFamilyM.Contains(firstName) ? "_m_" : string.Empty;
+        var available = new List<Sprite>(variants.Length);
+        for (int i = 0; i < variants.Length; i++)
+            if (variants[i] != null &&
+                (family.Length == 0 || variants[i].name.StartsWith(
+                    prefix + family, StringComparison.OrdinalIgnoreCase)))
+                available.Add(variants[i]);
+        if (available.Count == 0) available.AddRange(variants);
+        available.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+
+        // Stable across a candidate being hired; never use Unity random or
+        // depend on unspecified Resources.LoadAll ordering.
         uint hash = 2166136261u;
-        string key = fullName ?? string.Empty;
-        for (int i = 0; i < key.Length; i++)
-            hash = (hash ^ key[i]) * 16777619u;
-        return variants[(int)(hash % (uint)variants.Length)];
+        string key = prefix + ":" + (fullName ?? string.Empty) + ":1";
+        unchecked
+        {
+            for (int i = 0; i < key.Length; i++)
+                hash = (hash ^ key[i]) * 16777619u;
+            hash ^= hash >> 16;
+            hash *= 0x7feb352du;
+            hash ^= hash >> 15;
+            hash *= 0x846ca68bu;
+            hash ^= hash >> 16;
+        }
+        return available[(int)(hash % (uint)available.Count)];
     }
 
     public static void PortraitFrame(string name, Transform parent,
