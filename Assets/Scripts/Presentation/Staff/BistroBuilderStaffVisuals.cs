@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
 using BistroBuilder.UI.Iconography;
 
@@ -50,11 +51,29 @@ public static class BistroBuilderStaffVisuals
                 titleResolved = true;
                 TMP_FontAsset original = Resources.Load<TMP_FontAsset>(
                     "BistroBuilder/UI/Typography/Recoleta-SDF");
-                if (original != null)
+                bool demo = original != null &&
+                    original.faceInfo.styleName.IndexOf("DEMO",
+                        StringComparison.OrdinalIgnoreCase) >= 0;
+                // Important: the currently imported Recoleta OTF is a DEMO.
+                // Although its cmap advertises accent/euro glyphs, Chrome
+                // renders those glyphs as licence/demo marks. Do NOT blindly
+                // build a dynamic atlas from that source. Reuse the 95 clean
+                // ASCII glyphs in the canonical SDF and use official Inter
+                // only for absent glyphs. If a licensed full Recoleta is later
+                // installed, the dynamic path can cover the entire alphabet.
+                if (!demo)
                 {
-                    // A runtime copy protects the official asset and supplies
-                    // missing demo glyphs from Inter, NEVER Georgia.
+                    Font source = Resources.Load<Font>(
+                        "BistroBuilder/UI/Typography/Recoleta");
+                    if (source != null)
+                        staffRecoleta = TMP_FontAsset.CreateFontAsset(
+                            source, 64, 6, GlyphRenderMode.SDFAA,
+                            2048, 2048, AtlasPopulationMode.Dynamic, true);
+                }
+                if (staffRecoleta == null && original != null)
                     staffRecoleta = UnityEngine.Object.Instantiate(original);
+                if (staffRecoleta != null)
+                {
                     staffRecoleta.name = "Bistro Builder Personal Recoleta";
                     if (staffRecoleta.fallbackFontAssetTable == null)
                         staffRecoleta.fallbackFontAssetTable =
@@ -171,11 +190,21 @@ public static class BistroBuilderStaffVisuals
         target.raycastTarget = false;
     }
 
+    private static bool Inside(Transform node, string ancestorName)
+    {
+        for (Transform parent = node != null ? node.parent : null;
+             parent != null; parent = parent.parent)
+            if (parent.name == ancestorName) return true;
+        return false;
+    }
+
     /// <summary>
-    /// One idempotent typography pass over the actual on-screen hierarchy.
-    /// Prefab labels, runtime rows, confirmation, training and schedule cannot
-    /// keep a stale Liberation/Georgia face when their contents are rebuilt.
-    /// This only normalizes typography; it does not change data or commands.
+    /// Stable semantic type hierarchy for live prefabs and regenerated rows.
+    /// The APPROVED image shows a classic serif in tables, skill values and
+    /// lower inspector buttons: use the game's OWN Recoleta.otf there. Keep
+    /// Inter for explanatory captions, footer notes and navigation metadata.
+    /// Never infer display type solely from the current font: that would turn
+    /// every Recoleta row bold on the second Refresh().
     /// </summary>
     public static void NormalizeHierarchy(Transform root)
     {
@@ -187,38 +216,51 @@ public static class BistroBuilderStaffVisuals
         {
             if (label == null) continue;
             string name = label.name;
-            bool isDisplay = label.font == display ||
-                name == "DepartmentTitle" || name == "SkillsHeader" ||
-                name == "CandidateSkillHeader" || name == "ModalTitle" ||
-                name == "ScheduleDayCaption" ||
+            bool table = Inside(label.transform, "EmployeeList") ||
+                         Inside(label.transform, "CandidateList");
+            bool inspector = Inside(label.transform, "EmployeeDetail") ||
+                             Inside(label.transform, "CandidateDetail");
+            bool isDisplay = name == "DepartmentTitle" ||
+                name == "SkillsHeader" || name == "CandidateSkillHeader" ||
+                name == "ModalTitle" || name == "ScheduleDayCaption" ||
                 (name == "Title" && label.transform.parent != null &&
                  (label.transform.parent == root ||
                   label.transform.parent.name == "DepartmentBand" ||
                   label.transform.parent.name == "Band" ||
                   label.transform.parent.name == "TrainingModal"));
-            // A whole employee row has a Button for selection. Its ordinary
-            // cells (role, salary, status...) must NOT become semibold merely
-            // because a Button exists higher in the hierarchy.
-            bool ordinaryCell = name == "Role" || name == "Level" ||
-                name == "Salary" || name == "Status" ||
-                name == "Assignment" || name == "Profile" ||
-                name == "Availability" || name == "Scheduled";
-            bool directButtonLabel = !ordinaryCell &&
-                label.transform.parent != null &&
+            bool tableText = table && (
+                name == "Name" || name == "Role" || name == "Level" ||
+                name == "Assignment" || name == "Salary" ||
+                name == "Status" || name == "Profile" ||
+                name == "DepartmentCount" ||
+                name.StartsWith("Column_", StringComparison.Ordinal) ||
+                name == "VacancyText" || name == "VacancyHire_Label" ||
+                name.StartsWith("VacancyEmpty_", StringComparison.Ordinal));
+            bool inspectorText = inspector &&
+                name != "EmployeePerformanceNote" && name != "PortraitRole" &&
+                name != "XPNote";
+            bool referenceSerif = isDisplay || tableText || inspectorText;
+            bool strongSerif = isDisplay || (tableText &&
+                (name == "Name" || name == "DepartmentCount" ||
+                 name == "VacancyHire_Label" ||
+                 name.StartsWith("Column_", StringComparison.Ordinal))) ||
+                (inspectorText &&
+                 (label.fontSize >= 23f ||
+                  name == "LevelNumber" || name == "LevelLegend" ||
+                  name.StartsWith("SkillValue_", StringComparison.Ordinal) ||
+                  label.GetComponentInParent<Button>(true) != null));
+            // Row selection itself is a Button, but secondary captions outside
+            // the marked zones still use the official Inter hierarchy.
+            bool directButtonLabel = label.transform.parent != null &&
                 label.transform.parent.GetComponent<Button>() != null;
-            bool isEmphasis = !isDisplay && (
-                directButtonLabel ||
-                (!ordinaryCell && label.font == emphasis) || name == "Name" ||
-                name == "DepartmentCount" || name == "LevelLegend" ||
-                name == "LevelNumber" || name == "Count" ||
-                name.StartsWith("Column_", StringComparison.Ordinal));
-            TMP_FontAsset chosen = isDisplay ? display :
-                isEmphasis ? emphasis : body;
+            bool interEmphasis = !referenceSerif &&
+                (directButtonLabel || label.font == emphasis ||
+                 name == "Count");
+            TMP_FontAsset chosen = referenceSerif ? display :
+                interEmphasis ? emphasis : body;
             if (chosen != null) label.font = chosen;
-            label.fontStyle = isDisplay ? FontStyles.Bold : FontStyles.Normal;
-            label.characterSpacing = isDisplay ? -.18f :
-                isEmphasis ? -.15f : 0f;
-            // Respect the authored size but limit automatic reductions to 1px.
+            label.fontStyle = strongSerif ? FontStyles.Bold : FontStyles.Normal;
+            label.characterSpacing = strongSerif ? -.17f : 0f;
             if (label.enableAutoSizing && label.fontSize >= 12f)
             {
                 label.fontSizeMax = label.fontSize;

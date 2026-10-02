@@ -1,5 +1,7 @@
 # PERSONAL V7 — cierre integral de tipografía · 02/10/2026
 
+> **HISTÓRICO:** sustituido por `STAFF_PERSONAL_REFERENCE_V8_20261002.md`. La captura marcada posteriormente exige Recoleta en todas las celdas, nombres, habilidades, ficha y botones. V7 con Inter en esas áreas ya no es la autoridad visual.
+
 ## Fuente de verdad visual
 Captura original aportada por el usuario, **lado izquierdo** de la comparación. V5/V6 quedan históricas: V7 conserva su composición compacta y elimina toda excepción a la tipografía oficial de Bistro Builder.
 

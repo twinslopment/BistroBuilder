@@ -292,12 +292,40 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             titleFace != null && bodyFace != null && boldFace != null &&
             mainTitle.font == titleFace &&
             departmentTitle.font == titleFace &&
-            rowName.font == boldFace && columnName.font == boldFace &&
+            rowName.font == titleFace && columnName.font == titleFace &&
+            rowName.fontStyle == FontStyles.Bold &&
             titleFace.name.Contains("Recoleta") &&
             bodyFace == BistroBuilderTypography.Body &&
             boldFace == BistroBuilderTypography.Emphasis &&
             titleFace.fallbackFontAssetTable.Contains(bodyFace),
-            "Tipografía oficial: Recoleta en títulos; Inter Regular/SemiBold en tablas, sin Georgia.");
+            "Recoleta oficial en títulos, columnas y nombres; Inter secundario, sin Georgia.");
+        TMP_FontAsset sourceRecoleta = Resources.Load<TMP_FontAsset>(
+            "BistroBuilder/UI/Typography/Recoleta-SDF");
+        bool demo = sourceRecoleta != null &&
+            sourceRecoleta.faceInfo.styleName.IndexOf("DEMO",
+                StringComparison.OrdinalIgnoreCase) >= 0;
+        // TMPro's runtime character lookup may cache fallback mappings after
+        // rendering. Inspect the SOURCE SDF character table instead to prove
+        // that the broken DEMO accents/euro cannot originate in its atlas.
+        bool nativeAccent = false, nativeEuro = false;
+        if (sourceRecoleta != null && sourceRecoleta.characterTable != null)
+            foreach (TMP_Character glyph in sourceRecoleta.characterTable)
+            {
+                if (glyph == null) continue;
+                if (glyph.unicode == (uint)'ó') nativeAccent = true;
+                if (glyph.unicode == (uint)'€') nativeEuro = true;
+            }
+        bool cleanGlyphs = titleFace != null && (demo
+            ? titleFace.atlasPopulationMode == AtlasPopulationMode.Static &&
+              !nativeAccent && !nativeEuro &&
+              titleFace.fallbackFontAssetTable.Contains(bodyFace) &&
+              bodyFace.HasCharacter('ó', false, false) &&
+              bodyFace.HasCharacter('€', false, false)
+            : titleFace.atlasPopulationMode == AtlasPopulationMode.Dynamic &&
+              titleFace.HasCharacter('ó', true, true) &&
+              titleFace.HasCharacter('€', true, true));
+        Pass(cleanGlyphs,
+            "Recoleta DEMO usa glifos estáticos válidos; Inter oficial cubre acentos y euro ausentes.");
         bool alignedColumns = false;
         if (content != null)
             foreach (Transform child in content.GetComponentsInChildren<Transform>(true))
@@ -325,14 +353,30 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             }
         Pass(caption != null && caption.font == bodyFace &&
              caption.fontSize >= BistroBuilderStaffVisuals.CaptionSize - 1f &&
-             columnName != null && columnName.font == boldFace &&
+             columnName != null && columnName.font == titleFace &&
              columnName.fontSize >= BistroBuilderStaffVisuals.ColumnSize - 1f &&
-             salary != null && salary.font == bodyFace &&
-             skills != null && skills.font == bodyFace &&
-             infoKey != null && infoKey.font == bodyFace &&
-             infoValue != null && infoValue.font == bodyFace &&
-             hire != null && hire.font == boldFace,
-            "Descripción, columnas, datos, habilidades, ficha y contratación respetan el peso y tamaño oficiales.");
+             salary != null && salary.font == titleFace &&
+             skills != null && skills.font == titleFace &&
+             infoKey != null && infoKey.font == titleFace &&
+             infoValue != null && infoValue.font == titleFace &&
+             hire != null && hire.font == titleFace,
+            "Recoleta en columnas, filas, habilidades, datos y Contratar; Inter en la descripción.");
+        int serifActionButtons = 0;
+        foreach (Button action in inspector.GetComponentsInChildren<Button>(true))
+        {
+            if (action == null) continue;
+            TMP_Text actionLabel = action.GetComponentInChildren<TMP_Text>(true);
+            if (actionLabel == null) continue;
+            if (actionLabel.font == titleFace) serifActionButtons++;
+        }
+        Pass(serifActionButtons >= 4,
+            "Los cuatro botones inferiores de la ficha utilizan Recoleta.");
+        BistroBuilderStaffVisuals.NormalizeHierarchy(root);
+        Pass(salary != null && salary.font == titleFace &&
+            salary.fontStyle == FontStyles.Normal &&
+            columnName != null && columnName.font == titleFace &&
+            columnName.fontStyle == FontStyles.Bold,
+            "La segunda normalización mantiene Recoleta Regular/Bold sin falsear todas las filas como títulos.");
         int typographyCount = 0, nonOfficial = 0;
         string badExamples = string.Empty;
         foreach (TMP_Text label in root.GetComponentsInChildren<TMP_Text>(true))
