@@ -411,6 +411,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             BistroBuilderMenuEditorUiFactory.Surface
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(panel);
 
         BuildHeader(panel);
         BuildBody(panel);
@@ -445,8 +446,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         titleText.rectTransform.anchorMin = new Vector2(0f, 0f);
         titleText.rectTransform.anchorMax = new Vector2(0.32f, 1f);
-        titleText.rectTransform.offsetMin = new Vector2(16f, 0f);
+        titleText.rectTransform.offsetMin = new Vector2(54f, 0f);
         titleText.rectTransform.offsetMax = Vector2.zero;
+        BistroBuilderMenuEditorUiFactory.AddMenuHeaderIcon(header);
 
         contextText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Context",
@@ -466,7 +468,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             header,
             "Comida",
             CycleMealService,
-            new Color(0.16f, 0.20f, 0.18f, 1f),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             14
         );
         SetAnchoredColumn(mealServiceButton, 0.54f, 0.67f, 9f);
@@ -476,7 +478,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             header,
             "Mesa",
             CycleServiceMode,
-            new Color(0.16f, 0.20f, 0.18f, 1f),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             14
         );
         SetAnchoredColumn(serviceModeButton, 0.68f, 0.79f, 9f);
@@ -496,7 +498,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             header,
             "Cerrar",
             RequestClose,
-            new Color(0.25f, 0.15f, 0.14f, 1f),
+            BistroBuilderMenuEditorUiFactory.Negative,
             14
         );
         SetAnchoredColumn(closeButton, 0.90f, 0.985f, 9f);
@@ -523,8 +525,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             sidebar,
-            new Color(0.07f, 0.078f, 0.073f, 1f)
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(sidebar);
         BuildSidebar(sidebar);
 
         RectTransform detail = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -537,8 +540,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             detail,
-            new Color(0.07f, 0.078f, 0.073f, 1f)
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(detail);
         BuildDetail(detail);
 
         RectTransform list = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -874,7 +878,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             footer,
             "Descartar",
             DiscardChanges,
-            new Color(0.22f, 0.24f, 0.22f, 1f),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             14
         );
         SetAnchoredColumn(discardButton, 0.68f, 0.80f, 8f);
@@ -902,7 +906,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             confirmationRoot,
-            new Color(0f, 0f, 0f, 0.72f)
+            BistroBuilderMenuEditorUiFactory.Overlay
         );
 
         RectTransform card = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -937,7 +941,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             card,
             "Seguir editando",
             () => confirmationRoot.gameObject.SetActive(false),
-            new Color(0.22f, 0.24f, 0.22f, 1f),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             14
         );
         keepButton.GetComponent<RectTransform>().anchorMin = new Vector2(0.08f, 0.10f);
@@ -1385,9 +1389,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
     private void RefreshHeader()
     {
-        titleText.text = "Carta y platos · " +
-            summary.IncludedDishCount + "/" + summary.CatalogDishCount;
-        contextText.text = "Restaurante: " + summary.RestaurantId;
+        // Keep Recoleta DEMO restricted to clean ASCII. Dynamic counts and
+        // Unicode punctuation are presented in the official Inter caption.
+        titleText.text = "CARTA Y PLATOS";
+        contextText.text = "En carta: " + summary.IncludedDishCount + "/" +
+            summary.CatalogDishCount + " · Restaurante: " + summary.RestaurantId;
         SetButtonLabel(
             mealServiceButton,
             BistroBuilderMenuEditorUtility.GetMealServiceLabel(
@@ -1677,7 +1683,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             if (includeImage != null)
             {
                 includeImage.color = selectedSnapshot.Included
-                    ? new Color(0.34f, 0.18f, 0.16f, 1f)
+                    ? BistroBuilderMenuEditorUiFactory.Negative
                     : BistroBuilderMenuEditorUiFactory.Positive;
             }
 
@@ -2044,7 +2050,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
         if (text != null)
         {
-            text.text = label ?? string.Empty;
+            BistroBuilderMenuEditorUiFactory.SetButtonDisplay(text, label);
         }
     }
 }

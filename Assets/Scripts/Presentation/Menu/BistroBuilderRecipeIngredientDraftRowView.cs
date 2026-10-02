@@ -85,7 +85,7 @@ public sealed class BistroBuilderRecipeIngredientDraftRowView : MonoBehaviour
             root,
             "Quitar",
             () => removeRequested?.Invoke(this),
-            new Color(0.34f, 0.18f, 0.16f, 1f),
+            BistroBuilderMenuEditorUiFactory.Negative,
             12
         );
         BistroBuilderMenuEditorUiFactory.SetLayoutWidth(removeButton, 78f);

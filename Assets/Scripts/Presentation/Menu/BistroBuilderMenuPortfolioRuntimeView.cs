@@ -229,7 +229,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             host,
             "CARTAS",
             HandleOpen,
-            new Color(0.17f, 0.24f, 0.20f, 1f),
+            BistroBuilderMenuEditorUiFactory.Positive,
             14
         );
         RectTransform openRect = openButton.GetComponent<RectTransform>();
@@ -268,6 +268,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         );
 
         BistroBuilderManagementViewport.Install(modalRoot, panel, 760);
+        BistroBuilderMenuEditorUiFactory.StylePlate(panel);
         BuildHeader(panel);
         BuildMenusPanel(panel);
         BuildRulesPanel(panel);
@@ -294,7 +295,8 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.TextPrimary,
             FontStyle.Bold
         );
-        SetRect(headerText.rectTransform, 0.015f, 0f, 0.47f, 1f, 0f);
+        BistroBuilderMenuEditorUiFactory.AddMenuHeaderIcon(header);
+        SetRect(headerText.rectTransform, 0.058f, 0f, 0.47f, 1f, 0f);
 
         resolutionText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Resolution", header, string.Empty, 13,
@@ -305,7 +307,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
 
         Button close = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Close", header, "Cerrar", Close,
-            new Color(0.25f, 0.15f, 0.14f, 1f), 14
+            BistroBuilderMenuEditorUiFactory.Negative, 14
         );
         SetRect(close.GetComponent<RectTransform>(), 0.86f, 0.14f, 0.985f, 0.86f, 0f);
     }
@@ -546,9 +548,15 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             out _,
             out _
         );
-        headerText.text = "Cartas y reglas · " + snapshot.MenuCount + (snapshot.MenuCount == 1 ? " carta · " : " cartas · ") + snapshot.RuleCount + (snapshot.RuleCount == 1 ? " regla" : " reglas");
-        resolutionText.text = "Efectiva: " + GetMenuName(snapshot.ActiveMenuId) +
-            "\n" + resolution.Description;
+        // Recoleta.otf DEMO is only safe for ASCII. Keep the large title in
+        // the clean Recoleta alphabet; dynamic counts/diacritics belong to
+        // the secondary Inter face, never to Recoleta's faulty demo glyphs.
+        headerText.text = "CARTA";
+        resolutionText.text = snapshot.MenuCount +
+            (snapshot.MenuCount == 1 ? " carta · " : " cartas · ") +
+            snapshot.RuleCount +
+            (snapshot.RuleCount == 1 ? " regla · " : " reglas · ") +
+            "Efectiva: " + GetMenuName(snapshot.ActiveMenuId) + ".";
     }
 
     private void RefreshSignals()
@@ -824,8 +832,10 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
 
     private void UpdateRuleButtonLabels()
     {
-        if (ruleTypeText != null) ruleTypeText.text = "Tipo: " + GetTypeLabel(selectedRuleType);
-        if (targetMenuText != null) targetMenuText.text = "Destino: " + GetMenuName(selectedTargetMenuId);
+        BistroBuilderMenuEditorUiFactory.SetButtonDisplay(
+            ruleTypeText, "Tipo: " + GetTypeLabel(selectedRuleType));
+        BistroBuilderMenuEditorUiFactory.SetButtonDisplay(
+            targetMenuText, "Destino: " + GetMenuName(selectedTargetMenuId));
     }
 
     private void ActivateEvent() => SetSignal(eventIdInput.text, true, true);
@@ -1011,15 +1021,18 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     private static RectTransform CreateCard(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
     {
         RectTransform rect = BistroBuilderMenuEditorUiFactory.CreateRect(name, parent, anchorMin, anchorMax, offsetMin, offsetMax);
-        var image = BistroBuilderMenuEditorUiFactory.AddImage(rect, BistroBuilderUiTokens.Surface1);
-        BistroBuilderSurface.Apply(image, BistroBuilderSurfaceLevel.Panel);
+        BistroBuilderMenuEditorUiFactory.AddImage(rect,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised);
+        BistroBuilderMenuEditorUiFactory.StylePlate(rect);
         return rect;
     }
 
     private static void AddTitle(Transform parent, string text, float minY, float maxY)
     {
-        Text label = BistroBuilderMenuEditorUiFactory.CreateText("Subheading", parent, text, 18, TextAnchor.MiddleLeft, BistroBuilderMenuEditorUiFactory.TextPrimary, FontStyle.Normal);
-        SetRect(label.rectTransform, 0.04f, minY, 0.96f, maxY, 0f);
+        BistroBuilderMenuEditorUiFactory.AddPortfolioSectionIcon(parent,
+            text, minY, maxY);
+        Text label = BistroBuilderMenuEditorUiFactory.CreateText("Subheading", parent, text, 18, TextAnchor.MiddleLeft, BistroBuilderMenuEditorUiFactory.TextPrimary, FontStyle.Bold);
+        SetRect(label.rectTransform, 0.13f, minY, 0.96f, maxY, 0f);
     }
 
     private static void AddMiniLabel(Transform parent, string text, float minX, float minY, float maxX, float maxY)

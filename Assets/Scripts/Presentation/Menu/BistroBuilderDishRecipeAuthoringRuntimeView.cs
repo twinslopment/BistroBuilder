@@ -237,7 +237,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             modalRoot,
-            new Color(0.01f, 0.015f, 0.013f, 0.92f)
+            BistroBuilderMenuEditorUiFactory.Overlay
         );
 
         RectTransform card = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -252,6 +252,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
             card,
             BistroBuilderMenuEditorUiFactory.Surface
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(card);
 
         BuildHeader(card);
         BuildBody(card);
@@ -286,8 +287,9 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         titleText.rectTransform.anchorMin = new Vector2(0f, 0.42f);
         titleText.rectTransform.anchorMax = new Vector2(0.76f, 1f);
-        titleText.rectTransform.offsetMin = new Vector2(16f, 0f);
+        titleText.rectTransform.offsetMin = new Vector2(54f, 0f);
         titleText.rectTransform.offsetMax = Vector2.zero;
+        BistroBuilderMenuEditorUiFactory.AddMenuHeaderIcon(header);
 
         identityText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Identity",
@@ -307,7 +309,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
             header,
             "Cancelar",
             Close,
-            new Color(0.30f, 0.17f, 0.15f, 1f),
+            BistroBuilderMenuEditorUiFactory.Negative,
             14
         );
         RectTransform closeRect = closeButton.GetComponent<RectTransform>();
@@ -338,8 +340,9 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             left,
-            new Color(0.055f, 0.062f, 0.058f, 1f)
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(left);
 
         RectTransform right = BistroBuilderMenuEditorUiFactory.CreateRect(
             "RecipeColumn",
@@ -351,8 +354,9 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             right,
-            new Color(0.055f, 0.062f, 0.058f, 1f)
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
+        BistroBuilderMenuEditorUiFactory.StylePlate(right);
 
         BuildDishColumn(left);
         BuildRecipeColumn(right);
@@ -588,7 +592,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             pickerRoot,
-            new Color(0.01f, 0.01f, 0.01f, 0.86f)
+            BistroBuilderMenuEditorUiFactory.Overlay
         );
 
         RectTransform card = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -623,7 +627,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
             card,
             "Cerrar",
             CloseIngredientPicker,
-            new Color(0.30f, 0.17f, 0.15f, 1f),
+            BistroBuilderMenuEditorUiFactory.Negative,
             13
         );
         RectTransform closeRect = close.GetComponent<RectTransform>();
@@ -1001,7 +1005,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             row,
-            new Color(0.09f, 0.10f, 0.095f, 1f)
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
         BistroBuilderRecipeIngredientDraftRowView view =
             row.gameObject.AddComponent<
@@ -1354,7 +1358,7 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
 
         if (text != null)
         {
-            text.text = value ?? string.Empty;
+            BistroBuilderMenuEditorUiFactory.SetButtonDisplay(text, value);
         }
     }
 

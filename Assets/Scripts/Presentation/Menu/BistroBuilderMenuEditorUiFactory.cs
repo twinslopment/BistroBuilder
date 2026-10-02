@@ -1,3 +1,4 @@
+using BistroBuilder.UI.Iconography;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -9,33 +10,118 @@ using UnityEngine.UI;
 /// </summary>
 internal static class BistroBuilderMenuEditorUiFactory
 {
-    public static readonly Color Overlay = new Color(0.02f, 0.025f, 0.023f, 0.82f);
-    public static readonly Color Surface = BistroBuilderUiTokens.Background;
-    public static readonly Color SurfaceRaised = BistroBuilderUiTokens.Surface2;
-    public static readonly Color SurfaceSelected = new Color(0.20f, 0.28f, 0.23f, 1f);
-    public static readonly Color Border = new Color(0.27f, 0.30f, 0.28f, 1f);
-    public static readonly Color Accent = new Color(0.74f, 0.58f, 0.25f, 1f);
-    public static readonly Color Positive = new Color(0.29f, 0.57f, 0.39f, 1f);
-    public static readonly Color Warning = new Color(0.82f, 0.56f, 0.17f, 1f);
-    public static readonly Color Negative = new Color(0.72f, 0.25f, 0.23f, 1f);
-    public static readonly Color TextPrimary = new Color(0.94f, 0.94f, 0.90f, 1f);
-    public static readonly Color TextSecondary = new Color(0.69f, 0.72f, 0.69f, 1f);
+    // CARTA V1: one ivory / brass palette for Portfolio, Editor, Authoring,
+    // their lists and popovers. Same visual language as approved Personal V8.
+    public static readonly Color Overlay = new Color32(19, 16, 13, 222);
+    public static readonly Color Surface = new Color32(247, 230, 206, 255);
+    public static readonly Color SurfaceRaised = new Color32(255, 242, 222, 255);
+    public static readonly Color SurfaceSelected = new Color32(239, 202, 149, 255);
+    public static readonly Color Border = new Color32(184, 142, 90, 255);
+    public static readonly Color Accent = new Color32(171, 111, 47, 255);
+    public static readonly Color Positive = new Color32(210, 159, 95, 255);
+    public static readonly Color Warning = new Color32(162, 103, 38, 255);
+    public static readonly Color Negative = new Color32(150, 42, 31, 255);
+    public static readonly Color TextPrimary = new Color32(56, 36, 21, 255);
+    public static readonly Color TextSecondary = new Color32(111, 80, 50, 255);
 
+    private static BBIconCatalog icons;
     private static Font cachedFont;
+    private static Font displayFont;
+    private static Font emphasisFont;
 
     public static Font Font
     {
         get
         {
             if (cachedFont == null)
-            {
-                cachedFont = BistroBuilderTypography.LegacyBody ?? Resources.GetBuiltinResource<Font>(
-                    "LegacyRuntime.ttf"
-                );
-            }
-
+                cachedFont = Resources.Load<Font>(
+                    "BistroBuilder/UI/Typography/Inter-Regular")
+                    ?? BistroBuilderTypography.LegacyBody;
             return cachedFont;
         }
+    }
+
+    // These are the project's own imported fonts. The installed Recoleta.otf
+    // is a DEMO, so only ASCII-only display strings may safely use it; for
+    // any accented heading the official Inter SemiBold is the fallback.
+    private static Font HeadingFont(string value)
+    {
+        if (emphasisFont == null)
+            emphasisFont = Resources.Load<Font>(
+                "BistroBuilder/UI/Typography/Inter-SemiBold") ?? Font;
+        bool cleanAscii = true;
+        if (!string.IsNullOrEmpty(value))
+            foreach (char glyph in value)
+                if (glyph < 32 || glyph > 126) { cleanAscii = false; break; }
+        if (!cleanAscii) return emphasisFont;
+        if (displayFont == null)
+            displayFont = Resources.Load<Font>(
+                "BistroBuilder/UI/Typography/Recoleta");
+        return displayFont != null ? displayFont : emphasisFont;
+    }
+
+    public static void SetButtonDisplay(Text text, string value)
+    {
+        if (text == null) return;
+        text.text = value ?? string.Empty;
+        Font face = HeadingFont(text.text);
+        if (face != null) text.font = face;
+        text.fontStyle = face == displayFont ? FontStyle.Bold : FontStyle.Normal;
+    }
+
+    private static bool DisplayLabel(string name) => name == "Title" ||
+        name == "Subheading" || name == "Heading" || name == "SectionTitle";
+
+    public static void StylePlate(RectTransform rect)
+    {
+        if (rect == null) return;
+        Image panel = rect.GetComponent<Image>();
+        if (panel == null) panel = AddImage(rect, Surface);
+        panel.color = Surface;
+        Outline line = rect.GetComponent<Outline>();
+        if (line == null) line = rect.gameObject.AddComponent<Outline>();
+        line.effectColor = Border;
+        line.effectDistance = new Vector2(1.7f, -1.7f);
+        line.useGraphicAlpha = false;
+        Shadow shadow = rect.GetComponent<Shadow>();
+        if (shadow == null) shadow = rect.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color32(65, 39, 19, 70);
+        shadow.effectDistance = new Vector2(0, -2);
+        shadow.useGraphicAlpha = true;
+    }
+
+    public static RectTransform AddIcon(string name, Transform parent,
+        BBIconId id, Vector2 min, Vector2 max,
+        Vector2 offsetMin, Vector2 offsetMax)
+    {
+        if (icons == null) icons = BBIconCatalog.LoadDefault();
+        Sprite sprite = icons != null ? icons.GetSprite(id) : null;
+        if (sprite == null) return null;
+        RectTransform rect = CreateRect(name, parent, min, max,
+            offsetMin, offsetMax);
+        Image image = AddImage(rect, Color.white);
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        return rect;
+    }
+
+    public static void AddMenuHeaderIcon(Transform parent)
+    {
+        AddIcon("CartaHeaderIcon", parent, BBIconId.NavMenu,
+            new Vector2(0f, 0f), new Vector2(0f, 1f),
+            new Vector2(14f, 9f), new Vector2(45f, -9f));
+    }
+
+    public static void AddPortfolioSectionIcon(Transform parent,
+        string title, float minY, float maxY)
+    {
+        BBIconId icon = title == "Mis cartas" ? BBIconId.NavMenu :
+            title == "Reglas de activación" ? BBIconId.ActionSave :
+            BBIconId.ActionEdit;
+        AddIcon("SectionIcon", parent, icon,
+            new Vector2(.037f, minY), new Vector2(.113f, maxY),
+            new Vector2(0f, 5f), new Vector2(0f, -5f));
     }
 
     public static RectTransform CreateRect(
@@ -91,12 +177,20 @@ internal static class BistroBuilderMenuEditorUiFactory
             Vector2.zero
         );
         Text text = rect.gameObject.AddComponent<Text>();
-        text.font = Font;
+        // Legacy uGUI Text is retained so no service/UI bindings are replaced.
+        // The official Recoleta is used for clean ASCII display labels only;
+        // Inter Regular/SemiBold handles text with Spanish diacritics and euro.
+        bool isTitle = DisplayLabel(name);
+        text.font = isTitle ? HeadingFont(value) :
+            style == FontStyle.Bold ?
+            (emphasisFont ?? (emphasisFont = Resources.Load<Font>(
+                "BistroBuilder/UI/Typography/Inter-SemiBold") ?? Font)) : Font;
         text.text = value ?? string.Empty;
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.color = color;
-        text.fontStyle = style;
+        text.fontStyle = isTitle && text.font == displayFont
+            ? FontStyle.Bold : FontStyle.Normal;
         text.raycastTarget = false;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Truncate;
@@ -124,16 +218,13 @@ internal static class BistroBuilderMenuEditorUiFactory
         Button button = rect.gameObject.AddComponent<Button>();
         button.targetGraphic = image;
         ColorBlock colors = button.colors;
-        colors.normalColor = normalColor;
-        colors.highlightedColor = Color.Lerp(normalColor, Color.white, 0.12f);
-        colors.pressedColor = Color.Lerp(normalColor, Color.black, 0.18f);
+        // ColorTint multiplies image.color: tint ONCE, never twice (the prior
+        // dark menu accidentally used normalColor both places).
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color32(255, 251, 237, 255);
+        colors.pressedColor = new Color32(214, 186, 148, 255);
         colors.selectedColor = colors.highlightedColor;
-        colors.disabledColor = new Color(
-            normalColor.r,
-            normalColor.g,
-            normalColor.b,
-            0.35f
-        );
+        colors.disabledColor = new Color(1f, 1f, 1f, 0.4f);
         colors.colorMultiplier = 1f;
         button.colors = colors;
         button.navigation = new Navigation
@@ -148,8 +239,15 @@ internal static class BistroBuilderMenuEditorUiFactory
             fontSize,
             TextAnchor.MiddleCenter,
             TextPrimary,
-            FontStyle.Normal
+            FontStyle.Bold
         );
+        Font buttonFace = HeadingFont(label);
+        if (buttonFace != null) text.font = buttonFace;
+        text.fontStyle = buttonFace == displayFont ? FontStyle.Bold : FontStyle.Normal;
+        Outline trim = rect.gameObject.AddComponent<Outline>();
+        trim.effectColor = Border;
+        trim.effectDistance = new Vector2(1f, -1f);
+        trim.useGraphicAlpha = false;
         text.rectTransform.offsetMin = new Vector2(8f, 4f);
         text.rectTransform.offsetMax = new Vector2(-8f, -4f);
 
@@ -309,7 +407,7 @@ internal static class BistroBuilderMenuEditorUiFactory
             Vector2.zero,
             Vector2.zero
         );
-        AddImage(root, BistroBuilderUiTokens.Background);
+        AddImage(root, SurfaceRaised);
         ScrollRect scroll = root.gameObject.AddComponent<ScrollRect>();
         scroll.horizontal = false;
         scroll.vertical = true;

@@ -78,6 +78,18 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         ConfigureCanvas();
     }
 
+    private static bool IsCartaModalChild(Transform item)
+    {
+        for (Transform node = item; node != null; node = node.parent)
+        {
+            string name = node.name;
+            if (name == "MenuPortfolioModal" ||
+                name == "MenuEditorModal" ||
+                name == "DishRecipeAuthoringModal") return true;
+        }
+        return false;
+    }
+
     public void ApplyAllNow(bool force)
     {
         Resolve();
@@ -85,26 +97,41 @@ public sealed class BistroBuilderUiDesignSystem : MonoBehaviour
         ConfigureCanvas();
         if (force) styledIds.Clear();
 
+        // Carta V1 owns a dedicated approved parchment visual factory. The
+        // generic UI rescan otherwise repaints its legacy uGUI fonts as
+        // Georgia and its parchment panels with the old dark token palette.
+        // Exclude ONLY the three named modal roots; the surrounding HUD,
+        // launchers, Personal and all other screens keep their original gate.
         Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
-        for (int i = 0; i < buttons.Length; i++) StyleButton(buttons[i], force);
+        for (int i = 0; i < buttons.Length; i++)
+            if (!IsCartaModalChild(buttons[i].transform)) StyleButton(buttons[i], force);
         Toggle[] toggles = canvas.GetComponentsInChildren<Toggle>(true);
-        for (int i = 0; i < toggles.Length; i++) StyleToggle(toggles[i], force);
+        for (int i = 0; i < toggles.Length; i++)
+            if (!IsCartaModalChild(toggles[i].transform)) StyleToggle(toggles[i], force);
         TMP_InputField[] tmpInputs = canvas.GetComponentsInChildren<TMP_InputField>(true);
-        for (int i = 0; i < tmpInputs.Length; i++) StyleTmpInput(tmpInputs[i], force);
+        for (int i = 0; i < tmpInputs.Length; i++)
+            if (!IsCartaModalChild(tmpInputs[i].transform)) StyleTmpInput(tmpInputs[i], force);
         InputField[] inputs = canvas.GetComponentsInChildren<InputField>(true);
-        for (int i = 0; i < inputs.Length; i++) StyleLegacyInput(inputs[i], force);
+        for (int i = 0; i < inputs.Length; i++)
+            if (!IsCartaModalChild(inputs[i].transform)) StyleLegacyInput(inputs[i], force);
         TMP_Dropdown[] tmpDropdowns = canvas.GetComponentsInChildren<TMP_Dropdown>(true);
-        for (int i = 0; i < tmpDropdowns.Length; i++) StyleTmpDropdown(tmpDropdowns[i], force);
+        for (int i = 0; i < tmpDropdowns.Length; i++)
+            if (!IsCartaModalChild(tmpDropdowns[i].transform)) StyleTmpDropdown(tmpDropdowns[i], force);
         Dropdown[] dropdowns = canvas.GetComponentsInChildren<Dropdown>(true);
-        for (int i = 0; i < dropdowns.Length; i++) StyleLegacyDropdown(dropdowns[i], force);
+        for (int i = 0; i < dropdowns.Length; i++)
+            if (!IsCartaModalChild(dropdowns[i].transform)) StyleLegacyDropdown(dropdowns[i], force);
         Scrollbar[] scrollbars = canvas.GetComponentsInChildren<Scrollbar>(true);
-        for (int i = 0; i < scrollbars.Length; i++) StyleScrollbar(scrollbars[i], force);
+        for (int i = 0; i < scrollbars.Length; i++)
+            if (!IsCartaModalChild(scrollbars[i].transform)) StyleScrollbar(scrollbars[i], force);
         Image[] images = canvas.GetComponentsInChildren<Image>(true);
-        for (int i = 0; i < images.Length; i++) StyleStructuralImage(images[i], force);
+        for (int i = 0; i < images.Length; i++)
+            if (!IsCartaModalChild(images[i].transform)) StyleStructuralImage(images[i], force);
         TMP_Text[] tmpTexts = canvas.GetComponentsInChildren<TMP_Text>(true);
-        for (int i = 0; i < tmpTexts.Length; i++) StyleTmpText(tmpTexts[i], force);
+        for (int i = 0; i < tmpTexts.Length; i++)
+            if (!IsCartaModalChild(tmpTexts[i].transform)) StyleTmpText(tmpTexts[i], force);
         Text[] legacyTexts = canvas.GetComponentsInChildren<Text>(true);
-        for (int i = 0; i < legacyTexts.Length; i++) StyleLegacyText(legacyTexts[i], force);
+        for (int i = 0; i < legacyTexts.Length; i++)
+            if (!IsCartaModalChild(legacyTexts[i].transform)) StyleLegacyText(legacyTexts[i], force);
 
         nextScanAt = Time.unscaledTime + Mathf.Max(0.2f, rescanIntervalSeconds);
     }
