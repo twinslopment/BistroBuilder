@@ -11,14 +11,15 @@ using BistroBuilder.UI.Iconography;
 /// </summary>
 public static class BistroBuilderStaffVisuals
 {
-    public static readonly Color Ivory = new Color32(244, 230, 207, 255);
-    public static readonly Color Paper = new Color32(255, 247, 232, 255);
-    public static readonly Color Inset = new Color32(233, 210, 176, 255);
-    public static readonly Color Amber = new Color32(224, 184, 119, 255);
-    public static readonly Color Ink = new Color32(58, 39, 21, 255);
-    public static readonly Color Muted = new Color32(104, 79, 51, 255);
-    public static readonly Color Brass = new Color32(149, 103, 52, 255);
-    public static readonly Color Border = new Color32(179, 144, 97, 255);
+    // One coherent palette for 4F/5E, tuned against the approved Personal mock-up.
+    public static readonly Color Ivory = new Color32(245, 230, 207, 255);
+    public static readonly Color Paper = new Color32(251, 240, 220, 255);
+    public static readonly Color Inset = new Color32(233, 208, 173, 255);
+    public static readonly Color Amber = new Color32(232, 186, 115, 255);
+    public static readonly Color Ink = new Color32(53, 35, 23, 255);
+    public static readonly Color Muted = new Color32(110, 82, 52, 255);
+    public static readonly Color Brass = new Color32(160, 110, 54, 255);
+    public static readonly Color Border = new Color32(168, 125, 73, 255);
     public static readonly Color Danger = new Color32(146, 57, 44, 255);
     public static readonly Color Green = new Color32(51, 112, 52, 255);
     public static readonly Color Empty = new Color32(236, 223, 202, 255);
@@ -117,6 +118,12 @@ public static class BistroBuilderStaffVisuals
         outline.effectColor = destructive ? new Color32(97, 37, 28, 255) : Border;
         outline.effectDistance = new Vector2(1f, -1f);
         outline.useGraphicAlpha = false;
+        Shadow shadow = button.GetComponent<Shadow>();
+        if (shadow == null) shadow = button.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = new Color32(73, 42, 18, 75);
+        shadow.effectDistance = new Vector2(0f, -2f);
+        shadow.useGraphicAlpha = true;
+        // The subtly raised plate matches the approved ivory/brass controls.
         button.transition = Selectable.Transition.ColorTint;
         // Unity ColorTint writes Graphic.color directly; tinting from
         // white would erase the parchment/amber state on the first hover.
