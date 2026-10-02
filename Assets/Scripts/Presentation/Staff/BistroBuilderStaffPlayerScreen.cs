@@ -223,6 +223,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen : MonoBehaviour, Unit
         RenderSelectedCandidate();
         ApplyViewMode();
         UpdateApprovedRowSelection();
+        BistroBuilderStaffVisuals.NormalizeHierarchy(panelRoot.transform);
         ShowFeedback(string.Empty);
     }
 

@@ -109,7 +109,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             BistroBuilderStaffVisuals.Inset);
         BistroBuilderStaffVisuals.Label("ApprovedPersonalTagline", taglineCard,
             "Contrata, asigna y mejora a tu equipo para ofrecer la mejor experiencia.",
-            15f, .019f, .04f, .981f, .96f, true,
+            13.5f, .019f, .04f, .981f, .96f, true,
             TextAlignmentOptions.Center);
         // The approved reference has a single clean header. The dynamic count
         // remains in the snapshot, but is presented in its actual context
@@ -186,7 +186,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             .006f, .006f, .559f, .063f, BistroBuilderStaffVisuals.Inset);
         BistroBuilderStaffVisuals.Label("ApprovedStaffFooterText", staffFoot,
             "Los cocineros aparecen en Cocina durante el servicio; consulta sus turnos en Horarios.",
-            13f, .018f, .08f, .982f, .92f);
+            BistroBuilderStaffVisuals.CaptionSize, .018f, .08f, .982f, .92f);
         StyleApprovedScroll(candidateListContent, .006f, .006f, .559f, .856f,
             candidatesPanel.transform);
         employeeDetail = employeeNameText.transform.parent as RectTransform;
@@ -277,7 +277,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         BistroBuilderStaffVisuals.TitleStyle(employeeNameText, 28f);
         BistroBuilderStaffVisuals.Place(employeeRoleText.rectTransform,
             .360f, .799f, .930f, .870f);
-        BistroBuilderStaffVisuals.TextStyle(employeeRoleText, 18f, true);
+        BistroBuilderStaffVisuals.TextStyle(employeeRoleText, 16f, true);
 
         SetInactive(employeeContractText);
         SetInactive(employeeProgressText);
@@ -321,9 +321,11 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             infoIcon.preserveAspect = true;
             infoIcon.raycastTarget = false;
             BistroBuilderStaffVisuals.Label("InfoLabel_" + i, employeeDetail,
-                keys[i], 14f, .400f, top - .043f, .622f, top, false);
+                keys[i], BistroBuilderStaffVisuals.FactSize,
+                .400f, top - .043f, .622f, top, false);
             employeeInfo[i] = BistroBuilderStaffVisuals.Label("InfoValue_" + i,
-                employeeDetail, "—", 14f, .626f, top - .043f, .961f, top,
+                employeeDetail, "—", BistroBuilderStaffVisuals.FactSize,
+                .626f, top - .043f, .961f, top,
                 false, TextAlignmentOptions.MidlineRight);
             BistroBuilderStaffVisuals.Separator("InfoRule_" + i,
                 employeeDetail, .356f, top - .047f, .960f);
@@ -374,7 +376,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         BistroBuilderStaffVisuals.TitleStyle(candidateNameText, 28f);
         BistroBuilderStaffVisuals.Place(candidateRoleText.rectTransform,
             .360f, .799f, .930f, .870f);
-        BistroBuilderStaffVisuals.TextStyle(candidateRoleText, 18f, true);
+        BistroBuilderStaffVisuals.TextStyle(candidateRoleText, 16f, true);
         SetInactive(candidateProfileText);
         SetInactive(candidateSalaryText);
         SetInactive(candidateSkillsText);
@@ -424,11 +426,11 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         {
             float y = .348f - .063f * i;
             BistroBuilderStaffVisuals.Label("Skill_" + i, host, titles[i],
-                14f, .052f, y, .341f, y + .046f);
+                BistroBuilderStaffVisuals.SkillSize, .052f, y, .341f, y + .046f);
             BistroBuilderStaffVisuals.Bar("SkillTrack_" + i, host,
                 .360f, y + .012f, .850f, y + .039f, out bars[i]);
             values[i] = BistroBuilderStaffVisuals.Label("SkillValue_" + i,
-                host, "—", 16f, .865f, y, .955f, y + .049f,
+                host, "—", BistroBuilderStaffVisuals.SkillSize, .865f, y, .955f, y + .049f,
                 false, TextAlignmentOptions.MidlineRight);
         }
     }
@@ -663,7 +665,9 @@ public sealed partial class BistroBuilderStaffPlayerScreen
                 BistroBuilderStaffVisuals.Place(rect, a, 0f, b, 1f);
             if (rect != null)
                 BistroBuilderStaffVisuals.TextStyle(
-                    rect.GetComponent<TMP_Text>(), name == "Name" ? 15f : 13f,
+                    rect.GetComponent<TMP_Text>(), name == "Name"
+                    ? BistroBuilderStaffVisuals.RowNameSize
+                    : BistroBuilderStaffVisuals.RowDataSize,
                     name == "Name",
                     name == "Name" ? TextAlignmentOptions.MidlineLeft
                         : TextAlignmentOptions.Center);
@@ -676,7 +680,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             Cell("Salary", .713f, .837f);
             Cell("Status", .842f, .992f);
             var assign = BistroBuilderStaffVisuals.Label("Assignment", row.transform,
-                department, 13f, .542f, 0f, .708f, 1f,
+                department, BistroBuilderStaffVisuals.RowDataSize,
+                .542f, 0f, .708f, 1f,
                 false, TextAlignmentOptions.Center);
             assign.color = BistroBuilderStaffVisuals.Muted;
             TMP_Text status = row.transform.Find("Status")?.GetComponent<TMP_Text>();
@@ -809,9 +814,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             department, 22f, .059f, .10f, .25f, .91f, true);
         BistroBuilderStaffVisuals.TitleStyle(title, 22f);
         BistroBuilderStaffVisuals.Label("DepartmentCaption", band,
-            caption, 13f, .25f, .10f, .77f, .91f);
+            caption, BistroBuilderStaffVisuals.CaptionSize,
+            .25f, .10f, .77f, .91f);
         BistroBuilderStaffVisuals.Label("DepartmentCount", band,
-            count + " EN PLANTILLA", 12f, .77f, .10f, .973f, .91f,
+            count + " EN PLANTILLA", 13f, .77f, .10f, .973f, .91f,
             true, TextAlignmentOptions.Right);
 
         var columns = BistroBuilderStaffVisuals.Panel("DepartmentColumns",
@@ -821,7 +827,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         for (int i = 0; i < labels.Length; i++)
         {
             TMP_Text text = BistroBuilderStaffVisuals.Label("Column_" + i,
-                columns, labels[i], 11f, x[i], 0f, x[i+1], 1f, true,
+                columns, labels[i], BistroBuilderStaffVisuals.ColumnSize,
+                x[i], 0f, x[i+1], 1f, true,
                 TextAlignmentOptions.Center);
             text.color = BistroBuilderStaffVisuals.Ink;
             if (i < labels.Length - 1)
@@ -847,13 +854,15 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             27f, .024f, .10f, .088f, .89f, true,
             TextAlignmentOptions.Center).color = BistroBuilderStaffVisuals.Brass;
         BistroBuilderStaffVisuals.Label("VacancyText", vacancy,
-            "Puesto disponible", 13f, .110f, 0f, .315f, 1f)
+            "Puesto disponible", BistroBuilderStaffVisuals.RowDataSize,
+            .110f, 0f, .315f, 1f)
             .color = BistroBuilderStaffVisuals.Muted;
         float[] emptyLeft = { .325f, .462f, .557f, .706f };
         float[] emptyRight = { .46f, .55f, .697f, .833f };
         for (int i = 0; i < emptyLeft.Length; i++)
             BistroBuilderStaffVisuals.Label("VacancyEmpty_" + i, vacancy,
-                "—", 13f, emptyLeft[i], 0f, emptyRight[i], 1f,
+                "—", BistroBuilderStaffVisuals.RowDataSize,
+                emptyLeft[i], 0f, emptyRight[i], 1f,
                 false, TextAlignmentOptions.Center);
         Button open = BistroBuilderStaffVisuals.NewButton("VacancyHire",
             vacancy, "Contratar", .850f, .14f, .986f, .86f,

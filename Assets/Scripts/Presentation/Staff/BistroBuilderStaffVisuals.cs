@@ -30,6 +30,15 @@ public static class BistroBuilderStaffVisuals
     // No OS fonts or Georgia-specific exceptions are created here.
     public static TMP_FontAsset StaffRegular => BistroBuilderTypography.Body;
     public static TMP_FontAsset StaffBold => BistroBuilderTypography.Emphasis;
+
+    // Official typography tokens are shared by static and generated rows.
+    public const float CaptionSize = 14f;
+    public const float ColumnSize = 12.5f;
+    public const float RowNameSize = 15f;
+    public const float RowDataSize = 14f;
+    public const float FactSize = 14f;
+    public const float SkillSize = 14f;
+    public const float ButtonSize = 14f;
     private static TMP_FontAsset staffRecoleta;
     private static bool titleResolved;
     public static TMP_FontAsset StaffTitle
@@ -129,11 +138,12 @@ public static class BistroBuilderStaffVisuals
         text.fontSize = size;
         text.enableAutoSizing = true;
         text.fontSizeMax = size;
-        text.fontSizeMin = Mathf.Max(10f, size - 5f);
+        // Avoid silently shrinking captions, column titles or table data to 10px.
+        text.fontSizeMin = Mathf.Max(12f, size - 1f);
         TMP_FontAsset font = heading ? StaffBold : StaffRegular;
         if (font != null) text.font = font;
         text.fontStyle = FontStyles.Normal;
-        text.characterSpacing = heading ? -.35f : -.10f;
+        text.characterSpacing = heading ? -.15f : 0f;
         text.color = Ink;
         text.alignment = alignment;
         text.overflowMode = TextOverflowModes.Ellipsis;
@@ -150,15 +160,78 @@ public static class BistroBuilderStaffVisuals
         TMP_FontAsset font = heading ? StaffBold : StaffRegular;
         if (font != null) target.font = font;
         target.fontStyle = FontStyles.Normal;
-        target.characterSpacing = heading ? -.35f : -.10f;
+        target.characterSpacing = heading ? -.15f : 0f;
         target.color = overrideColor ?? Ink;
         target.fontSize = size;
         target.enableAutoSizing = true;
         target.fontSizeMax = size;
-        target.fontSizeMin = Mathf.Max(10f, size - 6f);
+        target.fontSizeMin = Mathf.Max(12f, size - 1f);
         target.alignment = alignment;
         target.overflowMode = TextOverflowModes.Ellipsis;
         target.raycastTarget = false;
+    }
+
+    /// <summary>
+    /// One idempotent typography pass over the actual on-screen hierarchy.
+    /// Prefab labels, runtime rows, confirmation, training and schedule cannot
+    /// keep a stale Liberation/Georgia face when their contents are rebuilt.
+    /// This only normalizes typography; it does not change data or commands.
+    /// </summary>
+    public static void NormalizeHierarchy(Transform root)
+    {
+        if (root == null) return;
+        TMP_FontAsset display = StaffTitle;
+        TMP_FontAsset body = StaffRegular;
+        TMP_FontAsset emphasis = StaffBold;
+        foreach (TMP_Text label in root.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (label == null) continue;
+            string name = label.name;
+            bool isDisplay = label.font == display ||
+                name == "DepartmentTitle" || name == "SkillsHeader" ||
+                name == "CandidateSkillHeader" || name == "ModalTitle" ||
+                name == "ScheduleDayCaption" ||
+                (name == "Title" && label.transform.parent != null &&
+                 (label.transform.parent == root ||
+                  label.transform.parent.name == "DepartmentBand" ||
+                  label.transform.parent.name == "Band" ||
+                  label.transform.parent.name == "TrainingModal"));
+            // A whole employee row has a Button for selection. Its ordinary
+            // cells (role, salary, status...) must NOT become semibold merely
+            // because a Button exists higher in the hierarchy.
+            bool ordinaryCell = name == "Role" || name == "Level" ||
+                name == "Salary" || name == "Status" ||
+                name == "Assignment" || name == "Profile" ||
+                name == "Availability" || name == "Scheduled";
+            bool directButtonLabel = !ordinaryCell &&
+                label.transform.parent != null &&
+                label.transform.parent.GetComponent<Button>() != null;
+            bool isEmphasis = !isDisplay && (
+                directButtonLabel ||
+                (!ordinaryCell && label.font == emphasis) || name == "Name" ||
+                name == "DepartmentCount" || name == "LevelLegend" ||
+                name == "LevelNumber" || name == "Count" ||
+                name.StartsWith("Column_", StringComparison.Ordinal));
+            TMP_FontAsset chosen = isDisplay ? display :
+                isEmphasis ? emphasis : body;
+            if (chosen != null) label.font = chosen;
+            label.fontStyle = isDisplay ? FontStyles.Bold : FontStyles.Normal;
+            label.characterSpacing = isDisplay ? -.18f :
+                isEmphasis ? -.15f : 0f;
+            // Respect the authored size but limit automatic reductions to 1px.
+            if (label.enableAutoSizing && label.fontSize >= 12f)
+            {
+                label.fontSizeMax = label.fontSize;
+                label.fontSizeMin = Mathf.Max(12f, label.fontSize - 1f);
+            }
+        }
+    }
+
+    public static bool IsOfficialFont(TMP_Text label)
+    {
+        if (label == null) return false;
+        return label.font == StaffRegular || label.font == StaffBold ||
+               label.font == StaffTitle;
     }
 
     public static void ButtonStyle(Button button, bool destructive = false,
@@ -197,7 +270,7 @@ public static class BistroBuilderStaffVisuals
         colors.colorMultiplier = 1f;
         button.colors = colors;
         TMP_Text label = button.GetComponentInChildren<TMP_Text>(true);
-        TextStyle(label, 17f, false, TextAlignmentOptions.Center,
+        TextStyle(label, ButtonSize, true, TextAlignmentOptions.Center,
             destructive ? Paper : Ink);
     }
 
@@ -209,8 +282,8 @@ public static class BistroBuilderStaffVisuals
         Image image = rect.gameObject.AddComponent<Image>();
         Button button = rect.gameObject.AddComponent<Button>();
         button.targetGraphic = image;
-        Label(name + "_Label", rect, label, 16f, .03f, 0f, .97f, 1f,
-            false, TextAlignmentOptions.Center);
+        Label(name + "_Label", rect, label, ButtonSize, .03f, 0f, .97f, 1f,
+            true, TextAlignmentOptions.Center);
         ButtonStyle(button, destructive, primary);
         return button;
     }

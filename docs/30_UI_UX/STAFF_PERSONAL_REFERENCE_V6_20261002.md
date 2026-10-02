@@ -1,5 +1,7 @@
 # PERSONAL V6 — fidelidad de tablas y tipografía canónica (02/10/2026)
 
+> **HISTÓRICO.** La especificación integral vigente es `STAFF_PERSONAL_REFERENCE_V7_20261002.md`. V7 completa los pesos, tamaños y normalización de *todos* los elementos regenerados de Plantilla, Candidatos y Horarios.
+
 ## Referencia visual vinculante
 Imagen original `Captura de pantalla 2026-10-01 093447(1).png`: pantalla izquierda de la comparativa `image(20261002-093222).png`. NO utilizar la pantalla derecha ni las V3/V4 como guía final. La V5 conserva la composición general; la V6 ajusta fuentes y tablas.
 

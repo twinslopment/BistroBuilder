@@ -155,6 +155,7 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen : MonoBehavio
         nextDayButton.interactable =
             dayIndex < facade.CurrentDayIndex + facade.PlanningHorizonDays - 1;
         copyPreviousButton.interactable = dayIndex > facade.CurrentDayIndex;
+        BistroBuilderStaffVisuals.NormalizeHierarchy(panelRoot.transform);
         ShowFeedback(string.Empty);
     }
 

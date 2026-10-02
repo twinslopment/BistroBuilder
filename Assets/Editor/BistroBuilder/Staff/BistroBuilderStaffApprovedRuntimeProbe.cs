@@ -309,6 +309,47 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             content?.Find("ApprovedDepartmentGap") != null,
             "SALA y COCINA usan tablas continuas con columnas alineadas y separación entre secciones.");
 
+        TMP_Text caption = content?.Find(
+            "Department_SALA/DepartmentBand/DepartmentCaption")?.GetComponent<TMP_Text>();
+        TMP_Text salary = null;
+        TMP_Text skills = inspector?.Find("Skill_0")?.GetComponent<TMP_Text>();
+        TMP_Text infoKey = inspector?.Find("InfoLabel_0")?.GetComponent<TMP_Text>();
+        TMP_Text infoValue = inspector?.Find("InfoValue_0")?.GetComponent<TMP_Text>();
+        TMP_Text hire = null;
+        if (content != null)
+            foreach (TMP_Text label in content.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (label == null) continue;
+                if (salary == null && label.name == "Salary") salary = label;
+                if (hire == null && label.name == "VacancyHire_Label") hire = label;
+            }
+        Pass(caption != null && caption.font == bodyFace &&
+             caption.fontSize >= BistroBuilderStaffVisuals.CaptionSize - 1f &&
+             columnName != null && columnName.font == boldFace &&
+             columnName.fontSize >= BistroBuilderStaffVisuals.ColumnSize - 1f &&
+             salary != null && salary.font == bodyFace &&
+             skills != null && skills.font == bodyFace &&
+             infoKey != null && infoKey.font == bodyFace &&
+             infoValue != null && infoValue.font == bodyFace &&
+             hire != null && hire.font == boldFace,
+            "Descripción, columnas, datos, habilidades, ficha y contratación respetan el peso y tamaño oficiales.");
+        int typographyCount = 0, nonOfficial = 0;
+        string badExamples = string.Empty;
+        foreach (TMP_Text label in root.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (label == null) continue;
+            typographyCount++;
+            if (BistroBuilderStaffVisuals.IsOfficialFont(label)) continue;
+            nonOfficial++;
+            if (nonOfficial <= 4)
+                badExamples += " " + label.name + "=" +
+                    (label.font != null ? label.font.name : "NULL");
+        }
+        Pass(typographyCount >= 55 && nonOfficial == 0,
+            "Auditoría integral: " + typographyCount +
+            " textos de Personal/Candidatos/modales solo con Recoleta e Inter." +
+            (nonOfficial > 0 ? " INCORRECTOS:" + badExamples : string.Empty));
+
         string file = Path.Combine(directory, "Personal_1920x1080.png");
         ScreenCapture.CaptureScreenshot(file);
         SessionState.SetInt(Prefix + "Stage", 2);
@@ -359,6 +400,17 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
              root.transform.Find("Title")?.GetComponent<TMP_Text>()?.font ==
                  BistroBuilderStaffVisuals.StaffTitle,
             "Horarios comparte Recoleta oficial con Personal; datos y controles usan Inter.");
+        int count = 0, incorrect = 0;
+        if (root != null)
+            foreach (TMP_Text label in root.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (label == null) continue;
+                count++;
+                if (!BistroBuilderStaffVisuals.IsOfficialFont(label)) incorrect++;
+            }
+        Pass(count >= 20 && incorrect == 0,
+            "Auditoría integral Horarios: " + count +
+            " textos con fuentes oficiales; ninguna heredada.");
 
         BistroBuilderStaffSchedulePlayerFacade facade =
             FindScene<BistroBuilderStaffSchedulePlayerFacade>();
