@@ -35,6 +35,11 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     private Text headerText;
     private Text resolutionText;
     private Text statusText;
+    private Text menuCountText;
+    private Text ruleCountText;
+    private RectTransform deleteConfirmationOverlay;
+    private Text deleteConfirmationMessage;
+    private Action pendingDeletion;
     private Text targetMenuText;
     private Text ruleTypeText;
     private Text signalText;
@@ -91,7 +96,10 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
         {
-            Close();
+            if (deleteConfirmationOverlay != null &&
+                deleteConfirmationOverlay.gameObject.activeSelf)
+                CancelPendingDeletion();
+            else Close();
         }
     }
 
@@ -211,6 +219,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
 
     public void Close()
     {
+        CancelPendingDeletion();
         SetVisible(false);
     }
 
@@ -274,6 +283,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         BuildRulesPanel(panel);
         BuildRuleEditor(panel);
         BuildFooter(panel);
+        BuildDeleteConfirmation(panel);
         built = true;
     }
 
@@ -298,12 +308,22 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         BistroBuilderMenuEditorUiFactory.AddMenuHeaderIcon(header);
         SetRect(headerText.rectTransform, 0.058f, 0f, 0.47f, 1f, 0f);
 
-        resolutionText = BistroBuilderMenuEditorUiFactory.CreateText(
-            "Resolution", header, string.Empty, 13,
-            TextAnchor.MiddleLeft,
+        // Personal V8 layout: the explanatory sentence belongs in the main
+        // header; live resolution/count metadata lives in the footer. Keep
+        // gameplay state independent of this presentation arrangement.
+        Text tagline = BistroBuilderMenuEditorUiFactory.CreateText(
+            "Tagline", header,
+            "Diseña, activa y organiza tus cartas para cada momento del servicio.",
+            12, TextAnchor.MiddleRight,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        SetRect(resolutionText.rectTransform, 0.48f, 0f, 0.83f, 1f, 4f);
+        SetRect(tagline.rectTransform, 0.38f, 0.06f, 0.84f, 0.94f, 0f);
+        resolutionText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "Resolution", panel, string.Empty, 11,
+            TextAnchor.MiddleRight,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(resolutionText.rectTransform, 0.51f, 0.015f, 0.98f, 0.08f, 0f);
 
         Button close = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Close", header, "Cerrar", Close,
@@ -320,6 +340,12 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             new Vector2(16f, 78f), new Vector2(-6f, -78f)
         );
         AddTitle(root, "Mis cartas", 0.92f, 1f);
+        menuCountText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "MenuCount", root, string.Empty, 12,
+            TextAnchor.MiddleRight,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(menuCountText.rectTransform, .80f, .92f, .96f, 1f, 0f);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "MenuList", root, out menuContent
@@ -334,7 +360,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         Button create = MakeButton(root, "Crear desde activa", CreateMenu, 0.03f, 0.27f, 0.48f, 0.33f, true);
         Button duplicate = MakeButton(root, "Duplicar", DuplicateMenu, 0.52f, 0.27f, 0.97f, 0.33f, false);
         Button rename = MakeButton(root, "Renombrar", RenameMenu, 0.03f, 0.19f, 0.48f, 0.25f, false);
-        Button remove = MakeButton(root, "Eliminar", DeleteMenu, 0.52f, 0.19f, 0.97f, 0.25f, false);
+        Button remove = MakeButton(root, "Eliminar", AskDeleteMenu, 0.52f, 0.19f, 0.97f, 0.25f, false, true);
         Button fallback = MakeButton(root, "Fijar como base", SetFallback, 0.03f, 0.11f, 0.48f, 0.17f, false);
         Button manual = MakeButton(root, "Activar manual", SetManual, 0.52f, 0.11f, 0.97f, 0.17f, true);
         Button automatic = MakeButton(root, "Reglas automáticas", ClearManual, 0.03f, 0.03f, 0.48f, 0.09f, false);
@@ -350,6 +376,12 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             new Vector2(6f, 78f), new Vector2(-6f, -78f)
         );
         AddTitle(root, "Reglas de activación", 0.92f, 1f);
+        ruleCountText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "RuleCount", root, string.Empty, 12,
+            TextAnchor.MiddleRight,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(ruleCountText.rectTransform, .80f, .92f, .96f, 1f, 0f);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "RuleList", root, out ruleContent
@@ -377,7 +409,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         MakeButton(root, "−", DeactivatePromotion, 0.78f, 0.11f, 0.97f, 0.17f, false);
 
         MakeButton(root, "Nueva regla", NewRule, 0.03f, 0.03f, 0.48f, 0.09f, true);
-        MakeButton(root, "Eliminar regla", DeleteRule, 0.52f, 0.03f, 0.97f, 0.09f, false);
+        MakeButton(root, "Eliminar regla", AskDeleteRule, 0.52f, 0.03f, 0.97f, 0.09f, false, true);
     }
 
     private void BuildRuleEditor(RectTransform panel)
@@ -446,7 +478,91 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             "Status", panel, "Sin cambios.", 13, TextAnchor.MiddleLeft,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        SetRect(statusText.rectTransform, 0.02f, 0.015f, 0.98f, 0.08f, 0f);
+        SetRect(statusText.rectTransform, 0.02f, 0.015f, 0.50f, 0.08f, 0f);
+    }
+
+    private void BuildDeleteConfirmation(RectTransform panel)
+    {
+        // Presentation-only confirmation, same destructive-action contract as
+        // Personal V8. Never mutates the domain until the player confirms.
+        deleteConfirmationOverlay = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "DeleteConfirmation", panel, Vector2.zero, Vector2.one,
+            Vector2.zero, Vector2.zero);
+        BistroBuilderMenuEditorUiFactory.AddImage(deleteConfirmationOverlay,
+            new Color32(32, 20, 11, 162));
+        RectTransform dialog = CreateCard(
+            "ConfirmationCard", deleteConfirmationOverlay,
+            new Vector2(.30f, .34f), new Vector2(.70f, .68f),
+            Vector2.zero, Vector2.zero);
+        Text title = BistroBuilderMenuEditorUiFactory.CreateText(
+            "Subheading", dialog, "CONFIRMAR", 23,
+            TextAnchor.MiddleCenter,
+            BistroBuilderMenuEditorUiFactory.TextPrimary, FontStyle.Bold);
+        SetRect(title.rectTransform, .07f, .69f, .93f, .93f, 0f);
+        deleteConfirmationMessage = BistroBuilderMenuEditorUiFactory.CreateText(
+            "Description", dialog, string.Empty, 14,
+            TextAnchor.MiddleCenter,
+            BistroBuilderMenuEditorUiFactory.TextPrimary);
+        SetRect(deleteConfirmationMessage.rectTransform,
+            .06f, .34f, .94f, .72f, 0f);
+        Button cancel = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "CancelDeletion", dialog, "Cancelar", CancelPendingDeletion,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 14);
+        SetRect(cancel.GetComponent<RectTransform>(),
+            .07f, .09f, .47f, .29f, 0f);
+        Button confirm = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "ConfirmDeletion", dialog, "Eliminar", ConfirmPendingDeletion,
+            BistroBuilderMenuEditorUiFactory.Negative, 14);
+        SetRect(confirm.GetComponent<RectTransform>(),
+            .53f, .09f, .93f, .29f, 0f);
+        deleteConfirmationOverlay.gameObject.SetActive(false);
+    }
+
+    private void RequestDeletion(string message, Action command)
+    {
+        if (deleteConfirmationOverlay == null || command == null) return;
+        pendingDeletion = command;
+        deleteConfirmationMessage.text = message;
+        deleteConfirmationOverlay.gameObject.SetActive(true);
+        deleteConfirmationOverlay.SetAsLastSibling();
+    }
+
+    private void CancelPendingDeletion()
+    {
+        pendingDeletion = null;
+        if (deleteConfirmationOverlay != null)
+            deleteConfirmationOverlay.gameObject.SetActive(false);
+    }
+
+    private void ConfirmPendingDeletion()
+    {
+        Action command = pendingDeletion;
+        CancelPendingDeletion();
+        command?.Invoke();
+    }
+
+    private void AskDeleteMenu()
+    {
+        if (snapshot == null ||
+            !snapshot.TryGetMenu(selectedMenuId, out BistroBuilderNamedMenuRuntimeState menu))
+        {
+            ShowStatus("Selecciona una carta para eliminarla.", true);
+            return;
+        }
+        RequestDeletion("¿Eliminar la carta «" + menu.DisplayName + "»?",
+            DeleteMenu);
+    }
+
+    private void AskDeleteRule()
+    {
+        if (snapshot == null ||
+            !snapshot.TryGetRule(selectedRuleId, out BistroBuilderMenuActivationRuleRuntimeState rule))
+        {
+            ShowStatus("Selecciona una regla para eliminarla.", true);
+            return;
+        }
+        RequestDeletion("¿Eliminar la regla «" + rule.DisplayName + "»?",
+            DeleteRule);
     }
 
     private void RefreshAll(string message)
@@ -479,6 +595,10 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
 
         RebuildMenuRows();
         RebuildRuleRows();
+        if (menuCountText != null)
+            menuCountText.text = snapshot.MenuCount + " cartas";
+        if (ruleCountText != null)
+            ruleCountText.text = snapshot.RuleCount + " reglas";
         RefreshHeader();
         RefreshSignals();
         RefreshRuleEditorFromSelection();
@@ -508,7 +628,9 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
                     : BistroBuilderMenuEditorUiFactory.SurfaceRaised,
                 13
             );
-            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 58f);
+            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 62f);
+            StyleSelectableEntry(button,
+                BistroBuilder.UI.Iconography.BBIconId.NavMenu);
             menuButtons.Add(button);
         }
     }
@@ -535,9 +657,31 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
                     : BistroBuilderMenuEditorUiFactory.SurfaceRaised,
                 12
             );
-            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 58f);
+            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 62f);
+            StyleSelectableEntry(button,
+                BistroBuilder.UI.Iconography.BBIconId.StatusWaiting);
             ruleButtons.Add(button);
         }
+    }
+
+    private static void StyleSelectableEntry(Button button,
+        BistroBuilder.UI.Iconography.BBIconId concept)
+    {
+        if (button == null) return;
+        // Small authored glyph, aligned text and two independent rows of
+        // information, matching the compact Personal V8 table language.
+        Text label = button.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            label.alignment = TextAnchor.MiddleLeft;
+            label.rectTransform.offsetMin = new Vector2(48f, 4f);
+            label.rectTransform.offsetMax = new Vector2(-9f, -4f);
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        }
+        BistroBuilderMenuEditorUiFactory.AddIcon(
+            "EntryIcon", button.transform, concept,
+            new Vector2(0f, 0f), new Vector2(0f, 1f),
+            new Vector2(11f, 13f), new Vector2(35f, -13f));
     }
 
     private void RefreshHeader()
@@ -1032,7 +1176,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         BistroBuilderMenuEditorUiFactory.AddPortfolioSectionIcon(parent,
             text, minY, maxY);
         Text label = BistroBuilderMenuEditorUiFactory.CreateText("Subheading", parent, text, 18, TextAnchor.MiddleLeft, BistroBuilderMenuEditorUiFactory.TextPrimary, FontStyle.Bold);
-        SetRect(label.rectTransform, 0.13f, minY, 0.96f, maxY, 0f);
+        SetRect(label.rectTransform, 0.13f, minY, 0.78f, maxY, 0f);
     }
 
     private static void AddMiniLabel(Transform parent, string text, float minX, float minY, float maxX, float maxY)
@@ -1048,11 +1192,13 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         return input;
     }
 
-    private static Button MakeButton(Transform parent, string label, UnityEngine.Events.UnityAction action, float minX, float minY, float maxX, float maxY, bool positive)
+    private static Button MakeButton(Transform parent, string label, UnityEngine.Events.UnityAction action, float minX, float minY, float maxX, float maxY, bool positive, bool destructive = false)
     {
         Button button = BistroBuilderMenuEditorUiFactory.CreateButton(
             label.Replace(" ", string.Empty), parent, label, action,
-            positive ? BistroBuilderMenuEditorUiFactory.Positive : BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            positive ? BistroBuilderMenuEditorUiFactory.Positive :
+                destructive ? BistroBuilderMenuEditorUiFactory.Negative :
+                BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             12
         );
         SetRect(button.GetComponent<RectTransform>(), minX, minY, maxX, maxY, 0f);

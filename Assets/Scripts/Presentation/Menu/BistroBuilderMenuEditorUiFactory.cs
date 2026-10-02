@@ -275,6 +275,9 @@ internal static class BistroBuilderMenuEditorUiFactory
             Vector2.zero
         );
         Toggle toggle = root.gameObject.AddComponent<Toggle>();
+        // The checked/unchecked background has its own deterministic palette;
+        // disable Selectable's automatic tint so it cannot shift the tick box.
+        toggle.transition = Selectable.Transition.None;
         toggle.navigation = new Navigation
         {
             mode = Navigation.Mode.Automatic
@@ -291,17 +294,32 @@ internal static class BistroBuilderMenuEditorUiFactory
         Image boxImage = AddImage(box, SurfaceRaised);
         toggle.targetGraphic = boxImage;
 
+        // Use the project's own Inter check glyph, geometrically centred in
+        // the 20x20 box. The previous filled inner square did not show a tick,
+        // and the HTML prototype's text-baseline check was visibly displaced.
         RectTransform check = CreateRect(
             "Check",
             box,
             Vector2.zero,
             Vector2.one,
-            new Vector2(4f, 4f),
-            new Vector2(-4f, -4f)
+            Vector2.zero,
+            Vector2.zero
         );
-        Image checkImage = AddImage(check, Accent);
-        checkImage.raycastTarget = false;
-        toggle.graphic = checkImage;
+        Text checkGlyph = check.gameObject.AddComponent<Text>();
+        checkGlyph.font = Font; // Inter Regular includes U+2713.
+        checkGlyph.text = "\u2713";
+        checkGlyph.fontSize = 15;
+        checkGlyph.fontStyle = FontStyle.Bold;
+        checkGlyph.alignment = TextAnchor.MiddleCenter;
+        checkGlyph.color = Color.white;
+        checkGlyph.raycastTarget = false;
+        checkGlyph.supportRichText = false;
+        checkGlyph.horizontalOverflow = HorizontalWrapMode.Overflow;
+        checkGlyph.verticalOverflow = VerticalWrapMode.Overflow;
+        toggle.graphic = checkGlyph;
+        boxImage.color = toggle.isOn ? Accent : SurfaceRaised;
+        toggle.onValueChanged.AddListener(value =>
+            boxImage.color = value ? Accent : SurfaceRaised);
 
         Text text = CreateText(
             "Label",

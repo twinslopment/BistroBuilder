@@ -197,6 +197,67 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              plate?.Find("Menus/SectionIcon") != null &&
              plate?.Find("Rules/SectionIcon") != null,
              "Official menu iconography in the title and portfolio cards.");
+        Text tagline = plate?.Find("Header/Tagline")?.GetComponent<Text>();
+        Text menuCount = plate?.Find("Menus/MenuCount")?.GetComponent<Text>();
+        Text ruleCount = plate?.Find("Rules/RuleCount")?.GetComponent<Text>();
+        Pass(tagline != null && tagline.text.StartsWith("Diseña,") &&
+             menuCount != null && !string.IsNullOrWhiteSpace(menuCount.text) &&
+             ruleCount != null && !string.IsNullOrWhiteSpace(ruleCount.text) &&
+             plate?.Find("Resolution") != null,
+            "V2 header explains Carta; each column has a count and dynamic context remains in footer.");
+        Transform rows = plate?.Find("Menus/MenuList/Viewport/Content");
+        Transform first = rows != null && rows.childCount > 0 ? rows.GetChild(0) : null;
+        Text rowText = first?.GetComponentInChildren<Text>(true);
+        Pass(first != null && first.Find("EntryIcon") != null &&
+             rowText != null && rowText.alignment == TextAnchor.MiddleLeft,
+            "V2 Carta row uses official icon and left-aligned compact typography.");
+        Transform overlay = plate?.Find("DeleteConfirmation");
+        Button remove = plate?.Find("Menus/Eliminar")?.GetComponent<Button>();
+        Pass(overlay != null && !overlay.gameObject.activeSelf &&
+             overlay.Find("ConfirmationCard/ConfirmDeletion") != null &&
+             overlay.Find("ConfirmationCard/CancelDeletion") != null &&
+             remove != null && remove.targetGraphic is Image redGraphic &&
+             redGraphic.color.r > .40f && redGraphic.color.g < .30f,
+            "V2 destructive actions use red and a hidden reusable confirmation.");
+        if (remove != null && overlay != null)
+        {
+            remove.onClick.Invoke();
+            Pass(overlay.gameObject.activeSelf &&
+                 overlay.Find("ConfirmationCard/Description")?.GetComponent<Text>()?.text.Contains("Eliminar") == true,
+                 "Deleting a menu requires explicit approval; service untouched before confirmation.");
+            overlay.Find("ConfirmationCard/CancelDeletion")?.GetComponent<Button>()?.onClick.Invoke();
+            Pass(!overlay.gameObject.activeSelf &&
+                 portfolio.TryValidateVisibleContent(out _),
+                 "Cancelling a destructive action preserves Carta and all row bindings.");
+        }
+        Transform activeRule = plate?.Find("RuleEditor/Enabled");
+        Transform weekday = plate?.Find("RuleEditor/Weekday0");
+        Text ruleTick = activeRule?.Find("Box/Check")?.GetComponent<Text>();
+        Text weekdayTick = weekday?.Find("Box/Check")?.GetComponent<Text>();
+        RectTransform tickRect = ruleTick != null ? ruleTick.rectTransform : null;
+        Pass(ruleTick != null && ruleTick.text == "\u2713" &&
+             ruleTick.alignment == TextAnchor.MiddleCenter &&
+             weekdayTick != null && weekdayTick.text == "\u2713" &&
+             weekdayTick.alignment == TextAnchor.MiddleCenter &&
+             tickRect != null && tickRect.anchorMin == Vector2.zero &&
+             tickRect.anchorMax == Vector2.one &&
+             tickRect.offsetMin == Vector2.zero &&
+             tickRect.offsetMax == Vector2.zero,
+            "V2.1 checked markers are centred in 20x20 boxes for services and weekdays.");
+        Toggle ruleToggle = activeRule?.GetComponent<Toggle>();
+        Image checkBackground = activeRule?.Find("Box")?.GetComponent<Image>();
+        if (ruleToggle != null && checkBackground != null)
+        {
+            bool initial = ruleToggle.isOn;
+            ruleToggle.isOn = false;
+            Color off = checkBackground.color;
+            ruleToggle.isOn = true;
+            Color on = checkBackground.color;
+            ruleToggle.isOn = initial;
+            Pass(off != on && on == BistroBuilderMenuEditorUiFactory.Accent &&
+                 off == BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+                 "Checked state updates only the centred box; no data mutation.");
+        }
         Capture("01_Gestor_Cartas_y_Reglas.png");
         portfolio.Close();
         Move(2);
