@@ -82,11 +82,11 @@ public sealed partial class BistroBuilderStaffPlayerScreen
                 BistroBuilderStaffVisuals.Brass, false);
 
         var head = panelRoot.transform.Find("Title") as RectTransform;
-        BistroBuilderStaffVisuals.Place(head, .067f, .908f, .325f, .984f);
+        BistroBuilderStaffVisuals.Place(head, .078f, .908f, .325f, .984f);
         if (head != null)
         {
-            BistroBuilderStaffVisuals.TextStyle(
-                head.GetComponent<TMP_Text>(), 41f, true);
+            BistroBuilderStaffVisuals.TitleStyle(
+                head.GetComponent<TMP_Text>(), 39f);
             // Match the softly embossed reference title without touching the
             // global shell's type hierarchy.
             Shadow titleShadow = head.GetComponent<Shadow>();
@@ -97,7 +97,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             titleShadow.useGraphicAlpha = true;
         }
         var staffIcon = BistroBuilderStaffVisuals.Node("PersonalHeaderIcon",
-            panelRoot.transform, .027f, .914f, .064f, .982f);
+            panelRoot.transform, .039f, .914f, .074f, .982f);
         Image nav = staffIcon.gameObject.AddComponent<Image>();
         nav.sprite = BistroBuilderStaffVisuals.RoleIcon(string.Empty);
         nav.preserveAspect = true;
@@ -105,7 +105,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         nav.raycastTarget = false;
         RectTransform taglineCard = BistroBuilderStaffVisuals.Panel(
             "ApprovedPersonalTaglineCard", panelRoot.transform,
-            .623f, .918f, .963f, .981f,
+            .621f, .918f, .956f, .981f,
             BistroBuilderStaffVisuals.Inset);
         BistroBuilderStaffVisuals.Label("ApprovedPersonalTagline", taglineCard,
             "Contrata, asigna y mejora a tu equipo para ofrecer la mejor experiencia.",
@@ -179,7 +179,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         // Match the reference: grouped table occupies 56%; right inspector 43%.
         // Compact table + separate informational footer; the old scroll filled
         // the whole plate and cut the final hiring row at lower resolutions.
-        StyleApprovedScroll(employeeListContent, .006f, .069f, .559f, .991f,
+        StyleApprovedScroll(employeeListContent, .000f, .069f, .559f, .991f,
             staffPanel.transform);
         RectTransform staffFoot = BistroBuilderStaffVisuals.Panel(
             "ApprovedStaffFooter", staffPanel.transform,
@@ -274,7 +274,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             "HeroPortrait/PortraitMat/PortraitRole")?.GetComponent<TMP_Text>();
         BistroBuilderStaffVisuals.Place(employeeNameText.rectTransform,
             .358f, .865f, .960f, .963f);
-        BistroBuilderStaffVisuals.TextStyle(employeeNameText, 29f, true);
+        BistroBuilderStaffVisuals.TitleStyle(employeeNameText, 28f);
         BistroBuilderStaffVisuals.Place(employeeRoleText.rectTransform,
             .360f, .799f, .930f, .870f);
         BistroBuilderStaffVisuals.TextStyle(employeeRoleText, 18f, true);
@@ -332,8 +332,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             .025f, .445f, .975f);
         BistroBuilderStaffVisuals.DecorativeIcon("SkillsIcon", employeeDetail,
             BBIconId.EconomyReport, .042f, .405f, .075f, .438f);
-        BistroBuilderStaffVisuals.Label("SkillsHeader", employeeDetail,
+        TMP_Text employeeSkillsHeader = BistroBuilderStaffVisuals.Label(
+            "SkillsHeader", employeeDetail,
             "HABILIDADES", 18f, .083f, .398f, .960f, .444f, true);
+        BistroBuilderStaffVisuals.TitleStyle(employeeSkillsHeader, 18f);
         BuildApprovedSkills(employeeDetail, employeeSkillBars, employeeSkillValues);
 
         BistroBuilderStaffVisuals.Place(
@@ -369,7 +371,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             "HeroPortrait/PortraitMat/PortraitRole")?.GetComponent<TMP_Text>();
         BistroBuilderStaffVisuals.Place(candidateNameText.rectTransform,
             .358f, .865f, .960f, .963f);
-        BistroBuilderStaffVisuals.TextStyle(candidateNameText, 29f, true);
+        BistroBuilderStaffVisuals.TitleStyle(candidateNameText, 28f);
         BistroBuilderStaffVisuals.Place(candidateRoleText.rectTransform,
             .360f, .799f, .930f, .870f);
         BistroBuilderStaffVisuals.TextStyle(candidateRoleText, 18f, true);
@@ -394,8 +396,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             .025f, .445f, .975f);
         BistroBuilderStaffVisuals.DecorativeIcon("SkillsIcon", candidateDetail,
             BBIconId.EconomyReport, .042f, .405f, .075f, .438f);
-        BistroBuilderStaffVisuals.Label("CandidateSkillHeader", candidateDetail,
+        TMP_Text candidateSkillsHeader = BistroBuilderStaffVisuals.Label(
+            "CandidateSkillHeader", candidateDetail,
             "HABILIDADES", 18f, .083f, .398f, .96f, .444f, true);
+        BistroBuilderStaffVisuals.TitleStyle(candidateSkillsHeader, 18f);
         BuildApprovedSkills(candidateDetail, candidateSkillBars,
             candidateSkillValues);
         BistroBuilderStaffVisuals.Place(hireButton.transform as RectTransform,
@@ -666,29 +670,40 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         }
         if (employee)
         {
-            Cell("Name", .108f, .317f);
-            Cell("Role", .324f, .460f);
-            Cell("Level", .461f, .551f);
-            Cell("Salary", .704f, .838f);
-            Cell("Status", .843f, .985f);
+            Cell("Name", .106f, .298f);
+            Cell("Role", .303f, .434f);
+            Cell("Level", .436f, .538f);
+            Cell("Salary", .713f, .837f);
+            Cell("Status", .842f, .992f);
             var assign = BistroBuilderStaffVisuals.Label("Assignment", row.transform,
-                department, 13f, .557f, 0f, .697f, 1f,
+                department, 13f, .542f, 0f, .708f, 1f,
                 false, TextAlignmentOptions.Center);
             assign.color = BistroBuilderStaffVisuals.Muted;
             TMP_Text status = row.transform.Find("Status")?.GetComponent<TMP_Text>();
             if (status != null && !string.IsNullOrWhiteSpace(status.text))
             {
-                status.text = "● " + status.text;
-                status.color = status.text.Contains("No disponible") ||
-                    status.text.Contains("Inactivo")
-                    ? BistroBuilderStaffVisuals.Muted
-                    : BistroBuilderStaffVisuals.Green;
+                bool inactive = status.text.Contains("No disponible") ||
+                    status.text.Contains("Inactivo");
+                status.richText = true;
+                status.text = "<color=" + (inactive ? "#987452" : "#4B9431") +
+                    ">●</color> " + status.text.TrimStart('●', ' ');
+                status.color = inactive ? BistroBuilderStaffVisuals.Muted
+                    : BistroBuilderStaffVisuals.Ink;
             }
             TMP_Text level = row.transform.Find("Level")?.GetComponent<TMP_Text>();
             if (level != null) level.text = level.text.Replace("Nivel ", "");
             TMP_Text salary = row.transform.Find("Salary")?.GetComponent<TMP_Text>();
             if (salary != null)
                 salary.text = salary.text.Replace(" / servicio", "");
+            // Original reference: continuous, understated column separators.
+            // Unlike outlines around each row these do not turn the table into
+            // a collection of independent cards.
+            float[] boundaries = { .300f, .435f, .540f, .710f, .840f };
+            for (int i = 0; i < boundaries.Length; i++)
+                BistroBuilderStaffVisuals.Panel("RowDivider_" + i,
+                    row.transform, boundaries[i], .04f,
+                    boundaries[i] + .001f, .96f,
+                    new Color32(191, 152, 109, 65), false);
         }
         else
         {
@@ -720,12 +735,12 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         // orange command-button colour from the former implementation.
         Color baseColor = selected
             ? new Color32(240, 207, 159, 255)
-            : BistroBuilderStaffVisuals.Paper;
+            : new Color32(250, 237, 219, 255);
         bg.color = baseColor;
         Outline edge = row.GetComponent<Outline>();
         if (edge == null) edge = row.AddComponent<Outline>();
         edge.effectColor = selected ? BistroBuilderStaffVisuals.Brass
-            : new Color32(206, 176, 136, 255);
+            : Color.clear;
         edge.effectDistance = new Vector2(0f, -1f);
         edge.useGraphicAlpha = false;
         Button button = row.GetComponent<Button>();
@@ -734,12 +749,12 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             button.targetGraphic = bg;
             button.transition = Selectable.Transition.ColorTint;
             ColorBlock colors = button.colors;
-            colors.normalColor = baseColor;
-            colors.highlightedColor = Color.Lerp(baseColor,
-                BistroBuilderStaffVisuals.Amber, selected ? .08f : .38f);
-            colors.pressedColor = Color.Lerp(baseColor,
-                BistroBuilderStaffVisuals.Ink, .12f);
-            colors.selectedColor = colors.highlightedColor;
+            // Tint MULTIPLIES Image.color; using baseColor twice darkened every
+            // row and made the approved parchment table look orange/brown.
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color32(255, 245, 228, 255);
+            colors.pressedColor = new Color32(232, 209, 178, 255);
+            colors.selectedColor = Color.white;
             colors.disabledColor = new Color(baseColor.r, baseColor.g,
                 baseColor.b, .45f);
             colors.colorMultiplier = 1f;
@@ -757,13 +772,24 @@ public sealed partial class BistroBuilderStaffPlayerScreen
 
     private GameObject CreateApprovedDepartmentHeading(string department, int count)
     {
+        // The approved image separates SALA and COCINA with a narrow gutter;
+        // rows within each section form ONE continuous table, not button cards.
+        if (departmentHeadings.Count > 0)
+        {
+            RectTransform gap = BistroBuilderStaffVisuals.Node(
+                "ApprovedDepartmentGap", employeeListContent, 0f, 0f, 1f, 1f);
+            LayoutElement space = gap.gameObject.AddComponent<LayoutElement>();
+            space.minHeight = space.preferredHeight = 7f;
+            departmentHeadings.Add(gap.gameObject);
+        }
         RectTransform container = BistroBuilderStaffVisuals.Node(
             "Department_" + department, employeeListContent, 0f, 0f, 1f, 1f);
         LayoutElement layout = container.gameObject.AddComponent<LayoutElement>();
         layout.minHeight = 69f;
         layout.preferredHeight = 69f;
         var band = BistroBuilderStaffVisuals.Panel("DepartmentBand", container,
-            .005f, .40f, .995f, .99f, BistroBuilderStaffVisuals.Inset);
+            .005f, .40f, .995f, .99f,
+            new Color32(241, 222, 197, 255));
         string caption = string.Equals(department, "SALA",
             StringComparison.OrdinalIgnoreCase)
             ? "Personal de sala que atiende a los clientes."
@@ -781,7 +807,7 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         roleImage.raycastTarget = false;
         var title = BistroBuilderStaffVisuals.Label("DepartmentTitle", band,
             department, 22f, .059f, .10f, .25f, .91f, true);
-        title.fontStyle = FontStyles.Bold;
+        BistroBuilderStaffVisuals.TitleStyle(title, 22f);
         BistroBuilderStaffVisuals.Label("DepartmentCaption", band,
             caption, 13f, .25f, .10f, .77f, .91f);
         BistroBuilderStaffVisuals.Label("DepartmentCount", band,
@@ -791,13 +817,17 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         var columns = BistroBuilderStaffVisuals.Panel("DepartmentColumns",
             container, .005f, .01f, .995f, .40f, BistroBuilderStaffVisuals.Paper);
         string[] labels = {"NOMBRE", "ROL", "NIVEL", "ASIGNACIÓN", "SALARIO", "ESTADO"};
-        float[] x = {.105f, .324f, .463f, .555f, .707f, .850f, .99f};
+        float[] x = {.105f, .300f, .435f, .540f, .710f, .840f, .99f};
         for (int i = 0; i < labels.Length; i++)
         {
             TMP_Text text = BistroBuilderStaffVisuals.Label("Column_" + i,
-                columns, labels[i], 11f, x[i], 0f, x[i+1], 1f, false,
+                columns, labels[i], 11f, x[i], 0f, x[i+1], 1f, true,
                 TextAlignmentOptions.Center);
-            text.color = BistroBuilderStaffVisuals.Muted;
+            text.color = BistroBuilderStaffVisuals.Ink;
+            if (i < labels.Length - 1)
+                BistroBuilderStaffVisuals.Panel("ColumnDivider_" + i,
+                    columns, x[i + 1], .13f, x[i + 1] + .001f, .87f,
+                    new Color32(186, 151, 109, 120), false);
         }
         departmentHeadings.Add(container.gameObject);
         return container.gameObject;
@@ -817,13 +847,13 @@ public sealed partial class BistroBuilderStaffPlayerScreen
             27f, .024f, .10f, .088f, .89f, true,
             TextAlignmentOptions.Center).color = BistroBuilderStaffVisuals.Brass;
         BistroBuilderStaffVisuals.Label("VacancyText", vacancy,
-            "Puesto disponible", 16f, .110f, 0f, .315f, 1f)
+            "Puesto disponible", 13f, .110f, 0f, .315f, 1f)
             .color = BistroBuilderStaffVisuals.Muted;
         float[] emptyLeft = { .325f, .462f, .557f, .706f };
         float[] emptyRight = { .46f, .55f, .697f, .833f };
         for (int i = 0; i < emptyLeft.Length; i++)
             BistroBuilderStaffVisuals.Label("VacancyEmpty_" + i, vacancy,
-                "—", 15f, emptyLeft[i], 0f, emptyRight[i], 1f,
+                "—", 13f, emptyLeft[i], 0f, emptyRight[i], 1f,
                 false, TextAlignmentOptions.Center);
         Button open = BistroBuilderStaffVisuals.NewButton("VacancyHire",
             vacancy, "Contratar", .850f, .14f, .986f, .86f,

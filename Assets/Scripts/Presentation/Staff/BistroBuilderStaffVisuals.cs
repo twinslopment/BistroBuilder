@@ -26,27 +26,48 @@ public static class BistroBuilderStaffVisuals
     public static readonly Color Empty = new Color32(236, 223, 202, 255);
 
     private static BBIconCatalog icons;
-    private static TMP_FontAsset staffRegularFont, staffBoldFont;
-    private static bool regularResolved, boldResolved;
-
-    // Personal is deliberately independent of the global Inter/Recoleta shell.
-    // Resolve the OS Georgia faces at runtime; preserve a serif fallback when
-    // Georgia is unavailable. Do not change the top bar or other modules.
-    public static TMP_FontAsset StaffRegular => ResolveStaffFont(
-        ref staffRegularFont, ref regularResolved, "Regular");
-    public static TMP_FontAsset StaffBold => ResolveStaffFont(
-        ref staffBoldFont, ref boldResolved, "Bold");
-
-    private static TMP_FontAsset ResolveStaffFont(
-        ref TMP_FontAsset cached, ref bool resolved, string style)
+    // Personal follows the same canonical typography as the rest of the game.
+    // No OS fonts or Georgia-specific exceptions are created here.
+    public static TMP_FontAsset StaffRegular => BistroBuilderTypography.Body;
+    public static TMP_FontAsset StaffBold => BistroBuilderTypography.Emphasis;
+    private static TMP_FontAsset staffRecoleta;
+    private static bool titleResolved;
+    public static TMP_FontAsset StaffTitle
     {
-        if (!resolved)
+        get
         {
-            resolved = true;
-            cached = TMP_FontAsset.CreateFontAsset("Georgia", style);
-            if (cached != null) cached.name = "BB Staff Georgia " + style;
+            if (!titleResolved)
+            {
+                titleResolved = true;
+                TMP_FontAsset original = Resources.Load<TMP_FontAsset>(
+                    "BistroBuilder/UI/Typography/Recoleta-SDF");
+                if (original != null)
+                {
+                    // A runtime copy protects the official asset and supplies
+                    // missing demo glyphs from Inter, NEVER Georgia.
+                    staffRecoleta = UnityEngine.Object.Instantiate(original);
+                    staffRecoleta.name = "Bistro Builder Personal Recoleta";
+                    if (staffRecoleta.fallbackFontAssetTable == null)
+                        staffRecoleta.fallbackFontAssetTable =
+                            new List<TMP_FontAsset>();
+                    if (StaffRegular != null &&
+                        !staffRecoleta.fallbackFontAssetTable.Contains(StaffRegular))
+                        staffRecoleta.fallbackFontAssetTable.Insert(0, StaffRegular);
+                }
+            }
+            return staffRecoleta != null ? staffRecoleta : StaffBold;
         }
-        return cached != null ? cached : BistroBuilderTypography.Title;
+    }
+
+    public static void TitleStyle(TMP_Text target, float size,
+        TextAlignmentOptions alignment = TextAlignmentOptions.MidlineLeft)
+    {
+        TextStyle(target, size, true, alignment);
+        if (target == null) return;
+        if (StaffTitle != null) target.font = StaffTitle;
+        target.characterSpacing = -.18f;
+        // The approved reference uses the stronger display cut of Recoleta.
+        target.fontStyle = FontStyles.Bold;
     }
 
     // The simulated first names are curated by StaffRecruitmentProfile. These

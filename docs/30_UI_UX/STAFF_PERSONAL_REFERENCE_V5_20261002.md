@@ -1,5 +1,7 @@
 # PERSONAL V5 — implementación de la referencia izquierda (02/10/2026)
 
+> HISTÓRICO: las decisiones tipográficas y de rejilla han sido sustituidas por `STAFF_PERSONAL_REFERENCE_V6_20261002.md` (Recoleta + Inter). Mantener de V5 únicamente la referencia compositiva que no contradiga V6.
+
 ## Referencia visual vinculante
 - Captura aportada por el usuario: panel PERSONAL a la izquierda de la comparación `image(20261002-093222).png`, equivalente al diseño original `Captura de pantalla 2026-10-01 093447.png`.
 - Una sola cabecera PERSONAL + texto descriptivo; no se reserva una fila permanente para Plantilla, Candidatos y Horarios.

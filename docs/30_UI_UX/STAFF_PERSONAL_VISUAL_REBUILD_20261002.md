@@ -1,5 +1,7 @@
 # Personal — reconstrucción visual · 02/10/2026
 
+> DOCUMENTO HISTÓRICO V4, **SUPERADO**. La autoridad visual vigente es `STAFF_PERSONAL_REFERENCE_V6_20261002.md`; Personal debe utilizar Recoleta + Inter oficiales. Las referencias antiguas a Georgia que figuran más abajo describen un prototipo descartado y no son especificaciones activas.
+
 ## Referencia y alcance
 - Referencia obligatoria: captura aportada `Captura de pantalla 2026-10-01 093447(1).png` (marco marfil/latón, tabla Sala/Cocina, retrato y ficha derecha).
 - Mantener los servicios existentes de Personal, contratación, formación, Horarios y confirmaciones; sin autoridad duplicada ni navegador integrado en Unity.

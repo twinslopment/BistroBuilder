@@ -65,8 +65,8 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen
         {
             BistroBuilderStaffVisuals.Place(titleRect,
                 .034f, .923f, .366f, .982f);
-            BistroBuilderStaffVisuals.TextStyle(title.GetComponent<TMP_Text>(),
-                35f, true);
+            BistroBuilderStaffVisuals.TitleStyle(title.GetComponent<TMP_Text>(),
+                35f);
         }
         BistroBuilderStaffVisuals.Place(headerText.rectTransform,
             .632f, .930f, .951f, .980f);
@@ -188,8 +188,10 @@ public sealed partial class BistroBuilderStaffSchedulePlayerScreen
         layout.preferredHeight = 86f;
         var band = BistroBuilderStaffVisuals.Panel("Band", r,
             .005f, .41f, .995f, .985f, BistroBuilderStaffVisuals.Inset);
-        BistroBuilderStaffVisuals.Label("Title", band, department, 23f,
+        TMP_Text departmentTitle = BistroBuilderStaffVisuals.Label(
+            "Title", band, department, 23f,
             .024f, .04f, .35f, .97f, true);
+        BistroBuilderStaffVisuals.TitleStyle(departmentTitle, 23f);
         BistroBuilderStaffVisuals.Label("Count", band,
             count + " EN PLANTILLA", 15f,
             .74f, .04f, .979f, .97f, true,

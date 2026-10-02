@@ -282,14 +282,32 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
         }
         TMP_FontAsset bodyFace = BistroBuilderStaffVisuals.StaffRegular;
         TMP_FontAsset boldFace = BistroBuilderStaffVisuals.StaffBold;
+        TMP_FontAsset titleFace = BistroBuilderStaffVisuals.StaffTitle;
+        TMP_Text departmentTitle = content?.Find(
+            "Department_SALA/DepartmentBand/DepartmentTitle")?.GetComponent<TMP_Text>();
+        TMP_Text columnName = content?.Find(
+            "Department_SALA/DepartmentColumns/Column_0")?.GetComponent<TMP_Text>();
         Pass(mainTitle != null && rowName != null &&
-            mainTitle.font == boldFace && rowName.font == boldFace &&
-            bodyFace != null && boldFace != null &&
-            string.Equals(bodyFace.faceInfo.familyName, "Georgia",
-                StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(boldFace.faceInfo.familyName, "Georgia",
-                StringComparison.OrdinalIgnoreCase),
-            "Personal usa Georgia real: regular en datos y negrita en título y nombres.");
+            departmentTitle != null && columnName != null &&
+            titleFace != null && bodyFace != null && boldFace != null &&
+            mainTitle.font == titleFace &&
+            departmentTitle.font == titleFace &&
+            rowName.font == boldFace && columnName.font == boldFace &&
+            titleFace.name.Contains("Recoleta") &&
+            bodyFace == BistroBuilderTypography.Body &&
+            boldFace == BistroBuilderTypography.Emphasis &&
+            titleFace.fallbackFontAssetTable.Contains(bodyFace),
+            "Tipografía oficial: Recoleta en títulos; Inter Regular/SemiBold en tablas, sin Georgia.");
+        bool alignedColumns = false;
+        if (content != null)
+            foreach (Transform child in content.GetComponentsInChildren<Transform>(true))
+                if (child != null && child.name == "RowDivider_4" &&
+                    child.parent.Find("RowDivider_0") != null)
+                { alignedColumns = true; break; }
+        Pass(alignedColumns && content?.Find(
+            "Department_SALA/DepartmentColumns/ColumnDivider_0") != null &&
+            content?.Find("ApprovedDepartmentGap") != null,
+            "SALA y COCINA usan tablas continuas con columnas alineadas y separación entre secciones.");
 
         string file = Path.Combine(directory, "Personal_1920x1080.png");
         ScreenCapture.CaptureScreenshot(file);
@@ -337,6 +355,10 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             root.transform.Find("GoToPlantilla") != null &&
             root.transform.Find("GoToCandidates") != null,
             "Horarios mantiene el mismo lenguaje visual y regreso a Personal.");
+        Pass(root != null &&
+             root.transform.Find("Title")?.GetComponent<TMP_Text>()?.font ==
+                 BistroBuilderStaffVisuals.StaffTitle,
+            "Horarios comparte Recoleta oficial con Personal; datos y controles usan Inter.");
 
         BistroBuilderStaffSchedulePlayerFacade facade =
             FindScene<BistroBuilderStaffSchedulePlayerFacade>();
