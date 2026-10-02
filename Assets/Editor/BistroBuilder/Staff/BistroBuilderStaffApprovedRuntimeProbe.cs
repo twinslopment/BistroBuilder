@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -246,6 +247,25 @@ public static class BistroBuilderStaffApprovedRuntimeProbe
             p.Find("ApprovedPersonalFrame") != null &&
             p.Find("ApprovedPersonalPaper") != null,
             "Navegación y marco marfil/latón únicos.");
+
+        TMP_Text mainTitle = p.Find("Title")?.GetComponent<TMP_Text>();
+        TMP_Text rowName = null;
+        if (content != null)
+        {
+            foreach (TMP_Text label in content.GetComponentsInChildren<TMP_Text>(true))
+                if (label != null && label.name == "Name")
+                { rowName = label; break; }
+        }
+        TMP_FontAsset bodyFace = BistroBuilderStaffVisuals.StaffRegular;
+        TMP_FontAsset boldFace = BistroBuilderStaffVisuals.StaffBold;
+        Pass(mainTitle != null && rowName != null &&
+            mainTitle.font == boldFace && rowName.font == boldFace &&
+            bodyFace != null && boldFace != null &&
+            string.Equals(bodyFace.faceInfo.familyName, "Georgia",
+                StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(boldFace.faceInfo.familyName, "Georgia",
+                StringComparison.OrdinalIgnoreCase),
+            "Personal usa Georgia real: regular en datos y negrita en título y nombres.");
 
         string file = Path.Combine(directory, "Personal_1920x1080.png");
         ScreenCapture.CaptureScreenshot(file);

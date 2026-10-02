@@ -26,6 +26,28 @@ public static class BistroBuilderStaffVisuals
     public static readonly Color Empty = new Color32(236, 223, 202, 255);
 
     private static BBIconCatalog icons;
+    private static TMP_FontAsset staffRegularFont, staffBoldFont;
+    private static bool regularResolved, boldResolved;
+
+    // Personal is deliberately independent of the global Inter/Recoleta shell.
+    // Resolve the OS Georgia faces at runtime; preserve a serif fallback when
+    // Georgia is unavailable. Do not change the top bar or other modules.
+    public static TMP_FontAsset StaffRegular => ResolveStaffFont(
+        ref staffRegularFont, ref regularResolved, "Regular");
+    public static TMP_FontAsset StaffBold => ResolveStaffFont(
+        ref staffBoldFont, ref boldResolved, "Bold");
+
+    private static TMP_FontAsset ResolveStaffFont(
+        ref TMP_FontAsset cached, ref bool resolved, string style)
+    {
+        if (!resolved)
+        {
+            resolved = true;
+            cached = TMP_FontAsset.CreateFontAsset("Georgia", style);
+            if (cached != null) cached.name = "BB Staff Georgia " + style;
+        }
+        return cached != null ? cached : BistroBuilderTypography.Title;
+    }
 
     // The simulated first names are curated by StaffRecruitmentProfile. These
     // sets choose the appropriate portrait-art collection, not an employee rule.
@@ -87,9 +109,10 @@ public static class BistroBuilderStaffVisuals
         text.enableAutoSizing = true;
         text.fontSizeMax = size;
         text.fontSizeMin = Mathf.Max(10f, size - 5f);
-        TMP_FontAsset font = heading
-            ? BistroBuilderTypography.Title : BistroBuilderTypography.Body;
+        TMP_FontAsset font = heading ? StaffBold : StaffRegular;
         if (font != null) text.font = font;
+        text.fontStyle = FontStyles.Normal;
+        text.characterSpacing = heading ? -.35f : -.10f;
         text.color = Ink;
         text.alignment = alignment;
         text.overflowMode = TextOverflowModes.Ellipsis;
@@ -103,9 +126,10 @@ public static class BistroBuilderStaffVisuals
         Color? overrideColor = null)
     {
         if (target == null) return;
-        TMP_FontAsset font = heading
-            ? BistroBuilderTypography.Title : BistroBuilderTypography.Body;
+        TMP_FontAsset font = heading ? StaffBold : StaffRegular;
         if (font != null) target.font = font;
+        target.fontStyle = FontStyles.Normal;
+        target.characterSpacing = heading ? -.35f : -.10f;
         target.color = overrideColor ?? Ink;
         target.fontSize = size;
         target.enableAutoSizing = true;
@@ -210,13 +234,30 @@ public static class BistroBuilderStaffVisuals
 
     public static Sprite RoleIcon(string roleId)
     {
-        if (icons == null) icons = BBIconCatalog.LoadDefault();
-        if (icons == null) return null;
         BBIconId icon = string.Equals(roleId, "waiter", StringComparison.Ordinal)
             ? BBIconId.ObjectWaiter
             : string.Equals(roleId, "cook", StringComparison.Ordinal)
                 ? BBIconId.ObjectCook : BBIconId.NavStaff;
-        return icons.GetSprite(icon);
+        return Icon(icon);
+    }
+
+    public static Sprite Icon(BBIconId id)
+    {
+        if (icons == null) icons = BBIconCatalog.LoadDefault();
+        return icons != null ? icons.GetSprite(id) : null;
+    }
+
+    public static void DecorativeIcon(string name, Transform parent,
+        BBIconId id, float x0, float y0, float x1, float y1)
+    {
+        Sprite sprite = Icon(id);
+        if (sprite == null) return;
+        RectTransform root = Node(name, parent, x0, y0, x1, y1);
+        Image image = root.gameObject.AddComponent<Image>();
+        image.sprite = sprite;
+        image.color = Ink;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
     }
 
     /// <summary>

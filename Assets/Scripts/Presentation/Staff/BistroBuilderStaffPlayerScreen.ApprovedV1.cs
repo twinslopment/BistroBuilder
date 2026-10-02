@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using BistroBuilder.UI.Iconography;
 
 /// <summary>
 /// Approved 01/10/2026 PERSONAL plate: faithful left SALA/COCINA tables and
@@ -80,8 +81,19 @@ public sealed partial class BistroBuilderStaffPlayerScreen
 
         var head = panelRoot.transform.Find("Title") as RectTransform;
         BistroBuilderStaffVisuals.Place(head, .075f, .914f, .325f, .983f);
-        if (head != null) BistroBuilderStaffVisuals.TextStyle(
-            head.GetComponent<TMP_Text>(), 37f, true);
+        if (head != null)
+        {
+            BistroBuilderStaffVisuals.TextStyle(
+                head.GetComponent<TMP_Text>(), 41f, true);
+            // Match the softly embossed reference title without touching the
+            // global shell's type hierarchy.
+            Shadow titleShadow = head.GetComponent<Shadow>();
+            if (titleShadow == null)
+                titleShadow = head.gameObject.AddComponent<Shadow>();
+            titleShadow.effectColor = new Color32(70, 43, 19, 98);
+            titleShadow.effectDistance = new Vector2(1.2f, -1.35f);
+            titleShadow.useGraphicAlpha = true;
+        }
         var staffIcon = BistroBuilderStaffVisuals.Node("PersonalHeaderIcon",
             panelRoot.transform, .031f, .913f, .072f, .984f);
         Image nav = staffIcon.gameObject.AddComponent<Image>();
@@ -246,8 +258,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         SetInactive(employeePerformanceText);
         BistroBuilderStaffVisuals.Panel("EmployeeLevelBadge", employeeDetail,
             .357f, .735f, .532f, .789f, BistroBuilderStaffVisuals.Amber);
+        BistroBuilderStaffVisuals.DecorativeIcon("LevelIcon", employeeDetail,
+            BBIconId.CustomerVip, .361f, .746f, .391f, .777f);
         BistroBuilderStaffVisuals.Label("LevelLegend", employeeDetail,
-            "★ NIVEL", 13f, .362f, .737f, .454f, .785f, true);
+            "NIVEL", 13f, .393f, .737f, .454f, .785f, true);
         employeeXpLabel = BistroBuilderStaffVisuals.Label("LevelNumber",
             employeeDetail, "—", 17f, .459f, .735f, .522f, .784f, true,
             TextAlignmentOptions.Center);
@@ -280,8 +294,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         }
         BistroBuilderStaffVisuals.Separator("SkillsGoldRule", employeeDetail,
             .025f, .445f, .975f);
+        BistroBuilderStaffVisuals.DecorativeIcon("SkillsIcon", employeeDetail,
+            BBIconId.EconomyReport, .042f, .405f, .075f, .438f);
         BistroBuilderStaffVisuals.Label("SkillsHeader", employeeDetail,
-            "▥  HABILIDADES", 22f, .041f, .398f, .960f, .444f, true);
+            "HABILIDADES", 22f, .083f, .398f, .960f, .444f, true);
         BuildApprovedSkills(employeeDetail, employeeSkillBars, employeeSkillValues);
 
         BistroBuilderStaffVisuals.Place(
@@ -340,8 +356,10 @@ public sealed partial class BistroBuilderStaffPlayerScreen
         }
         BistroBuilderStaffVisuals.Separator("CandidateSkillRule", candidateDetail,
             .025f, .445f, .975f);
+        BistroBuilderStaffVisuals.DecorativeIcon("SkillsIcon", candidateDetail,
+            BBIconId.EconomyReport, .042f, .405f, .075f, .438f);
         BistroBuilderStaffVisuals.Label("CandidateSkillHeader", candidateDetail,
-            "▥  HABILIDADES", 22f, .041f, .398f, .96f, .444f, true);
+            "HABILIDADES", 22f, .083f, .398f, .96f, .444f, true);
         BuildApprovedSkills(candidateDetail, candidateSkillBars,
             candidateSkillValues);
         BistroBuilderStaffVisuals.Place(hireButton.transform as RectTransform,
@@ -585,7 +603,8 @@ public sealed partial class BistroBuilderStaffPlayerScreen
                 BistroBuilderStaffVisuals.Place(rect, a, 0f, b, 1f);
             if (rect != null)
                 BistroBuilderStaffVisuals.TextStyle(
-                    rect.GetComponent<TMP_Text>(), 16f, false,
+                    rect.GetComponent<TMP_Text>(), name == "Name" ? 17f : 16f,
+                    name == "Name",
                     name == "Name" ? TextAlignmentOptions.MidlineLeft
                         : TextAlignmentOptions.Center);
         }
