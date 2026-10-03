@@ -1,44 +1,44 @@
 {
     "status": "PASS",
-    "startedUtc": "2026-10-03T16:33:06.4419048Z",
-    "completedUtc": "2026-10-03T16:33:48.9765304Z",
+    "startedUtc": "2026-10-03T16:38:58.4568937Z",
+    "completedUtc": "2026-10-03T16:39:34.7112930Z",
     "passed": 26,
     "failed": 0,
     "results": [
         {
             "id": "foundation",
             "status": "PASS",
-            "durationMilliseconds": 183,
+            "durationMilliseconds": 152,
             "message": ""
         },
         {
             "id": "autonomous-classification",
             "status": "PASS",
-            "durationMilliseconds": 310,
+            "durationMilliseconds": 158,
             "message": ""
         },
         {
             "id": "provider-metadata",
             "status": "PASS",
-            "durationMilliseconds": 283,
+            "durationMilliseconds": 107,
             "message": ""
         },
         {
             "id": "floor-lamp",
             "status": "PASS",
-            "durationMilliseconds": 545,
+            "durationMilliseconds": 441,
             "message": ""
         },
         {
             "id": "bar-stool-geometry",
             "status": "PASS",
-            "durationMilliseconds": 16,
+            "durationMilliseconds": 12,
             "message": ""
         },
         {
             "id": "bar-placeable-binding",
             "status": "PASS",
-            "durationMilliseconds": 8,
+            "durationMilliseconds": 10,
             "message": ""
         },
         {
@@ -56,25 +56,25 @@
         {
             "id": "bar-seat-persistence-contract",
             "status": "PASS",
-            "durationMilliseconds": 8,
+            "durationMilliseconds": 7,
             "message": ""
         },
         {
             "id": "bar-stool-acceptance-queue",
             "status": "PASS",
-            "durationMilliseconds": 25,
+            "durationMilliseconds": 23,
             "message": ""
         },
         {
             "id": "dynamic-bar-operational-coordinator",
             "status": "PASS",
-            "durationMilliseconds": 9,
+            "durationMilliseconds": 6,
             "message": ""
         },
         {
             "id": "bar-body-spatial",
             "status": "PASS",
-            "durationMilliseconds": 12,
+            "durationMilliseconds": 13,
             "message": ""
         },
         {
@@ -92,7 +92,7 @@
         {
             "id": "overhead-acceptance-queue",
             "status": "PASS",
-            "durationMilliseconds": 60,
+            "durationMilliseconds": 57,
             "message": ""
         },
         {
@@ -104,61 +104,61 @@
         {
             "id": "bar-counter-authoring",
             "status": "PASS",
-            "durationMilliseconds": 546,
+            "durationMilliseconds": 439,
             "message": ""
         },
         {
             "id": "runtime-typography-ownership",
             "status": "PASS",
-            "durationMilliseconds": 105,
+            "durationMilliseconds": 87,
             "message": ""
         },
         {
             "id": "batch-recovery",
             "status": "PASS",
-            "durationMilliseconds": 486,
+            "durationMilliseconds": 435,
             "message": ""
         },
         {
             "id": "legacy-adoption",
             "status": "PASS",
-            "durationMilliseconds": 1035,
+            "durationMilliseconds": 700,
             "message": ""
         },
         {
             "id": "incremental-invalidation",
             "status": "PASS",
-            "durationMilliseconds": 61,
+            "durationMilliseconds": 50,
             "message": ""
         },
         {
             "id": "publication-rollback",
             "status": "PASS",
-            "durationMilliseconds": 1102,
+            "durationMilliseconds": 970,
             "message": ""
         },
         {
             "id": "mass-ingestion",
             "status": "PASS",
-            "durationMilliseconds": 32502,
+            "durationMilliseconds": 28612,
             "message": ""
         },
         {
             "id": "construction",
             "status": "PASS",
-            "durationMilliseconds": 1427,
+            "durationMilliseconds": 1223,
             "message": ""
         },
         {
             "id": "images-ui",
             "status": "PASS",
-            "durationMilliseconds": 1990,
+            "durationMilliseconds": 1533,
             "message": ""
         },
         {
             "id": "content-bundle",
             "status": "PASS",
-            "durationMilliseconds": 1564,
+            "durationMilliseconds": 958,
             "message": ""
         }
     ]

@@ -33,3 +33,9 @@ Copias exactas del inventario, gate y cinco informes estrictos: `SAVIC/Verificat
 `integration-topbar-responsive.log` termina **exit 1**: la comprobación de igualdad física de altura entre barra superior e inferior falla a 1920×1080. Se conserva `responsive-ui-failure.txt`. Las dos implementaciones de layout y este test son idénticos a `b595fd99`: la superior usa 9% (84–102 unidades) y la inferior 8,5% (78–108). Este fallo no se presenta como aceptación visual positiva ni se retira su assert para pasar. La integración funcional no certifica el cierre visual de 21A; el usuario debe poder evaluar la combinación.
 
 No se afirma reconocimiento universal de fuentes futuras, jornada IA completa, recuperación de un servicio ocupado al cargar ni extracción/ventilación simulada. Los checkpoints de taburetes son desocupados y la campana sigue pasiva conforme a D-003.
+
+## Actualización del destino durante la integración
+
+Antes del push se detecta `0172c0fbe4143216b71fb90f827abda1f5bc35e7`, posterior a la base solicitada: los cuatro iconos aprobados de encabezados de Carta. Se incorpora por merge conservando ambos historiales. `integration-latest-carta-icons.log` ejecuta `BistroBuilderMenuVisualV1RuntimeProbe.RunBatch` con **26 PASS / 0 FAIL, UnityActualExitCode=0** sobre la escena real. Es una auditoría estructural/uGUI; batch no produce capturas Game View ni sustituye la aprobación visual.
+
+Se repite la regresión canónica tras incorporar esos recursos/código: `integration-latest-final-canonical.log`, **exit 0**, gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos y todos los proofs funcionales actuales. Auditoría final **03/10/2026 16:39:39 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED y 0 inbox**. El inventario/gate copiados en el directorio de evidencia corresponden a este último cierre. Permanece documentado el fallo responsive de alturas y no se cambia su gate.

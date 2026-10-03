@@ -375,6 +375,8 @@ La candidata `codex/topbar-responsive-approved` incorpora `f86f97da` de `integra
 
 Combinación funcional verificada sobre `feature/bb-presentation-interaction-quality-v1` desde `b595fd99`, fuente SAVIC `ef1fcbb7`. Copia nueva `BB_SavicPresentation`: auditoría 16:33:56 UTC, 18 publicados/17 placeables, cero revisiones/fallidos; gate26/core84/Navigation22/barra59/BBSIS2B18 PASS y aceptaciones estrictas reales con SaveGame de barra/taburetes/campana. Empaquetado LFS y evidencia Meshy íntegros en checkout. Sigue pendiente el gate visual: prueba responsive falla por alturas distintas de barras, código heredado de la base de presentación. No se declara cerrado 21A. [Informe](../40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md).
 
+La integración conserva también el avance remoto `0172c0fb` (iconos de encabezado Carta), con su gate uGUI **26/26 PASS**. Regresión funcional repetida después: gate26/core84/Navigation22/barra59/BBSIS2B18 PASS, auditoría final 16:39:39 UTC mantiene cero revisiones y fallidos. La igualdad responsive de altura continúa pendiente; no afecta al alcance del cierre funcional SAVIC ni certifica cierre visual.
+
 ---
 
 ## SOURCE: docs/10_ARCHITECTURE/AUTHORITY_MATRIX.md
@@ -1453,6 +1455,42 @@ Pruebas de JavaScript/DOM de la preview a 1440x814, 1313x740, 1280x720, 900x600 
 
 ---
 
+## SOURCE: docs/30_UI_UX/CARTA_GESTOR_ICONOGRAFIA_V4_20261003.md
+
+Category: CANONICAL
+
+# Carta Gestor V4 — iconografía de encabezados (03/10/2026)
+
+## Especificación acordada
+Cambiar **solo cuatro posiciones de encabezado** en Carta:
+- CARTA: libro marrón «MENÚ» recuperado de la imagen aportada por el usuario, sin reinterpretar su motivo
+- Mis cartas: colección de cartas/libros apilados
+- Reglas de activación: libro de menú con reloj
+- Detalle de la regla: nueva tablilla/portapapeles con tres comprobaciones (sustituye expresamente el anterior icono rechazado)
+
+**Prohibido reutilizar estos iconos decorativos en las filas de las listas, los botones o las demás pestañas.** Conservar los iconos de filas BBIconCatalog / SVG ya programados. Sin alteraciones en dominio, reglas, cartas, persistencia ni Save/Load.
+
+## Fuentes de recursos
+Cuatro PNG transparentes optimizados, almacenados como:
+`Assets/Resources/BistroBuilder/UI/MenuHeaderIcons/{carta_main,mis_cartas,reglas_activacion,detalle_regla}.png`.
+Los recursos se importan sin alterar los archivos tipográficos del proyecto. Los cuatro PNG transferidos a Windows se verificaron individualmente por SHA256.
+
+## Presentación web
+`docs/30_UI_UX/previews/Carta_Gestor_Iconografia_V4.html` deriva directamente de la V3 aprobada con cuatro sustituciones estáticas de encabezado y seis reglas CSS específicas de tamaño/sombra. Se mantienen JS, interactividad, filas, formularios, casillas centradas, Recoleta e Inter. Previews de Chrome Windows con recursos reales en `Carta_Gestor_Iconografia_V4_1440x814.png` y `Carta_Gestor_Iconografia_V4_1280x720.png`.
+Copia para abrir en la máquina del usuario: `C:\Users\mruperez\Downloads\Carta_Gestor_Iconografia_V4.html`, con URLs de recursos ajustadas a esa carpeta.
+
+## Unity
+`BistroBuilderMenuEditorUiFactory` reutiliza un único cargador/caché de sprites `Resources/BistroBuilder/UI/MenuHeaderIcons`. `AddMenuHeaderIcon` aplica el libro original; `AddPortfolioSectionIcon` selecciona una de las tres imágenes por título. Cuando faltan recursos se mantiene la iconografía anterior como fallback seguro. Los botones/filas se crean por vías independientes y no están modificados.
+
+## Validación
+- Unity 6000.3.19f1, escena real Prototype_Restaurant, `BistroBuilderMenuVisualV1RuntimeProbe.RunBatch`: **26 PASS / 0 FAIL, EXIT 0**.
+- Gates nuevos: cuatro imágenes distintas presentes en los encabezados, sin raycast y manteniendo aspecto; icono de fila deliberadamente diferente al decorativo del encabezado.
+- Verificaciones anteriores de Carta: navegación de Gestor/Editor/Recetas, confirmación destructiva, toggles centrados, listas reales, escandallo y scrolls; siguen pasando.
+- Capturas Chrome revisadas: la V4 conserva las tres columnas y solo cambia los cuatro iconos del encabezado.
+- Esta aceptación de iconos NO implica fusión a master. La rama de presentación sigue aislada.
+
+---
+
 ## SOURCE: docs/30_UI_UX/CARTA_GESTOR_V2_1_20261002.md
 
 Category: CANONICAL
@@ -2401,6 +2439,54 @@ Category: CANONICAL
 
 ## Criterio de uso
 A partir de esta migración, agentes y desarrolladores deben arrancar por `AGENTS.md` + `docs/README.md`. Los documentos históricos sirven para trazabilidad, no para contradecir el Decision Register o los documentos canónicos.
+
+---
+
+## SOURCE: docs/40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md
+
+Category: CANONICAL
+
+# Integración SAVIC y presentación — 03/10/2026
+
+## Base y alcance
+
+Integración solicitada sobre `feature/bb-presentation-interaction-quality-v1`, base `b595fd99`, con SAVIC `ef1fcbb7a539cd6a02a1af05fe938bdfe586d3d8`. Se prueba una copia nueva en `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation`, conservando los cambios locales de las carpetas originales. No se integra en master.
+
+Se combinan el catálogo de persistencia de presentación (sincronización dinámica y eventos) y las fuentes canónicas SAVIC; se conservan las definiciones de escena anteriores. Los clientes mantienen paleta y cápsula de respaldo de presentación y añaden el perfil Humanoid canónico. La materialización de paredes conserva geometría continua, vecinos, acabados y aperturas y resuelve módulos de construcción SAVIC por definición.
+
+## Regresiones demostradas y correcciones
+
+- La primera prueba de construcción detectó que elegir solo el materializador de presentación perdía los módulos publicados SAVIC (`savic-presentation-first-closure.log`, exit 1). La combinación corregida pasa 26/26 y la regresión nativa posterior.
+- Un checkout nuevo carecía de los GLB SourceMirror referenciados por los prefabs. Se versionan los 18 GLB con sus GUID existentes mediante Git LFS, compartiendo objetos SHA con el archivo canónico. Los 18 objetos LFS (540 MB) están transferidos. No se versionan las fuentes sintéticas de diagnósticos.
+- La normalización LF de Git alteraba los bytes de ProviderMetadata y su SHA almacenado, impidiendo verificar la identidad completa de la campana (`integration-hood-current-candidate.log`, exit 1). Se restauran los siete archivos originales y se establece `-text` para preservar su evidencia byte a byte. Verificados los hashes de todos los archivos/mirrors de los 18 publicados y de cada metadato adjunto.
+- La primera aceptación de barra hizo colocación y SaveGame, pero rechazó una excepción de Unity Search durante el arranque del Editor nuevo (`integration-bar-main-runtime.log`, exit 1). Se desactiva únicamente el indexado de arranque en UserSettings de esta copia de pruebas, no versionado. Los verificadores siguen rechazando Error/Exception/Assert; no se filtró la excepción. La repetición estricta termina exit 0.
+
+## Aceptación funcional real
+
+| Ejecución local | Resultado |
+| --- | --- |
+| integration-bar-main-runtime-second.log | exit 0; catálogo principal/SaveDefinition, registro, servicio/leases/rutas, SaveGame con identidad estable y nuevas instancias, cleanup/Console |
+| integration-stool-current-candidate.log | exit 0; aceptación de dependencias de representación combinadas, sin cambiar catálogo ni estados |
+| integration-stool-main-strict.log | exit 0; tres taburetes, asociación, cliente Humanoid sentado, Navigation/ocupación/lease, seis cargas SaveGame, nuevas instancias/links estables, cleanup/Console |
+| integration-hood-preserved-evidence-candidate.log | exit 0; fuente/perfil propios, área Kitchen, cuerpo elevado/BBSIS/paso humano/claims, dos cargas reales |
+| integration-hood-main-strict.log | exit 0; catálogo principal/SaveDefinition exactos, mismos contratos y dos cargas, cleanup/Console hasta Editor |
+| integration-final-native-regression.log | exit 0; Closure Gate 26/26, core 84/84, Navigation 22/22, barra 59/59, BBSIS 2B 18/18; proofs actuales verificados |
+
+Auditoría de esta copia: **03/10/2026 16:33:56 UTC; 18 únicos, 18 publicados, 17 catálogo placeables, cero NEEDS_REVIEW, cero FAILED y cero inbox**. El lote solicitado de 14 GLB está incluido. La diferencia con los 27 únicos de la carpeta original son los nueve jobs históricos locales sin fuente original; se conservan allí y no se fabrican registros en esta copia nueva.
+
+Copias exactas del inventario, gate y cinco informes estrictos: `SAVIC/Verification/PresentationIntegration_20261003`. Los informes mantienen sus SHA de los manifiestos y mencionan Actual MainCatalog; las rutas runtime canónicas siguen en Library. No se usa el directorio de evidencia como autoridad de publicación.
+
+## Presentación: comprobación pendiente
+
+`integration-topbar-responsive.log` termina **exit 1**: la comprobación de igualdad física de altura entre barra superior e inferior falla a 1920×1080. Se conserva `responsive-ui-failure.txt`. Las dos implementaciones de layout y este test son idénticos a `b595fd99`: la superior usa 9% (84–102 unidades) y la inferior 8,5% (78–108). Este fallo no se presenta como aceptación visual positiva ni se retira su assert para pasar. La integración funcional no certifica el cierre visual de 21A; el usuario debe poder evaluar la combinación.
+
+No se afirma reconocimiento universal de fuentes futuras, jornada IA completa, recuperación de un servicio ocupado al cargar ni extracción/ventilación simulada. Los checkpoints de taburetes son desocupados y la campana sigue pasiva conforme a D-003.
+
+## Actualización del destino durante la integración
+
+Antes del push se detecta `0172c0fbe4143216b71fb90f827abda1f5bc35e7`, posterior a la base solicitada: los cuatro iconos aprobados de encabezados de Carta. Se incorpora por merge conservando ambos historiales. `integration-latest-carta-icons.log` ejecuta `BistroBuilderMenuVisualV1RuntimeProbe.RunBatch` con **26 PASS / 0 FAIL, UnityActualExitCode=0** sobre la escena real. Es una auditoría estructural/uGUI; batch no produce capturas Game View ni sustituye la aprobación visual.
+
+Se repite la regresión canónica tras incorporar esos recursos/código: `integration-latest-final-canonical.log`, **exit 0**, gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos y todos los proofs funcionales actuales. Auditoría final **03/10/2026 16:39:39 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED y 0 inbox**. El inventario/gate copiados en el directorio de evidencia corresponden a este último cierre. Permanece documentado el fallo responsive de alturas y no se cambia su gate.
 
 ---
 
@@ -5879,6 +5965,8 @@ Este cierre certifica el lote y sus contratos probados. No afirma reconocimiento
 El usuario solicita combinar SAVIC con `feature/bb-presentation-interaction-quality-v1` desde `b595fd99`. Fuente funcional guardada en `ef1fcbb7`. La copia nueva `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation` pasa las aceptaciones estrictas de barra, tres taburetes y campana con MainCatalog/SaveDefinition, navegación/leases y SaveGame reales. Auditoría **03/10/2026 16:33:56 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, cero revisiones y fallidos**; los nueve jobs históricos sin original permanecen en la carpeta fuente. Regresión final exit 0: gate **26/26**, core **84/84**, Navigation **22/22**, barra **59/59** y BBSIS 2B **18/18**.
 
 El checkout conserva ahora los 18 SourceMirror GLB vía LFS y los bytes de siete evidencias ProviderMetadata; se corrigieron pérdidas de módulos de pared y cambios de hash introducidos al combinar ramas. Los gates estrictos `Matches` se mantienen: dependencias modificadas requieren aceptación candidata real antes del catálogo principal. Evidencia y fallos anteriores conservados en [informe de integración](40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md). La prueba responsive detecta diferencia de altura entre barras, cuyo código procede de la base de presentación; no se declara cerrado el gate visual ni se modifica la estética aprobada como parte de este merge.
+
+Actualización de destino incorporada: `0172c0fb`, cuatro iconos aprobados de Carta. Prueba nativa Carta **26 PASS / 0 FAIL** y regresión canónica final repetida exit0 con gate26/core84/Navigation22/barra59/BBSIS2B18. Auditoría definitiva **03/10/2026 16:39:39 UTC: 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW y 0 FAILED**. La copia comprobada conserva el historial de la base y del nuevo commit de presentación.
 
 ---
 
