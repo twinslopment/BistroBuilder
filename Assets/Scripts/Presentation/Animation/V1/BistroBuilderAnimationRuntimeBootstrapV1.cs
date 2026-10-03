@@ -53,6 +53,10 @@ public sealed class BistroBuilderAnimationRuntimeBootstrapV1 : MonoBehaviour
     public bool TryBootstrapActor(GameObject root)
     {
         if (root == null || !root.scene.IsValid()) return false;
+        // Member visuals have independent actors. A group-level player must not compete
+        // for the first member's Animator while leaving the other members unrepresented.
+        if (root.GetComponent<CustomerGroup>() != null &&
+            root.GetComponentInChildren<BistroBuilderCustomerBarSeatPresenter>(true) != null) return false;
         Animator animator = root.GetComponentInChildren<Animator>(true);
         if (animator == null) return false;
 

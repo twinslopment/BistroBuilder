@@ -155,8 +155,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CustomerMovementView
   customerGroup: {fileID: 0}
   restaurantExitPoint: {fileID: 0}
+  navigationService: {fileID: 0}
   movementSpeed: 2
   arrivalDistance: 0.05
+  circulationRadius: 0.32
 --- !u!114 &3212191675486891665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,3 +231,4 @@ MonoBehaviour:
   groupPlaceholderRenderer: {fileID: 5358082151093453806}
   memberSpacing: 0.42
   memberScale: {x: 0.32, y: 0.55, z: 0.32}
+  humanoidProfile: {fileID: 11400000, guid: e96d26ff7053dff4caa0758e8344b26f, type: 2}

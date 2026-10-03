@@ -29,8 +29,9 @@ namespace BistroBuilder.Editor.Savic
 
     public static class SavicV1ClosureGate
     {
-        private const string ReportRelativePath =
-            "Temp/SAVIC/SavicV1ClosureGateReport.json";
+        private static string ReportPath => Path.Combine(
+            SavicEditorContext.Instance.Layout.LogsRoot,
+            "SavicV1ClosureGateReport.json");
 
         [MenuItem(
             "Tools/Bistro Builder/SAVIC/Diagnostics/Run SAVIC V1 Closure Gate",
@@ -60,6 +61,53 @@ namespace BistroBuilder.Editor.Savic
                     report,
                     "foundation",
                     SavicBlock1SelfTest.RunFromCommandLine);
+
+                RunStep(
+                    report,
+                    "autonomous-classification",
+                    SavicAutonomousClassificationSelfTest.RunFromCommandLine);
+
+                RunStep(report, "provider-metadata",
+                    SavicProviderMetadataSelfTest.RunFromCommandLine);
+
+                RunStep(report, "floor-lamp",
+                    SavicFloorLampSelfTest.RunFromCommandLine);
+
+                RunStep(report, "bar-stool-geometry",
+                    SavicBarStoolGeometrySelfTest.RunFromCommandLine);
+
+                RunStep(report, "bar-placeable-binding",
+                    SavicBarPlaceableBindingSelfTest.RunFromCommandLine);
+
+                RunStep(report, "bar-seat-binding",
+                    SavicBarSeatBindingSelfTest.RunFromCommandLine);
+                RunStep(report, "bar-seat-automatic-placement",
+                    SavicBarSeatBindingSelfTest.RunAutomaticAssociationFromCommandLine);
+                RunStep(report, "bar-seat-persistence-contract",
+                    SavicBarSeatPersistenceSelfTest.RunFromCommandLine);
+                RunStep(report, "bar-stool-acceptance-queue",
+                    SavicBarStoolPublicationSelfTest.RunQueueGuardsFromCommandLine);
+
+                RunStep(report, "dynamic-bar-operational-coordinator",
+                    SavicBarSeatBindingSelfTest.RunDynamicCoordinatorFromCommandLine);
+
+                RunStep(report, "bar-body-spatial",
+                    SavicBarBodySpatialSelfTest.RunFromCommandLine);
+
+                RunStep(report, "compound-physical-footprint",
+                    SavicCompoundPhysicalFootprintSelfTest.RunFromCommandLine);
+                RunStep(report, "elevated-spatial-primitives",
+                    SavicElevatedSpatialSelfTest.RunFromCommandLine);
+                RunStep(report, "overhead-acceptance-queue",
+                    SavicOverheadEquipmentPublicationSelfTest.RunQueueGuardsFromCommandLine);
+
+                RunStep(report, "compound-body-geometry",
+                    SavicCompoundBodyGeometrySelfTest.RunFromCommandLine);
+
+                RunStep(report, "bar-counter-authoring",
+                    SavicBarCounterAuthoringSelfTest.RunFromCommandLine);
+                RunStep(report, "runtime-typography-ownership",
+                    SavicRuntimeTypographyOwnershipSelfTest.RunFromCommandLine);
 
                 RunStep(
                     report,
@@ -137,7 +185,7 @@ namespace BistroBuilder.Editor.Savic
                     "Checks passed: " +
                     report.passed +
                     "\nReport: " +
-                    ReportRelativePath);
+                    ReportPath);
 
                 if (commandLine && Application.isBatchMode)
                     EditorApplication.Exit(0);
@@ -152,7 +200,7 @@ namespace BistroBuilder.Editor.Savic
                 ", failed=" +
                 report.failed +
                 ". Report: " +
-                ReportRelativePath;
+                ReportPath;
 
             Debug.LogError(failure);
 
@@ -211,10 +259,7 @@ namespace BistroBuilder.Editor.Savic
         private static void WriteReport(
             SavicV1ClosureGateReport report)
         {
-            string absolutePath =
-                Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    ReportRelativePath);
+            string absolutePath = ReportPath;
 
             string directory =
                 Path.GetDirectoryName(absolutePath);

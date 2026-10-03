@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+  displayName: Black Cushioned Bar Stool
+  category: 1
+  placementScope: 0
+  description: "Elemento decorativo preparado autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 746d54abc258d784aa5de568421c426f, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 9c828338f5b475a428b8d8f408d34e6b, type: 3}
+  dimensionsCentimeters: {x: 36.005817, y: 75.450966, z: 35.735863}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 3958561814652726535, guid: 1c6834cb827ca5f4ebba1f81f614e1d9, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 330a8dd2cc5f6244686f8a6753e6fda8, type: 2}
+  purchasePrice: 156
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

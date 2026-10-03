@@ -32,10 +32,10 @@ namespace BistroBuilder.Editor.Savic
 
     internal sealed class SavicChairPublisher
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         private const string PublicationFingerprintSchema =
-            "chair-publication-input-v1";
+            "chair-publication-input-v2";
 
         private const string GeneratedChairsRoot =
             "Assets/Generated/BistroBuilder/SAVIC/Published/Chairs";
@@ -58,6 +58,9 @@ namespace BistroBuilder.Editor.Savic
 
         private const string CatalogPreviewArtifactRole =
             "preview.catalog";
+
+        private const string NeutralMaterialArtifactRole =
+            "published.chair.neutral_material";
 
         private readonly SavicStorageLayout layout;
         private readonly SavicManifestRepository manifests;
@@ -140,6 +143,9 @@ namespace BistroBuilder.Editor.Savic
                 contentFolder +
                 "/Preview_Catalog.png";
 
+            string neutralMaterialPath =
+                contentFolder + "/Material_NeutralFallback.mat";
+
             RestaurantPlaceableCatalogDefinition catalog =
                 AssetDatabase.LoadAssetAtPath
                     <RestaurantPlaceableCatalogDefinition>(
@@ -197,8 +203,12 @@ namespace BistroBuilder.Editor.Savic
             transaction.CaptureAsset(
                 catalogPreviewPath);
 
+            transaction.CaptureAsset(
+                neutralMaterialPath);
+
             GameObject workingRoot =
                 null;
+            int neutralMaterialSlots = 0;
 
             try
             {
@@ -231,6 +241,11 @@ namespace BistroBuilder.Editor.Savic
 
                     AssetDatabase.SaveAssets();
 
+                    Material neutralMaterial =
+                        CountInvalidMaterialSlots(sourceModelAsset) > 0
+                            ? GetOrCreateNeutralMaterial(neutralMaterialPath)
+                            : null;
+
                     workingRoot =
                         BuildWorkingChair(
                             template,
@@ -239,7 +254,9 @@ namespace BistroBuilder.Editor.Savic
                             editableDefinition,
                             useProfile,
                             manifest,
-                            plan);
+                            plan,
+                            neutralMaterial,
+                            out neutralMaterialSlots);
 
                     savedPrefab =
                         SavePrefabWithBoundedRetry(
@@ -299,6 +316,14 @@ namespace BistroBuilder.Editor.Savic
                     throw new InvalidOperationException(
                         "Generated chair prefab could not be reloaded.");
                 }
+                if (CountInvalidMaterialSlots(reloadedPrefab) > 0)
+                    throw new InvalidOperationException(
+                        "Generated chair prefab contains missing or unsupported material slots.");
+                Material managedNeutral =
+                    AssetDatabase.LoadAssetAtPath<Material>(neutralMaterialPath);
+                if (managedNeutral != null)
+                    neutralMaterialSlots = CountMaterialReferences(
+                        reloadedPrefab, managedNeutral);
 
                 StampManagedAsset(
                     reloadedPrefab,
@@ -406,6 +431,26 @@ namespace BistroBuilder.Editor.Savic
                     "savic.preview-renderer",
                     SavicPreviewRenderer.Version,
                     previewFingerprint);
+
+                if (neutralMaterialSlots > 0)
+                    SavicManifestMutations.UpsertArtifact(
+                        manifest,
+                        NeutralMaterialArtifactRole,
+                        neutralMaterialPath,
+                        "savic.chair-publisher",
+                        Version,
+                        publicationFingerprint);
+
+                SavicManifestMutations.UpsertValidation(
+                    manifest,
+                    "Presentation.ChairMaterials",
+                    neutralMaterialSlots > 0 ? "WARNING" : "PASS",
+                    neutralMaterialSlots > 0 ? "WARNING" : "INFO",
+                    neutralMaterialSlots > 0
+                        ? neutralMaterialSlots +
+                          " missing or unsupported source material slot(s) use a neutral managed material."
+                        : "Source materials are usable.",
+                    Version);
 
                 SavicManifestMutations.UpsertValidation(
                     manifest,
@@ -542,6 +587,13 @@ namespace BistroBuilder.Editor.Savic
 
             if (sourceModelAsset == null)
                 throw new ArgumentNullException(nameof(sourceModelAsset));
+
+            SavicArtifactRecord publishedPrefab =
+                FindArtifact(manifest, PrefabArtifactRole);
+            if (CountInvalidMaterialSlots(sourceModelAsset) > 0 ||
+                publishedPrefab == null ||
+                publishedPrefab.builderVersion != Version)
+                return Publish(manifest, sourceModelAsset);
 
             SavicChairAuthoringRecord plan =
                 manifest.chairAuthoring;
@@ -942,6 +994,8 @@ namespace BistroBuilder.Editor.Savic
 
             if (prefab == null)
                 return false;
+            if (CountInvalidMaterialSlots(prefab) > 0)
+                return false;
 
             RestaurantSeat seat =
                 prefab.GetComponent<RestaurantSeat>();
@@ -1180,8 +1234,11 @@ namespace BistroBuilder.Editor.Savic
             RestaurantEditableObjectDefinition editableDefinition,
             RestaurantSeatUseProfileDefinition useProfile,
             SavicManifest manifest,
-            SavicChairAuthoringRecord plan)
+            SavicChairAuthoringRecord plan,
+            Material neutralMaterial,
+            out int neutralMaterialSlots)
         {
+            neutralMaterialSlots = 0;
             GameObject root =
                 PrefabUtility.InstantiatePrefab(
                     template) as GameObject;
@@ -1313,6 +1370,11 @@ namespace BistroBuilder.Editor.Savic
 
             RemoveUnsupportedSourceComponents(
                 sourceInstance);
+
+            neutralMaterialSlots = ReplaceInvalidMaterialSlots(
+                sourceInstance, neutralMaterial);
+
+            ValidateAuthoredVisualHeight(sourceInstance, plan.finalHeightMeters);
 
             if (sourceInstance.GetComponentInChildren
                     <Renderer>(true) == null)
@@ -1936,6 +1998,12 @@ namespace BistroBuilder.Editor.Savic
             SavicModelAnalysisRecord analysis,
             SavicChairAuthoringRecord plan)
         {
+            // Analysis measures geometry in SavicMetricSpace, which includes
+            // the importer's root rotation and unit scale. Keep those same
+            // transforms when authoring the visual; replacing them makes an
+            // FBX imported in centimetres about 100 times too small.
+            Quaternion importerRotation = source.localRotation;
+            Vector3 importerScale = source.localScale;
             Quaternion yaw =
                 Quaternion.Euler(
                     0f,
@@ -1960,17 +2028,72 @@ namespace BistroBuilder.Editor.Savic
                 plan.uniformScale;
 
             source.localRotation =
-                yaw;
+                yaw * importerRotation;
 
             source.localScale =
-                Vector3.one *
-                plan.uniformScale;
+                importerScale * plan.uniformScale;
 
             source.localPosition =
                 new Vector3(
                     -rotatedCenter.x,
                     -sourceBottom,
                     -rotatedCenter.z);
+        }
+
+        internal static int CountInvalidMaterialSlots(GameObject root)
+        {
+            return SavicSourceMaterialFallback.CountInvalidSlots(root);
+        }
+
+        private static int CountMaterialReferences(
+            GameObject root, Material material)
+        {
+            int count = 0;
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+                foreach (Material candidate in renderer.sharedMaterials)
+                    if (candidate == material)
+                        count++;
+            return count;
+        }
+
+        private static void ValidateAuthoredVisualHeight(
+            GameObject source, float expectedHeight)
+        {
+            bool hasBounds = false;
+            Bounds bounds = new Bounds();
+            foreach (Renderer renderer in source.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null || !renderer.enabled ||
+                    !renderer.gameObject.activeInHierarchy)
+                    continue;
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                    bounds.Encapsulate(renderer.bounds);
+            }
+
+            if (!hasBounds || expectedHeight <= 0f ||
+                float.IsNaN(bounds.size.y) ||
+                bounds.size.y < expectedHeight * 0.80f ||
+                bounds.size.y > expectedHeight * 1.20f)
+                throw new InvalidOperationException(
+                    "Authored chair visual height differs from its verified metric plan. " +
+                    "Expected " + expectedHeight.ToString("0.###") +
+                    " m, rendered bounds " + bounds.size.y.ToString("0.###") + " m.");
+        }
+
+        private static int ReplaceInvalidMaterialSlots(
+            GameObject root, Material neutralMaterial)
+        {
+            return SavicSourceMaterialFallback.ReplaceInvalidSlots(root, neutralMaterial);
+        }
+
+        private static Material GetOrCreateNeutralMaterial(string assetPath)
+        {
+            return SavicSourceMaterialFallback.GetOrCreateNeutral(assetPath, "SAVIC Neutral Chair Appearance");
         }
 
         private static void RemoveTemplateVisual(

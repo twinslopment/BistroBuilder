@@ -8,7 +8,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicContentClassifier
     {
-        internal const string Version = "4.3.0";
+        internal const string Version = "4.7.0";
 
         private static readonly HashSet<string> TableTokens =
             new HashSet<string>(
@@ -31,6 +31,17 @@ namespace BistroBuilder.Editor.Savic
                     "sillas",
                     "armchair",
                     "armchairs"
+                },
+                StringComparer.OrdinalIgnoreCase);
+
+        private static readonly HashSet<string> StoolTokens =
+            new HashSet<string>(
+                new[]
+                {
+                    "stool", "stools", "taburete", "taburetes",
+                    // Meshy truncates descriptive names before its numeric ID.
+                    // Accept this fragment only with independent bar context.
+                    "stoo"
                 },
                 StringComparer.OrdinalIgnoreCase);
 
@@ -95,6 +106,7 @@ namespace BistroBuilder.Editor.Savic
                     "mesas",
                     "stool",
                     "stools",
+                    "stoo",
                     "taburete",
                     "taburetes",
                     "bench",
@@ -174,7 +186,7 @@ namespace BistroBuilder.Editor.Savic
                 new[]
                 {
                     "chair", "chairs", "silla", "sillas",
-                    "stool", "stools", "taburete", "taburetes",
+                    "stool", "stools", "stoo", "taburete", "taburetes",
                     "bench", "benches", "banco", "bancos",
                     "sofa", "sofas", "table", "tables",
                     "mesa", "mesas"
@@ -191,6 +203,7 @@ namespace BistroBuilder.Editor.Savic
                     "sillas",
                     "stool",
                     "stools",
+                    "stoo",
                     "taburete",
                     "taburetes",
                     "bench",
@@ -203,7 +216,7 @@ namespace BistroBuilder.Editor.Savic
                 StringComparer.OrdinalIgnoreCase);
 
         internal static SavicClassificationRecord Classify(
-            SavicManifest manifest)
+            SavicManifest manifest, SavicStorageLayout layout = null)
         {
             if (manifest?.source == null)
                 throw new ArgumentNullException(nameof(manifest));
@@ -238,9 +251,7 @@ namespace BistroBuilder.Editor.Savic
                 return result;
             }
 
-            string sourceName =
-                Path.GetFileNameWithoutExtension(
-                    manifest.source.originalFileName ?? string.Empty);
+            string sourceName = SavicProviderMetadataService.ResolveSemanticName(manifest, layout);
 
             HashSet<string> tokens =
                 Tokenize(sourceName);
@@ -250,6 +261,40 @@ namespace BistroBuilder.Editor.Savic
                     analysis,
                     result))
             {
+                return result;
+            }
+
+            if ((tokens.Contains("swing") || tokens.Contains("swinging") ||
+                 tokens.Contains("sw")) &&
+                SavicVerifiedProjectSourceContext.TryResolve(
+                    manifest.source,
+                    out string verifiedFolder,
+                    out string verifiedPath) &&
+                TryClassifyVerifiedProjectDoor(
+                    tokens, analysis, verifiedFolder, verifiedPath, result))
+            {
+                return result;
+            }
+
+            if (TryClassifyStool(
+                    tokens,
+                    analysis,
+                    result))
+            {
+                return result;
+            }
+
+            if (TryClassifyStaticFurnitureIdentity(tokens, analysis, result))
+                return result;
+
+            if (tokens.Contains("bar") && !ContainsAny(tokens, GenericPlaceableConflicts) &&
+                !ContainsAny(tokens, KitchenEquipmentStrongTokens) && !tokens.Contains("lamp") &&
+                !tokens.Contains("light") && !tokens.Contains("cabinet") && !analysis.hasSkinnedMeshes &&
+                analysis.hasUsableBounds && analysis.widthMeters >= 0.5f && analysis.depthMeters >= 0.3f && analysis.heightMeters >= 0.2f)
+            {
+                result.family = "ServiceEquipment"; result.type = "BarCounter"; result.category = "ServiceEquipment";
+                result.score = 0.86f; result.explicitTypeToken = true; result.nameBacked = true; result.confidence = "HIGH";
+                result.evidence = "Source subject explicitly identifies a bar counter. Compound geometry, native service and runtime acceptance remain publication requirements.";
                 return result;
             }
 
@@ -664,6 +709,144 @@ namespace BistroBuilder.Editor.Savic
                     evidence);
 
             return true;
+        }
+
+        private static bool TryClassifyStool(
+            ISet<string> tokens,
+            SavicModelAnalysisRecord analysis,
+            SavicClassificationRecord result)
+        {
+            if (tokens == null || analysis == null || result == null ||
+                !ContainsAny(tokens, StoolTokens) ||
+                (tokens.Contains("stoo") && !tokens.Contains("bar")) ||
+                ContainsAny(tokens, ChairTokens) ||
+                ContainsAny(tokens, TableTokens) ||
+                tokens.Contains("bench") || tokens.Contains("benches") ||
+                tokens.Contains("sofa") || tokens.Contains("sofas") ||
+                !HasPlausibleFurnitureDimensions(analysis))
+            {
+                return false;
+            }
+
+            bool bar = tokens.Contains("bar") || tokens.Contains("barra");
+            SavicChairGeometryProfileRecord geometry = analysis.chairGeometry;
+            bool geometrySupportsSeat = geometry != null &&
+                geometry.analyzed && geometry.usable &&
+                geometry.confidenceScore >= 0.78f;
+
+            result.family = "Furniture";
+            result.type = bar ? "BarStool" : "Stool";
+            result.category = "Seating";
+            result.score = geometrySupportsSeat ? 0.90f : 0.80f;
+            result.explicitTypeToken = true;
+            result.nameBacked = true;
+            result.geometryBacked = geometrySupportsSeat;
+            result.confidence = geometrySupportsSeat && !tokens.Contains("stoo")
+                ? "HIGH"
+                : "MEDIUM";
+            result.evidence =
+                "name contains an explicit stool identity" +
+                (tokens.Contains("stoo") ? " (truncated token with bar context)" : "") +
+                "; bounds are plausible for furniture" +
+                (geometrySupportsSeat
+                    ? "; geometry supports a seat profile"
+                    : "; seat geometry is insufficient for automatic functional authoring") +
+                "; functional publication requires a stool family contract";
+            return true;
+        }
+
+        private static bool TryClassifyStaticFurnitureIdentity(ISet<string> tokens,
+            SavicModelAnalysisRecord analysis, SavicClassificationRecord result)
+        {
+            if (analysis.hasSkinnedMeshes || ContainsAny(tokens, GenericPlaceableConflicts))
+                return false;
+            bool storage = tokens.Contains("storage") &&
+                (tokens.Contains("cabinet") || tokens.Contains("cupboard")) &&
+                !tokens.Contains("kitchen") && !tokens.Contains("commercial") &&
+                tokens.Contains("freestanding") && analysis.widthMeters >= 0.30f &&
+                analysis.widthMeters <= 2.50f && analysis.depthMeters >= 0.20f &&
+                analysis.depthMeters <= 1.50f && analysis.heightMeters >= 0.40f &&
+                analysis.heightMeters <= 2.50f;
+            bool floorLamp = tokens.Contains("floor") && tokens.Contains("lamp") &&
+                analysis.heightMeters >= 0.90f && analysis.heightMeters <= 2.50f &&
+                analysis.widthMeters >= 0.10f && analysis.widthMeters <= 0.90f &&
+                analysis.depthMeters >= 0.10f && analysis.depthMeters <= 0.90f;
+            if (!storage && !floorLamp)
+                return false;
+            result.family = "Furniture";
+            result.type = storage ? "StorageFurniture" : "FloorLamp";
+            result.category = storage ? "Furniture" : "Lighting";
+            result.score = 0.86f;
+            result.explicitTypeToken = true;
+            result.nameBacked = true;
+            result.confidence = "HIGH";
+            result.evidence = storage
+                ? "source subject explicitly identifies a freestanding storage cabinet; static bounds fit furniture; no inventory gameplay is inferred"
+                : "source subject explicitly identifies a floor lamp; static bounds fit a floor fixture; lighting publication requires its dedicated family contract";
+            return true;
+        }
+
+        internal static bool TryClassifyVerifiedProjectDoor(
+            ISet<string> nameTokens,
+            SavicModelAnalysisRecord analysis,
+            string verifiedFolder,
+            string verifiedPath,
+            SavicClassificationRecord result)
+        {
+            if (nameTokens == null || analysis == null || result == null ||
+                string.IsNullOrWhiteSpace(verifiedPath) ||
+                !analysis.hasUsableBounds || analysis.hasSkinnedMeshes ||
+                ContainsAny(nameTokens, ConstructionIdentityConflicts) ||
+                ContainsAny(nameTokens, WindowTokens) ||
+                ContainsAny(nameTokens, WallTokens) ||
+                !(nameTokens.Contains("swing") || nameTokens.Contains("swinging") ||
+                  nameTokens.Contains("sw")))
+                return false;
+
+            // Source-folder identity alone is insufficient. Require a
+            // complementary name cue and a thin, mostly vertical door slab.
+            HashSet<string> folderTokens =
+                Tokenize(SplitCamelCase(verifiedFolder));
+            if (!ContainsAny(folderTokens, DoorTokens) ||
+                analysis.widthMeters < 0.40f ||
+                analysis.widthMeters > 2.50f ||
+                analysis.heightMeters < 1.50f ||
+                analysis.heightMeters > 3.20f ||
+                analysis.depthMeters < 0.005f ||
+                analysis.depthMeters > 0.25f ||
+                analysis.geometry == null ||
+                !analysis.geometry.analyzed ||
+                analysis.geometry.verticalAreaRatio < 0.70f ||
+                analysis.geometry.upwardFacingAreaRatio > 0.15f)
+                return false;
+
+            result.family = "Architecture";
+            result.type = "Door";
+            result.category = "Construction";
+            result.score = 0.91f;
+            result.explicitTypeToken = true;
+            result.nameBacked = true;
+            result.geometryBacked = true;
+            result.confidence = "HIGH";
+            result.evidence = "SHA-256 verified project source at " + verifiedPath +
+                " has an explicit door folder; name indicates a swing; " +
+                "dimensions and vertical surface profile fit a door slab";
+            return true;
+        }
+
+        private static string SplitCamelCase(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+            StringBuilder split = new StringBuilder(value.Length + 8);
+            for (int index = 0; index < value.Length; index++)
+            {
+                if (index > 0 && char.IsUpper(value[index]) &&
+                    char.IsLower(value[index - 1]))
+                    split.Append('_');
+                split.Append(value[index]);
+            }
+            return split.ToString();
         }
 
         private static bool TryClassifyChair(

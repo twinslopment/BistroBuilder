@@ -57,7 +57,7 @@ namespace BistroBuilder.Editor.Savic
     /// </summary>
     internal static class SavicEquipmentIntegrationPolicy
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         internal const string PassiveAreaPlaceableMode =
             "PASSIVE_AREA_PLACEABLE";
@@ -107,7 +107,9 @@ namespace BistroBuilder.Editor.Savic
                         // Existing service/bar/pass systems own these
                         // interactions; static publication would duplicate
                         // gameplay authority.
-                        "counter", "bar", "pass",
+                        // "bar" alone is context: bar stools and truncated
+                        // exports must not become functional service stations.
+                        "counter", "pass",
                         "register", "pos", "cash"
                     },
                     StringComparer.OrdinalIgnoreCase);

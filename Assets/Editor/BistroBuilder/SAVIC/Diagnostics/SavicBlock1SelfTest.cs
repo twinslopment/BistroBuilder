@@ -113,6 +113,8 @@ namespace BistroBuilder.Editor.Savic
                     jobs.CountByState(SavicJobState.DuplicateExact) == 1,
                     "Expected one exact-duplicate job.");
 
+                ValidateDuplicateInventoryLifecycle(layout, manifest);
+
                 SavicIntakeOutcome rebuilt = intake.IngestSynchronously(
                     CreateReplacementInput(layout.DropHereRoot, payload));
 
@@ -138,11 +140,10 @@ namespace BistroBuilder.Editor.Savic
                 Require(
                     File.ReadAllBytes(archivedPath).SequenceEqual(payload),
                     "Corrupted source archive was not repaired.");
-                Require(
-                    Directory.GetFiles(
-                        Path.GetDirectoryName(archivedPath),
-                        Path.GetFileName(archivedPath) + ".corrupt.*")
-                    .Length == 1,
+                string[] preserved = Directory.GetFiles(
+                    Path.GetDirectoryName(archivedPath), ".savic-*.corrupt");
+                Require(preserved.Length == 1 &&
+                        File.ReadAllBytes(preserved[0]).SequenceEqual(corrupted),
                     "Corrupted archive bytes were not preserved for audit.");
             }
             finally
@@ -158,6 +159,74 @@ namespace BistroBuilder.Editor.Savic
             string path = Path.Combine(dropHereRoot, "Reprocessed.fbx");
             File.WriteAllBytes(path, payload);
             return path;
+        }
+
+        private static void ValidateDuplicateInventoryLifecycle(
+            SavicStorageLayout layout, SavicManifest manifest)
+        {
+            string priorStatus = manifest.status;
+            SavicJobRecord primary = new SavicJobRecord
+            {
+                jobId = "primary",
+                manifestSavicId = manifest.savicId,
+                sourceHash = manifest.source.sourceHash,
+                originalFileName = manifest.source.originalFileName,
+                archivedRelativePath = manifest.source.archivedRelativePath,
+                state = SavicJobState.NeedsReview.ToString(),
+                message = "Original requires a functional adapter.",
+                updatedUtc = "2026-01-01T00:00:00Z"
+            };
+            SavicJobRecord duplicate = new SavicJobRecord
+            {
+                jobId = "duplicate",
+                manifestSavicId = manifest.savicId,
+                sourceHash = manifest.source.sourceHash,
+                originalFileName = "renamed-copy.fbx",
+                state = SavicJobState.DuplicateExact.ToString(),
+                message = "Exact duplicate ignored.",
+                updatedUtc = "2026-01-02T00:00:00Z"
+            };
+            try
+            {
+                manifest.status = "NEEDS_REVIEW";
+                SavicCanonicalContentInventorySnapshot reviewed =
+                    SavicCanonicalContentInventoryService.Build(layout,
+                        new[] { manifest }, new[] { duplicate, primary },
+                        new SavicProjectInventorySnapshot());
+                Require(reviewed.Total == 1 && reviewed.NeedsReview == 1 &&
+                        reviewed.Rows[0].LatestJob.jobId == "primary" &&
+                        reviewed.Rows[0].Reason == primary.message,
+                    "A newer duplicate hid the canonical content review.");
+
+                primary.state = SavicJobState.FailedProcessing.ToString();
+                manifest.status = "FAILED";
+                SavicCanonicalContentInventorySnapshot failed =
+                    SavicCanonicalContentInventoryService.Build(layout,
+                        new[] { manifest }, new[] { primary, duplicate },
+                        new SavicProjectInventorySnapshot());
+                Require(failed.Total == 1 && failed.Failed == 1,
+                    "A newer duplicate hid the canonical processing failure.");
+
+                manifest.status = "NEEDS_REVIEW";
+                SavicCanonicalContentInventorySnapshot manifestOnly =
+                    SavicCanonicalContentInventoryService.Build(layout,
+                        new[] { manifest }, new[] { duplicate },
+                        new SavicProjectInventorySnapshot());
+                Require(manifestOnly.NeedsReview == 1,
+                    "A duplicate-only queue replaced the manifest outcome.");
+
+                primary.state = SavicJobState.NeedsReview.ToString();
+                SavicCanonicalContentInventorySnapshot orphan =
+                    SavicCanonicalContentInventoryService.Build(layout,
+                        Array.Empty<SavicManifest>(), new[] { primary, duplicate },
+                        new SavicProjectInventorySnapshot());
+                Require(orphan.Total == 1 && orphan.NeedsReview == 1,
+                    "A newer orphan duplicate hid its primary review job.");
+            }
+            finally
+            {
+                manifest.status = priorStatus;
+            }
         }
 
         private static byte[] BuildDeterministicPayload()

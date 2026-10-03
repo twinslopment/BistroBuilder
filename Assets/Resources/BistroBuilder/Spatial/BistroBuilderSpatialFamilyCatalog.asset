@@ -27,6 +27,12 @@ MonoBehaviour:
     defaultTraitIds:
     - seating.chair
     - dynamic.seat
+  - familyId: seating.bar
+    displayName: Taburete de barra
+    defaultTraitIds:
+    - seating.bar
+    - seat.static
+    - service.bar
   - familyId: architecture.door
     displayName: Puerta
     defaultTraitIds:

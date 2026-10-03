@@ -34,7 +34,7 @@ namespace BistroBuilder.Editor.Savic
 
     internal sealed class SavicGenericPlaceablePublisher
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "2.3.0";
 
         private const string MainCatalogPath =
             "Assets/Data/Restaurant/EditMode/Catalog/" +
@@ -71,7 +71,7 @@ namespace BistroBuilder.Editor.Savic
 
         internal SavicGenericPlaceablePublicationOutcome Publish(
             SavicManifest manifest,
-            GameObject sourceModelAsset)
+            GameObject sourceModelAsset, bool prepareCandidateOnly = false)
         {
             if (manifest == null)
                 throw new ArgumentNullException(nameof(manifest));
@@ -116,6 +116,11 @@ namespace BistroBuilder.Editor.Savic
                     manifest,
                     plan);
 
+            if (prepareCandidateOnly && !SavicFunctionalRuntimeAcceptance.Required(manifest))
+                return Fail("Candidate preparation is restricted to content requiring real runtime acceptance.");
+            if (!prepareCandidateOnly && !SavicFunctionalRuntimeAcceptance.Matches(manifest, layout))
+                return Fail("Functional publication requires current canonical runtime and SaveGame acceptance.");
+
             if (CanReuseExisting(
                     manifest,
                     plan,
@@ -133,6 +138,10 @@ namespace BistroBuilder.Editor.Savic
                 if (reusedItem != null &&
                     reusedPrefab != null)
                 {
+                    using SavicAssetMutationScope reuseTransaction = new SavicAssetMutationScope(layout, "reuse_generic_" + manifest.canonicalContentId);
+                    reuseTransaction.CaptureAsset(MainCatalogPath);
+                    reuseTransaction.CaptureAsset(plan.itemDefinitionAssetPath);
+                    RefreshGeneratedDescription(reusedItem, plan.integrationMode == SavicBarCounterFunctionAdapter.Mode);
                     SavicPreviewGenerationResult reusedPreviews =
                         SavicPreviewRenderer.ReuseAndAssign(
                             reusedItem,
@@ -141,10 +150,12 @@ namespace BistroBuilder.Editor.Savic
 
                     if (reusedPreviews.Succeeded)
                     {
+                        if (!prepareCandidateOnly) EnsureCatalogEntry(reusedItem);
+                        AssetDatabase.SaveAssets();
                         if (!ValidateAndStampReadiness(
                                 manifest,
                                 plan,
-                                out string readinessError))
+                                out string readinessError, prepareCandidateOnly))
                         {
                             return Fail(
                                 readinessError,
@@ -152,15 +163,15 @@ namespace BistroBuilder.Editor.Savic
                                 plan.itemDefinitionAssetPath);
                         }
 
-                        manifest.status =
-                            "PUBLISHED";
+                        manifest.status = prepareCandidateOnly ? "NEEDS_REVIEW" : "PUBLISHED";
 
                         manifests.Save(
                             manifest);
+                        reuseTransaction.Commit();
 
                         return new SavicGenericPlaceablePublicationOutcome(
                             true,
-                            "Generic placeable reused unchanged published artifacts.",
+                            prepareCandidateOnly ? "Functional candidate reused; real runtime acceptance pending." : "Generic placeable reused unchanged accepted artifacts.",
                             plan.prefabAssetPath,
                             plan.itemDefinitionAssetPath);
                     }
@@ -190,6 +201,8 @@ namespace BistroBuilder.Editor.Savic
 
             transaction.CaptureAsset(
                 MainCatalogPath);
+            string neutralMaterialPath = contentFolder + "/Material_NeutralFallback.mat";
+            transaction.CaptureAsset(neutralMaterialPath);
 
             try
             {
@@ -221,6 +234,20 @@ namespace BistroBuilder.Editor.Savic
                         "Published generic prefab could not be loaded.");
                 }
 
+                if (SavicSourceMaterialFallback.CountInvalidSlots(prefab) != 0)
+                    throw new InvalidOperationException("Published generic prefab contains invalid material slots.");
+                Material neutral = AssetDatabase.LoadAssetAtPath<Material>(neutralMaterialPath);
+                int neutralSlots = neutral == null ? 0 : prefab.GetComponentsInChildren<Renderer>(true)
+                    .Sum(renderer => renderer.sharedMaterials.Count(material => material == neutral));
+                SavicManifestMutations.UpsertValidation(manifest, "Presentation.GenericMaterials",
+                    neutralSlots > 0 ? "WARNING" : "PASS", neutralSlots > 0 ? "WARNING" : "INFO",
+                    neutralSlots > 0 ? neutralSlots + " missing or unsupported material slot(s) use a managed neutral material; source textures are unavailable."
+                        : "Source materials are usable.", Version);
+                if (neutralSlots > 0)
+                    SavicManifestMutations.UpsertArtifact(manifest, "published.generic.neutral_material",
+                        neutralMaterialPath, "savic.generic-placeable-publisher", Version,
+                        SavicHashService.ComputeSha256(layout.FromProjectRelativePath(neutralMaterialPath)));
+
                 RestaurantPlaceableObject placeable =
                     prefab.GetComponent<RestaurantPlaceableObject>();
 
@@ -236,8 +263,7 @@ namespace BistroBuilder.Editor.Savic
                     manifest,
                     plan);
 
-                EnsureCatalogEntry(
-                    item);
+                if (!prepareCandidateOnly) EnsureCatalogEntry(item);
 
                 string previewFingerprint =
                     SavicPreviewRenderer.BuildInputFingerprint(
@@ -301,7 +327,7 @@ namespace BistroBuilder.Editor.Savic
                 if (!ValidateAndStampReadiness(
                         manifest,
                         plan,
-                        out string readinessError))
+                        out string readinessError, prepareCandidateOnly))
                 {
                     throw new InvalidOperationException(
                         readinessError);
@@ -315,8 +341,7 @@ namespace BistroBuilder.Editor.Savic
                     previews.Message,
                     SavicPreviewRenderer.Version);
 
-                manifest.status =
-                    "PUBLISHED";
+                manifest.status = prepareCandidateOnly ? "NEEDS_REVIEW" : "PUBLISHED";
 
                 manifests.Save(
                     manifest);
@@ -325,7 +350,7 @@ namespace BistroBuilder.Editor.Savic
 
                 return new SavicGenericPlaceablePublicationOutcome(
                     true,
-                    "Generic floor placeable published atomically.",
+                    prepareCandidateOnly ? "Functional candidate prepared atomically without main catalog publication." : "Generic floor placeable published atomically.",
                     plan.prefabAssetPath,
                     plan.itemDefinitionAssetPath);
             }
@@ -371,6 +396,8 @@ namespace BistroBuilder.Editor.Savic
                         plan.itemDefinitionAssetPath);
 
             if (existingPrefab == null ||
+                SavicSourceMaterialFallback.CountInvalidSlots(existingPrefab) > 0 ||
+                SavicSourceMaterialFallback.CountInvalidSlots(sourceModelAsset) > 0 ||
                 item == null ||
                 existingPrefab.transform.Find(
                     "Visual/SourceModel") == null ||
@@ -466,6 +493,7 @@ namespace BistroBuilder.Editor.Savic
                 RemoveSourceColliders(
                     sourceInstance);
 
+                SavicPlaceableFunctionAdapters.Apply(prefabContents, manifest);
                 GameObject saved =
                     PrefabUtility.SaveAsPrefabAsset(
                         prefabContents,
@@ -636,7 +664,7 @@ namespace BistroBuilder.Editor.Savic
                 serialized,
                 "displayName",
                 HumanizeSourceName(
-                    manifest.source?.originalFileName));
+                    SavicProviderMetadataService.ResolveSemanticName(manifest, layout)));
 
             SetString(
                 serialized,
@@ -732,7 +760,7 @@ namespace BistroBuilder.Editor.Savic
                 serialized,
                 "displayName",
                 HumanizeSourceName(
-                    manifest.source?.originalFileName));
+                    SavicProviderMetadataService.ResolveSemanticName(manifest, layout)));
 
             SetEnumIndex(
                 serialized,
@@ -745,11 +773,10 @@ namespace BistroBuilder.Editor.Savic
                 (int)RestaurantPlaceableEnvironmentScope
                     .InteriorAndExterior);
 
-            SetString(
-                serialized,
-                "description",
-                BuildDescription(
-                    category));
+            string existingDescription = serialized.FindProperty("description").stringValue;
+            string desiredDescription = BuildDescription(category, plan.integrationMode == SavicBarCounterFunctionAdapter.Mode);
+            if (CanReplaceGeneratedDescription(existingDescription, desiredDescription))
+                SetString(serialized, "description", desiredDescription);
 
             SetObjectReference(
                 serialized,
@@ -848,6 +875,13 @@ namespace BistroBuilder.Editor.Savic
                 BoxCollider collider =
                     root.AddComponent<BoxCollider>();
 
+                if (SavicSourceMaterialFallback.CountInvalidSlots(sourceInstance) > 0)
+                {
+                    string neutralPath = Path.GetDirectoryName(plan.prefabAssetPath).Replace('\\', '/') + "/Material_NeutralFallback.mat";
+                    SavicSourceMaterialFallback.ReplaceInvalidSlots(sourceInstance,
+                        SavicSourceMaterialFallback.GetOrCreateNeutral(neutralPath, "SAVIC Neutral Placeable Appearance"));
+                }
+
                 collider.center =
                     new Vector3(
                         0f,
@@ -914,6 +948,8 @@ namespace BistroBuilder.Editor.Savic
                     item,
                     anchorObject.transform);
 
+                SavicPlaceableFunctionAdapters.Apply(root, manifest);
+
                 GameObject saved =
                     PrefabUtility.SaveAsPrefabAsset(
                         root,
@@ -966,7 +1002,7 @@ namespace BistroBuilder.Editor.Savic
             return instance;
         }
 
-        private static void NormalizeSourceVisual(
+        internal static void NormalizeSourceVisual(
             Transform source,
             SavicModelAnalysisRecord analysis)
         {
@@ -976,11 +1012,7 @@ namespace BistroBuilder.Editor.Savic
                 return;
             }
 
-            source.localRotation =
-                Quaternion.identity;
-
-            source.localScale =
-                Vector3.one;
+            // Match SavicMetricSpace: preserve the importer's rotation and unit scale.
 
             float minY =
                 analysis.boundsCenterY -
@@ -1424,7 +1456,7 @@ namespace BistroBuilder.Editor.Savic
         private bool ValidateAndStampReadiness(
             SavicManifest manifest,
             SavicGenericPlaceableAuthoringRecord plan,
-            out string error)
+            out string error, bool candidateOnly = false)
         {
             error =
                 string.Empty;
@@ -1452,6 +1484,12 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
+            if (SavicSourceMaterialFallback.CountInvalidSlots(prefab) > 0)
+            {
+                error = "Generic published prefab has invalid material slots.";
+                return false;
+            }
+
             RestaurantPlaceableObject placeable =
                 prefab.GetComponent
                     <RestaurantPlaceableObject>();
@@ -1470,7 +1508,7 @@ namespace BistroBuilder.Editor.Savic
 
             if (placeable == null ||
                 footprint == null ||
-                collider == null ||
+                (collider == null && !SavicBarCounterRuntimeAcceptance.Required(manifest)) ||
                 areaMember == null)
             {
                 error =
@@ -1500,10 +1538,9 @@ namespace BistroBuilder.Editor.Savic
                     0.001f &&
                 footprint.BlocksOtherPlacements;
 
-            bool colliderReady =
-                collider.size.x > 0.01f &&
-                collider.size.y > 0.01f &&
-                collider.size.z > 0.01f;
+            bool colliderReady = SavicBarCounterRuntimeAcceptance.Required(manifest)
+                ? collider == null && prefab.GetComponentsInChildren<BoxCollider>(true).Length == manifest.barCounter.physicalBoxes.Count
+                : collider != null && collider.size.x > 0.01f && collider.size.y > 0.01f && collider.size.z > 0.01f;
 
             int catalogCount =
                 CountCatalogEntries(
@@ -1521,13 +1558,20 @@ namespace BistroBuilder.Editor.Savic
                     manifest.canonicalContentId,
                     StringComparison.Ordinal);
 
-            bool navigationReady =
-                footprintReady;
+            bool runtimeRequired = SavicFunctionalRuntimeAcceptance.Required(manifest);
+            bool runtimeAccepted = !runtimeRequired || SavicFunctionalRuntimeAcceptance.Matches(manifest, layout);
+            bool navigationReady = footprintReady && runtimeAccepted;
 
             bool areaCapabilityReady =
                 HasRequiredAreaCapability(
                     prefab,
                     plan);
+
+            bool functionReady = SavicPlaceableFunctionAdapters.Validate(prefab, manifest, out string functionError);
+            SavicManifestMutations.UpsertValidation(manifest, "GenericPlaceable.FunctionAdapter",
+                functionReady ? "PASS" : "FAIL", functionReady ? "INFO" : "ERROR",
+                functionReady ? "Required native function adapter matches the canonical authoring plan."
+                    : functionError, Version);
 
             bool ready =
                 footprintReady &&
@@ -1535,7 +1579,7 @@ namespace BistroBuilder.Editor.Savic
                 catalogReady &&
                 persistenceReady &&
                 navigationReady &&
-                areaCapabilityReady;
+                areaCapabilityReady && functionReady && runtimeAccepted;
 
             manifest.genericPlaceableReadiness =
                 new SavicGenericPlaceableReadinessRecord
@@ -1557,9 +1601,10 @@ namespace BistroBuilder.Editor.Savic
                     navigationReady =
                         navigationReady,
                     spatialContractRequired =
-                        false,
+                        runtimeRequired,
                     areaCapabilityReady =
                         areaCapabilityReady,
+                    functionalAdapterReady = functionReady,
                     requiredAreaCapabilityId =
                         plan.requiredAreaCapabilityId ??
                         string.Empty,
@@ -1571,7 +1616,9 @@ namespace BistroBuilder.Editor.Savic
                     itemDefinitionAssetPath =
                         plan.itemDefinitionAssetPath,
                     evidence =
-                        ready
+                        runtimeRequired ? (ready
+                            ? "Native physical/function contract, canonical catalog identity and verified creation/navigation/lease/SaveGame acceptance match the prefab."
+                            : "Functional candidate requires current runtime acceptance and catalog publication.") : ready
                             ? string.IsNullOrWhiteSpace(
                                   plan.requiredAreaCapabilityId)
                                 ? "Static generic placeable has canonical floor anchor, footprint, collider, catalog identity and persistence-ready prefab. No interactive BBSIS contract is required."
@@ -1591,8 +1638,20 @@ namespace BistroBuilder.Editor.Savic
                 catalogReady,
                 persistenceReady,
                 navigationReady,
-                areaCapabilityReady);
+                areaCapabilityReady, candidateOnly);
 
+            if (candidateOnly)
+            {
+                // Prepared geometry is not catalog/persistence/navigation acceptance.
+                SavicManifestMutations.UpsertValidation(manifest, "GenericPlaceable.RuntimeAcceptance", "REVIEW", "WARNING",
+                    "Candidate prepared without main catalog entry; real Play Mode acceptance remains required.", Version);
+                return footprintReady && colliderReady && areaCapabilityReady && functionReady;
+            }
+            if (runtimeRequired)
+                SavicManifestMutations.UpsertValidation(manifest, "GenericPlaceable.RuntimeAcceptance",
+                    runtimeAccepted ? "PASS" : "REVIEW", runtimeAccepted ? "INFO" : "WARNING",
+                    runtimeAccepted ? "Current prefab passed canonical runtime creation, native binding/lease/route and SaveGame save/load/cleanup."
+                        : "Runtime acceptance is absent or stale.", Version);
             if (!ready)
             {
                 error =
@@ -1610,7 +1669,7 @@ namespace BistroBuilder.Editor.Savic
             bool catalogReady,
             bool persistenceReady,
             bool navigationReady,
-            bool areaCapabilityReady)
+            bool areaCapabilityReady, bool candidateOnly = false)
         {
             SavicManifestMutations.UpsertValidation(
                 manifest,
@@ -1628,25 +1687,25 @@ namespace BistroBuilder.Editor.Savic
                 colliderReady ? "PASS" : "FAIL",
                 colliderReady ? "INFO" : "ERROR",
                 colliderReady
-                    ? "Simple static box collider is valid."
+                    ? "Canonical static collider geometry is valid."
                     : "Generic collider is invalid.",
                 Version);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
                 "GenericPlaceable.Catalog",
-                catalogReady ? "PASS" : "FAIL",
-                catalogReady ? "INFO" : "ERROR",
+                catalogReady ? "PASS" : candidateOnly ? "REVIEW" : "FAIL",
+                catalogReady ? "INFO" : candidateOnly ? "WARNING" : "ERROR",
                 catalogReady
                     ? "Canonical catalog resolves exactly one item definition."
-                    : "Catalog registration is missing or duplicated.",
+                    : candidateOnly ? "Candidate is not yet published to the main catalog." : "Catalog registration is missing or duplicated.",
                 Version);
 
             SavicManifestMutations.UpsertValidation(
                 manifest,
                 "GenericPlaceable.Persistence",
-                persistenceReady ? "PASS" : "FAIL",
-                persistenceReady ? "INFO" : "ERROR",
+                persistenceReady ? "PASS" : candidateOnly ? "REVIEW" : "FAIL",
+                persistenceReady ? "INFO" : candidateOnly ? "WARNING" : "ERROR",
                 persistenceReady
                     ? "Canonical ItemId and prefab are persistence-resolvable."
                     : "Persistence identity is not ready.",
@@ -1655,8 +1714,8 @@ namespace BistroBuilder.Editor.Savic
             SavicManifestMutations.UpsertValidation(
                 manifest,
                 "GenericPlaceable.Navigation",
-                navigationReady ? "PASS" : "FAIL",
-                navigationReady ? "INFO" : "ERROR",
+                navigationReady ? "PASS" : candidateOnly ? "REVIEW" : "FAIL",
+                navigationReady ? "INFO" : candidateOnly ? "WARNING" : "ERROR",
                 navigationReady
                     ? "Canonical blocking footprint supplies static navigation topology."
                     : "Navigation footprint is not ready.",
@@ -1682,7 +1741,9 @@ namespace BistroBuilder.Editor.Savic
                 "GenericPlaceable.BBSIS",
                 "PASS",
                 "INFO",
-                string.Equals(
+                plan.integrationMode == SavicBarCounterFunctionAdapter.Mode
+                    ? "Compound root body and native bar ports are validated against the existing work.bar contract."
+                    : string.Equals(
                     plan.integrationMode,
                     SavicEquipmentIntegrationPolicy.PassiveAreaPlaceableMode,
                     StringComparison.Ordinal)
@@ -1715,8 +1776,8 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            return AssetDatabase.LoadAssetAtPath<GameObject>(
-                       plan.prefabAssetPath) != null &&
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(plan.prefabAssetPath);
+            return prefab != null && SavicSourceMaterialFallback.CountInvalidSlots(prefab) == 0 &&
                    AssetDatabase.LoadAssetAtPath
                        <RestaurantPlaceableItemDefinition>(
                            plan.itemDefinitionAssetPath) != null &&
@@ -1738,6 +1799,7 @@ namespace BistroBuilder.Editor.Savic
                         string.Empty,
                     manifest.source?.sourceHash ??
                         string.Empty,
+                    manifest.source?.providerMetadataHash ?? string.Empty,
                     manifest.incremental?.geometryFingerprint ??
                         string.Empty,
                     manifest.incremental?.appearanceFingerprint ??
@@ -1750,6 +1812,7 @@ namespace BistroBuilder.Editor.Savic
                         string.Empty,
                     plan.integrationMode ??
                         string.Empty,
+                    SavicPlaceableFunctionAdapters.Resolve(manifest)?.Fingerprint(manifest) ?? string.Empty,
                     plan.requiredAreaCapabilityId ??
                         string.Empty,
                     F(plan.finalWidthMeters),
@@ -1795,16 +1858,56 @@ namespace BistroBuilder.Editor.Savic
             return RestaurantPlaceableItemCategory.Other;
         }
 
-        private static string BuildDescription(
-            RestaurantPlaceableItemCategory category)
+        internal bool RefreshPublishedGeneratedDescription(SavicManifest manifest)
         {
+            var plan = manifest?.genericPlaceable;
+            if (manifest?.status != "PUBLISHED" || plan == null || !plan.planned) return false;
+            var item = AssetDatabase.LoadAssetAtPath<RestaurantPlaceableItemDefinition>(plan.itemDefinitionAssetPath);
+            if (item == null || item.ItemId != manifest.canonicalContentId || item.Category != ParseCategory(plan.category))
+                throw new InvalidOperationException("Published description repair requires the canonical item and category.");
+            string desired = BuildDescription(item.Category, plan.integrationMode == SavicBarCounterFunctionAdapter.Mode);
+            if (item.Description == desired || !CanReplaceGeneratedDescription(item.Description, desired)) return false;
+            using var transaction = new SavicAssetMutationScope(layout, "description_" + manifest.canonicalContentId);
+            transaction.CaptureAsset(plan.itemDefinitionAssetPath);
+            RefreshGeneratedDescription(item, plan.integrationMode == SavicBarCounterFunctionAdapter.Mode);
+            AssetDatabase.SaveAssets();
+            transaction.Commit();
+            return true;
+        }
+
+        internal static bool CanReplaceGeneratedDescription(string existing, string desired) =>
+            string.IsNullOrWhiteSpace(existing) || existing == desired ||
+            existing == "Elemento decorativo preparado automáticamente por SAVIC." ||
+            existing == "Equipamiento pasivo de cocina preparado automáticamente por SAVIC." ||
+            existing == "Equipamiento pasivo de servicio preparado automáticamente por SAVIC.";
+
+        private static void RefreshGeneratedDescription(RestaurantPlaceableItemDefinition item, bool bar)
+        {
+            string desired = BuildDescription(item.Category, bar);
+            if (item.Description == desired || !CanReplaceGeneratedDescription(item.Description, desired)) return;
+            var serialized = new SerializedObject(item);
+            SetString(serialized, "description", desired);
+            serialized.ApplyModifiedPropertiesWithoutUndo(); EditorUtility.SetDirty(item);
+        }
+
+        private static string BuildDescription(
+            RestaurantPlaceableItemCategory category, bool bar = false)
+        {
+            if (bar) return "Mostrador de barra con plazas de servicio y contrato espacial canónicos, preparado por SAVIC.";
             switch (category)
             {
+                case RestaurantPlaceableItemCategory.Seating:
+                    return "Asiento de barra preparado por SAVIC para una plaza compatible y ocupación canónica.";
                 case RestaurantPlaceableItemCategory.KitchenEquipment:
                     return "Equipamiento pasivo de cocina preparado automáticamente por SAVIC.";
 
                 case RestaurantPlaceableItemCategory.ServiceEquipment:
                     return "Equipamiento pasivo de servicio preparado automáticamente por SAVIC.";
+
+                case RestaurantPlaceableItemCategory.Lighting:
+                    return "Iluminación funcional preparada automáticamente por SAVIC.";
+                case RestaurantPlaceableItemCategory.Furniture:
+                    return "Mobiliario preparado automáticamente por SAVIC.";
 
                 default:
                     return "Elemento decorativo preparado automáticamente por SAVIC.";

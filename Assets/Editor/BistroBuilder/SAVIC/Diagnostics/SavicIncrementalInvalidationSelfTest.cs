@@ -45,6 +45,15 @@ namespace BistroBuilder.Editor.Savic
             SavicManifest materialOnly =
                 Clone(previous);
 
+            SavicManifest providerChange = Clone(previous);
+            providerChange.source.providerMetadataHash = new string('e', 64);
+            Require(SavicIncrementalInvalidationService.Evaluate(previous, providerChange,
+                providerChange.model3D).Action == SavicIncrementalAction.FullRebuild,
+                "Changed provider identity reused stale semantics.");
+            Require(SavicIncrementalInvalidationService.Evaluate(providerChange, Clone(providerChange),
+                providerChange.model3D).Action == SavicIncrementalAction.ReusePublished,
+                "Unchanged provider identity prevented exact reuse.");
+
             materialOnly.source.sourceHash =
                 new string('b', 64);
 

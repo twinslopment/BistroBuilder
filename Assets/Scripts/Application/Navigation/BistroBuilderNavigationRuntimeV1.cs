@@ -1095,12 +1095,9 @@ public sealed partial class BistroBuilderNavigationService
         // El planner permite aproximarse a endpoints certificados aunque estÃ©n
         // prÃ³ximos a la huella estÃ¡tica del objeto de interacciÃ³n. El solver
         // local debe respetar la misma semÃ¡ntica para no autobloquear el viaje.
-        if (!nearTripEndpoint && !skipStaticGeometry)
-        {
-            for (int i = 0; i < staticShapes.Count; i++)
-                if (PointInsideShape(proposed, staticShapes[i], r + staticClearance))
-                    return false;
-        }
+        for (int i = 0; i < staticShapes.Count; i++)
+            if ((staticShapes[i].RequiresCompleteClearance || (!nearTripEndpoint && !skipStaticGeometry)) &&
+                BlocksAgentShape(proposed, staticShapes[i], r + staticClearance)) return false;
 
         if (spatialService != null &&
             spatialService.BlocksTraversalPoint(proposed, r, ownerId))

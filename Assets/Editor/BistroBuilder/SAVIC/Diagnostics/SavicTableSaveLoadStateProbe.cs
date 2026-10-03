@@ -18,26 +18,41 @@ namespace BistroBuilder.Editor.Savic
             122)]
         public static void RunFromMenu()
         {
-            RunOrThrow();
+            RunOrThrow("Table");
         }
 
         public static void RunFromCommandLine()
         {
-            RunOrThrow();
+            RunOrThrow("Table");
         }
 
-        private static void RunOrThrow()
+        internal static void RunTableForSavicId(string savicId)
+        {
+            if (string.IsNullOrWhiteSpace(savicId))
+                throw new ArgumentException("SAVIC table identity is required.", nameof(savicId));
+            RunOrThrow("Table", savicId);
+        }
+
+        [MenuItem(
+            "Tools/Bistro Builder/SAVIC/Diagnostics/Run Published Chair SaveLoad State Probe",
+            false,
+            123)]
+        public static void RunChairFromMenu() => RunChairFromCommandLine();
+
+        public static void RunChairFromCommandLine() => RunOrThrow("Chair");
+
+        private static void RunOrThrow(string type, string savicId = "")
         {
             SavicEditorContext context =
                 SavicEditorContext.Instance;
 
             SavicManifest manifest =
-                FindPublishedTable(
-                    context.Manifests.GetAll());
+                FindPublished(
+                    context.Manifests.GetAll(), type, savicId);
 
             Require(
                 manifest != null,
-                "No published SAVIC table exists.");
+                "No published SAVIC " + type + " exists.");
 
             SceneSetup[] previousSetup =
                 EditorSceneManager.GetSceneManagerSetup();
@@ -72,13 +87,14 @@ namespace BistroBuilder.Editor.Savic
                 RestaurantStructureSaveData state =
                     BuildState(
                         scene.name,
-                        manifest.canonicalContentId);
+                        manifest.canonicalContentId,
+                        string.Equals(type, "Table", StringComparison.Ordinal));
 
                 Require(
                     provider.ValidateState(
                         state,
                         out string stateError),
-                    "SAVIC table is not a valid restaurant.structure save record: " +
+                    "SAVIC " + type + " is not a valid restaurant.structure save record: " +
                     stateError);
 
                 BistroBuilderJsonSaveSerializer serializer =
@@ -125,7 +141,7 @@ namespace BistroBuilder.Editor.Savic
                     roundTripError);
 
                 Debug.Log(
-                    "[SAVIC] TABLE SAVELOAD STATE PROBE - PASS\n" +
+                    "[SAVIC] " + type.ToUpperInvariant() + " SAVELOAD STATE PROBE - PASS\n" +
                     "Scene: " +
                     scene.name +
                     "\nCanonical ItemId: " +
@@ -148,7 +164,8 @@ namespace BistroBuilder.Editor.Savic
 
         private static RestaurantStructureSaveData BuildState(
             string sceneName,
-            string itemId)
+            string itemId,
+            bool table)
         {
             RestaurantStructureSaveData state =
                 new RestaurantStructureSaveData
@@ -161,11 +178,12 @@ namespace BistroBuilder.Editor.Savic
                 new RestaurantPlaceableSaveRecord
                 {
                     instanceId =
-                        "savic_probe_table_instance",
+                        table ? "savic_probe_table_instance" :
+                            "savic_probe_chair_instance",
                     itemId =
                         itemId ?? string.Empty,
                     functionalTableId =
-                        900001,
+                        table ? 900001 : 0,
                     worldPosition =
                         new BistroBuilderSaveVector3(
                             new Vector3(
@@ -183,8 +201,10 @@ namespace BistroBuilder.Editor.Savic
             return state;
         }
 
-        private static SavicManifest FindPublishedTable(
-            IReadOnlyList<SavicManifest> manifests)
+        private static SavicManifest FindPublished(
+            IReadOnlyList<SavicManifest> manifests,
+            string type,
+            string savicId)
         {
             for (int index = 0;
                  index < manifests.Count;
@@ -200,8 +220,11 @@ namespace BistroBuilder.Editor.Savic
                         StringComparison.Ordinal) &&
                     string.Equals(
                         candidate.type,
-                        "Table",
+                        type,
                         StringComparison.Ordinal) &&
+                    (string.IsNullOrEmpty(savicId) ||
+                     string.Equals(candidate.savicId, savicId,
+                         StringComparison.OrdinalIgnoreCase)) &&
                     !string.IsNullOrWhiteSpace(
                         candidate.canonicalContentId))
                 {

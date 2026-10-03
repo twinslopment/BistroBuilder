@@ -43,6 +43,12 @@ public static class BistroBuilderBarServiceSelfTest
     private static readonly List<UnityEngine.Object> temporaryObjects =
         new List<UnityEngine.Object>();
 
+    public static void RunFromCommandLine()
+    {
+        Run();
+        if (failed > 0) throw new InvalidOperationException("Bar service regression tests failed: " + failed + ".");
+    }
+
     [MenuItem(MenuPath, false, 267)]
     private static void Run()
     {
@@ -90,7 +96,8 @@ public static class BistroBuilderBarServiceSelfTest
             Debug.LogError(report);
         }
 
-        EditorUtility.DisplayDialog("Bistro Builder", report, "Aceptar");
+        if (!Application.isBatchMode)
+            EditorUtility.DisplayDialog("Bistro Builder", report, "Aceptar");
     }
 
     private static void RunServiceModeTests()

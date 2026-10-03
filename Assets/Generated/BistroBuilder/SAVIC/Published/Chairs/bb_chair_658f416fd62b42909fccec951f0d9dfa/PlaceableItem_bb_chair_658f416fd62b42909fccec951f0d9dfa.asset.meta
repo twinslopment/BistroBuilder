@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 378f77187c9e4df44b80e2b831ab3378
+labels:
+- SAVIC.CatalogItem
+- SAVIC.Chair
+- SAVIC.Managed
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

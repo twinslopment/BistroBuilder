@@ -9,6 +9,7 @@ namespace BistroBuilder.Editor.Savic
         private readonly string typeId;
         private readonly SavicManifestRepository manifests;
         private readonly SavicGenericPlaceablePublisher publisher;
+        private readonly SavicStorageLayout layout;
 
         internal SavicGenericPlaceableFamilyModule(
             string typeId,
@@ -19,6 +20,7 @@ namespace BistroBuilder.Editor.Savic
                 throw new ArgumentException("Type id is required.", nameof(typeId));
 
             this.typeId = typeId;
+            this.layout = layout;
             this.manifests =
                 manifests ?? throw new ArgumentNullException(nameof(manifests));
 
@@ -39,6 +41,9 @@ namespace BistroBuilder.Editor.Savic
 
             if (sourceModel == null)
                 throw new ArgumentNullException(nameof(sourceModel));
+
+            if (typeId == "KitchenEquipment" && SavicOverheadEquipmentAuthoringPlanner.IsVerifiedHood(manifest, layout))
+                return new SavicOverheadEquipmentFamilyModule(layout, manifests).Process(manifest, sourceModel);
 
             bool planned =
                 SavicGenericPlaceableAuthoringPlanner.TryPlan(
@@ -118,6 +123,9 @@ namespace BistroBuilder.Editor.Savic
 
             if (sourceModel == null)
                 throw new ArgumentNullException(nameof(sourceModel));
+
+            if (typeId == "KitchenEquipment" && SavicOverheadEquipmentAuthoringPlanner.IsVerifiedHood(manifest, layout))
+                return new SavicOverheadEquipmentFamilyModule(layout, manifests).Process(manifest, sourceModel);
 
             bool planned =
                 SavicGenericPlaceableAuthoringPlanner.TryPlan(

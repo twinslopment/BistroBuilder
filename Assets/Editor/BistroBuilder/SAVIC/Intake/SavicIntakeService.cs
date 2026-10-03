@@ -83,6 +83,30 @@ namespace BistroBuilder.Editor.Savic
             return CommitIngest(path, snapshot, hash);
         }
 
+        // Import an external original without allowing the inbox commit to
+        // delete the operator's file. The staging directory is not watched.
+        internal SavicIntakeOutcome IngestExternalCopySynchronously(string originalPath)
+        {
+            if (string.IsNullOrWhiteSpace(originalPath) || !File.Exists(originalPath))
+                throw new FileNotFoundException("Select an existing source file.", originalPath);
+
+            string directory = Path.Combine(layout.StagingRoot,
+                "ExternalImport-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            string copy = Path.Combine(directory, Path.GetFileName(originalPath));
+            try
+            {
+                File.Copy(originalPath, copy, false);
+                return IngestSynchronously(copy);
+            }
+            finally
+            {
+                if (File.Exists(copy))
+                    File.Delete(copy);
+                Directory.Delete(directory, false);
+            }
+        }
+
         private void ReconcileObservationsAndSchedule()
         {
             string[] files = Directory.GetFiles(
@@ -323,12 +347,11 @@ namespace BistroBuilder.Editor.Savic
                 return;
             }
 
-            string tempPath =
-                archivePath + ".incoming." + Guid.NewGuid().ToString("N");
+            string tempPath = Path.Combine(archiveDirectory,
+                ".savic-" + Guid.NewGuid().ToString("N") + ".incoming");
 
-            string corruptBackup =
-                archivePath + ".corrupt." +
-                DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
+            string corruptBackup = Path.Combine(archiveDirectory,
+                ".savic-" + Guid.NewGuid().ToString("N") + ".corrupt");
 
             try
             {

@@ -44,6 +44,7 @@ public sealed class CustomerMovementView : MonoBehaviour
     public event Action<CustomerMovementView> DestinationReached;
 
     public bool HasReachedDestination { get; private set; }
+    public bool IsMoving => isMoving;
 
     private Transform currentDestination;
     private bool isMoving;
@@ -262,7 +263,7 @@ public sealed class CustomerMovementView : MonoBehaviour
             return false;
         }
 
-        Transform destination = barSpot.CustomerPoint;
+        Transform destination = barSpot.CustomerApproachPoint;
 
         if (destination == null)
         {
@@ -349,7 +350,7 @@ public sealed class CustomerMovementView : MonoBehaviour
             return null;
         }
 
-        return group.AssignedBarSpot.CustomerPoint;
+        return group.AssignedBarSpot.CustomerApproachPoint;
     }
 
     /// <summary>

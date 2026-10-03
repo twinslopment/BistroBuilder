@@ -53,6 +53,11 @@ namespace BistroBuilder.Editor.Savic
         private readonly List<ISavicSourceImportAdapter> adapters =
             new List<ISavicSourceImportAdapter>();
 
+        internal bool HasRegisteredFamily(string type)
+        {
+            return familyRegistry.TryResolve(type, out _);
+        }
+
         internal SavicSourceProcessingService(
             SavicStorageLayout layout,
             SavicManifestRepository manifests)
@@ -75,6 +80,13 @@ namespace BistroBuilder.Editor.Savic
                         "Decoration",
                         layout,
                         this.manifests),
+                    new SavicGenericPlaceableFamilyModule(
+                        "StorageFurniture",
+                        layout,
+                        this.manifests),
+                    new SavicFloorLampFamilyModule(layout, this.manifests),
+                    new SavicBarCounterFamilyModule(layout, this.manifests),
+                    new SavicBarStoolFamilyModule(layout, this.manifests),
                     new SavicGenericPlaceableFamilyModule(
                         "KitchenEquipment",
                         layout,

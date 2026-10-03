@@ -103,6 +103,9 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
         registeredSpots.Clear();
         byId.Clear();
         DiscoverSceneSpots();
+        foreach (BistroBuilderBarPlaceableBinding binding in FindObjectsByType<BistroBuilderBarPlaceableBinding>(
+                     FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID))
+            binding.TryRegisterRuntime(out _);
     }
 
     public bool RegisterSpot(BistroBuilderBarServiceSpot spot)
@@ -577,6 +580,10 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
 
         for (int index = 0; index < spots.Length; index++)
         {
+            // Las plazas de catálogo pertenecen al ciclo de vida de su colocable.
+            // Su binder las registra después de confirmar la instancia.
+            if (spots[index].GetComponentInParent<BistroBuilderBarPlaceableBinding>() != null)
+                continue;
             RegisterSpot(spots[index]);
         }
     }

@@ -272,6 +272,473 @@ namespace BistroBuilder.Editor.Savic
             return changed;
         }
 
+        // Historical queue snapshots deliberately keep batchEligible=false.
+        // Canonical reconciliation is the only path that opts a verified job in.
+        internal bool EnableVerifiedLegacyJob(
+            string jobId,
+            string savicId,
+            string sourceHash)
+        {
+            if (string.IsNullOrWhiteSpace(jobId) ||
+                string.IsNullOrWhiteSpace(savicId) ||
+                string.IsNullOrWhiteSpace(sourceHash))
+            {
+                throw new ArgumentException("A complete verified job identity is required.");
+            }
+
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null &&
+                    string.Equals(candidate.jobId, jobId, StringComparison.Ordinal));
+
+                if (job == null ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.state, SavicJobState.Ingested.ToString(), StringComparison.Ordinal) ||
+                    job.cancelRequested)
+                {
+                    throw new InvalidOperationException(
+                        "The queued job changed or is not eligible for explicit reconciliation.");
+                }
+
+                if (!job.batchEligible)
+                {
+                    job.batchEligible = true;
+                    job.checkpoint = "CANONICAL_RECONCILED";
+                    job.message = "Canonical source and manifest verified; queued for normal SAVIC processing.";
+                    job.updatedUtc = DateTime.UtcNow.ToString("O");
+                    snapshot.schedulerGeneration++;
+                    Save();
+                    changed = true;
+                }
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // The caller must verify the archived source and manifest immediately
+        // before this narrowly scoped retry. Other failures stay terminal.
+        internal bool RetryVerifiedMirrorFailure(
+            string jobId,
+            string savicId,
+            string sourceHash)
+        {
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null &&
+                    string.Equals(candidate.jobId, jobId, StringComparison.Ordinal));
+
+                if (job == null ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.state, SavicJobState.FailedProcessing.ToString(), StringComparison.Ordinal) ||
+                    !string.Equals(job.reasonCode, "SOURCE_MATERIALIZATION_FAILED", StringComparison.Ordinal) ||
+                    !string.Equals(job.primaryStage, "MATERIALIZE_SOURCE_MIRROR", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_MIRROR_RETRY";
+                job.message = "Archived source and manifest verified; retrying the corrected source-mirror materialization.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // A pre-import policy decision may be retried only after the caller
+        // verifies the original and proves the current policy changed.
+        internal bool RetryVerifiedObsoletePreImportReview(
+            string jobId, string savicId, string sourceHash)
+        {
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.state, SavicJobState.NeedsReview.ToString(), StringComparison.Ordinal) ||
+                    !string.Equals(job.reasonCode, "FUNCTIONAL_ADAPTER_REQUIRED", StringComparison.Ordinal) ||
+                    !string.Equals(job.primaryStage, "PREIMPORT_ROUTE", StringComparison.Ordinal))
+                    return false;
+
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_POLICY_RETRY";
+                job.message = "Verified source queued for evaluation under the corrected pre-import policy.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // Caller has verified the canonical archive and a current classifier
+        // result that now resolves to a registered publication family.
+        internal bool RetryVerifiedClassificationReview(
+            string jobId, string savicId, string sourceHash,
+            string classifierVersion)
+        {
+            if (string.IsNullOrWhiteSpace(classifierVersion))
+                throw new ArgumentException("Classifier version is required.",
+                    nameof(classifierVersion));
+
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    job.state != SavicJobState.NeedsReview.ToString() ||
+                    job.reasonCode != "UNSUPPORTED_PUBLICATION_FAMILY" ||
+                    job.primaryStage != "CLASSIFICATION" ||
+                    string.Equals(job.lastAutomaticClassifierRetryVersion,
+                        classifierVersion, StringComparison.Ordinal))
+                    return false;
+
+                job.lastAutomaticClassifierRetryVersion = classifierVersion;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_CLASSIFIER_RETRY";
+                job.message = "Verified source queued once under the current registered content family.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // Reconciliation verifies the source and complete runtime proof first.
+        // This queues publication; it never promotes a job to Done.
+        internal bool RetryVerifiedBarRuntimeAcceptance(string jobId, string savicId,
+            string sourceHash, string acceptanceFingerprint)
+        {
+            if (string.IsNullOrWhiteSpace(acceptanceFingerprint)) return false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate => candidate?.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    job.manifestSavicId != savicId || job.sourceHash != sourceHash ||
+                    job.state != SavicJobState.NeedsReview.ToString() ||
+                    job.reasonCode != "BAR_COUNTER_RUNTIME_ACCEPTANCE_PENDING" || job.primaryStage != "FAMILY_PUBLICATION" ||
+                    job.lastAutomaticBarAcceptanceFingerprint == acceptanceFingerprint) return false;
+                job.lastAutomaticBarAcceptanceFingerprint = acceptanceFingerprint;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_BAR_RUNTIME_ACCEPTANCE";
+                job.message = "Current source and runtime acceptance verified; queued for canonical publication.";
+                job.processingStartedUtc = job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+            }
+            NotifyChanged();
+            return true;
+        }
+
+        internal bool RetryVerifiedBarStoolRuntimeAcceptance(string jobId, string savicId,
+            string sourceHash, string acceptanceFingerprint)
+        {
+            if (string.IsNullOrWhiteSpace(acceptanceFingerprint)) return false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                var job = snapshot.jobs.FirstOrDefault(candidate => candidate?.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    job.manifestSavicId != savicId || job.sourceHash != sourceHash ||
+                    job.state != SavicJobState.NeedsReview.ToString() ||
+                    job.reasonCode != "BAR_STOOL_RUNTIME_ACCEPTANCE_PENDING" || job.primaryStage != "FAMILY_PUBLICATION" ||
+                    job.lastAutomaticBarStoolAcceptanceFingerprint == acceptanceFingerprint) return false;
+                job.lastAutomaticBarStoolAcceptanceFingerprint = acceptanceFingerprint;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_BAR_STOOL_RUNTIME_ACCEPTANCE";
+                job.message = "Current source and seated runtime acceptance verified; queued for canonical publication.";
+                job.processingStartedUtc = job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+            }
+            NotifyChanged();
+            return true;
+        }
+
+        internal bool RetryVerifiedOverheadReview(string jobId, string savicId, string sourceHash,
+            string fingerprint, bool acceptedRuntime)
+        {
+            if (string.IsNullOrWhiteSpace(fingerprint)) return false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                var job = snapshot.jobs.FirstOrDefault(candidate => candidate?.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested || job.manifestSavicId != savicId ||
+                    job.sourceHash != sourceHash || job.state != SavicJobState.NeedsReview.ToString() || job.primaryStage != "FAMILY_PUBLICATION") return false;
+                if (acceptedRuntime)
+                {
+                    if (job.reasonCode != "OVERHEAD_RUNTIME_ACCEPTANCE_PENDING" || job.lastAutomaticOverheadAcceptanceFingerprint == fingerprint) return false;
+                    job.lastAutomaticOverheadAcceptanceFingerprint = fingerprint;
+                }
+                else
+                {
+                    if ((job.reasonCode != "EQUIPMENT_FUNCTION_AMBIGUOUS" && job.reasonCode != "PLACEMENT_OVERHEAD_REQUIRES_ADAPTER" &&
+                        job.reasonCode != "OVERHEAD_AUTHORING_REVIEW" && job.reasonCode != "OVERHEAD_COMMON_PLAN_REVIEW") ||
+                        job.lastAutomaticOverheadPlannerFingerprint == fingerprint) return false;
+                    job.lastAutomaticOverheadPlannerFingerprint = fingerprint;
+                }
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = acceptedRuntime ? "VERIFIED_OVERHEAD_RUNTIME_ACCEPTANCE" : "VERIFIED_OVERHEAD_PLAN_RETRY";
+                job.message = "Verified passive overhead source queued for the canonical family publication stage.";
+                job.processingStartedUtc = job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString(); job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O"); snapshot.schedulerGeneration++; Save();
+            }
+            NotifyChanged(); return true;
+        }
+
+        internal bool RetryVerifiedPublishedBarAuthoring(string jobId, string savicId,
+            string sourceHash, string authoringFingerprint)
+        {
+            if (string.IsNullOrWhiteSpace(authoringFingerprint)) return false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                var job = snapshot.jobs.FirstOrDefault(candidate => candidate?.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    job.manifestSavicId != savicId || job.sourceHash != sourceHash ||
+                    job.state != SavicJobState.Done.ToString() || job.reasonCode != "PUBLISHED" ||
+                    job.lastAutomaticBarAuthoringFingerprint == authoringFingerprint) return false;
+                job.lastAutomaticBarAuthoringFingerprint = authoringFingerprint;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_BAR_AUTHORING_UPDATE";
+                job.message = "Verified published bar queued for current canonical function authoring and renewed runtime acceptance.";
+                job.processingStartedUtc = job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++; Save();
+            }
+            NotifyChanged(); return true;
+        }
+
+        internal bool RetryVerifiedChairAuthoringReview(
+            string jobId, string savicId, string sourceHash,
+            string automaticPlannerVersion = "")
+        {
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.state, SavicJobState.NeedsReview.ToString(), StringComparison.Ordinal) ||
+                    !string.Equals(job.reasonCode, "CHAIR_AUTHORING_REVIEW", StringComparison.Ordinal) ||
+                    !string.Equals(job.primaryStage, "FAMILY_PUBLICATION", StringComparison.Ordinal) ||
+                    (!string.IsNullOrEmpty(automaticPlannerVersion) &&
+                     string.Equals(job.lastAutomaticChairPlannerRetryVersion,
+                         automaticPlannerVersion, StringComparison.Ordinal)))
+                    return false;
+
+                if (!string.IsNullOrEmpty(automaticPlannerVersion))
+                    job.lastAutomaticChairPlannerRetryVersion = automaticPlannerVersion;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_CHAIR_PLAN_RETRY";
+                job.message = "Verified source queued after the current chair planner accepted a safe calibration.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        internal bool RetryVerifiedTableAuthoringReview(
+            string jobId, string savicId, string sourceHash,
+            string plannerVersion)
+        {
+            if (string.IsNullOrWhiteSpace(plannerVersion))
+                throw new ArgumentException("Planner version is required.", nameof(plannerVersion));
+
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    job.state != SavicJobState.NeedsReview.ToString() ||
+                    job.reasonCode != "FAMILY_PUBLICATION_FAILED" ||
+                    job.primaryStage != "FAMILY_PUBLICATION" ||
+                    job.message != "Normalized dimensions are not safe for an automatic table profile." ||
+                    string.Equals(job.lastAutomaticTablePlannerRetryVersion,
+                        plannerVersion, StringComparison.Ordinal))
+                    return false;
+
+                job.lastAutomaticTablePlannerRetryVersion = plannerVersion;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_TABLE_PLAN_RETRY";
+                job.message = "Verified compact square table queued under the current planner revision.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // A changed seating profile may require republishing a verified table.
+        // The publisher preserves catalog identity and manual item values, and
+        // the planner version prevents a reload from repeating the operation.
+        internal bool RetryVerifiedPublishedTableProfile(
+            string jobId, string savicId, string sourceHash,
+            string plannerVersion)
+        {
+            if (string.IsNullOrWhiteSpace(plannerVersion))
+                throw new ArgumentException("Planner version is required.", nameof(plannerVersion));
+
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    job.state != SavicJobState.Done.ToString() ||
+                    job.reasonCode != "PUBLISHED" ||
+                    string.Equals(job.lastAutomaticTablePlannerRetryVersion,
+                        plannerVersion, StringComparison.Ordinal))
+                    return false;
+
+                job.lastAutomaticTablePlannerRetryVersion = plannerVersion;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_TABLE_PROFILE_UPDATE";
+                job.message = "Verified published table queued once for a corrected seating profile.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
+        // A null graphics device can make an otherwise valid chair preview
+        // fail. Retry only that exact failure once for this renderer revision.
+        internal bool RetryVerifiedChairPreviewFailure(
+            string jobId, string savicId, string sourceHash,
+            string rendererVersion)
+        {
+            if (string.IsNullOrWhiteSpace(rendererVersion))
+                throw new ArgumentException("Renderer version is required.", nameof(rendererVersion));
+
+            bool changed = false;
+            lock (sync)
+            {
+                EnsureLoaded();
+                SavicJobRecord job = snapshot.jobs.FirstOrDefault(candidate =>
+                    candidate != null && candidate.jobId == jobId);
+                if (job == null || !job.batchEligible || job.cancelRequested ||
+                    !string.Equals(job.manifestSavicId, savicId, StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(job.sourceHash, sourceHash, StringComparison.OrdinalIgnoreCase) ||
+                    job.state != SavicJobState.NeedsReview.ToString() ||
+                    job.reasonCode != "CHAIR_PUBLICATION_FAILED" ||
+                    job.primaryStage != "FAMILY_PUBLICATION" ||
+                    (job.message ?? string.Empty).IndexOf(
+                        "Rendered preview appears blank or visually degenerate.",
+                        StringComparison.Ordinal) < 0 ||
+                    string.Equals(job.lastAutomaticChairPreviewRetryVersion,
+                        rendererVersion, StringComparison.Ordinal))
+                    return false;
+
+                job.lastAutomaticChairPreviewRetryVersion = rendererVersion;
+                job.state = SavicJobState.Ingested.ToString();
+                job.checkpoint = "VERIFIED_CHAIR_PREVIEW_RETRY";
+                job.message = "Verified chair queued once after a graphics device became available.";
+                job.processingStartedUtc = string.Empty;
+                job.completedUtc = string.Empty;
+                job.preparationStage = SavicSourcePreparationStage.None.ToString();
+                job.sourcePrepared = false;
+                job.updatedUtc = DateTime.UtcNow.ToString("O");
+                snapshot.schedulerGeneration++;
+                Save();
+                changed = true;
+            }
+
+            if (changed)
+                NotifyChanged();
+            return changed;
+        }
+
         internal bool TryClaimNextProcessable(
             out SavicJobRecord claimed)
         {

@@ -106,6 +106,14 @@ public struct BistroBuilderSpatialVolume
     public Vector3 forwardAxis;
     public Vector2 halfExtents;
     public float radius;
+    public BistroBuilderSpatialHeightRange heightRange;
+
+    public BistroBuilderSpatialVolume WithHeightRange(BistroBuilderSpatialHeightRange range)
+    {
+        BistroBuilderSpatialVolume copy = this;
+        copy.heightRange = range;
+        return copy;
+    }
 
     public static BistroBuilderSpatialVolume Circle(Vector3 center, float radius)
     {
@@ -141,6 +149,7 @@ public struct BistroBuilderSpatialVolume
 
     public bool ContainsPoint(Vector3 point, float expansion = 0f)
     {
+        if (!heightRange.Contains(point.y, expansion)) return false;
         float extra = Mathf.Max(0f, expansion);
         if (shapeKind == BistroBuilderSpatialShapeKind.Circle)
         {
@@ -160,6 +169,7 @@ public struct BistroBuilderSpatialVolume
 
     public bool Overlaps(BistroBuilderSpatialVolume other)
     {
+        if (!heightRange.Overlaps(other.heightRange)) return false;
         if (shapeKind == BistroBuilderSpatialShapeKind.Circle &&
             other.shapeKind == BistroBuilderSpatialShapeKind.Circle)
         {

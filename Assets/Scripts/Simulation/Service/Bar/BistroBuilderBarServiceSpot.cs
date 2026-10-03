@@ -20,6 +20,9 @@ public sealed class BistroBuilderBarServiceSpot : MonoBehaviour
     [SerializeField]
     private Transform waiterServicePoint;
 
+    [SerializeField] private Transform counterSurfacePoint;
+    private BistroBuilderBarSeatBinding attachedSeat;
+
     [Header("Capacidad")]
     [SerializeField, Min(1)]
     private int capacity = 1;
@@ -50,6 +53,50 @@ public sealed class BistroBuilderBarServiceSpot : MonoBehaviour
     public bool AllowsStandingService => allowsStandingService;
     public CustomerGroup AssignedCustomerGroup => assignedCustomerGroup;
     public bool IsFree => assignedCustomerGroup == null;
+    public Transform CounterSurfacePoint => counterSurfacePoint;
+    public BistroBuilderBarSeatBinding AttachedSeat => attachedSeat;
+    public Transform CustomerApproachPoint => attachedSeat != null ? attachedSeat.ApproachFrame : CustomerPoint;
+
+    public bool TryConfigureCounterSurface(Transform surface)
+    {
+        if (surface == counterSurfacePoint) return true;
+        if (surface == null || !surface.IsChildOf(transform) || !IsFree || attachedSeat != null ||
+            GetComponent<BistroBuilderBarSpatialAdapter>()?.HasCustomerLease == true) return false;
+        counterSurfacePoint = surface; return true;
+    }
+
+    internal bool TryAttachSeat(BistroBuilderBarSeatBinding seat, out string error)
+    {
+        error = "The native bar spot already has a seat, customer or active spatial lease.";
+        if (seat == null || attachedSeat != null || !IsFree ||
+            GetComponent<BistroBuilderBarSpatialAdapter>()?.HasCustomerLease == true) return false;
+        attachedSeat = seat; error = string.Empty; return true;
+    }
+
+    internal bool TryDetachSeat(BistroBuilderBarSeatBinding seat, out string error)
+    {
+        error = "The native bar seat cannot be detached while a customer or spatial lease owns the spot.";
+        if (seat == null || attachedSeat != seat || !IsFree ||
+            GetComponent<BistroBuilderBarSpatialAdapter>()?.HasCustomerLease == true) return false;
+        attachedSeat = null; error = string.Empty; return true;
+    }
+
+    /// <summary>Configura una plaza antes de registrarla. Nunca sustituye una plaza ocupada.</summary>
+    public bool TryConfigure(string stableId, Transform customer, Transform waiter, int seats, bool standing)
+    {
+        string normalized = BistroBuilderOrderIdUtility.Normalize(stableId);
+        if (!BistroBuilderOrderIdUtility.IsValid(normalized) || customer == null || waiter == null || seats < 1)
+            return false;
+        if ((!IsFree || attachedSeat != null) && (BarSpotId != normalized || customerPoint != customer || waiterServicePoint != waiter ||
+                        capacity != seats || allowsStandingService != standing))
+            return false;
+        barSpotId = normalized;
+        customerPoint = customer;
+        waiterServicePoint = waiter;
+        capacity = seats;
+        allowsStandingService = standing;
+        return true;
+    }
 
     /// <summary>
     /// Indica si esta plaza puede reservar una parte de un grupo. La
@@ -58,7 +105,8 @@ public sealed class BistroBuilderBarServiceSpot : MonoBehaviour
     /// </summary>
     public bool CanHost(CustomerGroup group)
     {
-        return group != null && IsFree && Capacity > 0;
+        return group != null && IsFree && Capacity > 0 &&
+            (attachedSeat == null || attachedSeat.ValidateRuntimeAssociation(out _));
     }
 
     public bool TryOccupy(CustomerGroup group)

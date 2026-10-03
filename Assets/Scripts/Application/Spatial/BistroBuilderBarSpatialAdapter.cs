@@ -26,8 +26,14 @@ public sealed class BistroBuilderBarSpatialAdapter :
         subject != null ? subject.SubjectId : string.Empty;
     public BistroBuilderBarServiceSpot BarSpot => barSpot;
     public BistroBuilderSpatialSubject Subject => subject;
-    public bool HasCustomerLease =>
-        !string.IsNullOrWhiteSpace(customerLeaseId);
+    public bool HasCustomerLease
+    {
+        get
+        {
+            ResolveService();
+            return spatialService != null && spatialService.HasActiveLease(customerLeaseId);
+        }
+    }
 
     private void OnDisable()
     {
@@ -36,12 +42,13 @@ public sealed class BistroBuilderBarSpatialAdapter :
 
     public void Configure(
         BistroBuilderBarServiceSpot spot,
-        BistroBuilderSpatialSubject spatialSubject)
+        BistroBuilderSpatialSubject spatialSubject,
+        BistroBuilderSpatialInteractionService interactionService = null)
     {
         barSpot = spot;
         subject = spatialSubject;
-        spatialService = FindFirstObjectByType<
-            BistroBuilderSpatialInteractionService>();
+        spatialService = interactionService != null ? interactionService :
+            FindFirstObjectByType<BistroBuilderSpatialInteractionService>();
         EnsureAnchors();
     }
 
@@ -81,6 +88,15 @@ public sealed class BistroBuilderBarSpatialAdapter :
             return false;
         }
 
+        string relatedSeat = string.Empty;
+        if (barSpot != null && barSpot.AttachedSeat != null)
+        {
+            if (barSpot.AssignedCustomerGroup != group)
+            { rejectionReason = "El grupo no posee la plaza nativa del taburete."; return false; }
+            if (!barSpot.AttachedSeat.ValidateRuntimeAssociation(out rejectionReason)) return false;
+            relatedSeat = barSpot.AttachedSeat.SpatialSubjectId;
+        }
+
         string ownerId = "bbsis.bar.customer." +
             group.GroupId + "." + barSpot.BarSpotId;
         if (HasCustomerLease &&
@@ -105,6 +121,7 @@ public sealed class BistroBuilderBarSpatialAdapter :
         {
             ownerId = ownerId,
             subjectId = subject.SubjectId,
+            relatedSubjectId = relatedSeat,
             portId = CustomerPortId,
             kind = BistroBuilderSpatialClaimKind.Seat,
             conflictMode = mode,
@@ -163,6 +180,8 @@ public sealed class BistroBuilderBarSpatialAdapter :
     {
         if (results == null)
             throw new ArgumentNullException(nameof(results));
+        // The root provider exposes the same native ports for compound placeable preflight.
+        if (GetComponentInParent<BistroBuilderBarBodySpatialAdapter>() != null) return 0;
         if (subject == null || subject.Contract == null)
             return 0;
 
@@ -204,7 +223,9 @@ public sealed class BistroBuilderBarSpatialAdapter :
             layer = BistroBuilderSpatialProxyLayer.Operational,
             conflictMode = mode,
             volume = volume,
-            critical = critical
+            critical = critical,
+            relatedSubjectId = portId == CustomerPortId && barSpot?.AttachedSeat != null &&
+                barSpot.AttachedSeat.ValidateRuntimeAssociation(out _) ? barSpot.AttachedSeat.SpatialSubjectId : string.Empty
         });
     }
 

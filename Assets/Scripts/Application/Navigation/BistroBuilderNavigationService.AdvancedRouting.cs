@@ -60,6 +60,12 @@ public sealed partial class BistroBuilderNavigationService
                 if (!routeOk)
                     continue;
 
+                // A route to the approach ring does not prove the final docking segment.
+                // Check that link with the original destination's interaction tolerance.
+                if (!SegmentAllowedForNavMesh(candidate, destination, mobilityRadius,
+                        agent, requesterId, origin, destination))
+                    continue;
+
                 float score = routeMeters +
                     Vector3.Distance(candidate, destination) * 0.35f +
                     routeCongestion * congestionWeight;
@@ -130,15 +136,10 @@ public sealed partial class BistroBuilderNavigationService
         if (!nearEndpoint && areas.Count > 0 && !IsInsideAllowedArea(point, agent))
             return false;
 
-        if (!nearEndpoint)
-        {
-            float clearance = Mathf.Max(0.05f, radius) + staticClearance;
-            for (int i = 0; i < staticShapes.Count; i++)
-            {
-                if (PointInsideShape(point, staticShapes[i], clearance))
-                    return false;
-            }
-        }
+        float clearance = Mathf.Max(0.05f, radius) + staticClearance;
+        for (int i = 0; i < staticShapes.Count; i++)
+            if ((!nearEndpoint || staticShapes[i].RequiresCompleteClearance) &&
+                BlocksAgentShape(point, staticShapes[i], clearance)) return false;
 
         // Dynamic Sweeps, Mobility/Carry leases y otros NPC no invalidan
         // topología global: los resuelve el solver local y Traffic Coordinator.

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a831b56d5bb9fb74db15deb3c68a53a9, type: 3}
+  m_Name: BarCounterProfile_Standard
+  m_EditorClassIdentifier: Assembly-CSharp-Editor::BistroBuilder.Editor.Savic.SavicBarCounterProfile
+  profileVersion: 1.0.0
+  counterHeightMeters: 1.05
+  minimumWidthMeters: 1.5
+  maximumWidthMeters: 8
+  minimumDepthMeters: 1
+  maximumDepthMeters: 5
+  maximumTotalHeightMeters: 1.8
+  minimumUpperSurfaceCoverage: 0.08
+  minimumWaiterClearanceMeters: 0.35
+  customerOffsetMeters: 0.45

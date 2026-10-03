@@ -57,6 +57,12 @@ namespace BistroBuilder.Editor.Savic
             RunOrThrow();
         }
 
+        public static void VerifyAndAuditFromCommandLine()
+        {
+            SavicBlock1SelfTest.RunFromCommandLine();
+            RunOrThrow();
+        }
+
         private static void RunOrThrow()
         {
             SavicEditorContext context =

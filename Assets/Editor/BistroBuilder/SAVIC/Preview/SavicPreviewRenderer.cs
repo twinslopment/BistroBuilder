@@ -37,7 +37,7 @@ namespace BistroBuilder.Editor.Savic
 
     internal static class SavicPreviewRenderer
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         private const int LargeWidth = 768;
         private const int LargeHeight = 576;
@@ -97,7 +97,7 @@ namespace BistroBuilder.Editor.Savic
                             System.Globalization
                                 .CultureInfo.InvariantCulture),
                         "single-sample",
-                        "table-camera-v1",
+                        "isolated-preview-scene-v2",
                         "floor-v1",
                         "lighting-v1"
                     });
@@ -153,7 +153,8 @@ namespace BistroBuilder.Editor.Savic
         internal static SavicPreviewGenerationResult GenerateAndAssign(
             GameObject prefabAsset,
             RestaurantPlaceableItemDefinition item,
-            string contentFolderAssetPath)
+            string contentFolderAssetPath,
+            Vector3? diagnosticViewDirection = null)
         {
             if (prefabAsset == null)
                 throw new ArgumentNullException(nameof(prefabAsset));
@@ -174,13 +175,6 @@ namespace BistroBuilder.Editor.Savic
 
             Scene previewScene =
                 EditorSceneManager.NewPreviewScene();
-
-            // NewPreviewScene intentionally receives a private culling mask.
-            // Manual Camera.Render uses Game-view culling semantics, so the
-            // temporary scene must explicitly opt into the default render mask.
-            EditorSceneManager.SetSceneCullingMask(
-                previewScene,
-                SceneCullingMasks.DefaultSceneCullingMask);
 
             GameObject instance = null;
             GameObject cameraObject = null;
@@ -230,6 +224,9 @@ namespace BistroBuilder.Editor.Savic
                     cameraObject.GetComponent<Camera>();
 
                 ConfigureCamera(camera);
+                // Camera.Render otherwise includes the open editor scene.
+                // Camera.scene restricts rendering to this preview scene.
+                camera.scene = previewScene;
 
                 keyLightObject =
                     CreateDirectionalLight(
@@ -247,14 +244,18 @@ namespace BistroBuilder.Editor.Savic
                         0.38f,
                         false);
 
+                if (diagnosticViewDirection.HasValue)
+                {
+                    camera.backgroundColor = new Color(0.22f, 0.24f, 0.26f, 1f);
+                    keyLightObject.transform.rotation = Quaternion.LookRotation(-diagnosticViewDirection.Value.normalized,
+                        Mathf.Abs(diagnosticViewDirection.Value.normalized.y) > 0.99f ? Vector3.forward : Vector3.up);
+                }
+
                 floorMaterial =
                     CreateFloorMaterial();
 
-                floorObject =
-                    CreateFloor(
-                        previewScene,
-                        bounds,
-                        floorMaterial);
+                if (!diagnosticViewDirection.HasValue)
+                    floorObject = CreateFloor(previewScene, bounds, floorMaterial);
 
                 RenderPreviewToPng(
                     camera,
@@ -262,7 +263,8 @@ namespace BistroBuilder.Editor.Savic
                     LargeWidth,
                     LargeHeight,
                     LargeMargin,
-                    largePath);
+                    largePath,
+                    diagnosticViewDirection);
 
                 RenderPreviewToPng(
                     camera,
@@ -270,7 +272,8 @@ namespace BistroBuilder.Editor.Savic
                     CatalogWidth,
                     CatalogHeight,
                     CatalogMargin,
-                    catalogPath);
+                    catalogPath,
+                    diagnosticViewDirection);
 
                 Sprite largeSprite =
                     ImportPreviewAsSprite(
@@ -313,10 +316,17 @@ namespace BistroBuilder.Editor.Savic
             }
             catch (Exception exception)
             {
+                string detail = exception.Message;
+                if (instance != null &&
+                    TryCalculateRendererBounds(instance,
+                        out Bounds failedBounds, out int failedRenderers))
+                    detail += " Renderer bounds=" + failedBounds.size +
+                              ", center=" + failedBounds.center +
+                              ", renderers=" + failedRenderers + ".";
                 return Failure(
                     largePath,
                     catalogPath,
-                    exception.Message);
+                    detail);
             }
             finally
             {
@@ -572,7 +582,8 @@ namespace BistroBuilder.Editor.Savic
             int width,
             int height,
             float margin,
-            string assetPath)
+            string assetPath,
+            Vector3? diagnosticViewDirection = null)
         {
             if (width <= 0 || height <= 0)
                 throw new ArgumentOutOfRangeException(
@@ -581,10 +592,23 @@ namespace BistroBuilder.Editor.Savic
             camera.aspect =
                 width / (float)height;
 
-            ConfigureCameraPose(
-                camera,
-                bounds,
-                margin);
+            if (diagnosticViewDirection.HasValue)
+            {
+                Vector3 direction = diagnosticViewDirection.Value.normalized;
+                if (direction.sqrMagnitude < 0.9f)
+                    throw new InvalidOperationException("Diagnostic view direction is invalid.");
+                camera.transform.rotation = Quaternion.LookRotation(-direction,
+                    Mathf.Abs(direction.y) > 0.99f ? Vector3.forward : Vector3.up);
+                float distance = Mathf.Max(1f, bounds.extents.magnitude / Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad));
+                for (int iteration = 0; iteration < MaximumFramingIterations; iteration++)
+                {
+                    camera.transform.position = bounds.center + direction * distance;
+                    if (ProjectedBoundsAreSafe(camera, bounds, margin)) break;
+                    distance *= 1.1f;
+                }
+                camera.farClipPlane = Mathf.Max(20f, distance + bounds.extents.magnitude * 4f);
+            }
+            else ConfigureCameraPose(camera, bounds, margin);
 
             if (!ProjectedBoundsAreSafe(
                     camera,
@@ -880,7 +904,9 @@ namespace BistroBuilder.Editor.Savic
                 variance < 10d)
             {
                 throw new InvalidOperationException(
-                    "Rendered preview appears blank or visually degenerate.");
+                    "Rendered preview appears blank or visually degenerate. " +
+                    "Mean luminance=" + mean.ToString("0.###") +
+                    ", variance=" + variance.ToString("0.###") + ".");
             }
         }
 

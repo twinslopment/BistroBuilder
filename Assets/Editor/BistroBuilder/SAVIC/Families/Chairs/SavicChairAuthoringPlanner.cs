@@ -6,7 +6,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicChairAuthoringPlanner
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         internal const string TemplatePrefabAssetPath =
             "Assets/Prefabs/Restaurant/Generated/Seating/" +
@@ -110,38 +110,42 @@ namespace BistroBuilder.Editor.Savic
 
             bool scaleCorrectionApplied =
                 false;
+            bool normalizedExportCalibration =
+                false;
 
             if (sourceSeatHeight <
                     MinimumAcceptedSeatHeightMeters ||
                 sourceSeatHeight >
                     MaximumAcceptedSeatHeightMeters)
             {
-                if (sourceSeatHeight <
-                        MinimumSourceSeatHeightForCorrection ||
-                    sourceSeatHeight >
-                        MaximumSourceSeatHeightForCorrection)
+                if (sourceSeatHeight > MaximumSourceSeatHeightForCorrection &&
+                    TryResolveNormalizedExportScale(manifest, out float exportScale))
+                {
+                    uniformScale = exportScale;
+                    scaleCorrectionApplied = true;
+                    normalizedExportCalibration = true;
+                }
+                else if (sourceSeatHeight <
+                             MinimumSourceSeatHeightForCorrection ||
+                         sourceSeatHeight >
+                             MaximumSourceSeatHeightForCorrection)
                 {
                     rejectionReason =
                         "Detected seat height is outside the safe auto-correction range.";
                     return false;
                 }
-
-                uniformScale =
-                    NominalSeatHeightMeters /
-                    sourceSeatHeight;
-
-                if (uniformScale <
-                        MinimumSafeUniformScale ||
-                    uniformScale >
-                        MaximumSafeUniformScale)
+                else
                 {
-                    rejectionReason =
-                        "Required chair scale correction is too large for automatic publication.";
-                    return false;
+                    uniformScale = NominalSeatHeightMeters / sourceSeatHeight;
+                    if (uniformScale < MinimumSafeUniformScale ||
+                        uniformScale > MaximumSafeUniformScale)
+                    {
+                        rejectionReason =
+                            "Required chair scale correction is too large for automatic publication.";
+                        return false;
+                    }
+                    scaleCorrectionApplied = true;
                 }
-
-                scaleCorrectionApplied =
-                    true;
             }
 
             float sourceFrontX =
@@ -240,6 +244,7 @@ namespace BistroBuilder.Editor.Savic
                     planReason =
                         BuildPlanReason(
                             scaleCorrectionApplied,
+                            normalizedExportCalibration,
                             visualYawDegrees,
                             finalSeatHeight),
                     plannedUtc =
@@ -247,6 +252,53 @@ namespace BistroBuilder.Editor.Savic
                 };
 
             return true;
+        }
+
+        // Some unitless 3D exports normalize every model to roughly 1.9 m
+        // tall. Calibrate only a strongly identified dining-chair shape whose
+        // resulting physical dimensions pass the existing readiness bounds.
+        // The ordinary source-height correction envelope remains unchanged.
+        private static bool TryResolveNormalizedExportScale(
+            SavicManifest manifest, out float scale)
+        {
+            scale = 1f;
+            SavicModelAnalysisRecord analysis = manifest.model3D;
+            SavicChairGeometryProfileRecord chair = analysis?.chairGeometry;
+            SavicSemanticPartAnalysisRecord parts = analysis?.semanticParts;
+            if (analysis == null || chair == null || parts == null ||
+                !manifest.classification.geometryBacked ||
+                manifest.classification.score < 0.81f ||
+                !parts.automationReady ||
+                chair.confidenceScore < 0.90f ||
+                analysis.heightMeters < 1.85f ||
+                analysis.heightMeters > 1.95f ||
+                chair.seatHeight01 < 0.45f ||
+                chair.seatHeight01 > 0.58f ||
+                chair.seatHeightMeters < 0.84f ||
+                chair.seatHeightMeters > 1.10f ||
+                HasAmbiguousSeatingName(manifest.source?.originalFileName))
+                return false;
+
+            scale = NominalSeatHeightMeters / chair.seatHeightMeters;
+            return scale >= 0.40f && scale <= 0.52f;
+        }
+
+        private static bool HasAmbiguousSeatingName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return true;
+            string[] tokens = fileName.Split(
+                new[] { '_', '-', ' ', '.', '(', ')' },
+                StringSplitOptions.RemoveEmptyEntries);
+            foreach (string token in tokens)
+            {
+                if (string.Equals(token, "bar", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(token, "stool", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(token, "stoo", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(token, "taburete", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
 
         private static bool TryResolveCanonicalYaw(
@@ -398,13 +450,16 @@ namespace BistroBuilder.Editor.Savic
 
         private static string BuildPlanReason(
             bool scaleCorrectionApplied,
+            bool normalizedExportCalibration,
             float visualYawDegrees,
             float finalSeatHeight)
         {
             string scaleReason =
-                scaleCorrectionApplied
-                    ? "uniform seat-height normalization applied"
-                    : "source seat height accepted";
+                normalizedExportCalibration
+                    ? "unitless export height profile calibrated from high-confidence chair geometry"
+                    : scaleCorrectionApplied
+                        ? "uniform seat-height normalization applied"
+                        : "source seat height accepted";
 
             string rotationReason =
                 Math.Abs(visualYawDegrees) <=

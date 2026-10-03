@@ -1,0 +1,853 @@
+{
+    "schemaVersion": 1,
+    "savicVersion": "0.1.0",
+    "pipelineVersion": "intake-v1",
+    "savicId": "0b450ebc99e34230b7e4fa28cef62f5e",
+    "canonicalContentId": "bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e",
+    "status": "PUBLISHED",
+    "family": "Furniture",
+    "type": "BarStool",
+    "category": "Seating",
+    "createdUtc": "2026-09-25T12:58:33.8748801Z",
+    "updatedUtc": "2026-10-03T05:10:21.2179199Z",
+    "source": {
+        "sourceHash": "c6c3e8bfced6e81e623f5e0d6756b99777ba1038b63b90f4ba5b9ddbe5fa9f62",
+        "originalFileName": "Meshy_AI_Blue_Quilted_Bar_Stoo_0918123057_generate.glb",
+        "extension": ".glb",
+        "sourceKind": "Model3D",
+        "archivedRelativePath": "ContentSource/SHA256/c6/c6c3e8bfced6e81e623f5e0d6756b99777ba1038b63b90f4ba5b9ddbe5fa9f62/Meshy_AI_Blue_Quilted_Bar_Stoo_0918123057_generate.glb",
+        "byteLength": 10814968,
+        "originalLastWriteUtcTicks": 0,
+        "ingestedUtc": "2026-09-25T12:58:33.8748801Z",
+        "providerMetadataRelativePath": "ContentSource/ProviderMetadata/765ff279e98930eb0cf2633727059fbcc717d7148e946ffc03aa624b8fbef941.json",
+        "providerMetadataHash": "e5b3e41e92b92519edf42474a85b5f693da31994676c9b384d44284e0a21cd2d"
+    },
+    "model3D": {
+        "analyzed": true,
+        "analyzerVersion": "3.0.0",
+        "hasUsableBounds": true,
+        "boundsCenterX": 0.00043264031410217285,
+        "boundsCenterY": -0.002246558666229248,
+        "boundsCenterZ": 0.000033468008041381836,
+        "widthMeters": 0.9312604665756226,
+        "heightMeters": 1.901705026626587,
+        "depthMeters": 0.910631537437439,
+        "rendererCount": 1,
+        "meshInstanceCount": 1,
+        "uniqueMeshCount": 1,
+        "vertexCount": 272148,
+        "triangleCount": 356864,
+        "materialSlotCount": 1,
+        "uniqueMaterialCount": 1,
+        "missingMaterialSlots": 0,
+        "texturedMaterialCount": 0,
+        "hasVertexColors": false,
+        "hasUv0": false,
+        "hasNonDefaultBaseColor": false,
+        "appearanceDataCompleteness": "NONE",
+        "hasSkinnedMeshes": false,
+        "hasNegativeScale": false,
+        "geometry": {
+            "analyzed": true,
+            "analyzerVersion": "2.0.0",
+            "usable": true,
+            "meshInstanceCount": 1,
+            "sourceTriangleCount": 356864,
+            "sampledTriangleCount": 178432,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 0,
+            "maximumSamplingStride": 2,
+            "estimatedSurfaceAreaSquareMeters": 3.875926971435547,
+            "upwardFacingAreaRatio": 0.176964670419693,
+            "horizontalAreaRatio": 0.3262560963630676,
+            "verticalAreaRatio": 0.49159207940101626,
+            "upperBandAreaRatio": 0.5611481666564941,
+            "lowerBandAreaRatio": 0.20729251205921174,
+            "surfaceAreaCentroidHeight01": 0.5988700985908508,
+            "upperUpwardProjectedCoverage": 0.6783460974693298,
+            "lowerHorizontalProjectedCoverage": 0.00397463608533144,
+            "evidence": "upward area 0.177; upper-band area 0.561; lower-band area 0.207; surface centroid height 0.599; upper projected coverage 0.678."
+        },
+        "chairGeometry": {
+            "analyzed": true,
+            "analyzerVersion": "2.0.0",
+            "usable": true,
+            "sourceTriangleCount": 356864,
+            "sampledTriangleCount": 178432,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 0,
+            "maximumSamplingStride": 2,
+            "seatHeight01": 0.6387890577316284,
+            "seatHeightMeters": 1.2147883176803589,
+            "seatUpwardAreaRatio": 0.15371550619602204,
+            "seatProjectedCoverage": 0.63620525598526,
+            "upperVerticalAreaRatio": 0.19589468836784364,
+            "upperVerticalCentroidX01": 0.5012998580932617,
+            "upperVerticalCentroidZ01": 0.1447986513376236,
+            "backAxis": "Z",
+            "backSide": "NEGATIVE",
+            "backEdgeBias": 0.7104027271270752,
+            "frontDirectionLocalX": 0.0,
+            "frontDirectionLocalZ": 1.0,
+            "lowerSupportAreaRatio": 0.41105037927627566,
+            "confidenceScore": 0.8352113962173462,
+            "evidence": "seat height 0.639; seat projected coverage 0.636; seat upward area 0.154; upper vertical area 0.196; inferred back Z/NEGATIVE bias 0.71; lower support area 0.411; confidence 0.835."
+        },
+        "semanticParts": {
+            "analyzed": false,
+            "analyzerVersion": "3.0.0",
+            "automationReady": false,
+            "rawRegionCount": 0,
+            "regionDetailMode": "FULL",
+            "rawRegionDetailTruncated": false,
+            "semanticPartCount": 0,
+            "semanticCoverage": 0.0,
+            "unresolvedAreaRatio": 0.0,
+            "supportPattern": {
+                "analyzed": false,
+                "mode": "UNASSESSED",
+                "confidence": "UNKNOWN",
+                "confidenceScore": 0.0,
+                "zoneCount": 0,
+                "supportSpanXRatio": 0.0,
+                "supportSpanZRatio": 0.0,
+                "supportPolygonAreaRatio": 0.0,
+                "centerSupported": false,
+                "broadBaseAreaRatio": 0.0,
+                "zones": [],
+                "evidence": ""
+            },
+            "parts": [],
+            "relations": [],
+            "evidence": "Semantic part analysis supports Table and Chair content in V1.",
+            "analyzedUtc": "2026-10-03T01:03:00.9639216Z"
+        },
+        "dominantMaterialSemantic": "Unknown",
+        "dominantMaterialConfidence": "UNKNOWN",
+        "materials": [
+            {
+                "materialName": "material",
+                "shaderName": "Shader Graphs/glTF-pbrMetallicRoughness",
+                "semantic": "Unknown",
+                "semanticConfidence": "UNKNOWN",
+                "semanticScore": 0.0,
+                "metallic": 0.0,
+                "smoothness": 0.0,
+                "baseColorR": 1.0,
+                "baseColorG": 1.0,
+                "baseColorB": 1.0,
+                "baseColorA": 1.0,
+                "transparent": false,
+                "textureCount": 0,
+                "textureNames": "",
+                "evidence": "No conservative material semantic evidence."
+            }
+        ],
+        "analyzedUtc": "2026-10-03T01:03:00.7601300Z"
+    },
+    "classification": {
+        "classified": true,
+        "classifierVersion": "4.7.0",
+        "family": "Furniture",
+        "type": "BarStool",
+        "category": "Seating",
+        "confidence": "HIGH",
+        "score": 0.8999999761581421,
+        "explicitTypeToken": true,
+        "nameBacked": true,
+        "geometryBacked": true,
+        "evidence": "name contains an explicit stool identity; bounds are plausible for furniture; geometry supports a seat profile; functional publication requires a stool family contract",
+        "classifiedUtc": "2026-10-03T01:03:00.9541796Z"
+    },
+    "materialSemantic": {
+        "resolved": false,
+        "resolverVersion": "1.0.0",
+        "semantic": "Unknown",
+        "confidence": "UNKNOWN",
+        "score": 0.0,
+        "source": "NONE",
+        "evidence": "No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+        "resolvedUtc": "2026-10-03T01:03:00.9706102Z"
+    },
+    "incremental": {
+        "evaluatorVersion": "1.1.0",
+        "geometryFingerprint": "8ad4e65d0fa69c80c39e17c9874a5223071908ab8451de35e90b75bfde8929cf",
+        "appearanceFingerprint": "5d768e5894d11c6952b6660a5ee33d783f3f081f3027b02371ec84b2c573f612",
+        "lastAction": "FullRebuild",
+        "reason": "No compatible published baseline exists.",
+        "reusedGeometry": false,
+        "reusedSemanticParts": false,
+        "reusedClassification": false,
+        "reusedColliders": false,
+        "appearanceOnlyRefresh": false,
+        "reuseCount": 0,
+        "fullRebuildCount": 1,
+        "appearanceRefreshCount": 0,
+        "evaluatedUtc": "2026-10-03T01:03:00.9506388Z"
+    },
+    "tableAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "uniformScale": 1.0,
+        "visualYawDegrees": 0.0,
+        "finalWidthMeters": 0.0,
+        "finalHeightMeters": 0.0,
+        "finalDepthMeters": 0.0,
+        "capacity": 0,
+        "suggestedPurchasePriceEuro": 0,
+        "scaleCorrectionApplied": false,
+        "templatePrefabAssetPath": "",
+        "seatingDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "tableColliders": {
+        "generated": false,
+        "builderVersion": "",
+        "strategy": "UNSET",
+        "colliderCount": 0,
+        "supportColliderCount": 0,
+        "semanticBacked": false,
+        "evidence": "",
+        "generatedUtc": ""
+    },
+    "tableSpatial": {
+        "validated": false,
+        "validatorVersion": "",
+        "contractAssetPath": "",
+        "contractId": "",
+        "familyId": "",
+        "configurationId": "",
+        "seatBayPortCount": 0,
+        "emittedSeatBayCount": 0,
+        "runtimeBindingValidated": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "tableNavigation": {
+        "validated": false,
+        "validatorVersion": "",
+        "footprintBlocksNavigation": false,
+        "footprintWidthMeters": 0.0,
+        "footprintDepthMeters": 0.0,
+        "defaultAgentRadiusMeters": 0.0,
+        "requiredEndpointClearanceMeters": 0.0,
+        "customerEndpointClearanceMeters": 0.0,
+        "waiterEndpointClearanceMeters": 0.0,
+        "solidColliderCount": 0,
+        "usesCanonicalFootprintTopology": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "tablePersistence": {
+        "validated": false,
+        "validatorVersion": "",
+        "sourceCatalogAssetPath": "",
+        "canonicalContentId": "",
+        "itemDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "catalogResolvable": false,
+        "prefabResolvable": false,
+        "functionalTableIdValid": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "uniformScale": 1.0,
+        "visualYawDegrees": 0.0,
+        "finalWidthMeters": 0.0,
+        "finalHeightMeters": 0.0,
+        "finalDepthMeters": 0.0,
+        "finalSeatHeightMeters": 0.0,
+        "sourceFrontLocalX": 0.0,
+        "sourceFrontLocalZ": 0.0,
+        "canonicalFrontLocalX": 0.0,
+        "canonicalFrontLocalZ": 1.0,
+        "suggestedPurchasePriceEuro": 0,
+        "scaleCorrectionApplied": false,
+        "templatePrefabAssetPath": "",
+        "seatUseProfileAssetPath": "",
+        "editableDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "chairColliders": {
+        "generated": false,
+        "builderVersion": "",
+        "strategy": "UNSET",
+        "colliderCount": 0,
+        "seatColliderCount": 0,
+        "backColliderCount": 0,
+        "supportColliderCount": 0,
+        "armColliderCount": 0,
+        "semanticBacked": false,
+        "evidence": "",
+        "generatedUtc": ""
+    },
+    "chairSpatial": {
+        "validated": false,
+        "validatorVersion": "",
+        "contractAssetPath": "",
+        "contractId": "",
+        "familyId": "",
+        "configurationId": "",
+        "runtimeBindingValidated": false,
+        "staticVolumeCount": 0,
+        "operationalVolumeCount": 0,
+        "dynamicVolumeCount": 0,
+        "semanticVolumeCount": 0,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairNavigation": {
+        "validated": false,
+        "validatorVersion": "",
+        "footprintBlocksNavigation": false,
+        "footprintWidthMeters": 0.0,
+        "footprintDepthMeters": 0.0,
+        "seatHeightMeters": 0.0,
+        "approachDistanceMeters": 0.0,
+        "approachRadiusMeters": 0.0,
+        "solidColliderCount": 0,
+        "canonicalFrontPositiveZ": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairPersistence": {
+        "validated": false,
+        "validatorVersion": "",
+        "sourceCatalogAssetPath": "",
+        "canonicalContentId": "",
+        "itemDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "catalogResolvable": false,
+        "prefabResolvable": false,
+        "seatComponentValid": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "genericPlaceable": {
+        "planned": true,
+        "plannerVersion": "2.2.0",
+        "placementMode": "FLOOR",
+        "category": "Seating",
+        "finalWidthMeters": 0.57668137550354,
+        "finalHeightMeters": 1.176908254623413,
+        "finalDepthMeters": 0.5639227628707886,
+        "rotationStepDegrees": 90.0,
+        "minimumClearanceMeters": 0.05000000074505806,
+        "suggestedPurchasePriceEuro": 160,
+        "requiresFunctionalAdapter": true,
+        "integrationMode": "NATIVE_BAR_SEAT",
+        "requiredAreaCapabilityId": "customer_seating",
+        "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Placeable_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.prefab",
+        "editableDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Editable_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.asset",
+        "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/PlaceableItem_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.asset",
+        "planReason": "Native bar seat requires one compatible persistent bar place, seated Animation and real repeated SaveGame acceptance.",
+        "plannedUtc": "2026-10-03T01:03:01.1386766Z"
+    },
+    "genericPlaceableReadiness": {
+        "validated": true,
+        "validatorVersion": "2.3.0",
+        "floorPlacementReady": true,
+        "colliderReady": true,
+        "footprintReady": true,
+        "catalogResolvable": true,
+        "persistenceReady": true,
+        "navigationReady": true,
+        "spatialContractRequired": true,
+        "areaCapabilityReady": true,
+        "functionalAdapterReady": true,
+        "requiredAreaCapabilityId": "customer_seating",
+        "integrationMode": "NATIVE_BAR_SEAT",
+        "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Placeable_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.prefab",
+        "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/PlaceableItem_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.asset",
+        "evidence": "Native bar compound body/ports, canonical catalog identity and verified creation/navigation/lease/SaveGame acceptance match the prefab.",
+        "validatedUtc": "2026-10-03T01:03:03.7324219Z"
+    },
+    "floorLamp": {
+        "planned": false,
+        "plannerVersion": "",
+        "profileVersion": "",
+        "profileFingerprint": "",
+        "sourceHash": "",
+        "providerMetadataHash": "",
+        "emitterLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "shadeCenter": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "shadeSize": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "intensity": 0.0,
+        "rangeMeters": 0.0,
+        "colorTemperatureKelvin": 0.0,
+        "inputFingerprint": "",
+        "evidence": ""
+    },
+    "barCounter": {
+        "planned": false,
+        "plannerVersion": "",
+        "geometryVersion": "",
+        "profileVersion": "",
+        "profileFingerprint": "",
+        "sourceHash": "",
+        "providerMetadataHash": "",
+        "inputFingerprint": "",
+        "uniformScale": 0.0,
+        "sourceCounterHeightMeters": 0.0,
+        "counterHeightMeters": 0.0,
+        "upperSurfaceCoverage": 0.0,
+        "finalSizeMeters": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "waiterLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "customerLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "openingDirection": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "waiterClearanceMeters": 0.0,
+        "physicalBoxes": [],
+        "evidence": ""
+    },
+    "barCounterRuntime": {
+        "verifierVersion": "",
+        "planFingerprint": "",
+        "prefabDependencyHash": "",
+        "sourceHash": "",
+        "reportRelativePath": "",
+        "reportHash": "",
+        "verifiedUtc": "",
+        "creationPassed": false,
+        "nativeBindingPassed": false,
+        "routePassed": false,
+        "leasePassed": false,
+        "saveLoadPassed": false,
+        "cleanupPassed": false,
+        "consoleClean": false
+    },
+    "barStool": {
+        "planned": true,
+        "plannerVersion": "1.1.0",
+        "geometryVersion": "1.1.0",
+        "profileVersion": "1.0.0",
+        "profileFingerprint": "d6010c08e2d9256f182977cfc2d26683eea1ab63bef9760670e4ea253a3db0a8",
+        "sourceHash": "c6c3e8bfced6e81e623f5e0d6756b99777ba1038b63b90f4ba5b9ddbe5fa9f62",
+        "providerMetadataHash": "e5b3e41e92b92519edf42474a85b5f693da31994676c9b384d44284e0a21cd2d",
+        "inputFingerprint": "8394e3b317777d02fd41b7160ac13b5750abccf17352581b6ea937a1352fb423",
+        "facingEvidence": "Unilateral upper structure gives the back; front is opposite its area-weighted horizontal offset: (0.00, 0.00, -0.40)",
+        "sourceSeatHeightMeters": 1.2118861675262452,
+        "seatHeightMeters": 0.75,
+        "counterHeightMeters": 1.0499999523162842,
+        "uniformScale": 0.6188700199127197,
+        "visualYawDegrees": -0.0358157716691494,
+        "hasBackrest": true,
+        "finalSizeMeters": {
+            "x": 0.57668137550354,
+            "y": 1.176908254623413,
+            "z": 0.5639227628707886
+        },
+        "seatLocalPosition": {
+            "x": 0.00012929837976116687,
+            "y": 0.75,
+            "z": 0.05070079118013382
+        },
+        "sourceFacingMetric": {
+            "x": 0.0006251030717976391,
+            "y": 0.0,
+            "z": 0.9999997615814209
+        },
+        "approachLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -0.7019613981246948
+        },
+        "approachRadiusMeters": 0.3199999928474426,
+        "spotPositionToleranceMeters": 0.07999999821186066,
+        "maximumFacingAngleDegrees": 10.0
+    },
+    "barStoolRuntime": {
+        "verifierVersion": "1.0.0",
+        "sourceHash": "c6c3e8bfced6e81e623f5e0d6756b99777ba1038b63b90f4ba5b9ddbe5fa9f62",
+        "planFingerprint": "8394e3b317777d02fd41b7160ac13b5750abccf17352581b6ea937a1352fb423",
+        "prefabDependencyHash": "6df1bd4ec09f322d0d364f9a44e17850",
+        "customerPrefabDependencyHash": "7cc7a039101e7e73c5d45f99737c75db",
+        "animationCatalogDependencyHash": "0931e2b5ec8b7bf144393d5e70cadaac",
+        "reportRelativePath": "Library/BistroBuilder/SAVIC/Logs/savic-barstool-candidate-0b450ebc99e34230b7e4fa28cef62f5e-runtime-playtest.txt",
+        "reportHash": "8e93ed012c1191e31d63ff9055dba19248bb2b787230ca2298bc84712ca1edad",
+        "verifiedUtc": "2026-10-03T05:10:21.2179199Z",
+        "creationPassed": true,
+        "associationPassed": true,
+        "routePassed": true,
+        "leasePassed": true,
+        "seatedAnimationPassed": true,
+        "saveLoadPassed": true,
+        "repeatedLoadPassed": true,
+        "cleanupPassed": true,
+        "consoleClean": true
+    },
+    "construction": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "definitionId": "",
+        "openingType": "",
+        "nominalWidthMeters": 0.0,
+        "nominalHeightMeters": 0.0,
+        "nominalDepthMeters": 0.0,
+        "visualYawDegrees": 0.0,
+        "prefabAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "constructionReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "prefabResolvable": false,
+        "constructionKitResolvable": false,
+        "definitionResolvable": false,
+        "passageColliderSafe": false,
+        "wallVisualOnly": false,
+        "definitionId": "",
+        "role": "UNSET",
+        "prefabAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "imageAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "importAsSprite": false,
+        "sRgb": true,
+        "mipmaps": false,
+        "maximumTextureSize": 2048,
+        "publishedAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "imageReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "textureResolvable": false,
+        "spriteResolvable": false,
+        "importerProfileValid": false,
+        "catalogBindingValid": false,
+        "widthPixels": 0,
+        "heightPixels": 0,
+        "sourceHasAlpha": false,
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "publishedAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "contentBundle": {
+        "planned": false,
+        "plannerVersion": "",
+        "schemaId": "",
+        "schemaVersion": 0,
+        "bundleId": "",
+        "ingredientCount": 0,
+        "dishCount": 0,
+        "recipeCount": 0,
+        "supplierCount": 0,
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "contentBundleReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "ingredientCatalogValid": false,
+        "dishCatalogValid": false,
+        "recipeCatalogValid": false,
+        "supplierAuthoringValid": false,
+        "ingredientsPublished": 0,
+        "dishesPublished": 0,
+        "recipesPublished": 0,
+        "suppliersPublished": 0,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "decisions": [
+        {
+            "key": "content.type",
+            "value": "BarStool",
+            "confidence": "HIGH",
+            "evidence": "name contains an explicit stool identity; bounds are plausible for furniture; geometry supports a seat profile; functional publication requires a stool family contract",
+            "ruleId": "content.classification.v2"
+        },
+        {
+            "key": "material.semantic",
+            "value": "Unknown",
+            "confidence": "UNKNOWN",
+            "evidence": "No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+            "ruleId": "material.semantic.resolve.v1"
+        }
+    ],
+    "artifacts": [
+        {
+            "role": "unity.source_mirror",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/SourceMirror/c6/c6c3e8bfced6e81e623f5e0d6756b99777ba1038b63b90f4ba5b9ddbe5fa9f62/Meshy_AI_Blue_Quilted_Bar_Stoo_0918123057_generate.glb",
+            "builderId": "savic.source-import.unity-model",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": ""
+        },
+        {
+            "role": "authoring.bar_stool.profile",
+            "projectRelativePath": "Assets/Data/Restaurant/SAVIC/BarStoolProfile_Standard.asset",
+            "builderId": "savic.bar-stool-planner",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "d6010c08e2d9256f182977cfc2d26683eea1ab63bef9760670e4ea253a3db0a8"
+        },
+        {
+            "role": "published.generic.prefab",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Placeable_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.prefab",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "d090f1616c42342beeef4a4c48827f18993530c37177c89c6fcdba12bcbf73c6"
+        },
+        {
+            "role": "catalog.item_definition",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/PlaceableItem_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.asset",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "d090f1616c42342beeef4a4c48827f18993530c37177c89c6fcdba12bcbf73c6"
+        },
+        {
+            "role": "editmode.editable_definition",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Editable_bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e.asset",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "d090f1616c42342beeef4a4c48827f18993530c37177c89c6fcdba12bcbf73c6"
+        },
+        {
+            "role": "preview.large",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Preview_Large.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "d4e75ed9d701e9311b4c8d8d635f5ac9ac0ca3f04829b10b4e0b2bc6674df520"
+        },
+        {
+            "role": "preview.catalog",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e/Preview_Catalog.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "d4e75ed9d701e9311b4c8d8d635f5ac9ac0ca3f04829b10b4e0b2bc6674df520"
+        }
+    ],
+    "validations": [
+        {
+            "validationId": "Pipeline.PreImportRouting",
+            "result": "REVIEW",
+            "severity": "WARNING",
+            "message": "The source maps to an existing interactive service/bar/pass concept. SAVIC will not duplicate that gameplay authority with a generic static prefab. Expensive 3D import/analysis is intentionally skipped until the approved adapter exists.",
+            "validatorVersion": "2.0.0"
+        },
+        {
+            "validationId": "Source.ArchiveIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Archived source passed SHA-256 integrity validation.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Source.UnityImport",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Prepared Unity source mirror already has a valid imported GameObject.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Geometry.ValidBounds",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model bounds are finite and usable.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Geometry.MeshData",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model contains usable mesh geometry.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Materials.ReferenceIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "All renderer material slots have references.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Geometry.StructuralProfile",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Mesh surface distribution analyzed successfully: upward area 0.177; upper-band area 0.561; lower-band area 0.207; surface centroid height 0.599; upper projected coverage 0.678.",
+            "validatorVersion": "2.0.0"
+        },
+        {
+            "validationId": "Materials.AppearanceData",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Pipeline.IncrementalInvalidation",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "FullRebuild: No compatible published baseline exists.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Geometry.SemanticParts",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Semantic part analysis supports Table and Chair content in V1.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Materials.SemanticProfile",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Material semantic remains Unknown: No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Classification.ContentType",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model classified as BarStool and matched a registered SAVIC family module.",
+            "validatorVersion": "4.7.0"
+        },
+        {
+            "validationId": "Source.ProviderMetadata",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Original and download task verified; Meshy MODEL_TITLE evidence attached for 01a0b47e-d8a9-7682-a453-43327b66eb29",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Authoring.BarStool",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Measured seat normalized to the canonical profile. Unilateral upper structure gives the back; front is opposite its area-weighted horizontal offset: (0.00, 0.00, -0.40)",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Presentation.GenericMaterials",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Source materials are usable.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.FunctionAdapter",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Required native function adapter matches the canonical authoring plan.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.FloorPlacement",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Floor anchor and canonical footprint are valid.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Collider",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical static collider geometry is valid.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Catalog",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical catalog resolves exactly one item definition.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Persistence",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical ItemId and prefab are persistence-resolvable.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Navigation",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical blocking footprint supplies static navigation topology.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.AreaCapability",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Placement requires the existing canonical area capability 'customer_seating'.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.BBSIS",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "No interactive BBSIS contract is required for this passive generic placeable.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.RuntimeAcceptance",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Current prefab passed canonical runtime creation, native binding/lease/route and SaveGame save/load/cleanup.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "Presentation.Previews",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Generated and assigned two validated SAVIC previews from 1 renderer(s).",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Publication.BarStoolAcceptance",
+            "result": "REVIEW",
+            "severity": "WARNING",
+            "message": "Candidate prepared. Current creation/association/navigation/leases/seated Animation/repeated SaveGame/cleanup/Console acceptance is required.",
+            "validatorVersion": "1.0.0"
+        }
+    ],
+    "developerOverrides": []
+}

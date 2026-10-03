@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace BistroBuilder.Editor.Savic
 {
@@ -72,6 +73,13 @@ namespace BistroBuilder.Editor.Savic
             new SavicGenericPlaceableAuthoringRecord();
         public SavicGenericPlaceableReadinessRecord genericPlaceableReadiness =
             new SavicGenericPlaceableReadinessRecord();
+        public SavicFloorLampAuthoringRecord floorLamp = new SavicFloorLampAuthoringRecord();
+        public SavicBarCounterAuthoringRecord barCounter = new SavicBarCounterAuthoringRecord();
+        public SavicBarCounterRuntimeAcceptanceRecord barCounterRuntime = new SavicBarCounterRuntimeAcceptanceRecord();
+        public SavicBarStoolAuthoringRecord barStool = new SavicBarStoolAuthoringRecord();
+        public SavicBarStoolRuntimeAcceptanceRecord barStoolRuntime = new SavicBarStoolRuntimeAcceptanceRecord();
+        public SavicOverheadEquipmentAuthoringRecord overheadEquipment = new SavicOverheadEquipmentAuthoringRecord();
+        public SavicOverheadEquipmentRuntimeAcceptanceRecord overheadEquipmentRuntime = new SavicOverheadEquipmentRuntimeAcceptanceRecord();
         public SavicConstructionAuthoringRecord construction =
             new SavicConstructionAuthoringRecord();
         public SavicConstructionReadinessRecord constructionReadiness =
@@ -120,6 +128,8 @@ namespace BistroBuilder.Editor.Savic
         public long byteLength;
         public long originalLastWriteUtcTicks;
         public string ingestedUtc = string.Empty;
+        public string providerMetadataRelativePath = string.Empty;
+        public string providerMetadataHash = string.Empty;
     }
 
     [Serializable]
@@ -465,6 +475,25 @@ namespace BistroBuilder.Editor.Savic
     }
 
     [Serializable]
+    internal sealed class SavicFloorLampAuthoringRecord
+    {
+        public bool planned;
+        public string plannerVersion = string.Empty;
+        public string profileVersion = string.Empty;
+        public string profileFingerprint = string.Empty;
+        public string sourceHash = string.Empty;
+        public string providerMetadataHash = string.Empty;
+        public Vector3 emitterLocalPosition;
+        public Vector3 shadeCenter;
+        public Vector3 shadeSize;
+        public float intensity;
+        public float rangeMeters;
+        public float colorTemperatureKelvin;
+        public string inputFingerprint = string.Empty;
+        public string evidence = string.Empty;
+    }
+
+    [Serializable]
     internal sealed class SavicGenericPlaceableAuthoringRecord
     {
         public bool planned;
@@ -500,6 +529,7 @@ namespace BistroBuilder.Editor.Savic
         public bool navigationReady;
         public bool spatialContractRequired;
         public bool areaCapabilityReady;
+        public bool functionalAdapterReady;
         public string requiredAreaCapabilityId = string.Empty;
         public string integrationMode = "NONE";
         public string prefabAssetPath = string.Empty;
@@ -792,6 +822,23 @@ namespace BistroBuilder.Editor.Savic
         public string outcomeStatus = string.Empty;
         public string reasonCode = string.Empty;
         public string primaryStage = string.Empty;
+        // Prevents a rejected planner revision from being retried on every
+        // domain reload. A later planner version may revalidate the job.
+        public string lastAutomaticChairPlannerRetryVersion = string.Empty;
+        // A verified table review can be retried once when a new planner
+        // revision admits a safe canonical seating profile.
+        public string lastAutomaticTablePlannerRetryVersion = string.Empty;
+        // A preview render failure may be retried once when a graphics device
+        // becomes available; the same renderer revision must not loop.
+        public string lastAutomaticChairPreviewRetryVersion = string.Empty;
+        // A newly supported classifier result may retry a verified review
+        // once per classifier version; unresolved identities stay in review.
+        public string lastAutomaticClassifierRetryVersion = string.Empty;
+        public string lastAutomaticBarAcceptanceFingerprint = string.Empty;
+        public string lastAutomaticBarStoolAcceptanceFingerprint = string.Empty;
+        public string lastAutomaticOverheadPlannerFingerprint = string.Empty;
+        public string lastAutomaticOverheadAcceptanceFingerprint = string.Empty;
+        public string lastAutomaticBarAuthoringFingerprint = string.Empty;
         public List<SavicProcessingStageRecord> stageTimings =
             new List<SavicProcessingStageRecord>();
     }

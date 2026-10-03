@@ -12,6 +12,8 @@ namespace BistroBuilder.Editor.Savic
             Layout.EnsureInfrastructure();
             Manifests = new SavicManifestRepository(Layout);
             Jobs = new SavicJobStore(Layout);
+            CanonicalReconciliation =
+                new SavicCanonicalReconciliationService(Layout, Manifests, Jobs);
             Intake = new SavicIntakeService(Layout, Manifests, Jobs);
             SourceProcessing =
                 new SavicSourceProcessingService(Layout, Manifests);
@@ -34,6 +36,7 @@ namespace BistroBuilder.Editor.Savic
         internal SavicStorageLayout Layout { get; }
         internal SavicManifestRepository Manifests { get; }
         internal SavicJobStore Jobs { get; }
+        internal SavicCanonicalReconciliationService CanonicalReconciliation { get; }
         internal SavicIntakeService Intake { get; }
         internal SavicSourceProcessingService SourceProcessing { get; }
         internal SavicBatchProcessor Batch { get; }

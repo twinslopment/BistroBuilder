@@ -393,9 +393,6 @@ namespace BistroBuilder.Editor.Savic
             string tempPath =
                 Path.Combine(
                     mirrorDirectory,
-                    "." +
-                    Path.GetFileName(
-                        mirrorAbsolutePath) +
                     ".savic-" +
                     Guid.NewGuid().ToString("N") +
                     ".tmp");

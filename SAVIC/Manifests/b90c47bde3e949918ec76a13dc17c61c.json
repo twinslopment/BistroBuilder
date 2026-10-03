@@ -9,7 +9,7 @@
     "type": "Table",
     "category": "Furniture",
     "createdUtc": "2026-09-22T10:03:00.5329493Z",
-    "updatedUtc": "2026-09-22T20:14:03.0229527Z",
+    "updatedUtc": "2026-10-01T10:57:27.3596483Z",
     "source": {
         "sourceHash": "b2deaec282113f080df5af9e5a8373109d91c0abc9336b3d4a1241771ce3346b",
         "originalFileName": "Meshy_AI_Wooden_Bistro_Table_0918082625_generate.glb",
@@ -280,6 +280,22 @@
         "evidence": "1 explicit source material token(s); object type was independently confirmed as Table by geometry-backed classification; the source carries no texture, vertex-color or non-default base-color appearance data.",
         "resolvedUtc": "2026-09-22T20:14:02.8922473Z"
     },
+    "incremental": {
+        "evaluatorVersion": "",
+        "geometryFingerprint": "",
+        "appearanceFingerprint": "",
+        "lastAction": "UNSET",
+        "reason": "",
+        "reusedGeometry": false,
+        "reusedSemanticParts": false,
+        "reusedClassification": false,
+        "reusedColliders": false,
+        "appearanceOnlyRefresh": false,
+        "reuseCount": 0,
+        "fullRebuildCount": 0,
+        "appearanceRefreshCount": 0,
+        "evaluatedUtc": ""
+    },
     "tableAuthoring": {
         "planned": true,
         "plannerVersion": "1.0.0",
@@ -427,6 +443,130 @@
         "evidence": "",
         "validatedUtc": ""
     },
+    "genericPlaceable": {
+        "planned": false,
+        "plannerVersion": "",
+        "placementMode": "UNSET",
+        "category": "Other",
+        "finalWidthMeters": 0.0,
+        "finalHeightMeters": 0.0,
+        "finalDepthMeters": 0.0,
+        "rotationStepDegrees": 90.0,
+        "minimumClearanceMeters": 0.0,
+        "suggestedPurchasePriceEuro": 0,
+        "requiresFunctionalAdapter": false,
+        "integrationMode": "NONE",
+        "requiredAreaCapabilityId": "",
+        "prefabAssetPath": "",
+        "editableDefinitionAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "genericPlaceableReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "floorPlacementReady": false,
+        "colliderReady": false,
+        "footprintReady": false,
+        "catalogResolvable": false,
+        "persistenceReady": false,
+        "navigationReady": false,
+        "spatialContractRequired": false,
+        "areaCapabilityReady": false,
+        "requiredAreaCapabilityId": "",
+        "integrationMode": "NONE",
+        "prefabAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "construction": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "definitionId": "",
+        "openingType": "",
+        "nominalWidthMeters": 0.0,
+        "nominalHeightMeters": 0.0,
+        "nominalDepthMeters": 0.0,
+        "visualYawDegrees": 0.0,
+        "prefabAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "constructionReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "prefabResolvable": false,
+        "constructionKitResolvable": false,
+        "definitionResolvable": false,
+        "passageColliderSafe": false,
+        "wallVisualOnly": false,
+        "definitionId": "",
+        "role": "UNSET",
+        "prefabAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "imageAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "importAsSprite": false,
+        "sRgb": true,
+        "mipmaps": false,
+        "maximumTextureSize": 2048,
+        "publishedAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "imageReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "textureResolvable": false,
+        "spriteResolvable": false,
+        "importerProfileValid": false,
+        "catalogBindingValid": false,
+        "widthPixels": 0,
+        "heightPixels": 0,
+        "sourceHasAlpha": false,
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "publishedAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "contentBundle": {
+        "planned": false,
+        "plannerVersion": "",
+        "schemaId": "",
+        "schemaVersion": 0,
+        "bundleId": "",
+        "ingredientCount": 0,
+        "dishCount": 0,
+        "recipeCount": 0,
+        "supplierCount": 0,
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "contentBundleReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "ingredientCatalogValid": false,
+        "dishCatalogValid": false,
+        "recipeCatalogValid": false,
+        "supplierAuthoringValid": false,
+        "ingredientsPublished": 0,
+        "dishesPublished": 0,
+        "recipesPublished": 0,
+        "suppliersPublished": 0,
+        "evidence": "",
+        "validatedUtc": ""
+    },
     "decisions": [
         {
             "key": "content.type",
@@ -511,15 +651,15 @@
             "role": "preview.large",
             "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Preview_Large.png",
             "builderId": "savic.preview-renderer",
-            "builderVersion": "1.0.0",
-            "inputFingerprint": "35511339d4a34d764cd453f34808573bf3f1865dbbb93830960e8192c448c20c"
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "0ad8c3ce75e7bbeb412132d3c518967734412fbab2454254593ea2a9ce1fcbb5"
         },
         {
             "role": "preview.catalog",
             "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Tables/bb_table_b90c47bde3e949918ec76a13dc17c61c/Preview_Catalog.png",
             "builderId": "savic.preview-renderer",
-            "builderVersion": "1.0.0",
-            "inputFingerprint": "35511339d4a34d764cd453f34808573bf3f1865dbbb93830960e8192c448c20c"
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "0ad8c3ce75e7bbeb412132d3c518967734412fbab2454254593ea2a9ce1fcbb5"
         }
     ],
     "validations": [
@@ -583,8 +723,8 @@
             "validationId": "Presentation.Previews",
             "result": "PASS",
             "severity": "INFO",
-            "message": "Reused unchanged validated SAVIC previews.",
-            "validatorVersion": "1.0.0"
+            "message": "Isolated published previews regenerated and assigned.",
+            "validatorVersion": "1.1.0"
         },
         {
             "validationId": "Geometry.StructuralProfile",

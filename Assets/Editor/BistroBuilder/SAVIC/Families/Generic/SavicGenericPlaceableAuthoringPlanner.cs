@@ -7,7 +7,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicGenericPlaceableAuthoringPlanner
     {
-        internal const string Version = "2.0.0";
+        internal const string Version = "2.2.0";
 
         private static readonly HashSet<string> FloorEvidence =
             new HashSet<string>(
@@ -232,7 +232,7 @@ namespace BistroBuilder.Editor.Savic
             SavicManifest manifest,
             out SavicGenericPlaceableAuthoringRecord plan,
             out string reasonCode,
-            out string error)
+            out string error, SavicStorageLayout layout = null)
         {
             plan =
                 new SavicGenericPlaceableAuthoringRecord
@@ -304,10 +304,51 @@ namespace BistroBuilder.Editor.Savic
                 manifest.classification.type ??
                 string.Empty;
 
+            if (type == "BarStool")
+            {
+                if (!SavicBarStoolFunctionAdapter.PlanMatches(manifest))
+                { reasonCode = "BAR_STOOL_PLAN_REQUIRED"; error = "Verified stool physical/function plan is absent or stale."; return false; }
+                string folder = "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/" + manifest.canonicalContentId;
+                var size = manifest.barStool.finalSizeMeters;
+                plan.planned = true; plan.placementMode = "FLOOR"; plan.category = "Seating";
+                plan.finalWidthMeters = size.x; plan.finalHeightMeters = size.y; plan.finalDepthMeters = size.z;
+                plan.rotationStepDegrees = 90f; plan.minimumClearanceMeters = 0.05f;
+                plan.suggestedPurchasePriceEuro = ResolvePrice(RestaurantPlaceableItemCategory.Seating, analysis);
+                plan.requiresFunctionalAdapter = true; plan.integrationMode = SavicBarStoolFunctionAdapter.Mode;
+                plan.requiredAreaCapabilityId = "customer_seating";
+                plan.prefabAssetPath = folder + "/Placeable_" + manifest.canonicalContentId + ".prefab";
+                plan.itemDefinitionAssetPath = folder + "/PlaceableItem_" + manifest.canonicalContentId + ".asset";
+                plan.editableDefinitionAssetPath = folder + "/Editable_" + manifest.canonicalContentId + ".asset";
+                plan.planReason = "Native bar seat requires one compatible persistent bar place, seated Animation and real repeated SaveGame acceptance.";
+                plan.plannedUtc = DateTime.UtcNow.ToString("O"); return true;
+            }
+
+            if (type == "BarCounter")
+            {
+                if (!SavicBarCounterFunctionAdapter.PlanMatches(manifest))
+                { reasonCode = "BAR_COUNTER_PLAN_REQUIRED"; error = "Verified bar counter physical/function plan is absent or stale."; return false; }
+                string folder = "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/" + manifest.canonicalContentId;
+                var size = manifest.barCounter.finalSizeMeters;
+                plan.planned = true; plan.placementMode = "FLOOR"; plan.category = "ServiceEquipment";
+                plan.finalWidthMeters = size.x; plan.finalHeightMeters = size.y; plan.finalDepthMeters = size.z;
+                plan.rotationStepDegrees = 90f; plan.minimumClearanceMeters = 0.05f;
+                plan.suggestedPurchasePriceEuro = ResolvePrice(RestaurantPlaceableItemCategory.ServiceEquipment, analysis);
+                plan.requiresFunctionalAdapter = true; plan.integrationMode = SavicBarCounterFunctionAdapter.Mode;
+                plan.requiredAreaCapabilityId = "customer_seating";
+                plan.prefabAssetPath = folder + "/Placeable_" + manifest.canonicalContentId + ".prefab";
+                plan.itemDefinitionAssetPath = folder + "/PlaceableItem_" + manifest.canonicalContentId + ".asset";
+                plan.editableDefinitionAssetPath = folder + "/Editable_" + manifest.canonicalContentId + ".asset";
+                plan.planReason = "Bar counter requires canonical customer-service area, native bar registry/BBSIS and real runtime acceptance.";
+                plan.plannedUtc = DateTime.UtcNow.ToString("O");
+                return true;
+            }
+
             if (!string.Equals(
                     type,
                     "Decoration",
                     StringComparison.Ordinal) &&
+                !string.Equals(type, "StorageFurniture", StringComparison.Ordinal) &&
+                !string.Equals(type, "FloorLamp", StringComparison.Ordinal) &&
                 !string.Equals(
                     type,
                     "KitchenEquipment",
@@ -326,11 +367,47 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            HashSet<string> tokens =
-                Tokenize(
-                    Path.GetFileNameWithoutExtension(
-                        manifest.source.originalFileName ??
-                        string.Empty));
+            string semanticName = SavicProviderMetadataService.ResolveSemanticName(manifest, layout);
+            HashSet<string> tokens = Tokenize(semanticName);
+
+            if (type == "FloorLamp" && (!tokens.Contains("floor") || !tokens.Contains("lamp")))
+            {
+                reasonCode = "FLOOR_LAMP_IDENTITY_AMBIGUOUS";
+                error = "Floor lighting requires an explicit floor-lamp subject.";
+                return false;
+            }
+
+            if (type == "StorageFurniture" &&
+                (!tokens.Contains("freestanding") || !tokens.Contains("storage") ||
+                 !(tokens.Contains("cabinet") || tokens.Contains("cupboard"))))
+            {
+                reasonCode = "STORAGE_FURNITURE_IDENTITY_AMBIGUOUS";
+                error = "Storage furniture requires an explicit freestanding cabinet identity.";
+                return false;
+            }
+            if (tokens.Contains("hood"))
+            {
+                if (type == "KitchenEquipment" && SavicOverheadEquipmentAuthoringPlanner.IsVerifiedHood(manifest, layout) &&
+                    SavicOverheadEquipmentFunctionAdapter.PlanMatches(manifest))
+                {
+                    string folder = "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/" + manifest.canonicalContentId;
+                    var size = manifest.overheadEquipment.finalSizeMeters;
+                    plan.planned = true; plan.placementMode = "OVERHEAD_FLOOR_ANCHOR"; plan.category = "KitchenEquipment";
+                    plan.finalWidthMeters = size.x; plan.finalHeightMeters = size.y; plan.finalDepthMeters = size.z;
+                    plan.rotationStepDegrees = 90f; plan.minimumClearanceMeters = 0.05f;
+                    plan.suggestedPurchasePriceEuro = ResolvePrice(RestaurantPlaceableItemCategory.KitchenEquipment, analysis);
+                    plan.requiresFunctionalAdapter = true; plan.integrationMode = SavicOverheadEquipmentFunctionAdapter.Mode;
+                    plan.requiredAreaCapabilityId = SavicEquipmentIntegrationPolicy.FoodProductionCapabilityId;
+                    plan.prefabAssetPath = folder + "/Placeable_" + manifest.canonicalContentId + ".prefab";
+                    plan.itemDefinitionAssetPath = folder + "/PlaceableItem_" + manifest.canonicalContentId + ".asset";
+                    plan.editableDefinitionAssetPath = folder + "/Editable_" + manifest.canonicalContentId + ".asset";
+                    plan.planReason = "Passive overhead kitchen equipment: authored installation profile and native bounded body, no extraction gameplay; real runtime acceptance required.";
+                    plan.plannedUtc = DateTime.UtcNow.ToString("O"); return true;
+                }
+                reasonCode = "PLACEMENT_OVERHEAD_REQUIRES_ADAPTER";
+                error = "An exhaust hood needs verified overhead placement; it cannot be published as a floor cabinet.";
+                return false;
+            }
 
             if (ContainsAny(
                     tokens,
@@ -384,7 +461,7 @@ namespace BistroBuilder.Editor.Savic
             SavicEquipmentIntegrationDecision
                 equipmentDecision =
                     SavicEquipmentIntegrationPolicy.Resolve(
-                        manifest.source.originalFileName,
+                        semanticName,
                         type);
 
             if (equipment)
@@ -476,6 +553,14 @@ namespace BistroBuilder.Editor.Savic
             plan.planned =
                 true;
 
+            if (type == "StorageFurniture")
+                plan.integrationMode = "STATIC_FURNITURE";
+            if (type == "FloorLamp")
+            {
+                plan.integrationMode = SavicFloorLampFunctionAdapter.Mode;
+                plan.requiresFunctionalAdapter = true;
+            }
+
             plan.placementMode =
                 "FLOOR";
 
@@ -527,7 +612,11 @@ namespace BistroBuilder.Editor.Savic
                 ".asset";
 
             plan.planReason =
-                category ==
+                type == "StorageFurniture"
+                    ? "Verified freestanding storage furniture; static physical placement and persistence only, with no inventory authority."
+                    : type == "FloorLamp"
+                        ? "Verified floor-lamp identity; canonical floor placement requires a validated lighting function adapter."
+                    : category ==
                 RestaurantPlaceableItemCategory.Decoration
                     ? "High-confidence static floor decoration; generic non-interactive placeable is safe."
                     : equipmentDecision.Evidence;
@@ -617,6 +706,10 @@ namespace BistroBuilder.Editor.Savic
         private static RestaurantPlaceableItemCategory ResolveCategory(
             string type)
         {
+            if (type == "StorageFurniture")
+                return RestaurantPlaceableItemCategory.Furniture;
+            if (type == "FloorLamp")
+                return RestaurantPlaceableItemCategory.Lighting;
             if (string.Equals(
                     type,
                     "KitchenEquipment",

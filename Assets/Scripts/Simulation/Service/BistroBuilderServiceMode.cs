@@ -141,8 +141,8 @@ public static class BistroBuilderServiceModeUtility
 
         if (barSpot != null)
         {
-            return barSpot.CustomerPoint != null
-                ? barSpot.CustomerPoint
+            return barSpot.CustomerApproachPoint != null
+                ? barSpot.CustomerApproachPoint
                 : barSpot.transform;
         }
 

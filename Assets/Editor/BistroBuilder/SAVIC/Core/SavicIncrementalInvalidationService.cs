@@ -44,7 +44,7 @@ namespace BistroBuilder.Editor.Savic
 
     internal static class SavicIncrementalInvalidationService
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.1.0";
 
         internal static SavicIncrementalPlan Evaluate(
             SavicManifest previousPublished,
@@ -65,7 +65,8 @@ namespace BistroBuilder.Editor.Savic
             string currentGeometry =
                 BuildGeometryFingerprint(
                     currentAnalysis,
-                    current.source.originalFileName);
+                    current.source.originalFileName,
+                    current.source.providerMetadataHash);
 
             string currentMaterialCore =
                 BuildMaterialCoreFingerprint(
@@ -106,7 +107,8 @@ namespace BistroBuilder.Editor.Savic
             string previousGeometry =
                 BuildGeometryFingerprint(
                     previousPublished.model3D,
-                    previousPublished.source.originalFileName);
+                    previousPublished.source.originalFileName,
+                    previousPublished.source.providerMetadataHash);
 
             if (!string.Equals(
                     previousGeometry,
@@ -236,7 +238,8 @@ namespace BistroBuilder.Editor.Savic
 
         internal static string BuildGeometryFingerprint(
             SavicModelAnalysisRecord analysis,
-            string sourceName)
+            string sourceName,
+            string providerMetadataHash = "")
         {
             if (analysis == null)
                 return string.Empty;
@@ -249,6 +252,11 @@ namespace BistroBuilder.Editor.Savic
             Append(builder, SavicGeometryProfileAnalyzer.Version);
             Append(builder, SavicChairGeometryAnalyzer.Version);
             Append(builder, sourceName ?? string.Empty);
+            if (!string.IsNullOrEmpty(providerMetadataHash))
+            {
+                Append(builder, "provider-metadata");
+                Append(builder, providerMetadataHash);
+            }
             Append(builder, analysis.hasUsableBounds);
             Append(builder, analysis.boundsCenterX);
             Append(builder, analysis.boundsCenterY);

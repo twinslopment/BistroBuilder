@@ -1,6 +1,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BistroBuilder.Editor.Savic
 {
@@ -31,6 +32,46 @@ namespace BistroBuilder.Editor.Savic
             {
                 SavicEditorContext.Instance.Layout.EnsureInfrastructure();
                 SavicEditorContext.Instance.Batch.RecoverAfterDomainReload();
+
+                SavicClassificationRefreshResult classificationRefresh =
+                    SavicEditorContext.Instance.CanonicalReconciliation
+                        .RefreshReviewedClassifications(16,
+                            SavicEditorContext.Instance.SourceProcessing
+                                .HasRegisteredFamily);
+                if (classificationRefresh.Updated > 0 ||
+                    classificationRefresh.Skipped > 0)
+                    Debug.Log("[SAVIC] Reviewed classifications refreshed: " +
+                              "updated=" + classificationRefresh.Updated +
+                              ", queued=" + classificationRefresh.Queued +
+                              ", skipped=" + classificationRefresh.Skipped + ".");
+
+                // Preview generation needs a real graphics device. A headless
+                // batch must not turn verified reviews into render failures.
+                if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
+                {
+                    int chairReviews = SavicEditorContext.Instance
+                        .CanonicalReconciliation
+                        .RetryVerifiedChairReviewsForCurrentPlanner(8);
+                    int previewRetries = SavicEditorContext.Instance
+                        .CanonicalReconciliation
+                        .RetryVerifiedChairPreviewFailures(8);
+                    int tableReviews = SavicEditorContext.Instance
+                        .CanonicalReconciliation
+                        .RetryVerifiedCompactSquareTableReviews(4);
+                    int barAcceptances = SavicEditorContext.Instance.CanonicalReconciliation.RetryVerifiedBarRuntimeAcceptances(4);
+                    int stoolAcceptances = SavicEditorContext.Instance.CanonicalReconciliation.RetryVerifiedBarStoolRuntimeAcceptances(4);
+                    int overheadReviews = SavicEditorContext.Instance.CanonicalReconciliation.RetryVerifiedOverheadReviews(4);
+                    if (overheadReviews > 0) Debug.Log("[SAVIC] Verified passive overhead source queued for canonical processing: " + overheadReviews + ".");
+                    if (stoolAcceptances > 0) Debug.Log("[SAVIC] Verified bar stool runtime acceptance queued for canonical publication: " + stoolAcceptances + ".");
+                    if (barAcceptances > 0) Debug.Log("[SAVIC] Verified bar runtime acceptance queued for canonical publication: " + barAcceptances + ".");
+                    if (chairReviews + previewRetries > 0)
+                        Debug.Log("[SAVIC] Verified chair revalidation queued: " +
+                                  "planner=" + chairReviews +
+                                  ", preview=" + previewRetries + ".");
+                    if (tableReviews > 0)
+                        Debug.Log("[SAVIC] Verified compact square table revalidation queued: " +
+                                  tableReviews + ".");
+                }
 
                 EditorApplication.update -= OnEditorUpdate;
                 EditorApplication.update += OnEditorUpdate;

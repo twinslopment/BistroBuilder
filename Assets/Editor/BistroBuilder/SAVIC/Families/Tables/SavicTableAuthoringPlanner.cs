@@ -4,7 +4,7 @@ namespace BistroBuilder.Editor.Savic
 {
     internal static class SavicTableAuthoringPlanner
     {
-        internal const string Version = "1.0.0";
+        internal const string Version = "1.2.0";
 
         internal const string Table2TemplatePath =
             "Assets/Prefabs/Restaurant/Furniture/Table_Basic.prefab";
@@ -20,6 +20,10 @@ namespace BistroBuilder.Editor.Savic
             "Assets/Data/Restaurant/Seating/TableConfigurations/" +
             "TableSeatingConfiguration_TableBasic4.asset";
 
+        internal const string CompactSquareTwoSeatingPath =
+            "Assets/Data/Restaurant/Seating/TableConfigurations/" +
+            "TableSeatingConfiguration_TableCompactSquare2.asset";
+
         private const float NominalTableHeightMeters = 0.75f;
         private const float MinimumAcceptedHeightMeters = 0.60f;
         private const float MaximumAcceptedHeightMeters = 0.90f;
@@ -27,6 +31,7 @@ namespace BistroBuilder.Editor.Savic
         private const float MaximumSourceHeightForCorrection = 2.50f;
         private const float MinimumSafeUniformScale = 0.35f;
         private const float MaximumSafeUniformScale = 2.85f;
+        private const float MinimumCompactSquareSideMeters = 0.59f;
 
         internal static bool TryPlan(
             SavicManifest manifest,
@@ -133,7 +138,15 @@ namespace BistroBuilder.Editor.Savic
                     ? scaledWidth
                     : scaledDepth;
 
-            if (!HasSafePublishedDimensions(
+            bool compactSquareTwoSeat =
+                IsCompactSquareTwoSeatCandidate(
+                    manifest,
+                    finalWidth,
+                    scaledHeight,
+                    finalDepth);
+
+            if (!compactSquareTwoSeat &&
+                !HasSafePublishedDimensions(
                     finalWidth,
                     scaledHeight,
                     finalDepth))
@@ -143,8 +156,9 @@ namespace BistroBuilder.Editor.Savic
                 return false;
             }
 
-            int capacity =
-                ResolveCapacity(
+            int capacity = compactSquareTwoSeat
+                ? 2
+                : ResolveCapacity(
                     finalWidth,
                     finalDepth);
 
@@ -175,19 +189,53 @@ namespace BistroBuilder.Editor.Savic
                         ? Table4TemplatePath
                         : Table2TemplatePath,
                 seatingDefinitionAssetPath =
-                    capacity >= 4
+                    compactSquareTwoSeat
+                        ? CompactSquareTwoSeatingPath
+                        : capacity >= 4
                         ? Table4SeatingPath
                         : Table2SeatingPath,
                 planReason =
                     BuildPlanReason(
                         correctionApplied,
                         rotateQuarterTurn,
-                        capacity),
+                        capacity) +
+                    (compactSquareTwoSeat
+                        ? " Compact near-square tabletop uses the canonical two-seat opposite-side profile."
+                        : string.Empty),
                 plannedUtc =
                     DateTime.UtcNow.ToString("O")
             };
 
             return true;
+        }
+
+        private static bool IsCompactSquareTwoSeatCandidate(
+            SavicManifest manifest,
+            float width,
+            float height,
+            float depth)
+        {
+            SavicGeometryProfileRecord geometry = manifest.model3D?.geometry;
+            if (geometry == null || !geometry.analyzed || !geometry.usable ||
+                manifest.classification == null ||
+                !manifest.classification.geometryBacked ||
+                manifest.classification.score < 0.80f)
+                return false;
+
+            float diameter = Math.Max(width, depth);
+            float smallerAxis = Math.Min(width, depth);
+            return diameter >= MinimumCompactSquareSideMeters &&
+                   diameter < 0.75f &&
+                   smallerAxis >= MinimumCompactSquareSideMeters &&
+                   diameter / smallerAxis <= 1.10f &&
+                   height >= MinimumAcceptedHeightMeters &&
+                   height <= MaximumAcceptedHeightMeters &&
+                   geometry.upwardFacingAreaRatio >= 0.23f &&
+                   geometry.upperBandAreaRatio >= 0.65f &&
+                   geometry.lowerBandAreaRatio >= 0.05f &&
+                   geometry.lowerBandAreaRatio <= 0.35f &&
+                   geometry.surfaceAreaCentroidHeight01 >= 0.62f &&
+                   geometry.upperUpwardProjectedCoverage >= 0.55f;
         }
 
         private static bool HasSafePublishedDimensions(

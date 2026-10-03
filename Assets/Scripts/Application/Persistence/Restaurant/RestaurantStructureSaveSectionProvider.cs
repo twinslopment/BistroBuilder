@@ -18,10 +18,29 @@ using UnityEngine.SceneManagement;
 )]
 public sealed class RestaurantStructureSaveSectionProvider :
     MonoBehaviour,
-    IBistroBuilderSaveSectionProvider
+    IBistroBuilderSaveSectionProvider,
+    IBistroBuilderSaveSectionMigration
 {
     public const string StableSectionId = "restaurant.structure";
-    public const int StableSectionVersion = 1;
+    public const int StableSectionVersion = 2;
+
+    public int FromVersion => 1;
+    public int ToVersion => StableSectionVersion;
+    public string FromSerializerId => BistroBuilderJsonSaveSerializer.StableSerializerId;
+    public string ToSerializerId => BistroBuilderJsonSaveSerializer.StableSerializerId;
+
+    public bool TryMigrate(byte[] sourcePayload, out byte[] migratedPayload, out string error)
+    {
+        migratedPayload = null; error = string.Empty;
+        try
+        {
+            var serializer = new BistroBuilderJsonSaveSerializer();
+            var old = (RestaurantStructureSaveData)serializer.Deserialize(sourcePayload, typeof(RestaurantStructureSaveData));
+            if (old.barSeatLinks == null) old.barSeatLinks = new List<RestaurantBarSeatLinkSaveRecord>();
+            migratedPayload = serializer.Serialize(old, true); return true;
+        }
+        catch (Exception exception) { error = exception.Message; return false; }
+    }
 
     [Header("Dependencias")]
 
@@ -234,6 +253,10 @@ public sealed class RestaurantStructureSaveSectionProvider :
                 }
             );
 
+            if (!RestaurantBarSeatPersistence.TryCapture(placeable, out var barLink, out string barLinkError))
+            { context.Fail(barLinkError); yield break; }
+            if (barLink != null) data.barSeatLinks.Add(barLink);
+
             if (placeable.TryGetComponent(
                     out RestaurantSeat seat
                 ))
@@ -281,6 +304,7 @@ public sealed class RestaurantStructureSaveSectionProvider :
         }
 
         data.seatLinks.Sort(CompareSeatLinks);
+        data.barSeatLinks.Sort((first, second) => string.CompareOrdinal(first.seatInstanceId, second.seatInstanceId));
         context.Complete(data);
     }
 
@@ -505,7 +529,8 @@ public sealed class RestaurantStructureSaveSectionProvider :
 
         // Las sillas no enlazadas son válidas mientras se diseña el local.
         // Simplemente no cuentan como plazas operativas hasta asociarse.
-        return true;
+        return RestaurantBarSeatPersistence.ValidateState(data, itemId =>
+            definitionCatalog.TryGetDefinition(itemId, out var definition) ? definition : null, out error);
     }
 
     public IEnumerator PrepareForLoad(
@@ -533,6 +558,15 @@ public sealed class RestaurantStructureSaveSectionProvider :
 
         // Bound work by elapsed time as well as object count: furniture cost varies
         // with prefab complexity and linked registry/physics callbacks.
+        placeableBuffer.Sort((first, second) =>
+        {
+            int firstWeight = first.GetComponent<BistroBuilderBarSeatBinding>() != null ? 0 :
+                first.GetComponent<BistroBuilderBarPlaceableBinding>() != null ? 2 : 1;
+            int secondWeight = second.GetComponent<BistroBuilderBarSeatBinding>() != null ? 0 :
+                second.GetComponent<BistroBuilderBarPlaceableBinding>() != null ? 2 : 1;
+            return firstWeight != secondWeight ? firstWeight.CompareTo(secondWeight) : ComparePlaceablesByInstanceId(first, second);
+        });
+        FindFirstObjectByType<BistroBuilderOperationalSpatialCoordinator>()?.ReconcileOperationalClaims();
         var removalBudget = System.Diagnostics.Stopwatch.StartNew();
         for (int index = 0;
              index < placeableBuffer.Count;
@@ -805,6 +839,9 @@ public sealed class RestaurantStructureSaveSectionProvider :
         Physics.SyncTransforms();
         seatingTopologyService.RebuildImmediately();
 
+        if (!RestaurantBarSeatPersistence.ValidateRestored(data, loadedPlaceablesById, out string barLinkError))
+        { context.Fail(barLinkError); yield break; }
+
         if (!ValidateRestoredSeatLinks(
                 data,
                 out string seatLinkError
@@ -940,6 +977,9 @@ public sealed class RestaurantStructureSaveSectionProvider :
         {
             return 0;
         }
+
+        if (definition.Prefab.GetComponent<BistroBuilderBarPlaceableBinding>() != null) return 0;
+        if (definition.Prefab.GetComponent<BistroBuilderBarSeatBinding>() != null) return 3;
 
         if (definition.Prefab.GetComponent<RestaurantSeat>() != null)
         {

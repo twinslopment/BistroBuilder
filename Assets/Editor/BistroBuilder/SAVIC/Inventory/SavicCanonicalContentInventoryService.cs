@@ -35,6 +35,7 @@ namespace BistroBuilder.Editor.Savic
         internal int Orphaned =>
             Rows.Count(row =>
                 string.Equals(row.SourceLocation, "JOB_ONLY", StringComparison.Ordinal) ||
+                string.Equals(row.SourceLocation, "ARCHIVED_JOB_ONLY", StringComparison.Ordinal) ||
                 string.Equals(row.SourceLocation, "CONTENT_SOURCE_ORPHAN", StringComparison.Ordinal));
     }
 
@@ -191,14 +192,7 @@ namespace BistroBuilder.Editor.Savic
                 if (!result.TryGetValue(
                         job.sourceHash,
                         out SavicJobRecord current) ||
-                    ParseTimestamp(
-                        FirstNonEmpty(
-                            job.updatedUtc,
-                            job.createdUtc)) >
-                    ParseTimestamp(
-                        FirstNonEmpty(
-                            current.updatedUtc,
-                            current.createdUtc)))
+                    ShouldReplacePrimaryJob(current, job))
                 {
                     result[job.sourceHash] =
                         job;
@@ -206,6 +200,23 @@ namespace BistroBuilder.Editor.Savic
             }
 
             return result;
+        }
+
+        // Duplicate intake is an identity observation, not a processing
+        // outcome. A newer duplicate must not hide the original review/failure.
+        private static bool ShouldReplacePrimaryJob(
+            SavicJobRecord current, SavicJobRecord candidate)
+        {
+            bool currentDuplicate = string.Equals(current.state,
+                SavicJobState.DuplicateExact.ToString(), StringComparison.OrdinalIgnoreCase);
+            bool candidateDuplicate = string.Equals(candidate.state,
+                SavicJobState.DuplicateExact.ToString(), StringComparison.OrdinalIgnoreCase);
+            if (currentDuplicate != candidateDuplicate)
+                return currentDuplicate;
+            return ParseTimestamp(FirstNonEmpty(candidate.updatedUtc,
+                       candidate.createdUtc)) >
+                   ParseTimestamp(FirstNonEmpty(current.updatedUtc,
+                       current.createdUtc));
         }
 
         private static SavicCanonicalContentInventoryRow
@@ -386,14 +397,7 @@ namespace BistroBuilder.Editor.Savic
                 if (!latest.TryGetValue(
                         key,
                         out SavicJobRecord current) ||
-                    ParseTimestamp(
-                        FirstNonEmpty(
-                            job.updatedUtc,
-                            job.createdUtc)) >
-                    ParseTimestamp(
-                        FirstNonEmpty(
-                            current.updatedUtc,
-                            current.createdUtc)))
+                    ShouldReplacePrimaryJob(current, job))
                 {
                     latest[key] =
                         job;
@@ -466,8 +470,9 @@ namespace BistroBuilder.Editor.Savic
                         InMainCatalog =
                             false,
                         Reason =
-                            job.message ??
-                            string.Empty,
+                            archiveExists
+                                ? "Archived original exists, but its SAVIC manifest is missing."
+                                : "Original is missing from its recorded ContentSource path, and its SAVIC manifest is missing. The queue record alone cannot be published.",
                         UpdatedUtc =
                             updated,
                         SortTimestamp =
@@ -649,13 +654,12 @@ namespace BistroBuilder.Editor.Savic
         private static void DeduplicatePhysicalRows(
             SavicCanonicalContentInventorySnapshot snapshot)
         {
-            HashSet<string> manifestHashes =
+            HashSet<string> claimedHashes =
                 new HashSet<string>(
                     snapshot.Rows
                         .Where(row =>
-                            row.Manifest != null &&
-                            !string.IsNullOrWhiteSpace(
-                                row.SourceHash))
+                            (row.Manifest != null || row.LatestJob != null) &&
+                            !string.IsNullOrWhiteSpace(row.SourceHash))
                         .Select(row => row.SourceHash),
                     StringComparer.OrdinalIgnoreCase);
 
@@ -668,7 +672,7 @@ namespace BistroBuilder.Editor.Savic
                         StringComparison.Ordinal) &&
                     !string.IsNullOrWhiteSpace(
                         row.SourceHash) &&
-                    manifestHashes.Contains(
+                    claimedHashes.Contains(
                         row.SourceHash));
         }
 
@@ -733,7 +737,10 @@ namespace BistroBuilder.Editor.Savic
                 return "PUBLISHED";
             }
 
-            if (latestJob != null)
+            if (latestJob != null &&
+                !string.Equals(latestJob.state,
+                    SavicJobState.DuplicateExact.ToString(),
+                    StringComparison.OrdinalIgnoreCase))
                 return ResolveJobLifecycle(
                     latestJob.state);
 
@@ -814,7 +821,10 @@ namespace BistroBuilder.Editor.Savic
             SavicJobRecord latestJob)
         {
             if (!string.IsNullOrWhiteSpace(
-                    latestJob?.message))
+                    latestJob?.message) &&
+                !string.Equals(latestJob.state,
+                    SavicJobState.DuplicateExact.ToString(),
+                    StringComparison.OrdinalIgnoreCase))
             {
                 return latestJob.message;
             }
