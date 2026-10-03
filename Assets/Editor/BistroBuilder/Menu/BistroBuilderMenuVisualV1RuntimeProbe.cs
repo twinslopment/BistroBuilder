@@ -197,6 +197,23 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              plate?.Find("Menus/SectionIcon") != null &&
              plate?.Find("Rules/SectionIcon") != null,
              "Official menu iconography in the title and portfolio cards.");
+        string[] iconPaths = {
+            "Header/CartaHeaderIcon", "Menus/SectionIcon",
+            "Rules/SectionIcon", "RuleEditor/SectionIcon"
+        };
+        string[] iconNames = {
+            "carta_main", "mis_cartas", "reglas_activacion", "detalle_regla"
+        };
+        bool exactHeaders = true;
+        for (int i = 0; i < iconPaths.Length; i++)
+        {
+            Image icon = plate?.Find(iconPaths[i])?.GetComponent<Image>();
+            exactHeaders &= icon != null && icon.sprite != null &&
+                icon.sprite.name.Contains(iconNames[i]) &&
+                icon.preserveAspect && !icon.raycastTarget;
+        }
+        Pass(exactHeaders,
+            "V4 uses the supplied MENU book and three separate header sprites, including the new checklist detail icon.");
         Text tagline = plate?.Find("Header/Tagline")?.GetComponent<Text>();
         Text menuCount = plate?.Find("Menus/MenuCount")?.GetComponent<Text>();
         Text ruleCount = plate?.Find("Rules/RuleCount")?.GetComponent<Text>();
@@ -211,6 +228,12 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Pass(first != null && first.Find("EntryIcon") != null &&
              rowText != null && rowText.alignment == TextAnchor.MiddleLeft,
             "V2 Carta row uses official icon and left-aligned compact typography.");
+        Image rowIcon = first?.Find("EntryIcon")?.GetComponent<Image>();
+        Image menuHeading = plate?.Find("Menus/SectionIcon")?.GetComponent<Image>();
+        Pass(rowIcon != null && rowIcon.sprite != null &&
+             menuHeading != null && menuHeading.sprite != null &&
+             rowIcon.sprite != menuHeading.sprite,
+            "V4 keeps ordinary list-row icons; themed icons appear only beside section titles.");
         Transform overlay = plate?.Find("DeleteConfirmation");
         Button remove = plate?.Find("Menus/Eliminar")?.GetComponent<Button>();
         Pass(overlay != null && !overlay.gameObject.activeSelf &&
