@@ -20,6 +20,8 @@ public sealed class BistroBuilderSpatialProxyPart
     public Vector3 localForward = Vector3.forward;
     public List<Vector2> convexHull = new List<Vector2>();
     public bool enabled = true;
+    public bool hasVerticalExtent;
+    public float height;
 
     public BistroBuilderSpatialVolume BuildWorldVolume(Transform root)
     {
@@ -28,15 +30,19 @@ public sealed class BistroBuilderSpatialProxyPart
         Vector3 center = basis != null ? basis.TransformPoint(localCenter) : localCenter;
         Vector3 right = basis != null ? basis.right : Vector3.right;
         Vector3 forward = basis != null ? basis.forward : Vector3.forward;
+        BistroBuilderSpatialHeightRange heightRange = default;
+        if (hasVerticalExtent && ValidHeightBasis(basis))
+            heightRange = BistroBuilderSpatialHeightRange.Between(center.y - height * scale.y * 0.5f,
+                center.y + height * scale.y * 0.5f);
 
         if (shapeKind == BistroBuilderSpatialShapeKind.Circle)
         {
             float worldRadius = radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
-            return BistroBuilderSpatialVolume.Circle(center, worldRadius);
+            return BistroBuilderSpatialVolume.Circle(center, worldRadius).WithHeightRange(heightRange);
         }
 
         Vector2 half = GetApproximateHalfExtents(scale);
-        return BistroBuilderSpatialVolume.Box(center, right, forward, half);
+        return BistroBuilderSpatialVolume.Box(center, right, forward, half).WithHeightRange(heightRange);
     }
 
     public bool ContainsPoint(Transform root, Vector3 worldPoint, float expansion)
@@ -44,6 +50,7 @@ public sealed class BistroBuilderSpatialProxyPart
         if (!enabled) return false;
         Transform basis = anchor != null ? anchor : root;
         if (basis == null) return false;
+        if (hasVerticalExtent && !BuildWorldVolume(root).heightRange.Contains(worldPoint.y, expansion)) return false;
         Vector3 local = basis.InverseTransformPoint(worldPoint) - localCenter;
         float sx = Mathf.Max(0.0001f, Mathf.Abs(basis.lossyScale.x));
         float sz = Mathf.Max(0.0001f, Mathf.Abs(basis.lossyScale.z));
@@ -64,6 +71,13 @@ public sealed class BistroBuilderSpatialProxyPart
                        Mathf.Abs(local.z) <= Mathf.Max(0.01f, size.y * 0.5f) + ez;
         }
     }
+
+    internal bool ValidHeightBasis(Transform basis) => height > 0f && !float.IsNaN(height) &&
+        !float.IsInfinity(height) && basis != null &&
+        PositiveFinite(basis.lossyScale.x) && PositiveFinite(basis.lossyScale.y) && PositiveFinite(basis.lossyScale.z) &&
+        Vector3.Dot(basis.up, Vector3.up) > 0.9999f &&
+        !float.IsNaN(localCenter.y) && !float.IsInfinity(localCenter.y);
+    private static bool PositiveFinite(float value) => value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
 
     private bool ContainsCapsule(Vector3 local, float ex, float ez)
     {
@@ -208,6 +222,11 @@ public sealed class BistroBuilderAdaptiveSpatialProxy : MonoBehaviour
             BistroBuilderSpatialProxyPart part = parts[i];
             if (part == null || !part.enabled) continue;
             enabledCount++;
+            if (part.hasVerticalExtent && !part.ValidHeightBasis(part.anchor != null ? part.anchor : transform))
+            {
+                error = part.partId + ": invalid vertical extent or non-horizontal basis.";
+                return false;
+            }
             layers.Add(part.layer);
             if (string.IsNullOrWhiteSpace(part.partId) || !ids.Add(part.partId))
             {

@@ -79,7 +79,8 @@ public sealed class BistroBuilderSpatialAssessmentService : MonoBehaviour
             FindObjectsSortMode.InstanceID);
         for (int i = 0; i < behaviours.Length; i++)
         {
-            if (behaviours[i] is IBistroBuilderSpatialSemanticProvider provider)
+            if (behaviours[i] is IBistroBuilderSpatialSemanticProvider provider &&
+                (!(provider is IBistroBuilderSpatialLifecycleOwner owner) || owner.IsSpatialLifecycleActive))
                 provider.WriteSemanticVolumes(semanticVolumes);
         }
     }
@@ -161,8 +162,16 @@ public sealed class BistroBuilderSpatialAssessmentService : MonoBehaviour
         return (!string.IsNullOrWhiteSpace(first.relatedSubjectId) &&
                 string.Equals(first.relatedSubjectId, second.subjectId, StringComparison.Ordinal)) ||
                (!string.IsNullOrWhiteSpace(second.relatedSubjectId) &&
-                string.Equals(second.relatedSubjectId, first.subjectId, StringComparison.Ordinal));
+                string.Equals(second.relatedSubjectId, first.subjectId, StringComparison.Ordinal)) ||
+               ExactSemanticRelation(first, second) || ExactSemanticRelation(second, first);
     }
+
+    private static bool ExactSemanticRelation(BistroBuilderSpatialSemanticVolume first,
+        BistroBuilderSpatialSemanticVolume second) =>
+        !string.IsNullOrWhiteSpace(first.relatedSemanticSubjectId) &&
+        !string.IsNullOrWhiteSpace(first.relatedSemanticId) &&
+        string.Equals(first.relatedSemanticSubjectId, second.subjectId, StringComparison.Ordinal) &&
+        string.Equals(first.relatedSemanticId, second.semanticId, StringComparison.Ordinal);
 
     public static bool TryClassifyPair(
         BistroBuilderSpatialSemanticVolume first,

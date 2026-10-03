@@ -1,0 +1,35 @@
+PASS Canonical normal bottom bar visible
+PASS Normal bottom bar shares approved ivory/brass top-bar plate
+PASS Definitive normal bottom content exists
+PASS Cash uses approved icon
+PASS Satisfaction uses approved icon family
+PASS Kitchen uses approved icon
+PASS Waiting uses approved icon
+PASS Bottom center uses real restaurant-name readout
+PASS Bottom right uses real weather icon
+PASS Bottom right owns date/time
+PASS Bottom right owns pause and speed controls
+PASS Legacy 368B dock suppressed to avoid duplicate controls
+PASS Activity and contextual side surfaces exist
+PASS Activity and context share light authored surface
+PASS Activity and context share restrained brass boundary
+PASS Definitive bottom bar is isolated from global restyling
+PASS Selected-table context owns its authored light palette
+PASS Selected-table details card is light, not legacy dark
+PASS Legacy construction panel hidden in normal mode
+PASS Ten complete icons and original logo
+PASS Hover target active and interactable
+PASS Visible hover feedback in pointer-enter frame
+PASS Immediate press feedback
+PASS Immediate release feedback
+PASS 90ms hover settling; amount=1 active=True
+PASS Independent icon animation
+PASS Bar fits 1920
+PASS Compact height 1920
+PASS Full available width 1920
+PASS Bottom bar present 1920
+PASS Bottom bar fits 1920
+System.Exception: Normal top/bottom share physical height 1920
+  at BistroBuilderTopBarResponsiveTest.Check (System.Boolean value, System.String label) [0x00024] in C:\Users\mruperez\ProyectoBB\BB_SavicPresentation\Assets\Editor\BistroBuilder\UI\BistroBuilderTopBarResponsiveTest.cs:32 
+  at BistroBuilderTopBarResponsiveTest.Capture (System.Int32 width, System.Int32 height, System.String screen) [0x005cd] in C:\Users\mruperez\ProyectoBB\BB_SavicPresentation\Assets\Editor\BistroBuilder\UI\BistroBuilderTopBarResponsiveTest.cs:184 
+  at BistroBuilderTopBarResponsiveTest.Tick () [0x007d1] in C:\Users\mruperez\ProyectoBB\BB_SavicPresentation\Assets\Editor\BistroBuilder\UI\BistroBuilderTopBarResponsiveTest.cs:84 

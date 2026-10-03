@@ -11316,6 +11316,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 54314689c10f5c14f9120409bde72483, type: 2}
   - {fileID: 11400000, guid: c747c083c153b6c4caf38147bbe43efd, type: 2}
   - {fileID: 11400000, guid: cdbd8fa0f6f0e434d86304ad8cf1eead, type: 2}
+  sourceCatalogs:
+  - {fileID: 11400000, guid: db986eac9680ed24999bbce21e0718af, type: 2}
 --- !u!114 &263644953
 MonoBehaviour:
   m_ObjectHideFlags: 0

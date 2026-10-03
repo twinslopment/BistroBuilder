@@ -76,6 +76,9 @@ public sealed class RestaurantPlacementValidationService :
 
     private Coroutine initialValidationRoutine;
 
+    private readonly List<RestaurantPlacementShape> candidatePhysicalShapes = new List<RestaurantPlacementShape>(16);
+    private readonly List<RestaurantPlacementShape> otherPhysicalShapes = new List<RestaurantPlacementShape>(16);
+
     private void Awake()
     {
         CacheDependenciesIfNeeded();
@@ -245,6 +248,13 @@ public sealed class RestaurantPlacementValidationService :
                 candidateRootPosition,
                 candidateRootRotation
             );
+
+        if (!BistroBuilderPhysicalPlacementGeometry.TryWriteShapes(candidateFootprint,
+                candidateRootPosition, candidateRootRotation, candidatePhysicalShapes, out _))
+        {
+            return CreateResult(RestaurantPlacementValidationStatus.SystemUnavailable,
+                member, candidateFootprint, candidateArea);
+        }
 
         placementRegistry.CopyFootprintsInArea(
             candidateArea,
@@ -616,12 +626,11 @@ public sealed class RestaurantPlacementValidationService :
             RestaurantPlacementShape otherShape =
                 otherFootprint.BuildCurrentShape();
 
+            BistroBuilderPhysicalPlacementGeometry.TryWriteShapes(otherFootprint,
+                otherFootprint.transform.position, otherFootprint.transform.rotation, otherPhysicalShapes, out _);
+
             RestaurantPlacementConflictType conflict =
-                RestaurantPlacementCollisionUtility
-                    .EvaluateConflict(
-                        candidateShape,
-                        otherShape
-                    );
+                BistroBuilderPhysicalPlacementGeometry.EvaluateConflict(candidatePhysicalShapes, otherPhysicalShapes);
 
             RegisterNearestConflict(
                 conflict,
@@ -683,12 +692,10 @@ public sealed class RestaurantPlacementValidationService :
                     obstacle.MinimumClearance
                 );
 
+            otherPhysicalShapes.Clear();
+            otherPhysicalShapes.Add(obstacleShape);
             RestaurantPlacementConflictType conflict =
-                RestaurantPlacementCollisionUtility
-                    .EvaluateConflict(
-                        candidateShape,
-                        obstacleShape
-                    );
+                BistroBuilderPhysicalPlacementGeometry.EvaluateConflict(candidatePhysicalShapes, otherPhysicalShapes);
 
             RegisterNearestConflict(
                 conflict,

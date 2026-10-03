@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_table_40b9adf572e4445b8d85ade6c8cbbd84
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_table_40b9adf572e4445b8d85ade6c8cbbd84
+  displayName: Ornate Wooden Pedesta
+  category: 0
+  placementScope: 0
+  description: "Mesa integrada autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 9b658e16d73361d48987e557b1caaa74, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 2a2d98f519402b04d88e6442cd75904f, type: 3}
+  dimensionsCentimeters: {x: 59.19095, y: 75, z: 59.187447}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 783576153649618271, guid: 9ea81734d07b32f4cb09f8f9271aa725, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 6e8a98ed7f2c05846b692b3ef29a161c, type: 2}
+  purchasePrice: 120
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

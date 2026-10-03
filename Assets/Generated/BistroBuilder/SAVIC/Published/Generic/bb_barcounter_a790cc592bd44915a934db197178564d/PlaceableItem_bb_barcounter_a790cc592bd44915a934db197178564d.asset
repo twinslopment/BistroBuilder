@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_barcounter_a790cc592bd44915a934db197178564d
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_barcounter_a790cc592bd44915a934db197178564d
+  displayName: Arctic Curve Bar
+  category: 5
+  placementScope: 0
+  description: "Mostrador de barra con plazas de servicio y contrato espacial can\xF3nicos,
+    preparado por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 66417ca33c2324c4dab9863512647f34, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 68815a66fbd682146adb93b1c9a6a1ab, type: 3}
+  dimensionsCentimeters: {x: 434.03906, y: 122.99328, z: 278.85294}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 3693084748088940860, guid: 3c3c780010f10054bb8e27fe237e4e8e, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 3d5d1aeb0fce3a74c9689e5709d3fb89, type: 2}
+  purchasePrice: 575
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

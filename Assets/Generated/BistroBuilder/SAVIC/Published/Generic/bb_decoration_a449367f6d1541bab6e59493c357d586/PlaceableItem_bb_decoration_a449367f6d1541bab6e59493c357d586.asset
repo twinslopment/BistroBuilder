@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_decoration_a449367f6d1541bab6e59493c357d586
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_decoration_a449367f6d1541bab6e59493c357d586
+  displayName: Black Framed Floor Mi 0922102652
+  category: 3
+  placementScope: 0
+  description: "Elemento decorativo preparado autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 210c05a63fbef1d4890bd3de4e26333c, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 47fca11b95527864c8eb606ab3459c0b, type: 3}
+  dimensionsCentimeters: {x: 79.6354, y: 190.3, z: 5.1269}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 7801627793816567775, guid: f8f83f08501719e44b1a3680178e54d4, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 8571a81fadb0ce041acd7bb5460112fd, type: 2}
+  purchasePrice: 60
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

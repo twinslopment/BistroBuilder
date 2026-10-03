@@ -217,3 +217,7 @@ Debe verificarse en Game View:
 - Actividad y Contexto mantienen la misma familia visual sin invadir el viewport ni las barras.
 
 Solo después de estas comprobaciones y aprobación visual del usuario se integrará esta pasada en `integration/master-current-20260918`.
+
+## Integración SAVIC — 03/10/2026
+
+Combinación solicitada con SAVIC desde `b595fd99`, en copia aislada `BB_SavicPresentation`. Se preservan las autoridades existentes, paleta del cliente y geometría/aperturas/acabados; se integran catálogo canónico de persistencia, perfil Humanoid, módulos publicados y los 18 GLB LFS. Aceptación funcional: catálogo real/SaveGame de barra, tres taburetes y campana; gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos. La prueba responsive de igualdad de altura entre barras falla a 1920×1080 con las implementaciones de la base de presentación intactas; no se declara aceptación visual ni cierre de 21A. [Evidencia](../40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md).

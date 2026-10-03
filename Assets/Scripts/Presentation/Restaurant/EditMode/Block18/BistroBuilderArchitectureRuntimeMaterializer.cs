@@ -40,6 +40,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     private readonly List<Vector2> visualYIntervals = new List<Vector2>(8);
     private readonly List<Vector2> visualOpeningIntervals = new List<Vector2>(8);
     private GameObject wallVisualModulePrefab;
+    private BistroBuilderConstructionAssetKit constructionAssetKit;
     private Material fallbackWallMaterial;
     private BistroBuilderEditDocument lastDocument;
 
@@ -54,7 +55,6 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         ClearGenerated();
         lastDocument = document.DeepClone();
         ResolveWallSpatialContract();
-        ResolveWallVisualModule();
 
         int wallCount = 0;
         int floorCount = 0;
@@ -140,6 +140,9 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
             collider.sharedMesh = mesh;
         }
 
+        ResolveWallVisualModule(wall.wallDefinitionId);
+        if (CreateWallVisualModules(go.transform, wall, openings))
+            renderer.enabled = false;
         BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, renderer.sharedMaterial);
 
         BuildBlockedFloorIntervals(wall, openings, blockedIntervals);
@@ -334,10 +337,36 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         return fallbackWallMaterial;
     }
 
-    private void ResolveWallVisualModule()
+    private void ResolveWallVisualModule(string definitionId)
     {
-        if (!useWallVisualModule) { wallVisualModulePrefab = null; return; }
-        if (wallVisualModulePrefab == null && !string.IsNullOrWhiteSpace(wallVisualModuleResource))
+        wallVisualModulePrefab = null;
+        if (!useWallVisualModule)
+            return;
+
+        if (constructionAssetKit == null)
+            constructionAssetKit = BistroBuilderConstructionAssetKit.Load();
+
+        if (constructionAssetKit != null &&
+            constructionAssetKit.TryResolveWallVisual(
+                definitionId,
+                out GameObject registeredPrefab,
+                out Vector3 nominalSize))
+        {
+            wallVisualModulePrefab = registeredPrefab;
+            wallVisualModuleWidth = nominalSize.x;
+            wallVisualModuleHeight = nominalSize.y;
+            wallVisualModuleThickness = nominalSize.z;
+            return;
+        }
+
+        bool requestsDefault =
+            string.IsNullOrWhiteSpace(definitionId) ||
+            string.Equals(
+                definitionId.Trim(),
+                "wall.default",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (requestsDefault && !string.IsNullOrWhiteSpace(wallVisualModuleResource))
             wallVisualModulePrefab = Resources.Load<GameObject>(wallVisualModuleResource);
     }
 
@@ -349,8 +378,15 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         IReadOnlyList<BistroBuilderOpeningRecord> openings, IReadOnlyList<BistroBuilderWallRecord> neighbours = null)
     {
         if (parent == null || wall == null || !wall.wallId.IsValid) return false;
-        parent.gameObject.AddComponent<MeshFilter>().sharedMesh = BistroBuilderWallGeometryBuilder.Build(wall, openings, neighbours);
+        ResolveWallVisualModule(wall.wallDefinitionId);
         var material = ContinuousWallMaterial();
+        if (CreateWallVisualModules(parent, wall, openings))
+        {
+            BistroBuilderOpeningVisuals.Build(parent, wall, openings, material);
+            return true;
+        }
+        parent.gameObject.AddComponent<MeshFilter>().sharedMesh =
+            BistroBuilderWallGeometryBuilder.Build(wall, openings, neighbours);
         parent.gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
         BistroBuilderOpeningVisuals.Build(parent, wall, openings, material);
         return true;

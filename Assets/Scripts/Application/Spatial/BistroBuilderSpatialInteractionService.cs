@@ -91,7 +91,7 @@ public sealed class BistroBuilderSpatialInteractionService : MonoBehaviour
 
     private bool RegisterSubject(BistroBuilderSpatialSubject subject, bool bump)
     {
-        if (subject == null || string.IsNullOrWhiteSpace(subject.SubjectId)) return false;
+        if (subject == null || !subject.IsRegistrationEligible || string.IsNullOrWhiteSpace(subject.SubjectId)) return false;
         if (subjects.TryGetValue(subject.SubjectId, out BistroBuilderSpatialSubject existing))
         {
             if (existing == subject)
@@ -269,6 +269,12 @@ public sealed class BistroBuilderSpatialInteractionService : MonoBehaviour
         return true;
     }
 
+    public bool HasActiveLease(string leaseId)
+    {
+        CleanupExpiredLeases();
+        return !string.IsNullOrWhiteSpace(leaseId) && leases.TryGetValue(leaseId, out var lease) && lease != null;
+    }
+
     public bool TryReservePointWithAlternates(
         string ownerId,
         BistroBuilderSpatialClaimKind kind,
@@ -387,6 +393,20 @@ public sealed class BistroBuilderSpatialInteractionService : MonoBehaviour
         foreach (BistroBuilderSpatialLease lease in leases.Values)
             if (lease != null && lease.kind == kind) count++;
         return count;
+    }
+
+    /// <summary>Read-only native guard for placing/removing physical bodies.
+    /// It evaluates current leases; bindings never cache reservation authority.</summary>
+    public bool TryFindBlockingLease(BistroBuilderSpatialVolume volume, out BistroBuilderSpatialLease blocker)
+    {
+        CleanupExpiredLeases(); blocker = null;
+        foreach (var lease in leases.Values)
+        {
+            if (lease == null || lease.conflictMode == BistroBuilderSpatialConflictMode.Compatible ||
+                lease.conflictMode == BistroBuilderSpatialConflictMode.Degrade || !volume.Overlaps(lease.volume)) continue;
+            if (blocker == null || CompareLeasesDeterministically(lease, blocker) < 0) blocker = lease;
+        }
+        return blocker != null;
     }
 
     public bool BlocksTraversalPoint(Vector3 point, float radius, string requesterId)

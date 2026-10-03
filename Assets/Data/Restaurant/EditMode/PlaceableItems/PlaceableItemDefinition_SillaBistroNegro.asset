@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItemDefinition_SillaBistroNegro
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: chair_bistro_01_painted_black
+  displayName: "Silla bistr\xF3 \u2014 Negro"
+  category: 1
+  placementScope: 0
+  description: "Silla bistr\xF3 de madera con acabado negro pintado."
+  catalogIcon: {fileID: 21300000, guid: 1a5dffb180138b84e9b955048d5100fb, type: 3}
+  inspectorPreview: {fileID: 0}
+  dimensionsCentimeters: {x: 0, y: 0, z: 0}
+  finishProfile: {fileID: 0}
+  inspectorRules: 0
+  prefab: {fileID: 909394670989820039, guid: c5a3d11ba0e47fd46b8f8ee6af820fe7, type: 3}
+  editableDefinition: {fileID: 11400000, guid: fb950dcfaf089c3449381b9fa46d56eb, type: 2}
+  purchasePrice: 40
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

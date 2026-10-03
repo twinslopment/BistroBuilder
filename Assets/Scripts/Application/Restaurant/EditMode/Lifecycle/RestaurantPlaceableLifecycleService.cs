@@ -397,9 +397,11 @@ public sealed class RestaurantPlaceableLifecycleService :
             result =
                 RestaurantPlaceableLifecycleResult.Failure(
                     RestaurantPlaceableLifecycleFailureReason
-                        .PlaceableRegistrationFailed,
+                    .PlaceableRegistrationFailed,
                     placeable,
-                    "No se pudo registrar la identidad colocable."
+                    string.IsNullOrWhiteSpace(placeableRegistry.LastRegistrationError)
+                        ? "No se pudo registrar la identidad colocable."
+                        : placeableRegistry.LastRegistrationError
                 );
 
             return false;

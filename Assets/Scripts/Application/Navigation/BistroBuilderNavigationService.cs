@@ -14,6 +14,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
     [Header("Geometria")]
     [SerializeField, Min(0.2f)] private float gridCellSize = 0.45f;
     [SerializeField, Min(0.1f)] private float defaultAgentRadius = 0.28f;
+    [SerializeField, Min(0.1f)] private float defaultAgentHeight = 2f;
     [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 1.4f;
     [SerializeField] private int navMeshAreaMask = NavMesh.AllAreas;
     [SerializeField, Min(1000)] private int maximumExpandedGridNodes = 24000;
@@ -32,6 +33,8 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         new List<BistroBuilderNavigationAccessZone>(16);
     private readonly List<RestaurantPlacementShape> staticShapes =
         new List<RestaurantPlacementShape>(128);
+    private readonly List<RestaurantPlacementShape> physicalShapeScratch =
+        new List<RestaurantPlacementShape>(16);
     private readonly List<BistroBuilderDynamicCirculationEnvelope> dynamicEnvelopes =
         new List<BistroBuilderDynamicCirculationEnvelope>(32);
     private readonly Dictionary<string, AgentPresence> presences =
@@ -74,6 +77,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
     public bool ValidateConfiguration(out string error)
     {
         if (gridCellSize < 0.2f || defaultAgentRadius <= 0f ||
+            defaultAgentHeight <= 0f || float.IsNaN(defaultAgentHeight) || float.IsInfinity(defaultAgentHeight) ||
             maximumExpandedGridNodes < 1000)
         {
             error = "La configuracion de navegacion contiene limites invalidos.";
@@ -110,14 +114,22 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
             RestaurantPlacementFootprint footprint = footprints[i];
             if (footprint != null && footprint.BlocksOtherPlacements)
             {
-                RestaurantPlacementShape shape = footprint.BuildCurrentShape();
-                if (footprint.GetComponent<RestaurantSeat>() != null)
+                BistroBuilderSpatialSubject physicalSubject = footprint.GetComponent<BistroBuilderSpatialSubject>();
+                if (physicalSubject != null && !physicalSubject.IsRegistrationEligible) continue;
+                BistroBuilderPhysicalPlacementGeometry.TryWriteShapes(footprint,
+                    footprint.transform.position, footprint.transform.rotation, physicalShapeScratch, out _);
+                bool simpleParkedSeat = physicalShapeScratch.Count == 1 &&
+                    footprint.GetComponent<BistroBuilderSpatialPhysicalFootprintAdapter>() == null &&
+                    footprint.GetComponent<RestaurantSeat>() != null;
+                for (int partIndex = 0; partIndex < physicalShapeScratch.Count; partIndex++)
                 {
-                    shape = new RestaurantPlacementShape(
-                        shape.Center, shape.RightAxis, shape.ForwardAxis,
-                        shape.HalfExtents * parkedSeatObstacleScale, 0f);
+                    RestaurantPlacementShape shape = physicalShapeScratch[partIndex];
+                    if (simpleParkedSeat)
+                        shape = new RestaurantPlacementShape(
+                            shape.Center, shape.RightAxis, shape.ForwardAxis,
+                            shape.HalfExtents * parkedSeatObstacleScale, 0f);
+                    staticShapes.Add(shape);
                 }
-                staticShapes.Add(shape);
             }
         }
         dynamicEnvelopes.RemoveAll(item => item == null);
@@ -726,14 +738,9 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         if (!nearEndpoint && areas.Count > 0 && !IsInsideAllowedArea(point, agent))
             return false;
 
-        if (!nearEndpoint)
-        {
-            for (int i = 0; i < staticShapes.Count; i++)
-            {
-                if (PointInsideShape(point, staticShapes[i], radius + staticClearance))
-                    return false;
-            }
-        }
+        for (int i = 0; i < staticShapes.Count; i++)
+            if ((!nearEndpoint || staticShapes[i].RequiresCompleteClearance) &&
+                BlocksAgentShape(point, staticShapes[i], radius + staticClearance)) return false;
         if (spatialService != null &&
             spatialService.BlocksTraversalPoint(point, radius, requesterId))
             return false;
@@ -899,6 +906,10 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         int straight = Mathf.Max(dx, dz) - diagonal;
         return (diagonal * 1.4142135f + straight) * gridCellSize;
     }
+
+    private bool BlocksAgentShape(Vector3 point, RestaurantPlacementShape shape, float horizontalClearance) =>
+        shape.HeightRange.Overlaps(BistroBuilderSpatialHeightRange.Between(point.y, point.y + defaultAgentHeight),
+            staticClearance) && PointInsideShape(point, shape, horizontalClearance);
 
     private static bool PointInsideShape(
         Vector3 point,

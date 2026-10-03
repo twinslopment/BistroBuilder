@@ -23,3 +23,9 @@ MonoBehaviour:
   - {fileID: 7628152649625046396, guid: 55b0bb69995530e46822b56b9385292b, type: 3}
   - {fileID: 8998242277823643212, guid: a250bf6e830a3614b81cbba9c8721b70, type: 3}
   - {fileID: 713648938733528280, guid: 59b4ac747fa0b694db43f86281964aa7, type: 3}
+  openingAssets:
+  - definitionId: bb_door_ffaf190901fc47e6a616f234cd399598
+    openingType: door
+    prefab: {fileID: 3532442497057857578, guid: 9c90c5e3d4e9c474caccad78aa0c4b80, type: 3}
+    nominalSizeMeters: {x: 0.819302, y: 1.8996711, z: 0.17103355}
+  wallVisualAssets: []

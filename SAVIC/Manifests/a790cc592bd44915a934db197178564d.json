@@ -1,0 +1,1359 @@
+{
+    "schemaVersion": 1,
+    "savicVersion": "0.1.0",
+    "pipelineVersion": "intake-v1",
+    "savicId": "a790cc592bd44915a934db197178564d",
+    "canonicalContentId": "bb_barcounter_a790cc592bd44915a934db197178564d",
+    "status": "PUBLISHED",
+    "family": "ServiceEquipment",
+    "type": "BarCounter",
+    "category": "ServiceEquipment",
+    "createdUtc": "2026-09-25T12:58:32.5099231Z",
+    "updatedUtc": "2026-10-03T16:19:52.7305521Z",
+    "source": {
+        "sourceHash": "0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455",
+        "originalFileName": "Meshy_AI_Arctic_Curve_Bar_0922105448_generate.glb",
+        "extension": ".glb",
+        "sourceKind": "Model3D",
+        "archivedRelativePath": "ContentSource/SHA256/0c/0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455/Meshy_AI_Arctic_Curve_Bar_0922105448_generate.glb",
+        "byteLength": 66037768,
+        "originalLastWriteUtcTicks": 0,
+        "ingestedUtc": "2026-09-25T12:58:32.5099231Z",
+        "providerMetadataRelativePath": "ContentSource/ProviderMetadata/8b5515909b8dad7075c3e927bb5e10d59f02a6f8d0be18478382be9de6a0f97f.json",
+        "providerMetadataHash": "162f03a4fcddae307ebcf00eed2207ef6329d3a1cfc7916a9ee6968dec8983e1"
+    },
+    "model3D": {
+        "analyzed": true,
+        "analyzerVersion": "3.0.0",
+        "hasUsableBounds": true,
+        "boundsCenterX": 0.00030750036239624023,
+        "boundsCenterY": 0.00027370452880859375,
+        "boundsCenterZ": -0.0004649162292480469,
+        "widthMeters": 1.9020037651062012,
+        "heightMeters": 0.5389691591262817,
+        "depthMeters": 1.2219622135162354,
+        "rendererCount": 1,
+        "meshInstanceCount": 1,
+        "uniqueMeshCount": 1,
+        "vertexCount": 1374244,
+        "triangleCount": 2754580,
+        "materialSlotCount": 1,
+        "uniqueMaterialCount": 1,
+        "missingMaterialSlots": 0,
+        "texturedMaterialCount": 0,
+        "hasVertexColors": false,
+        "hasUv0": false,
+        "hasNonDefaultBaseColor": false,
+        "appearanceDataCompleteness": "NONE",
+        "hasSkinnedMeshes": false,
+        "hasNegativeScale": false,
+        "geometry": {
+            "analyzed": true,
+            "analyzerVersion": "2.0.0",
+            "usable": true,
+            "meshInstanceCount": 1,
+            "sourceTriangleCount": 2754580,
+            "sampledTriangleCount": 229549,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 0,
+            "maximumSamplingStride": 12,
+            "estimatedSurfaceAreaSquareMeters": 7.619687080383301,
+            "upwardFacingAreaRatio": 0.15910354256629945,
+            "horizontalAreaRatio": 0.3026428520679474,
+            "verticalAreaRatio": 0.5917505621910095,
+            "upperBandAreaRatio": 0.2673456072807312,
+            "lowerBandAreaRatio": 0.5419703722000122,
+            "surfaceAreaCentroidHeight01": 0.4022030532360077,
+            "upperUpwardProjectedCoverage": 0.28587839007377627,
+            "lowerHorizontalProjectedCoverage": 0.33140504360198977,
+            "evidence": "upward area 0.159; upper-band area 0.267; lower-band area 0.542; surface centroid height 0.402; upper projected coverage 0.286."
+        },
+        "chairGeometry": {
+            "analyzed": true,
+            "analyzerVersion": "2.0.0",
+            "usable": true,
+            "sourceTriangleCount": 2754580,
+            "sampledTriangleCount": 196755,
+            "invalidTriangleCount": 0,
+            "degenerateTriangleCount": 1,
+            "maximumSamplingStride": 14,
+            "seatHeight01": 0.6267269849777222,
+            "seatHeightMeters": 0.3377865254878998,
+            "seatUpwardAreaRatio": 0.06807220727205277,
+            "seatProjectedCoverage": 0.2289949506521225,
+            "upperVerticalAreaRatio": 0.08466159552335739,
+            "upperVerticalCentroidX01": 0.6032922267913818,
+            "upperVerticalCentroidZ01": 0.3215930461883545,
+            "backAxis": "Z",
+            "backSide": "NEGATIVE",
+            "backEdgeBias": 0.356813907623291,
+            "frontDirectionLocalX": 0.0,
+            "frontDirectionLocalZ": 1.0,
+            "lowerSupportAreaRatio": 0.6953109502792358,
+            "confidenceScore": 0.5266022086143494,
+            "evidence": "seat height 0.627; seat projected coverage 0.229; seat upward area 0.068; upper vertical area 0.085; inferred back Z/NEGATIVE bias 0.357; lower support area 0.695; confidence 0.527."
+        },
+        "semanticParts": {
+            "analyzed": false,
+            "analyzerVersion": "3.0.0",
+            "automationReady": false,
+            "rawRegionCount": 0,
+            "regionDetailMode": "FULL",
+            "rawRegionDetailTruncated": false,
+            "semanticPartCount": 0,
+            "semanticCoverage": 0.0,
+            "unresolvedAreaRatio": 0.0,
+            "supportPattern": {
+                "analyzed": false,
+                "mode": "UNASSESSED",
+                "confidence": "UNKNOWN",
+                "confidenceScore": 0.0,
+                "zoneCount": 0,
+                "supportSpanXRatio": 0.0,
+                "supportSpanZRatio": 0.0,
+                "supportPolygonAreaRatio": 0.0,
+                "centerSupported": false,
+                "broadBaseAreaRatio": 0.0,
+                "zones": [],
+                "evidence": ""
+            },
+            "parts": [],
+            "relations": [],
+            "evidence": "Semantic part analysis supports Table and Chair content in V1.",
+            "analyzedUtc": "2026-10-02T23:27:42.0352968Z"
+        },
+        "dominantMaterialSemantic": "Unknown",
+        "dominantMaterialConfidence": "UNKNOWN",
+        "materials": [
+            {
+                "materialName": "",
+                "shaderName": "Shader Graphs/glTF-pbrMetallicRoughness",
+                "semantic": "Unknown",
+                "semanticConfidence": "UNKNOWN",
+                "semanticScore": 0.0,
+                "metallic": 0.0,
+                "smoothness": 0.0,
+                "baseColorR": 1.0,
+                "baseColorG": 1.0,
+                "baseColorB": 1.0,
+                "baseColorA": 1.0,
+                "transparent": false,
+                "textureCount": 0,
+                "textureNames": "",
+                "evidence": "No conservative material semantic evidence."
+            }
+        ],
+        "analyzedUtc": "2026-10-02T23:27:41.7570931Z"
+    },
+    "classification": {
+        "classified": true,
+        "classifierVersion": "4.7.0",
+        "family": "ServiceEquipment",
+        "type": "BarCounter",
+        "category": "ServiceEquipment",
+        "confidence": "HIGH",
+        "score": 0.8600000143051148,
+        "explicitTypeToken": true,
+        "nameBacked": true,
+        "geometryBacked": false,
+        "evidence": "Source subject explicitly identifies a bar counter. Compound geometry, native service and runtime acceptance remain publication requirements.",
+        "classifiedUtc": "2026-10-02T23:27:42.0269033Z"
+    },
+    "materialSemantic": {
+        "resolved": false,
+        "resolverVersion": "1.0.0",
+        "semantic": "Unknown",
+        "confidence": "UNKNOWN",
+        "score": 0.0,
+        "source": "NONE",
+        "evidence": "No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+        "resolvedUtc": "2026-10-02T23:27:42.0358053Z"
+    },
+    "incremental": {
+        "evaluatorVersion": "1.1.0",
+        "geometryFingerprint": "ba3910c4b949f7eed04b9f63510f58738d8610e6279e09fa21807d88e03c7d45",
+        "appearanceFingerprint": "7f2682083ebc40a7be56a689013eff2114812408909dad3f3a210d8cf7c588c0",
+        "lastAction": "FullRebuild",
+        "reason": "No compatible published baseline exists.",
+        "reusedGeometry": false,
+        "reusedSemanticParts": false,
+        "reusedClassification": false,
+        "reusedColliders": false,
+        "appearanceOnlyRefresh": false,
+        "reuseCount": 0,
+        "fullRebuildCount": 1,
+        "appearanceRefreshCount": 0,
+        "evaluatedUtc": "2026-10-02T23:27:42.0258879Z"
+    },
+    "tableAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "uniformScale": 1.0,
+        "visualYawDegrees": 0.0,
+        "finalWidthMeters": 0.0,
+        "finalHeightMeters": 0.0,
+        "finalDepthMeters": 0.0,
+        "capacity": 0,
+        "suggestedPurchasePriceEuro": 0,
+        "scaleCorrectionApplied": false,
+        "templatePrefabAssetPath": "",
+        "seatingDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "tableColliders": {
+        "generated": false,
+        "builderVersion": "",
+        "strategy": "UNSET",
+        "colliderCount": 0,
+        "supportColliderCount": 0,
+        "semanticBacked": false,
+        "evidence": "",
+        "generatedUtc": ""
+    },
+    "tableSpatial": {
+        "validated": false,
+        "validatorVersion": "",
+        "contractAssetPath": "",
+        "contractId": "",
+        "familyId": "",
+        "configurationId": "",
+        "seatBayPortCount": 0,
+        "emittedSeatBayCount": 0,
+        "runtimeBindingValidated": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "tableNavigation": {
+        "validated": false,
+        "validatorVersion": "",
+        "footprintBlocksNavigation": false,
+        "footprintWidthMeters": 0.0,
+        "footprintDepthMeters": 0.0,
+        "defaultAgentRadiusMeters": 0.0,
+        "requiredEndpointClearanceMeters": 0.0,
+        "customerEndpointClearanceMeters": 0.0,
+        "waiterEndpointClearanceMeters": 0.0,
+        "solidColliderCount": 0,
+        "usesCanonicalFootprintTopology": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "tablePersistence": {
+        "validated": false,
+        "validatorVersion": "",
+        "sourceCatalogAssetPath": "",
+        "canonicalContentId": "",
+        "itemDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "catalogResolvable": false,
+        "prefabResolvable": false,
+        "functionalTableIdValid": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "uniformScale": 1.0,
+        "visualYawDegrees": 0.0,
+        "finalWidthMeters": 0.0,
+        "finalHeightMeters": 0.0,
+        "finalDepthMeters": 0.0,
+        "finalSeatHeightMeters": 0.0,
+        "sourceFrontLocalX": 0.0,
+        "sourceFrontLocalZ": 0.0,
+        "canonicalFrontLocalX": 0.0,
+        "canonicalFrontLocalZ": 1.0,
+        "suggestedPurchasePriceEuro": 0,
+        "scaleCorrectionApplied": false,
+        "templatePrefabAssetPath": "",
+        "seatUseProfileAssetPath": "",
+        "editableDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "itemDefinitionAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "chairColliders": {
+        "generated": false,
+        "builderVersion": "",
+        "strategy": "UNSET",
+        "colliderCount": 0,
+        "seatColliderCount": 0,
+        "backColliderCount": 0,
+        "supportColliderCount": 0,
+        "armColliderCount": 0,
+        "semanticBacked": false,
+        "evidence": "",
+        "generatedUtc": ""
+    },
+    "chairSpatial": {
+        "validated": false,
+        "validatorVersion": "",
+        "contractAssetPath": "",
+        "contractId": "",
+        "familyId": "",
+        "configurationId": "",
+        "runtimeBindingValidated": false,
+        "staticVolumeCount": 0,
+        "operationalVolumeCount": 0,
+        "dynamicVolumeCount": 0,
+        "semanticVolumeCount": 0,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairNavigation": {
+        "validated": false,
+        "validatorVersion": "",
+        "footprintBlocksNavigation": false,
+        "footprintWidthMeters": 0.0,
+        "footprintDepthMeters": 0.0,
+        "seatHeightMeters": 0.0,
+        "approachDistanceMeters": 0.0,
+        "approachRadiusMeters": 0.0,
+        "solidColliderCount": 0,
+        "canonicalFrontPositiveZ": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "chairPersistence": {
+        "validated": false,
+        "validatorVersion": "",
+        "sourceCatalogAssetPath": "",
+        "canonicalContentId": "",
+        "itemDefinitionAssetPath": "",
+        "prefabAssetPath": "",
+        "catalogResolvable": false,
+        "prefabResolvable": false,
+        "seatComponentValid": false,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "genericPlaceable": {
+        "planned": true,
+        "plannerVersion": "2.2.0",
+        "placementMode": "FLOOR",
+        "category": "ServiceEquipment",
+        "finalWidthMeters": 4.340390682220459,
+        "finalHeightMeters": 1.2299327850341797,
+        "finalDepthMeters": 2.788529396057129,
+        "rotationStepDegrees": 90.0,
+        "minimumClearanceMeters": 0.05000000074505806,
+        "suggestedPurchasePriceEuro": 575,
+        "requiresFunctionalAdapter": true,
+        "integrationMode": "NATIVE_BAR_COUNTER",
+        "requiredAreaCapabilityId": "customer_seating",
+        "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Placeable_bb_barcounter_a790cc592bd44915a934db197178564d.prefab",
+        "editableDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Editable_bb_barcounter_a790cc592bd44915a934db197178564d.asset",
+        "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/PlaceableItem_bb_barcounter_a790cc592bd44915a934db197178564d.asset",
+        "planReason": "Bar counter requires canonical customer-service area, native bar registry/BBSIS and real runtime acceptance.",
+        "plannedUtc": "2026-10-02T23:27:43.1401517Z"
+    },
+    "genericPlaceableReadiness": {
+        "validated": true,
+        "validatorVersion": "2.3.0",
+        "floorPlacementReady": true,
+        "colliderReady": true,
+        "footprintReady": true,
+        "catalogResolvable": true,
+        "persistenceReady": true,
+        "navigationReady": true,
+        "spatialContractRequired": true,
+        "areaCapabilityReady": true,
+        "functionalAdapterReady": true,
+        "requiredAreaCapabilityId": "customer_seating",
+        "integrationMode": "NATIVE_BAR_COUNTER",
+        "prefabAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Placeable_bb_barcounter_a790cc592bd44915a934db197178564d.prefab",
+        "itemDefinitionAssetPath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/PlaceableItem_bb_barcounter_a790cc592bd44915a934db197178564d.asset",
+        "evidence": "Native bar compound body/ports, canonical catalog identity and verified creation/navigation/lease/SaveGame acceptance match the prefab.",
+        "validatedUtc": "2026-10-02T23:27:45.7226830Z"
+    },
+    "floorLamp": {
+        "planned": false,
+        "plannerVersion": "",
+        "profileVersion": "",
+        "profileFingerprint": "",
+        "sourceHash": "",
+        "providerMetadataHash": "",
+        "emitterLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "shadeCenter": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "shadeSize": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "intensity": 0.0,
+        "rangeMeters": 0.0,
+        "colorTemperatureKelvin": 0.0,
+        "inputFingerprint": "",
+        "evidence": ""
+    },
+    "barCounter": {
+        "planned": true,
+        "plannerVersion": "1.0.0",
+        "geometryVersion": "1.2.0",
+        "profileVersion": "1.0.0",
+        "profileFingerprint": "af26bd7e123961ebc3a589778c9ea79f6c9b6ee5bc7b5ead4d62f6dc0b9926f5",
+        "sourceHash": "0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455",
+        "providerMetadataHash": "162f03a4fcddae307ebcf00eed2207ef6329d3a1cfc7916a9ee6968dec8983e1",
+        "inputFingerprint": "419071c6fcb755a51ff3a0b4a194016642178c5b31251c2dea643e447e6083d6",
+        "uniformScale": 2.2820096015930177,
+        "sourceCounterHeightMeters": 0.4601207375526428,
+        "counterHeightMeters": 1.0499999523162842,
+        "upperSurfaceCoverage": 0.09606704860925675,
+        "finalSizeMeters": {
+            "x": 4.340390682220459,
+            "y": 1.2299327850341797,
+            "z": 2.788529396057129
+        },
+        "waiterLocalPosition": {
+            "x": -0.31648683547973635,
+            "y": 0.0,
+            "z": 0.09774460643529892
+        },
+        "customerLocalPosition": {
+            "x": -0.31648683547973635,
+            "y": 0.0,
+            "z": -1.8442647457122803
+        },
+        "openingDirection": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        "waiterClearanceMeters": 0.6675531268119812,
+        "physicalBoxes": [
+            {
+                "center": {
+                    "x": -0.2260620892047882,
+                    "y": 0.6149663925170898,
+                    "z": -1.3490524291992188
+                },
+                "size": {
+                    "x": 0.8138231635093689,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": -0.22606202960014344,
+                    "y": 0.6149663925170898,
+                    "z": -1.2586275339126588
+                },
+                "size": {
+                    "x": 1.1755224466323853,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": -0.13563717901706696,
+                    "y": 0.6149663925170898,
+                    "z": -1.1682027578353882
+                },
+                "size": {
+                    "x": 1.5372217893600464,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -0.09042488038539887,
+                    "y": 0.6149663925170898,
+                    "z": -1.0777778625488282
+                },
+                "size": {
+                    "x": 1.989345669746399,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -0.0904248058795929,
+                    "y": 0.6149663925170898,
+                    "z": -0.9873531460762024
+                },
+                "size": {
+                    "x": 2.3510448932647707,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -0.09042473882436753,
+                    "y": 0.6149663925170898,
+                    "z": -0.8969282507896423
+                },
+                "size": {
+                    "x": 2.7127444744110109,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -0.0904248058795929,
+                    "y": 0.6149663925170898,
+                    "z": -0.8065035343170166
+                },
+                "size": {
+                    "x": 2.8935937881469728,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.0398852825164796,
+                    "y": 0.6149663925170898,
+                    "z": -0.7160786390304565
+                },
+                "size": {
+                    "x": 1.3563721179962159,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 0.5877612829208374,
+                    "y": 0.6149663925170898,
+                    "z": -0.7160786390304565
+                },
+                "size": {
+                    "x": 1.5372217893600464,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.22073495388031,
+                    "y": 0.6149663925170898,
+                    "z": -0.6256539225578308
+                },
+                "size": {
+                    "x": 1.3563722372055054,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 0.6329736709594727,
+                    "y": 0.6149663925170898,
+                    "z": -0.6256539225578308
+                },
+                "size": {
+                    "x": 1.627646565437317,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.3563721179962159,
+                    "y": 0.6149663925170898,
+                    "z": -0.5352290868759155
+                },
+                "size": {
+                    "x": 1.4467967748641968,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 0.7686108350753784,
+                    "y": 0.6149663925170898,
+                    "z": -0.5352290868759155
+                },
+                "size": {
+                    "x": 1.3563722372055054,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.4920092821121216,
+                    "y": 0.6149663925170898,
+                    "z": -0.44480425119400027
+                },
+                "size": {
+                    "x": 1.3563722372055054,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 0.9494604468345642,
+                    "y": 0.6149663925170898,
+                    "z": -0.44480425119400027
+                },
+                "size": {
+                    "x": 1.1755224466323853,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.5372217893600464,
+                    "y": 0.6149663925170898,
+                    "z": -0.35437944531440737
+                },
+                "size": {
+                    "x": 1.2659473419189454,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 1.0850976705551148,
+                    "y": 0.6149663925170898,
+                    "z": -0.35437944531440737
+                },
+                "size": {
+                    "x": 0.9042479991912842,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.6728590726852418,
+                    "y": 0.6149663925170898,
+                    "z": -0.26395466923713686
+                },
+                "size": {
+                    "x": 0.9946728348731995,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": 1.1755224466323853,
+                    "y": 0.6149663925170898,
+                    "z": -0.26395466923713686
+                },
+                "size": {
+                    "x": 0.9042479395866394,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": -1.7180713415145875,
+                    "y": 0.6149663925170898,
+                    "z": -0.17352981865406037
+                },
+                "size": {
+                    "x": 0.9042481184005737,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 1.13031005859375,
+                    "y": 0.6149663925170898,
+                    "z": -0.17352981865406037
+                },
+                "size": {
+                    "x": 0.9946727752685547,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.7632838487625123,
+                    "y": 0.6149663925170898,
+                    "z": -0.08310498297214508
+                },
+                "size": {
+                    "x": 0.6329736113548279,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": 1.1755225658416749,
+                    "y": 0.6149663925170898,
+                    "z": -0.08310498297214508
+                },
+                "size": {
+                    "x": 1.0850977897644044,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": -1.8537085056304932,
+                    "y": 0.6149663925170898,
+                    "z": 0.007319794502109289
+                },
+                "size": {
+                    "x": 0.4521239697933197,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 1.22073495388031,
+                    "y": 0.6149663925170898,
+                    "z": 0.007319794502109289
+                },
+                "size": {
+                    "x": 0.994672954082489,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": -1.898921012878418,
+                    "y": 0.6149663925170898,
+                    "z": 0.09774456918239594
+                },
+                "size": {
+                    "x": 0.1808496117591858,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": 1.2659473419189454,
+                    "y": 0.6149663925170898,
+                    "z": 0.09774456918239594
+                },
+                "size": {
+                    "x": 1.0850976705551148,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": 1.3111597299575806,
+                    "y": 0.6149663925170898,
+                    "z": 0.1881694197654724
+                },
+                "size": {
+                    "x": 0.9946728944778442,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 0.9042481184005737,
+                    "y": 0.6149663925170898,
+                    "z": 0.2785942554473877
+                },
+                "size": {
+                    "x": 0.18084968626499177,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": 1.5372217893600464,
+                    "y": 0.6149663925170898,
+                    "z": 0.2785942554473877
+                },
+                "size": {
+                    "x": 0.7233983278274536,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": 1.582434058189392,
+                    "y": 0.6149663925170898,
+                    "z": 0.3690190315246582
+                },
+                "size": {
+                    "x": 0.6329736113548279,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 1.627646565437317,
+                    "y": 0.6149663925170898,
+                    "z": 0.5046562552452087
+                },
+                "size": {
+                    "x": 0.7233986258506775,
+                    "y": 1.2299327850341797,
+                    "z": 0.1808496117591858
+                }
+            },
+            {
+                "center": {
+                    "x": 1.6728590726852418,
+                    "y": 0.6149663925170898,
+                    "z": 0.6402934789657593
+                },
+                "size": {
+                    "x": 0.632973849773407,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042488038539887
+                }
+            },
+            {
+                "center": {
+                    "x": 1.7180713415145875,
+                    "y": 0.6149663925170898,
+                    "z": 0.7307183146476746
+                },
+                "size": {
+                    "x": 0.7233986258506775,
+                    "y": 1.2299327850341797,
+                    "z": 0.0904248058795929
+                }
+            },
+            {
+                "center": {
+                    "x": 1.7632838487625123,
+                    "y": 0.6149663925170898,
+                    "z": 0.8211430311203003
+                },
+                "size": {
+                    "x": 0.6329737305641174,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042473882436753
+                }
+            },
+            {
+                "center": {
+                    "x": 1.8084962368011475,
+                    "y": 0.6149663925170898,
+                    "z": 0.9115678071975708
+                },
+                "size": {
+                    "x": 0.7233984470367432,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042467176914215
+                }
+            },
+            {
+                "center": {
+                    "x": 1.8537085056304932,
+                    "y": 0.6149663925170898,
+                    "z": 1.0924174785614014
+                },
+                "size": {
+                    "x": 0.6329736113548279,
+                    "y": 1.2299327850341797,
+                    "z": 0.2712743580341339
+                }
+            },
+            {
+                "center": {
+                    "x": 1.8537085056304932,
+                    "y": 0.6149663925170898,
+                    "z": 1.273267149925232
+                },
+                "size": {
+                    "x": 0.45212411880493166,
+                    "y": 1.2299327850341797,
+                    "z": 0.09042501449584961
+                }
+            },
+            {
+                "center": {
+                    "x": 1.7632838487625123,
+                    "y": 0.6149663925170898,
+                    "z": 1.3563722372055054
+                },
+                "size": {
+                    "x": 0.2712743580341339,
+                    "y": 1.2299327850341797,
+                    "z": 0.07578521966934204
+                }
+            }
+        ],
+        "evidence": "Source triangles prove the highest broad upper surface and open compound body. Counter height, limits and port separation are authored profile settings; uniform source scale preserved. Geometry/ports do not grant publication or prove runtime service/persistence."
+    },
+    "barCounterRuntime": {
+        "verifierVersion": "1.1.0",
+        "planFingerprint": "419071c6fcb755a51ff3a0b4a194016642178c5b31251c2dea643e447e6083d6",
+        "prefabDependencyHash": "f11d1d3469c98eefbd2f3bc8e650f91e",
+        "sourceHash": "0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455",
+        "reportRelativePath": "Library/BistroBuilder/SAVIC/Logs/savic-barcounter-candidate-a790cc592bd44915a934db197178564d-runtime-playtest.txt",
+        "reportHash": "4d09f1ad095dcbce8cdb6e5ae8fcca11e1a9bc834b3eab21f55f931666228241",
+        "verifiedUtc": "2026-10-03T16:19:52.7305521Z",
+        "creationPassed": true,
+        "nativeBindingPassed": true,
+        "routePassed": true,
+        "leasePassed": true,
+        "saveLoadPassed": true,
+        "cleanupPassed": true,
+        "consoleClean": true
+    },
+    "barStool": {
+        "planned": false,
+        "plannerVersion": "",
+        "geometryVersion": "",
+        "profileVersion": "",
+        "profileFingerprint": "",
+        "sourceHash": "",
+        "providerMetadataHash": "",
+        "inputFingerprint": "",
+        "facingEvidence": "",
+        "sourceSeatHeightMeters": 0.0,
+        "seatHeightMeters": 0.0,
+        "counterHeightMeters": 0.0,
+        "uniformScale": 0.0,
+        "visualYawDegrees": 0.0,
+        "hasBackrest": false,
+        "finalSizeMeters": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "seatLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "sourceFacingMetric": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "approachLocalPosition": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "approachRadiusMeters": 0.0,
+        "spotPositionToleranceMeters": 0.0,
+        "maximumFacingAngleDegrees": 0.0
+    },
+    "barStoolRuntime": {
+        "verifierVersion": "",
+        "sourceHash": "",
+        "planFingerprint": "",
+        "prefabDependencyHash": "",
+        "customerPrefabDependencyHash": "",
+        "animationCatalogDependencyHash": "",
+        "reportRelativePath": "",
+        "reportHash": "",
+        "verifiedUtc": "",
+        "creationPassed": false,
+        "associationPassed": false,
+        "routePassed": false,
+        "leasePassed": false,
+        "seatedAnimationPassed": false,
+        "saveLoadPassed": false,
+        "repeatedLoadPassed": false,
+        "cleanupPassed": false,
+        "consoleClean": false
+    },
+    "overheadEquipment": {
+        "planned": false,
+        "plannerVersion": "",
+        "profileVersion": "",
+        "profileFingerprint": "",
+        "sourceHash": "",
+        "providerMetadataHash": "",
+        "inputFingerprint": "",
+        "uniformScale": 0.0,
+        "installationBottomMeters": 0.0,
+        "finalSizeMeters": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "evidence": ""
+    },
+    "overheadEquipmentRuntime": {
+        "verifierVersion": "",
+        "sourceHash": "",
+        "planFingerprint": "",
+        "prefabDependencyHash": "",
+        "reportRelativePath": "",
+        "reportHash": "",
+        "verifiedUtc": "",
+        "catalogMode": "",
+        "creationPassed": false,
+        "provisionalIsolationPassed": false,
+        "nativeBindingPassed": false,
+        "areaCapabilityPassed": false,
+        "routePassed": false,
+        "leasePassed": false,
+        "saveLoadPassed": false,
+        "repeatedLoadPassed": false,
+        "cleanupPassed": false,
+        "consoleClean": false
+    },
+    "construction": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "definitionId": "",
+        "openingType": "",
+        "nominalWidthMeters": 0.0,
+        "nominalHeightMeters": 0.0,
+        "nominalDepthMeters": 0.0,
+        "visualYawDegrees": 0.0,
+        "prefabAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "constructionReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "prefabResolvable": false,
+        "constructionKitResolvable": false,
+        "definitionResolvable": false,
+        "passageColliderSafe": false,
+        "wallVisualOnly": false,
+        "definitionId": "",
+        "role": "UNSET",
+        "prefabAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "imageAuthoring": {
+        "planned": false,
+        "plannerVersion": "",
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "importAsSprite": false,
+        "sRgb": true,
+        "mipmaps": false,
+        "maximumTextureSize": 2048,
+        "publishedAssetPath": "",
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "imageReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "textureResolvable": false,
+        "spriteResolvable": false,
+        "importerProfileValid": false,
+        "catalogBindingValid": false,
+        "widthPixels": 0,
+        "heightPixels": 0,
+        "sourceHasAlpha": false,
+        "role": "UNSET",
+        "mapType": "GENERIC",
+        "targetIconId": "",
+        "publishedAssetPath": "",
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "contentBundle": {
+        "planned": false,
+        "plannerVersion": "",
+        "schemaId": "",
+        "schemaVersion": 0,
+        "bundleId": "",
+        "ingredientCount": 0,
+        "dishCount": 0,
+        "recipeCount": 0,
+        "supplierCount": 0,
+        "planReason": "",
+        "plannedUtc": ""
+    },
+    "contentBundleReadiness": {
+        "validated": false,
+        "validatorVersion": "",
+        "ingredientCatalogValid": false,
+        "dishCatalogValid": false,
+        "recipeCatalogValid": false,
+        "supplierAuthoringValid": false,
+        "ingredientsPublished": 0,
+        "dishesPublished": 0,
+        "recipesPublished": 0,
+        "suppliersPublished": 0,
+        "evidence": "",
+        "validatedUtc": ""
+    },
+    "decisions": [
+        {
+            "key": "content.type",
+            "value": "BarCounter",
+            "confidence": "HIGH",
+            "evidence": "Source subject explicitly identifies a bar counter. Compound geometry, native service and runtime acceptance remain publication requirements.",
+            "ruleId": "content.classification.v2"
+        },
+        {
+            "key": "material.semantic",
+            "value": "Unknown",
+            "confidence": "UNKNOWN",
+            "evidence": "No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+            "ruleId": "material.semantic.resolve.v1"
+        }
+    ],
+    "artifacts": [
+        {
+            "role": "unity.source_mirror",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/SourceMirror/0c/0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455/Meshy_AI_Arctic_Curve_Bar_0922105448_generate.glb",
+            "builderId": "savic.source-import.unity-model",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": ""
+        },
+        {
+            "role": "authoring.bar_counter.profile",
+            "projectRelativePath": "Assets/Data/Restaurant/SAVIC/BarCounterProfile_Standard.asset",
+            "builderId": "savic.bar-counter-planner",
+            "builderVersion": "1.0.0",
+            "inputFingerprint": "af26bd7e123961ebc3a589778c9ea79f6c9b6ee5bc7b5ead4d62f6dc0b9926f5"
+        },
+        {
+            "role": "published.generic.prefab",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Placeable_bb_barcounter_a790cc592bd44915a934db197178564d.prefab",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "283def3ad65be5d97eeda21ef98c333cfc2099fef9431bef50992fca7d3c9d07"
+        },
+        {
+            "role": "catalog.item_definition",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/PlaceableItem_bb_barcounter_a790cc592bd44915a934db197178564d.asset",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "283def3ad65be5d97eeda21ef98c333cfc2099fef9431bef50992fca7d3c9d07"
+        },
+        {
+            "role": "editmode.editable_definition",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Editable_bb_barcounter_a790cc592bd44915a934db197178564d.asset",
+            "builderId": "savic.generic-placeable-publisher",
+            "builderVersion": "2.3.0",
+            "inputFingerprint": "283def3ad65be5d97eeda21ef98c333cfc2099fef9431bef50992fca7d3c9d07"
+        },
+        {
+            "role": "preview.large",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Preview_Large.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "a8068bff12edc67b4abfa7f28612a4acfa287727d33748e1f4deb9dd93cfd990"
+        },
+        {
+            "role": "preview.catalog",
+            "projectRelativePath": "Assets/Generated/BistroBuilder/SAVIC/Published/Generic/bb_barcounter_a790cc592bd44915a934db197178564d/Preview_Catalog.png",
+            "builderId": "savic.preview-renderer",
+            "builderVersion": "1.1.0",
+            "inputFingerprint": "a8068bff12edc67b4abfa7f28612a4acfa287727d33748e1f4deb9dd93cfd990"
+        }
+    ],
+    "validations": [
+        {
+            "validationId": "Pipeline.PreImportRouting",
+            "result": "REVIEW",
+            "severity": "WARNING",
+            "message": "The source maps to an existing interactive service/bar/pass concept. SAVIC will not duplicate that gameplay authority with a generic static prefab. Expensive 3D import/analysis is intentionally skipped until the approved adapter exists.",
+            "validatorVersion": "2.0.0"
+        },
+        {
+            "validationId": "Source.ArchiveIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Archived source passed SHA-256 integrity validation.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Source.UnityImport",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Prepared Unity source mirror already has a valid imported GameObject.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Geometry.ValidBounds",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model bounds are finite and usable.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Geometry.MeshData",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model contains usable mesh geometry.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Materials.ReferenceIntegrity",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "All renderer material slots have references.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Geometry.StructuralProfile",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Mesh surface distribution analyzed successfully: upward area 0.159; upper-band area 0.267; lower-band area 0.542; surface centroid height 0.402; upper projected coverage 0.286.",
+            "validatorVersion": "2.0.0"
+        },
+        {
+            "validationId": "Materials.AppearanceData",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Source contains no texture, vertex-color or non-default base-color appearance data; SAVIC will keep this explicit instead of inventing visual material detail.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Pipeline.IncrementalInvalidation",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "FullRebuild: No compatible published baseline exists.",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Geometry.SemanticParts",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Semantic part analysis supports Table and Chair content in V1.",
+            "validatorVersion": "3.0.0"
+        },
+        {
+            "validationId": "Materials.SemanticProfile",
+            "result": "WARNING",
+            "severity": "WARNING",
+            "message": "Material semantic remains Unknown: No reliable material semantic exists and source-name fallback is restricted to geometry-backed furniture classification.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Classification.ContentType",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Model classified as BarCounter and matched a registered SAVIC family module.",
+            "validatorVersion": "4.7.0"
+        },
+        {
+            "validationId": "Source.ProviderMetadata",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Original and download task verified; Meshy MODEL_TITLE evidence attached for 01a0c8bf-d126-704c-8bfd-47d4da622886",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Authoring.BarCounter",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Source triangles prove the highest broad upper surface and open compound body. Counter height, limits and port separation are authored profile settings; uniform source scale preserved. Geometry/ports do not grant publication or prove runtime service/persistence.",
+            "validatorVersion": "1.0.0"
+        },
+        {
+            "validationId": "Presentation.GenericMaterials",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Source materials are usable.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.FunctionAdapter",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Required native function adapter matches the canonical authoring plan.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.FloorPlacement",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Floor anchor and canonical footprint are valid.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Collider",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical static collider geometry is valid.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Catalog",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical catalog resolves exactly one item definition.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Persistence",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical ItemId and prefab are persistence-resolvable.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.Navigation",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Canonical blocking footprint supplies static navigation topology.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.AreaCapability",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Placement requires the existing canonical area capability 'customer_seating'.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.BBSIS",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Compound root body and native bar ports are validated against the existing work.bar contract.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "GenericPlaceable.RuntimeAcceptance",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Current prefab passed canonical runtime creation, native binding/lease/route and SaveGame save/load/cleanup.",
+            "validatorVersion": "2.3.0"
+        },
+        {
+            "validationId": "Presentation.Previews",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Generated and assigned two validated SAVIC previews from 1 renderer(s).",
+            "validatorVersion": "1.1.0"
+        },
+        {
+            "validationId": "Publication.BarCounterAcceptance",
+            "result": "PASS",
+            "severity": "INFO",
+            "message": "Current candidate passed canonical runtime acceptance and publication.",
+            "validatorVersion": "1.1.0"
+        }
+    ],
+    "developerOverrides": []
+}

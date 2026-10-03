@@ -34,6 +34,7 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
         new List<BistroBuilderBarSpatialAdapter>(16);
 
     private float nextReconciliationAt;
+    private BistroBuilderBarServiceRegistry subscribedBarRegistry;
 
     public int ManagedLeaseCount => leaseByOwner.Count;
     public int LastRejectedClaims { get; private set; }
@@ -43,6 +44,9 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
         ResolveDependencies();
         RebuildBindings();
     }
+
+    private void OnEnable() { ResolveDependencies(); SubscribeBarRegistry(); RebuildBindings(); }
+    private void Start() { RebuildBindings(); }
 
     private void Update()
     {
@@ -55,6 +59,7 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
 
     private void OnDisable()
     {
+        UnsubscribeBarRegistry();
         ReleaseAllManagedLeases();
     }
 
@@ -86,14 +91,15 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
 
     public void RebuildBindings()
     {
+        ResolveDependencies();
+        SubscribeBarRegistry();
         barAdapters.Clear();
-        BistroBuilderBarSpatialAdapter[] found =
-            FindObjectsByType<BistroBuilderBarSpatialAdapter>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.InstanceID);
-        for (int i = 0; i < found.Length; i++)
-            if (found[i] != null)
-                barAdapters.Add(found[i]);
+        if (barRegistry != null)
+            foreach (BistroBuilderBarServiceSpot spot in barRegistry.RegisteredSpots)
+            {
+                BistroBuilderBarSpatialAdapter adapter = spot != null ? spot.GetComponent<BistroBuilderBarSpatialAdapter>() : null;
+                if (adapter != null) barAdapters.Add(adapter);
+            }
         barAdapters.Sort((left, right) =>
             string.CompareOrdinal(
                 left.BarSpot != null
@@ -225,6 +231,7 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
     public void ReconcileOperationalClaims()
     {
         ResolveDependencies();
+        if (subscribedBarRegistry != barRegistry) RebuildBindings();
         if (spatialService == null)
             return;
         activeOwners.Clear();
@@ -286,7 +293,10 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
             CustomerGroup group =
                 spot != null ? spot.AssignedCustomerGroup : null;
             if (group == null)
+            {
+                adapter?.ReleaseCustomerLease();
                 continue;
+            }
 
             string customerOwner = "bbsis.bar.customer." +
                 group.GroupId + "." + spot.BarSpotId;
@@ -461,6 +471,41 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
                 BistroBuilderBarServiceSystem>();
     }
 
+    private void SubscribeBarRegistry()
+    {
+        if (subscribedBarRegistry == barRegistry) return;
+        UnsubscribeBarRegistry();
+        subscribedBarRegistry = barRegistry;
+        if (subscribedBarRegistry == null) return;
+        subscribedBarRegistry.SpotRegistered += HandleBarRegistered;
+        subscribedBarRegistry.SpotUnregistered += HandleBarUnregistered;
+    }
+
+    private void UnsubscribeBarRegistry()
+    {
+        if (subscribedBarRegistry != null)
+        {
+            subscribedBarRegistry.SpotRegistered -= HandleBarRegistered;
+            subscribedBarRegistry.SpotUnregistered -= HandleBarUnregistered;
+        }
+        subscribedBarRegistry = null;
+    }
+    private void HandleBarRegistered(BistroBuilderBarServiceSpot spot) => RebuildBindings();
+    private void HandleBarUnregistered(BistroBuilderBarServiceSpot spot)
+    {
+        if (spot != null)
+        {
+            spot.GetComponent<BistroBuilderBarSpatialAdapter>()?.ReleaseCustomerLease();
+            if (spot.AssignedCustomerGroup != null)
+            {
+                string groupId = spot.AssignedCustomerGroup.GroupId.ToString();
+                ReleaseManagedOwner("bbsis.bar.service." + groupId);
+                ReleaseManagedOwner("bbsis.bar.transfer." + groupId);
+            }
+        }
+        RebuildBindings();
+    }
+
     private static bool NeedsServiceClaim(
         BistroBuilderBarSessionPhase phase)
     {
@@ -482,6 +527,7 @@ public sealed class BistroBuilderOperationalSpatialCoordinator :
         BistroBuilderBarServiceRegistry registry,
         BistroBuilderBarServiceSystem bar)
     {
+        UnsubscribeBarRegistry();
         spatialService = spatial;
         kitchenAdapter = kitchen;
         advancedKitchenService = advancedKitchen;

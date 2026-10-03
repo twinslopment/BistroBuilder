@@ -34,6 +34,15 @@ public static class BistroBuilderConstructionAssetInstaller
             modules.Add(Prefab(go,name));
         }
         kit.wallModules=modules.ToArray();
+        GameObject defaultWallVisual =
+            Resources.Load<GameObject>(
+                "BistroBuilder/Architecture/BB_Wall_Module_Master_001");
+        if(defaultWallVisual!=null)
+            kit.UpsertWallVisual(
+                "wall.default",
+                defaultWallVisual,
+                new Vector3(0.49141f,1.89958f,0.03436f));
+
         var door=new GameObject("Puerta_roble_abierta");
         Frame(door.transform,0.9f,2.1f,kit.trimMaterial,false);
         var hinge=new GameObject("Bisagra"); hinge.transform.SetParent(door.transform,false);
@@ -41,9 +50,21 @@ public static class BistroBuilderConstructionAssetInstaller
         Part(hinge.transform,"Hoja",new Vector3(0.45f,1.02f,0),new Vector3(0.86f,2.04f,0.045f),kit.trimMaterial);
         Part(hinge.transform,"Tirador",new Vector3(0.78f,1,0.045f),new Vector3(0.04f,0.14f,0.025f),metal);
         kit.doorPrefab=Prefab(door,"Puerta_roble_abierta");
+        kit.UpsertOpening(
+            "door",
+            "door",
+            kit.doorPrefab,
+            new Vector3(0.9f,2.1f,0.12f));
+
         var window=new GameObject("Ventana_marco_grafito"); Frame(window.transform,1.2f,1.2f,metal,true);
         Part(window.transform,"Cristal",new Vector3(0,0.6f,0),new Vector3(1.12f,1.12f,0.012f),kit.glassMaterial);
         kit.windowPrefab=Prefab(window,"Ventana_marco_grafito");
+        kit.UpsertOpening(
+            "window",
+            "window",
+            kit.windowPrefab,
+            new Vector3(1.2f,1.2f,0.12f));
+
         foreach(string icon in new[]{"select","wall","module","room","door","window","furniture"}) Icon(icon);
         EditorUtility.SetDirty(kit); AssetDatabase.SaveAssets(); AssetDatabase.Refresh();
         Debug.Log("BB_CONSTRUCTION_ASSETS_PASS | 4 wall modules, door, window, 5 materials, 7 icons");

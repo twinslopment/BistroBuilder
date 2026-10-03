@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 2c7c6dab35bb59e4e8ca3875b183a5cf
+labels:
+- SAVIC.CatalogItem
+- SAVIC.Managed
+- SAVIC.Table
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

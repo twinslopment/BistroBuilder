@@ -24,6 +24,8 @@ HUD operativo por estados **Normal / Atención / Demora / Incidencia / Crítico 
 ## Tipografía y tono
 Recoleta para títulos/encabezados cuando encaje con la identidad visual; sans limpia tipo Inter para interfaz. Estética elegante, sobria y legible; evitar barroquismo y ornamentación que compita con el restaurante.
 
+Los clones de font TMP usados en runtime poseen copias propias de su atlas y material; no comparten esos recursos destruibles con subassets persistentes. El fallback de acentos conserva la tipografía original. Hardening demostrado al verificar SAVIC: el clon superficial de Recoleta emitía errores al salir de Play Mode, porque el destructor TMP intentaba destruir material/atlas del asset. La corrección preserva los recursos fuente; evidencia y aceptación runtime estricta en `docs/SAVIC.md`, sección 69.
+
 ## Modo Edición — composición visual
 Durante Modo Edición, `Actividad` deja temporalmente su lateral al **Catálogo de artículos**. La dirección visual aprobada es la **Propuesta C revisada**:
 

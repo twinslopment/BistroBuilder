@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_storagefurniture_8a5c37cab8eb4366ab675afa66af65ad
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_storagefurniture_8a5c37cab8eb4366ab675afa66af65ad
+  displayName: Realistic freestanding contemporary storage cabinet
+  category: 0
+  placementScope: 0
+  description: "Mobiliario preparado autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 173b24bff37a39f47a34ca47b6ceb157, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: f9e10e7d178c6634f97e8f99c874d09f, type: 3}
+  dimensionsCentimeters: {x: 119.70128, y: 189.9457, z: 88.51712}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 3049106236831288431, guid: 0f7310542954f8747a3df160e866d727, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 231da3956a1ae1d4d85b18ae1b71cf8e, type: 2}
+  purchasePrice: 186
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

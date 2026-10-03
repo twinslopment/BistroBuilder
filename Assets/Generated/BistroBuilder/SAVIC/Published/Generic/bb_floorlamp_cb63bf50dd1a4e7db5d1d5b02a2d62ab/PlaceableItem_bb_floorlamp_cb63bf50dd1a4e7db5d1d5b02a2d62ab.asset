@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_floorlamp_cb63bf50dd1a4e7db5d1d5b02a2d62ab
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_floorlamp_cb63bf50dd1a4e7db5d1d5b02a2d62ab
+  displayName: Realistic contemporary floor lamp with a clearly readable modular
+    structure
+  category: 2
+  placementScope: 0
+  description: "Iluminaci\xF3n funcional preparada autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: ef046e87b33c74146b38dc1107257a14, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 9ac08ce69df67bb4baadb4ab0af0f115, type: 3}
+  dimensionsCentimeters: {x: 43.753876, y: 189.9507, z: 43.76201}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 4490829444246724047, guid: d4f8e49f2c817d94093937b3e4d2e5ba, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 7b3b0dc300b431147b2e328dcdddbef2, type: 2}
+  purchasePrice: 79
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

@@ -11,13 +11,29 @@ public static class BistroBuilderOpeningVisuals
         {
             var kit = BistroBuilderConstructionAssetKit.Load();
             bool window = opening.openingType == "window";
-            var prefab = kit != null ? (window ? kit.windowPrefab : kit.doorPrefab) : null;
-            if (prefab != null)
+            GameObject prefab = null;
+            Vector3 nominalSize = Vector3.zero;
+            bool resolved =
+                kit != null &&
+                kit.TryResolveOpening(
+                    opening.openingType,
+                    opening.fillDefinitionId,
+                    out prefab,
+                    out nominalSize);
+
+            if (resolved && prefab != null)
             {
                 var fill = Object.Instantiate(prefab, parent, false);
-                fill.transform.localPosition = new Vector3(wall.Length * opening.axisPosition01, opening.bottomElevation, 0);
-                fill.transform.localScale = new Vector3(opening.width / (window ? 1.2f : 0.9f), opening.height / (window ? 1.2f : 2.1f), Mathf.Max(1,wall.thickness / 0.12f));
-                if (opening.flipped) fill.transform.localRotation = Quaternion.Euler(0,180,0);
+                fill.transform.localPosition = new Vector3(
+                    wall.Length * opening.axisPosition01,
+                    opening.bottomElevation,
+                    0);
+                fill.transform.localScale = new Vector3(
+                    opening.width / Mathf.Max(0.001f, nominalSize.x),
+                    opening.height / Mathf.Max(0.001f, nominalSize.y),
+                    wall.thickness / Mathf.Max(0.001f, nominalSize.z));
+                if (opening.flipped)
+                    fill.transform.localRotation = Quaternion.Euler(0,180,0);
                 continue;
             }
             float center = wall.Length * opening.axisPosition01;
