@@ -1,4 +1,5 @@
 using BistroBuilder.UI.Iconography;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -28,6 +29,8 @@ internal static class BistroBuilderMenuEditorUiFactory
     private static Font cachedFont;
     private static Font displayFont;
     private static Font emphasisFont;
+    private static readonly Dictionary<string, Sprite> themedHeaderSprites =
+        new Dictionary<string, Sprite>();
 
     public static Font Font
     {
@@ -106,20 +109,69 @@ internal static class BistroBuilderMenuEditorUiFactory
         return rect;
     }
 
+    // V4: four independent HEADER sprites. The list-row icons deliberately
+    // remain BBIconCatalog sprites and are never replaced by these assets.
+    private static Sprite ThemedHeaderSprite(string key)
+    {
+        if (themedHeaderSprites.TryGetValue(key, out Sprite cached))
+            return cached;
+        string path = "BistroBuilder/UI/MenuHeaderIcons/" + key;
+        Sprite sprite = Resources.Load<Sprite>(path);
+        if (sprite == null)
+        {
+            // Works with PNG assets imported as either Sprite or Texture2D;
+            // avoids a global importer or changes to unrelated .meta files.
+            Texture2D texture = Resources.Load<Texture2D>(path);
+            if (texture != null)
+            {
+                sprite = Sprite.Create(texture,
+                    new Rect(0f, 0f, texture.width, texture.height),
+                    new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
+                sprite.name = "BB Carta " + key;
+            }
+        }
+        if (sprite != null) themedHeaderSprites[key] = sprite;
+        return sprite;
+    }
+
+    private static RectTransform AddThemedHeaderIcon(string name,
+        Transform parent, string key, Vector2 min, Vector2 max,
+        Vector2 offsetMin, Vector2 offsetMax)
+    {
+        Sprite sprite = ThemedHeaderSprite(key);
+        if (sprite == null) return null;
+        RectTransform root = CreateRect(name, parent, min, max,
+            offsetMin, offsetMax);
+        Image image = AddImage(root, Color.white);
+        image.sprite = sprite;
+        image.preserveAspect = true;
+        image.raycastTarget = false;
+        return root;
+    }
+
     public static void AddMenuHeaderIcon(Transform parent)
     {
-        AddIcon("CartaHeaderIcon", parent, BBIconId.NavMenu,
+        if (AddThemedHeaderIcon("CartaHeaderIcon", parent, "carta_main",
             new Vector2(0f, 0f), new Vector2(0f, 1f),
-            new Vector2(14f, 9f), new Vector2(45f, -9f));
+            new Vector2(9f, 3f), new Vector2(53f, -3f)) == null)
+            AddIcon("CartaHeaderIcon", parent, BBIconId.NavMenu,
+                new Vector2(0f, 0f), new Vector2(0f, 1f),
+                new Vector2(14f, 9f), new Vector2(45f, -9f));
     }
 
     public static void AddPortfolioSectionIcon(Transform parent,
         string title, float minY, float maxY)
     {
-        BBIconId icon = title == "Mis cartas" ? BBIconId.NavMenu :
+        string key = title == "Mis cartas" ? "mis_cartas" :
+            title == "Reglas de activación" ? "reglas_activacion" :
+            "detalle_regla";
+        if (AddThemedHeaderIcon("SectionIcon", parent, key,
+            new Vector2(.022f, minY), new Vector2(.127f, maxY),
+            new Vector2(0f, 1f), new Vector2(0f, -1f)) != null) return;
+        BBIconId fallback = title == "Mis cartas" ? BBIconId.NavMenu :
             title == "Reglas de activación" ? BBIconId.ActionSave :
             BBIconId.ActionEdit;
-        AddIcon("SectionIcon", parent, icon,
+        AddIcon("SectionIcon", parent, fallback,
             new Vector2(.037f, minY), new Vector2(.113f, maxY),
             new Vector2(0f, 5f), new Vector2(0f, -5f));
     }
