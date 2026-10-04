@@ -107,7 +107,7 @@ public static class BistroBuilderCatalogThumbnailService
                 0.95f,
                 1.16f,
                 0.045f,
-                new Vector3(1.05f, 0.72f, -1.05f)
+                new Vector3(1.05f, -0.72f, -1.05f)
             ),
             new ThumbnailRenderProfile(
                 "Bright",
@@ -117,7 +117,7 @@ public static class BistroBuilderCatalogThumbnailService
                 1.25f,
                 1.28f,
                 0.075f,
-                new Vector3(1.0f, 0.8f, -1.0f)
+                new Vector3(1.0f, -0.8f, -1.0f)
             ),
             new ThumbnailRenderProfile(
                 "Wide",
@@ -127,7 +127,7 @@ public static class BistroBuilderCatalogThumbnailService
                 1.05f,
                 1.2f,
                 0.055f,
-                new Vector3(1.12f, 0.68f, -1.0f)
+                new Vector3(1.12f, -0.68f, -1.0f)
             )
         };
 
@@ -690,6 +690,7 @@ public static class BistroBuilderCatalogThumbnailService
         GameObject previewRoot = null;
         Texture2D readableTexture = null;
         RenderTexture previousActive = null;
+        RenderTexture normalizedRender = null;
         bool previewWasOpened = false;
 
         try
@@ -783,8 +784,15 @@ public static class BistroBuilderCatalogThumbnailService
             previousActive =
                 RenderTexture.active;
 
-            RenderTexture.active =
-                renderTexture;
+            // Editor pixel density can make the preview RT larger than its logical rect.
+            // Read the complete rendered product, never just its bottom-left size x size crop.
+            if (renderTexture.width != size || renderTexture.height != size)
+            {
+                normalizedRender = RenderTexture.GetTemporary(size, size, 0, RenderTextureFormat.ARGB32);
+                Graphics.Blit(renderTexture, normalizedRender);
+            }
+            RenderTexture.active = normalizedRender != null ? normalizedRender : renderTexture;
+            Debug.Log("[CATALOG THUMBNAIL] " + prefabAsset.name + " full render=" + renderTexture.width + "x" + renderTexture.height + " output=" + size);
 
             readableTexture =
                 new Texture2D(
@@ -838,6 +846,7 @@ public static class BistroBuilderCatalogThumbnailService
         {
             RenderTexture.active =
                 previousActive;
+            if (normalizedRender != null) RenderTexture.ReleaseTemporary(normalizedRender);
 
             if (readableTexture != null)
             {
@@ -966,8 +975,7 @@ public static class BistroBuilderCatalogThumbnailService
         root.localRotation =
             Quaternion.identity;
 
-        root.localScale =
-            Vector3.one;
+        // Preserve the prefab scale: it is part of the authored product size.
 
         if (!root.gameObject.activeSelf)
         {

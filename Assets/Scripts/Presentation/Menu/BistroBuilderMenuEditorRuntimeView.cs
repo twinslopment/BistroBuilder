@@ -411,6 +411,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             BistroBuilderMenuEditorUiFactory.Surface
         );
+        BistroBuilderManagementViewport.Install(modalRoot, panel, 760);
         BistroBuilderMenuEditorUiFactory.StylePlate(panel);
 
         BuildHeader(panel);
@@ -501,7 +502,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.Negative,
             14
         );
-        SetAnchoredColumn(closeButton, 0.90f, 0.985f, 9f);
+        SetAnchoredColumn(closeButton, 0.90f, 0.985f, 7f);
     }
 
     private void BuildBody(RectTransform panel)
@@ -1848,6 +1849,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         if (modalRoot != null)
         {
             modalRoot.gameObject.SetActive(visible);
+            if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
 
             if (visible)
             {

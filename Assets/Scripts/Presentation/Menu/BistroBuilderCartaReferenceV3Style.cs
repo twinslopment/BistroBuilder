@@ -268,8 +268,20 @@ internal static class BistroBuilderCartaReferenceV3Style
             {
                 Text label=close.GetComponentInChildren<Text>(true);
                 if(label!=null){label.text="×";SetTypeface(label,false,13,true);}
-                Anchor(close.GetComponent<RectTransform>(),.984f,.20f,1,.80f,
-                    Vector2.zero,Vector2.zero);
+                // A small glyph must keep a usable pointer target. The previous
+                // 1.6%-width target also made the factory's padded label narrower than zero.
+                RectTransform closeRect = close.GetComponent<RectTransform>();
+                closeRect.anchorMin = closeRect.anchorMax = new Vector2(1f, .5f);
+                closeRect.pivot = new Vector2(1f, .5f);
+                closeRect.anchoredPosition = Vector2.zero;
+                closeRect.sizeDelta = new Vector2(44f, 44f);
+                if(label != null)
+                {
+                    label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(1f, .5f);
+                    label.rectTransform.pivot = new Vector2(.5f, .5f);
+                    label.rectTransform.anchoredPosition = new Vector2(-9f, 0f);
+                    label.rectTransform.sizeDelta = new Vector2(18f, 24f);
+                }
                 Image img=close.GetComponent<Image>();if(img!=null)img.color=new Color(1,1,1,.06f);
             }
         }

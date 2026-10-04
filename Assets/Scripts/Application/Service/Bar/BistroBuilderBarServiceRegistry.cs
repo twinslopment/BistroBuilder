@@ -492,11 +492,9 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
             RebuildRegistryFromScene();
         }
 
-        if (registeredSpots.Count == 0)
-        {
-            error = "No existe ninguna plaza de barra registrada.";
-            return false;
-        }
+        // An empty layout has no bar capacity, but is a valid registry.
+        // Keep the service available for bars placed later through the native lifecycle.
+        // Reservation/allocation still require actual free registered spots.
 
         HashSet<string> unique = new HashSet<string>(StringComparer.Ordinal);
         Dictionary<CustomerGroup, int> capacityByGroup =

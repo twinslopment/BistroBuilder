@@ -259,7 +259,7 @@ public sealed class BistroBuilderPrototypePresentationService :
 
         if (existing != null)
         {
-            if (Application.isPlaying) Destroy(existing.gameObject);
+            if (Application.isPlaying) { existing.gameObject.SetActive(false); Destroy(existing.gameObject); }
             else DestroyImmediate(existing.gameObject);
         }
 
@@ -1178,6 +1178,7 @@ public sealed class BistroBuilderPrototypePresentationService :
 
     private void HandleEditModeChanged()
     {
+        if (!isActiveAndEnabled || editModeService == null || !editModeService.isActiveAndEnabled) return;
         ApplyScenePresentation();
     }
 

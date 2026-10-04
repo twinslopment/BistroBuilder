@@ -73,4 +73,31 @@ public static class BistroBuilderPresentationReviewRepair
             "legacyRemoved=" + removed + "\nprimitiveTableThumbnails=" + thumbnails + "\nexistingChairColours=" + chairColours + "\n");
         Debug.Log("[PRESENTATION REVIEW] Native authoring completed. Runtime acceptance is still required.");
     }
+    public static void RunFinalRegression()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        BistroBuilder.Editor.Savic.SavicV1ClosureGate.RunFromMenu();
+        var layout = BistroBuilder.Editor.Savic.SavicEditorContext.Instance.Layout;
+        var gate = JsonUtility.FromJson<BistroBuilder.Editor.Savic.SavicV1ClosureGateReport>(
+            File.ReadAllText(Path.Combine(layout.LogsRoot, "SavicV1ClosureGateReport.json")));
+        if (gate.failed != 0 || gate.passed < 26) throw new InvalidOperationException("SAVIC closure regression failed.");
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        BistroBuilderEditBlock18CoreSelfTest.RunFromMenu();
+        string core = File.ReadAllText("EditBlock18CoreSelfTestReport.txt");
+        if (!core.Contains("Resultado: 84 OK / 0 fallos.")) throw new InvalidOperationException("Edit core regression failed: " + core);
+        BistroBuilderNavigation17SelfTest.Run();
+        if (BistroBuilderNavigation17SelfTest.LastFailed != 0) throw new InvalidOperationException(BistroBuilderNavigation17SelfTest.LastReport);
+        BistroBuilderNavigationV1CoreSelfTest.Run();
+        if (BistroBuilderNavigationV1CoreSelfTest.LastFailed != 0) throw new InvalidOperationException(BistroBuilderNavigationV1CoreSelfTest.LastReport);
+        BistroBuilderBarServiceSelfTest.RunFromCommandLine();
+        BistroBuilderBBSISPhase2BSelfTest.Run();
+        if (BistroBuilderBBSISPhase2BSelfTest.LastFailed != 0) throw new InvalidOperationException(BistroBuilderBBSISPhase2BSelfTest.LastReport);
+        BistroBuilder.Editor.Savic.SavicCanonicalContentInventoryProbe.RunFromCommandLine();
+        Directory.CreateDirectory("Logs");
+        File.WriteAllText("Logs/presentation-review-final-regression.txt", DateTime.UtcNow.ToString("O") +
+            "\nPASS SAVIC=" + gate.passed + "/" + gate.passed +
+            " editCore=84/84 navigation=" + BistroBuilderNavigation17SelfTest.LastPassed +
+            " navigationV1=" + BistroBuilderNavigationV1CoreSelfTest.LastPassed +
+            " barService=PASS BBSIS2B=" + BistroBuilderBBSISPhase2BSelfTest.LastPassed + "\n");
+    }
 }

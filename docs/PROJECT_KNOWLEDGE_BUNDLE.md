@@ -380,7 +380,7 @@ La integración conserva también el avance remoto `0172c0fb` (iconos de encabez
 
 ## Regresiones de presentación — 04/10/2026
 
-El vídeo y la revisión del usuario reabren aceptación de mesas primitivas, inspector de arrastre, visibilidad de acabados, cierre de Carta y barra provisional retirada. Correcciones en preparación; ninguna aceptación runtime nueva todavía. Clientes sentados fuera de sillas de comedor siguen pendientes. Se preserva la evidencia funcional SAVIC y el avance remoto de Carta. [Alcance vivo](../30_UI_UX/PRESENTATION_INTERACTION_QUALITY.md).
+Cinco incidencias del vídeo corregidas y verificadas: miniaturas/ghost de mesas básicas, cuatro acabados existentes de silla accesibles, inspector de arrastre, cierre de Carta y editor con ratón, y retirada permanente de la barra provisional/taburetes antiguos. Play Mode 72 comprobaciones y Console limpia; regresión SAVIC26/core84/Navigation22+44/barra59/BBSIS2B18 PASS. La barra publicada de SAVIC vuelve a pasar colocación, leases, rutas y SaveGame real. Auditoría 04/10/2026 09:32:07 UTC: 18 publicados/17 placeables, cero revisiones/fallidos/inbox/orphans. Se conserva Carta V3 del remoto y se integra en `feature/bb-presentation-interaction-quality-v1`. Clientes sentados fuera de sillas de comedor y alturas desiguales del HUD continúan pendientes; 21A sigue abierto. [Evidencia y límites](../40_TESTING/UI_PRESENTATION_REVIEW_2026-10-04.md).
 
 ---
 
@@ -1496,6 +1496,35 @@ Copia para abrir en la máquina del usuario: `C:\Users\mruperez\Downloads\Carta_
 
 ---
 
+## SOURCE: docs/30_UI_UX/CARTA_GESTOR_REFERENCIA_V3_IMPLEMENTACION_UNITY_20261004.md
+
+Category: CANONICAL
+
+# CARTA — Gestor: especificación visual vinculante (04/10/2026)
+
+## Fuente de verdad
+
+Captura aprobada por el usuario: **Carta_Gestor_PersonalV8_V3_1280.png** (1280 × 720). Coincide con el gestor `docs/30_UI_UX/previews/Carta_Gestor_PersonalV8_V3.html`. Se programa la **vista nativa Unity del Gestor**, no una sustitución por una imagen plana ni un webview.
+
+Si la iconografía decorativa V4 difiere de esta captura, el Gestor adopta la V3: libro abierto plano en CARTA y Mis cartas, reloj sólido en Reglas de activación, documento plano en Detalle de la regla. La barra de navegación superior conserva sus propios iconos oficiales y el menú CARTA de cuero; no cambiar globalmente `BistroBuilderMenuEditorUiFactory` para el resto de pantallas.
+
+## Implementación
+
+- `BistroBuilderCartaReferenceV3Style.cs`: estilos específicos de la vista Gestor aplicados al árbol uGUI real: gradientes marfil y crema, borde latón redondeado, remaches discretos, fondos con nine-slice, selección miel, acciones destructivas rojas, inputs marfil, botonera en latón y status verde/gris
+- Recursos SVG exactos exportados de los `<symbol>` de la preview V3 (no similares), almacenados en `Assets/Resources/BistroBuilder/UI/CartaReferenceV3Icons`; incluye variantes blancas para destructivas
+- `BistroBuilderMenuPortfolioRuntimeView`: tres columnas con la anchura V3, formulario de regla con etiquetas visibles encima de sus campos; los siete días conservan sus Toggle reales y check centrado; scroll en listas, metadatos y nombres en textos diferentes (Recoleta/Inter)
+- Recoleta oficial en títulos, nombres y botones; Inter para descripciones, cifras/inputs y caracteres incompatibles con la Recoleta DEMO. Los nombres y encabezados con acentos usan runs tipográficos mixtos tal como hace la preview HTML
+- No se modifican `BistroBuilderMenuPortfolioService`, horarios/evaluación, Save/Load, datos de cartas ni acciones de usuario: únicamente la presentación y el texto resumen visible de las filas. Se conserva el cierre vía botón discreto y Escape
+- El marco respeta el espacio de las barras del juego y mantiene anclas responsivas. 1280×720 y 1920×1080 son targets de verificación
+
+## Verificación y límites
+
+Se han compilado **Assembly-CSharp** y **Assembly-CSharp-Editor** con el SDK local y referencias reales de Unity: **0 errores**. Las advertencias de otros módulos preexistentes no implican fallo de esta implementación. El segundo proceso Unity batch no pudo inicializar su Package Manager mientras una instancia de Editor estaba abierta; el resultado de una compilación C# independiente no debe anunciarse como un Play Mode PASS ni como una certificación visual pixel-perfect.
+
+La preview HTML V3 y sus capturas son la referencia visual; una captura real de Game View a ambas resoluciones queda como control final de similitud al abrir Unity, antes de declarar paridad absoluta.
+
+---
+
 ## SOURCE: docs/30_UI_UX/CARTA_GESTOR_V2_1_20261002.md
 
 Category: CANONICAL
@@ -2034,17 +2063,19 @@ Solo después de estas comprobaciones y aprobación visual del usuario se integr
 Combinación solicitada con SAVIC desde `b595fd99`, en copia aislada `BB_SavicPresentation`. Se preservan las autoridades existentes, paleta del cliente y geometría/aperturas/acabados; se integran catálogo canónico de persistencia, perfil Humanoid, módulos publicados y los 18 GLB LFS. Aceptación funcional: catálogo real/SaveGame de barra, tres taburetes y campana; gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos. La prueba responsive de igualdad de altura entre barras falla a 1920×1080 con las implementaciones de la base de presentación intactas; no se declara aceptación visual ni cierre de 21A. [Evidencia](../40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md).
 
 
-## Revisión de vídeo — 04/10/2026 (EN CORRECCIÓN, sin aceptación runtime)
+## Revisión de vídeo — 04/10/2026 (cinco incidencias verificadas)
 
-El vídeo de 218 s aportado por el usuario demuestra miniaturas/ghost de mesa básica como cubos, inspector compacto con texto recortado, cierre de Carta no confirmado y clientes con pose sentada fuera del asiento. El usuario exige retirar definitivamente la barra provisional y sus taburetes. Las pruebas de publicación SAVIC anteriores no certifican estos flujos de UI ni el asiento de comedor.
+Correcciones verificadas en Unity 6000.3.19f1, conservando el avance remoto de Carta V3. [Causas, pruebas y límites](../40_TESTING/UI_PRESENTATION_REVIEW_2026-10-04.md).
 
-- La identidad `fixture_367h_bar` queda retirada: escena, instalador y presentación inicial deben dejar de crearla. Se mantienen las autoridades de servicio y las barras placeables publicadas. La compatibilidad con escenas antiguas debe impedir registros, obstáculos y visuales de esa fixture retirada.
-- Miniaturas y ghost de las mesas primitivas deben usar el mismo generador visual de tablero y patas, respetando geometría local al rotar y sin modificar colliders/footprints.
-- El inspector debe calcular alturas reales de filas y texto; al arrastrar conserva nombre del artículo, reglas y motivo de validación completo.
-- Existen cuatro colores de la silla contemporánea (rojo, oliva, blanco y amarillo) en datos y catálogo. Sigue pendiente verificar su visibilidad efectiva y navegación en la UI; no se han generado variantes nuevas.
-- El cierre de Carta requiere prueba del primer hit de EventSystem y del handler de puntero, conservando el contenido y estilo aprobado. No basta con llamar `Close()` en un test.
+- Las dos mesas básicas usan tablero y patas tanto en la miniatura como en el ghost provisional. El renderer compartido respeta la escala y geometría local; no añade colliders. La captura de miniaturas usa el render completo antes de reducirlo a 256 px: a DPI 125 %, leer solo 256 de un target de 320 recortaba el producto. El inspector de la mesa de cuatro plazas referencia su propia miniatura.
+- Los cuatro acabados existentes de silla contemporánea (rojo, oliva, blanco y amarillo) son accesibles mediante scroll vertical. La causa era un HorizontalLayoutGroup heredado con todas las tarjetas en una fila; ahora el skin convierte ese layout en una cuadrícula de dos columnas. No se fabrican colores ni variantes.
+- El inspector refresca artículo, reglas y motivo de validación en cada cambio de arrastre, calcula alturas reales de texto y vuelve al preview completo al cancelar. Las dos creaciones provisionales se cancelan por lifecycle sin dejar ghosts.
+- Carta y su editor de platos cierran mediante ratón real sin abrir otra sección. El Canvas elevado de la cabecera sticky carecía de GraphicRaycaster; también se corrigen el orden acumulativo, el área de cierre de 44 unidades y el safe-area/viewport del editor para que la navegación superior no capture ese cierre. Se conserva el cierre canónico y la confirmación de cambios sin guardar.
+- La fixture `fixture_367h_bar` y sus taburetes se retiran de la escena por autoría nativa; instalador y presentación dejan de crearlos. La compatibilidad desactiva y destruye esa identidad antes de renderizar en escenas antiguas. La barra placeable de SAVIC conserva sus autoridades. Un layout sin barras mantiene el servicio habilitado con capacidad cero, permitiendo futuras altas reales sin crear plazas artificiales.
 
-Se prepararon correcciones de código y una operación de autoría nativa reversible; aún no se declara PASS ni reparación completa. Quedan pendientes la ejecución nativa, las miniaturas regeneradas, retirada guardada de la fixture, el diagnóstico de cierre y las pruebas reales de inspector/colores. El problema visual de clientes de comedor continúa abierto.
+Aceptación: 72 comprobaciones en Play Mode, incluida entrada/salida de edición, cuatro colores alcanzables, dos ghosts con seis piezas visuales, razón de colocación inválida visible y tres cierres con eventos nativos de ratón. Console limpia hasta regresar al Editor. Regresión: SAVIC 26/26, núcleo de edición 84/84, Navigation 17 22/22, Navigation V1 44/44, barra 59/59 y BBSIS 2B 18/18. La barra publicada pasó además colocación, leases, rutas y SaveGame con instancia nueva y slot diagnóstico eliminado. Auditoría: 18 publicados, 17 placeables, cero revisiones/fallidos/inbox/orphans.
+
+Este cierre cubre esas cinco incidencias. El asiento visual de clientes de comedor y la desigualdad responsive de altura entre barras siguen abiertos; no se declara cierre comercial de 21A ni certificación visual de todas las resoluciones.
 
 ---
 
@@ -2505,6 +2536,52 @@ No se afirma reconocimiento universal de fuentes futuras, jornada IA completa, r
 Antes del push se detecta `0172c0fbe4143216b71fb90f827abda1f5bc35e7`, posterior a la base solicitada: los cuatro iconos aprobados de encabezados de Carta. Se incorpora por merge conservando ambos historiales. `integration-latest-carta-icons.log` ejecuta `BistroBuilderMenuVisualV1RuntimeProbe.RunBatch` con **26 PASS / 0 FAIL, UnityActualExitCode=0** sobre la escena real. Es una auditoría estructural/uGUI; batch no produce capturas Game View ni sustituye la aprobación visual.
 
 Se repite la regresión canónica tras incorporar esos recursos/código: `integration-latest-final-canonical.log`, **exit 0**, gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos y todos los proofs funcionales actuales. Auditoría final **03/10/2026 16:39:39 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED y 0 inbox**. El inventario/gate copiados en el directorio de evidencia corresponden a este último cierre. Permanece documentado el fallo responsive de alturas y no se cambia su gate.
+
+---
+
+## SOURCE: docs/40_TESTING/UI_PRESENTATION_REVIEW_2026-10-04.md
+
+Category: CANONICAL
+
+# Revisión de presentación — 04/10/2026
+
+## Alcance y estado
+
+Cinco incidencias adicionales reportadas sobre el vídeo del usuario, corregidas en Unity 6000.3.19f1. Destino autorizado: `feature/bb-presentation-interaction-quality-v1`; proyecto del usuario: `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation`. Revisión aislada: `C:\Users\mruperez\ProyectoBB\BB_Review`. No se sube a master.
+
+## Causas demostradas y correcciones
+
+| Incidencia | Evidencia de causa | Corrección |
+|---|---|---|
+| Miniaturas y mesa provisional como bloque | La captura tomaba el prefab primitivo sin la presentación de tablero/patas. A DPI 125 %, el target real de PreviewRenderUtility era 320×320 y ReadPixels de 256×256 recortaba la imagen. Preview de mesa de cuatro plazas apuntaba al icono de dos. | Renderer compartido de mesa, también en CreationStarted; geometría en coordenadas locales, escala del prefab preservada, cámara superior y reducción del target completo. Dos PNG inspeccionados y referencia corregida. Sin cambios de autoridad física. |
+| Solo dos colores de silla visibles | Cuatro definiciones y prefabs reales en MainCatalog; tarjetas colocadas en una única fila horizontal pese a tener solo scroll vertical. | Conversión del layout heredado a GridLayoutGroup de dos columnas y ContentSizeFitter; cuatro colores comprobados con scroll nativo. |
+| Inspector inconsistente al arrastrar | Early return al mantener modo compacto y alturas fijas de contenido/estado no respetaban los textos. | Refresh de datos y visibilidad, reglas durante drag, alturas medidas y límites del canvas; restauración de preview al cancelar. |
+| Carta no cerraba | EventSystem alcanzaba el modal antes que el cierre: cabecera elevada con Canvas propio sin GraphicRaycaster. Reconfiguraciones acumulaban sortingOrder. Editor de platos quedaba debajo de navegación. | Raycaster en Canvas sticky, herencia desde Canvas padre, sorting estable, target mínimo 44 y safe-area/viewport canónicos del editor. Tres cierres reales con press/release del Input System; no se llama Close como aceptación. |
+| Barra/taburetes antiguos reaparecían | Fixture serializada, instalador y recreación visual legacy. Al retirarla, BarServiceRegistry rechazaba cero plazas y deshabilitaba el servicio. | Retirada nativa guardada, eliminación de sus rutas de creación, guard de compatibilidad por identidad, registro vacío válido con capacidad cero. Alta dinámica de barra SAVIC preservada. |
+
+## Aceptación real
+
+Todos los procesos siguientes finalizaron con código de salida real **0**. Logs locales en `BB_Review/Logs`; los helpers de ejecución quedan versionados.
+
+| Ejecución | Resultado | Evidencia |
+|---|---|---|
+| Autoría nativa e iconos | Dos mesas, cuatro colores existentes; primera retirada=1, repetición=0; render completo 320→256 | `presentation-native-repair-full-render.log`, `presentation-review-authoring.txt` |
+| Play Mode de cinco incidencias | **72 PASS**, Console sin Error/Exception/Assert hasta Editor | `presentation-review-five-issues-final.log`, `presentation-review-runtime.txt`, timestamp 09:21:47 UTC |
+| Regresión canónica | SAVIC **26/26**, edición **84/84**, Navigation17 **22/22**, NavigationV1 **44/44**, servicio de barra **59/59**, BBSIS2B **18/18** | `presentation-review-final-canonical-regression.log`, `presentation-review-final-regression.txt`, timestamp 09:32:07 UTC |
+| Barra publicada, catálogo principal real | Colocación, binding, ruta GridFallback, lease automático/liberación/ocupación, SaveGame save/load, mismos IDs y nueva instancia; slot eliminado y Console limpia | `presentation-review-published-bar-runtime.log`, proof `barCounterRuntime` verificado 09:32:35 UTC |
+| Inventario canónico | **18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED, 0 inbox, 0 orphaned** | `Library/BistroBuilder/SAVIC/Logs/canonical-content-inventory.json`, 09:32:07 UTC |
+
+Ejecución reproducible: `BistroBuilderPresentationReviewRepair.Run()` prepara autoría; `BistroBuilderPresentationReviewPlaytest.RunFromCommandLine()` verifica los cinco flujos; `BistroBuilderPresentationReviewRepair.RunFinalRegression()` verifica autoridades y genera inventario. La prueba publicada usa `BistroBuilder.Editor.Savic.SavicPublishedTableRuntimePlaytest.RunPublishedBarCounterFromCommandLine()`. Ejecutar sobre una copia limpia y sin otro Editor abierto en ese proyecto.
+
+## Fallos encontrados durante la verificación
+
+Los primeros intentos no se presentan como aceptación. La prueba aislada encontró pointers LFS sin materializar: se verificaron 36 rutas sin cambios locales, sus tamaños y los SHA-256 de 18 objetos ya disponibles, y se materializaron exclusivamente esas rutas. No hubo descarga ni recuperación Git/stash. La prueba BBSIS antigua exigía una barra fija; ahora verifica ausencia de capacidad/asignación en layout vacío y mantiene las pruebas nativas de semánticas cuando existen barras. La barra SAVIC publicada se prueba separadamente.
+
+El test de ratón necesitaba consumir eventos Dynamic porque el bootstrap mantiene la simulación pausada; se verifica estado de Mouse y primer hit de EventSystem antes de enviar cada press/release. Los fallos previos de Canvas/raycaster y de navegación superpuesta demostraron los defectos de producto y se corrigieron sin sustituir el cierre por una llamada directa. También se eliminaron búsquedas de UI durante teardown de componentes desactivados, que producían Assert al salir del Editor.
+
+## Límites
+
+Las capturas nativas del proceso batch son de 640×480; los PNG de miniatura se inspeccionaron a 256×256. Esta evidencia certifica los flujos descritos, no todas las resoluciones del HUD. Los clientes de comedor con pose sentada fuera de la silla y la desigualdad de altura entre barras siguen pendientes. Se conservan los cuatro colores existentes; no se amplía el sistema de acabados ni se inventan materiales de Meshy. No se afirma jornada completa de IA ni recuperación de servicio ocupado tras cargar.
 
 ---
 

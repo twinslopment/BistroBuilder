@@ -146,7 +146,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         try
         {
             if (stage == 0 && Time.frameCount >= 24) OpenPortfolio();
-            else if (stage == 1 && Time.frameCount >= 48) AuditPortfolio();
+            else if (stage == 1 && Time.frameCount >= 48 && Time.unscaledTime >= 3f) AuditPortfolio();
             else if (stage == 2 && Time.frameCount >= 70) OpenEditor();
             else if (stage == 3 && Time.frameCount >= 96) AuditEditor();
             else if (stage == 4 && Time.frameCount >= 112) OpenRecipe();
@@ -164,6 +164,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
 
     private static void OpenPortfolio()
     {
+        FindScene<BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
         portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
         editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
         recipe = FindScene<BistroBuilderDishRecipeAuthoringRuntimeView>();
@@ -330,7 +331,30 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(reached && !portfolio.IsOpen,
             "Close is the top real EventSystem hit and closes Carta through its pointer handler.");
-        if (portfolio.IsOpen) portfolio.Close(); // Test cleanup; cannot turn the failed click into PASS.
+        if (portfolio.IsOpen) portfolio.Close(); // Cleanup cannot turn a failed click into PASS.
+        Pass(portfolio.TryOpen(out _), "Carta can reopen after closing.");
+        Canvas.ForceUpdateCanvases();
+        if (close != null && eventSystem != null)
+        {
+            RectTransform rect = close.transform as RectTransform;
+            Canvas hostCanvas = close.GetComponentInParent<Canvas>();
+            var pointer = new PointerEventData(eventSystem) {
+                position = RectTransformUtility.WorldToScreenPoint(
+                    hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : hostCanvas.worldCamera,
+                    rect.TransformPoint(rect.rect.center)), button = PointerEventData.InputButton.Left };
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            eventSystem.RaycastAll(pointer, hits);
+            bool repeatReached = hits.Count > 0 && hits[0].gameObject.GetComponentInParent<Button>() == close;
+            Debug.Log("[CARTA V1] Reopened close header canvas=" + hostCanvas.name +
+                ", raycaster=" + (hostCanvas.GetComponent<GraphicRaycaster>() != null) +
+                ", firstHit=" + (hits.Count > 0 ? hits[0].gameObject.name : "none"));
+            if (repeatReached) ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,
+                pointer, ExecuteEvents.pointerClickHandler);
+            Pass(repeatReached && !portfolio.IsOpen,
+                "Reopened Carta closes through the real pointer after sticky-header installation.");
+        }
+        else Pass(false, "Reopened Carta requires a close button and EventSystem.");
+        if (portfolio.IsOpen) portfolio.Close();
         Move(2);
     }
 
