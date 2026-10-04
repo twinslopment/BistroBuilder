@@ -719,6 +719,11 @@ public static class BistroBuilderCatalogThumbnailService
                 previewRoot.transform
             );
 
+            // Match the table shown in scene and in the provisional placement.
+            // Never render the functional whitebox cube as a product thumbnail.
+            foreach (var table in previewRoot.GetComponentsInChildren<RestaurantTable>(true))
+                BistroBuilderPrototypePresentationService.ApplyTablePresentationForPreview(table);
+
             if (!TryCalculateRendererBounds(
                     previewRoot,
                     out Bounds bounds

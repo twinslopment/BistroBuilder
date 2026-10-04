@@ -55,3 +55,8 @@ La candidata `codex/topbar-responsive-approved` incorpora `f86f97da` de `integra
 Combinación funcional verificada sobre `feature/bb-presentation-interaction-quality-v1` desde `b595fd99`, fuente SAVIC `ef1fcbb7`. Copia nueva `BB_SavicPresentation`: auditoría 16:33:56 UTC, 18 publicados/17 placeables, cero revisiones/fallidos; gate26/core84/Navigation22/barra59/BBSIS2B18 PASS y aceptaciones estrictas reales con SaveGame de barra/taburetes/campana. Empaquetado LFS y evidencia Meshy íntegros en checkout. Sigue pendiente el gate visual: prueba responsive falla por alturas distintas de barras, código heredado de la base de presentación. No se declara cerrado 21A. [Informe](../40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md).
 
 La integración conserva también el avance remoto `0172c0fb` (iconos de encabezado Carta), con su gate uGUI **26/26 PASS**. Regresión funcional repetida después: gate26/core84/Navigation22/barra59/BBSIS2B18 PASS, auditoría final 16:39:39 UTC mantiene cero revisiones y fallidos. La igualdad responsive de altura continúa pendiente; no afecta al alcance del cierre funcional SAVIC ni certifica cierre visual.
+
+
+## Regresiones de presentación — 04/10/2026
+
+El vídeo y la revisión del usuario reabren aceptación de mesas primitivas, inspector de arrastre, visibilidad de acabados, cierre de Carta y barra provisional retirada. Correcciones en preparación; ninguna aceptación runtime nueva todavía. Clientes sentados fuera de sillas de comedor siguen pendientes. Se preserva la evidencia funcional SAVIC y el avance remoto de Carta. [Alcance vivo](../30_UI_UX/PRESENTATION_INTERACTION_QUALITY.md).

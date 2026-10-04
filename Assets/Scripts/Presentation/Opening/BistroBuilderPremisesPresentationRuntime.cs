@@ -61,7 +61,6 @@ public static class BistroBuilderPremisesPresentationRuntime
         if (profile != BistroBuilderStartingPremisesProfile.Empty)
         {
             UpgradeKitchenAuthorityVisual(kit);
-            UpgradeLegacyBarVisuals(kit);
         }
 
         ReconcilePrototypeFallback();
@@ -376,103 +375,6 @@ public static class BistroBuilderPremisesPresentationRuntime
             new Vector3(0f, 0.38f, -0.73f),
             new Vector3(3.02f, 0.13f, 0.08f),
             kit.trimMaterial != null ? kit.trimMaterial : kit.wallMaterial);
-    }
-
-    private static void UpgradeLegacyBarVisuals(
-        BistroBuilderConstructionAssetKit kit)
-    {
-        BistroBuilder367HInstalledFixture[] fixtures =
-            UnityEngine.Object.FindObjectsByType<BistroBuilder367HInstalledFixture>(
-                FindObjectsInactive.Exclude,
-                FindObjectsSortMode.InstanceID);
-
-        BistroBuilder367HInstalledFixture bar = null;
-        for (int i = 0; i < fixtures.Length; i++)
-        {
-            if (fixtures[i] != null &&
-                string.Equals(
-                    fixtures[i].FixtureId,
-                    "fixture_367h_bar",
-                    StringComparison.Ordinal))
-            {
-                bar = fixtures[i];
-                break;
-            }
-        }
-
-        if (bar == null) return;
-
-        HideLegacyPrimitive(bar.transform, "ProvisionalCounter");
-        HideLegacyPrimitive(bar.transform, "ProvisionalStool");
-
-        Transform previous = bar.transform.Find("BB_PresentationBar");
-        if (previous != null) DestroyPresentationObject(previous.gameObject);
-
-        var visual = new GameObject("BB_PresentationBar");
-        visual.transform.SetParent(bar.transform, false);
-
-        Material metal = Resources.Load<Material>(
-            "BistroBuilder/Construction/Materials/Metal_grafito");
-        Material timber = kit.trimMaterial != null ? kit.trimMaterial : kit.wallMaterial;
-
-        CreateBox(
-            visual.transform,
-            "CounterBase",
-            new Vector3(0f, 0.38f, 0f),
-            new Vector3(5.20f, 0.72f, 0.78f),
-            timber);
-
-        CreateBox(
-            visual.transform,
-            "CounterTop",
-            new Vector3(0f, 0.80f, 0f),
-            new Vector3(5.45f, 0.12f, 1.02f),
-            kit.floorMaterial);
-
-        Material accent = metal != null ? metal : kit.wallMaterial;
-        for (int i = 0; i < 6; i++)
-        {
-            float x = Mathf.Lerp(-2.25f, 2.25f, i / 5f);
-            CreateBox(
-                visual.transform,
-                "FrontSlat_" + i.ToString("D2"),
-                new Vector3(x, 0.38f, -0.43f),
-                new Vector3(0.055f, 0.62f, 0.06f),
-                accent);
-        }
-
-        BistroBuilderBarServiceSpot[] spots =
-            bar.GetComponentsInChildren<BistroBuilderBarServiceSpot>(true);
-        for (int i = 0; i < spots.Length; i++)
-        {
-            if (spots[i] == null) continue;
-            Transform oldStool = spots[i].transform.Find("BB_PresentationStool");
-            if (oldStool != null) DestroyPresentationObject(oldStool.gameObject);
-
-            var stool = new GameObject("BB_PresentationStool");
-            stool.transform.SetParent(spots[i].transform, false);
-
-            CreateCylinder(
-                stool.transform,
-                "Base",
-                new Vector3(0f, 0.055f, -1f),
-                new Vector3(0.28f, 0.055f, 0.28f),
-                accent);
-
-            CreateCylinder(
-                stool.transform,
-                "Stem",
-                new Vector3(0f, 0.37f, -1f),
-                new Vector3(0.065f, 0.31f, 0.065f),
-                accent);
-
-            CreateCylinder(
-                stool.transform,
-                "Seat",
-                new Vector3(0f, 0.72f, -1f),
-                new Vector3(0.34f, 0.075f, 0.34f),
-                timber);
-        }
     }
 
     private static void HideLegacyPrimitive(

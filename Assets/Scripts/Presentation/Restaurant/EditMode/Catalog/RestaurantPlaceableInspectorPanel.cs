@@ -284,7 +284,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         layout.spacing = 7f;
         layout.childAlignment = TextAnchor.UpperCenter;
         layout.childControlWidth = true;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
@@ -583,9 +583,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             TextAlignmentOptions.BottomLeft);
         SetAnchors(
             statusTitle.rectTransform,
-            new Vector2(0f, 0.5f),
+            new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(56f, 0f),
+            new Vector2(56f, -28f),
             new Vector2(-8f, -7f));
 
         statusMessage = CreateTmp(
@@ -600,9 +600,9 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         SetAnchors(
             statusMessage.rectTransform,
             new Vector2(0f, 0f),
-            new Vector2(1f, 0.5f),
+            new Vector2(1f, 1f),
             new Vector2(56f, 6f),
-            new Vector2(-8f, 0f));
+            new Vector2(-8f, -30f));
     }
 
     private void BuildActions()
@@ -752,7 +752,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             return;
 
         if (titleText != null)
-            titleText.text = "Inspector";
+            titleText.text = compactPlacementMode ? data.DisplayName : "Inspector";
         if (nameText != null) nameText.text = data.DisplayName;
         if (descriptionText != null) descriptionText.text = data.Description;
 
@@ -1536,14 +1536,10 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             interactionController != null &&
             interactionController.HasActivePlacement;
 
-        if (compactPlacementMode ==
-            shouldCompact)
-        {
-            return;
-        }
-
-        compactPlacementMode =
-            shouldCompact;
+        compactPlacementMode = shouldCompact;
+        if (titleText != null)
+            titleText.text = compactPlacementMode && currentData != null
+                ? currentData.DisplayName : "Inspector";
 
         if (previewSection != null)
         {
@@ -1574,8 +1570,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         if (rulesSection != null)
         {
-            rulesSection.gameObject.SetActive(
-                !compactPlacementMode);
+            rulesSection.gameObject.SetActive(true);
         }
 
         if (actionsSection != null)
@@ -1631,12 +1626,19 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 : 1080f;
 
         float available =
-            Mathf.Max(360f, canvasHeight - topInset - bottomInset);
+            Mathf.Max(126f, canvasHeight - topInset - bottomInset);
 
+        if (statusMessage != null && statusBackground != null)
+        {
+            float messageWidth = Mathf.Max(160f, root.rect.width - 94f);
+            float height = Mathf.Max(64f, 40f + statusMessage.GetPreferredValues(
+                statusMessage.text, messageWidth, 0f).y);
+            var row = statusBackground.GetComponent<LayoutElement>();
+            if (row != null) row.minHeight = row.preferredHeight = height;
+        }
         if (content != null)
         {
-            LayoutRebuilder.ForceRebuildLayoutImmediate(
-                content);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
         }
 
         float preferredHeight =
@@ -1649,15 +1651,11 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
                 ? Mathf.Clamp(
                     preferredHeight,
                     126f,
-                    Mathf.Min(
-                        180f,
-                        available))
+                    available)
                 : Mathf.Clamp(
                     preferredHeight,
-                    360f,
-                    Mathf.Min(
-                        680f,
-                        available));
+                    Mathf.Min(360f, available),
+                    Mathf.Min(680f, available));
 
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);

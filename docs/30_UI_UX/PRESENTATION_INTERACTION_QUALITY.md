@@ -221,3 +221,16 @@ Solo después de estas comprobaciones y aprobación visual del usuario se integr
 ## Integración SAVIC — 03/10/2026
 
 Combinación solicitada con SAVIC desde `b595fd99`, en copia aislada `BB_SavicPresentation`. Se preservan las autoridades existentes, paleta del cliente y geometría/aperturas/acabados; se integran catálogo canónico de persistencia, perfil Humanoid, módulos publicados y los 18 GLB LFS. Aceptación funcional: catálogo real/SaveGame de barra, tres taburetes y campana; gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos. La prueba responsive de igualdad de altura entre barras falla a 1920×1080 con las implementaciones de la base de presentación intactas; no se declara aceptación visual ni cierre de 21A. [Evidencia](../40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md).
+
+
+## Revisión de vídeo — 04/10/2026 (EN CORRECCIÓN, sin aceptación runtime)
+
+El vídeo de 218 s aportado por el usuario demuestra miniaturas/ghost de mesa básica como cubos, inspector compacto con texto recortado, cierre de Carta no confirmado y clientes con pose sentada fuera del asiento. El usuario exige retirar definitivamente la barra provisional y sus taburetes. Las pruebas de publicación SAVIC anteriores no certifican estos flujos de UI ni el asiento de comedor.
+
+- La identidad `fixture_367h_bar` queda retirada: escena, instalador y presentación inicial deben dejar de crearla. Se mantienen las autoridades de servicio y las barras placeables publicadas. La compatibilidad con escenas antiguas debe impedir registros, obstáculos y visuales de esa fixture retirada.
+- Miniaturas y ghost de las mesas primitivas deben usar el mismo generador visual de tablero y patas, respetando geometría local al rotar y sin modificar colliders/footprints.
+- El inspector debe calcular alturas reales de filas y texto; al arrastrar conserva nombre del artículo, reglas y motivo de validación completo.
+- Existen cuatro colores de la silla contemporánea (rojo, oliva, blanco y amarillo) en datos y catálogo. Sigue pendiente verificar su visibilidad efectiva y navegación en la UI; no se han generado variantes nuevas.
+- El cierre de Carta requiere prueba del primer hit de EventSystem y del handler de puntero, conservando el contenido y estilo aprobado. No basta con llamar `Close()` en un test.
+
+Se prepararon correcciones de código y una operación de autoría nativa reversible; aún no se declara PASS ni reparación completa. Quedan pendientes la ejecución nativa, las miniaturas regeneradas, retirada guardada de la fixture, el diagnóstico de cierre y las pruebas reales de inspector/colores. El problema visual de clientes de comedor continúa abierto.
