@@ -382,6 +382,10 @@ La integración conserva también el avance remoto `0172c0fb` (iconos de encabez
 
 Cinco incidencias del vídeo corregidas y verificadas: miniaturas/ghost de mesas básicas, cuatro acabados existentes de silla accesibles, inspector de arrastre, cierre de Carta y editor con ratón, y retirada permanente de la barra provisional/taburetes antiguos. Play Mode 72 comprobaciones y Console limpia; regresión SAVIC26/core84/Navigation22+44/barra59/BBSIS2B18 PASS. La barra publicada de SAVIC vuelve a pasar colocación, leases, rutas y SaveGame real. Auditoría 04/10/2026 09:32:07 UTC: 18 publicados/17 placeables, cero revisiones/fallidos/inbox/orphans. Se conserva Carta V3 del remoto y se integra en `feature/bb-presentation-interaction-quality-v1`. Clientes sentados fuera de sillas de comedor y alturas desiguales del HUD continúan pendientes; 21A sigue abierto. [Evidencia y límites](../40_TESTING/UI_PRESENTATION_REVIEW_2026-10-04.md).
 
+## Comedor/HUD — 04/10/2026
+
+Resueltos los dos pendientes de la revisión del vídeo: alineación de clientes Humanoid con sillas reales del comedor y altura física común entre barras del HUD. Play Mode de comedor 50 comprobaciones (llegada, asiento, salida y reconstrucción del cliente sin inventar la bandera de Navigation); HUD 159 comprobaciones en siete resoluciones. Tres BarStool publicados reaceptados desde catálogo principal con seis cargas SaveGame, identidad/asociación estables, clientes sentados y Console limpia. No cambia Gameplay, reservas, capacidad ni raíz lógica. No se declara jornada IA completa ni ratificación comercial de 21A. [Causas y evidencia](../40_TESTING/DINING_SEATING_HUD_REVIEW_2026-10-04.md).
+
 ---
 
 ## SOURCE: docs/10_ARCHITECTURE/AUTHORITY_MATRIX.md
@@ -2077,6 +2081,16 @@ Aceptación: 72 comprobaciones en Play Mode, incluida entrada/salida de edición
 
 Este cierre cubre esas cinco incidencias. El asiento visual de clientes de comedor y la desigualdad responsive de altura entre barras siguen abiertos; no se declara cierre comercial de 21A ni certificación visual de todas las resoluciones.
 
+## Comedor y geometría compartida del HUD — 04/10/2026
+
+Corregidos los dos pendientes anteriores: los miembros Humanoid de un grupo de comedor se alinean ahora con los SeatPoint de las sillas reales de su mesa, y el HUD inferior consume la misma métrica de altura/margen físico que la navegación superior y el chrome de edición. [Evidencia](../40_TESTING/DINING_SEATING_HUD_REVIEW_2026-10-04.md).
+
+La representación de comedor observa exclusivamente la asignación bidireccional grupo↔mesa, los estados posteriores a la llegada, la topología registrada y el facing funcional de cada silla. Distribuye miembros por índice de plaza existente; no concede reservas, modifica capacidad ni mueve la raíz lógica de Navigation. Durante restauración parcial no alinea; al terminar, acepta el estado autoritativo reconstruido, porque HasReachedDestination es transitorio y no se guarda. Las recetas canónicas sit/idle/stand colocan la pelvis sobre el SeatPoint con el offset del perfil. Una silla ausente/ambigua/con reserva activa no produce un asiento ficticio.
+
+Play Mode: 50 comprobaciones de dos miembros, llegada real por Navigation/CustomerSeatingFlow, asientos distintos, pelvis/error/facing/pose de piernas, liberación y reconstrucción mediante las APIs usadas por service.runtime con IDs estables y nuevo objeto Unity. HUD: 159 comprobaciones en siete resoluciones (800×600–3840×2160), incluida igualdad física de las barras, límites de secciones, controles e iconos sin deformación. Capturas nativas del comedor y HUD inspeccionadas. Los tres taburetes conservan su aceptación estricta MainCatalog tras seis cargas reales de SaveGame y Console limpia.
+
+Este avance resuelve las dos incidencias concretas; la reconstrucción del comedor prueba el contrato de identidad/estado del cliente, no una jornada completa ni todo service.runtime ocupado de extremo a extremo. La ratificación visual comercial de 21A sigue pendiente.
+
 ---
 
 ## SOURCE: docs/30_UI_UX/STAFF_PERSONAL_REFERENCE_V5_20261002.md
@@ -2453,6 +2467,45 @@ Los bloques críticos deben incluir escenarios integrados que intenten romper in
 
 ## Cierre documental
 Al declarar un bloque COMPLETO/VALIDADO/CERRADO, actualizar `00_PRODUCT/ROADMAP.md`, la documentación del sistema y la evidencia de validación en el mismo cambio.
+
+---
+
+## SOURCE: docs/40_TESTING/DINING_SEATING_HUD_REVIEW_2026-10-04.md
+
+Category: CANONICAL
+
+# Comedor y HUD — revisión 04/10/2026
+
+## Causas y solución
+
+El presenter del miembro Humanoid resolvía únicamente plazas de barra; el comedor no conectaba la pose con las sillas registradas. Se amplía el presenter existente, conservando su API y actor de Animation V1. Gameplay sigue concediendo la mesa y CustomerSeatingFlow confirma la llegada. La representación observa esa concesión, estados sentados, topología de RestaurantSeatRegistry y plazas ordenadas por AssociatedSlotIndex. Cada miembro usa un SeatPoint distinto y el eje funcional de su silla; solo cambia su visual, no el CustomerGroup lógico, capacidad, reservas, rutas ni leases. Se rechazan topologías insuficientes/ambiguas y sillas con reserva activa, sin fabricar asientos. Al liberar la mesa se reproduce stand y vuelve el visual a su baseline.
+
+La comprobación de carga encontró que HasReachedDestination no es persistente: service.runtime recrea identidad/pose y restaura el estado del grupo sin esa bandera. El presenter espera a terminar IsRestoring y observa los estados autoritativos posteriores a sentarse. El caso de reconstrucción usa las APIs TryRestoreRuntimeIdentity/TryRestoreRuntimeState con la identidad, estado y pose capturados después de la llegada real; no marca Navigation como llegado ni mueve su raíz como prueba.
+
+La barra inferior recalculaba altura con 8,5 % y límites 78–108 unidades, sobrescribiendo la métrica compartida de la superior. Ahora RefreshNormalBottomBarLayout consume ResolveApprovedTopBarMetrics, también para margen lateral y separación física al borde. Se mantienen las autoridades y diseño de pausa/velocidades/relojes; no se cambia el assert de igualdad de altura para aceptar el defecto.
+
+## Evidencia nativa
+
+Unity 6000.3.19f1 en la copia aislada `C:\Users\mruperez\ProyectoBB\BB_Review`. Entrega en `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation`, rama remota `feature/bb-presentation-interaction-quality-v1`. Se preservan todos los cambios locales ajenos.
+
+| Prueba | Resultado | Evidencia local |
+|---|---|---|
+| Comedor inicial | 25 PASS: dos clientes del prefab real, asignación de mesa y llegada por Navigation/CustomerSeatingFlow, asiento y liberación | `Logs/dining-seat-first.log` |
+| Comedor con reconstrucción | **50 PASS**, Console limpia hasta Editor; dos miembros en sillas distintas, pelvis a SeatPoint+offset con error <0,025 m, facing correcto, muslos sentados; misma identidad y nueva instancia Unity sin bandera de llegada fabricada | `Logs/dining-seat-restoration-final.log`, `Logs/dining-seat-presentation.txt` |
+| HUD nativo | **159 PASS**, siete resoluciones y siete asserts de igualdad física de barras; marcos/secciones/controles dentro de pantalla, iconos no estirados y etiquetas superiores sin recortes | `Logs/hud-shared-height.log`, `Logs/TopBarResponsive/result.txt` |
+| Taburetes publicados, representación compartida | Revalidación y aceptación estricta de MainCatalog, tres assets y seis cargas SaveGame, IDs/enlaces estables y objetos nuevos, clientes sentados, limpieza/slot eliminado/Console=0 | `Logs/dining-change-stool-revalidation.log`, `Logs/dining-change-stool-main-strict.log`, proof 10:02:38 UTC |
+
+Todos estos procesos terminaron con código real **0**. Las capturas inspeccionadas son `Logs/dining-seated-actual-customers.png`, `Logs/dining-seated-restored-customers.png` y `Logs/TopBarResponsive/bar-1920.png`; el HUD se renderizó también a 800×600, 1024×768, 1280×720, 2560×1440, 3440×1440 y 3840×2160. No se sustituyó el render nativo por una maqueta.
+
+Reproducción: `BistroBuilderDiningSeatPresentationPlaytest.Run()` y `BistroBuilderTopBarResponsiveTest.RunChromeOnly()`. La prueba original completa del HUD sigue disponible; este gate se limita a geometría, controles y contenido del chrome, sin afirmar aceptación de todas las pantallas de gestión. Las pruebas de barra/taburetes conservan el gate estricto de fuente/plan/prefab/cliente/Animation/informe vigente.
+
+## Límites
+
+La reconstrucción del comedor certifica las APIs de identidad/estado/visual del cliente y su asignación; no se presenta como prueba completa de SaveGame de un servicio ocupado. Las seis cargas completas de SaveGame sí se ejecutan para los taburetes publicados en su alcance anterior. No se añade walking, interacción de manos, extracción de campana ni capacidad nueva. La aprobación visual comercial global y jornada IA completa permanecen fuera de este cierre.
+
+## Cierre canónico
+
+Regresión posterior al caso de reconstrucción: `Logs/dining-hud-restoration-canonical-final.log`, código real 0, **SAVIC26/26, edición84/84, Navigation17 22/22, NavigationV1 44/44, barra59/59 y BBSIS2B18/18 PASS**. Inventario nativo 04/10/2026 10:10:54 UTC: **18 únicos, 18 publicados, 17 placeables, 0 NEEDS_REVIEW, 0 FAILED, 0 inbox y 0 orphaned**. Los proofs publicados siguen vigentes; no se cambian estados para cerrar el lote.
 
 ---
 

@@ -557,14 +557,13 @@ public sealed partial class BistroBuilderUiShell
 
         int pixelWidth = Mathf.RoundToInt(canvas.pixelRect.width);
         int pixelHeight = Mathf.RoundToInt(canvas.pixelRect.height);
-        float scale = Mathf.Max(0.01f, canvas.scaleFactor);
-        float height = Mathf.Clamp(pixelHeight * 0.085f / scale, 78f, 108f);
+        ResolveApprovedTopBarMetrics(out float scale, out float height, out float margin, out _);
 
         bottomOperations.anchorMin = new Vector2(0f, 0f);
         bottomOperations.anchorMax = new Vector2(1f, 0f);
         bottomOperations.pivot = new Vector2(0.5f, 0f);
-        bottomOperations.anchoredPosition = Vector2.zero;
-        bottomOperations.sizeDelta = new Vector2(0f, height);
+        bottomOperations.anchoredPosition = new Vector2(0f, 8f / scale);
+        bottomOperations.sizeDelta = new Vector2(-margin * 2f, height);
 
         float aspect = pixelHeight > 0 ? pixelWidth / (float)pixelHeight : 1.777f;
         float leftWeight;

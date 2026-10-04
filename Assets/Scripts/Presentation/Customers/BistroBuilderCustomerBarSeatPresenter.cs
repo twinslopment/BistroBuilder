@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Represents resolved native bar occupancy. Only this member's visual transform moves;
+/// Represents granted bar or dining seating. Only this member's visual transform moves;
 /// the logical CustomerGroup, Navigation, capacities and spatial leases are never written.
 /// </summary>
 [DefaultExecutionOrder(200)]
@@ -15,6 +15,9 @@ public sealed class BistroBuilderCustomerBarSeatPresenter : MonoBehaviour
     private BistroBuilderCustomerHumanoidProfile profile;
     private BistroBuilderCharacterAnimationServiceV1 animationService;
     private BistroBuilderBarServiceRegistry bars;
+    private RestaurantSeatRegistry diningSeats;
+    private RestaurantSeat alignedDiningSeat;
+    private readonly List<RestaurantSeat> diningSeatBuffer = new List<RestaurantSeat>();
     private BistroBuilderAnimationActorBinding actor;
     private Animator animator;
     private Transform hips;
@@ -62,6 +65,7 @@ public sealed class BistroBuilderCustomerBarSeatPresenter : MonoBehaviour
     private void ResolveServices()
     {
         if (bars == null) bars = FindFirstObjectByType<BistroBuilderBarServiceRegistry>();
+        if (diningSeats == null) diningSeats = FindFirstObjectByType<RestaurantSeatRegistry>();
         if (animationService != null) return;
         animationService = FindFirstObjectByType<BistroBuilderCharacterAnimationServiceV1>();
         if (animationService != null)
@@ -98,7 +102,9 @@ public sealed class BistroBuilderCustomerBarSeatPresenter : MonoBehaviour
 
     private Transform ResolveGrantedSeat()
     {
-        if (bars == null || !group.IsOccupyingBar || movement == null || movement.IsMoving ||
+        if (!group.IsOccupyingBar) return ResolveDiningSeat();
+        alignedDiningSeat = null;
+        if (bars == null || movement == null || movement.IsMoving ||
             group.CurrentState == CustomerGroupState.WalkingToBar || group.CurrentState == CustomerGroupState.Leaving ||
             group.CurrentState == CustomerGroupState.Finished) return null;
         bars.GetOccupiedSpots(group, occupied);
@@ -122,6 +128,49 @@ public sealed class BistroBuilderCustomerBarSeatPresenter : MonoBehaviour
         return null;
     }
 
+    private Transform ResolveDiningSeat()
+    {
+        alignedDiningSeat = null;
+        RestaurantTable table = group.AssignedTable;
+        // Gameplay grants the whole table; topology identifies its actual chairs.
+        // This only chooses a visual member position, without reserving or creating capacity.
+        if (table == null || table.AssignedCustomerGroup != group || diningSeats == null ||
+            movement == null || movement.IsMoving || BistroBuilderActiveServiceRuntimeLoadScope.IsRestoring ||
+            !HasCompletedDiningArrival(group.CurrentState)) return null;
+        diningSeatBuffer.Clear();
+        foreach (RestaurantSeat seat in diningSeats.RegisteredSeats)
+        {
+            if (seat == null || !seat.isActiveAndEnabled || !seat.IsAssociated ||
+                seat.AssociatedTable.Table != table || seat.SeatPoint == null ||
+                !string.IsNullOrWhiteSpace(seat.ReservationOwnerId)) continue;
+            diningSeatBuffer.Add(seat);
+        }
+        diningSeatBuffer.Sort((a, b) => a.AssociatedSlotIndex.CompareTo(b.AssociatedSlotIndex));
+        if (diningSeatBuffer.Count < group.GroupSize) return null;
+        for (int i = 1; i < diningSeatBuffer.Count; i++)
+            if (diningSeatBuffer[i - 1].AssociatedSlotIndex == diningSeatBuffer[i].AssociatedSlotIndex) return null;
+        if (memberIndex > diningSeatBuffer.Count) return null;
+        alignedDiningSeat = diningSeatBuffer[memberIndex - 1];
+        return alignedDiningSeat.SeatPoint;
+    }
+    private static bool HasCompletedDiningArrival(CustomerGroupState state)
+    {
+        // These authoritative states follow seating completion. service.runtime restores
+        // them without serializing Navigation's transient HasReachedDestination flag.
+        switch (state)
+        {
+            case CustomerGroupState.Seated:
+            case CustomerGroupState.WaitingForWaiter:
+            case CustomerGroupState.Ordering:
+            case CustomerGroupState.WaitingForFood:
+            case CustomerGroupState.Eating:
+            case CustomerGroupState.WaitingForBill:
+            case CustomerGroupState.Paying:
+                return true;
+            default:
+                return false;
+        }
+    }
     private string pendingMotion;
     private BistroBuilderInteractionOperation pendingOperation;
     private void Request(string motion, BistroBuilderInteractionOperation operation)
@@ -167,7 +216,10 @@ public sealed class BistroBuilderCustomerBarSeatPresenter : MonoBehaviour
         if (alignedSeat != null && (State == VisualState.EnteringSeat || State == VisualState.Seated))
         {
             Vector3 hipsLocal = transform.InverseTransformPoint(hips.position);
-            Quaternion desiredRotation = Quaternion.Inverse(transform.parent.rotation) * alignedSeat.rotation;
+            Quaternion seatRotation = alignedDiningSeat != null
+                ? Quaternion.LookRotation(alignedDiningSeat.CalculateFacingDirectionAtPose(alignedDiningSeat.transform.rotation), alignedSeat.up)
+                : alignedSeat.rotation;
+            Quaternion desiredRotation = Quaternion.Inverse(transform.parent.rotation) * seatRotation;
             Vector3 pelvisTarget = alignedSeat.position + alignedSeat.up * profile.PelvisAboveSeatMeters;
             Vector3 desiredPosition = transform.parent.InverseTransformPoint(pelvisTarget) -
                 desiredRotation * Vector3.Scale(hipsLocal, transform.localScale);

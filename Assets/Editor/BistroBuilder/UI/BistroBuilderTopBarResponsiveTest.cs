@@ -28,6 +28,7 @@ public static class BistroBuilderTopBarResponsiveTest
         if(state==PlayModeStateChange.EnteredPlayMode){stage=0;auditIndex=0;next=EditorApplication.timeSinceStartup+4;timeout=next+180;EditorApplication.update+=Tick;}
         if(state==PlayModeStateChange.EnteredEditMode){SessionState.SetBool(Key,false);EditorApplication.Exit(SessionState.GetBool(Key+".Pass",false)?0:1);}
     };}
+    public static void RunChromeOnly(){SessionState.SetBool(Key+".ChromeOnly",true);Run();}
     public static void Run(){Directory.CreateDirectory("Logs/TopBarResponsive");File.WriteAllText("Logs/TopBarResponsive/result.txt","");SessionState.SetBool(Key,true);SessionState.SetBool(Key+".Pass",false);EditorSceneManager.OpenScene("Assets/Scenes/Prototype_Restaurant.unity");EditorApplication.EnterPlaymode();}
     static void Check(bool value,string label){if(!value)throw new Exception(label);File.AppendAllText("Logs/TopBarResponsive/result.txt","PASS "+label+"\n");}
     static Button Button(string label)=>bar.GetComponentsInChildren<Button>(true).First(x=>x.name=="BBNav_"+label);
@@ -82,7 +83,7 @@ public static class BistroBuilderTopBarResponsiveTest
                     Check(hover.HoverAmount>.95f,"90ms hover settling; amount="+hover.HoverAmount+" active="+hover.isActiveAndEnabled);
                     Check(moving.localScale.x>1||moving.localPosition!=restPosition,"Independent icon animation");
                     foreach(var size in new[]{new Vector2Int(1920,1080),new Vector2Int(1280,720),new Vector2Int(1024,768),new Vector2Int(800,600),new Vector2Int(2560,1440),new Vector2Int(3440,1440),new Vector2Int(3840,2160)})Capture(size.x,size.y);
-                    hover.OnPointerExit(new PointerEventData(EventSystem.current));Button("Personal").onClick.Invoke();break;
+                    hover.OnPointerExit(new PointerEventData(EventSystem.current));if(SessionState.GetBool(Key+".ChromeOnly",false)){SessionState.SetBool(Key+".ChromeOnly",false);Finish(true,"BB_HUD_SHARED_GEOMETRY_PASS");break;}Button("Personal").onClick.Invoke();break;
                 case 2:
                     if(hover.HoverAmount>.01f){stage--;return;}
                     Check(UnityEngine.Object.FindFirstObjectByType<BistroBuilderStaffPlayerScreen>().IsVisible,"Personal opens its real panel");
