@@ -129,165 +129,28 @@ public static class BistroBuilderBarServiceValidator
     }
 
     private static void ValidateBarFixtures(
-        Scene scene,
-        BistroBuilderBarServiceValidationResult result
-    )
+        Scene scene, BistroBuilderBarServiceValidationResult result)
     {
-        BistroBuilder367HInstalledFixture[] fixtures =
-            BistroBuilderBarServiceInstaller
-                .FindSceneObjects<BistroBuilder367HInstalledFixture>(scene);
-        int barFixtureCount = 0;
+        int retired = 0;
+        foreach (var fixture in BistroBuilderBarServiceInstaller
+                     .FindSceneObjects<BistroBuilder367HInstalledFixture>(scene))
+            if (fixture != null && fixture.IsRetired) retired++;
+        if (retired == 0) result.AddCorrect("La barra provisional retirada no existe en la escena.");
+        else result.AddError("Persisten barras provisionales retiradas: " + retired + ".");
 
-        for (int index = 0; index < fixtures.Length; index++)
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var spot in BistroBuilderBarServiceInstaller
+                     .FindSceneObjects<BistroBuilderBarServiceSpot>(scene))
         {
-            if (fixtures[index] != null &&
-                string.Equals(
-                    fixtures[index].FixtureId,
-                    "fixture_367h_bar",
-                    StringComparison.Ordinal
-                ))
-            {
-                barFixtureCount++;
-            }
+            if (spot == null) { result.AddError("Plaza nativa nula."); continue; }
+            if (!spot.ValidateConfiguration(out string error)) result.AddError(error);
+            else if (!ids.Add(spot.BarSpotId)) result.AddError("BarSpotId duplicado: " + spot.BarSpotId);
+            else result.AddCorrect("Plaza nativa válida: " + spot.BarSpotId);
         }
-
-        if (barFixtureCount == 1)
-        {
-            result.AddCorrect("Existe una única barra fija 367H.");
-        }
-        else
-        {
-            result.AddError(
-                "Deben existir exactamente una barra fija; encontradas " +
-                barFixtureCount + "."
-            );
-        }
-
-        BistroBuilderBarServiceSpot[] spots =
-            BistroBuilderBarServiceInstaller
-                .FindSceneObjects<BistroBuilderBarServiceSpot>(scene);
-        HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
-
-        if (spots.Length == 4)
-        {
-            result.AddCorrect("La barra contiene cuatro plazas operativas.");
-        }
-        else
-        {
-            result.AddError(
-                "Se esperaban cuatro plazas de barra y hay " +
-                spots.Length + "."
-            );
-        }
-
-        int validSpots = 0;
-
-        for (int index = 0; index < spots.Length; index++)
-        {
-            BistroBuilderBarServiceSpot spot = spots[index];
-            string error = string.Empty;
-            bool valid = spot != null &&
-                spot.ValidateConfiguration(out error) &&
-                ids.Add(spot.BarSpotId);
-
-            if (valid)
-            {
-                validSpots++;
-            }
-            else
-            {
-                result.AddError(
-                    spot == null
-                        ? "Existe una plaza de barra nula."
-                        : string.IsNullOrWhiteSpace(error)
-                            ? "BarSpotId duplicado: " + spot.BarSpotId + "."
-                            : error
-                );
-            }
-        }
-
-        if (validSpots == spots.Length && spots.Length == 4)
-        {
-            result.AddCorrect(
-                "Las cuatro plazas tienen identidad y puntos válidos."
-            );
-        }
-
-        int stools = 0;
-
-        for (int index = 0; index < fixtures.Length; index++)
-        {
-            if (fixtures[index] == null ||
-                !string.Equals(
-                    fixtures[index].FixtureId,
-                    "fixture_367h_bar",
-                    StringComparison.Ordinal
-                ))
-            {
-                continue;
-            }
-
-            Transform[] children = fixtures[index]
-                .GetComponentsInChildren<Transform>(true);
-
-            for (int child = 0; child < children.Length; child++)
-            {
-                if (children[child].name == "ProvisionalStool")
-                {
-                    stools++;
-                }
-            }
-        }
-
-        if (stools == 4)
-        {
-            result.AddCorrect("La barra incorpora cuatro taburetes provisionales.");
-        }
-        else
-        {
-            result.AddError(
-                "La barra debe contener cuatro taburetes; detectados " +
-                stools + "."
-            );
-        }
-
-        RestaurantPlacementObstacle[] obstacles =
-            BistroBuilderBarServiceInstaller.FindSceneObjects<
-                RestaurantPlacementObstacle
-            >(scene);
-        int barObstacleCount = 0;
-
-        for (int index = 0; index < obstacles.Length; index++)
-        {
-            RestaurantPlacementObstacle obstacle = obstacles[index];
-
-            if (obstacle != null &&
-                string.Equals(
-                    obstacle.ObstacleId,
-                    "placement_obstacle_367h_bar",
-                    StringComparison.Ordinal
-                ) &&
-                obstacle.BlocksPlacement &&
-                obstacle.Operational)
-            {
-                barObstacleCount++;
-            }
-        }
-
-        if (barObstacleCount == 1)
-        {
-            result.AddCorrect(
-                "La barra bloquea colocaciones incompatibles mediante un " +
-                "obstáculo fijo único."
-            );
-        }
-        else
-        {
-            result.AddError(
-                "La barra necesita un único obstáculo de colocación activo; " +
-                "detectados " + barObstacleCount + "."
-            );
-        }
+        foreach (var obstacle in BistroBuilderBarServiceInstaller
+                     .FindSceneObjects<RestaurantPlacementObstacle>(scene))
+            if (obstacle != null && obstacle.ObstacleId == "placement_obstacle_367h_bar")
+                result.AddError("Persiste el obstáculo de la barra provisional retirada.");
     }
 
     private static void ValidateTables(

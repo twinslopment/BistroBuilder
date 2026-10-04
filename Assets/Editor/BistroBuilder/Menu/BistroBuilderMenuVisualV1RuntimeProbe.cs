@@ -6,6 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// CARTA V1 visual runtime gate. Opens Portfolio -> Editor -> Recipe with
@@ -304,7 +305,32 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                  "Checked state updates only the centred box; no data mutation.");
         }
         Capture("01_Gestor_Cartas_y_Reglas.png");
-        portfolio.Close();
+        Button close = plate?.Find("Header/Close")?.GetComponent<Button>();
+        Canvas.ForceUpdateCanvases();
+        var eventSystem = EventSystem.current;
+        bool reached = false;
+        if (close != null && eventSystem != null)
+        {
+            RectTransform rect = close.transform as RectTransform;
+            Canvas hostCanvas = close.GetComponentInParent<Canvas>();
+            Camera camera = hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null : hostCanvas.worldCamera;
+            var pointer = new PointerEventData(eventSystem) {
+                position = RectTransformUtility.WorldToScreenPoint(camera,
+                    rect.TransformPoint(rect.rect.center)), button = PointerEventData.InputButton.Left };
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            eventSystem.RaycastAll(pointer, hits);
+            reached = hits.Count > 0 &&
+                hits[0].gameObject.GetComponentInParent<Button>() == close;
+            foreach (var hit in hits)
+                Debug.Log("[CARTA V1] Close raycast: " + hit.gameObject.name +
+                    " / " + hit.gameObject.transform.parent?.name);
+            if (reached) ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,
+                pointer, ExecuteEvents.pointerClickHandler);
+        }
+        Pass(reached && !portfolio.IsOpen,
+            "Close is the top real EventSystem hit and closes Carta through its pointer handler.");
+        if (portfolio.IsOpen) portfolio.Close(); // Test cleanup; cannot turn the failed click into PASS.
         Move(2);
     }
 

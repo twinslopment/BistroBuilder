@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>
 /// Instalador acumulativo e idempotente de 367H.
-/// Crea una barra provisional reemplazable, cuatro plazas, dos mesas fijas,
+/// Conserva las autoridades de servicio y retira la barra provisional obsoleta;
 /// cinco artículos rápidos y todas las conexiones runtime necesarias.
 /// </summary>
 public static class BistroBuilderBarServiceInstaller
@@ -201,14 +201,7 @@ public static class BistroBuilderBarServiceInstaller
                 );
             }
 
-            BistroBuilder367HInstalledFixture barFixture =
-                EnsureBarFixture(scene, existingTables);
-
-            EnsureAdditionalTables(
-                scene,
-                existingTables,
-                barFixture.transform.position
-            );
+            RetireLegacyBar(scene);
 
             BistroBuilderBarServiceRegistry registry =
                 GetOrAdd<BistroBuilderBarServiceRegistry>(gameSystems);
@@ -505,171 +498,16 @@ public static class BistroBuilderBarServiceInstaller
         }
     }
 
-    private static BistroBuilder367HInstalledFixture EnsureBarFixture(
-        Scene scene,
-        RestaurantTable[] tables
-    )
+    public static int RetireLegacyBar(Scene scene)
     {
-        BistroBuilder367HInstalledFixture existing =
-            FindFixture(scene, "fixture_367h_bar");
-
-        if (existing != null)
+        int removed = 0;
+        foreach (var fixture in FindSceneObjects<BistroBuilder367HInstalledFixture>(scene))
         {
-            EnsureBarSpots(existing.gameObject);
-            EnsureBarPlacementObstacle(existing.gameObject);
-            return existing;
+            if (fixture == null || !fixture.IsRetired) continue;
+            Undo.DestroyObjectImmediate(fixture.gameObject);
+            removed++;
         }
-
-        if (!TryResolveDiningArea(tables, out RestaurantArea area))
-        {
-            throw new InvalidOperationException(
-                "No se pudo resolver el área de comedor para la barra."
-            );
-        }
-
-        if (!TryFindBarPose(area, tables, out Vector3 position,
-                out Quaternion rotation))
-        {
-            throw new InvalidOperationException(
-                "No se encontró una posición segura para la barra provisional."
-            );
-        }
-
-        GameObject root = new GameObject("BB_367H_FixedBar");
-        Undo.RegisterCreatedObjectUndo(root, "Crear barra 367H");
-        SceneManager.MoveGameObjectToScene(root, scene);
-        root.transform.SetPositionAndRotation(position, rotation);
-
-        BistroBuilder367HInstalledFixture fixture =
-            root.AddComponent<BistroBuilder367HInstalledFixture>();
-        fixture.EditorAssignFixtureId("fixture_367h_bar");
-
-        GameObject counter = GameObject.CreatePrimitive(
-            PrimitiveType.Cube
-        );
-        Undo.RegisterCreatedObjectUndo(counter, "Crear mostrador 367H");
-        counter.name = "ProvisionalCounter";
-        counter.transform.SetParent(root.transform, false);
-        counter.transform.localPosition = new Vector3(0f, 0.55f, 0f);
-        counter.transform.localScale = new Vector3(5.2f, 1.1f, 0.85f);
-
-        EnsureBarSpots(root);
-        EnsureBarPlacementObstacle(root);
-        return fixture;
-    }
-
-    private static void EnsureBarPlacementObstacle(GameObject barRoot)
-    {
-        RestaurantPlacementObstacle obstacle =
-            barRoot.GetComponent<RestaurantPlacementObstacle>();
-
-        if (obstacle == null)
-        {
-            obstacle = Undo.AddComponent<RestaurantPlacementObstacle>(
-                barRoot
-            );
-        }
-
-        SerializedObject serialized = new SerializedObject(obstacle);
-        RequireProperty(serialized, "obstacleId").stringValue =
-            "placement_obstacle_367h_bar";
-        RequireProperty(serialized, "localCenter").vector3Value =
-            new Vector3(0f, 0f, -0.15f);
-        RequireProperty(serialized, "localSize").vector2Value =
-            new Vector2(5.6f, 2.8f);
-        RequireProperty(serialized, "minimumClearance").floatValue = 0.25f;
-        RequireProperty(serialized, "blocksPlacement").boolValue = true;
-        RequireProperty(serialized, "operational").boolValue = true;
-        serialized.ApplyModifiedPropertiesWithoutUndo();
-        EditorUtility.SetDirty(obstacle);
-    }
-
-    private static void EnsureBarSpots(GameObject barRoot)
-    {
-        const int spotCount = 4;
-
-        for (int index = 0; index < spotCount; index++)
-        {
-            string spotId = "bar_spot_" + (index + 1).ToString("D2");
-            BistroBuilderBarServiceSpot spot = null;
-            BistroBuilderBarServiceSpot[] existing =
-                barRoot.GetComponentsInChildren<
-                    BistroBuilderBarServiceSpot
-                >(true);
-
-            for (int candidate = 0; candidate < existing.Length; candidate++)
-            {
-                if (existing[candidate] != null &&
-                    string.Equals(
-                        existing[candidate].BarSpotId,
-                        spotId,
-                        StringComparison.Ordinal
-                    ))
-                {
-                    spot = existing[candidate];
-                    break;
-                }
-            }
-
-            if (spot == null)
-            {
-                GameObject spotRoot = new GameObject(
-                    "BarSpot_" + (index + 1).ToString("D2")
-                );
-                Undo.RegisterCreatedObjectUndo(
-                    spotRoot,
-                    "Crear plaza de barra 367H"
-                );
-                spotRoot.transform.SetParent(barRoot.transform, false);
-                spotRoot.transform.localPosition = new Vector3(
-                    -1.8f + index * 1.2f,
-                    0f,
-                    0f
-                );
-                spot = spotRoot.AddComponent<BistroBuilderBarServiceSpot>();
-
-                GameObject stool = GameObject.CreatePrimitive(
-                    PrimitiveType.Cylinder
-                );
-                Undo.RegisterCreatedObjectUndo(stool, "Crear taburete 367H");
-                stool.name = "ProvisionalStool";
-                stool.transform.SetParent(spotRoot.transform, false);
-                stool.transform.localPosition = new Vector3(0f, 0.4f, -1f);
-                stool.transform.localScale = new Vector3(0.38f, 0.4f, 0.38f);
-
-                Transform customer = new GameObject("CustomerPoint").transform;
-                Undo.RegisterCreatedObjectUndo(
-                    customer.gameObject,
-                    "Crear punto cliente 367H"
-                );
-                customer.SetParent(spotRoot.transform, false);
-                customer.localPosition = new Vector3(0f, 0f, -1.2f);
-
-                Transform waiter = new GameObject("WaiterServicePoint").transform;
-                Undo.RegisterCreatedObjectUndo(
-                    waiter.gameObject,
-                    "Crear punto camarero 367H"
-                );
-                waiter.SetParent(spotRoot.transform, false);
-                waiter.localPosition = new Vector3(0f, 0f, 0.85f);
-
-                SerializedObject serialized = new SerializedObject(spot);
-                RequireProperty(serialized, "barSpotId").stringValue = spotId;
-                RequireProperty(serialized, "customerPoint")
-                    .objectReferenceValue = customer;
-                RequireProperty(serialized, "waiterServicePoint")
-                    .objectReferenceValue = waiter;
-                RequireProperty(serialized, "capacity").intValue = 1;
-                RequireProperty(serialized, "allowsStandingService")
-                    .boolValue = false;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
-
-            if (!spot.ValidateConfiguration(out string spotError))
-            {
-                throw new InvalidOperationException(spotError);
-            }
-        }
+        return removed;
     }
 
     private static void EnsureAdditionalTables(

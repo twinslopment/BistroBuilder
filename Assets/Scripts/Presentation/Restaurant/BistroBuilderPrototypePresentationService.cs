@@ -226,41 +226,32 @@ public sealed class BistroBuilderPrototypePresentationService :
         }
     }
 
-    private void TrySkinPrimitiveTable(
-        RestaurantTable table)
+    private void TrySkinPrimitiveTable(RestaurantTable table)
     {
-        if (table == null)
-            return;
+        if (table == null || tableBindings.ContainsKey(table.GetInstanceID())) return;
+        TablePresentationBinding binding = CreateTablePresentation(table, tableMaterial);
+        if (binding != null) tableBindings.Add(table.GetInstanceID(), binding);
+    }
 
-        int instanceId =
-            table.GetInstanceID();
+    // The catalogue renderer uses the same presentation geometry as placement.
+    // This creates visual children only, with no subscription or scene authority.
+    public static GameObject ApplyTablePresentationForPreview(RestaurantTable table)
+    {
+        var material = Resources.Load<Material>(
+            "BistroBuilder/Construction/Materials/Roble_marcos");
+        return CreateTablePresentation(table, material)?.Root;
+    }
 
-        if (tableBindings.ContainsKey(instanceId))
-            return;
-
-        MeshRenderer sourceRenderer =
-            FindPrimitiveTableSource(
-                table);
-
-        MeshFilter sourceFilter =
-            sourceRenderer != null
-                ? sourceRenderer.GetComponent<MeshFilter>()
-                : null;
-
-        if (sourceRenderer == null ||
-            sourceFilter == null ||
-            sourceFilter.sharedMesh == null)
-        {
-            return;
-        }
-
-        Material material =
-            tableMaterial != null
-                ? tableMaterial
-                : sourceRenderer.sharedMaterial;
-
-        if (material == null)
-            return;
+    private static TablePresentationBinding CreateTablePresentation(
+        RestaurantTable table, Material material)
+    {
+        if (table == null) return null;
+        MeshRenderer sourceRenderer = FindPrimitiveTableSource(table);
+        MeshFilter sourceFilter = sourceRenderer != null
+            ? sourceRenderer.GetComponent<MeshFilter>() : null;
+        if (sourceFilter == null || sourceFilter.sharedMesh == null) return null;
+        if (material == null) material = sourceRenderer.sharedMaterial;
+        if (material == null) return null;
 
         Transform existing =
             table.transform.Find(
@@ -268,8 +259,8 @@ public sealed class BistroBuilderPrototypePresentationService :
 
         if (existing != null)
         {
-            Destroy(
-                existing.gameObject);
+            if (Application.isPlaying) Destroy(existing.gameObject);
+            else DestroyImmediate(existing.gameObject);
         }
 
         GameObject root =
@@ -283,52 +274,22 @@ public sealed class BistroBuilderPrototypePresentationService :
             table.transform,
             false);
 
-        Bounds bounds =
-            sourceRenderer.bounds;
-
-        Vector3 scale =
-            table.transform.lossyScale;
-
-        float safeX =
-            Mathf.Max(
-                0.0001f,
-                Mathf.Abs(scale.x));
-
-        float safeY =
-            Mathf.Max(
-                0.0001f,
-                Mathf.Abs(scale.y));
-
-        float safeZ =
-            Mathf.Max(
-                0.0001f,
-                Mathf.Abs(scale.z));
-
-        Vector3 localSize =
-            new Vector3(
-                bounds.size.x / safeX,
-                bounds.size.y / safeY,
-                bounds.size.z / safeZ);
-
-        localSize.x =
-            Mathf.Max(
-                0.55f,
-                localSize.x);
-
-        localSize.y =
-            Mathf.Max(
-                0.58f,
-                localSize.y);
-
-        localSize.z =
-            Mathf.Max(
-                0.55f,
-                localSize.z);
-
-        Vector3 localCenter =
-            table.transform
-                .InverseTransformPoint(
-                    bounds.center);
+        // Work in the table frame: world AABB dimensions would swap/widen
+        // the visual when the root is rotated, unlike its physical footprint.
+        Bounds meshBounds = sourceFilter.sharedMesh.bounds;
+        Matrix4x4 sourceToTable = table.transform.worldToLocalMatrix *
+            sourceFilter.transform.localToWorldMatrix;
+        Bounds localBounds = new Bounds(sourceToTable.MultiplyPoint3x4(meshBounds.min), Vector3.zero);
+        for (int corner = 0; corner < 8; corner++)
+        {
+            Vector3 point = new Vector3(
+                (corner & 1) == 0 ? meshBounds.min.x : meshBounds.max.x,
+                (corner & 2) == 0 ? meshBounds.min.y : meshBounds.max.y,
+                (corner & 4) == 0 ? meshBounds.min.z : meshBounds.max.z);
+            localBounds.Encapsulate(sourceToTable.MultiplyPoint3x4(point));
+        }
+        Vector3 localSize = localBounds.size;
+        Vector3 localCenter = localBounds.center;
 
         float topThickness =
             Mathf.Clamp(
@@ -488,13 +449,8 @@ public sealed class BistroBuilderPrototypePresentationService :
         sourceRenderer.enabled =
             false;
 
-        tableBindings.Add(
-            instanceId,
-            new TablePresentationBinding(
-                sourceRenderer,
-                sourceWasEnabled,
-                root,
-                generated));
+        return new TablePresentationBinding(
+            sourceRenderer, sourceWasEnabled, root, generated);
     }
 
     private static void AddLeg(
@@ -1385,9 +1341,11 @@ public sealed class BistroBuilderPrototypePresentationService :
     {
         if (creationService != null)
         {
+            creationService.CreationStarted -= HandleCreationCommitted;
             creationService.CreationCommitted -=
                 HandleCreationCommitted;
 
+            creationService.CreationStarted += HandleCreationCommitted;
             creationService.CreationCommitted +=
                 HandleCreationCommitted;
         }
@@ -1421,6 +1379,7 @@ public sealed class BistroBuilderPrototypePresentationService :
     {
         if (creationService != null)
         {
+            creationService.CreationStarted -= HandleCreationCommitted;
             creationService.CreationCommitted -=
                 HandleCreationCommitted;
         }
