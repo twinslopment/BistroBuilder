@@ -408,7 +408,7 @@ public sealed class BistroBuilderUiStickyTableHeader : MonoBehaviour
 
     private void OnEnable()
     {
-        CaptureBase();
+        if (!captured) CaptureBase();
     }
 
     private void Bind(ScrollRect owner)
@@ -446,11 +446,24 @@ public sealed class BistroBuilderUiStickyTableHeader : MonoBehaviour
     private void EnsureLiftCanvas()
     {
         if (header == null) return;
+        // Resolve the ancestor before installing our own canvas: otherwise each
+        // scan reads itself and increments its sorting order indefinitely.
+        Canvas parentCanvas = header.parent != null ? header.parent.GetComponentInParent<Canvas>() : null;
         liftCanvas = header.GetComponent<Canvas>();
         if (liftCanvas == null) liftCanvas = header.gameObject.AddComponent<Canvas>();
-        Canvas parentCanvas = header.GetComponentInParent<Canvas>();
         liftCanvas.overrideSorting = true;
+        liftCanvas.sortingLayerID = parentCanvas != null ? parentCanvas.sortingLayerID : 0;
         liftCanvas.sortingOrder = parentCanvas != null ? parentCanvas.sortingOrder + 5 : 5;
+        // Graphics move to this canvas when it is lifted. Without a raycaster,
+        // visible header buttons disappear from EventSystem's pointer hits.
+        var raycaster = header.GetComponent<GraphicRaycaster>() ?? header.gameObject.AddComponent<GraphicRaycaster>();
+        var parentRaycaster = parentCanvas != null ? parentCanvas.GetComponent<GraphicRaycaster>() : null;
+        if (parentRaycaster != null)
+        {
+            raycaster.ignoreReversedGraphics = parentRaycaster.ignoreReversedGraphics;
+            raycaster.blockingObjects = parentRaycaster.blockingObjects;
+            raycaster.blockingMask = parentRaycaster.blockingMask;
+        }
     }
 }
 

@@ -624,6 +624,15 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             TextAlignmentOptions.Top);
     }
 
+    private bool awaitingItemGrid;
+    private System.Collections.IEnumerator FinishItemGridConversion()
+    {
+        yield return null;
+        awaitingItemGrid = false;
+        ApplyItemGrid();
+        geometryDirty = true;
+    }
+
     private void ApplyItemGrid()
     {
         if (itemContainer == null)
@@ -637,16 +646,30 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         itemContainer.anchoredPosition = Vector2.zero;
         itemContainer.sizeDelta = new Vector2(0f, itemContainer.sizeDelta.y);
 
-        ContentSizeFitter fitter = itemContainer.GetComponent<ContentSizeFitter>();
+        var legacyRow = itemContainer.GetComponent<HorizontalLayoutGroup>();
+        if (legacyRow != null)
+        {
+            legacyRow.enabled = false;
+            if (!awaitingItemGrid)
+            {
+                awaitingItemGrid = true;
+                Destroy(legacyRow);
+                StartCoroutine(FinishItemGridConversion());
+            }
+            return;
+        }
+        ContentSizeFitter fitter = itemContainer.GetComponent<ContentSizeFitter>() ?? itemContainer.gameObject.AddComponent<ContentSizeFitter>();
         if (fitter != null)
         {
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
 
-        GridLayoutGroup grid = itemContainer.GetComponent<GridLayoutGroup>();
+        GridLayoutGroup grid = itemContainer.GetComponent<GridLayoutGroup>() ?? itemContainer.gameObject.AddComponent<GridLayoutGroup>();
         if (grid != null)
         {
+            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = 2;
             grid.cellSize = new Vector2(178.5f, 245f);

@@ -1856,6 +1856,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private void HandleEditModePresentationChanged()
     {
+        if (!isActiveAndEnabled || overlayEditMode == null || !overlayEditMode.isActiveAndEnabled) return;
         // El cambio Normal ↔ Edición debe ser visualmente atómico; no espera
         // al siguiente refresco periódico del HUD.
         nextRefreshAt = 0f;

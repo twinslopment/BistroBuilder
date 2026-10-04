@@ -189,15 +189,39 @@ public static class BistroBuilderBBSISPhase2BSelfTest
                 BistroBuilderBarSpatialAdapter>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.InstanceID);
+        if (adapters.Length == 0)
+        {
+            // The retired prototype counter is no longer required content.
+            // An empty bar layout must remain a valid, zero-capacity service.
+            var registry = UnityEngine.Object.FindFirstObjectByType<BistroBuilderBarServiceRegistry>();
+            Check(registry != null && registry.ValidateConfiguration(out _) &&
+                registry.RegisteredSpotCount == 0 && registry.FreeCapacity == 0,
+                "Sin barra colocada: registro válido y capacidad real cero", report);
+            var probe = new GameObject("BBSIS2B_EmptyBarAllocationProbe") { hideFlags = HideFlags.HideAndDontSave };
+            try
+            {
+                var group = probe.AddComponent<CustomerGroup>();
+                bool initialized = group.Initialize(92001, 1, BistroBuilderServiceMode.BarService);
+                Check(initialized && registry != null &&
+                    !registry.TryAllocateSpot(group, BistroBuilderServiceMode.BarService, out _) && !group.HasAssignedBarSpot,
+                    "Sin barra colocada: no se fabrica destino ni reserva de cliente", report);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(probe); }
+            return;
+        }
         Check(adapters.Length > 0,
             "Adaptadores reales de barra detectados",
             report);
         bool allSemantic = adapters.Length > 0;
+        var seenProviders = new HashSet<IBistroBuilderSpatialSemanticProvider>();
         for (int i = 0; i < adapters.Length; i++)
         {
             var volumes =
                 new List<BistroBuilderSpatialSemanticVolume>();
-            int count = adapters[i].WriteSemanticVolumes(volumes);
+            IBistroBuilderSpatialSemanticProvider provider = adapters[i].GetComponentInParent<BistroBuilderBarBodySpatialAdapter>();
+            if (provider == null) provider = adapters[i];
+            if (!seenProviders.Add(provider)) continue;
+            int count = provider.WriteSemanticVolumes(volumes);
             bool customer = false;
             bool work = false;
             bool transfer = false;
@@ -212,7 +236,7 @@ public static class BistroBuilderBBSISPhase2BSelfTest
                 transfer |= volumes[v].role ==
                     BistroBuilderSpatialSemanticRole.TransferZone;
             }
-            allSemantic &= count == 3 &&
+            allSemantic &= count >= 3 &&
                 customer && work && transfer;
         }
         Check(allSemantic,

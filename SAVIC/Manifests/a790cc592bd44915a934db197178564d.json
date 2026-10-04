@@ -9,7 +9,7 @@
     "type": "BarCounter",
     "category": "ServiceEquipment",
     "createdUtc": "2026-09-25T12:58:32.5099231Z",
-    "updatedUtc": "2026-10-03T16:19:52.7305521Z",
+    "updatedUtc": "2026-10-04T09:32:35.1281046Z",
     "source": {
         "sourceHash": "0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455",
         "originalFileName": "Meshy_AI_Arctic_Curve_Bar_0922105448_generate.glb",
@@ -912,7 +912,7 @@
         "sourceHash": "0c599308c9d9d1ce262fb0454ec9ec7d78a2a026311d1f0cd7a8fff4ad8ce455",
         "reportRelativePath": "Library/BistroBuilder/SAVIC/Logs/savic-barcounter-candidate-a790cc592bd44915a934db197178564d-runtime-playtest.txt",
         "reportHash": "4d09f1ad095dcbce8cdb6e5ae8fcca11e1a9bc834b3eab21f55f931666228241",
-        "verifiedUtc": "2026-10-03T16:19:52.7305521Z",
+        "verifiedUtc": "2026-10-04T09:32:35.1281046Z",
         "creationPassed": true,
         "nativeBindingPassed": true,
         "routePassed": true,

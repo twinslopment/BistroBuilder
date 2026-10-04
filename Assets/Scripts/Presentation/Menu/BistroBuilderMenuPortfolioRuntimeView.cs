@@ -284,6 +284,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         BuildRuleEditor(panel);
         BuildFooter(panel);
         BuildDeleteConfirmation(panel);
+        BistroBuilderCartaReferenceV3Style.Apply(panel);
         built = true;
     }
 
@@ -372,7 +373,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     {
         RectTransform root = CreateCard(
             "Rules", panel,
-            new Vector2(0.30f, 0f), new Vector2(0.58f, 1f),
+            new Vector2(0.30f, 0f), new Vector2(0.592f, 1f),
             new Vector2(6f, 78f), new Vector2(-6f, -78f)
         );
         AddTitle(root, "Reglas de activación", 0.92f, 1f);
@@ -416,57 +417,62 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     {
         RectTransform root = CreateCard(
             "RuleEditor", panel,
-            new Vector2(0.58f, 0f), Vector2.one,
+            new Vector2(0.592f, 0f), Vector2.one,
             new Vector2(6f, 78f), new Vector2(-16f, -78f)
         );
         AddTitle(root, "Detalle de la regla", 0.92f, 1f);
 
-        ruleNameInput = CreateField(root, "RuleName", "Nombre de la regla", 0.03f, 0.84f, 0.68f, 0.90f);
-        priorityInput = CreateField(root, "Priority", "Prioridad (-1000..1000)", 0.71f, 0.84f, 0.97f, 0.90f);
+        // Approved V3: captions ABOVE inputs, not encoded as placeholder-only labels.
+        AddMiniLabel(root, "Nombre de la regla", 0.03f, 0.865f, 0.68f, 0.902f);
+        AddMiniLabel(root, "Prioridad", 0.71f, 0.865f, 0.97f, 0.902f);
+        ruleNameInput = CreateField(root, "RuleName", "Nombre de la regla", 0.03f, 0.795f, 0.68f, 0.855f);
+        priorityInput = CreateField(root, "Priority", "0", 0.71f, 0.795f, 0.97f, 0.855f);
 
-        Button typeButton = MakeButton(root, "Tipo", CycleRuleType, 0.03f, 0.76f, 0.48f, 0.82f, false);
+        AddMiniLabel(root, "Tipo", 0.03f, 0.765f, 0.48f, 0.795f);
+        AddMiniLabel(root, "Carta de destino", 0.52f, 0.765f, 0.97f, 0.795f);
+        Button typeButton = MakeButton(root, "Tipo", CycleRuleType, 0.03f, 0.695f, 0.48f, 0.755f, false);
         ruleTypeText = typeButton.GetComponentInChildren<Text>(true);
-        Button targetButton = MakeButton(root, "Carta destino", CycleTargetMenu, 0.52f, 0.76f, 0.97f, 0.82f, false);
+        Button targetButton = MakeButton(root, "Carta destino", CycleTargetMenu, 0.52f, 0.695f, 0.97f, 0.755f, false);
         targetMenuText = targetButton.GetComponentInChildren<Text>(true);
 
-        enabledToggle = MakeToggle(root, "Enabled", "Regla activa", 0.03f, 0.70f, 0.35f, 0.74f);
-        breakfastToggle = MakeToggle(root, "Breakfast", "Desayuno", 0.36f, 0.70f, 0.56f, 0.74f);
-        lunchToggle = MakeToggle(root, "Lunch", "Comida", 0.57f, 0.70f, 0.75f, 0.74f);
-        dinnerToggle = MakeToggle(root, "Dinner", "Cena", 0.76f, 0.70f, 0.97f, 0.74f);
+        enabledToggle = MakeToggle(root, "Enabled", "Regla activa", 0.03f, 0.637f, 0.35f, 0.687f);
+        breakfastToggle = MakeToggle(root, "Breakfast", "Desayuno", 0.36f, 0.637f, 0.56f, 0.687f);
+        lunchToggle = MakeToggle(root, "Lunch", "Comida", 0.57f, 0.637f, 0.75f, 0.687f);
+        dinnerToggle = MakeToggle(root, "Dinner", "Cena", 0.76f, 0.637f, 0.97f, 0.687f);
 
-        AddMiniLabel(root, "Fechas inclusivas (vacío = cualquiera)", 0.03f, 0.65f, 0.97f, 0.69f);
-        startDateInput = CreateField(root, "StartDate", "Inicio YYYY-MM-DD", 0.03f, 0.59f, 0.48f, 0.64f);
-        endDateInput = CreateField(root, "EndDate", "Fin YYYY-MM-DD", 0.52f, 0.59f, 0.97f, 0.64f);
+        AddMiniLabel(root, "Fechas inclusivas (vacío = cualquiera)", 0.03f, 0.602f, 0.97f, 0.637f);
+        startDateInput = CreateField(root, "StartDate", "Inicio YYYY-MM-DD", 0.03f, 0.537f, 0.48f, 0.598f);
+        endDateInput = CreateField(root, "EndDate", "Fin YYYY-MM-DD", 0.52f, 0.537f, 0.97f, 0.598f);
 
-        AddMiniLabel(root, "Franja horaria (vacío = cualquiera; admite noche)", 0.03f, 0.54f, 0.97f, 0.58f);
-        startTimeInput = CreateField(root, "StartTime", "Inicio HH:mm", 0.03f, 0.48f, 0.48f, 0.53f);
-        endTimeInput = CreateField(root, "EndTime", "Fin HH:mm", 0.52f, 0.48f, 0.97f, 0.53f);
+        AddMiniLabel(root, "Franja horaria (vacío = cualquiera; admite noche)", 0.03f, 0.505f, 0.97f, 0.533f);
+        startTimeInput = CreateField(root, "StartTime", "Inicio HH:mm", 0.03f, 0.442f, 0.48f, 0.503f);
+        endTimeInput = CreateField(root, "EndTime", "Fin HH:mm", 0.52f, 0.442f, 0.97f, 0.503f);
 
-        AddMiniLabel(root, "Días de la semana (ninguno = cualquiera)", 0.03f, 0.43f, 0.97f, 0.47f);
+        AddMiniLabel(root, "Días de la semana (ninguno = cualquiera)", 0.03f, 0.407f, 0.97f, 0.440f);
         string[] labels = { "D", "L", "M", "X", "J", "V", "S" };
         for (int index = 0; index < weekdayToggles.Length; index++)
         {
             float left = 0.03f + index * 0.135f;
             weekdayToggles[index] = MakeToggle(
                 root, "Weekday" + index, labels[index],
-                left, 0.37f, left + 0.12f, 0.42f
+                left, 0.357f, left + 0.12f, 0.405f
             );
         }
 
-        AddMiniLabel(root, "Condiciones opcionales", 0.03f, 0.32f, 0.97f, 0.36f);
-        InputField requiredEvent = CreateField(root, "RequiredEvent", "Evento requerido", 0.03f, 0.26f, 0.48f, 0.31f);
-        InputField requiredPromotion = CreateField(root, "RequiredPromotion", "Promoción requerida", 0.52f, 0.26f, 0.97f, 0.31f);
-        // Reutilizamos referencias exclusivas para la regla mediante campos privados auxiliares.
+        AddMiniLabel(root, "Condiciones opcionales", 0.03f, 0.320f, 0.97f, 0.354f);
+        InputField requiredEvent = CreateField(root, "RequiredEvent", "Evento requerido", 0.03f, 0.252f, 0.48f, 0.313f);
+        InputField requiredPromotion = CreateField(root, "RequiredPromotion", "Promoción requerida", 0.52f, 0.252f, 0.97f, 0.313f);
+        // Keep the two original service bindings; this changes visual positions only.
         ruleEventInput = requiredEvent;
         rulePromotionInput = requiredPromotion;
 
         AddMiniLabel(
             root,
             "Se aplica primero la regla de mayor prioridad.",
-            0.03f, 0.19f, 0.97f, 0.24f
+            0.03f, 0.169f, 0.97f, 0.201f
         );
-        MakeButton(root, "Guardar regla", SaveRule, 0.03f, 0.10f, 0.97f, 0.17f, true);
-        MakeButton(root, "Limpiar formulario", NewRule, 0.03f, 0.03f, 0.97f, 0.09f, false);
+        MakeButton(root, "Guardar regla", SaveRule, 0.03f, 0.095f, 0.97f, 0.156f, true);
+        MakeButton(root, "Limpiar formulario", NewRule, 0.03f, 0.021f, 0.97f, 0.081f, false);
     }
 
     private InputField ruleEventInput;
@@ -613,24 +619,26 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         for (int index = 0; index < snapshot.Menus.Count; index++)
         {
             BistroBuilderNamedMenuRuntimeState menu = snapshot.Menus[index];
-            string suffix = string.Empty;
-            if (menu.MenuId == snapshot.ActiveMenuId) suffix += " · ACTIVA";
-            if (menu.MenuId == snapshot.FallbackMenuId) suffix += " · BASE";
-            if (menu.MenuId == snapshot.ManualOverrideMenuId) suffix += " · MANUAL";
+            bool active = menu.MenuId == snapshot.ActiveMenuId;
+            bool fallback = menu.MenuId == snapshot.FallbackMenuId;
+            string status = menu.ItemCount + " platos · " + (active ? "Activa" : "Inactiva");
+            if (fallback) status += " · Base";
+            if (menu.MenuId == snapshot.ManualOverrideMenuId) status += " · Manual";
             string id = menu.MenuId;
             Button button = BistroBuilderMenuEditorUiFactory.CreateButton(
                 "Menu_" + id,
                 menuContent,
-                menu.DisplayName + suffix + "\n" + menu.ItemCount + " platos · rev " + menu.Revision,
+                menu.DisplayName + "\n" + status,
                 () => SelectMenu(id),
                 id == selectedMenuId
                     ? BistroBuilderMenuEditorUiFactory.SurfaceSelected
                     : BistroBuilderMenuEditorUiFactory.SurfaceRaised,
                 13
             );
-            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 62f);
+            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 54f);
             StyleSelectableEntry(button,
-                BistroBuilder.UI.Iconography.BBIconId.NavMenu);
+                BistroBuilder.UI.Iconography.BBIconId.NavMenu,
+                id == selectedMenuId, fallback, active);
             menuButtons.Add(button);
         }
     }
@@ -644,7 +652,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         {
             BistroBuilderMenuActivationRuleRuntimeState rule = snapshot.Rules[index];
             string id = rule.RuleId;
-            string label = (rule.Enabled ? "● " : "○ ") + rule.DisplayName +
+            string label = rule.DisplayName +
                 "\nP" + rule.Priority + " · " + GetTypeLabel(rule.RuleType) +
                 " → " + GetMenuName(rule.TargetMenuId);
             Button button = BistroBuilderMenuEditorUiFactory.CreateButton(
@@ -657,15 +665,17 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
                     : BistroBuilderMenuEditorUiFactory.SurfaceRaised,
                 12
             );
-            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 62f);
+            BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 54f);
             StyleSelectableEntry(button,
-                BistroBuilder.UI.Iconography.BBIconId.StatusWaiting);
+                BistroBuilder.UI.Iconography.BBIconId.StatusWaiting,
+                id == selectedRuleId, false, rule.Enabled);
             ruleButtons.Add(button);
         }
     }
 
     private static void StyleSelectableEntry(Button button,
-        BistroBuilder.UI.Iconography.BBIconId concept)
+        BistroBuilder.UI.Iconography.BBIconId concept,
+        bool selected, bool baseMenu, bool active)
     {
         if (button == null) return;
         // Small authored glyph, aligned text and two independent rows of
@@ -682,6 +692,9 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             "EntryIcon", button.transform, concept,
             new Vector2(0f, 0f), new Vector2(0f, 1f),
             new Vector2(11f, 13f), new Vector2(35f, -13f));
+        BistroBuilderCartaReferenceV3Style.StyleRow(button, selected,
+            concept == BistroBuilder.UI.Iconography.BBIconId.StatusWaiting,
+            baseMenu, active);
     }
 
     private void RefreshHeader()
@@ -976,10 +989,11 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
 
     private void UpdateRuleButtonLabels()
     {
+        // Field captions live above these two controls, as in the reference.
         BistroBuilderMenuEditorUiFactory.SetButtonDisplay(
-            ruleTypeText, "Tipo: " + GetTypeLabel(selectedRuleType));
+            ruleTypeText, GetTypeLabel(selectedRuleType));
         BistroBuilderMenuEditorUiFactory.SetButtonDisplay(
-            targetMenuText, "Destino: " + GetMenuName(selectedTargetMenuId));
+            targetMenuText, GetMenuName(selectedTargetMenuId));
     }
 
     private void ActivateEvent() => SetSignal(eventIdInput.text, true, true);

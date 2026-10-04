@@ -146,7 +146,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         try
         {
             if (stage == 0 && Time.frameCount >= 24) OpenPortfolio();
-            else if (stage == 1 && Time.frameCount >= 48) AuditPortfolio();
+            else if (stage == 1 && Time.frameCount >= 48 && Time.unscaledTime >= 3f) AuditPortfolio();
             else if (stage == 2 && Time.frameCount >= 70) OpenEditor();
             else if (stage == 3 && Time.frameCount >= 96) AuditEditor();
             else if (stage == 4 && Time.frameCount >= 112) OpenRecipe();
@@ -164,6 +164,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
 
     private static void OpenPortfolio()
     {
+        FindScene<BistroBuilderNewGameOpeningPlayerScreen>()?.Hide();
         portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
         editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
         recipe = FindScene<BistroBuilderDishRecipeAuthoringRuntimeView>();
@@ -203,7 +204,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "Rules/SectionIcon", "RuleEditor/SectionIcon"
         };
         string[] iconNames = {
-            "carta_main", "mis_cartas", "reglas_activacion", "detalle_regla"
+            "book", "book", "clock", "file"
         };
         bool exactHeaders = true;
         for (int i = 0; i < iconPaths.Length; i++)
@@ -214,7 +215,29 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                 icon.preserveAspect && !icon.raycastTarget;
         }
         Pass(exactHeaders,
-            "V4 uses the supplied MENU book and three separate header sprites, including the new checklist detail icon.");
+            "Approved V3 reference: exact brown book, book, clock and document SVGs in four headings.");
+        Image frame=plate?.GetComponent<Image>();
+        Image menusFrame=plate?.Find("Menus")?.GetComponent<Image>();
+        Image rulesFrame=plate?.Find("Rules")?.GetComponent<Image>();
+        Image detailsFrame=plate?.Find("RuleEditor")?.GetComponent<Image>();
+        Pass(frame != null && frame.type==Image.Type.Sliced &&
+             menusFrame != null && menusFrame.type==Image.Type.Sliced &&
+             rulesFrame != null && rulesFrame.type==Image.Type.Sliced &&
+             detailsFrame != null && detailsFrame.type==Image.Type.Sliced,
+            "Approved V3: ivory/brass rounded 9-slice frame and three cream columns.");
+        Transform mixed=plate?.Find("Rules/ReferenceTypefaceRuns");
+        Pass(mixed != null && mixed.childCount==3 &&
+             mixed.GetChild(0).GetComponent<Text>()?.font?.name.IndexOf("Recoleta",
+                 StringComparison.OrdinalIgnoreCase)>=0,
+            "V3 typography preserves Recoleta in 'Reglas de activación' and renders ó with Inter.");
+        RectTransform columnsMenu=plate?.Find("Menus") as RectTransform;
+        RectTransform columnsRules=plate?.Find("Rules") as RectTransform;
+        RectTransform columnsDetail=plate?.Find("RuleEditor") as RectTransform;
+        Pass(columnsMenu!=null && columnsRules!=null && columnsDetail!=null &&
+             Mathf.Abs(columnsMenu.anchorMax.x-columnsRules.anchorMin.x)<0.0001f &&
+             Mathf.Abs(columnsRules.anchorMax.x-columnsDetail.anchorMin.x)<0.0001f &&
+             columnsMenu.anchorMin.x==0f && columnsDetail.anchorMax.x==1f,
+            "V3 three-column ratios share contiguous responsive anchor boundaries.");
         Text tagline = plate?.Find("Header/Tagline")?.GetComponent<Text>();
         Text menuCount = plate?.Find("Menus/MenuCount")?.GetComponent<Text>();
         Text ruleCount = plate?.Find("Rules/RuleCount")?.GetComponent<Text>();
@@ -233,16 +256,16 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Image menuHeading = plate?.Find("Menus/SectionIcon")?.GetComponent<Image>();
         Pass(rowIcon != null && rowIcon.sprite != null &&
              menuHeading != null && menuHeading.sprite != null &&
-             rowIcon.sprite != menuHeading.sprite,
-            "V4 keeps ordinary list-row icons; themed icons appear only beside section titles.");
+             first.Find("ReferenceRowDescription") != null &&
+             first.Find("ReferenceRowStatus") != null,
+            "Approved V3: each menu row has separate Recoleta title, Inter metadata and status dot.");
         Transform overlay = plate?.Find("DeleteConfirmation");
         Button remove = plate?.Find("Menus/Eliminar")?.GetComponent<Button>();
         Pass(overlay != null && !overlay.gameObject.activeSelf &&
              overlay.Find("ConfirmationCard/ConfirmDeletion") != null &&
              overlay.Find("ConfirmationCard/CancelDeletion") != null &&
-             remove != null && remove.targetGraphic is Image redGraphic &&
-             redGraphic.color.r > .40f && redGraphic.color.g < .30f,
-            "V2 destructive actions use red and a hidden reusable confirmation.");
+             remove != null && BistroBuilderCartaReferenceV3Style.IsDestructiveStyle(remove),
+            "Approved V3 destructives use the dedicated red gradient and hidden reusable confirmation.");
         if (remove != null && overlay != null)
         {
             remove.onClick.Invoke();
@@ -308,7 +331,30 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(reached && !portfolio.IsOpen,
             "Close is the top real EventSystem hit and closes Carta through its pointer handler.");
-        if (portfolio.IsOpen) portfolio.Close(); // Test cleanup; cannot turn the failed click into PASS.
+        if (portfolio.IsOpen) portfolio.Close(); // Cleanup cannot turn a failed click into PASS.
+        Pass(portfolio.TryOpen(out _), "Carta can reopen after closing.");
+        Canvas.ForceUpdateCanvases();
+        if (close != null && eventSystem != null)
+        {
+            RectTransform rect = close.transform as RectTransform;
+            Canvas hostCanvas = close.GetComponentInParent<Canvas>();
+            var pointer = new PointerEventData(eventSystem) {
+                position = RectTransformUtility.WorldToScreenPoint(
+                    hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : hostCanvas.worldCamera,
+                    rect.TransformPoint(rect.rect.center)), button = PointerEventData.InputButton.Left };
+            var hits = new System.Collections.Generic.List<RaycastResult>();
+            eventSystem.RaycastAll(pointer, hits);
+            bool repeatReached = hits.Count > 0 && hits[0].gameObject.GetComponentInParent<Button>() == close;
+            Debug.Log("[CARTA V1] Reopened close header canvas=" + hostCanvas.name +
+                ", raycaster=" + (hostCanvas.GetComponent<GraphicRaycaster>() != null) +
+                ", firstHit=" + (hits.Count > 0 ? hits[0].gameObject.name : "none"));
+            if (repeatReached) ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,
+                pointer, ExecuteEvents.pointerClickHandler);
+            Pass(repeatReached && !portfolio.IsOpen,
+                "Reopened Carta closes through the real pointer after sticky-header installation.");
+        }
+        else Pass(false, "Reopened Carta requires a close button and EventSystem.");
+        if (portfolio.IsOpen) portfolio.Close();
         Move(2);
     }
 
