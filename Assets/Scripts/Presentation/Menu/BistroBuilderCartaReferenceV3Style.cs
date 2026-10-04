@@ -11,6 +11,7 @@ using UnityEngine.UI;
 internal static class BistroBuilderCartaReferenceV3Style
 {
     private const string IconRoot = "BistroBuilder/UI/CartaReferenceV3Icons/";
+    private const string RasterRoot = "BistroBuilder/UI/CartaReferenceV3IconsRaster/";
     private static readonly Color32 Ink = new Color32(57, 34, 18, 255);
     private static readonly Color32 Muted = new Color32(103, 76, 51, 255);
     private static readonly Color32 Brass = new Color32(155, 106, 58, 255);
@@ -34,7 +35,22 @@ internal static class BistroBuilderCartaReferenceV3Style
     public static Sprite ReferenceIcon(string name)
     {
         if (Sprites.TryGetValue(name, out Sprite sprite)) return sprite;
-        sprite = Resources.Load<Sprite>(IconRoot + name);
+
+        // Unity Vector Graphics can import the reference SVG as a named sprite
+        // without producing visible pixels on the current uGUI Image renderer.
+        // Prefer a pixel-perfect transparent raster of that SAME SVG drawing.
+        Texture2D texture = Resources.Load<Texture2D>(RasterRoot + name);
+        if (texture != null)
+        {
+            sprite = Sprite.Create(texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect);
+            sprite.name = "CartaV3_" + name;
+        }
+        if (sprite == null)
+            sprite = Resources.Load<Sprite>(RasterRoot + name);
+        if (sprite == null)
+            sprite = Resources.Load<Sprite>(IconRoot + name); // safe source fallback
         if (sprite != null) Sprites.Add(name, sprite);
         return sprite;
     }
