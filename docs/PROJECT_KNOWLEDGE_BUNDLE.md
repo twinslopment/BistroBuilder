@@ -1531,6 +1531,33 @@ Se han compilado **Assembly-CSharp** y **Assembly-CSharp-Editor** con el SDK loc
 
 La preview HTML V3 y sus capturas son la referencia visual; una captura real de Game View a ambas resoluciones queda como control final de similitud al abrir Unity, antes de declarar paridad absoluta.
 
+## Verificación gráfica con Unity Hub — 04/10/2026
+
+La copia de integración se abrió desde Unity Hub 3.22.1 con Unity 6000.3.19f1.
+UPM se conectó y resolvió los 59 paquetes. Un lanzador de QA temporal ejecutó
+la regresión reversible del Gestor, Editor y Receta sin guardar partidas.
+
+- **30 PASS / 0 FAIL en Play Mode** sobre la copia de integración aislada, con un
+  gate adicional de raster real de los cuatro iconos de encabezado.
+- Los SVG originales de la preview V3 habían sido importados como sprites, pero
+  no se dibujaban en uGUI. Se añadieron **13 PNG RGBA 128x128**, rasterizados a
+  partir de esos mismos SVG, en `CartaReferenceV3IconsRaster`. El cargador usa
+  sus texturas, crea sprites FullRect y conserva el SVG de origen como fallback.
+- La pantalla «Nueva partida» usa un Canvas con sortingOrder 30000 y ocultaba las
+  tres capturas anteriores; durante esta prueba se ocultó **solo en Play Mode**.
+  También se esperó al final de cada frame antes de cerrar cada vista, porque
+  `ScreenCapture.CaptureScreenshot` es asíncrono.
+- Capturas **reales de Game View 1920x1080**, distintas y revisadas:
+  `Carta_Gestor_Unity_1920x1080_20261004.png`,
+  `Carta_Editor_Unity_1920x1080_20261004.png` y
+  `Carta_Receta_Unity_1920x1080_20261004.png`.
+  Contienen los datos presentes en la sesión real (una carta y ninguna regla),
+  no las cuatro cartas/tres reglas ilustrativas de la preview HTML.
+- Esta evidencia valida ejecución y renderizado a 1920x1080; no debe presentarse
+  como prueba independiente de paridad píxel a píxel ni de Game View a 1280x720.
+- El lanzador temporal no forma parte de la entrega de la rama. Se preservan
+  los tests/cambios de interacción del botón de cierre incorporados en paralelo.
+
 ---
 
 ## SOURCE: docs/30_UI_UX/CARTA_GESTOR_V2_1_20261002.md

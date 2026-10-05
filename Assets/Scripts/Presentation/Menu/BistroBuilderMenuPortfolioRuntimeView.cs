@@ -256,6 +256,10 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
             Vector2.zero,
             Vector2.zero
         );
+        // Carta Gestor owns its complete V3 visual contract. Prevent global
+        // design-system passes from re-injecting icons or restyling it.
+        if (modalRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
+            modalRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
         BistroBuilderMenuEditorUiFactory.AddImage(
             modalRoot,
             BistroBuilderMenuEditorUiFactory.Overlay
