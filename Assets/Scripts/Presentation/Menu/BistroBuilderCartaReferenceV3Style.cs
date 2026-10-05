@@ -282,23 +282,9 @@ internal static class BistroBuilderCartaReferenceV3Style
             Transform close=header.Find("Close");
             if(close!=null)
             {
-                Text label=close.GetComponentInChildren<Text>(true);
-                if(label!=null){label.text="×";SetTypeface(label,false,13,true);}
-                // A small glyph must keep a usable pointer target. The previous
-                // 1.6%-width target also made the factory's padded label narrower than zero.
-                RectTransform closeRect = close.GetComponent<RectTransform>();
-                closeRect.anchorMin = closeRect.anchorMax = new Vector2(1f, .5f);
-                closeRect.pivot = new Vector2(1f, .5f);
-                closeRect.anchoredPosition = Vector2.zero;
-                closeRect.sizeDelta = new Vector2(44f, 44f);
-                if(label != null)
-                {
-                    label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(1f, .5f);
-                    label.rectTransform.pivot = new Vector2(.5f, .5f);
-                    label.rectTransform.anchoredPosition = new Vector2(-9f, 0f);
-                    label.rectTransform.sizeDelta = new Vector2(18f, 24f);
-                }
-                Image img=close.GetComponent<Image>();if(img!=null)img.color=new Color(1,1,1,.06f);
+                // The approved Carta V3 reference has no close tile in the header.
+                // Navigation/Escape still closes the management view.
+                close.gameObject.SetActive(false);
             }
         }
         foreach(string name in new[]{"Menus","Rules","RuleEditor"})
@@ -364,6 +350,11 @@ internal static class BistroBuilderCartaReferenceV3Style
         }
         }
         AddCorners(panel);
+        BistroBuilderCartaReferenceV3Responsive responsive =
+            panel.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
+        if (responsive == null)
+            responsive = panel.gameObject.AddComponent<BistroBuilderCartaReferenceV3Responsive>();
+        responsive.ApplyImmediate(true);
     }
 
     private static void AddCorners(RectTransform panel)
@@ -394,8 +385,9 @@ internal static class BistroBuilderCartaReferenceV3Style
             case "NuevaRegla":return "plus";
             case "Nuevaregla":return "plus";
             case "Eliminarregla":return "trash";
-            case "+Evento":return "plus";
-            case "+Promo":return "plus";
+            // + Evento / + Promo already carry the plus in their text in V3.
+            case "+Evento":return null;
+            case "+Promo":return null;
             case "Guardarregla":return "save";
             case "Limpiarformulario":return "broom";
             default:return null;
@@ -407,6 +399,16 @@ internal static class BistroBuilderCartaReferenceV3Style
         bool destructive=button.name=="Eliminar" || button.name=="Eliminarregla" ||
             button.name=="ConfirmDeletion";
         bool flatField=button.name=="Tipo" || button.name=="Cartadestino";
+
+        // Carta V3 is authoritative: suppress every legacy/design-system child
+        // graphic before installing the single approved brown/white glyph.
+        foreach(Image child in button.GetComponentsInChildren<Image>(true))
+        {
+            if(child == button.GetComponent<Image>()) continue;
+            if(child.transform.name == "ReferenceActionIcon") continue;
+            child.enabled = false;
+        }
+
         SkinImage(button.GetComponent<Image>(),flatField?input:destructive?danger:normalButton);
         Image bg=button.GetComponent<Image>();
         if(bg!=null)bg.raycastTarget=true;
