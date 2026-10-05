@@ -1565,6 +1565,14 @@ la regresión reversible del Gestor, Editor y Receta sin guardar partidas.
 - El lanzador temporal no forma parte de la entrega de la rama. Se preservan
   los tests/cambios de interacción del botón de cierre incorporados en paralelo.
 
+## Navegación unificada de Carta — 05/10/2026
+
+- El botón `Carta` de la barra superior abre siempre el Gestor de Carta como entrada canónica; ya no salta directamente al editor de platos como fallback.
+- El Gestor y `CARTA Y PLATOS` comparten dos pestañas persistentes: `Cartas y reglas` y `Platos`. Cambiar de pestaña conserva la misma sección de gestión y abre la vista runtime real correspondiente.
+- `CARTA Y PLATOS` adopta el contrato visual V3 del Gestor: marco marfil/latón, superficies crema, tipografía Recoleta/Inter, botones con las mismas nine-slice y estados hover/pressed, rojo exclusivo para acciones destructivas y selectores miel.
+- Los cambios de platos pendientes nunca se descartan al cambiar de pestaña: se exige aplicar o descartar antes de volver a `Cartas y reglas`.
+- Validación C# local con referencias reales de Unity 6000.3.19f1: `Assembly-CSharp` y `Assembly-CSharp-Editor` compilan con **0 errores**. El Play Mode final sigue siendo una validación separada.
+
 ---
 
 ## SOURCE: docs/30_UI_UX/CARTA_GESTOR_V2_1_20261002.md
@@ -2727,6 +2735,7 @@ El primer intento no pasó compilación: referencias adelantadas a los botones d
 ## Regresión final
 
 La comprobación de miniaturas se añade al autotest de UX existente: imagen canónica real, rebind de imagen válida a imagen ausente, limpieza, selección preferida y filtrada, vacío y 10.000 entradas virtualizadas. `savic-thumbnail-grid-final-regression.log`, **exit0**, **ClosureGate27/27 PASS** y proofs funcionales actuales. Auditoría **05/10/2026 15:47:36 UTC**: **18 únicos,18 publicados,17 placeables,0 NEEDS_REVIEW,0 FAILED,0 inbox,0 huérfanos**, cola vacía. No se han repetido las pruebas de jornada ni se afirma clasificación universal.
+Cierre tras integrar la actualización remota de Carta `46666878` mediante `a925ea6c`: `savic-thumbnail-grid-merged-final.log`, **exit 0**, **gate 27/27**, contrato de miniaturas PASS y proofs actuales. Auditoría **05/10/2026 15:58:22 UTC**: **18 publicados,17 placeables,0 revisiones,0 fallidos,0 inbox,0 huérfanos**, cola vacía. La cuadrícula conserva el código probado con curl; los nuevos cambios de Carta se incluyen sin sobrescritura.
 
 ---
 
@@ -6286,6 +6295,8 @@ Liberación final confirmada: ambos procesos `savic-editor-final-release-verific
 Control Center incorpora **Miniaturas / Lista**, con cuadrícula por defecto, imágenes de catálogo reales, fallback de preview grande y placeholder explícito. La selección abre ficha/preview y se conserva al cambiar vista y refrescar; se mantienen filtros existentes, vacíos y teclado. Filas nativas virtualizadas; tarjetas recicladas limpian textura/nombre/identidad. No se modifica la autoría ni el estado de ningún asset.
 
 La prueba CLI temporal por loopback permite comprobar por curl el componente UI Toolkit real: **16 solicitudes PASS**, anchos 132/330/460/740 → columnas 1/2/3/5, sin solapes, PNG reales y HTTP 404 para imagen ausente. La ventana SAVIC real pasa selección/ficha, cambio de vista y búsqueda mediante eventos nativos. Regresión **27/27 PASS**, proceso exit 0 y auditoría **05/10/2026 15:47:36 UTC**: 18 publicados / 17 placeables / cero revisiones y fallos; proofs actuales. La galería de seis PNG es un ejemplo independiente, no captura del Editor. [Evidencia y reproducción](40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
+
+Cierre tras integrar la actualización remota de Carta `46666878` mediante `a925ea6c`: `savic-thumbnail-grid-merged-final.log`, **exit 0**, **gate 27/27**, contrato de miniaturas PASS y proofs actuales. Auditoría **05/10/2026 15:58:22 UTC**: **18 publicados,17 placeables,0 revisiones,0 fallidos,0 inbox,0 huérfanos**, cola vacía. La cuadrícula conserva el código probado con curl; los nuevos cambios de Carta se incluyen sin sobrescritura.
 
 ---
 
