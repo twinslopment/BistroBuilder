@@ -19,7 +19,7 @@
 | 15 Fin de servicio/día | CERRADO V1 | rama específica |
 | 16 Nueva partida/apertura | CERRADO V1 + hardening | existe V2 de apertura |
 | 17 Navegación V1 | CERRADO V1 + hardening | Crowd Flow transversal continúa integración/regresiones |
-| 18 Modo Edición/Construcción | CORE V1 CERRADO; UX/HARDENING ACTIVO | 84/84 reportados en núcleo; Construction Authoring/18N sigue hasta player-ready |
+| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 PLAN APROBADO / IMPLEMENTACIÓN NO INICIADA | Evolución controlada del núcleo existente; B0 baseline antes del gate Assets4All → SAVIC y después B1–B16 |
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales
@@ -50,3 +50,6 @@ Ampliado el área útil de los iconos sin aumentar la barra, mejorado el filtrad
 La candidata `codex/topbar-responsive-approved` incorpora `f86f97da` de `integration/master-current-20260918` para conservar las secciones actuales de edición, las miniaturas y las correcciones de paredes. Se corrigen solapamientos, selectores sin texto, contraste de Reputación y duplicación de acciones iniciales. La integración de esta candidata continúa pendiente de conformidad visual; no se declara cerrado 21A. [Evidencia y alcance](../40_TESTING/UI_VIDEO_AUDIT_2026-09-29.md).
 ## Integración UI autorizada — 29/09/2026
 El usuario aprueba subir las correcciones de `9b70eafc` a `integration/master-current-20260918`. Se integra con el cambio remoto `702b7175` de Universal Preview V2 conservando ambos trabajos. El recorrido de UI combinado mantiene 305 comprobaciones PASS. Esto sustituye el estado pendiente de aprobación de la candidata; no declara cerrado el conjunto de 21A.
+
+## Plan Editor V2 — 05/10/2026
+Se aprueba el plan maestro de evolución del Modo Edición sin reescritura total. La implementación queda secuenciada por gates: primero B0 (baseline/protección), después cierre de la conexión Assets4All → SAVIC y, una vez superado ese gate, B1–B16 de Editor V2. BBSIS, Navigation, Finance, Save/Load, SAVIC, Placement, Construction Authoring, cámara 369 y Universal Preview conservan sus autoridades; Editor V2 añadirá coordinación común sin duplicarlas. Fuente: [Editor V2 Master Plan](../20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md).

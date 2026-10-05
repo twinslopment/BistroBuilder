@@ -2,7 +2,10 @@
 
 **Documento canónico:** decisiones aprobadas sobre interacción del modo edición.
 **Estado:** ACTIVO
-**Última actualización:** 2026-09-28
+**Última actualización:** 2026-10-05
+**Plan rector de ejecución:** [Editor V2 Master Plan](../20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md)
+
+Editor V2 desarrolla y coordina las decisiones aprobadas en este documento; no las invalida ni autoriza una reescritura total de las autoridades existentes.
 
 ## 1. Propósito
 

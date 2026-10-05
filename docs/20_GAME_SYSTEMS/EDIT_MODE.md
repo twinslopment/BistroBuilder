@@ -1,6 +1,6 @@
 # Bistro Builder — Modo Edición / Construcción
 
-**Estado reconciliado:** arquitectura/core V1 cerrados en su alcance; **Construction Authoring/UX hardening activo** hasta que el flujo completo sea player-ready.
+**Estado reconciliado:** arquitectura/core V1 cerrados en su alcance; **Editor V2 dispone de plan canónico aprobado y su implementación todavía no ha comenzado**. Construction Authoring/UX continúa siendo la base que debe evolucionarse, no reescribirse.
 
 ## Objetivo de producto
 El jugador debe poder partir de un local y comprender cómo **crear habitaciones/paredes**, modificar estructura, colocar puertas y mobiliario, reorganizar elementos y confirmar cambios sin conocer herramientas técnicas internas.
@@ -55,6 +55,19 @@ Preview/ghost, snapping suave y visible, medidas útiles, materialización breve
 - crear pared/habitación es descubrible desde la UI;
 - cancelar restaura estado anterior de forma segura;
 - puertas/ventanas usan openings/segmentos; V1 excluye pisos múltiples, tejados, curvas y CAD avanzado.
+
+## Evolución vinculante — Editor V2
+
+El desarrollo futuro del Modo Edición se rige por [Editor V2 Master Plan](EDITOR_V2_MASTER_PLAN.md).
+
+Reglas de transición:
+
+- Editor V2 evoluciona el núcleo actual; no crea un segundo editor paralelo.
+- BBSIS, Navigation, Finance, Save/Load, Placement, Construction Authoring, SAVIC, cámara 369 y Universal Preview conservan sus responsabilidades.
+- La UI y la coordinación pueden sustituirse cuando limiten la experiencia, pero toda sustitución debe superar pruebas equivalentes o superiores antes de retirar la ruta anterior.
+- La implementación empieza por B0 (baseline/protección), se pausa para cerrar el gate Assets4All → SAVIC y continúa después con B1–B16.
+- Undo/Redo global, reforma transaccional y Save/Load son gates críticos; un fallo bloquea el avance.
+- El estado de cada bloque se mantiene en el plan maestro y solo pasa a PASS con evidencia reproducible.
 
 ## Gate player-ready
 Local vacío → crear estancia → paredes/puerta → mobiliario → mover/eliminar → validar → confirmar → guardar → cargar → volver a editar. Debe conservar geometría/IDs, no dejar residuos y responder con fluidez.
