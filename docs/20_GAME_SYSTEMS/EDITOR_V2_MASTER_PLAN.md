@@ -1,6 +1,6 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · IMPLEMENTACIÓN NO INICIADA  
+**Estado:** PLAN CANÓNICO APROBADO · B0 BASELINE PASS · ESPERANDO GATE ASSETS4ALL → SAVIC
 **Fecha:** 2026-10-05  
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
@@ -209,6 +209,8 @@ PASS:
 - punto de retorno inequívoco.
 
 **GATE:** si no podemos distinguir un fallo previo de una regresión nueva, no se continúa.
+
+**Cierre B0 — 2026-10-05: PASS.** Evidencia: [Editor V2 Baseline 2026-10-05](../40_TESTING/EDITOR_V2_BASELINE_20261005.md). La baseline registra dos incidencias preexistentes de rendimiento que no impiden cerrar la fotografía de partida: Load de 5,676 s frente al presupuesto histórico de 5 s y diagnóstico completo de circulación de ~37 s. Ambas quedan como entradas explícitas de hardening; no son regresiones de Editor V2.
 
 ### B1 — Cerrar riesgos de la auditoría
 
@@ -694,9 +696,9 @@ Salvo decisión posterior explícita:
 
 ## 17. Estado de bloques
 
-| Bloque | Estado inicial |
+| Bloque | Estado actual |
 |---|---|
-| B0 Baseline y protección | NO INICIADO |
+| B0 Baseline y protección | PASS |
 | Gate Assets4All → SAVIC | PENDIENTE |
 | B1 Riesgos de auditoría | NO INICIADO |
 | B2 Editor V2 Coordinator | NO INICIADO |
