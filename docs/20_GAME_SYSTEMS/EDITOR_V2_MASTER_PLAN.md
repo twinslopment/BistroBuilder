@@ -1,6 +1,6 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · B0 BASELINE PASS · ESPERANDO GATE ASSETS4ALL → SAVIC
+**Estado:** PLAN CANÓNICO APROBADO · B0 BASELINE PASS · GATE ASSETS4ALL → SAVIC VALIDANDO
 **Fecha:** 2026-10-05  
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
@@ -699,7 +699,7 @@ Salvo decisión posterior explícita:
 | Bloque | Estado actual |
 |---|---|
 | B0 Baseline y protección | PASS |
-| Gate Assets4All → SAVIC | PENDIENTE |
+| Gate Assets4All → SAVIC | VALIDANDO — conexión funcional; falta cobertura real de 5 familias y versionado estable |
 | B1 Riesgos de auditoría | NO INICIADO |
 | B2 Editor V2 Coordinator | NO INICIADO |
 | B3 Selección común | NO INICIADO |

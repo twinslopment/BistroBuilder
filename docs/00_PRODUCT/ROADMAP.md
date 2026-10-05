@@ -19,7 +19,7 @@
 | 15 Fin de servicio/día | CERRADO V1 | rama específica |
 | 16 Nueva partida/apertura | CERRADO V1 + hardening | existe V2 de apertura |
 | 17 Navegación V1 | CERRADO V1 + hardening | Crowd Flow transversal continúa integración/regresiones |
-| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS | Baseline técnica cerrada; esperando gate Assets4All → SAVIC antes de B1. Incidencia previa: Load 5,676 s > presupuesto 5 s |
+| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC VALIDANDO | Conexión funcional demostrada; falta certificar mesa, silla, lámpara y decoración además del equipamiento ya probado, y versionar el puente antes de B1 |
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales
