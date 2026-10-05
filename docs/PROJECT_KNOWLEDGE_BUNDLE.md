@@ -393,6 +393,10 @@ Flujo operativo comprobado desde Control Center: importar carpeta GLB, reintenta
 
 Operaciones de ventana implementadas y verificadas: importar, reintentar, verificar una identidad y actualizar el original conservando identidad/valores manuales mediante transacción recuperable. Revalidación de dependencias de cliente/Animation con candidato y MainCatalog estrictos, historial de revisión por SHA entrante y rollback de archivos mapeados corregidos. Gate27/27 y auditoría 12:33:14UTC:18 publicados,17 placeables,0 revisión/FAILED/inbox/huérfanos;94 archivos previos preservados. [Evidencia y límites](../40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). El trabajo de conexión de otro chat permanece independiente.
 
+### SAVIC · miniaturas — 05/10/2026
+
+Cuadrícula compacta en Inventario, alternancia Lista/Miniaturas, selección/ficha y filtros, fallback y virtualización. 16 solicitudes curl PASS con layout nativo 1/2/3/5 columnas; gate 27/27 y auditoría15:47:36 UTC conservan 18 publicados y 0 revisión/FAILED. [Pruebas](../40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
+
 ---
 
 ## SOURCE: docs/10_ARCHITECTURE/AUTHORITY_MATRIX.md
@@ -2688,6 +2692,41 @@ No se afirma reconocimiento universal de fuentes futuras, jornada IA completa, r
 Antes del push se detecta `0172c0fbe4143216b71fb90f827abda1f5bc35e7`, posterior a la base solicitada: los cuatro iconos aprobados de encabezados de Carta. Se incorpora por merge conservando ambos historiales. `integration-latest-carta-icons.log` ejecuta `BistroBuilderMenuVisualV1RuntimeProbe.RunBatch` con **26 PASS / 0 FAIL, UnityActualExitCode=0** sobre la escena real. Es una auditoría estructural/uGUI; batch no produce capturas Game View ni sustituye la aprobación visual.
 
 Se repite la regresión canónica tras incorporar esos recursos/código: `integration-latest-final-canonical.log`, **exit 0**, gate26/core84/Navigation22/barra59/BBSIS2B18 sin fallos y todos los proofs funcionales actuales. Auditoría final **03/10/2026 16:39:39 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED y 0 inbox**. El inventario/gate copiados en el directorio de evidencia corresponden a este último cierre. Permanece documentado el fallo responsive de alturas y no se cambia su gate.
+
+---
+
+## SOURCE: docs/40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md
+
+Category: CANONICAL
+
+# SAVIC · cuadrícula de miniaturas — 05/10/2026
+
+## Función implementada
+
+Control Center → **Inventario** abre por defecto una cuadrícula compacta. **Miniaturas / Lista** permite alternar vista conservando la identidad seleccionada. Las tarjetas usan `preview.catalog` y, cuando falta ese artefacto, `preview.large`; mantienen proporciones con ScaleToFit. Incluyen nombre, tipo/estado, tooltip completo, borde de selección y navegación por flechas. Pulsar una tarjeta abre su ficha y preview grande.
+
+Se conserva el inventario canónico, sus filtros y las autoridades de publicación. Un filtro vacío limpia la ficha; la selección válida se mantiene al refrescar/filtrar. Las filas se virtualizan con ListView FixedHeight; unbind elimina imagen, título y referencia anterior. Los PNG pertenecen a AssetDatabase. Un asset sin preview muestra **Sin miniatura**, sin asignarle una imagen ajena. No se genera nueva geometría ni se altera publicación/materiales.
+
+## Prueba nativa con curl
+
+`SavicThumbnailGridProbe.StartFromCommandLine` abre la ventana SAVIC real y una fixture de tamaño variable del mismo componente nativo. El servicio temporal se enlaza exclusivamente a loopback 127.0.0.1:19057; no arranca en uso normal. Finaliza con /finish y tiene timeout. El layout se mide mediante worldBound real en UI Toolkit, no mediante CSS ni una simulación de Unity.
+
+| Ancho de fixture | Columnas reales | Assets | Tarjetas realizadas, incluido overscan |
+|---:|---:|---:|---:|
+| 132 px | 1 | 18 | 5 |
+| 330 px | 2 | 18 | 10 |
+| 460 px | 3 | 18 | 15 |
+| 740 px | 5 | 18 | 18 |
+
+**16 solicitudes curl aprobadas**: salud; cuatro layouts; búsqueda con resultados y búsqueda vacía; selección por identidad; seis imágenes PNG reales; imagen inexistente HTTP404; cierre con comprobaciones nativas. Los layouts prueban tamaños finitos, ausencia de solapes y ScaleToFit. La selección/ficha y el cambio Lista/Miniaturas se prueban aparte en la ventana SAVIC real mediante NavigationSubmitEvent. También se prueba búsqueda real, fallback, borrado de datos reciclados y contrato de virtualización para 10.000 entradas sintéticas explícitas, sin crear assets canónicos.
+
+Evidencia en `BB_SavicPresentation/Logs/savic-thumbnail-grid-curl-native-second.log`, **exit0**; respuestas y resultado `Library/BistroBuilder/SAVIC/Logs/ThumbnailGrid`: `result.json` statusPASS, curlRequests16, consoleErrors0. Los PNG de ejemplo se descargaron por curl y se inspeccionaron visualmente. Una galería HTML independiente muestra seis imágenes reales; es una presentación de ejemplos, no una captura de la ventana Unity.
+
+El primer intento no pasó compilación: referencias adelantadas a los botones de vista y uso de una propiedad de inventario inexistente. Se corrigieron a botones previamente declarados y TryLoadPersisted; el log inicial se conserva como fallo, no se declara PASS.
+
+## Regresión final
+
+La comprobación de miniaturas se añade al autotest de UX existente: imagen canónica real, rebind de imagen válida a imagen ausente, limpieza, selección preferida y filtrada, vacío y 10.000 entradas virtualizadas. `savic-thumbnail-grid-final-regression.log`, **exit0**, **ClosureGate27/27 PASS** y proofs funcionales actuales. Auditoría **05/10/2026 15:47:36 UTC**: **18 únicos,18 publicados,17 placeables,0 NEEDS_REVIEW,0 FAILED,0 inbox,0 huérfanos**, cola vacía. No se han repetido las pruebas de jornada ni se afirma clasificación universal.
 
 ---
 
@@ -6241,6 +6280,12 @@ Las dependencias de cliente/Animation cambiaron en la integración y dejaron obs
 Entrega verificada **05/10/2026 12:33:14 UTC** en `BB_SavicPresentation`: **gate 27/27**, **18 publicados**, **17 placeables**, **cero revisiones y fallidos**, cola vacía y proofs actuales. Los 94 archivos existentes comprobados por SHA siguen intactos; las dos actualizaciones remotas de Carta se incluyen. Fallos intermedios y repruebas constan en [el informe](40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md); no se presentan como PASS. La integración Assets4ALL de otro chat permanece separada de esta entrega.
 
 Liberación final confirmada: ambos procesos `savic-editor-final-release-verification.log` terminaron **exit 0**, gate **27/27** y proofs actuales. Auditoría de Delivery **05/10/2026 12:39:50 UTC**: **18 únicos,18 publicados,17 placeables,0 NEEDS_REVIEW,0 FAILED,0 inbox,0 huérfanos**, cola vacía.
+
+## 88. Cuadrícula compacta de miniaturas en Inventario
+
+Control Center incorpora **Miniaturas / Lista**, con cuadrícula por defecto, imágenes de catálogo reales, fallback de preview grande y placeholder explícito. La selección abre ficha/preview y se conserva al cambiar vista y refrescar; se mantienen filtros existentes, vacíos y teclado. Filas nativas virtualizadas; tarjetas recicladas limpian textura/nombre/identidad. No se modifica la autoría ni el estado de ningún asset.
+
+La prueba CLI temporal por loopback permite comprobar por curl el componente UI Toolkit real: **16 solicitudes PASS**, anchos 132/330/460/740 → columnas 1/2/3/5, sin solapes, PNG reales y HTTP 404 para imagen ausente. La ventana SAVIC real pasa selección/ficha, cambio de vista y búsqueda mediante eventos nativos. Regresión **27/27 PASS**, proceso exit 0 y auditoría **05/10/2026 15:47:36 UTC**: 18 publicados / 17 placeables / cero revisiones y fallos; proofs actuales. La galería de seis PNG es un ejemplo independiente, no captura del Editor. [Evidencia y reproducción](40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
 
 ---
 

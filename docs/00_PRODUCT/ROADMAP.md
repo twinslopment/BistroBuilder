@@ -71,3 +71,7 @@ Flujo operativo comprobado desde Control Center: importar carpeta GLB, reintenta
 ### Cierre de entrega SAVIC Editor — 05/10/2026
 
 Operaciones de ventana implementadas y verificadas: importar, reintentar, verificar una identidad y actualizar el original conservando identidad/valores manuales mediante transacción recuperable. Revalidación de dependencias de cliente/Animation con candidato y MainCatalog estrictos, historial de revisión por SHA entrante y rollback de archivos mapeados corregidos. Gate27/27 y auditoría 12:33:14UTC:18 publicados,17 placeables,0 revisión/FAILED/inbox/huérfanos;94 archivos previos preservados. [Evidencia y límites](../40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). El trabajo de conexión de otro chat permanece independiente.
+
+### SAVIC · miniaturas — 05/10/2026
+
+Cuadrícula compacta en Inventario, alternancia Lista/Miniaturas, selección/ficha y filtros, fallback y virtualización. 16 solicitudes curl PASS con layout nativo 1/2/3/5 columnas; gate 27/27 y auditoría15:47:36 UTC conservan 18 publicados y 0 revisión/FAILED. [Pruebas](../40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).

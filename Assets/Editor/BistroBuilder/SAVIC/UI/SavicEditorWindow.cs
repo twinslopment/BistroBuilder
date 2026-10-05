@@ -69,6 +69,9 @@ namespace BistroBuilder.Editor.Savic
         [SerializeField]
         private string librarySearch = string.Empty;
 
+        [SerializeField] private bool libraryThumbnails = true;
+        [SerializeField] private string librarySelectedKey = string.Empty;
+
         [SerializeField]
         private string libraryFamily = "Todos";
 
@@ -1108,8 +1111,36 @@ namespace BistroBuilder.Editor.Savic
                         FirstSelection<SavicCanonicalContentInventoryRow>(
                             selection));
 
-            page.Add(CreateSplit(list, detail));
+            detail.name = "savic-library-detail";
+            var grid = new SavicThumbnailGrid(entry =>
+            {
+                librarySelectedKey = entry?.Id ?? string.Empty;
+                RenderInventoryDetail(detail, entry?.InventoryRow);
+            });
+            var browser = new VisualElement(); browser.style.flexGrow = 1; browser.style.minHeight = 0;
+            var views = new VisualElement(); views.style.flexDirection = FlexDirection.Row; views.style.marginBottom = 8;
+            var count = new Label(); count.style.flexGrow = 1; count.style.color = TextMuted; count.style.unityTextAlign = TextAnchor.MiddleLeft;
+            Button thumbnails = null, textList = null;
+            thumbnails = CreateSecondaryButton("Miniaturas", () => SwitchView(true)); thumbnails.name = "savic-view-thumbnails";
+            textList = CreateSecondaryButton("Lista", () => SwitchView(false)); textList.name = "savic-view-list";
+            views.Add(count); views.Add(thumbnails); views.Add(textList); browser.Add(views); browser.Add(grid); browser.Add(list);
+            page.Add(CreateSplit(browser, detail));
             contentHost.Add(page);
+            void SwitchView(bool value)
+            {
+                libraryThumbnails = value;
+                grid.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+                list.style.display = value ? DisplayStyle.None : DisplayStyle.Flex;
+                thumbnails.SetEnabled(!value); textList.SetEnabled(value);
+                if (value) grid.Select(librarySelectedKey);
+                else { int index = visible.FindIndex(r => r.StableKey == librarySelectedKey); list.selectedIndex = index; }
+            }
+            void UpdateBrowser()
+            {
+                count.text = visible.Count + " assets";
+                grid.SetItems(visible.Select(SavicThumbnailEntry.FromInventory), librarySelectedKey);
+                SwitchView(libraryThumbnails);
+            }
 
             List<SavicCanonicalContentInventoryRow> FilterInventory()
             {
@@ -1186,11 +1217,7 @@ namespace BistroBuilder.Editor.Savic
             {
                 visible = FilterInventory();
                 SetItems(list, visible);
-                SelectFirstOrClear(
-                    list,
-                    visible,
-                    detail,
-                    RenderInventoryDetail);
+                UpdateBrowser();
             }
 
             search.RegisterValueChangedCallback(
@@ -1241,11 +1268,7 @@ namespace BistroBuilder.Editor.Savic
                     ApplyFilters();
                 });
 
-            SelectFirstOrClear(
-                list,
-                visible,
-                detail,
-                RenderInventoryDetail);
+            UpdateBrowser();
 
             void BindInventoryRow(
                 VisualElement element,
@@ -1270,6 +1293,7 @@ namespace BistroBuilder.Editor.Savic
                 SavicCanonicalContentInventoryRow row)
             {
                 host.Clear();
+                host.userData = row?.StableKey;
 
                 if (row == null)
                 {
@@ -1283,6 +1307,9 @@ namespace BistroBuilder.Editor.Savic
                     host,
                     row.DisplayName,
                     row.Lifecycle);
+
+                librarySelectedKey = row.StableKey;
+                if (row.Manifest != null) AddPreview(host, row.Manifest);
 
                 if (!string.IsNullOrWhiteSpace(
                         row.Reason))
@@ -2540,6 +2567,7 @@ namespace BistroBuilder.Editor.Savic
 
 
         internal void FlushRefreshForDiagnostics() => ExecuteQueuedRefresh();
+        internal void ShowLibraryForDiagnostics(string search = "") { librarySearch = search; selectedSection = SavicEditorSection.Library; SubscribeToData(); ExecuteQueuedRefresh(); RenderSelectedSection(); }
 
         internal void ShowAssetForDiagnostics(string id)
         {

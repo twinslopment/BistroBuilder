@@ -29,6 +29,7 @@ namespace BistroBuilder.Editor.Savic
             ValidateReadModel();
             ValidateRepositorySignalsAndPersistedInventory();
             ValidateVirtualizationContract();
+            SavicThumbnailGridProbe.RunContractChecks();
 
             Debug.Log(
                 "[SAVIC] EDITOR UX SELF-TEST - PASS\n" +
