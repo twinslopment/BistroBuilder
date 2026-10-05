@@ -58,10 +58,13 @@ namespace BistroBuilder.Editor.Savic
             SessionState.EraseString(Key + "Result"); SessionState.SetBool(Key + "Succeeded", false);
             SessionState.SetBool(Key + "Paused", context.Jobs.IsPaused);
             context.Jobs.SetPaused(true);
+            bool revalidateDependencies = m.type == "BarStool" && m.status == "PUBLISHED" && !SavicFunctionalRuntimeAcceptance.Matches(m, context.Layout);
+            SessionState.SetBool(Key + "ConfirmPublished", revalidateDependencies);
             SessionState.SetBool(Key + "Active", true);
             try
             {
                 if (m.type == "BarCounter") SavicPublishedTableRuntimePlaytest.RunSelectedBar(id, m.status != "PUBLISHED");
+                else if (revalidateDependencies) SavicCustomerBarSeatVisualPlaytest.RevalidateSelectedPublishedDependencies();
                 else if (m.type == "BarStool") SavicCustomerBarSeatVisualPlaytest.RunSelected(m.status == "PUBLISHED");
                 else if (SavicOverheadEquipmentRuntimeAcceptance.Required(m)) SavicOverheadEquipmentRuntimePlaytest.RunSelected(id, m.status != "PUBLISHED");
                 else throw new InvalidOperationException("No existe un verificador aprobado para esta familia.");
@@ -74,6 +77,8 @@ namespace BistroBuilder.Editor.Savic
         {
             if (!IsActive) return;
             string id = SelectedId;
+            bool confirmPublished = SessionState.GetBool(Key + "ConfirmPublished", false);
+            SessionState.SetBool(Key + "ConfirmPublished", false);
             SessionState.SetBool(Key + "Active", false);
             var context = SavicEditorContext.Instance;
             try
@@ -111,6 +116,7 @@ namespace BistroBuilder.Editor.Savic
                 SessionState.EraseString(Key + "Id");
                 Changed?.Invoke();
             }
+            if (success && confirmPublished) Run(id);
         }
         private static void RecoverInterrupted()
         {

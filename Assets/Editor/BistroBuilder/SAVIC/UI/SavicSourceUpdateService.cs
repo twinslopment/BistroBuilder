@@ -83,6 +83,7 @@ namespace BistroBuilder.Editor.Savic
                     !record.publicationFolders.Contains(folder))
                     record.publicationFolders.Add(folder);
             }
+            AssetDatabase.ReleaseCachedFileHandles();
             foreach (string folder in record.publicationFolders)
                 if (Directory.Exists(context.Layout.FromProjectRelativePath(folder)))
                     foreach (string file in Directory.GetFiles(context.Layout.FromProjectRelativePath(folder), "*", SearchOption.AllDirectories))
@@ -224,6 +225,7 @@ namespace BistroBuilder.Editor.Savic
                     throw new IOException("Falta una copia íntegra de rollback. Se conserva el registro para recuperar: " + f.path);
                 CheckedPath(f.path);
             }
+            AssetDatabase.ReleaseCachedFileHandles();
             foreach (string folder in record.publicationFolders)
                 if (Directory.Exists(context.Layout.FromProjectRelativePath(folder)))
                     foreach (string absolute in Directory.GetFiles(context.Layout.FromProjectRelativePath(folder), "*", SearchOption.AllDirectories))

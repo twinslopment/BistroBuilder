@@ -126,19 +126,18 @@ namespace BistroBuilder.Editor.Savic
             if (completed)
                 return;
 
-            try
+            try { Rollback(); }
+            catch (Exception failure)
             {
-                Rollback();
+                throw new IOException("SAVIC rollback failed; backups retained at " + backupRoot, failure);
             }
-            finally
-            {
-                completed = true;
-                DeleteBackupRoot();
-            }
+            completed = true;
+            DeleteBackupRoot();
         }
 
         private void Rollback()
         {
+            AssetDatabase.ReleaseCachedFileHandles();
             for (int index = snapshots.Count - 1;
                  index >= 0;
                  index--)

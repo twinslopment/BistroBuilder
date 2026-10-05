@@ -389,6 +389,9 @@ Resueltos los dos pendientes de la revisión del vídeo: alineación de clientes
 ## SAVIC: operaciones de Editor — 05/10/2026
 
 Flujo operativo comprobado desde Control Center: importar carpeta GLB, reintentar/revalidar por identidad, verificar una familia funcional seleccionada y actualizar un original conservando identidad/GUID/autoría manual. Revisión de fuente con historial y rollback persistente, escena de autoría aislada y recuperación en un proceso nuevo del Editor. Verificaciones reales seleccionadas de barra, taburete y campana, y revisión funcional completa de barra con segunda aceptación MainCatalog: exit 0. Gate **27/27 PASS**; auditoría aislada 11:54:49 UTC: **18 publicados, 17 catálogo placeables, 0 revisiones/fallidos/inbox/huérfanos**, cola vacía y proofs actuales. Fuentes: SAVIC §87 y [pruebas de operaciones](../40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). La conexión Assets4ALL se trata en un chat separado; no está implementada en este cierre.
+### Cierre de entrega SAVIC Editor — 05/10/2026
+
+Operaciones de ventana implementadas y verificadas: importar, reintentar, verificar una identidad y actualizar el original conservando identidad/valores manuales mediante transacción recuperable. Revalidación de dependencias de cliente/Animation con candidato y MainCatalog estrictos, historial de revisión por SHA entrante y rollback de archivos mapeados corregidos. Gate27/27 y auditoría 12:33:14UTC:18 publicados,17 placeables,0 revisión/FAILED/inbox/huérfanos;94 archivos previos preservados. [Evidencia y límites](../40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). El trabajo de conexión de otro chat permanece independiente.
 
 ---
 
@@ -2624,6 +2627,19 @@ Las revisiones de ensayo modifican un marcador JSON de GLB reales, manteniendo s
 Abrir `Tools > Bistro Builder > SAVIC > Open Control Center`. Importar una carpeta con GLB o usar la carpeta existente `ContentInbox/DropHere`. Las acciones de ficha bloquean operaciones concurrentes del mismo asset y verifican SHA antes de actuar. Guardar las escenas antes de actualizar o verificar funcionamiento.
 
 Actualizar conserva una función compatible, identidad, GUID y valores manuales; una fuente ambigua o de otra función se rechaza conservando lo válido. Esta acción admite GLB y FBX autocontenidos, no GLTF con dependencias externas. Los valores de instalación/normalización siguen perteneciendo a los perfiles canónicos. No se añade extracción ni ventilación D-003. Assets4ALL no se conecta en este cambio.
+## Cierre en el proyecto de entrega
+
+Las dos actualizaciones remotas de Carta `efd07b6e` y `f94ec55c` se integraron en `4c43284d`, antes de probar la entrega `BB_SavicPresentation`. La comparación SHA-256 conserva los **94 archivos existentes** capturados antes del merge; no se han incluido cambios de otros trabajos en este cierre.
+
+La primera comprobación de entrega terminó exit 1: los tres proofs de taburete conservaban hashes antiguos del prefab de cliente y del catálogo de Animation. El botón **Verificar funcionamiento** usa ahora la revalidación candidata existente para la identidad seleccionada, mantiene la evidencia de fuente/plan/perfil/autoría e inicia después una segunda comprobación estricta desde MainCatalog. Los tres taburetes pasan ambas fases con cliente Humanoid sentado, llegada/ocupación/leases, dos cargas SaveGame por fase, IDs estables/nuevas instancias, slot eliminado y Console limpia. No se quitó Matches ni se sustituyó una comprobación por un estado. Evidencia: `savic-stale-stool-ui-verified-1.log`, `-2.log`, `-3.log`, los tres exit 0 en `BB_SavicPresentation/Logs`.
+
+La prueba de revisión archivada descubrió también que el historial de un DuplicateExact guardaba el SHA actual del propietario, en lugar de los bytes antiguos entrantes. Se conserva ahora el SourceRecord de la revisión duplicada, sin cambiar la fuente vigente. Reprueba en dos aperturas reales: `savic-revision-history-final-BeginColdRestartFromCommandLine.log` y `savic-revision-history-final-CompleteAfterColdRestartFromCommandLine.log`, exit 0, **29 comprobaciones**.
+
+Otro gate de entrega terminó exit 1 al restaurar `BBIconCatalog.asset`: Windows rechazó copiar un archivo que Unity mantenía mapeado. La transacción común libera ahora los handles de AssetDatabase antes de restaurar archivos; el rollback de revisión lo hace antes de cualquier borrado/copia. Si falla la restauración, las copias se conservan y se informa su ubicación. El catálogo diagnóstico se reconstruyó con su instalador canónico y su diff volvió a quedar vacío. `savic-delivered-rollback-verified-RunFinalVerificationFromCommandLine.log`, exit 0: **gate 27/27**, inventario **05/10/2026 12:33:14 UTC**, **18 publicados / 17 placeables / 0 revisiones / 0 fallidos / 0 inbox / 0 huérfanos**, cola vacía y proofs actuales. Los fallos anteriores permanecen en los logs; no son ejecuciones declaradas PASS.
+
+Los logs finales `savic-editor-final-release-verification.log` vuelven a comprobar el código final de Review y Delivery después de retirar el helper puntual del catálogo. Sus archivos `.exitcode.txt` y el inventario fresco son la evidencia de liberación. Esta sección describe exclusivamente las operaciones de Editor; el trabajo Assets4ALL de otro chat conserva sus archivos y decisiones por separado.
+
+Liberación final confirmada: ambos procesos `savic-editor-final-release-verification.log` terminaron **exit 0**, gate **27/27** y proofs actuales. Auditoría de Delivery **05/10/2026 12:39:50 UTC**: **18 únicos,18 publicados,17 placeables,0 NEEDS_REVIEW,0 FAILED,0 inbox,0 huérfanos**, cola vacía.
 
 ---
 
@@ -6218,6 +6234,13 @@ Pruebas reales en Unity 6000.3.19f1, worktree aislado de revisión:
 - **Gate 27/27 PASS**, ahora incluye Editor UX. Auditoría **05/10/2026 11:54:49 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED, 0 inbox, 0 huérfanos**; cola vacía y proofs funcionales actuales. Todos los procesos finales anteriores terminaron con exit 0.
 
 Evidencia y alcance: [operaciones de Editor](40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). Esta entrega cubre SAVIC dentro de Unity y el lote existente; la conexión con Assets4ALL sigue siendo un trabajo separado. No certifica clasificación universal, GLTF dependiente de archivos externos ni carga de servicio ocupado.
+### Cierre de entrega de las operaciones de Editor
+
+Las dependencias de cliente/Animation cambiaron en la integración y dejaron obsoleta la evidencia de los tres taburetes. La verificación individual puede renovar sus dependencias mediante aceptación candidata existente y ejecutar después MainCatalog estricto; los tres casos reales pasan ambas fases con SaveGame y Console limpia. El historial DuplicateExact de una fuente archivada conserva su SHA entrante real. La transacción común libera handles de Unity al restaurar archivos y conserva backups si una restauración falla; el fallo Windows de catálogo mapeado quedó reproducido y corregido sin recuperación Git/stash.
+
+Entrega verificada **05/10/2026 12:33:14 UTC** en `BB_SavicPresentation`: **gate 27/27**, **18 publicados**, **17 placeables**, **cero revisiones y fallidos**, cola vacía y proofs actuales. Los 94 archivos existentes comprobados por SHA siguen intactos; las dos actualizaciones remotas de Carta se incluyen. Fallos intermedios y repruebas constan en [el informe](40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md); no se presentan como PASS. La integración Assets4ALL de otro chat permanece separada de esta entrega.
+
+Liberación final confirmada: ambos procesos `savic-editor-final-release-verification.log` terminaron **exit 0**, gate **27/27** y proofs actuales. Auditoría de Delivery **05/10/2026 12:39:50 UTC**: **18 únicos,18 publicados,17 placeables,0 NEEDS_REVIEW,0 FAILED,0 inbox,0 huérfanos**, cola vacía.
 
 ---
 

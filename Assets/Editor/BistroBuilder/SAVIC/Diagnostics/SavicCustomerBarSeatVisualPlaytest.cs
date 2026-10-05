@@ -66,6 +66,7 @@ namespace BistroBuilder.Editor.Savic
         }
         internal static void RunSelected(bool published)
         { if (published) RunPublishedAcceptanceFromCommandLine(); else RunCandidateAcceptanceFromCommandLine(); }
+        internal static void RevalidateSelectedPublishedDependencies() => RevalidatePublishedCandidates(true);
         private static bool IncludesSelected(SavicManifest m) => !SavicRuntimeVerificationSession.IsActive || m.savicId == SavicRuntimeVerificationSession.SelectedId;
         private static int ExpectedCount => SavicRuntimeVerificationSession.IsActive ? 1 : 3;
 
@@ -103,7 +104,7 @@ namespace BistroBuilder.Editor.Savic
         private static void RevalidatePublishedCandidates(bool representationDependenciesChanged)
         {
             var context = SavicEditorContext.Instance;
-            foreach (var m in context.Manifests.GetAll().Where(m => m?.type == "BarStool" && m.status == "PUBLISHED"))
+            foreach (var m in context.Manifests.GetAll().Where(m => m?.type == "BarStool" && m.status == "PUBLISHED" && IncludesSelected(m)))
             {
                 var proof = m.barStoolRuntime;
                 Require(proof != null && proof.verifierVersion == SavicBarStoolRuntimeAcceptance.Version &&

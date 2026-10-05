@@ -124,6 +124,9 @@ namespace BistroBuilder.Editor.Savic
                 Require(c.Manifests.Count == f.count + 1 && c.Manifests.TryGetBySavicId(f.id, out m) && m.source.sourceHash == revisedHash,
                     "Importing an archived prior revision duplicated or rolled back the current asset.");
 
+                Require(c.Jobs.Jobs.Any(j => j.state == SavicJobState.DuplicateExact.ToString() && j.manifestSavicId == f.id && j.sourceHash == f.hash),
+                    "Archived duplicate history did not retain the actual incoming revision SHA.");
+
                 // A malformed replacement must leave the previously published bytes intact.
                 string validPrefabHash = SavicHashService.ComputeSha256(c.Layout.FromProjectRelativePath(prefabPath));
                 string invalid = Path.Combine(Path.GetDirectoryName(f.input), "broken_chair.glb");

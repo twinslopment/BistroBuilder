@@ -9,7 +9,7 @@
     "type": "BarStool",
     "category": "Seating",
     "createdUtc": "2026-10-01T08:31:34.2172496Z",
-    "updatedUtc": "2026-10-04T10:02:38.1162100Z",
+    "updatedUtc": "2026-10-05T12:19:26.9796969Z",
     "source": {
         "sourceHash": "84d31cb8a9d521c43290367896e76e1e661d8202242eafc02bf3ff22df5a77fd",
         "originalFileName": "Meshy_AI_Black_Cushioned_Bar_S_1001081701_generate.glb",
@@ -22,6 +22,7 @@
         "providerMetadataRelativePath": "ContentSource/ProviderMetadata/83410c98ca7a952ed6330aea9246d9e2e2136a5aecd1632e6f3a23df3d2b59ee.json",
         "providerMetadataHash": "a52a3004de3b47162d03e6a18dab9b09367c3c1c5033aaadce8657f022bd36c7"
     },
+    "sourceRevisions": [],
     "model3D": {
         "analyzed": true,
         "analyzerVersion": "3.0.0",
@@ -497,11 +498,11 @@
         "sourceHash": "84d31cb8a9d521c43290367896e76e1e661d8202242eafc02bf3ff22df5a77fd",
         "planFingerprint": "0c7021a2789f88462be6d19bfa9b0f4cb3be5cf13fe74c93d8cb9d0174797d31",
         "prefabDependencyHash": "3d362c9719db6796cedfe0f6788e8c6c",
-        "customerPrefabDependencyHash": "e68836543e9c706452988b37b2c00964",
-        "animationCatalogDependencyHash": "71dbb7a880f1c5a09dc90dfd548215df",
+        "customerPrefabDependencyHash": "7cc7a039101e7e73c5d45f99737c75db",
+        "animationCatalogDependencyHash": "0931e2b5ec8b7bf144393d5e70cadaac",
         "reportRelativePath": "Library/BistroBuilder/SAVIC/Logs/savic-barstool-candidate-bab4d97bded34d2f9e716a4cee34f24b-runtime-playtest.txt",
-        "reportHash": "99956de055e7882c90078d2284d29e71dda41031e842454ac237d0e4ba4694a7",
-        "verifiedUtc": "2026-10-04T10:02:38.1162100Z",
+        "reportHash": "23606895ed6b05c45c667b4d5a0b61c3eb841e12838a54d6371bb9b14b4ff7fa",
+        "verifiedUtc": "2026-10-05T12:19:26.9786899Z",
         "creationPassed": true,
         "associationPassed": true,
         "routePassed": true,

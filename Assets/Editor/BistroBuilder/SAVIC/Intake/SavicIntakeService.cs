@@ -239,7 +239,8 @@ namespace BistroBuilder.Editor.Savic
                 string previousArchive = layout.FromProjectRelativePath(revision.archivedRelativePath);
                 if (!File.Exists(previousArchive) || SavicHashService.ComputeSha256(previousArchive) != sourceHash)
                     throw new InvalidOperationException("The archived prior revision no longer matches its recorded source.");
-                jobs.RecordIngested(revisionOwner, true, "Exact duplicate of an archived prior revision; current asset identity and source preserved.");
+                jobs.RecordIngested(new SavicManifest { savicId = revisionOwner.savicId, source = revision }, true,
+                    "Exact duplicate of an archived prior revision; current asset identity and source preserved.");
                 DeleteIncomingAfterCommit(incomingPath);
                 return new SavicIntakeOutcome(true, true, sourceHash, revisionOwner.savicId, "Archived revision duplicate.");
             }

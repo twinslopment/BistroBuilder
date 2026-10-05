@@ -19,7 +19,7 @@ namespace BistroBuilder.Editor.Savic
         [Serializable] private sealed class Fixture
         {
             public string id, type, manifestPath, manifest, reportPath, report, queue;
-            public bool queueExisted, revision; public int stage;
+            public bool queueExisted, revision, acceptCurrent; public int stage;
             public string input, proposedHash, itemGuid, prefabGuid;
             public double deadline;
         }
@@ -28,12 +28,13 @@ namespace BistroBuilder.Editor.Savic
         public static void RunStoolFromCommandLine() => Begin("BarStool");
         public static void RunHoodFromCommandLine() => Begin("KitchenEquipment");
         public static void RunBarRevisionFromCommandLine() => Begin("BarCounter", true);
-        private static void Begin(string type, bool revision = false)
+        public static void RenewStaleStoolFromCommandLine() => Begin("BarStool", false, true);
+        private static void Begin(string type, bool revision = false, bool acceptCurrent = false)
         {
             var c = SavicEditorContext.Instance;
             Require(!SessionState.GetBool(Key + "Active", false) && !SavicRuntimeVerificationSession.IsActive && c.Jobs.PendingProcessCount == 0, "An operation is already active.");
-            var m = c.Manifests.GetAll().First(m => m.status == "PUBLISHED" && m.type == type && SavicFunctionalRuntimeAcceptance.Required(m));
-            Require(SavicFunctionalRuntimeAcceptance.Matches(m, c.Layout), "Published runtime proof must be current before strict UI revalidation.");
+            var m = c.Manifests.GetAll().First(m => m.status == "PUBLISHED" && m.type == type && SavicFunctionalRuntimeAcceptance.Required(m) && (!acceptCurrent || !SavicFunctionalRuntimeAcceptance.Matches(m, c.Layout)));
+            Require(acceptCurrent || SavicFunctionalRuntimeAcceptance.Matches(m, c.Layout), "Published runtime proof must be current before strict UI revalidation.");
             c.Manifests.TryGetManifestPath(m.savicId, out string manifestPath);
             string report = m.barCounterRuntime?.reportRelativePath;
             if (type == "BarStool") report = m.barStoolRuntime.reportRelativePath;
@@ -42,9 +43,10 @@ namespace BistroBuilder.Editor.Savic
                 reportPath = c.Layout.FromProjectRelativePath(report), report = Convert.ToBase64String(File.ReadAllBytes(c.Layout.FromProjectRelativePath(report))),
                 queueExisted = File.Exists(c.Layout.QueueSnapshotPath), queue = File.Exists(c.Layout.QueueSnapshotPath) ? File.ReadAllText(c.Layout.QueueSnapshotPath) : "",
                 deadline = EditorApplication.timeSinceStartup + 300 };
-            f.revision = revision; f.itemGuid = AssetDatabase.AssetPathToGUID(m.genericPlaceable.itemDefinitionAssetPath); f.prefabGuid = AssetDatabase.AssetPathToGUID(m.genericPlaceable.prefabAssetPath);
+            f.acceptCurrent = acceptCurrent; f.revision = revision; f.itemGuid = AssetDatabase.AssetPathToGUID(m.genericPlaceable.itemDefinitionAssetPath); f.prefabGuid = AssetDatabase.AssetPathToGUID(m.genericPlaceable.prefabAssetPath);
             if (revision) Require(SavicSourceUpdateService.ReadLast(c.Layout, m.savicId) == null, "Revision probe requires no existing update journal.");
             Require(!File.Exists(c.Layout.FromProjectRelativePath(Scene)), "Diagnostic scene must not overwrite an existing file.");
+            Directory.CreateDirectory(Path.GetDirectoryName(c.Layout.FromProjectRelativePath(Scene))); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Require(EditorSceneManager.SaveScene(scene, Scene), "Diagnostic scene not saved.");
             c.Jobs.SetPaused(true);
@@ -131,7 +133,7 @@ namespace BistroBuilder.Editor.Savic
                     if (Directory.Exists(archive)) Directory.Delete(archive, true);
                 }
                 SavicEditorWindow.SourceRevisionSelection = null;
-                File.WriteAllBytes(f.manifestPath, Convert.FromBase64String(f.manifest)); File.WriteAllBytes(f.reportPath, Convert.FromBase64String(f.report));
+                if (!f.acceptCurrent) { File.WriteAllBytes(f.manifestPath, Convert.FromBase64String(f.manifest)); File.WriteAllBytes(f.reportPath, Convert.FromBase64String(f.report)); }
                 var c = SavicEditorContext.Instance;
                 if (f.queueExisted) File.WriteAllText(c.Layout.QueueSnapshotPath, f.queue); else if (File.Exists(c.Layout.QueueSnapshotPath)) File.Delete(c.Layout.QueueSnapshotPath);
                 c.Manifests.Reload(); c.Jobs.Reload();
