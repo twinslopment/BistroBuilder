@@ -837,13 +837,22 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
                 if (staff != null) { staff.Show(); opened = staff.IsVisible; }
                 break;
             case "Carta":
+                // Carta always enters through the canonical Carta hub. If the
+                // dish editor is already open, close it first; pending changes
+                // remain protected by its existing confirmation flow.
+                var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
+                if (editor != null && editor.IsOpen)
+                {
+                    editor.RequestCloseFromInterface();
+                    if (editor.IsOpen)
+                    {
+                        error = "Aplica o descarta los cambios de Platos antes de volver a Cartas y reglas.";
+                        break;
+                    }
+                }
+
                 var portfolio = FindScene<BistroBuilderMenuPortfolioRuntimeView>();
                 opened = portfolio != null && portfolio.TryOpen(out error);
-                if (!opened)
-                {
-                    var editor = FindScene<BistroBuilderMenuEditorRuntimeView>();
-                    if (editor != null) opened = editor.TryOpenFromInterface(out error);
-                }
                 break;
             case "Inventario":
                 var warehouse = FindScene<BistroBuilderInventoryWarehouseRuntimeView>();

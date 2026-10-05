@@ -306,55 +306,25 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                  "Checked state updates only the centred box; no data mutation.");
         }
         Capture("01_Gestor_Cartas_y_Reglas.png");
-        Button close = plate?.Find("Header/Close")?.GetComponent<Button>();
-        Canvas.ForceUpdateCanvases();
-        var eventSystem = EventSystem.current;
-        bool reached = false;
-        if (close != null && eventSystem != null)
+        Button managementTab = plate?.Find("CartaTabs/CartaTabManagement")?.GetComponent<Button>();
+        Button dishesTab = plate?.Find("CartaTabs/CartaTabDishes")?.GetComponent<Button>();
+        Pass(managementTab != null && dishesTab != null,
+            "Carta hub exposes Cartas y reglas and Platos tabs.");
+        if (dishesTab != null)
         {
-            RectTransform rect = close.transform as RectTransform;
-            Canvas hostCanvas = close.GetComponentInParent<Canvas>();
-            Camera camera = hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay
-                ? null : hostCanvas.worldCamera;
-            var pointer = new PointerEventData(eventSystem) {
-                position = RectTransformUtility.WorldToScreenPoint(camera,
-                    rect.TransformPoint(rect.rect.center)), button = PointerEventData.InputButton.Left };
-            var hits = new System.Collections.Generic.List<RaycastResult>();
-            eventSystem.RaycastAll(pointer, hits);
-            reached = hits.Count > 0 &&
-                hits[0].gameObject.GetComponentInParent<Button>() == close;
-            foreach (var hit in hits)
-                Debug.Log("[CARTA V1] Close raycast: " + hit.gameObject.name +
-                    " / " + hit.gameObject.transform.parent?.name);
-            if (reached) ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,
-                pointer, ExecuteEvents.pointerClickHandler);
+            dishesTab.onClick.Invoke();
+            Pass(!portfolio.IsOpen && editor != null && editor.IsOpen,
+                "Platos tab switches from the Carta hub to the real dish editor.");
+            if (editor != null && editor.IsOpen)
+                editor.RequestCloseFromInterface();
+            Pass(portfolio.TryOpen(out _),
+                "Carta hub reopens cleanly after leaving Platos.");
+            portfolio.Close();
         }
-        Pass(reached && !portfolio.IsOpen,
-            "Close is the top real EventSystem hit and closes Carta through its pointer handler.");
-        if (portfolio.IsOpen) portfolio.Close(); // Cleanup cannot turn a failed click into PASS.
-        Pass(portfolio.TryOpen(out _), "Carta can reopen after closing.");
-        Canvas.ForceUpdateCanvases();
-        if (close != null && eventSystem != null)
+        else
         {
-            RectTransform rect = close.transform as RectTransform;
-            Canvas hostCanvas = close.GetComponentInParent<Canvas>();
-            var pointer = new PointerEventData(eventSystem) {
-                position = RectTransformUtility.WorldToScreenPoint(
-                    hostCanvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : hostCanvas.worldCamera,
-                    rect.TransformPoint(rect.rect.center)), button = PointerEventData.InputButton.Left };
-            var hits = new System.Collections.Generic.List<RaycastResult>();
-            eventSystem.RaycastAll(pointer, hits);
-            bool repeatReached = hits.Count > 0 && hits[0].gameObject.GetComponentInParent<Button>() == close;
-            Debug.Log("[CARTA V1] Reopened close header canvas=" + hostCanvas.name +
-                ", raycaster=" + (hostCanvas.GetComponent<GraphicRaycaster>() != null) +
-                ", firstHit=" + (hits.Count > 0 ? hits[0].gameObject.name : "none"));
-            if (repeatReached) ExecuteEvents.ExecuteHierarchy(hits[0].gameObject,
-                pointer, ExecuteEvents.pointerClickHandler);
-            Pass(repeatReached && !portfolio.IsOpen,
-                "Reopened Carta closes through the real pointer after sticky-header installation.");
+            Pass(false, "Platos tab must be available from the Carta hub.");
         }
-        else Pass(false, "Reopened Carta requires a close button and EventSystem.");
-        if (portfolio.IsOpen) portfolio.Close();
         Move(2);
     }
 
@@ -387,6 +357,14 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Pass(IsParchment(plate, "Body/Sidebar") &&
              IsParchment(plate, "Body/Detail"),
              "Category filters and selected dish have matching parchment panels.");
+        Button editorManagementTab =
+            plate?.Find("CartaTabs/CartaTabManagement")?.GetComponent<Button>();
+        Button editorDishesTab =
+            plate?.Find("CartaTabs/CartaTabDishes")?.GetComponent<Button>();
+        Pass(editorManagementTab != null && editorDishesTab != null &&
+             editorManagementTab.GetComponent<Image>()?.sprite != null &&
+             editorDishesTab.GetComponent<Image>()?.sprite != null,
+            "Platos shares the same Carta tabs and V3 button construction as the hub.");
         Pass(plate?.Find("Body/List/DishScroll/Viewport/Content") != null &&
              plate?.Find("Header/NewDish") != null &&
              plate?.Find("Footer/Apply") != null &&

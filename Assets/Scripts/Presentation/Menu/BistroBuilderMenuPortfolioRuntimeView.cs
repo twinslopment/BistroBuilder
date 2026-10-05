@@ -29,6 +29,8 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     private readonly Toggle[] weekdayToggles = new Toggle[7];
 
     private Button openButton;
+    private Button managementTabButton;
+    private Button dishesTabButton;
     private RectTransform modalRoot;
     private RectTransform menuContent;
     private RectTransform ruleContent;
@@ -283,6 +285,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         BistroBuilderManagementViewport.Install(modalRoot, panel, 760);
         BistroBuilderMenuEditorUiFactory.StylePlate(panel);
         BuildHeader(panel);
+        BuildTabs(panel);
         BuildMenusPanel(panel);
         BuildRulesPanel(panel);
         BuildRuleEditor(panel);
@@ -337,12 +340,57 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         SetRect(close.GetComponent<RectTransform>(), 0.86f, 0.14f, 0.985f, 0.86f, 0f);
     }
 
+    private void BuildTabs(RectTransform panel)
+    {
+        RectTransform tabs = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "CartaTabs",
+            panel,
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(18f, -112f),
+            new Vector2(-18f, -76f)
+        );
+
+        managementTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "CartaTabManagement",
+            tabs,
+            "Cartas y reglas",
+            () => { },
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            13
+        );
+        SetRect(
+            managementTabButton.GetComponent<RectTransform>(),
+            0f, 0f, 0.18f, 1f, 0f
+        );
+
+        dishesTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "CartaTabDishes",
+            tabs,
+            "Platos",
+            OpenDishesTab,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            13
+        );
+        SetRect(
+            dishesTabButton.GetComponent<RectTransform>(),
+            0.185f, 0f, 0.31f, 1f, 0f
+        );
+
+        BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
+            managementTabButton, true
+        );
+        BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
+            dishesTabButton, false
+        );
+    }
+
     private void BuildMenusPanel(RectTransform panel)
     {
         RectTransform root = CreateCard(
             "Menus", panel,
             new Vector2(0f, 0f), new Vector2(0.30f, 1f),
-            new Vector2(16f, 78f), new Vector2(-6f, -78f)
+            new Vector2(16f, 78f), new Vector2(-6f, -118f)
         );
         AddTitle(root, "Mis cartas", 0.92f, 1f);
         menuCountText = BistroBuilderMenuEditorUiFactory.CreateText(
@@ -378,7 +426,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         RectTransform root = CreateCard(
             "Rules", panel,
             new Vector2(0.30f, 0f), new Vector2(0.592f, 1f),
-            new Vector2(6f, 78f), new Vector2(-6f, -78f)
+            new Vector2(6f, 78f), new Vector2(-6f, -118f)
         );
         AddTitle(root, "Reglas de activación", 0.92f, 1f);
         ruleCountText = BistroBuilderMenuEditorUiFactory.CreateText(
@@ -422,7 +470,7 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
         RectTransform root = CreateCard(
             "RuleEditor", panel,
             new Vector2(0.592f, 0f), Vector2.one,
-            new Vector2(6f, 78f), new Vector2(-16f, -78f)
+            new Vector2(6f, 78f), new Vector2(-16f, -118f)
         );
         AddTitle(root, "Detalle de la regla", 0.92f, 1f);
 
@@ -851,6 +899,27 @@ public sealed class BistroBuilderMenuPortfolioRuntimeView : MonoBehaviour
     {
         if (portfolioService.TryClearManualOverride(out string error)) RefreshAll("Resolución automática reactivada.");
         else ShowStatus(error, true);
+    }
+
+    private void OpenDishesTab()
+    {
+        if (menuEditorView == null)
+        {
+            ShowStatus("No está disponible la gestión de platos.", true);
+            return;
+        }
+
+        Close();
+        if (!menuEditorView.TryOpenFromInterface(out string error))
+        {
+            TryOpen(out _);
+            ShowStatus(
+                string.IsNullOrWhiteSpace(error)
+                    ? "No se pudo abrir la gestión de platos."
+                    : error,
+                true
+            );
+        }
     }
 
     private void OpenActiveMenuEditor()

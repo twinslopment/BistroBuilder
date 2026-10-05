@@ -47,3 +47,11 @@ la regresión reversible del Gestor, Editor y Receta sin guardar partidas.
   como prueba independiente de paridad píxel a píxel ni de Game View a 1280x720.
 - El lanzador temporal no forma parte de la entrega de la rama. Se preservan
   los tests/cambios de interacción del botón de cierre incorporados en paralelo.
+
+## Navegación unificada de Carta — 05/10/2026
+
+- El botón `Carta` de la barra superior abre siempre el Gestor de Carta como entrada canónica; ya no salta directamente al editor de platos como fallback.
+- El Gestor y `CARTA Y PLATOS` comparten dos pestañas persistentes: `Cartas y reglas` y `Platos`. Cambiar de pestaña conserva la misma sección de gestión y abre la vista runtime real correspondiente.
+- `CARTA Y PLATOS` adopta el contrato visual V3 del Gestor: marco marfil/latón, superficies crema, tipografía Recoleta/Inter, botones con las mismas nine-slice y estados hover/pressed, rojo exclusivo para acciones destructivas y selectores miel.
+- Los cambios de platos pendientes nunca se descartan al cambiar de pestaña: se exige aplicar o descartar antes de volver a `Cartas y reglas`.
+- Validación C# local con referencias reales de Unity 6000.3.19f1: `Assembly-CSharp` y `Assembly-CSharp-Editor` compilan con **0 errores**. El Play Mode final sigue siendo una validación separada.

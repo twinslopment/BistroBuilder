@@ -324,6 +324,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         {
             if(b.name.StartsWith("Menu_",StringComparison.Ordinal) ||
                 b.name.StartsWith("Rule_",StringComparison.Ordinal) ||
+                b.name.StartsWith("CartaTab",StringComparison.Ordinal) ||
                 b.name=="Close")continue;
             SkinButton(b);
         }
@@ -397,7 +398,7 @@ internal static class BistroBuilderCartaReferenceV3Style
     private static void SkinButton(Button button)
     {
         bool destructive=button.name=="Eliminar" || button.name=="Eliminarregla" ||
-            button.name=="ConfirmDeletion";
+            button.name=="ConfirmDeletion" || button.name=="DiscardAndClose";
         bool flatField=button.name=="Tipo" || button.name=="Cartadestino";
 
         // Carta V3 is authoritative: suppress every legacy/design-system child
@@ -444,6 +445,157 @@ internal static class BistroBuilderCartaReferenceV3Style
             label.rectTransform.offsetMax=new Vector2(-4,-2);
         }
         MixedTypefaceRuns(label);
+    }
+
+    public static void ApplyEditor(RectTransform panel)
+    {
+        if (panel == null) return;
+        EnsureSurfaces();
+        SkinImage(panel.GetComponent<Image>(), outer);
+
+        foreach (string path in new[] { "Body/Sidebar", "Body/Detail", "Footer" })
+        {
+            Transform node = panel.Find(path);
+            if (node != null) SkinImage(node.GetComponent<Image>(), card);
+        }
+
+        Transform listHeader = panel.Find("Body/List/ListHeader");
+        if (listHeader != null)
+            SkinImage(listHeader.GetComponent<Image>(), input);
+
+        Transform header = panel.Find("Header");
+        if (header != null)
+        {
+            Image headerImage = header.GetComponent<Image>();
+            if (headerImage != null)
+            {
+                headerImage.color = Color.clear;
+                headerImage.raycastTarget = false;
+            }
+            if (header.Find("ReferenceTopRule") == null)
+                Line(header, "ReferenceTopRule", 0, 1, 0);
+
+            Text title = header.Find("Title")?.GetComponent<Text>();
+            if (title != null)
+            {
+                title.text = "CARTA Y PLATOS";
+                SetTypeface(title, true, 30, true);
+                Anchor(title.rectTransform, .067f, 0, .31f, 1,
+                    Vector2.zero, Vector2.zero);
+            }
+
+            Transform iconNode = header.Find("CartaHeaderIcon");
+            Image icon = iconNode?.GetComponent<Image>();
+            Sprite book = ReferenceIcon("book");
+            if (icon != null && book != null)
+            {
+                icon.sprite = book;
+                icon.color = Color.white;
+                icon.type = Image.Type.Simple;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                Anchor(icon.rectTransform, 0, 0, 0, 1,
+                    new Vector2(14, 13), new Vector2(42, -13));
+            }
+
+            Transform close = header.Find("Close");
+            if (close != null) close.gameObject.SetActive(false);
+        }
+
+        foreach (InputField field in panel.GetComponentsInChildren<InputField>(true))
+        {
+            SkinImage(field.GetComponent<Image>(), input);
+            if (field.textComponent != null) SetTypeface(field.textComponent, false, 13);
+            if (field.placeholder is Text hint)
+            {
+                SetTypeface(hint, false, 12);
+                hint.color = new Color32(139, 108, 78, 255);
+            }
+        }
+
+        foreach (Button button in panel.GetComponentsInChildren<Button>(true))
+        {
+            if (button.name.StartsWith("Category_", StringComparison.Ordinal) ||
+                button.name.StartsWith("Filter_", StringComparison.Ordinal) ||
+                button.name.StartsWith("CartaTab", StringComparison.Ordinal) ||
+                button.name == "Close")
+                continue;
+            SkinButton(button);
+        }
+
+        foreach (ScrollRect scroll in panel.GetComponentsInChildren<ScrollRect>(true))
+        {
+            Image background = scroll.GetComponent<Image>();
+            if (background != null)
+            {
+                background.color = Color.clear;
+                background.raycastTarget = false;
+            }
+        }
+
+        if (panel.Find("ReferenceBrassRivet") == null)
+            AddCorners(panel);
+
+        BistroBuilderCartaReferenceV3Responsive responsive =
+            panel.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
+        if (responsive == null)
+            responsive = panel.gameObject.AddComponent<BistroBuilderCartaReferenceV3Responsive>();
+        responsive.ApplyImmediate(true);
+    }
+
+    public static void StyleNavigationTab(Button button, bool selected)
+    {
+        if (button == null) return;
+        EnsureSurfaces();
+        Image background = button.GetComponent<Image>();
+        SkinImage(background, selected ? selectedRow : input);
+        if (background != null) background.raycastTarget = true;
+
+        ColorBlock colors = button.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1.03f, 1.03f, 1.03f, 1f);
+        colors.pressedColor = new Color(.91f, .89f, .87f, 1f);
+        colors.selectedColor = Color.white;
+        button.colors = colors;
+
+        Text label = button.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            SetTypeface(label, true, 13, true);
+            label.alignment = TextAnchor.MiddleCenter;
+            label.rectTransform.offsetMin = new Vector2(10f, 2f);
+            label.rectTransform.offsetMax = new Vector2(-10f, -2f);
+            MixedTypefaceRuns(label);
+        }
+    }
+
+    public static void StyleSelectorButton(Button button, bool selected)
+    {
+        StyleNavigationTab(button, selected);
+        Text label = button != null ? button.GetComponentInChildren<Text>(true) : null;
+        if (label != null)
+        {
+            SetTypeface(label, true, 13, selected);
+            label.alignment = TextAnchor.MiddleLeft;
+            label.rectTransform.offsetMin = new Vector2(12f, 2f);
+        }
+    }
+
+    public static void StyleEditorInclusionButton(Button button, bool destructive)
+    {
+        if (button == null) return;
+        EnsureSurfaces();
+        SkinImage(button.GetComponent<Image>(), destructive ? danger : normalButton);
+        Image background = button.GetComponent<Image>();
+        if (background != null) background.raycastTarget = true;
+
+        Text label = button.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            SetTypeface(label, true, 12, true);
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = destructive ? Color.white : Ink;
+        }
     }
 
     public static void StyleRow(Button button,bool selected,bool rule,bool baseMenu,bool active)

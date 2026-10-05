@@ -31,6 +31,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     [SerializeField]
     private BistroBuilderDishRecipeAuthoringRuntimeView authoringView;
 
+    [SerializeField]
+    private BistroBuilderMenuPortfolioRuntimeView portfolioView;
+
     [Header("Comportamiento")]
 
     [SerializeField]
@@ -65,6 +68,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         new List<BistroBuilderMenuEditorFilter>(5);
 
     private Button openButton;
+    private Button managementTabButton;
+    private Button dishesTabButton;
     private RectTransform modalRoot;
     private RectTransform listContent;
     private RectTransform categoryContent;
@@ -392,6 +397,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             Vector2.zero,
             Vector2.zero
         );
+        if (modalRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
+            modalRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
         BistroBuilderMenuEditorUiFactory.AddImage(
             modalRoot,
             BistroBuilderMenuEditorUiFactory.Overlay
@@ -415,9 +422,17 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         BistroBuilderMenuEditorUiFactory.StylePlate(panel);
 
         BuildHeader(panel);
+        BuildTabs(panel);
         BuildBody(panel);
         BuildFooter(panel);
         BuildConfirmation(modalRoot);
+        BistroBuilderCartaReferenceV3Style.ApplyEditor(panel);
+        BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
+            managementTabButton, false
+        );
+        BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
+            dishesTabButton, true
+        );
         visualTreeBuilt = true;
     }
 
@@ -505,6 +520,44 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         SetAnchoredColumn(closeButton, 0.90f, 0.985f, 7f);
     }
 
+    private void BuildTabs(RectTransform panel)
+    {
+        RectTransform tabs = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "CartaTabs",
+            panel,
+            new Vector2(0f, 1f),
+            new Vector2(1f, 1f),
+            new Vector2(18f, -112f),
+            new Vector2(-18f, -76f)
+        );
+
+        managementTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "CartaTabManagement",
+            tabs,
+            "Cartas y reglas",
+            OpenManagementTab,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            13
+        );
+        SetRect(
+            managementTabButton.GetComponent<RectTransform>(),
+            0f, 0f, 0.18f, 1f, 0f
+        );
+
+        dishesTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "CartaTabDishes",
+            tabs,
+            "Platos",
+            () => { },
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            13
+        );
+        SetRect(
+            dishesTabButton.GetComponent<RectTransform>(),
+            0.185f, 0f, 0.31f, 1f, 0f
+        );
+    }
+
     private void BuildBody(RectTransform panel)
     {
         RectTransform body = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -513,7 +566,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             Vector2.zero,
             Vector2.one,
             new Vector2(18f, 78f),
-            new Vector2(-18f, -82f)
+            new Vector2(-18f, -118f)
         );
 
         RectTransform sidebar = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -963,6 +1016,37 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         discardCloseButton.GetComponent<RectTransform>().offsetMin = Vector2.zero;
         discardCloseButton.GetComponent<RectTransform>().offsetMax = Vector2.zero;
         confirmationRoot.gameObject.SetActive(false);
+    }
+
+    private void OpenManagementTab()
+    {
+        if (editorService != null && editorService.HasPendingChanges)
+        {
+            ShowStatus(
+                "Aplica o descarta los cambios antes de volver a Cartas y reglas.",
+                true
+            );
+            return;
+        }
+
+        ResolveDependencies();
+        if (portfolioView == null)
+        {
+            ShowStatus("No está disponible la gestión de cartas y reglas.", true);
+            return;
+        }
+
+        CloseEditor(false);
+        if (!portfolioView.TryOpen(out string error))
+        {
+            TryOpenFromInterface(out _);
+            ShowStatus(
+                string.IsNullOrWhiteSpace(error)
+                    ? "No se pudo abrir Cartas y reglas."
+                    : error,
+                true
+            );
+        }
     }
 
     private void HandleOpenClicked()
@@ -1501,18 +1585,15 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     {
         for (int index = 0; index < categoryButtons.Count; index++)
         {
-            Image image = categoryButtons[index].targetGraphic as Image;
-
-            if (image != null)
-            {
-                image.color = string.Equals(
-                    selectedCategoryId,
-                    categoryButtonIds[index],
-                    StringComparison.Ordinal
-                )
-                    ? BistroBuilderMenuEditorUiFactory.SurfaceSelected
-                    : BistroBuilderMenuEditorUiFactory.SurfaceRaised;
-            }
+            bool selected = string.Equals(
+                selectedCategoryId,
+                categoryButtonIds[index],
+                StringComparison.Ordinal
+            );
+            BistroBuilderCartaReferenceV3Style.StyleSelectorButton(
+                categoryButtons[index],
+                selected
+            );
         }
     }
 
@@ -1545,14 +1626,10 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     {
         for (int index = 0; index < filterButtons.Count; index++)
         {
-            Image image = filterButtons[index].targetGraphic as Image;
-
-            if (image != null)
-            {
-                image.color = filterValues[index] == filter
-                    ? BistroBuilderMenuEditorUiFactory.SurfaceSelected
-                    : BistroBuilderMenuEditorUiFactory.SurfaceRaised;
-            }
+            BistroBuilderCartaReferenceV3Style.StyleSelectorButton(
+                filterButtons[index],
+                filterValues[index] == filter
+            );
         }
     }
 
@@ -1679,14 +1756,10 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                     ? "Retirar de la carta"
                     : "Añadir a la carta"
             );
-            Image includeImage = includeButton.targetGraphic as Image;
-
-            if (includeImage != null)
-            {
-                includeImage.color = selectedSnapshot.Included
-                    ? BistroBuilderMenuEditorUiFactory.Negative
-                    : BistroBuilderMenuEditorUiFactory.Positive;
-            }
+            BistroBuilderCartaReferenceV3Style.StyleEditorInclusionButton(
+                includeButton,
+                selectedSnapshot.Included
+            );
 
             bool editable = selectedSnapshot.Included;
             editDishRecipeButton.interactable = true;
@@ -1969,6 +2042,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         {
             TryGetComponent(out authoringView);
         }
+
+        if (portfolioView == null)
+        {
+            TryGetComponent(out portfolioView);
+        }
     }
 
     private Text AddDetailText(
@@ -2025,6 +2103,21 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         BistroBuilderMenuEditorUiFactory.SetLayoutHeight(toggle, 30f);
         return toggle;
+    }
+
+    private static void SetRect(
+        RectTransform rect,
+        float minX,
+        float minY,
+        float maxX,
+        float maxY,
+        float inset
+    )
+    {
+        rect.anchorMin = new Vector2(minX, minY);
+        rect.anchorMax = new Vector2(maxX, maxY);
+        rect.offsetMin = new Vector2(inset, inset);
+        rect.offsetMax = new Vector2(-inset, -inset);
     }
 
     private static void SetAnchoredColumn(
