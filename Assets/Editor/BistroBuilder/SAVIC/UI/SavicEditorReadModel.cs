@@ -656,11 +656,13 @@ namespace BistroBuilder.Editor.Savic
                 }
             }
 
-            foreach (SavicJobRecord job in
-                     jobs ?? Array.Empty<SavicJobRecord>())
+            var currentJobs = (jobs ?? Array.Empty<SavicJobRecord>()).Where(j => j != null).ToArray();
+            foreach (SavicJobRecord job in currentJobs)
             {
                 if (job == null)
                     continue;
+
+                if (!IsCurrentJob(job, currentJobs)) continue;
 
                 bool needsReview =
                     IsStatus(
@@ -711,6 +713,7 @@ namespace BistroBuilder.Editor.Savic
                             "job:" +
                             (job.jobId ?? string.Empty),
                         Source = "JOB",
+                        Manifest = manifests.FirstOrDefault(m => m.savicId == job.manifestSavicId),
                         SavicId =
                             job.manifestSavicId ?? string.Empty,
                         DisplayName =
@@ -902,6 +905,12 @@ namespace BistroBuilder.Editor.Savic
             return result;
         }
 
+
+        private static bool IsCurrentJob(SavicJobRecord job, IEnumerable<SavicJobRecord> jobs)
+            => string.IsNullOrEmpty(job.manifestSavicId) || !jobs.Any(other => other != null && other != job &&
+                other.manifestSavicId == job.manifestSavicId && other.state != SavicJobState.DuplicateExact.ToString() &&
+                string.CompareOrdinal(other.createdUtc, job.createdUtc) > 0);
+
         private static SavicEditorSummary BuildSummary(
             IReadOnlyList<SavicManifest> manifests,
             IReadOnlyList<SavicJobRecord> jobs,
@@ -924,9 +933,9 @@ namespace BistroBuilder.Editor.Savic
                     manifest => IsErrorStatus(manifest.status)) +
                     jobs.Count(
                         job =>
-                            IsStatus(job.state, "FailedSource") ||
+                            IsCurrentJob(job, jobs) && (IsStatus(job.state, "FailedSource") ||
                             IsStatus(job.state, "Quarantined") ||
-                            IsStatus(job.state, "FailedProcessing")),
+                            IsStatus(job.state, "FailedProcessing"))),
                 Stale = manifests.Count(
                     manifest => IsStatus(manifest.status, "STALE")),
                 QueuedOrActive = jobs.Count(

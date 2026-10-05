@@ -233,6 +233,17 @@ namespace BistroBuilder.Editor.Savic
             if (string.IsNullOrWhiteSpace(sourceHash))
                 throw new InvalidOperationException("Hash service returned an empty hash.");
 
+
+            if (manifests.TryGetArchivedRevision(sourceHash, out var revisionOwner, out var revision))
+            {
+                string previousArchive = layout.FromProjectRelativePath(revision.archivedRelativePath);
+                if (!File.Exists(previousArchive) || SavicHashService.ComputeSha256(previousArchive) != sourceHash)
+                    throw new InvalidOperationException("The archived prior revision no longer matches its recorded source.");
+                jobs.RecordIngested(revisionOwner, true, "Exact duplicate of an archived prior revision; current asset identity and source preserved.");
+                DeleteIncomingAfterCommit(incomingPath);
+                return new SavicIntakeOutcome(true, true, sourceHash, revisionOwner.savicId, "Archived revision duplicate.");
+            }
+
             if (manifests.TryGetBySourceHash(sourceHash, out SavicManifest existing))
             {
                 EnsureExistingArchive(existing, incomingPath, snapshot, sourceHash);

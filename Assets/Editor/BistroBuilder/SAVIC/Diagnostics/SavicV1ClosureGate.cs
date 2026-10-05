@@ -149,6 +149,8 @@ namespace BistroBuilder.Editor.Savic
                     "content-bundle",
                     SavicContentBundleVerticalProbe.RunFromCommandLine);
 
+                RunStep(report, "editor-control-center", SavicEditorUxSelfTest.RunFromCommandLine);
+
                 report.status =
                     report.failed == 0
                         ? "PASS"
@@ -156,6 +158,7 @@ namespace BistroBuilder.Editor.Savic
             }
             catch (Exception exception)
             {
+
                 report.status = "FAIL";
                 report.failed++;
 

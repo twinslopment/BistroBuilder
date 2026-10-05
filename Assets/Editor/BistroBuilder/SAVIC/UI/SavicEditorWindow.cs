@@ -105,6 +105,8 @@ namespace BistroBuilder.Editor.Savic
         private readonly Dictionary<SavicEditorSection, Button> navigation =
             new Dictionary<SavicEditorSection, Button>();
 
+        internal static Func<string> ImportFolderSelection;
+        internal static Func<string> SourceRevisionSelection;
         private SavicEditorContext context;
         private SavicEditorSnapshot snapshot = SavicEditorSnapshot.Empty;
         private VisualElement contentHost;
@@ -199,6 +201,7 @@ namespace BistroBuilder.Editor.Savic
                 context.Manifests.Changed += OnSourceDataChanged;
                 context.Jobs.Changed += OnSourceDataChanged;
                 context.ProjectInventory.Changed += OnSourceDataChanged;
+                SavicRuntimeVerificationSession.Changed += OnSourceDataChanged;
                 subscribed = true;
             }
             catch (Exception exception)
@@ -217,6 +220,7 @@ namespace BistroBuilder.Editor.Savic
             context.Manifests.Changed -= OnSourceDataChanged;
             context.Jobs.Changed -= OnSourceDataChanged;
             context.ProjectInventory.Changed -= OnSourceDataChanged;
+            SavicRuntimeVerificationSession.Changed -= OnSourceDataChanged;
             subscribed = false;
         }
 
@@ -388,6 +392,12 @@ namespace BistroBuilder.Editor.Savic
             identity.Add(subtitle);
             header.Add(identity);
 
+            header.Add(CreateHeaderButton("Importar carpeta GLB", () =>
+            {
+                string folder = ImportFolderSelection != null ? ImportFolderSelection() : EditorUtility.OpenFolderPanel("Selecciona una carpeta de GLB", "", "");
+                if (!string.IsNullOrWhiteSpace(folder)) RunAction("Importación de GLB",
+                    () => new SavicEditorActionService(context.Layout, context.Manifests, context.Jobs).ImportFolder(folder), true);
+            }));
             header.Add(
                 CreateHeaderButton(
                     "Escanear entrada",
@@ -2090,6 +2100,7 @@ namespace BistroBuilder.Editor.Savic
             AddField(detail, "SavicId", row.SavicId);
             AddField(detail, "Actualizado", FormatTimestamp(row.UpdatedUtc));
             AddField(detail, "Asset", row.AssetPath);
+            AddProcessingActions(detail, row.Manifest);
 
             AddRevealActions(
                 detail,
@@ -2157,6 +2168,7 @@ namespace BistroBuilder.Editor.Savic
             AddIntegrations(detail, manifest);
             AddValidationSummary(detail, manifest);
             AddRevealActions(detail, manifest, string.Empty);
+            AddProcessingActions(detail, manifest);
 
             Foldout advanced = new Foldout
             {
@@ -2524,6 +2536,68 @@ namespace BistroBuilder.Editor.Savic
                         ? string.Empty
                         : " · " + artifact.builderVersion));
             }
+        }
+
+
+        internal void FlushRefreshForDiagnostics() => ExecuteQueuedRefresh();
+
+        internal void ShowAssetForDiagnostics(string id)
+        {
+            SubscribeToData();
+            if (!context.Manifests.TryGetBySavicId(id, out var m)) throw new InvalidOperationException("Missing diagnostic asset.");
+            var detail = new VisualElement(); rootVisualElement.Clear(); rootVisualElement.Add(detail);
+            RenderAssetDetail(detail, new SavicEditorAssetRow { Manifest = m, SavicId = id, DisplayName = m.source.originalFileName,
+                Status = m.status, CanonicalContentId = m.canonicalContentId, Family = m.family, Type = m.type, Category = m.category });
+        }
+
+        private void AddProcessingActions(VisualElement parent, SavicManifest manifest)
+        {
+            if (manifest?.source == null) return;
+            VisualElement actions = new VisualElement();
+            actions.style.flexDirection = FlexDirection.Row;
+            actions.style.flexWrap = Wrap.Wrap;
+            var service = new SavicEditorActionService(context.Layout, context.Manifests, context.Jobs);
+            bool enabled = service.CanProcess(manifest.savicId, out string reason);
+            var retry = CreateSecondaryButton(manifest.status == "PUBLISHED" ? "Revalidar asset" : "Reintentar procesamiento",
+                () => RunAction("Procesamiento en cola", () => service.Reprocess(manifest.savicId), false));
+            retry.name = "savic-reprocess"; retry.tooltip = reason;
+            retry.SetEnabled(enabled); actions.Add(retry);
+            if (SavicFunctionalRuntimeAcceptance.Required(manifest) && (manifest.status == "NEEDS_REVIEW" || manifest.status == "PUBLISHED"))
+            {
+                var verify = CreateSecondaryButton("Verificar funcionamiento", () => RunAction(
+                    "Verificación funcional", () => SavicRuntimeVerificationSession.Run(manifest.savicId), false));
+                verify.name = "savic-verify"; verify.SetEnabled(enabled); actions.Add(verify);
+            }
+            var update = CreateSecondaryButton("Actualizar original", () =>
+            {
+                string path = SourceRevisionSelection != null ? SourceRevisionSelection() : EditorUtility.OpenFilePanel("Selecciona la nueva versión de este modelo", "", "glb,fbx");
+                if (!string.IsNullOrWhiteSpace(path)) RunAction("Actualización de original",
+                    () => new SavicSourceUpdateService(context).Update(manifest.savicId, path), true);
+            });
+            update.name = "savic-update-source"; update.SetEnabled(enabled); actions.Add(update);
+            var attach = CreateSecondaryButton("Adjuntar original", () =>
+            {
+                string path = EditorUtility.OpenFilePanel("Selecciona el original de este asset", "", "");
+                if (string.IsNullOrWhiteSpace(path)) return;
+                RunAction("Original verificado", () =>
+                {
+                    if (SavicHashService.ComputeSha256(path) != manifest.source.sourceHash)
+                        throw new InvalidOperationException("Este archivo no es el original de la ficha. Para otra versión usa «Actualizar original».");
+                    context.CanonicalReconciliation.AttachVerifiedOriginal(path);
+                }, true);
+            });
+            attach.name = "savic-attach-source";
+            attach.SetEnabled(!SavicRuntimeVerificationSession.IsActive && !EditorApplication.isPlayingOrWillChangePlaymode);
+            actions.Add(attach);
+            parent.Add(actions);
+            if (!enabled && !string.IsNullOrEmpty(reason)) parent.Add(CreateNotice("Procesamiento", reason, Warning));
+            if (SavicRuntimeVerificationSession.IsActive && SavicRuntimeVerificationSession.SelectedId == manifest.savicId)
+                parent.Add(CreateNotice("Verificando funcionamiento", "Unity está comprobando colocación, contratos y guardado/carga. Volverá a tu escena al terminar.", Accent));
+            else if (SavicRuntimeVerificationSession.LastId == manifest.savicId && !string.IsNullOrEmpty(SavicRuntimeVerificationSession.LastResult))
+                parent.Add(CreateNotice("Última verificación", SavicRuntimeVerificationSession.LastResult, SavicRuntimeVerificationSession.LastSucceeded ? Pass : Warning));
+            var revision = SavicSourceUpdateService.ReadLast(context.Layout, manifest.savicId);
+            if (revision != null && revision.state != "COMMITTED")
+                parent.Add(CreateNotice("Actualización pendiente", revision.message, Warning));
         }
 
         private void AddRevealActions(

@@ -31,6 +31,7 @@ namespace BistroBuilder.Editor.Savic
             try
             {
                 SavicEditorContext.Instance.Layout.EnsureInfrastructure();
+                new SavicSourceUpdateService(SavicEditorContext.Instance).RecoverInterrupted();
                 SavicEditorContext.Instance.Batch.RecoverAfterDomainReload();
 
                 SavicClassificationRefreshResult classificationRefresh =

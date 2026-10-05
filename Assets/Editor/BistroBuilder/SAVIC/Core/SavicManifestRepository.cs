@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace BistroBuilder.Editor.Savic
@@ -92,6 +93,18 @@ namespace BistroBuilder.Editor.Savic
                 out manifestPath);
         }
 
+
+        internal bool TryGetArchivedRevision(string hash, out SavicManifest owner, out SavicSourceRecord revision)
+        {
+            EnsureLoaded();
+            foreach (var m in bySavicId.Values)
+            {
+                var prior = m.sourceRevisions?.FirstOrDefault(s => s.sourceHash == hash);
+                if (prior != null) { owner = m; revision = prior; return true; }
+            }
+            owner = null; revision = null; return false;
+        }
+
         internal SavicManifest CreateIngested(
             string sourceHash,
             string originalFileName,
@@ -173,6 +186,27 @@ namespace BistroBuilder.Editor.Savic
             bySourceHash[manifest.source.sourceHash] = manifest;
             bySavicId[manifest.savicId] = manifest;
             pathBySavicId[manifest.savicId] = path;
+            NotifyChanged();
+        }
+
+
+        internal void ReplaceSourceRevision(SavicManifest revised, string expectedPreviousHash)
+        {
+            EnsureLoaded();
+            if (!bySavicId.TryGetValue(revised.savicId, out var previous) || previous.source.sourceHash != expectedPreviousHash ||
+                revised.canonicalContentId != previous.canonicalContentId || revised.source == null ||
+                revised.sourceRevisions == null || !revised.sourceRevisions.Any(s => s.sourceHash == expectedPreviousHash))
+                throw new InvalidOperationException("Source revision identity changed.");
+            if (bySourceHash.TryGetValue(revised.source.sourceHash, out var owner) && owner.savicId != revised.savicId)
+                throw new InvalidOperationException("Source revision belongs to another asset.");
+            revised.schemaVersion = SavicVersion.ManifestSchemaVersion;
+            revised.updatedUtc = DateTime.UtcNow.ToString("O");
+            string path = GetManifestPath(revised.savicId);
+            SavicAtomicFile.WriteJson(path, revised);
+            bySourceHash.Remove(expectedPreviousHash);
+            bySourceHash[revised.source.sourceHash] = revised;
+            bySavicId[revised.savicId] = revised;
+            pathBySavicId[revised.savicId] = path;
             NotifyChanged();
         }
 

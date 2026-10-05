@@ -386,6 +386,10 @@ Cinco incidencias del vídeo corregidas y verificadas: miniaturas/ghost de mesas
 
 Resueltos los dos pendientes de la revisión del vídeo: alineación de clientes Humanoid con sillas reales del comedor y altura física común entre barras del HUD. Play Mode de comedor 50 comprobaciones (llegada, asiento, salida y reconstrucción del cliente sin inventar la bandera de Navigation); HUD 159 comprobaciones en siete resoluciones. Tres BarStool publicados reaceptados desde catálogo principal con seis cargas SaveGame, identidad/asociación estables, clientes sentados y Console limpia. No cambia Gameplay, reservas, capacidad ni raíz lógica. No se declara jornada IA completa ni ratificación comercial de 21A. [Causas y evidencia](../40_TESTING/DINING_SEATING_HUD_REVIEW_2026-10-04.md).
 
+## SAVIC: operaciones de Editor — 05/10/2026
+
+Flujo operativo comprobado desde Control Center: importar carpeta GLB, reintentar/revalidar por identidad, verificar una familia funcional seleccionada y actualizar un original conservando identidad/GUID/autoría manual. Revisión de fuente con historial y rollback persistente, escena de autoría aislada y recuperación en un proceso nuevo del Editor. Verificaciones reales seleccionadas de barra, taburete y campana, y revisión funcional completa de barra con segunda aceptación MainCatalog: exit 0. Gate **27/27 PASS**; auditoría aislada 11:54:49 UTC: **18 publicados, 17 catálogo placeables, 0 revisiones/fallidos/inbox/huérfanos**, cola vacía y proofs actuales. Fuentes: SAVIC §87 y [pruebas de operaciones](../40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). La conexión Assets4ALL se trata en un chat separado; no está implementada en este cierre.
+
 ---
 
 ## SOURCE: docs/10_ARCHITECTURE/AUTHORITY_MATRIX.md
@@ -2541,6 +2545,58 @@ Category: CANONICAL
 
 ## Criterio de uso
 A partir de esta migración, agentes y desarrolladores deben arrancar por `AGENTS.md` + `docs/README.md`. Los documentos históricos sirven para trazabilidad, no para contradecir el Decision Register o los documentos canónicos.
+
+---
+
+## SOURCE: docs/40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md
+
+Category: CANONICAL
+
+# SAVIC: operaciones de Editor — 05/10/2026
+
+## Alcance comprobado
+
+Base ba77d32a, rama de revisión `codex/presentation-review-fixes`. Destino autorizado: `feature/bb-presentation-interaction-quality-v1`. Las fuentes y autorías existentes se preservan; las fixtures se eliminan por sus identidades y hashes de prueba. Ninguna recuperación Git/stash ni nuevo registro de catálogo, reservas o navegación.
+
+| Prueba | Evidencia local en `BB_Review/Logs` | Resultado |
+|---|---|---|
+| Importar GLB real desde ventana y cerrar con job Processing persistido | `savic-verified-BeginColdRestartFromCommandLine.log` | exit 0 |
+| Reanudar desde pestaña Cola, publicar, reintentar y actualizar; GUID/precio/catalog singleton; duplicado antiguo y rechazo de GLB malformado | `savic-verified-PrepareRevisionColdRollbackFromCommandLine.log` | exit 0 |
+| Abrir un proceso nuevo y restaurar revisión cuyo marcador final se interrumpió | `savic-verified-RecoverRevisionAfterColdRestartFromCommandLine.log` | exit 0 |
+| Botón de verificación individual de barra, MainCatalog y SaveGame reales | `savic-functional-ui-RunBarFromCommandLine.log` | exit 0 |
+| Botón de verificación de un taburete, cliente sentado y dos cargas reales | `savic-functional-ui-RunStoolFromCommandLine.log` | exit 0 |
+| Botón de verificación de campana, cocina/paso inferior/claims y dos cargas | `savic-functional-ui-RunHoodFromCommandLine.log` | exit 0 |
+| Actualizar fuente de barra; candidato → publicación → segunda prueba desde MainCatalog; identidad y GUID conservados | `savic-functional-revision-final-RunBarRevisionFromCommandLine.log` | exit 0 |
+| Gate, inventario real, cola vacía y proofs actuales | `savic-verified-RunFinalVerificationFromCommandLine.log` | exit 0, gate 27/27 |
+
+La activación de botones es mediante `NavigationSubmitEvent` nativo de UI Toolkit; no se presenta como una prueba con ratón humano ni como revisión visual del usuario. Las pruebas funcionales conservan los gates de los runners existentes y registran Console limpia hasta Editor. No se ha jugado una jornada ni se necesita para este alcance de SAVIC.
+
+## Causa y solución
+
+El UI carecía de acciones operativas por asset. La deduplicación normal conocía la fuente actual, pero no una revisión anterior. Actualizar bytes sin un contrato explícito creaba otra identidad o entraba en conflicto con la inmutabilidad SourceHash/SavicId del repositorio.
+
+Las acciones nuevas delegan en las autoridades existentes. Una revisión explícita conserva la identidad y su historial, archiva los nuevos bytes por SHA y procesa normalmente. Antes de cambiar el manifiesto se guarda una transacción con copias íntegramente verificadas de la publicación anterior. Las revisiones funcionales quedan sin aceptar hasta pasar runtime real; un error o reinicio incompleto restaura la versión válida anterior. No se cambia un estado para reducir cifras.
+
+La primera prueba funcional de revisión falló de forma segura: `savic-functional-ui-real-revision-second.log`, exit 1. La fuente nueva aún heredaba PUBLISHED, así que SourceProcessing preservaba el snapshot anterior al encontrar `BAR_RUNTIME_ACCEPTANCE_PENDING`; no quedaba un candidato continuable. La revisión empieza ahora INGESTED y la transacción explícita conserva la restauración anterior. La reprueba completa de candidato, publicación y MainCatalog pasa, sin quitar Matches.
+
+Los jobs fallidos anteriores permanecen en Historial. Solo un trabajo posterior de la misma identidad puede superarlos en la vista activa; los fallos huérfanos y las validaciones del manifiesto/inventario conservan su visibilidad. El autotest previo de UX contaba tres revisiones aunque la fixture tenía cuatro incidencias distintas; se corrigió la expectativa y se incorporó el test al gate.
+
+## Auditoría final aislada
+
+`Library/BistroBuilder/SAVIC/Logs/canonical-content-inventory.json`, 05/10/2026 11:54:49 UTC:
+
+- 18 únicos, 18 publicados y 17 placeables en catálogo.
+- 0 NEEDS_REVIEW, 0 FAILED, 0 inbox, 0 huérfanos.
+- Cola sin pendientes y proofs de todos los publicados funcionales actuales.
+- `SavicV1ClosureGateReport.json`: 27 PASS, 0 FAIL.
+
+Las revisiones de ensayo modifican un marcador JSON de GLB reales, manteniendo su geometría. El reinicio se prueba con procesos distintos; la ausencia del marcador final COMMITTED se inyecta en una transacción real y se declara como tal. Los slots de SaveGame diagnósticos se eliminan. Los checkpoints de servicio son desocupados, sin promesa de restaurar servicio activo.
+
+## Uso y límites
+
+Abrir `Tools > Bistro Builder > SAVIC > Open Control Center`. Importar una carpeta con GLB o usar la carpeta existente `ContentInbox/DropHere`. Las acciones de ficha bloquean operaciones concurrentes del mismo asset y verifican SHA antes de actuar. Guardar las escenas antes de actualizar o verificar funcionamiento.
+
+Actualizar conserva una función compatible, identidad, GUID y valores manuales; una fuente ambigua o de otra función se rechaza conservando lo válido. Esta acción admite GLB y FBX autocontenidos, no GLTF con dependencias externas. Los valores de instalación/normalización siguen perteneciendo a los perfiles canónicos. No se añade extracción ni ventilación D-003. Assets4ALL no se conecta en este cambio.
 
 ---
 
@@ -6115,6 +6171,26 @@ El usuario solicita combinar SAVIC con `feature/bb-presentation-interaction-qual
 El checkout conserva ahora los 18 SourceMirror GLB vía LFS y los bytes de siete evidencias ProviderMetadata; se corrigieron pérdidas de módulos de pared y cambios de hash introducidos al combinar ramas. Los gates estrictos `Matches` se mantienen: dependencias modificadas requieren aceptación candidata real antes del catálogo principal. Evidencia y fallos anteriores conservados en [informe de integración](40_TESTING/SAVIC_PRESENTATION_INTEGRATION_2026-10-03.md). La prueba responsive detecta diferencia de altura entre barras, cuyo código procede de la base de presentación; no se declara cerrado el gate visual ni se modifica la estética aprobada como parte de este merge.
 
 Actualización de destino incorporada: `0172c0fb`, cuatro iconos aprobados de Carta. Prueba nativa Carta **26 PASS / 0 FAIL** y regresión canónica final repetida exit0 con gate26/core84/Navigation22/barra59/BBSIS2B18. Auditoría definitiva **03/10/2026 16:39:39 UTC: 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW y 0 FAILED**. La copia comprobada conserva el historial de la base y del nuevo commit de presentación.
+
+## 87. Operación normal desde la ventana de SAVIC — 05/10/2026
+
+Causa demostrada del pendiente de Editor: la ventana presentaba las fichas, pero no ofrecía importar una carpeta, reintentar un asset, verificar un candidato funcional o sustituir explícitamente su original. La identidad de ingesta se deduplicaba por SHA; otro contenido se trataba como otro asset. Tampoco había una transacción persistente para conservar la publicación anterior durante una revisión de fuente. El lote cerrado y sus pruebas de runtime no resolvían este flujo del usuario.
+
+`Tools > Bistro Builder > SAVIC > Open Control Center` incorpora **Importar carpeta GLB** y, en la ficha, **Revalidar asset / Reintentar procesamiento**, **Verificar funcionamiento**, **Actualizar original** y **Adjuntar original**. Las acciones usan Intake, JobStore, SourceProcessing, reconciliación y publicadores existentes. Un reintento conserva su historial y entra en la cola; no concede PUBLISHED ni elimina fallos sin procesar. Las incidencias superadas por un trabajo posterior quedan en Historial y dejan de contarse como fallos activos. Los errores sin identidad siguen visibles.
+
+La verificación selecciona una identidad exacta y reutiliza los verificadores reales de barra, taburete o campana. Conserva SHA/plan/prefab, BBSIS/Navigation/Animation, SaveGame, cleanup y Console. Una sesión de Editor guarda las escenas abiertas, pausa la cola y restaura ambas al terminar; exige guardar las escenas antes de empezar. No crea ni reconfigura el perfil Humanoid durante una verificación interactiva. Un publicado se comprueba estrictamente desde MainCatalog; un candidato solo puede publicarse después de su aceptación actual.
+
+**Actualizar original** archiva bytes nuevos verificados, mantiene SavicId/ContentId y añade la fuente anterior a `sourceRevisions`. La revisión comienza como INGESTED: unos bytes nuevos no heredan la aceptación de la publicación anterior. Una transacción `SAVIC/SourceUpdates` conserva manifiesto, cola, catálogo, publicación y sus informes, con backups SHA en la caché del proyecto. La autoría se ejecuta en una escena temporal aislada; no ensucia la escena guardada del usuario. GLB y FBX autocontenidos son los formatos de esta acción; GLTF con sidecars se rechaza antes de modificar la publicación. Un cambio de función, error de importación o aceptación fallida restaura la versión válida anterior y conserva la propuesta y su diagnóstico. Un cierre con PREPARING/VERIFYING se recupera antes del batch al volver a abrir Unity.
+
+Pruebas reales en Unity 6000.3.19f1, worktree aislado de revisión:
+
+- Botones nativos activados mediante eventos de UI Toolkit: importación, pestaña Cola/reanudación, reintento y actualización. Se comprueban publicación, GUIDs estables, precio manual, entrada única de catálogo, bytes externos conservados, duplicado de revisión antigua y rollback de un GLB malformado. La fuente de ensayo es un GLB real con un marcador JSON que cambia su SHA sin inventar geometría.
+- Tres aperturas reales del Editor: un job reclamado se recupera; una segunda revisión real se prepara y se simula la ausencia de su último marcador COMMITTED; el siguiente proceso restaura fuente/publicación/GUID/precio y conserva la propuesta. La interrupción del marcador es inyectada explícitamente en la prueba.
+- Verificación individual desde el botón para barra, taburete y campana: runtime nativo, SaveGame y cleanup aprobados; escena guardada y pausa previa restauradas. El taburete prueba un cliente Humanoid sentado y dos cargas; la campana, dos cargas y paso inferior en cocina real.
+- Revisión funcional de la barra desde **Actualizar original**: fuente nueva → candidato y aceptación real → publicación por la cola → segunda aceptación estricta del MainCatalog. Se conservan identidad y GUIDs. La prueba detectó que heredar PUBLISHED al cambiar la fuente restauraba el manifiesto anterior en vez de continuar la aceptación; el ciclo INGESTED corrige esa causa.
+- **Gate 27/27 PASS**, ahora incluye Editor UX. Auditoría **05/10/2026 11:54:49 UTC: 18 únicos, 18 publicados, 17 catálogo placeables, 0 NEEDS_REVIEW, 0 FAILED, 0 inbox, 0 huérfanos**; cola vacía y proofs funcionales actuales. Todos los procesos finales anteriores terminaron con exit 0.
+
+Evidencia y alcance: [operaciones de Editor](40_TESTING/SAVIC_EDITOR_OPERATIONS_2026-10-05.md). Esta entrega cubre SAVIC dentro de Unity y el lote existente; la conexión con Assets4ALL sigue siendo un trabajo separado. No certifica clasificación universal, GLTF dependiente de archivos externos ni carga de servicio ocupado.
 
 ---
 

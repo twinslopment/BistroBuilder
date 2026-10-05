@@ -54,21 +54,27 @@ namespace BistroBuilder.Editor.Savic
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
             Require(model != null, "Certified Humanoid source missing.");
             var profile = AssetDatabase.LoadAssetAtPath<BistroBuilderCustomerHumanoidProfile>(ProfilePath);
+            if (profile == null && SavicRuntimeVerificationSession.IsActive) throw new InvalidOperationException("Canonical customer profile missing; interactive verification cannot create it.");
             if (profile == null)
             { profile = ScriptableObject.CreateInstance<BistroBuilderCustomerHumanoidProfile>(); AssetDatabase.CreateAsset(profile, ProfilePath); }
-            profile.ConfigureForEditor(model, 1f, 0.10f);
+            if (!SavicRuntimeVerificationSession.IsActive) profile.ConfigureForEditor(model, 1f, 0.10f);
             Require(profile.ValidateConfiguration(out string error), error);
-            EditorUtility.SetDirty(profile); AssetDatabase.SaveAssets();
+            if (!SavicRuntimeVerificationSession.IsActive) { EditorUtility.SetDirty(profile); AssetDatabase.SaveAssets(); }
             SessionState.SetBool(Key + "Active", true); SessionState.SetInt(Key + "Errors", 0);
             SessionState.SetBool(Key + "Success", false); SessionState.SetString(Key + "Error", string.Empty);
             EditorApplication.EnterPlaymode();
         }
+        internal static void RunSelected(bool published)
+        { if (published) RunPublishedAcceptanceFromCommandLine(); else RunCandidateAcceptanceFromCommandLine(); }
+        private static bool IncludesSelected(SavicManifest m) => !SavicRuntimeVerificationSession.IsActive || m.savicId == SavicRuntimeVerificationSession.SelectedId;
+        private static int ExpectedCount => SavicRuntimeVerificationSession.IsActive ? 1 : 3;
+
         public static void RunCandidateAcceptanceFromCommandLine()
         {
             SessionState.SetBool(Key + "RevalidatePublishedCandidates", false);
             SessionState.SetBool(Key + "Published", false);
             var context = SavicEditorContext.Instance;
-            foreach (var m in context.Manifests.GetAll().Where(m => m?.type == "BarStool" && m.status == "NEEDS_REVIEW"))
+            foreach (var m in context.Manifests.GetAll().Where(m => m?.type == "BarStool" && m.status == "NEEDS_REVIEW" && IncludesSelected(m)))
             {
                 string archive = context.Layout.GetArchivedSourcePath(m.source.sourceHash, m.source.originalFileName);
                 string mirror = context.Layout.GetUnitySourceMirrorPath(m.source.sourceHash, m.source.originalFileName);
@@ -154,9 +160,9 @@ namespace BistroBuilder.Editor.Savic
                 revalidatingPublishedCandidates = SessionState.GetBool(Key + "RevalidatePublishedCandidates", false);
                 catalogConfigured = false;
                 runFailed = false;
-                ids = SavicEditorContext.Instance.Manifests.GetAll().Where(m => m?.classification?.type == "BarStool" && m.status == (publishedAcceptance || revalidatingPublishedCandidates ? "PUBLISHED" : "NEEDS_REVIEW"))
+                ids = SavicEditorContext.Instance.Manifests.GetAll().Where(m => m?.classification?.type == "BarStool" && IncludesSelected(m) && m.status == (publishedAcceptance || revalidatingPublishedCandidates ? "PUBLISHED" : "NEEDS_REVIEW"))
                     .Select(m => m.savicId).OrderBy(id => id, StringComparer.Ordinal).ToArray();
-                Require(ids.Length == 3, "Three actual stools are required for complete acceptance.");
+                Require(ids.Length == ExpectedCount, "The exact selected source set is required for complete acceptance.");
                 foreach (string id in ids) SessionState.EraseString(Key + "Proof." + id);
                 deadline = EditorApplication.timeSinceStartup + 120;
             }
@@ -170,14 +176,16 @@ namespace BistroBuilder.Editor.Savic
                 SessionState.SetBool(Key + "Candidate", false);
                 SessionState.SetBool(Key + "Published", false);
                 SessionState.SetBool(Key + "RevalidatePublishedCandidates", false);
-                string message = success ? "PASS: three real source stools; native occupancy, actual customer prefab and Navigation arrival, " +
+                string message = success ? "PASS: " + ExpectedCount + " real source stools; native occupancy, actual customer prefab and Navigation arrival, " +
                     "lease-gated sit/idle/stand through Animation V1, bent Humanoid legs/seat pelvis alignment, unchanged logical root, release and cleanup. " +
                     "No stool publication or Play Mode SaveGame claimed."
                     : "FAIL: " + SessionState.GetString(Key + "Error", "Unknown failure.");
+                try
+                {
                 if (success && acceptedCandidates)
                 {
                     int stamped = 0;
-                    foreach (var manifest in SavicEditorContext.Instance.Manifests.GetAll().Where(m => m?.type == "BarStool" && m.status == (acceptedPublished || acceptedRevalidation ? "PUBLISHED" : "NEEDS_REVIEW")))
+                    foreach (var manifest in SavicEditorContext.Instance.Manifests.GetAll().Where(m => m?.type == "BarStool" && IncludesSelected(m) && m.status == (acceptedPublished || acceptedRevalidation ? "PUBLISHED" : "NEEDS_REVIEW")))
                     {
                         string proofText = SessionState.GetString(Key + "Proof." + manifest.savicId, string.Empty);
                         Require(!string.IsNullOrEmpty(proofText), "Complete repeated runtime proof is missing.");
@@ -194,14 +202,16 @@ namespace BistroBuilder.Editor.Savic
                         Require(SavicBarStoolRuntimeAcceptance.Matches(manifest, SavicEditorContext.Instance.Layout), "Stool runtime acceptance is not current.");
                         stamped++;
                     }
-                    Require(stamped == 3, "Runtime acceptance must stamp exactly the three fully tested sources.");
-                    message = "PASS: three canonical " + (acceptedPublished ? "main catalog items" : "candidates") + ", native seated customers, two real SaveGame loads each, fresh instances/stable links, diagnostic slot deleted, Console clean.";
+                    Require(stamped == ExpectedCount, "Runtime acceptance must stamp exactly the fully tested source set.");
+                    message = "PASS: " + ExpectedCount + " canonical " + (acceptedPublished ? "main catalog items" : "candidates") + ", native seated customers, two real SaveGame loads each, fresh instances/stable links, diagnostic slot deleted, Console clean.";
                 }
+                } catch (Exception exception) { success = false; message = "FAIL: " + exception.Message; }
                 File.WriteAllText(Path.Combine(SavicEditorContext.Instance.Layout.LogsRoot, "customer-bar-seat-real-visual-playtest.txt"),
                     DateTime.UtcNow.ToString("O") + "\n" + message + "\nConsole errors=" + SessionState.GetInt(Key + "Errors", 0));
                 if (success) Debug.Log("[SAVIC] CUSTOMER BAR SEAT VISUAL PLAYTEST - " + message);
                 else Debug.LogError("[SAVIC] CUSTOMER BAR SEAT VISUAL PLAYTEST - " + message);
-                EditorApplication.Exit(success ? 0 : 1);
+                if (SavicRuntimeVerificationSession.IsActive) SavicRuntimeVerificationSession.Complete(success, message);
+                else if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             }
         }
         private static void Log(string message, string trace, LogType type)
@@ -226,7 +236,7 @@ namespace BistroBuilder.Editor.Savic
                 Require(EditorApplication.timeSinceStartup < deadline, "Visual test timed out at stage " + stage + ": " + presenter?.LastError);
                 Require(SessionState.GetInt(Key + "Errors", 0) == 0, SessionState.GetString(Key + "Error", "Console error."));
                 if (stage == 0 && Time.frameCount >= 5)
-                { Require(ids?.Length == 3, "Expected the three real pending stool sources."); Build(ids[index]); stage = 1; }
+                { Require(ids?.Length == ExpectedCount, "Expected the exact selected pending source set."); Build(ids[index]); stage = 1; }
                 else if (stage == 1 && movement.HasReachedDestination)
                 {
                     logicalArrival = group.transform.position; logicalRotation = group.transform.rotation;
@@ -267,7 +277,7 @@ namespace BistroBuilder.Editor.Savic
                     if (index < ids.Length) { stage = 0; deadline = EditorApplication.timeSinceStartup + 90; }
                     else
                     {
-                        Require(completed == 3, "Incomplete source tests.");
+                        Require(completed == ids.Length, "Incomplete source tests.");
                         if (candidateAcceptance)
                         { stage = 8; Require(saveGame.TryDeleteSlot(diagnosticSlot, out string error), error); }
                         else { SessionState.SetBool(Key + "Success", true); EditorApplication.ExitPlaymode(); }
@@ -460,7 +470,7 @@ namespace BistroBuilder.Editor.Savic
                 if (stage == 8)
                 {
                     Require(!saveGame.SlotExists(diagnosticSlot), "Diagnostic slot was not deleted.");
-                    saveGame.OperationCompleted -= Saved; SessionState.SetBool(Key + "Success", !runFailed && completed == 3); EditorApplication.ExitPlaymode(); return;
+                    saveGame.OperationCompleted -= Saved; SessionState.SetBool(Key + "Success", !runFailed && completed == ids.Length); EditorApplication.ExitPlaymode(); return;
                 }
                 if (stage != 6) return;
                 if (result.OperationKind == BistroBuilderSaveOperationKind.Save)

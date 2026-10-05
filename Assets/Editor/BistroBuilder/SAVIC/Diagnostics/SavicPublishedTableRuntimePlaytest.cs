@@ -66,7 +66,9 @@ namespace BistroBuilder.Editor.Savic
         public static void RunBarCounterCandidateFromCommandLine() => Begin(true, "BarCounter");
         public static void RunPublishedBarCounterFromCommandLine() => Begin(true, "BarCounter", false);
 
-        private static void Begin(bool cli, string family = "Table", bool barCandidate = true)
+        internal static void RunSelectedBar(string id, bool candidate) => Begin(false, "BarCounter", candidate, id);
+
+        private static void Begin(bool cli, string family = "Table", bool barCandidate = true, string selectedId = null)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Play Mode is already active.");
@@ -74,7 +76,7 @@ namespace BistroBuilder.Editor.Savic
             SavicEditorContext context = SavicEditorContext.Instance;
             SavicManifest manifest = context.Manifests.GetAll().FirstOrDefault(candidate =>
                 candidate != null && candidate.status == (family == "BarCounter" && barCandidate ? "NEEDS_REVIEW" : "PUBLISHED") &&
-                candidate.type == family &&
+                candidate.type == family && (selectedId == null || candidate.savicId == selectedId) &&
                 (family == "Table"
                     ? candidate.tableAuthoring?.seatingDefinitionAssetPath == SavicTableAuthoringPlanner.CompactSquareTwoSeatingPath
                     : candidate.genericPlaceable?.integrationMode ==
@@ -139,8 +141,8 @@ namespace BistroBuilder.Editor.Savic
                 SessionState.EraseString(StageKey);
                 if (success) Debug.Log("[SAVIC] " + File.ReadAllText(reportPath) + " Runtime and Editor cleanup Console=clean.");
                 else Debug.LogError("[SAVIC] " + File.ReadAllText(reportPath));
-                if (cli)
-                    EditorApplication.Exit(success ? 0 : 1);
+                if (SavicRuntimeVerificationSession.IsActive) SavicRuntimeVerificationSession.Complete(success, File.ReadAllText(reportPath));
+                else if (cli) EditorApplication.Exit(success ? 0 : 1);
             }
         }
 

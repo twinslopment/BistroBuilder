@@ -44,17 +44,18 @@ namespace BistroBuilder.Editor.Savic
             SavicCanonicalContentInventoryProbe.RunFromCommandLine();
             Debug.Log("[SAVIC] OVERHEAD CANONICAL PUBLICATION - PASS: verified runtime acceptance consumed through the existing queue/family/transaction.");
         }
-        private static void Begin(bool candidate, bool revalidatingPublished = false)
+        internal static void RunSelected(string id, bool candidate) => Begin(candidate, false, id);
+        private static void Begin(bool candidate, bool revalidatingPublished = false, string selectedId = null)
         {
-            Require(Application.isBatchMode && !EditorApplication.isPlayingOrWillChangePlaymode, "Isolated overhead Play Mode acceptance requires an idle batch editor.");
+            Require((Application.isBatchMode || SavicRuntimeVerificationSession.IsActive) && !EditorApplication.isPlayingOrWillChangePlaymode, "Isolated overhead Play Mode acceptance requires an idle batch editor.");
             var context = SavicEditorContext.Instance;
-            if (candidate && !revalidatingPublished)
+            if (candidate && !revalidatingPublished && selectedId == null)
             {
                 context.CanonicalReconciliation.RetryVerifiedOverheadReviews(4);
                 for (int i = 0; i < 48 && context.Batch.TickOneIgnoringCooldownForDiagnostics(); i++) { }
             }
             var manifests = context.Manifests.GetAll().Where(m => SavicOverheadEquipmentRuntimeAcceptance.Required(m) &&
-                m.status == (candidate && !revalidatingPublished ? "NEEDS_REVIEW" : "PUBLISHED")).ToArray();
+                m.status == (candidate && !revalidatingPublished ? "NEEDS_REVIEW" : "PUBLISHED") && (selectedId == null || m.savicId == selectedId)).ToArray();
             Require(manifests.Length == 1, "This bounded acceptance run needs one canonical overhead candidate.");
             var m = manifests[0];
             string archive = context.Layout.GetArchivedSourcePath(m.source.sourceHash, m.source.originalFileName);
@@ -128,7 +129,8 @@ namespace BistroBuilder.Editor.Savic
                 SessionState.EraseString(Key + "Stage");
                 if (success) Debug.Log("[SAVIC] OVERHEAD RUNTIME ACCEPTANCE - " + File.ReadAllText(report));
                 else Debug.LogError("[SAVIC] OVERHEAD RUNTIME ACCEPTANCE - " + File.ReadAllText(report));
-                EditorApplication.Exit(success ? 0 : 1);
+                if (SavicRuntimeVerificationSession.IsActive) SavicRuntimeVerificationSession.Complete(success, File.ReadAllText(report));
+                else if (Application.isBatchMode) EditorApplication.Exit(success ? 0 : 1);
             }
         }
         private static void Log(string message, string trace, LogType type)

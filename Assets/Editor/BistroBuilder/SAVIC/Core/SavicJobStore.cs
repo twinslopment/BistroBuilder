@@ -155,6 +155,22 @@ namespace BistroBuilder.Editor.Savic
                 NotifyChanged();
         }
 
+
+        // Explicit user retry: source integrity is checked by the action service.
+        // Keeps terminal history and never marks a publication accepted.
+        internal SavicJobRecord RequeueVerifiedAsset(SavicManifest manifest)
+        {
+            lock (sync)
+            {
+                EnsureLoaded();
+                if (snapshot.jobs.Any(j => j != null && j.manifestSavicId == manifest.savicId && j.batchEligible &&
+                    (j.state == SavicJobState.Ingested.ToString() || j.state == SavicJobState.Processing.ToString())))
+                    return snapshot.jobs.First(j => j != null && j.manifestSavicId == manifest.savicId && j.batchEligible &&
+                        (j.state == SavicJobState.Ingested.ToString() || j.state == SavicJobState.Processing.ToString()));
+            }
+            return RecordIngested(manifest, false, "Explicit Editor revalidation queued; normal validators and publication transaction remain required.");
+        }
+
         internal int RecoverInterruptedJobs()
         {
             int recovered = 0;

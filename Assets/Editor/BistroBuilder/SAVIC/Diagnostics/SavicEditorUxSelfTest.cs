@@ -171,7 +171,7 @@ namespace BistroBuilder.Editor.Savic
             Require(first.Summary.QueuedOrActive == 1, "Queue total is incorrect.");
             Require(first.Summary.InventoryIssues == 1, "Inventory issue total is incorrect.");
             Require(first.Summary.LegacyPendingAdoption == 2, "Legacy total is incorrect.");
-            Require(first.Summary.NeedsReview == 3, "Review total is incorrect.");
+            Require(first.Summary.NeedsReview == 4, "Review must include both manifest exceptions, the failed job and the inventory issue. Actual=" + first.Summary.NeedsReview);
 
             Require(
                 first.Assets.Select(row => row.SavicId).SequenceEqual(
