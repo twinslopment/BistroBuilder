@@ -220,6 +220,32 @@ namespace BistroBuilder.Editor.Savic
             NotifyChanged();
         }
 
+        internal void CommitAssets4AllRevision(SavicManifest candidate, string expectedPreviousHash)
+        {
+            EnsureLoaded();
+            if (candidate?.assets4All?.delivery == null || candidate.status != "PUBLISHED")
+                throw new InvalidOperationException("Only a published Assets4ALL candidate may change source revision.");
+            bySavicId.TryGetValue(candidate.savicId, out SavicManifest previous);
+            if ((previous?.source?.sourceHash ?? "") != (expectedPreviousHash ?? ""))
+                throw new InvalidOperationException("Published source changed while the candidate was prepared.");
+            if (previous != null && (previous.canonicalContentId != candidate.canonicalContentId ||
+                (previous.assets4All?.delivery != null && previous.assets4All.delivery.assetUuid != candidate.assets4All.delivery.assetUuid)))
+                throw new InvalidOperationException("Revision cannot replace another canonical identity.");
+            if (previous == null) Save(candidate);
+            else ReplaceSourceRevision(candidate, expectedPreviousHash);
+        }
+
+        internal bool TryGetHistoricalSource(string hash, out SavicManifest manifest)
+        {
+            if (TryGetArchivedRevision(hash, out var owner, out var source))
+            {
+                manifest = JsonUtility.FromJson<SavicManifest>(JsonUtility.ToJson(owner));
+                manifest.source = source;
+                return true;
+            }
+            manifest = null; return false;
+        }
+
         private void NotifyChanged()
         {
             try

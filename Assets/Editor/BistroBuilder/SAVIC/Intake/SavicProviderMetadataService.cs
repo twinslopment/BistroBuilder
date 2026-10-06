@@ -111,6 +111,8 @@ namespace BistroBuilder.Editor.Savic
             if (manifest?.source == null)
                 return string.Empty;
             layout ??= SavicStorageLayout.ForCurrentProject();
+            if (SavicAssets4AllService.TryReadVerified(manifest, layout, out _))
+                return manifest.assets4All.semanticName;
             if (TryReadVerified(layout, manifest.source, out SavicProviderMetadataRecord metadata))
             {
                 // Descriptions can mention excluded objects ("no table", "no wall"). Only the

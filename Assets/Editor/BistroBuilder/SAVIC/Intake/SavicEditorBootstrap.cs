@@ -31,6 +31,7 @@ namespace BistroBuilder.Editor.Savic
             try
             {
                 SavicEditorContext.Instance.Layout.EnsureInfrastructure();
+                SavicAssets4AllService.Recover(SavicEditorContext.Instance.Layout, SavicEditorContext.Instance.Manifests);
                 new SavicSourceUpdateService(SavicEditorContext.Instance).RecoverInterrupted();
                 SavicEditorContext.Instance.Batch.RecoverAfterDomainReload();
 
@@ -129,6 +130,8 @@ namespace BistroBuilder.Editor.Savic
             }
 
             TryRefreshProjectInventory(now);
+            try { SavicAssets4AllService.Tick(SavicEditorContext.Instance); }
+            catch (Exception exception) { Debug.LogError("[SAVIC] Assets4ALL scan failed: " + exception); }
         }
 
         private static void OnProjectChanged()
