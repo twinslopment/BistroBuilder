@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 public static class BistroBuilderEditorV2B1HardeningSelfTest
@@ -39,6 +41,7 @@ public static class BistroBuilderEditorV2B1HardeningSelfTest
         TestPrePublishJournalFailureHasNoWorldSideEffects();
         TestRuntimeRollbackIsExactAndIdempotenceSafe();
         TestLoadMaterializesExactlyOnce();
+        TestPreviewPhysicsSyncOnlyWhenPoseChanges();
 
         string report =
             "EDITOR V2 - B1 HARDENING SELF TEST\n" +
@@ -186,13 +189,21 @@ public static class BistroBuilderEditorV2B1HardeningSelfTest
 
     private static void TestLoadMaterializesExactlyOnce()
     {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var host = new GameObject("EditorV2_B1_LoadProjection");
         try
         {
             var runtime = host.AddComponent<BistroBuilderEditDocumentRuntimeService>();
             var materializer = host.AddComponent<BistroBuilderArchitectureRuntimeMaterializer>();
-            host.AddComponent<BistroBuilderEditDocumentMaterializationBridge>();
+            var bridge = host.AddComponent<BistroBuilderEditDocumentMaterializationBridge>();
             var provider = host.AddComponent<BistroBuilderEditDocumentSaveSectionProvider>();
+
+            // Batch EditMode does not guarantee MonoBehaviour lifecycle callbacks
+            // for dynamically-added components. Invoke the same production
+            // OnEnable path explicitly so the test validates the real subscription.
+            MethodInfo onEnable = typeof(BistroBuilderEditDocumentMaterializationBridge)
+                .GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic);
+            onEnable?.Invoke(bridge, null);
 
             int before = materializer.RebuildInvocationCount;
             var loaded = new BistroBuilderEditDocument { revision = 500 };
@@ -204,12 +215,82 @@ public static class BistroBuilderEditorV2B1HardeningSelfTest
 
             Check(!context.HasFailed && runtime.Revision == 500,
                 "B1 Save/Load aplica documento arquitectónico válido");
-            Check(materializer.RebuildInvocationCount == before + 1,
-                "B1 Load materializa arquitectura exactamente una vez");
+            int after = materializer.RebuildInvocationCount;
+            Check(after == before + 1,
+                $"B1 Load materializa arquitectura exactamente una vez (before={before}, after={after})");
         }
         finally
         {
             UnityEngine.Object.DestroyImmediate(host);
+        }
+    }
+
+    private static void TestPreviewPhysicsSyncOnlyWhenPoseChanges()
+    {
+        EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var services = new GameObject("EditorV2_B1_PreviewServices");
+        var item = new GameObject("EditorV2_B1_PreviewItem");
+        try
+        {
+            var validation = services.AddComponent<RestaurantPlacementValidationService>();
+            var transaction = services.AddComponent<RestaurantPlacementTransactionService>();
+            var member = item.AddComponent<RestaurantAreaMember>();
+
+            FieldInfo validationField = typeof(RestaurantPlacementTransactionService)
+                .GetField("validationService", BindingFlags.Instance | BindingFlags.NonPublic);
+            validationField?.SetValue(transaction, validation);
+
+            item.transform.SetPositionAndRotation(
+                new Vector3(1f, 0f, 1f),
+                Quaternion.Euler(0f, 15f, 0f));
+
+            bool began = transaction.TryBeginPlacement(member, out var beginFailure);
+            Check(began && beginFailure == RestaurantPlacementTransactionFailureReason.None,
+                "B1 preview abre transacción de prueba");
+
+            int before = transaction.PreviewPhysicsSyncCount;
+            Vector3 originalPosition = item.transform.position;
+            Quaternion originalRotation = item.transform.rotation;
+
+            bool sameOk = transaction.TryPreviewPlacement(
+                originalPosition,
+                originalRotation,
+                out _,
+                out _);
+            int afterSame = transaction.PreviewPhysicsSyncCount;
+
+            Vector3 movedPosition = originalPosition + new Vector3(0.5f, 0f, 0.25f);
+            Quaternion movedRotation = Quaternion.Euler(0f, 45f, 0f);
+            bool changedOk = transaction.TryPreviewPlacement(
+                movedPosition,
+                movedRotation,
+                out _,
+                out _);
+            int afterChanged = transaction.PreviewPhysicsSyncCount;
+
+            bool repeatedOk = transaction.TryPreviewPlacement(
+                movedPosition,
+                movedRotation,
+                out _,
+                out _);
+            int afterRepeated = transaction.PreviewPhysicsSyncCount;
+
+            Check(sameOk && afterSame == before,
+                $"B1 preview misma pose no sincroniza física (before={before}, after={afterSame})");
+            Check(changedOk &&
+                  afterChanged == before + 1 &&
+                  item.transform.position == movedPosition &&
+                  item.transform.rotation == movedRotation,
+                $"B1 preview pose nueva sincroniza una vez (before={before}, after={afterChanged})");
+            Check(repeatedOk && afterRepeated == afterChanged,
+                $"B1 preview repetido no vuelve a sincronizar (afterChanged={afterChanged}, afterRepeated={afterRepeated})");
+
+            transaction.CancelPlacement();
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(item);
+            UnityEngine.Object.DestroyImmediate(services);
         }
     }
 

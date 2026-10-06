@@ -9,6 +9,8 @@ public sealed class BistroBuilderEditDocumentMaterializationBridge : MonoBehavio
     [SerializeField] private BistroBuilderSpatialInteractionService spatialService;
     [SerializeField] private BistroBuilderOperationalSpatialCoordinator operationalSpatialCoordinator;
     [SerializeField] private BistroBuilderNavigationService navigationService;
+    [SerializeField] private BistroBuilderNavigationEditIntegration navigationEditIntegration;
+    [SerializeField] private BistroBuilderSaveGameService saveGameService;
     [SerializeField] private bool rebuildOnEnable = true;
 
     private void OnEnable()
@@ -42,7 +44,25 @@ public sealed class BistroBuilderEditDocumentMaterializationBridge : MonoBehavio
 
         spatialService?.RebuildSubjects();
         operationalSpatialCoordinator?.RebuildBindings();
-        navigationService?.RebuildNavigationTopology();
+
+        /*
+         * During SaveGame Load this publication happens before the furniture
+         * provider has finished restoring all placeables. Rebuilding Navigation
+         * here produces a knowingly intermediate topology that is immediately
+         * replaced after the remaining providers finish.
+         *
+         * Queue the existing edit integration instead. It already waits while
+         * Load is active and flushes exactly once from OperationCompleted.
+         */
+        bool loading =
+            saveGameService != null &&
+            saveGameService.IsBusy &&
+            saveGameService.ActiveOperation == BistroBuilderSaveOperationKind.Load;
+
+        if (loading && navigationEditIntegration != null)
+            navigationEditIntegration.RequestRebuild();
+        else
+            navigationService?.RebuildNavigationTopology();
     }
 
     private void CacheDependencies()
@@ -57,5 +77,9 @@ public sealed class BistroBuilderEditDocumentMaterializationBridge : MonoBehavio
             operationalSpatialCoordinator = FindFirstObjectByType<BistroBuilderOperationalSpatialCoordinator>();
         if (navigationService == null)
             navigationService = FindFirstObjectByType<BistroBuilderNavigationService>();
+        if (navigationEditIntegration == null)
+            navigationEditIntegration = FindFirstObjectByType<BistroBuilderNavigationEditIntegration>();
+        if (saveGameService == null)
+            saveGameService = FindFirstObjectByType<BistroBuilderSaveGameService>();
     }
 }

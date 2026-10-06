@@ -89,3 +89,40 @@ Por esta razón:
 - B1 global: **VALIDANDO**, no PASS.
 
 No existe endpoint HTTP local del editor; por tanto, `curl` no es una herramienta válida para este bloque. Crear un servidor HTTP únicamente para “probar con curl” duplicaría superficie técnica sin probar mejor las autoridades reales. Se ha usado CLI determinista y failure injection sobre el código de producción.
+
+## Verificación adicional — 06/10/2026
+
+Evidencia ejecutada sobre el hardening final:
+
+- `EditorV2_B1_Hardening_navfix.log`: **20/20 OK**, sin `error CS`, sin `FAIL -`, sin excepción funcional y sin retorno 1.
+- `EditorV2_B1_CoreRegression.log`: **84/84 OK**.
+- `EditorV2_B1_SceneRegression.log`: **77/77 OK**.
+- `EditRuntimeLifecycleSelfTestReport.txt`: **20/20 OK**.
+- `EditorV2_B1_QueenRegression.log`: PASS y salida batch `return code 0`, sin errores de compilación ni excepciones.
+- `EditorV2_B1_PerformanceNavFix.log`: la carga real pasa de **2 rebuilds de topología a 1**; `loadHealthEvaluations=0`.
+
+Comparativa de Navigation durante Load:
+
+- antes del ajuste: `loadTopologyBuilds=2`;
+- después del ajuste: `loadTopologyBuilds=1`.
+
+La prueba de rendimiento continúa marcando deuda previa de Load:
+
+- ejecución previa: `loadMs=5622.8961`;
+- ejecución posterior: `loadMs=6055.9242`;
+- presupuesto histórico: < 5000 ms.
+
+La variación temporal no se atribuye a una segunda reconstrucción de Navigation: el contador demuestra que esa duplicidad quedó eliminada. El presupuesto global de carga permanece abierto para B14 / hardening de rendimiento.
+
+Se confirmó también en código que `BistroBuilderNavigationEditIntegration`:
+
+- conserva una única petición pendiente;
+- no reconstruye mientras SaveGame está cargando;
+- recibe `OperationCompleted`;
+- ejecuta `RebuildNow()` una sola vez si seguía pendiente.
+
+### Estado
+
+La funcionalidad específica de B1 está demostrada. El reintento de ejecutar nuevamente toda la batería sobre el árbol final se encuentra bloqueado por un fallo local reproducible de IPC del Unity Package Manager. El bloqueo ocurre antes de compilar o ejecutar tests y no constituye fallo de B1.
+
+Por rigor, el estado formal continúa **VALIDANDO** hasta que el entorno UPM permita repetir la batería completa sobre el último árbol versionado.
