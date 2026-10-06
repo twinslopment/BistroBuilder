@@ -700,7 +700,7 @@ Salvo decisión posterior explícita:
 |---|---|
 | B0 Baseline y protección | PASS |
 | Gate Assets4All → SAVIC | PASS — cinco familias verificadas por evidencia compuesta; puente versionado en ambos extremos |
-| B1 Riesgos de auditoría | NO INICIADO |
+| B1 Riesgos de auditoría | VALIDANDO — commit compensable, Load único y preview sync endurecidos; regresión Unity bloqueada por UPM |
 | B2 Editor V2 Coordinator | NO INICIADO |
 | B3 Selección común | NO INICIADO |
 | B4 Undo/Redo global | NO INICIADO |

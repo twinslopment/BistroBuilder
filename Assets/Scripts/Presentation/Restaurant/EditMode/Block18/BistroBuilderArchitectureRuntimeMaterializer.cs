@@ -42,6 +42,9 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     private GameObject wallVisualModulePrefab;
     private Material fallbackWallMaterial;
     private BistroBuilderEditDocument lastDocument;
+    private int rebuildInvocationCount;
+
+    public int RebuildInvocationCount => rebuildInvocationCount;
 
     public BistroBuilderEditDocument LastDocument =>
         lastDocument != null ? lastDocument.DeepClone() : null;
@@ -50,6 +53,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
         BistroBuilderEditDocument document)
     {
         if (document == null) throw new ArgumentNullException(nameof(document));
+        rebuildInvocationCount++;
         EnsureRoot();
         ClearGenerated();
         lastDocument = document.DeepClone();

@@ -4,8 +4,27 @@ using System.Collections.Generic;
 public interface IBistroBuilderEditDocumentStore
 {
     BistroBuilderEditDocument GetCommittedSnapshot();
-    bool TryPublish(long expectedBaselineRevision, BistroBuilderEditDocument candidate,
-        string operationId, out string error);
+
+    bool TryPublish(
+        long expectedBaselineRevision,
+        BistroBuilderEditDocument candidate,
+        string operationId,
+        out string error);
+
+    /// <summary>
+    /// Compensates a publication that already became canonical but whose
+    /// cross-system transaction could not be finalized.
+    ///
+    /// Implementations must only roll back the exact operationId that
+    /// published expectedPublishedRevision and must restore the supplied
+    /// baseline revision verbatim. The method is intentionally explicit:
+    /// callers are not allowed to overwrite arbitrary committed state.
+    /// </summary>
+    bool TryRollbackPublished(
+        string operationId,
+        long expectedPublishedRevision,
+        BistroBuilderEditDocument baseline,
+        out string error);
 }
 
 public interface IBistroBuilderEditCommitJournalStore
@@ -30,6 +49,39 @@ public sealed class BistroBuilderInMemoryEditDocumentStore : IBistroBuilderEditD
         if (committed.revision != expectedBaselineRevision) { error = "La baseline comprometida ha cambiado."; return false; }
         if (candidate.revision != expectedBaselineRevision + 1) { error = "La revisión candidata no es N+1."; return false; }
         committed = candidate.DeepClone(); publishedOperations.Add(operationId); return true;
+    }
+
+    public bool TryRollbackPublished(
+        string operationId,
+        long expectedPublishedRevision,
+        BistroBuilderEditDocument baseline,
+        out string error)
+    {
+        error = string.Empty;
+        if (string.IsNullOrWhiteSpace(operationId) || baseline == null)
+        {
+            error = "Rollback de publicación inválido.";
+            return false;
+        }
+        if (!publishedOperations.Contains(operationId))
+        {
+            error = "La operación indicada no está publicada.";
+            return false;
+        }
+        if (committed == null || committed.revision != expectedPublishedRevision)
+        {
+            error = "La revisión comprometida ya no coincide con la publicación a compensar.";
+            return false;
+        }
+        if (baseline.revision != expectedPublishedRevision - 1)
+        {
+            error = "La baseline de rollback no corresponde a la revisión publicada.";
+            return false;
+        }
+
+        committed = baseline.DeepClone();
+        publishedOperations.Remove(operationId);
+        return true;
     }
 }
 public sealed class BistroBuilderInMemoryCommitJournalStore : IBistroBuilderEditCommitJournalStore
@@ -232,45 +284,129 @@ public sealed class BistroBuilderEditCommitCoordinator
     public bool TryCommit(BistroBuilderEditSession session, out BistroBuilderEditDocument committed,
         out BistroBuilderEditCommitJournal journal, out List<BistroBuilderEditDiagnostic> diagnostics, out string error)
     {
-        committed = null; journal = null; error = string.Empty;
-        if (session == null) { diagnostics = new List<BistroBuilderEditDiagnostic>(); error = "Sesión inexistente."; return false; }
-        if (!session.TryPrepareCommit(out var candidate, out diagnostics)) { error = "La propuesta contiene bloqueantes."; return false; }
+        committed = null;
+        journal = null;
+        error = string.Empty;
+
+        if (session == null)
+        {
+            diagnostics = new List<BistroBuilderEditDiagnostic>();
+            error = "Sesión inexistente.";
+            return false;
+        }
+
+        if (!session.TryPrepareCommit(out var candidate, out diagnostics))
+        {
+            error = "La propuesta contiene bloqueantes.";
+            return false;
+        }
+
+        // Preflight before any external side effect. Once the document and
+        // Finance are finalized, session finalization must be a pure state flip.
+        if (!session.CanFinalizePreparedCommit(candidate))
+        {
+            session.RejectPreparedCommit();
+            error = "La sesión no puede finalizar el candidato preparado.";
+            return false;
+        }
+
         var proposal = BistroBuilderEditEconomicProposalBuilder.Build(session);
         if (!economy.TryPrepareAuthorization(proposal, out var authorization, out error))
-        { session.RejectPreparedCommit(); return false; }
+        {
+            session.RejectPreparedCommit();
+            return false;
+        }
+
         if (!authorization.IsValid || authorization.draftRevision != session.DraftRevision)
         {
-            economy.TryAbortAuthorization(authorization, out _); session.RejectPreparedCommit();
-            error = "La autorización económica no corresponde a la revisión del Draft."; return false;
+            economy.TryAbortAuthorization(authorization, out _);
+            session.RejectPreparedCommit();
+            error = "La autorización económica no corresponde a la revisión del Draft.";
+            return false;
         }
+
         string operationId = Guid.NewGuid().ToString("N");
         journal = new BistroBuilderEditCommitJournal
         {
-            operationId = operationId, sessionId = session.SessionId,
-            baselineRevision = session.BaselineRevision, draftRevision = session.DraftRevision,
-            draftFingerprint = proposal.draftFingerprint, economicAuthorizationId = authorization.authorizationId,
+            operationId = operationId,
+            sessionId = session.SessionId,
+            baselineRevision = session.BaselineRevision,
+            draftRevision = session.DraftRevision,
+            draftFingerprint = proposal.draftFingerprint,
+            economicAuthorizationId = authorization.authorizationId,
             state = BistroBuilderEditCommitJournalState.Prepared
         };
+
         if (!journalStore.TryWrite(journal, out error))
         {
-            economy.TryAbortAuthorization(authorization, out _); session.RejectPreparedCommit(); return false;
+            economy.TryAbortAuthorization(authorization, out _);
+            session.RejectPreparedCommit();
+            return false;
         }
 
         journal.state = BistroBuilderEditCommitJournalState.Publishing;
         if (!journalStore.TryWrite(journal, out error))
-        { economy.TryAbortAuthorization(authorization, out _); session.RejectPreparedCommit(); return false; }
-        if (!documentStore.TryPublish(session.BaselineRevision, candidate, operationId, out error))
         {
-            journal.state = BistroBuilderEditCommitJournalState.Aborted; journalStore.TryWrite(journal, out _);
-            economy.TryAbortAuthorization(authorization, out _); session.RejectPreparedCommit(); return false;
+            economy.TryAbortAuthorization(authorization, out _);
+            session.RejectPreparedCommit();
+            return false;
         }
 
+        BistroBuilderEditDocument baseline = session.Baseline.DeepClone();
+        if (!documentStore.TryPublish(
+                session.BaselineRevision,
+                candidate,
+                operationId,
+                out error))
+        {
+            journal.state = BistroBuilderEditCommitJournalState.Aborted;
+            journalStore.TryWrite(journal, out _);
+            economy.TryAbortAuthorization(authorization, out _);
+            session.RejectPreparedCommit();
+            return false;
+        }
+
+        // From this point the canonical document has changed. Journal writes are
+        // observability/recovery metadata and must not by themselves strand the
+        // world in a half-committed state.
         journal.state = BistroBuilderEditCommitJournalState.Published;
-        if (!journalStore.TryWrite(journal, out error)) return false;
-        if (!economy.TryFinalizeAuthorization(authorization, operationId, out error)) return false;
+        journalStore.TryWrite(journal, out _);
+
+        if (!economy.TryFinalizeAuthorization(authorization, operationId, out string financeError))
+        {
+            bool worldRestored = documentStore.TryRollbackPublished(
+                operationId,
+                candidate.revision,
+                baseline,
+                out string rollbackError);
+            bool authorizationAborted =
+                economy.TryAbortAuthorization(authorization, out string abortError);
+
+            journal.state = BistroBuilderEditCommitJournalState.Aborted;
+            journalStore.TryWrite(journal, out _);
+            session.RejectPreparedCommit();
+
+            error = financeError;
+            if (!worldRestored)
+                error += " Rollback arquitectónico falló: " + rollbackError;
+            if (!authorizationAborted)
+                error += " Abort económico falló: " + abortError;
+            return false;
+        }
+
+        // This was preflighted before side effects and no asynchronous work is
+        // allowed inside TryCommit. A failure here indicates a programming
+        // invariant violation rather than a recoverable business rejection.
+        if (!session.FinalizePreparedCommit(candidate))
+        {
+            error = "Invariante rota: la sesión rechazó un candidato prevalidado tras finalizar Finanzas.";
+            return false;
+        }
+
         journal.state = BistroBuilderEditCommitJournalState.Finalized;
-        if (!journalStore.TryWrite(journal, out error)) return false;
-        if (!session.FinalizePreparedCommit(candidate)) { error = "La sesión rechazó el candidato ya publicado."; return false; }
-        committed = documentStore.GetCommittedSnapshot(); return true;
+        journalStore.TryWrite(journal, out _);
+
+        committed = documentStore.GetCommittedSnapshot();
+        return true;
     }
 }

@@ -181,11 +181,22 @@ public sealed class BistroBuilderEditSession
         return true;
     }
 
+    public bool CanFinalizePreparedCommit(BistroBuilderEditDocument candidate)
+    {
+        if (State != BistroBuilderEditSessionState.ReviewingCommit || candidate == null)
+            return false;
+        if (candidate.revision != BaselineRevision + 1)
+            return false;
+        return string.Equals(
+            candidate.ComputeFingerprint(),
+            BuildExpectedCommitFingerprint(),
+            StringComparison.Ordinal);
+    }
+
     public bool FinalizePreparedCommit(BistroBuilderEditDocument candidate)
     {
-        if (State != BistroBuilderEditSessionState.ReviewingCommit || candidate == null) return false;
-        if (candidate.revision != BaselineRevision + 1) return false;
-        if (!string.Equals(candidate.ComputeFingerprint(), BuildExpectedCommitFingerprint(), StringComparison.Ordinal)) return false;
+        if (!CanFinalizePreparedCommit(candidate))
+            return false;
         State = BistroBuilderEditSessionState.Committed;
         return true;
     }

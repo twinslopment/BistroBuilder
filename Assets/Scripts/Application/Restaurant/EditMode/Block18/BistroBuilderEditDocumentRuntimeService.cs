@@ -90,6 +90,41 @@ public sealed class BistroBuilderEditDocumentRuntimeService : MonoBehaviour,
         return true;
     }
 
+    public bool TryRollbackPublished(
+        string operationId,
+        long expectedPublishedRevision,
+        BistroBuilderEditDocument baseline,
+        out string error)
+    {
+        error = string.Empty;
+        if (string.IsNullOrWhiteSpace(operationId) || baseline == null)
+        {
+            error = "Rollback de publicación inválido.";
+            return false;
+        }
+        if (!publishedOperations.Contains(operationId))
+        {
+            error = "La operación indicada no está publicada.";
+            return false;
+        }
+        if (committedDocument == null ||
+            committedDocument.revision != expectedPublishedRevision)
+        {
+            error = "La revisión comprometida ya no coincide con la publicación a compensar.";
+            return false;
+        }
+        if (baseline.revision != expectedPublishedRevision - 1)
+        {
+            error = "La baseline de rollback no corresponde a la revisión publicada.";
+            return false;
+        }
+
+        committedDocument = baseline.DeepClone();
+        publishedOperations.Remove(operationId);
+        DocumentPublished?.Invoke(committedDocument.DeepClone());
+        return true;
+    }
+
     public bool ReplaceCommittedForLoad(BistroBuilderEditDocument loaded, out string error)
     {
         error = string.Empty;

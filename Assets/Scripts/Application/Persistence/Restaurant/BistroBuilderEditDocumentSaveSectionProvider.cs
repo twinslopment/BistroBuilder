@@ -91,7 +91,15 @@ public sealed class BistroBuilderEditDocumentSaveSectionProvider : MonoBehaviour
             context.Fail(replaceError);
             yield break;
         }
-        if (materializer != null) materializer.Rebuild(document);
+
+        /*
+         * ReplaceCommittedForLoad publishes DocumentPublished.
+         * Projection/materialization is owned by
+         * BistroBuilderEditDocumentMaterializationBridge.
+         *
+         * Rebuilding here as well caused the same architecture document to be
+         * materialized twice during a normal load.
+         */
         yield break;
     }
 
@@ -101,7 +109,11 @@ public sealed class BistroBuilderEditDocumentSaveSectionProvider : MonoBehaviour
 
     private void CacheDependencies()
     {
-        if (runtimeService == null) runtimeService = FindFirstObjectByType<BistroBuilderEditDocumentRuntimeService>();
-        if (materializer == null) materializer = FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>();
+        if (runtimeService == null)
+            runtimeService = FindFirstObjectByType<BistroBuilderEditDocumentRuntimeService>();
+
+        // Kept serialized for backward-compatible scene data during B1.
+        // Materialization is event-driven by the bridge, not by persistence.
+        _ = materializer;
     }
 }

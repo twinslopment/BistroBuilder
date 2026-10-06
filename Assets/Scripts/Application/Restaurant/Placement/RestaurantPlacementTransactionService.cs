@@ -40,6 +40,9 @@ public sealed class RestaurantPlacementTransactionService :
     private bool hasActiveTransaction;
 
     private bool hasEvaluatedPreview;
+    private int previewPhysicsSyncCount;
+
+    public int PreviewPhysicsSyncCount => previewPhysicsSyncCount;
 
     private RestaurantPlacementTransactionKind
         activeTransactionKind =
@@ -305,22 +308,26 @@ public sealed class RestaurantPlacementTransactionService :
          * físicamente las posiciones inválidas mientras la operación
          * permanezca abierta.
          */
-        member.transform.SetPositionAndRotation(
-            candidateWorldPosition,
-            candidateWorldRotation
-        );
+        bool poseChanged =
+            member.transform.position != candidateWorldPosition ||
+            member.transform.rotation != candidateWorldRotation;
 
-        /*
-         * Cuando Time.timeScale es 0, Unity no ejecuta FixedUpdate.
-         * En ese caso el Transform visual puede cambiar sin que la
-         * escena física actualice todavía el collider utilizado por
-         * los raycasts de selección.
-         *
-         * La sincronización explícita mantiene el collider unido a
-         * la mesa también durante la pausa. Este método solo se llama
-         * cuando cambia realmente la pose candidata.
-         */
-        Physics.SyncTransforms();
+        if (poseChanged)
+        {
+            member.transform.SetPositionAndRotation(
+                candidateWorldPosition,
+                candidateWorldRotation
+            );
+
+            /*
+             * Cuando Time.timeScale es 0, Unity no ejecuta FixedUpdate.
+             * Solo sincronizamos física si la pose realmente cambió.
+             * En arrastres con el puntero quieto esto evita repetir una
+             * sincronización global sin perder precisión de raycasts.
+             */
+            Physics.SyncTransforms();
+            previewPhysicsSyncCount++;
+        }
 
         lastValidationResult =
             result;
