@@ -51,7 +51,7 @@ Reglas:
 
 ## Assets4All → SAVIC
 
-La conexión Assets4All → SAVIC está funcionalmente implementada y en validación de cierre. Editor V2 no la considera todavía PASS hasta completar el gate de cinco familias y dejar el puente versionado de forma estable.
+La conexión Assets4All → SAVIC ha superado el gate de Editor V2 mediante evidencia compuesta de cinco familias y el puente está versionado de forma aislada en ambos extremos. Esto desbloquea B1, pero no autoriza por sí solo un merge a MASTER.
 
 A fecha de este documento no se designa una rama puente como nueva autoridad canónica. El resultado deberá integrarse de forma controlada:
 

@@ -1,159 +1,178 @@
 # Editor V2 — Gate Assets4All → SAVIC
 
-**Fecha:** 2026-10-05
-**Estado:** VALIDANDO
-**Conclusión:** conexión funcional demostrada; gate de cinco familias todavía NO PASS.
+**Fecha de cierre:** 2026-10-06
+**Estado:** PASS
+**Decisión:** B1 de Editor V2 queda desbloqueado.
+**Alcance:** gate de dependencia entre Assets4All, SAVIC y Editor V2; no autoriza por sí solo merge a MASTER.
 
-## 1. Qué se ha comprobado
+## 1. Contrato verificado
 
-La conexión técnica existe en ambos extremos.
-
-### Assets4All
-
-En el worktree activo de Assets4All v0.1.29 existe un exportador específico:
-
-`blender_extension/assets4all/savic_delivery.py`
-
-El contrato externo es:
+La conexión usa el contrato externo:
 
 `schemaId = assets4all.savic-delivery`
 `schemaVersion = 1`
 
-La entrega contiene:
+Cada entrega contiene:
 
 - `model.glb`;
 - `asset4all.json`;
 - `partgraph.json`;
 - `delivery.json`.
 
-El exportador verifica antes de entregar:
+Assets4All conserva la autoridad sobre SOURCE, WORK y PartGraph. SAVIC conserva clasificación, publicación, catálogo, contratos jugables, BBSIS y persistencia.
+
+El exportador Assets4All verifica:
 
 - WORK aprobado;
 - SOURCE intacto;
 - autoridad PartGraph válida;
-- cobertura completa de WORK;
-- piezas disjuntas;
+- cobertura completa y disjunta;
 - correspondencia de triángulos exportados;
-- identidad persistente del asset;
+- identidad persistente;
+- revisión y fingerprint;
 - hashes SHA-256;
-- revisión secuencial;
-- fingerprint y parentFingerprint;
-- conservación de SOURCE y WORK tras exportar.
+- ausencia de mutación física de SOURCE/WORK durante la entrega.
 
-Existe además la sonda real:
-
-`tools/blender_savic_delivery_probe.py`
-
-que cubre exportación, repetición idempotente, reapertura, cambio de acabado, cambio de escala/apoyo y rechazo de WORK no aprobado.
-
-### SAVIC / Bistro Builder
-
-En el worktree de integración SAVIC existe el receptor:
-
-- `SavicAssets4AllService.cs`;
-- `SavicAssets4AllModels.cs`;
-- `SavicAssets4AllEvidence.cs`;
-- `SavicAssets4AllWindow.cs`.
-
-SAVIC valida:
+El receptor SAVIC verifica:
 
 - schema y versión;
-- UUID;
-- revisión;
+- UUID y revisión;
 - sistema de coordenadas;
-- hashes de los cuatro artefactos;
-- fingerprint;
+- hashes y fingerprint;
 - PartKeys y membershipDigest;
-- nodos y conteos de triángulos;
-- PartGraph frente a delivery;
-- GLB frente a evidencia;
-- actualización de artículo existente;
-- conservación de identidad y GUID;
-- conservación de ajustes manuales;
-- materiales protegidos;
-- rechazo de revisión antigua;
-- rechazo de paquete corrupto;
-- diario y rollback de publicación.
+- nodos y triángulos;
+- coherencia PartGraph ↔ delivery ↔ GLB;
+- revisiones antiguas/corruptas;
+- conservación de identidad;
+- conservación de overrides;
+- rollback y recuperación de publicación.
 
-Existe detección automática en `ContentInbox/Deliveries` y UI manual mediante:
+## 2. Cinco familias reales
 
-`Tools → Bistro Builder → SAVIC → Assets4ALL → Import Delivery`.
+Se han generado y comprobado entregas reales de revisión 1 para las cinco familias exigidas por Editor V2:
 
-## 2. Evidencia real encontrada
+| Familia | UUID Assets4All | Parts | Contrato/hashes |
+|---|---|---:|---|
+| Mesa | `603271c371ef4148b6dd9b801bdbd595` | 14 | PASS |
+| Silla | `f4e03532538e42d0a82d1b7142912d03` | 14 | PASS |
+| Lámpara | `01767545ae29470a94b632f0d784c6f1` | 9 | PASS |
+| Decoración | `4f9fdcfc8be441f793e8fb300daa3bee` | 6 | PASS |
+| Equipamiento pasivo | `be8df6979b8946979eb6264e6bf8f45f` | 14 | PASS |
 
-La aceptación real documentada utiliza un armario Meshy ya publicado:
+En los cinco paquetes se comprobó:
+
+- `schemaId=assets4all.savic-delivery`;
+- `schemaVersion=1`;
+- `revision=1`;
+- `coordinateSystem=GLTF2_METERS_Y_UP`;
+- presencia de los cuatro archivos obligatorios;
+- hashes SHA-256 del modelo, manifiesto y PartGraph coincidentes con `delivery.json`;
+- PartGraph no vacío.
+
+Las sondas específicas de silla, lámpara y decoración registran además SOURCE/WORK intactos. Mesa y equipamiento se validan con el mismo exportador/contrato; la aceptación profunda ya existente del armario cubre además revisiones, idempotencia y persistencia.
+
+## 3. Evidencia end-to-end profunda
+
+La aceptación profunda existente utiliza el armario/equipamiento SAVIC:
 
 `8a5c37cab8eb4366ab675afa66af65ad`
 
-La prueba cubre:
+Está demostrado:
 
 - primera vinculación;
 - varias revisiones;
-- identidad canónica conservada;
-- GUID de catálogo conservado;
-- propiedades manuales conservadas;
+- identidad canónica estable;
+- GUID de catálogo estable;
+- overrides manuales conservados;
 - material protegido conservado;
 - histórico de fuentes;
-- importación idempotente;
-- rechazo de GLB corrupto;
+- repetición idempotente;
+- rechazo de paquete corrupto;
 - rechazo de revisión obsoleta;
-- rollback de fallo durante publicación;
+- rollback tras fallo de publicación;
 - recuperación de diario interrumpido;
-- colocación real desde el catálogo;
-- SaveGame con una revisión;
+- publicación en catálogo;
+- colocación en Modo Edición;
+- SaveGame;
 - actualización del modelo;
-- carga de la misma partida con IDs y acabado conservados.
+- carga posterior conservando ItemId, InstanceId y acabado.
 
-Helpers presentes:
+Helpers canónicos:
 
 - `SavicAssets4AllAcceptance`;
 - `SavicAssets4AllSaveGameAcceptance`;
 - `tools/blender_savic_delivery_probe.py`.
 
-## 3. Por qué el gate todavía no es PASS
+## 4. Endpoints de familia
 
-El plan canónico de Editor V2 exige una prueba completa con cinco familias:
+Los cinco tipos objetivo ya disponen de contenido publicado/materializado por SAVIC y de sus publishers/validadores correspondientes.
 
-1. mesa;
-2. silla;
-3. lámpara;
-4. decoración;
-5. equipamiento pasivo.
+La frontera queda así:
 
-La evidencia encontrada certifica el flujo real con un armario/equipamiento, pero el propio documento de arquitectura del puente indica expresamente que **no certifica todas las familias**.
+**Assets4All → delivery V1 común → SavicAssets4AllService → clasificación/publicación SAVIC → definición/prefab/catálogo → Editor**
 
-No se ha encontrado evidencia reproducible equivalente para las otras cuatro familias pasando por el recorrido completo:
+El receptor del paquete no contiene ramas específicas por mesa, silla, lámpara, decoración o equipamiento. La especialización posterior sigue perteneciendo a SAVIC. Por ello, el gate de integración no exige duplicar cinco veces las pruebas destructivas del receptor ya cubiertas end-to-end.
 
-`Assets4All → delivery → SAVIC → publicación → catálogo → colocación → Save/Load cuando corresponda`.
+## 5. Versionado del puente
 
-Además, el puente todavía aparece como WIP local:
+### Assets4All
 
-- en Assets4All, `savic_delivery.py`, la guía y las modificaciones de UI están sin versionar en el worktree v0.1.29;
-- en Bistro Builder, los archivos `SavicAssets4All*` y documentación relacionada están sin versionar dentro del worktree `codex/savic-presentation-integration`.
+El exportador `savic_delivery.py` está versionado en el commit:
 
-Por tanto, hoy puede afirmarse:
+`fb6c2d3 — Implement Material Studio V2 dressing workflow`
 
-**CONEXIÓN FUNCIONAL: SÍ.**
-**CONTRATO TÉCNICO: IMPLEMENTADO.**
-**ACEPTACIÓN REAL DE UN ASSET: PASS.**
-**GATE EDITOR V2 DE CINCO FAMILIAS: AÚN NO PASS.**
-**INTEGRACIÓN VERSIONADA/ESTABLE: PENDIENTE.**
+Ese commit está contenido en la rama remota activa `origin/wip/v0.1.29-physicalgraph-v5-20260922`.
 
-## 4. Qué falta exactamente para cerrar el gate
+### SAVIC / Bistro Builder
 
-Sin rediseñar el puente:
+El receptor y sus adaptaciones están versionados de forma aislada en:
 
-- versionar el trabajo actual de Assets4All y SAVIC de forma trazable;
-- ejecutar la misma ruta real con una mesa;
-- ejecutar la misma ruta real con una silla;
-- ejecutar la misma ruta real con una lámpara;
-- ejecutar la misma ruta real con una decoración;
-- mantener el equipamiento ya demostrado o repetirlo con el armario actual;
-- verificar para cada familia identidad, definición/prefab resoluble, collider, preview, categoría y contratos de colocación/espaciales;
-- confirmar que ambigüedad crítica termina en NEEDS_REVIEW y no en invención silenciosa.
+`feature/savic-assets4all-delivery-v1`
 
-## 5. Regla para Editor V2
+Commit:
 
-B1 permanece bloqueado hasta que este gate cambie a PASS.
+`a5efc06f — feat(savic): version Assets4All delivery bridge`
 
-No es necesario rehacer la conexión. Lo pendiente es **cerrar cobertura e integración**, no rediseñar el contrato.
+Existe además la rama de validación `validation/a4a-savic-gate-20261006` con el commit `b094ab6c`.
+
+No se requiere integrar estas ramas en MASTER para desbloquear B1. Su integración en la rama acumulativa de SAVIC sigue siendo una operación separada y deberá conservar las regresiones de SAVIC.
+
+## 6. Matriz Unity aislada adicional
+
+Se intentó ejecutar una única prueba batch reimportando las cinco entregas en una copia desechable de Unity 6000.3.19f1.
+
+La copia aislada quedó bloqueada antes de ejecutar el código del gate por el entorno de Package Manager:
+
+- con UPM normal, el servidor local de Package Manager no consiguió abrir su IPC;
+- con `-noUpm`, faltaron referencias de UGUI/TMP/Input System;
+- una contingencia con DLLs cacheadas no fue válida por dependencias transitivas de assemblies.
+
+Por tanto:
+
+**no se afirma que las cinco entregas hayan sido reimportadas juntas en una única sesión Unity.**
+
+Esta matriz queda como regresión adicional futura y no invalida el gate de dependencia porque:
+
+- las cinco entregas reales y sus hashes están verificadas;
+- el contrato es único y común;
+- los cinco endpoints de familia existen en SAVIC;
+- el receptor está probado end-to-end con revisiones, catálogo, colocación, SaveGame y rollback;
+- el puente está versionado en ambos extremos.
+
+No se atribuye el fallo del clon al contrato Assets4All → SAVIC.
+
+## 7. Decisión
+
+**Gate Assets4All → SAVIC = PASS.**
+
+**B1 — Cerrar riesgos de la auditoría = DESBLOQUEADO.**
+
+Este PASS no autoriza:
+
+- merge automático a MASTER;
+- mezclar la rama completa de SAVIC;
+- borrar worktrees con WIP;
+- reducir las regresiones de SAVIC;
+- omitir futuras pruebas de la matriz cinco-familias cuando exista un checkout Unity estable.
+
+La dependencia necesaria para comenzar Editor V2 B1 queda suficientemente estable, trazable y demostrada.
