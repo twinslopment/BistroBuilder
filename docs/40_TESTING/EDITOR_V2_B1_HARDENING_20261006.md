@@ -121,8 +121,24 @@ Se confirmó también en código que `BistroBuilderNavigationEditIntegration`:
 - recibe `OperationCompleted`;
 - ejecuta `RebuildNow()` una sola vez si seguía pendiente.
 
-### Estado
+### Cierre final
 
-La funcionalidad específica de B1 está demostrada. El reintento de ejecutar nuevamente toda la batería sobre el árbol final se encuentra bloqueado por un fallo local reproducible de IPC del Unity Package Manager. El bloqueo ocurre antes de compilar o ejecutar tests y no constituye fallo de B1.
+Se aisló el bloqueo práctico del batch de UPM: Unity intentaba arrancar un servidor Package Manager adicional y no conseguía conectar con su IPC. El servidor UPM ya activo sí estaba sano y atendía peticiones.
 
-Por rigor, el estado formal continúa **VALIDANDO** hasta que el entorno UPM permita repetir la batería completa sobre el último árbol versionado.
+La validación final se ejecutó sin modificar configuración permanente de Windows:
+
+- servidor UPM activo `Unity-Upm-3556`;
+- Unity conectado explícitamente mediante `-upmIpcPath Upm-3556`;
+- checkout limpio y aislado en el commit `f340d5d3`.
+
+Sobre el árbol final de B1:
+
+- Hardening específico: **20/20 OK**, exit 0;
+- Core: **84/84 OK**, exit 0;
+- Scene Integration: **77/77 OK**, exit 0;
+- Runtime Lifecycle: **20/20 OK**, exit 0;
+- Queen Test: **PASS**, exit 0.
+
+**B1 = PASS.**
+
+La deuda `Load > 5 s` continúa registrada para B14 y no invalida el cierre funcional de B1.

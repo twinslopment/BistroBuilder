@@ -19,7 +19,7 @@
 | 15 Fin de servicio/día | CERRADO V1 | rama específica |
 | 16 Nueva partida/apertura | CERRADO V1 + hardening | existe V2 de apertura |
 | 17 Navegación V1 | CERRADO V1 + hardening | Crowd Flow transversal continúa integración/regresiones |
-| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC PASS; B1 DESBLOQUEADO | Cinco familias verificadas, regla no-naked-assets demostrada y puente versionado en ambos extremos; B1 puede comenzar |
+| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC PASS; B1 PASS; B2 PASS | Coordinator común validado 22/22 sin duplicar autoridades; B3 Selección común queda desbloqueado |
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales

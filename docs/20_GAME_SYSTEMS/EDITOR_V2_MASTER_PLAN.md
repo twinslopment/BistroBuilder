@@ -1,6 +1,6 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · B0 BASELINE PASS · GATE ASSETS4ALL → SAVIC PASS · B1 DESBLOQUEADO
+**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 DESBLOQUEADO
 **Fecha:** 2026-10-06
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
@@ -700,8 +700,8 @@ Salvo decisión posterior explícita:
 |---|---|
 | B0 Baseline y protección | PASS |
 | Gate Assets4All → SAVIC | PASS — cinco familias verificadas por evidencia compuesta; puente versionado en ambos extremos |
-| B1 Riesgos de auditoría | VALIDANDO — commit compensable, Load único y preview sync endurecidos; regresión Unity bloqueada por UPM |
-| B2 Editor V2 Coordinator | NO INICIADO |
+| B1 Riesgos de auditoría | PASS — 20/20 hardening + 84/84 core + 77/77 escena + 20/20 lifecycle + Queen exit 0 |
+| B2 Editor V2 Coordinator | PASS — 22/22 Coordinator + regresiones Core/Scene/Lifecycle/Queen exit 0 |
 | B3 Selección común | NO INICIADO |
 | B4 Undo/Redo global | NO INICIADO |
 | B5 Reforma transaccional | NO INICIADO |
