@@ -1,11 +1,14 @@
 using System;
+using System.Globalization;
+using BistroBuilder.ConstructionAuthoring;
 using UnityEngine;
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Restaurant/Edit Mode/Editor V2/Furniture Adapter")]
 public sealed class BistroBuilderEditorV2FurnitureAdapter :
     MonoBehaviour,
-    IBistroBuilderEditorV2ToolAdapter
+    IBistroBuilderEditorV2ToolAdapter,
+    IBistroBuilderEditorV2SelectionSource
 {
     [SerializeField] private RestaurantEditInteractionController furnitureController;
     [SerializeField] private BistroBuilderConstructionAuthoringRuntimeTool constructionTool;
@@ -87,6 +90,51 @@ public sealed class BistroBuilderEditorV2FurnitureAdapter :
         activeToolId = string.Empty;
     }
 
+    public bool TryReadSelection(out BistroBuilderEditorV2Selection selection)
+    {
+        selection = BistroBuilderEditorV2Selection.None;
+        CacheDependencies();
+
+        RestaurantEditableObject editable = furnitureController != null
+            ? furnitureController.SelectedEditableObject
+            : null;
+        if (editable == null ||
+            !editable.TryGetComponent(out RestaurantPlaceableObject placeable))
+            return false;
+
+        string identity = placeable.InstanceId;
+        bool persistent = !string.IsNullOrWhiteSpace(identity);
+        if (!persistent)
+            identity = "runtime:" + placeable.GetInstanceID().ToString(CultureInfo.InvariantCulture);
+
+        BistroBuilderEditorV2SelectionCapability capabilities =
+            BistroBuilderEditorV2SelectionCapability.Inspect |
+            BistroBuilderEditorV2SelectionCapability.Delete;
+        if (editable.CanMove)
+            capabilities |= BistroBuilderEditorV2SelectionCapability.Move;
+        if (editable.CanRotate)
+            capabilities |= BistroBuilderEditorV2SelectionCapability.Rotate;
+        if (placeable.ItemDefinition != null)
+            capabilities |= BistroBuilderEditorV2SelectionCapability.Duplicate;
+
+        selection = new BistroBuilderEditorV2Selection
+        {
+            family = Family,
+            kind = BistroBuilderEditorV2SelectionKind.Furniture,
+            stableId = identity,
+            displayName = placeable.DisplayName,
+            capabilities = capabilities,
+            persistentIdentity = persistent
+        };
+        return true;
+    }
+
+    public bool ClearSelection()
+    {
+        CacheDependencies();
+        return furnitureController != null && furnitureController.ClearSelection();
+    }
+
     private void CacheDependencies()
     {
         if (furnitureController == null)
@@ -106,7 +154,8 @@ public sealed class BistroBuilderEditorV2FurnitureAdapter :
 [AddComponentMenu("Bistro Builder/Restaurant/Edit Mode/Editor V2/Construction Adapter")]
 public sealed class BistroBuilderEditorV2ConstructionAdapter :
     MonoBehaviour,
-    IBistroBuilderEditorV2ToolAdapter
+    IBistroBuilderEditorV2ToolAdapter,
+    IBistroBuilderEditorV2SelectionSource
 {
     [SerializeField] private BistroBuilderConstructionAuthoringRuntimeTool constructionTool;
     [SerializeField] private RestaurantEditInteractionController furnitureController;
@@ -190,6 +239,64 @@ public sealed class BistroBuilderEditorV2ConstructionAdapter :
         activeToolId = string.Empty;
     }
 
+    public bool TryReadSelection(out BistroBuilderEditorV2Selection selection)
+    {
+        selection = BistroBuilderEditorV2Selection.None;
+        CacheDependencies();
+        if (constructionTool == null ||
+            constructionTool.SelectedKind == EntityKind.None ||
+            !constructionTool.SelectedId.IsValid)
+            return false;
+
+        BistroBuilderEditorV2SelectionKind kind;
+        BistroBuilderEditorV2SelectionCapability capabilities =
+            BistroBuilderEditorV2SelectionCapability.Inspect;
+        string label;
+
+        switch (constructionTool.SelectedKind)
+        {
+            case EntityKind.Wall:
+                kind = BistroBuilderEditorV2SelectionKind.Wall;
+                label = "Pared";
+                capabilities |=
+                    BistroBuilderEditorV2SelectionCapability.Move |
+                    BistroBuilderEditorV2SelectionCapability.Rotate |
+                    BistroBuilderEditorV2SelectionCapability.Delete |
+                    BistroBuilderEditorV2SelectionCapability.Duplicate;
+                break;
+            case EntityKind.Opening:
+                kind = BistroBuilderEditorV2SelectionKind.Opening;
+                label = "Puerta / ventana";
+                capabilities |=
+                    BistroBuilderEditorV2SelectionCapability.Delete |
+                    BistroBuilderEditorV2SelectionCapability.Duplicate;
+                break;
+            case EntityKind.Room:
+                kind = BistroBuilderEditorV2SelectionKind.Room;
+                label = "Habitación";
+                break;
+            default:
+                return false;
+        }
+
+        selection = new BistroBuilderEditorV2Selection
+        {
+            family = Family,
+            kind = kind,
+            stableId = constructionTool.SelectedId.Value,
+            displayName = label,
+            capabilities = capabilities,
+            persistentIdentity = true
+        };
+        return true;
+    }
+
+    public bool ClearSelection()
+    {
+        CacheDependencies();
+        return constructionTool != null && constructionTool.ClearArchitectureSelection();
+    }
+
     private void CacheDependencies()
     {
         if (constructionTool == null)
@@ -231,7 +338,8 @@ public sealed class BistroBuilderEditorV2ConstructionAdapter :
 [AddComponentMenu("Bistro Builder/Restaurant/Edit Mode/Editor V2/Surfaces Adapter")]
 public sealed class BistroBuilderEditorV2SurfacesAdapter :
     MonoBehaviour,
-    IBistroBuilderEditorV2ToolAdapter
+    IBistroBuilderEditorV2ToolAdapter,
+    IBistroBuilderEditorV2SelectionSource
 {
     [SerializeField] private BistroBuilderConstructionAuthoringRuntimeTool constructionTool;
     [SerializeField] private RestaurantEditInteractionController furnitureController;
@@ -297,6 +405,35 @@ public sealed class BistroBuilderEditorV2SurfacesAdapter :
     public void Deactivate()
     {
         activeToolId = string.Empty;
+    }
+
+    public bool TryReadSelection(out BistroBuilderEditorV2Selection selection)
+    {
+        selection = BistroBuilderEditorV2Selection.None;
+        CacheDependencies();
+        if (constructionTool == null ||
+            constructionTool.SelectedKind != EntityKind.Room ||
+            !constructionTool.SelectedId.IsValid)
+            return false;
+
+        selection = new BistroBuilderEditorV2Selection
+        {
+            family = Family,
+            kind = BistroBuilderEditorV2SelectionKind.Surface,
+            stableId = constructionTool.SelectedId.Value,
+            displayName = "Superficie de habitación",
+            capabilities =
+                BistroBuilderEditorV2SelectionCapability.Inspect |
+                BistroBuilderEditorV2SelectionCapability.ApplySurface,
+            persistentIdentity = true
+        };
+        return true;
+    }
+
+    public bool ClearSelection()
+    {
+        CacheDependencies();
+        return constructionTool != null && constructionTool.ClearArchitectureSelection();
     }
 
     private void CacheDependencies()

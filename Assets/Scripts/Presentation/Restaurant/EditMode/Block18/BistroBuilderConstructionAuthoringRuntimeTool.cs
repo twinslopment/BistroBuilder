@@ -110,6 +110,51 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     public string StatusMessage => status;
     public EntityKind SelectedKind => selection.Kind;
     public BistroBuilderEditId SelectedId => selection.Id;
+
+    public bool ClearArchitectureSelection()
+    {
+        if (selection.Kind == EntityKind.None)
+            return false;
+
+        selection.Clear();
+        RefreshVisuals();
+        return true;
+    }
+
+    public bool TrySelectArchitecture(
+        EntityKind kind,
+        BistroBuilderEditId id,
+        out string error)
+    {
+        error = string.Empty;
+        if (kind == EntityKind.None || !id.IsValid)
+        {
+            error = "La identidad arquitectónica no es válida.";
+            return false;
+        }
+
+        if (!EnsureSession(out error))
+            return false;
+
+        RefreshQueries();
+        if (!queries.Contains(kind, id))
+        {
+            error = "El elemento arquitectónico ya no existe en el Draft actual.";
+            return false;
+        }
+
+        if (!selection.Select(
+                queries,
+                new ArchitectureHit(kind, id, Vector2.zero, 0f)))
+        {
+            error = "No se pudo establecer la selección arquitectónica.";
+            return false;
+        }
+
+        RefreshVisuals();
+        return true;
+    }
+
     public bool HasActiveGesture => IsGestureActive();
     public bool IsPreviewBlocked { get; private set; }
     public bool HasDraftSession => coordinator != null && coordinator.HasSession;

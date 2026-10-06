@@ -19,7 +19,7 @@
 | 15 Fin de servicio/día | CERRADO V1 | rama específica |
 | 16 Nueva partida/apertura | CERRADO V1 + hardening | existe V2 de apertura |
 | 17 Navegación V1 | CERRADO V1 + hardening | Crowd Flow transversal continúa integración/regresiones |
-| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC PASS; B1 PASS; B2 PASS | Coordinator común validado 22/22 sin duplicar autoridades; B3 Selección común queda desbloqueado |
+| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC PASS; B1 PASS; B2 PASS; B3 PASS | Selección común validada 28/28 y consumida por la barra de edición; regresiones B2/Core/Scene/Lifecycle/Queen PASS; B4 Undo/Redo global desbloqueado |
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales
@@ -53,3 +53,6 @@ El usuario aprueba subir las correcciones de `9b70eafc` a `integration/master-cu
 
 ## Plan Editor V2 — 05/10/2026
 Se aprueba el plan maestro de evolución del Modo Edición sin reescritura total. La implementación queda secuenciada por gates: primero B0 (baseline/protección), después cierre de la conexión Assets4All → SAVIC y, una vez superado ese gate, B1–B16 de Editor V2. BBSIS, Navigation, Finance, Save/Load, SAVIC, Placement, Construction Authoring, cámara 369 y Universal Preview conservan sus autoridades; Editor V2 añadirá coordinación común sin duplicarlas. Fuente: [Editor V2 Master Plan](../20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md).
+
+## Editor V2 B3 - 06/10/2026
+B3 Selección común queda cerrado en PASS. Furniture, Construction y Surfaces proyectan su selección especializada a un contrato común con identidad, tipo y capacidades; la barra de edición usa ese contrato para habilitar acciones sin duplicar autoridades. Gate B3 28/28; regresiones B2 22/22, Core 84/84, Scene 77/77, Lifecycle 20/20 y Queen exit 0. B4 Undo/Redo global queda desbloqueado. Fuente: [Editor V2 B3 Selección común](../40_TESTING/EDITOR_V2_B3_COMMON_SELECTION_20261006.md).

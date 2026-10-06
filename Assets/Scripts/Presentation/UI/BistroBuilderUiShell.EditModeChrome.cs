@@ -14,6 +14,7 @@ public sealed partial class BistroBuilderUiShell
     BistroBuilderConstructionAuthoringRuntimeTool editModeConstructionTool;
     RestaurantPlaceableCatalogPanel editModeCatalogPanel;
     RestaurantEditInteractionController editModeFurnitureController;
+    BistroBuilderEditorV2SelectionCoordinator editModeSelectionCoordinator;
     RestaurantPlaceableDeletionService editChromeDeletion;
     RestaurantPlacementHistoryService editChromeHistory;
     BistroBuilderEditGridOverlay editChromeGrid;
@@ -49,6 +50,7 @@ public sealed partial class BistroBuilderUiShell
         if(editModeConstructionTool==null)editModeConstructionTool=FindScene<BistroBuilderConstructionAuthoringRuntimeTool>();
         if(editModeCatalogPanel==null)editModeCatalogPanel=FindScene<RestaurantPlaceableCatalogPanel>();
         if(editModeFurnitureController==null)editModeFurnitureController=FindScene<RestaurantEditInteractionController>();
+        if(editModeSelectionCoordinator==null)editModeSelectionCoordinator=FindScene<BistroBuilderEditorV2SelectionCoordinator>();
         if(editChromeHistory==null)editChromeHistory=FindScene<RestaurantPlacementHistoryService>();
         if(editChromeDeletion==null)editChromeDeletion=FindScene<RestaurantPlaceableDeletionService>();
         if(editChromeGrid==null)editChromeGrid=FindScene<BistroBuilderEditGridOverlay>();
@@ -121,30 +123,73 @@ public sealed partial class BistroBuilderUiShell
         return renderer!=null?$"{renderer.bounds.size.x:0.#} × {renderer.bounds.size.z:0.#} m":"Modo Edición";
     }
     bool IsFurnitureTool()=>editModeConstructionTool==null||editModeConstructionTool.Mode==Mode.Furniture;
+    BistroBuilderEditorV2Selection CurrentChromeSelection()
+    {
+        if(editModeSelectionCoordinator==null)return BistroBuilderEditorV2Selection.None;
+        editModeSelectionCoordinator.RefreshSelection();
+        return editModeSelectionCoordinator.Current;
+    }
     RestaurantPlaceableObject SelectedChromePlaceable()
     {var editable=editModeFurnitureController!=null?editModeFurnitureController.SelectedEditableObject:null;return editable!=null?editable.GetComponent<RestaurantPlaceableObject>():null;}
     void DeleteChromeSelection()
     {
-        var selected=SelectedChromePlaceable();
-        if(IsFurnitureTool()&&selected!=null&&editChromeDeletion!=null){if(editChromeDeletion.TryDelete(selected,out var result))editModeFurnitureController.ClearSelection();else ChromeMessage(result.Message);}
-        else if(editModeConstructionTool!=null&&!editModeConstructionTool.TryDeleteSelection(out var error))ChromeMessage(error);
+        var common=CurrentChromeSelection();
+        if(!common.Supports(BistroBuilderEditorV2SelectionCapability.Delete))return;
+        if(common.family==BistroBuilderEditorV2ToolFamily.Furniture)
+        {
+            var selected=SelectedChromePlaceable();
+            if(selected!=null&&editChromeDeletion!=null)
+            {
+                if(editChromeDeletion.TryDelete(selected,out var result))
+                {
+                    editModeFurnitureController?.ClearSelection();
+                    editModeSelectionCoordinator?.RefreshSelection();
+                }
+                else ChromeMessage(result.Message);
+            }
+            return;
+        }
+        if(common.family==BistroBuilderEditorV2ToolFamily.Construction&&
+           editModeConstructionTool!=null&&
+           !editModeConstructionTool.TryDeleteSelection(out var error))
+            ChromeMessage(error);
     }
     void RotateChromeSelection()
     {
-        if (!IsFurnitureTool() && editModeConstructionTool != null)
+        var common=CurrentChromeSelection();
+        bool furniturePlacement=editModeFurnitureController!=null&&editModeFurnitureController.HasActivePlacement;
+        if(common.family==BistroBuilderEditorV2ToolFamily.Construction)
         {
-            if (!editModeConstructionTool.TryRotateArchitecture(out var error)) ChromeMessage(error);
+            if(common.Supports(BistroBuilderEditorV2SelectionCapability.Rotate)&&
+               editModeConstructionTool!=null&&
+               !editModeConstructionTool.TryRotateArchitecture(out var error))
+                ChromeMessage(error);
             return;
         }
+        if(common.family!=BistroBuilderEditorV2ToolFamily.Furniture&&!furniturePlacement)return;
         if(editModeFurnitureController==null)return;
-        if(!editModeFurnitureController.HasActivePlacement&&!editModeFurnitureController.TryBeginMoveSelected())return;
+        if(!furniturePlacement)
+        {
+            if(!common.Supports(BistroBuilderEditorV2SelectionCapability.Rotate)||
+               !editModeFurnitureController.TryBeginMoveSelected())return;
+        }
         editModeFurnitureController.RotateActiveCandidateFromInterface();
     }
     void DuplicateChromeSelection()
     {
-        var selected=SelectedChromePlaceable();
-        if(IsFurnitureTool()&&selected!=null&&selected.ItemDefinition!=null)editModeFurnitureController.TryBeginPlaceableCreation(selected.ItemDefinition);
-        else if(editModeConstructionTool!=null&&!editModeConstructionTool.TryCopySelection(out var error))ChromeMessage(error);
+        var common=CurrentChromeSelection();
+        if(!common.Supports(BistroBuilderEditorV2SelectionCapability.Duplicate))return;
+        if(common.family==BistroBuilderEditorV2ToolFamily.Furniture)
+        {
+            var selected=SelectedChromePlaceable();
+            if(selected!=null&&selected.ItemDefinition!=null)
+                editModeFurnitureController?.TryBeginPlaceableCreation(selected.ItemDefinition);
+            return;
+        }
+        if(common.family==BistroBuilderEditorV2ToolFamily.Construction&&
+           editModeConstructionTool!=null&&
+           !editModeConstructionTool.TryCopySelection(out var error))
+            ChromeMessage(error);
     }
     void ChromeMessage(string message){if(editModeToolStatusText==null||string.IsNullOrEmpty(message))return;editModeToolStatusText.text=message;editModeToolStatusText.transform.parent.gameObject.SetActive(true);}
     void RefreshEditModeChrome(bool editing,bool managing)
@@ -171,13 +216,17 @@ public sealed partial class BistroBuilderUiShell
         ChromeSelected("EditOther",section==RestaurantEditCatalogSection.Other);
         ChromeSelected("EditPan",mode==Mode.Select);ChromeSelected("EditGrid",editChromeGrid!=null&&editChromeGrid.enabled);
         ChromeSelected("EditTerrain",mode==Mode.Room);
-        bool selected=editModeFurnitureController!=null&&editModeFurnitureController.HasSelection;
+        var commonSelection=CurrentChromeSelection();
         bool placement=editModeFurnitureController!=null&&editModeFurnitureController.HasActivePlacement;
-        bool structure=editModeConstructionTool!=null&&(editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Wall||editModeConstructionTool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Opening);
-        editChromeButtons["EditMove"].interactable=furniture&&selected&&!placement;
-        editChromeButtons["EditDelete"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
-        editChromeButtons["EditRotate"].interactable=furniture?(placement||selected):editModeConstructionTool!=null&&editModeConstructionTool.CanRotateArchitecture;
-        editChromeButtons["EditDuplicate"].interactable=!placement&&(furniture?SelectedChromePlaceable()!=null:structure);
+        editChromeButtons["EditMove"].interactable=!placement&&
+            commonSelection.family==BistroBuilderEditorV2ToolFamily.Furniture&&
+            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Move);
+        editChromeButtons["EditDelete"].interactable=!placement&&
+            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Delete);
+        editChromeButtons["EditRotate"].interactable=placement||
+            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Rotate);
+        editChromeButtons["EditDuplicate"].interactable=!placement&&
+            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Duplicate);
         editChromeButtons["EditUndo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo;
         editChromeButtons["EditRedo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo;
     }
