@@ -141,15 +141,33 @@ namespace BistroBuilder.Editor.Savic
                     using SavicAssetMutationScope reuseTransaction = new SavicAssetMutationScope(layout, "reuse_generic_" + manifest.canonicalContentId);
                     reuseTransaction.CaptureAsset(MainCatalogPath);
                     reuseTransaction.CaptureAsset(plan.itemDefinitionAssetPath);
+                    if (manifest.assets4All?.delivery != null)
+                    {
+                        reuseTransaction.CaptureAsset(plan.prefabAssetPath);
+                        reuseTransaction.CaptureAsset(largePreviewPath);
+                        reuseTransaction.CaptureAsset(catalogPreviewPath);
+                        SavicAssets4AllService.ApplyOverrides(manifest);
+                        reusedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(plan.prefabAssetPath);
+                    }
                     RefreshGeneratedDescription(reusedItem, plan.integrationMode == SavicBarCounterFunctionAdapter.Mode);
                     SavicPreviewGenerationResult reusedPreviews =
-                        SavicPreviewRenderer.ReuseAndAssign(
+                        manifest.assets4All?.delivery != null && manifest.developerOverrides.Any(o => o.field.StartsWith("material:"))
+                        ? SavicPreviewRenderer.GenerateAndAssign(reusedPrefab, reusedItem, contentFolder)
+                        : SavicPreviewRenderer.ReuseAndAssign(
                             reusedItem,
                             largePreviewPath,
                             catalogPreviewPath);
 
                     if (reusedPreviews.Succeeded)
                     {
+                        if (manifest.assets4All?.delivery != null)
+                        {
+                            string currentPreviewFingerprint = SavicPreviewRenderer.BuildInputFingerprint(plan.prefabAssetPath);
+                            SavicManifestMutations.UpsertArtifact(manifest, LargePreviewArtifactRole, reusedPreviews.LargePreviewAssetPath,
+                                "savic.preview-renderer", SavicPreviewRenderer.Version, currentPreviewFingerprint);
+                            SavicManifestMutations.UpsertArtifact(manifest, CatalogPreviewArtifactRole, reusedPreviews.CatalogPreviewAssetPath,
+                                "savic.preview-renderer", SavicPreviewRenderer.Version, currentPreviewFingerprint);
+                        }
                         if (!prepareCandidateOnly) EnsureCatalogEntry(reusedItem);
                         AssetDatabase.SaveAssets();
                         if (!ValidateAndStampReadiness(
@@ -223,6 +241,9 @@ namespace BistroBuilder.Editor.Savic
                     item,
                     editable,
                     sourceModelAsset);
+
+                if (manifest.assets4All?.delivery != null)
+                    SavicAssets4AllService.ApplyOverrides(manifest);
 
                 GameObject prefab =
                     AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -520,6 +541,9 @@ namespace BistroBuilder.Editor.Savic
                     plan.prefabAssetPath,
                     ImportAssetOptions.ForceSynchronousImport |
                     ImportAssetOptions.ForceUpdate);
+
+                if (manifest.assets4All?.delivery != null)
+                    SavicAssets4AllService.ApplyOverrides(manifest);
 
                 GameObject prefab =
                     AssetDatabase.LoadAssetAtPath<GameObject>(

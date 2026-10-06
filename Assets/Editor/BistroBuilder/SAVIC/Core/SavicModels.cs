@@ -43,6 +43,8 @@ namespace BistroBuilder.Editor.Savic
         public string updatedUtc = string.Empty;
         public SavicSourceRecord source = new SavicSourceRecord();
         public List<SavicSourceRecord> sourceRevisions = new List<SavicSourceRecord>();
+        public SavicAssets4AllRecord assets4All;
+        public List<SavicAssets4AllRevision> assets4AllRevisions = new List<SavicAssets4AllRevision>();
         public SavicModelAnalysisRecord model3D = new SavicModelAnalysisRecord();
         public SavicClassificationRecord classification =
             new SavicClassificationRecord();

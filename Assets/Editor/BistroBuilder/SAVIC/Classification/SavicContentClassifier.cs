@@ -252,6 +252,14 @@ namespace BistroBuilder.Editor.Savic
             }
 
             string sourceName = SavicProviderMetadataService.ResolveSemanticName(manifest, layout);
+            if (manifest.assets4All?.boundClassification?.classified == true)
+            {
+                var bound = UnityEngine.JsonUtility.FromJson<SavicClassificationRecord>(UnityEngine.JsonUtility.ToJson(manifest.assets4All.boundClassification));
+                bound.classifierVersion = Version;
+                bound.classifiedUtc = DateTime.UtcNow.ToString("O");
+                bound.evidence = "Existing SAVIC family retained for verified Assets4ALL revision. Current geometry and family publication gates remain mandatory. " + bound.evidence;
+                return bound;
+            }
 
             HashSet<string> tokens =
                 Tokenize(sourceName);

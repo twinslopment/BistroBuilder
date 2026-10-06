@@ -47,6 +47,7 @@ namespace BistroBuilder.Editor.Savic
             "Materials.SemanticProfile";
 
         private readonly SavicManifestRepository manifests;
+        private readonly SavicStorageLayout layout;
         private readonly SavicModelFamilyRegistry familyRegistry;
         private readonly SavicImagePublisher imagePublisher;
         private readonly SavicContentBundlePublisher contentBundlePublisher;
@@ -64,6 +65,7 @@ namespace BistroBuilder.Editor.Savic
         {
             if (layout == null)
                 throw new ArgumentNullException(nameof(layout));
+            this.layout = layout;
 
             this.manifests =
                 manifests ?? throw new ArgumentNullException(nameof(manifests));
@@ -579,6 +581,9 @@ namespace BistroBuilder.Editor.Savic
                         .IsHighConfidenceStaticGenericCandidate(
                             manifest.source.originalFileName);
 
+                if (previousPublishedSnapshot != null && manifest.assets4All?.delivery != null)
+                    SavicAssets4AllService.CaptureOverrides(previousPublishedSnapshot, manifest, manifest.assets4All.delivery);
+
                 SavicModelAnalysisMode analysisMode =
                     genericStaticFastPath
                         ? SavicModelAnalysisMode.GenericStatic
@@ -785,10 +790,9 @@ namespace BistroBuilder.Editor.Savic
                     semanticParts =
                         trace.Measure(
                             "SEMANTIC_PARTS",
-                            () => SavicSemanticPartAnalyzer.Analyze(
-                                root,
-                                analysis,
-                                classification));
+                            () => manifest.assets4All?.delivery != null
+                                ? SavicAssets4AllEvidence.Analyze(manifest, layout, root)
+                                : SavicSemanticPartAnalyzer.Analyze(root, analysis, classification));
                 }
 
                 analysis.semanticParts =
@@ -971,6 +975,13 @@ namespace BistroBuilder.Editor.Savic
                         familyOutcome.ReasonCode,
                         "FAMILY_PUBLICATION",
                         trace);
+                }
+
+                if (manifest.assets4All?.delivery != null)
+                {
+                    SavicAssets4AllService.ApplyOverrides(manifest);
+                    manifest.assets4All.materialBaseline = SavicAssets4AllService.MaterialValues(manifest);
+                    manifests.Save(manifest);
                 }
 
                 return new SavicSourceProcessingOutcome(
@@ -1413,6 +1424,9 @@ namespace BistroBuilder.Editor.Savic
         {
             outcome =
                 default;
+
+            if (SavicAssets4AllService.TryReadVerified(manifest, layout, out _))
+                return false;
 
             if (string.Equals(
                     manifest.source.sourceKind,
