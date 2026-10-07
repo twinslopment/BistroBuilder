@@ -68,5 +68,35 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             furniture,
             construction,
             surfaces);
+
+        BistroBuilderEditorV2GlobalHistory globalHistory =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2GlobalHistory>(
+                FindObjectsInactive.Include);
+        if (globalHistory == null)
+            globalHistory = host.AddComponent<BistroBuilderEditorV2GlobalHistory>();
+
+        RestaurantPlacementHistoryService placementHistory =
+            Object.FindFirstObjectByType<RestaurantPlacementHistoryService>(
+                FindObjectsInactive.Include);
+        BistroBuilderEditRuntimeCoordinator architectureRuntime =
+            Object.FindFirstObjectByType<BistroBuilderEditRuntimeCoordinator>(
+                FindObjectsInactive.Include);
+
+        globalHistory.Configure(placementHistory, architectureRuntime);
+
+        BistroBuilderEditorV2RenovationSession renovation =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2RenovationSession>(
+                FindObjectsInactive.Include);
+        if (renovation == null)
+            renovation = host.AddComponent<BistroBuilderEditorV2RenovationSession>();
+
+        renovation.Configure(
+            editMode,
+            coordinator,
+            globalHistory,
+            placementHistory,
+            architectureRuntime,
+            Object.FindFirstObjectByType<BistroBuilderFinanceService>(
+                FindObjectsInactive.Include));
     }
 }

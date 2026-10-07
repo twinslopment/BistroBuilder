@@ -111,7 +111,12 @@ public sealed partial class BistroBuilderUiShell
                     true,
                     out RestaurantEditModeFailureReason failureReason))
             {
-                ShowModeSelectorStatus("No se pudo salir de Edición: " + failureReason + ".");
+                string exitMessage =
+                    failureReason == RestaurantEditModeFailureReason.BlockedByExitGuard &&
+                    !string.IsNullOrWhiteSpace(editMode.LastExitRejectionMessage)
+                        ? editMode.LastExitRejectionMessage
+                        : "No se pudo salir de Edición: " + failureReason + ".";
+                ShowModeSelectorStatus(exitMessage);
                 return;
             }
         }

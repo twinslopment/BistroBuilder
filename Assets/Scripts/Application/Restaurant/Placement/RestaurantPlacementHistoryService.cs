@@ -58,6 +58,32 @@ public sealed class RestaurantPlacementHistoryService : MonoBehaviour
     public bool CanRedo => redoStack.Count > 0;
     public int UndoCount => undoStack.Count;
     public int RedoCount => redoStack.Count;
+    public IRestaurantEditHistoryCommand PeekUndoCommand() =>
+        undoStack.Count > 0 ? undoStack[undoStack.Count - 1] : null;
+    public IRestaurantEditHistoryCommand PeekRedoCommand() =>
+        redoStack.Count > 0 ? redoStack[redoStack.Count - 1] : null;
+
+    public int MaximumHistoryEntries => Mathf.Max(1, maximumHistoryEntries);
+
+    public int SetMaximumHistoryEntriesRuntime(int value)
+    {
+        int previous = MaximumHistoryEntries;
+        maximumHistoryEntries = Mathf.Max(1, value);
+        TrimStackIfNeeded(undoStack);
+        TrimStackIfNeeded(redoStack);
+        return previous;
+    }
+
+    public void DiscardRedoHistory()
+    {
+        if (redoStack.Count == 0)
+            return;
+
+        ReleaseStackResources(redoStack);
+        redoStack.Clear();
+        HistoryChanged?.Invoke();
+    }
+
     public RestaurantPlacementLinkedGroupService LinkedGroupService =>
         linkedGroupService;
 

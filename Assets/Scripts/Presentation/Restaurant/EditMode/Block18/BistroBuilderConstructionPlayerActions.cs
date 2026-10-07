@@ -99,12 +99,62 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool
     private void RenderModule(Vector2 raw)
     {
         Vector2 start = ResolvePoint(raw, null, default, null);
-        EnsurePreviewLineCount(1);
-        modulePreviewPose[0] = new WallPose(default, start, ModuleEnd(start));
-        IsPreviewBlocked = ConstructionGeometry.HasCrossing(queries, modulePreviewPose, "default", 0f, wallHeight);
-        SetLine(previewLines[0], start, ModuleEnd(start), IsPreviewBlocked ? InvalidColor : ValidColor, 0.065f);
-        if (IsPreviewBlocked) SetStatus(BistroBuilderWallCrossingPolicy.Message);
-        HideUnusedPreviewLines(1);
+        Vector2 end = ModuleEnd(start);
+        modulePreviewPose[0] = new WallPose(default, start, end);
+        IsPreviewBlocked = ConstructionGeometry.HasCrossing(
+            queries,
+            modulePreviewPose,
+            "default",
+            0f,
+            wallHeight);
+
+        if (universalPreviewService != null)
+        {
+            universalPreviewSegments.Clear();
+            universalPreviewVolumes.Clear();
+            AddUniversalSegment(
+                start,
+                end,
+                universalPreviewSegments,
+                0.065f);
+            AddUniversalWallVolume(
+                start,
+                end,
+                universalPreviewVolumes);
+
+            universalPreviewService.PublishConstruction(
+                BistroBuilderPreviewDomain.Module,
+                IsPreviewBlocked
+                    ? BistroBuilderPreviewValidity.Invalid
+                    : BistroBuilderPreviewValidity.Valid,
+                lastSnapKind != SnapKind.None
+                    ? BistroBuilderPreviewPhase.Snapped
+                    : BistroBuilderPreviewPhase.Ready,
+                universalPreviewSegments,
+                null,
+                universalPreviewVolumes,
+                lastSnapKind != SnapKind.None,
+                new Vector3(start.x, 0.07f, start.y),
+                IsPreviewBlocked
+                    ? BistroBuilderWallCrossingPolicy.Message
+                    : string.Empty);
+
+            HideUnusedPreviewLines(0);
+        }
+        else
+        {
+            EnsurePreviewLineCount(1);
+            SetLine(
+                previewLines[0],
+                start,
+                end,
+                IsPreviewBlocked ? InvalidColor : ValidColor,
+                0.065f);
+            HideUnusedPreviewLines(1);
+        }
+
+        if (IsPreviewBlocked)
+            SetStatus(BistroBuilderWallCrossingPolicy.Message);
     }
 
     private void RenderSelectionHover(Vector2 point)

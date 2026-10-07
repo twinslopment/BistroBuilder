@@ -21,6 +21,11 @@ public interface IRestaurantEditModeAvailabilityRule
     );
 }
 
+public interface IRestaurantEditModeExitGuard
+{
+    bool CanExitEditMode(out string rejectionMessage);
+}
+
 /// <summary>
 /// Gestiona el estado global del modo edición.
 ///
@@ -65,7 +70,11 @@ public sealed class RestaurantEditModeService :
     > availabilityRules =
         new List<IRestaurantEditModeAvailabilityRule>(4);
 
+    private readonly List<IRestaurantEditModeExitGuard> exitGuards =
+        new List<IRestaurantEditModeExitGuard>(4);
+
     private bool isEditModeActive;
+    private string lastExitRejectionMessage = string.Empty;
 
     /// <summary>
     /// Se ejecuta cuando se activa el modo edición.
@@ -106,6 +115,21 @@ public sealed class RestaurantEditModeService :
         {
             return availabilityRules.Count;
         }
+    }
+
+    public string LastExitRejectionMessage => lastExitRejectionMessage;
+
+    public bool RegisterExitGuard(IRestaurantEditModeExitGuard guard)
+    {
+        if (guard == null || exitGuards.Contains(guard))
+            return false;
+        exitGuards.Add(guard);
+        return true;
+    }
+
+    public bool UnregisterExitGuard(IRestaurantEditModeExitGuard guard)
+    {
+        return guard != null && exitGuards.Remove(guard);
     }
 
     private void Awake()
@@ -303,6 +327,7 @@ public sealed class RestaurantEditModeService :
     {
         failureReason =
             RestaurantEditModeFailureReason.None;
+        lastExitRejectionMessage = string.Empty;
 
         if (!isEditModeActive)
         {
@@ -348,6 +373,22 @@ public sealed class RestaurantEditModeService :
 
                 return false;
             }
+        }
+
+        for (int index = 0; index < exitGuards.Count; index++)
+        {
+            IRestaurantEditModeExitGuard guard = exitGuards[index];
+            if (guard == null)
+                continue;
+            if (guard.CanExitEditMode(out string rejectionMessage))
+                continue;
+
+            failureReason = RestaurantEditModeFailureReason.BlockedByExitGuard;
+            lastExitRejectionMessage = string.IsNullOrWhiteSpace(rejectionMessage)
+                ? "Hay cambios de edición pendientes. Aplica o descarta antes de salir."
+                : rejectionMessage;
+            EditModeExitRejected?.Invoke(failureReason);
+            return false;
         }
 
         isEditModeActive = false;
@@ -502,5 +543,6 @@ public enum RestaurantEditModeFailureReason
     NotActive = 2,
     BlockedByAvailabilityRule = 3,
     PlacementOperationActive = 4,
-    PlacementCancellationFailed = 5
+    PlacementCancellationFailed = 5,
+    BlockedByExitGuard = 6
 }

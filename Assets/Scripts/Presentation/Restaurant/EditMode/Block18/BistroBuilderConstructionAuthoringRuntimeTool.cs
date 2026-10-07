@@ -74,6 +74,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     private readonly List<Vector3> universalGhostSegments = new List<Vector3>(32);
     private readonly List<BistroBuilderPreviewBox> universalPreviewVolumes =
         new List<BistroBuilderPreviewBox>(8);
+    private string lastSurfacePreviewKey = string.Empty;
     private WallPose[] placementFeedbackWalls = Array.Empty<WallPose>();
     private PlacementFeedbackKind placementFeedbackKind;
     private Color placementFeedbackColor;
@@ -110,6 +111,10 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     public string StatusMessage => status;
     public EntityKind SelectedKind => selection.Kind;
     public BistroBuilderEditId SelectedId => selection.Id;
+    public long DraftRevision =>
+        coordinator != null && coordinator.HasSession
+            ? coordinator.Session.DraftRevision
+            : -1L;
 
     public bool ClearArchitectureSelection()
     {
@@ -502,6 +507,22 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     {
         error = string.Empty;
         CancelGesture(string.Empty);
+        BistroBuilderEditorV2RenovationSession renovation =
+            FindFirstObjectByType<BistroBuilderEditorV2RenovationSession>(
+                FindObjectsInactive.Include);
+        if (renovation != null && renovation.IsActive)
+        {
+            if (!renovation.TryApplyChanges(out error))
+            {
+                SetStatus(error);
+                return false;
+            }
+            selection.Clear();
+            ClearDraftOverlay();
+            SetStatus("Reforma aplicada y publicada.");
+            RefreshVisuals();
+            return true;
+        }
         if (coordinator == null || !coordinator.HasSession) return true;
         if (!coordinator.IsDirty)
         {
@@ -528,6 +549,22 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
     {
         error = string.Empty;
         CancelGesture(string.Empty);
+        BistroBuilderEditorV2RenovationSession renovation =
+            FindFirstObjectByType<BistroBuilderEditorV2RenovationSession>(
+                FindObjectsInactive.Include);
+        if (renovation != null && renovation.IsActive)
+        {
+            if (!renovation.TryDiscardChanges(out error))
+            {
+                SetStatus(error);
+                return false;
+            }
+            selection.Clear();
+            ClearDraftOverlay();
+            SetStatus("Reforma pendiente descartada.");
+            RefreshVisuals();
+            return true;
+        }
         if (coordinator == null || !coordinator.HasSession) return true;
         if (!coordinator.CancelSession())
         {
@@ -838,7 +875,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                     ? BistroBuilderPreviewValidity.Valid
                     : BistroBuilderPreviewValidity.Invalid,
                 ok
-                    ? BistroBuilderPreviewPhase.Ready
+                    ? BistroBuilderPreviewPhase.Snapped
                     : BistroBuilderPreviewPhase.Previewing,
                 universalPreviewSegments,
                 null,
@@ -955,9 +992,14 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                     ? BistroBuilderPreviewValidity.Valid
                     : BistroBuilderPreviewValidity.Invalid;
 
+            bool hasUniversalSnap =
+                observedSnapKind != SnapKind.None;
+
             BistroBuilderPreviewPhase phase =
                 gesture.State == ConstructionGestureState.Ready
-                    ? BistroBuilderPreviewPhase.Ready
+                    ? (hasUniversalSnap
+                        ? BistroBuilderPreviewPhase.Snapped
+                        : BistroBuilderPreviewPhase.Ready)
                     : BistroBuilderPreviewPhase.Previewing;
 
             universalPreviewService.PublishConstruction(
@@ -967,7 +1009,7 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
                 universalPreviewSegments,
                 universalGhostSegments,
                 universalPreviewVolumes,
-                observedSnapKind != SnapKind.None,
+                hasUniversalSnap,
                 new Vector3(
                     observedSnapPoint.x,
                     0.07f,
@@ -1133,8 +1175,11 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
             lineMaterial = new Material(shader)
             { name = "BB18N_RuntimeLineMaterial", hideFlags = HideFlags.HideAndDontSave };
         selectionLine = CreateLine("Selection");
-        snapMarker = CreateLine("Snap");
-        snapPulseLine = CreateLine("SnapPulse");
+        if (universalPreviewService == null)
+        {
+            snapMarker = CreateLine("Snap");
+            snapPulseLine = CreateLine("SnapPulse");
+        }
         previewLines = Array.Empty<LineRenderer>();
     }
 

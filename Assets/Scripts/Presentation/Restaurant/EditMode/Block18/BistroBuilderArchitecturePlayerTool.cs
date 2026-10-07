@@ -159,6 +159,20 @@ public sealed class BistroBuilderArchitecturePlayerTool : MonoBehaviour
     {
         error = string.Empty;
         CacheDependencies();
+        BistroBuilderEditorV2RenovationSession renovation =
+            FindFirstObjectByType<BistroBuilderEditorV2RenovationSession>(
+                FindObjectsInactive.Include);
+        if (renovation != null && renovation.IsActive)
+        {
+            if (!renovation.TryApplyChanges(out error))
+            {
+                SetStatus(error);
+                return false;
+            }
+            hasFirstPoint = false;
+            SetStatus("Reforma aplicada al restaurante.");
+            return true;
+        }
         if (coordinator == null || !coordinator.HasSession)
         {
             SetStatus("No hay cambios arquitectónicos pendientes.");
@@ -190,6 +204,22 @@ public sealed class BistroBuilderArchitecturePlayerTool : MonoBehaviour
     {
         error = string.Empty;
         CacheDependencies();
+        BistroBuilderEditorV2RenovationSession renovation =
+            FindFirstObjectByType<BistroBuilderEditorV2RenovationSession>(
+                FindObjectsInactive.Include);
+        if (renovation != null && renovation.IsActive)
+        {
+            if (!renovation.TryDiscardChanges(out error))
+            {
+                SetStatus(error);
+                return false;
+            }
+            hasFirstPoint = false;
+            if (materializer != null && documentService != null)
+                materializer.Rebuild(documentService.GetCommittedSnapshot());
+            SetStatus("Reforma pendiente descartada.");
+            return true;
+        }
         if (coordinator == null || !coordinator.HasSession)
         {
             SetStatus("No hay construcción pendiente que descartar.");

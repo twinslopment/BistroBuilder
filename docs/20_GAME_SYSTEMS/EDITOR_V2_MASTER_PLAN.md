@@ -1,6 +1,6 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 DESBLOQUEADO
+**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 DESBLOQUEADO
 **Fecha:** 2026-10-06
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
@@ -318,6 +318,8 @@ PASS:
 **GATE CRÍTICO:** Discard debe ser exacto.
 
 ### B6 — Universal Preview consolidado
+
+**Estado B6:** PASS · 37/37 · 10.000 publicaciones en 31 ms · 0 bytes asignados tras warmup · regresiones B5/B4/B3/B2/B1/Construction exit 0 · B7 DESBLOQUEADO
 
 **En cristiano:** mover una silla y construir una pared deben parecer partes del mismo juego.
 
@@ -705,9 +707,9 @@ Salvo decisión posterior explícita:
 | B1 Riesgos de auditoría | PASS — 20/20 hardening + 84/84 core + 77/77 escena + 20/20 lifecycle + Queen exit 0 |
 | B2 Editor V2 Coordinator | PASS — 22/22 Coordinator + regresiones Core/Scene/Lifecycle/Queen exit 0 |
 | B3 Selección común | PASS - 28/28 + B2 22/22 + Core 84/84 + Scene 77/77 + Lifecycle 20/20 + Queen exit 0 |
-| B4 Undo/Redo global | NO INICIADO |
-| B5 Reforma transaccional | NO INICIADO |
-| B6 Universal Preview | NO INICIADO |
+| B4 Undo/Redo global | PASS - 63/63 + regresiones B3 28/28 + B2 22/22 |
+| B5 Reforma transaccional | PASS - 48/48 + Discard exacto + Apply coherente + recovery de commit |
+| B6 Universal Preview | PASS — 37/37 + 10.000 updates 31 ms + 0 B alloc + regresiones B5/B4/B3/B2/B1/Construction exit 0 |
 | B7 Snapping contextual | NO INICIADO |
 | B8 Multiselección/grupos | NO INICIADO |
 | B9 Catálogo escalable | NO INICIADO |

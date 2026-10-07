@@ -259,6 +259,30 @@ public sealed class BistroBuilderEditFinanceGateway :
         return true;
     }
 
+    public bool TryQuoteProposal(
+        BistroBuilderEditEconomicProposal proposal,
+        out long creditCents,
+        out long debitCents,
+        out string error)
+    {
+        creditCents = 0L;
+        debitCents = 0L;
+        if (!ValidateDependencies(out error))
+            return false;
+        if (proposal != null && proposal.lines != null && proposal.lines.Count > 0 &&
+            !ValidateConfiguration(out error))
+            return false;
+
+        var priced = new List<BistroBuilderPricedEditEconomicLine>();
+        return BistroBuilderEditFinancePricingPolicy.TryPrice(
+            proposal,
+            EffectiveRates,
+            priced,
+            out creditCents,
+            out debitCents,
+            out error);
+    }
+
     public bool TryPrepareAuthorization(
         BistroBuilderEditEconomicProposal proposal,
         out BistroBuilderEditEconomicAuthorization authorization,

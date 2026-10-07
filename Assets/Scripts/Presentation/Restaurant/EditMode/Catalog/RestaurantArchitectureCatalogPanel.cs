@@ -44,6 +44,7 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     int selectedTab,scopeIndex;
     bool closed,inspectorClosed;
     string lastStatus;
+    string lastSurfacePreviewKey;
     static Sprite rounded;
     public bool IsVisible => left!=null&&left.gameObject.activeInHierarchy;
     public string InspectorTitle => inspectorTitle!=null?inspectorTitle.text:"";
@@ -112,7 +113,8 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     }
     public void OpenSection(RestaurantEditCatalogSection value)
     {
-        section=value;closed=inspectorClosed=false;selectedTab=0;scopeIndex=0;selected=null;lastStatus=null;
+        section=value;closed=inspectorClosed=false;selectedTab=0;scopeIndex=0;selected=null;lastStatus=null;lastSurfacePreviewKey=null;
+        if(value!=RestaurantEditCatalogSection.Surfaces)tool?.ClearSurfacePreview();
         if(left==null||!RestaurantEditCatalogSections.IsArchitecture(value))return;
         title.text=RestaurantEditCatalogSections.Title(value);((TMP_Text)search.placeholder).text=RestaurantEditCatalogSections.SearchHint(value);search.SetTextWithoutNotify("");
         foreach(Transform child in tabs){child.gameObject.SetActive(false);Destroy(child.gameObject);}tabButtons.Clear();
@@ -174,7 +176,21 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         if(left==null)return; if(tool==null)tool=FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
         bool visible=catalog!=null&&RestaurantEditCatalogSections.IsArchitecture(catalog.CurrentSection)&&editMode!=null&&editMode.IsEditModeActive&&(shell==null||!shell.HasManagementScreenOpen);
         left.gameObject.SetActive(visible&&!closed);right.gameObject.SetActive(visible&&selected!=null&&!inspectorClosed);
-        if(!visible)return;
+        if(!visible){if(lastSurfacePreviewKey!=null){tool?.ClearSurfacePreview();lastSurfacePreviewKey=null;}return;}
+        if(section==RestaurantEditCatalogSection.Surfaces&&tool!=null)
+        {
+            string surfaceKey=tool.SelectedKind+"|"+tool.SelectedId.Value+"|"+tool.DraftRevision+"|"+(selected!=null?selected.Id:string.Empty);
+            if(!string.Equals(surfaceKey,lastSurfacePreviewKey,StringComparison.Ordinal))
+            {
+                tool.TryRefreshSelectedRoomFloorFinishPreview(out _);
+                lastSurfacePreviewKey=surfaceKey;
+            }
+        }
+        else if(lastSurfacePreviewKey!=null)
+        {
+            tool?.ClearSurfacePreview();
+            lastSurfacePreviewKey=null;
+        }
         foreach(Transform child in details){if(child.name.StartsWith("Module"))child.gameObject.SetActive(section==RestaurantEditCatalogSection.Walls&&tool!=null&&tool.Mode==BistroBuilderConstructionRuntimeMode.WallModule);if(child.name.StartsWith("Opening"))child.gameObject.SetActive(tool!=null&&tool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Opening);if(child.name.StartsWith("Zone_"))child.gameObject.SetActive(tool!=null&&(tool.Mode==BistroBuilderConstructionRuntimeMode.Room||tool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Room));}
         commit.interactable=tool!=null&&tool.HasDraftChanges;
         apply.interactable=selected!=null&&selected.Available&&(section!=RestaurantEditCatalogSection.Surfaces||tool!=null&&tool.SelectedKind==BistroBuilder.ConstructionAuthoring.EntityKind.Room);

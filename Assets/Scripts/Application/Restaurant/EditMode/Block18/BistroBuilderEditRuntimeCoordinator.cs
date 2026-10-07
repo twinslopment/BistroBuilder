@@ -18,6 +18,9 @@ public sealed class BistroBuilderEditRuntimeCoordinator : MonoBehaviour
     public event Action SessionChanged;
     public event Action<IReadOnlyList<BistroBuilderEditDiagnostic>> DiagnosticsChanged;
     public event Action<BistroBuilderEditDocument> CommitCompleted;
+    public event Action<IBistroBuilderEditCommand> CommandExecuted;
+    public event Action<IBistroBuilderEditCommand> CommandUndone;
+    public event Action<IBistroBuilderEditCommand> CommandRedone;
 
     public BistroBuilderEditFeedbackEventHub Feedback => feedback;
     public BistroBuilderEditSession Session => session;
@@ -119,6 +122,7 @@ public sealed class BistroBuilderEditRuntimeCoordinator : MonoBehaviour
 
         PublishChangeSet(changeSet, BistroBuilderEditFeedbackEventType.DraftChanged,
             BistroBuilderEditFeedbackStyle.DirectionalReveal);
+        CommandExecuted?.Invoke(command);
         SessionChanged?.Invoke();
         return true;
     }
@@ -128,7 +132,9 @@ public sealed class BistroBuilderEditRuntimeCoordinator : MonoBehaviour
         error = string.Empty;
         if (!HasSession) { error = "No existe una sesión de edición activa."; return false; }
         if (!CanEditNow(out error)) return false;
+        IBistroBuilderEditCommand command = session.PeekUndoCommand();
         if (!session.TryUndo(out error)) return false;
+        CommandUndone?.Invoke(command);
         feedback.Publish(new BistroBuilderEditFeedbackEvent(
             BistroBuilderEditFeedbackEventType.Undo, default, "session",
             BistroBuilderEditFeedbackStyle.ReverseReveal, BistroBuilderEditDiagnosticSeverity.Info, default));
@@ -141,7 +147,9 @@ public sealed class BistroBuilderEditRuntimeCoordinator : MonoBehaviour
         error = string.Empty;
         if (!HasSession) { error = "No existe una sesión de edición activa."; return false; }
         if (!CanEditNow(out error)) return false;
+        IBistroBuilderEditCommand command = session.PeekRedoCommand();
         if (!session.TryRedo(out error)) return false;
+        CommandRedone?.Invoke(command);
         feedback.Publish(new BistroBuilderEditFeedbackEvent(
             BistroBuilderEditFeedbackEventType.Redo, default, "session",
             BistroBuilderEditFeedbackStyle.DirectionalReveal, BistroBuilderEditDiagnosticSeverity.Info, default));
@@ -189,6 +197,8 @@ public sealed class BistroBuilderEditRuntimeCoordinator : MonoBehaviour
         if (proposal.lines.Count > 0 && economyGateway == null)
         {
             error = "La sesión contiene cambios económicos y no hay autoridad financiera enlazada.";
+            session.RejectPreparedCommit();
+            SessionChanged?.Invoke();
             return false;
         }
 

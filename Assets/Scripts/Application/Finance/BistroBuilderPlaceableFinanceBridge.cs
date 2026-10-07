@@ -45,6 +45,11 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
     private bool isBound;
     public bool IsBound => isBound;
 
+    public void ResetTransientStateAtRenovationBoundary()
+    {
+        ClearPendingState();
+    }
+
     private void OnEnable()
     {
         Bind();

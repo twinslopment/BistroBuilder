@@ -90,6 +90,23 @@ public sealed class BistroBuilderEditSession
     public BistroBuilderEditSessionState State { get; private set; }
     public bool CanUndo => State == BistroBuilderEditSessionState.ActiveDirty && undo.Count > 0;
     public bool CanRedo => (State == BistroBuilderEditSessionState.ActiveDirty || State == BistroBuilderEditSessionState.ActiveClean) && redo.Count > 0;
+    public int UndoCount => undo.Count;
+    public int RedoCount => redo.Count;
+    public IBistroBuilderEditCommand PeekUndoCommand() =>
+        undo.Count > 0 ? undo[undo.Count - 1].command : null;
+    public IBistroBuilderEditCommand PeekRedoCommand() =>
+        redo.Count > 0 ? redo[redo.Count - 1].command : null;
+
+    public bool DiscardRedoHistory()
+    {
+        if (redo.Count == 0)
+            return false;
+        for (int i = 0; i < redo.Count; i++)
+            executedCommandIds.Remove(redo[i].command.CommandId);
+        redo.Clear();
+        return true;
+    }
+
     public IReadOnlyList<BistroBuilderWallRecord> PremisesBoundaryWalls => premisesBoundaryWalls;
 
     public BistroBuilderEditSession(BistroBuilderEditDocument committed,

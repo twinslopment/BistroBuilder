@@ -17,6 +17,8 @@ public sealed partial class BistroBuilderUiShell
     BistroBuilderEditorV2SelectionCoordinator editModeSelectionCoordinator;
     RestaurantPlaceableDeletionService editChromeDeletion;
     RestaurantPlacementHistoryService editChromeHistory;
+    BistroBuilderEditorV2GlobalHistory editChromeGlobalHistory;
+    BistroBuilderEditorV2RenovationSession editChromeRenovation;
     BistroBuilderEditGridOverlay editChromeGrid;
     bool editModeChromeBuilt;
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
@@ -52,6 +54,8 @@ public sealed partial class BistroBuilderUiShell
         if(editModeFurnitureController==null)editModeFurnitureController=FindScene<RestaurantEditInteractionController>();
         if(editModeSelectionCoordinator==null)editModeSelectionCoordinator=FindScene<BistroBuilderEditorV2SelectionCoordinator>();
         if(editChromeHistory==null)editChromeHistory=FindScene<RestaurantPlacementHistoryService>();
+        if(editChromeGlobalHistory==null)editChromeGlobalHistory=FindScene<BistroBuilderEditorV2GlobalHistory>();
+        if(editChromeRenovation==null)editChromeRenovation=FindScene<BistroBuilderEditorV2RenovationSession>();
         if(editChromeDeletion==null)editChromeDeletion=FindScene<RestaurantPlaceableDeletionService>();
         if(editChromeGrid==null)editChromeGrid=FindScene<BistroBuilderEditGridOverlay>();
     }
@@ -81,8 +85,8 @@ public sealed partial class BistroBuilderUiShell
         var title=ChromeText(mode,"Title","Modo Edición",21,EditChromeText);ChromeBox(title.rectTransform,48,0,230,29);
         var subtitle=ChromeText(mode,"Subtitle","Diseña el restaurante de tus sueños",12,EditChromeMuted);ChromeBox(subtitle.rectTransform,48,28,230,20);
         ChromeSpacer(root,"EditTopSpacerA");
-        ChromeButton(root,"EditUndo",Symbol.Undo,"",46,46,"Deshacer el último cambio",()=>{if(IsFurnitureTool())editModeFurnitureController?.TryUndoLastPlacement();else editModeConstructionTool?.TryUndo(out _);});
-        ChromeButton(root,"EditRedo",Symbol.Redo,"",46,46,"Rehacer el último cambio",()=>{if(IsFurnitureTool())editModeFurnitureController?.TryRedoLastPlacement();else editModeConstructionTool?.TryRedo(out _);});
+        ChromeButton(root,"EditUndo",Symbol.Undo,"",46,46,"Deshacer el último cambio",()=>{if(editChromeGlobalHistory!=null){if(!editChromeGlobalHistory.TryUndo(out var error))ChromeMessage(error);}else if(IsFurnitureTool())editModeFurnitureController?.TryUndoLastPlacement();else editModeConstructionTool?.TryUndo(out _);});
+        ChromeButton(root,"EditRedo",Symbol.Redo,"",46,46,"Rehacer el último cambio",()=>{if(editChromeGlobalHistory!=null){if(!editChromeGlobalHistory.TryRedo(out var error))ChromeMessage(error);}else if(IsFurnitureTool())editModeFurnitureController?.TryRedoLastPlacement();else editModeConstructionTool?.TryRedo(out _);});
         ChromeButton(root,"EditPan",Symbol.Hand,"",48,46,"Explorar: arrastra con el botón central del ratón",()=>{editModeFurnitureController?.CancelActivePlacement();editModeConstructionTool?.SetMode(Mode.Select);});
         ChromeButton(root,"EditMove",Symbol.Move,"",44,46,"Mover el artículo seleccionado",()=>editModeFurnitureController?.TryBeginMoveSelected());
         ChromeDivider(root,30);
@@ -95,7 +99,10 @@ public sealed partial class BistroBuilderUiShell
         editModeClockText=ChromeText(clock,"Time","—",16,EditChromeMuted);ChromeBox(editModeClockText.rectTransform,39,0,93,46);
         ChromeDivider(root,34);
         editModeMoneyText=ChromeText(root,"EditMoney","—",22,EditChromeOlive);editModeMoneyText.font=BistroBuilderTypography.Emphasis;ChromeWidth(editModeMoneyText.gameObject,135,46);
-        ChromeDivider(root,34);
+        ChromeDivider(root,24);
+        ChromeButton(root,"EditDiscard",Symbol.Undo,"Descartar",116,46,"Descartar toda la reforma y volver exactamente al punto de partida",DiscardRenovation,true);
+        ChromeButton(root,"EditApply",Symbol.Play,"Aplicar",108,46,"Aplicar toda la reforma como una única versión coherente",ApplyRenovation,false,false,EditChromeOlive);
+        ChromeDivider(root,24);
         ChromeButton(root,"EditPlay",Symbol.Play,"",49,46,"Terminar la edición y volver al restaurante",HandleEditModeClicked,false,false,EditChromeOlive);
     }
     void BuildEditBottomChrome(RectTransform root)
@@ -131,6 +138,20 @@ public sealed partial class BistroBuilderUiShell
     }
     RestaurantPlaceableObject SelectedChromePlaceable()
     {var editable=editModeFurnitureController!=null?editModeFurnitureController.SelectedEditableObject:null;return editable!=null?editable.GetComponent<RestaurantPlaceableObject>():null;}
+    void ApplyRenovation()
+    {
+        ResolveEditChrome();
+        if(editChromeRenovation==null){ChromeMessage("La sesión de reforma B5 no está disponible.");return;}
+        if(!editChromeRenovation.TryApplyChanges(out var error))ChromeMessage(error);
+        else ChromeMessage("Reforma aplicada.");
+    }
+    void DiscardRenovation()
+    {
+        ResolveEditChrome();
+        if(editChromeRenovation==null){ChromeMessage("La sesión de reforma B5 no está disponible.");return;}
+        if(!editChromeRenovation.TryDiscardChanges(out var error))ChromeMessage(error);
+        else ChromeMessage("Reforma descartada. Estado inicial restaurado.");
+    }
     void DeleteChromeSelection()
     {
         var common=CurrentChromeSelection();
@@ -227,8 +248,11 @@ public sealed partial class BistroBuilderUiShell
             commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Rotate);
         editChromeButtons["EditDuplicate"].interactable=!placement&&
             commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Duplicate);
-        editChromeButtons["EditUndo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo;
-        editChromeButtons["EditRedo"].interactable=furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo;
+        editChromeButtons["EditUndo"].interactable=editChromeGlobalHistory!=null?editChromeGlobalHistory.CanUndo:(furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo);
+        editChromeButtons["EditRedo"].interactable=editChromeGlobalHistory!=null?editChromeGlobalHistory.CanRedo:(furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo);
+        bool renovationPending=editChromeRenovation!=null&&editChromeRenovation.HasPendingChanges;
+        editChromeButtons["EditApply"].interactable=renovationPending;
+        editChromeButtons["EditDiscard"].interactable=renovationPending;
     }
     string EditChromeClock()
     {

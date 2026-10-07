@@ -48,6 +48,10 @@ public sealed class RestaurantEditInteractionController :
     private RestaurantPlacementHistoryService
         historyService;
 
+    [Tooltip("Editor V2 B4: historial cronológico común. Opcional; si no existe se conserva el historial Placement legado.")]
+    [SerializeField]
+    private BistroBuilderEditorV2GlobalHistory globalHistory;
+
     [Tooltip(
         "Servicio que coordina la creación definitiva de artículos."
     )]
@@ -920,6 +924,16 @@ public sealed class RestaurantEditInteractionController :
     /// </summary>
     public bool TryUndoLastPlacement()
     {
+        CacheDependenciesIfNeeded();
+        if (globalHistory != null)
+        {
+            bool globalUndone = globalHistory.TryUndo(out string globalError);
+            PublishMessage(globalUndone ? "Último cambio deshecho." : globalError);
+            LogEvent(globalUndone ? "Undo global Editor V2 completado." : globalError);
+            if (globalUndone) ClearSelectionIfUnavailable();
+            return globalUndone;
+        }
+
         if (historyService == null)
         {
             const string unavailableMessage =
@@ -998,6 +1012,16 @@ public sealed class RestaurantEditInteractionController :
     /// </summary>
     public bool TryRedoLastPlacement()
     {
+        CacheDependenciesIfNeeded();
+        if (globalHistory != null)
+        {
+            bool globalRedone = globalHistory.TryRedo(out string globalError);
+            PublishMessage(globalRedone ? "Último cambio rehecho." : globalError);
+            LogEvent(globalRedone ? "Redo global Editor V2 completado." : globalError);
+            if (globalRedone) ClearSelectionIfUnavailable();
+            return globalRedone;
+        }
+
         if (historyService == null)
         {
             const string unavailableMessage =
@@ -2875,6 +2899,12 @@ public sealed class RestaurantEditInteractionController :
             TryGetComponent(
                 out historyService
             );
+        }
+
+        if (globalHistory == null)
+        {
+            globalHistory = FindFirstObjectByType<BistroBuilderEditorV2GlobalHistory>(
+                FindObjectsInactive.Include);
         }
 
         if (creationService == null)

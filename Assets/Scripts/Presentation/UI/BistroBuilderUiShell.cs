@@ -1015,6 +1015,22 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
 
     private string ResolveEditCostText()
     {
+        BistroBuilderEditorV2RenovationSession renovation =
+            FindScene<BistroBuilderEditorV2RenovationSession>();
+        if (renovation != null && renovation.IsActive)
+        {
+            if (!renovation.HasPendingChanges)
+                return "Coste cambios  0";
+            if (renovation.TryGetSnapshot(
+                    out BistroBuilderEditorV2RenovationSnapshot snapshot,
+                    out _))
+            {
+                return "Coste cambios  " +
+                       BistroBuilderFinanceUiFormat.Money(snapshot.totalSignedCostCents);
+            }
+            return "Coste cambios  —";
+        }
+
         if (editCoordinator == null || !editCoordinator.HasSession || !editCoordinator.IsDirty)
             return "Coste cambios  0";
         if (editTariffs == null) return "Coste cambios  —";
