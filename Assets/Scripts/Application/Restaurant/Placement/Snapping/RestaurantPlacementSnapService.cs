@@ -152,6 +152,12 @@ public sealed class RestaurantPlacementSnapService :
                 )
                 : default;
 
+        for (int index = 0; index < providers.Count; index++)
+        {
+            if (providers[index] is IRestaurantPlacementSnapSessionAware aware)
+                aware.BeginSnapSession(member);
+        }
+
         visualizer?.HideAll();
     }
 
@@ -172,6 +178,12 @@ public sealed class RestaurantPlacementSnapService :
 
         candidateBuffer.Clear();
         hintBuffer.Clear();
+
+        for (int index = 0; index < providers.Count; index++)
+        {
+            if (providers[index] is IRestaurantPlacementSnapSessionAware aware)
+                aware.EndSnapSession();
+        }
 
         visualizer?.HideAll();
 
@@ -195,6 +207,22 @@ public sealed class RestaurantPlacementSnapService :
         out RestaurantPlacementSnapResult result
     )
     {
+        return TryResolveSnap(
+            member,
+            rawRootPosition,
+            rawRootRotation,
+            false,
+            out result);
+    }
+
+    public bool TryResolveSnap(
+        RestaurantAreaMember member,
+        Vector3 rawRootPosition,
+        Quaternion rawRootRotation,
+        bool suppressSnapping,
+        out RestaurantPlacementSnapResult result
+    )
+    {
         if (member == null)
         {
             result =
@@ -209,6 +237,24 @@ public sealed class RestaurantPlacementSnapService :
         if (!ReferenceEquals(activeMember, member))
         {
             BeginSession(member);
+        }
+
+        if (suppressSnapping)
+        {
+            RestaurantPlacementSnapResult previous = currentResult;
+            hasCapturedTarget = false;
+            capturedTarget = default;
+            hasCapturedValidation = false;
+            capturedValidationIsValid = false;
+            candidateBuffer.Clear();
+            hintBuffer.Clear();
+            currentResult = RestaurantPlacementSnapResult.Unsnapped(
+                rawRootPosition,
+                rawRootRotation);
+            visualizer?.HideAll();
+            PublishSnapChangeIfNeeded(previous, currentResult);
+            result = currentResult;
+            return false;
         }
 
         RestaurantPlacementSnapContext context =
@@ -398,6 +444,12 @@ public sealed class RestaurantPlacementSnapService :
             RestaurantPlacementSnapCandidate candidate =
                 candidateBuffer[index];
 
+            if (candidate.HintState !=
+                    RestaurantPlacementSnapHintState.Available)
+            {
+                continue;
+            }
+
             if (candidate.TargetKey == capturedTarget &&
                 candidate.Distance <= candidate.ReleaseRadius)
             {
@@ -420,6 +472,8 @@ public sealed class RestaurantPlacementSnapService :
                 candidateBuffer[index];
 
             if (candidate.Provider == null ||
+                candidate.HintState !=
+                    RestaurantPlacementSnapHintState.Available ||
                 candidate.Distance > candidate.CaptureRadius)
             {
                 continue;

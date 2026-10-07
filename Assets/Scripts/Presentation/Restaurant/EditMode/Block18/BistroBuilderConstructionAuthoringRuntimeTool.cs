@@ -799,9 +799,15 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void PlaceOpening(Vector2 point)
     {
-        ArchitectureHit wallHit = queries.PickWall(point, selectionRadius * 2f, "default");
-        if (!wallHit.IsValid) { SetStatus("Acerca el cursor a una pared válida."); return; }
         BistroBuilderOpeningRecord template = CreateOpeningTemplate(mode);
+        ArchitectureHit wallHit = queries.PickOpeningHost(
+            point,
+            selectionRadius * 2f,
+            template.width,
+            template.bottomElevation,
+            template.height,
+            "default");
+        if (!wallHit.IsValid) { SetStatus("Acerca el cursor a una pared compatible con el hueco."); return; }
         BistroBuilderWallRecord host = queries.CaptureWall(wallHit.Id);
         if (host == null) { SetStatus("La pared seleccionada ya no esta disponible."); return; }
         gesture = new ConstructionGesture();
@@ -850,10 +856,16 @@ public sealed partial class BistroBuilderConstructionAuthoringRuntimeTool : Mono
 
     private void RenderOpeningHover(Vector2 point)
     {
-        ArchitectureHit wallHit = queries.PickWall(point, selectionRadius * 2f, "default");
+        BistroBuilderOpeningRecord template = CreateOpeningTemplate(mode);
+        ArchitectureHit wallHit = queries.PickOpeningHost(
+            point,
+            selectionRadius * 2f,
+            template.width,
+            template.bottomElevation,
+            template.height,
+            "default");
         if (!wallHit.IsValid) { IsPreviewBlocked = true; ClearPreviewLines(); HideSnapMarker(); return; }
         BistroBuilderWallRecord host = queries.CaptureWall(wallHit.Id);
-        BistroBuilderOpeningRecord template = CreateOpeningTemplate(mode);
         bool ok = ConstructionGeometry.TryOpening(host, point, template.width, template.bottomElevation,
             template.height, out _, out Vector2 center, out string error);
         IsPreviewBlocked = !ok;

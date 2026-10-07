@@ -1690,6 +1690,7 @@ public sealed class RestaurantEditInteractionController :
                 activeMember,
                 nextPosition,
                 candidateRotation,
+                IsAltModifierPressed(),
                 out RestaurantPlacementSnapResult snapResult
             ))
         {
@@ -2430,6 +2431,14 @@ public sealed class RestaurantEditInteractionController :
 
         return keyboard.leftCtrlKey.isPressed ||
                keyboard.rightCtrlKey.isPressed;
+    }
+
+    private static bool IsAltModifierPressed()
+    {
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null &&
+               (keyboard.leftAltKey.isPressed ||
+                keyboard.rightAltKey.isPressed);
     }
 
 

@@ -216,6 +216,13 @@ public sealed class RestaurantSeatingSnapProvider :
                 bool occupied =
                     occupiedSlotBuffer[slotArrayIndex];
 
+                if (occupied)
+                {
+                    // Una plaza ocupada se muestra como información,
+                    // pero nunca se ofrece como pose candidata.
+                    continue;
+                }
+
                 results.Add(
                     new RestaurantPlacementSnapCandidate(
                         this,
@@ -229,13 +236,9 @@ public sealed class RestaurantSeatingSnapProvider :
                         horizontalDistance,
                         CaptureRadius,
                         ReleaseRadius,
-                        occupied ? 0.02f : 0f,
+                        0f,
                         configuration,
-                        occupied
-                            ? RestaurantPlacementSnapHintState
-                                .Occupied
-                            : RestaurantPlacementSnapHintState
-                                .Available
+                        RestaurantPlacementSnapHintState.Available
                     )
                 );
             }

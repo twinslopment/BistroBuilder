@@ -70,6 +70,57 @@ namespace BistroBuilder.ConstructionAuthoring
             return best;
         }
 
+        public ArchitectureHit PickOpeningHost(
+            Vector2 point,
+            float radius,
+            float width,
+            float bottomElevation,
+            float height,
+            string plane = "default")
+        {
+            ArchitectureHit best = default;
+            foreach (var wall in Walls)
+            {
+                if (wall.buildPlaneId != plane) continue;
+
+                Vector2 projected = ConstructionGeometry.Project(
+                    point,
+                    wall.axisStart,
+                    wall.axisEnd,
+                    out _);
+                float distance = Vector2.Distance(point, projected);
+                if (distance > radius) continue;
+
+                if (!ConstructionGeometry.TryOpening(
+                        wall,
+                        point,
+                        width,
+                        bottomElevation,
+                        height,
+                        out float alongHost,
+                        out Vector2 center,
+                        out _))
+                {
+                    continue;
+                }
+
+                bool better = !best.IsValid ||
+                              distance < best.Distance - 0.0001f ||
+                              (Mathf.Abs(distance - best.Distance) <= 0.0001f &&
+                               wall.wallId.CompareTo(best.Id) < 0);
+                if (better)
+                {
+                    best = new ArchitectureHit(
+                        EntityKind.Wall,
+                        wall.wallId,
+                        center,
+                        distance,
+                        alongHost);
+                }
+            }
+            return best;
+        }
+
         public ArchitectureHit PickOpening(Vector2 point, float radius, string plane = "default")
         {
             ArchitectureHit best = default;

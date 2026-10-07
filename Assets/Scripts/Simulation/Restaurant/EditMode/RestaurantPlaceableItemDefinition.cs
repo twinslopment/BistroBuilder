@@ -55,6 +55,10 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
     private RestaurantPlaceableInspectorRuleFlags inspectorRules =
         RestaurantPlaceableInspectorRuleFlags.None;
 
+    [Tooltip("Perfil de snapping contextual. Define qué tipos de destino puede sugerir el editor sin asumir autoridad de colocación.")]
+    [SerializeField]
+    private RestaurantPlacementSnapProfile snapProfile;
+
     [Header("Creación")]
     [SerializeField]
     private RestaurantPlaceableObject prefab;
@@ -107,6 +111,7 @@ public sealed class RestaurantPlaceableItemDefinition : ScriptableObject
     public float DepthCentimeters => Mathf.Max(0f, dimensionsCentimeters.z);
     public FurnitureFinishProfile FinishProfile => finishProfile;
     public RestaurantPlaceableInspectorRuleFlags InspectorRules => inspectorRules;
+    public RestaurantPlacementSnapProfile SnapProfile => snapProfile;
     public RestaurantPlaceableObject Prefab => prefab;
     public RestaurantEditableObjectDefinition EditableDefinition => editableDefinition;
     public int PurchasePrice => Mathf.Max(0, purchasePrice);

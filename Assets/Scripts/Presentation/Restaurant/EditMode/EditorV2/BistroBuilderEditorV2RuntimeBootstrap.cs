@@ -98,5 +98,18 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             architectureRuntime,
             Object.FindFirstObjectByType<BistroBuilderFinanceService>(
                 FindObjectsInactive.Include));
+
+        RestaurantPlacementSnapService placementSnap =
+            Object.FindFirstObjectByType<RestaurantPlacementSnapService>(
+                FindObjectsInactive.Include);
+        if (placementSnap != null)
+        {
+            RestaurantContextualPlacementSnapProvider contextual =
+                placementSnap.GetComponent<RestaurantContextualPlacementSnapProvider>();
+            if (contextual == null)
+                contextual = placementSnap.gameObject.AddComponent<RestaurantContextualPlacementSnapProvider>();
+
+            placementSnap.RefreshProviders();
+        }
     }
 }
