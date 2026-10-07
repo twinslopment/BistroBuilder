@@ -1,0 +1,115 @@
+{
+  "results": {
+    "glb": {
+      "label": "GLB",
+      "armatures": 1,
+      "meshes": 41,
+      "bones": 21,
+      "actions": [
+        "BB_Waiter_IdleTray_01",
+        "BB_Waiter_Idle_01",
+        "BB_Waiter_Serve_01",
+        "BB_Waiter_WalkTray_01",
+        "BB_Waiter_Walk_01"
+      ],
+      "expected_action_matches": [
+        "BB_Waiter_IdleTray_01",
+        "BB_Waiter_Idle_01",
+        "BB_Waiter_Serve_01",
+        "BB_Waiter_WalkTray_01",
+        "BB_Waiter_Walk_01"
+      ],
+      "has_tray": true,
+      "has_rig": true,
+      "import_ok": true,
+      "error": ""
+    },
+    "fbx": {
+      "label": "FBX",
+      "armatures": 1,
+      "meshes": 41,
+      "bones": 21,
+      "actions": [
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_IdleTray_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Idle_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Serve_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_WalkTray_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Walk_01"
+      ],
+      "expected_action_matches": [
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_IdleTray_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Idle_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Serve_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_WalkTray_01",
+        "BB_Waiter_Rig|BB_Waiter_Rig|BB_Waiter_Walk_01"
+      ],
+      "has_tray": true,
+      "has_rig": true,
+      "import_ok": true,
+      "error": ""
+    }
+  },
+  "checks": [
+    {
+      "name": "glb_import",
+      "passed": true
+    },
+    {
+      "name": "glb_armature",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "name": "glb_bones",
+      "passed": true,
+      "value": 21
+    },
+    {
+      "name": "glb_meshes",
+      "passed": true,
+      "value": 41
+    },
+    {
+      "name": "glb_tray",
+      "passed": true
+    },
+    {
+      "name": "glb_actions",
+      "passed": true,
+      "value": 5
+    },
+    {
+      "name": "fbx_import",
+      "passed": true
+    },
+    {
+      "name": "fbx_armature",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "name": "fbx_bones",
+      "passed": true,
+      "value": 21
+    },
+    {
+      "name": "fbx_meshes",
+      "passed": true,
+      "value": 41
+    },
+    {
+      "name": "fbx_tray",
+      "passed": true
+    },
+    {
+      "name": "fbx_actions",
+      "passed": true,
+      "value": 5
+    }
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "total": 12
+  }
+}

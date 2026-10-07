@@ -1,0 +1,176 @@
+{
+  "asset": "BB_Waiter_AnimationLab_V1",
+  "blender_version": "5.1.1",
+  "reference_direction": "male waiter, white long-sleeve shirt, black vest/trousers/shoes, dark hair",
+  "actions": [
+    "BB_Waiter_Idle_01",
+    "BB_Waiter_Walk_01",
+    "BB_Waiter_WalkTray_01",
+    "BB_Waiter_IdleTray_01",
+    "BB_Waiter_Serve_01"
+  ],
+  "metrics": {
+    "max_tray_tilt_deg": 0.0,
+    "max_tray_vertical_jitter_m": 0.0,
+    "object_count": 47,
+    "bone_count": 21
+  },
+  "tests": [
+    {
+      "name": "action_exists:BB_Waiter_Idle_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_Walk_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_WalkTray_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_IdleTray_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_Serve_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "loop_continuity:BB_Waiter_Walk_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-05,
+      "note": ""
+    },
+    {
+      "name": "loop_continuity:BB_Waiter_WalkTray_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-05,
+      "note": ""
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_WalkTray_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1.0,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_vertical_jitter:BB_Waiter_WalkTray_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.035,
+      "note": "meters"
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_IdleTray_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1.0,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_vertical_jitter:BB_Waiter_IdleTray_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.035,
+      "note": "meters"
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_Serve_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1.0,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_vertical_jitter:BB_Waiter_Serve_01",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.035,
+      "note": "meters"
+    },
+    {
+      "name": "foot_floor_sanity:BB_Waiter_Walk_01",
+      "passed": true,
+      "value": 0.0882,
+      "limit": -0.12,
+      "note": "bone-tail coarse sanity"
+    },
+    {
+      "name": "foot_floor_sanity:BB_Waiter_WalkTray_01",
+      "passed": true,
+      "value": 0.0878,
+      "limit": -0.12,
+      "note": "bone-tail coarse sanity"
+    },
+    {
+      "name": "tray_side_position",
+      "passed": true,
+      "value": [
+        -0.4,
+        -0.243,
+        1.18
+      ],
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "finite_world_transforms",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "export_glb",
+      "passed": true,
+      "value": 473840,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "export_fbx",
+      "passed": true,
+      "value": 1455884,
+      "limit": 10000,
+      "note": ""
+    }
+  ],
+  "summary": {
+    "passed": 19,
+    "failed": 0,
+    "total": 19
+  },
+  "outputs": {
+    "blend": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\Prototype\\BB_Waiter_AnimationLab_V1.blend",
+    "glb": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\Prototype\\BB_Waiter_AnimationLab_V1.glb",
+    "fbx": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\Prototype\\BB_Waiter_AnimationLab_V1.fbx",
+    "renders": [
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\01_idle.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\02_walk_contact.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\03_walk_passing.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\04_walk_tray.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\05_idle_tray.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\06_serve.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimation\\07_rig_debug.png"
+    ]
+  }
+}
