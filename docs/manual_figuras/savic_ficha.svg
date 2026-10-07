@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1000" height="430" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1000 430" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1000" height="430"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-430)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1000" height="430" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,15%,17%); fill-rule: evenodd;"/>
+			<rect x="0" y="388" width="1000" height="42" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(8%,10%,12%); fill-rule: evenodd;"/>
+			<text x="20" y="402" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,804) scale(1,-1)">Unity / SAVIC &gt; Inventario</text>
+			<text x="480" y="402" style="font-family: Arial; font-size: 17px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,804) scale(1,-1)">ILUSTRACIÓN APROXIMADA · NO ES CAPTURA REAL</text>
+			<text x="20" y="15" style="font-family: Arial; font-size: 17px;fill: rgb(78%,80%,81%); stroke:none;" transform="translate(0,30) scale(1,-1)">Las acciones disponibles dependen del artículo y su estado.</text>
+			<rect x="18" y="45" width="285" height="325" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="38" y="337" style="font-family: Arial-Bold; font-size: 24px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,674) scale(1,-1)">Inventario</text>
+			<rect x="38" y="277" width="241" height="37" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(27%,30%,32%); fill-rule: evenodd;"/>
+			<text x="50" y="289" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,578) scale(1,-1)">Buscar: Armario</text>
+			<text x="40" y="226" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,452) scale(1,-1)">Armario de ejemplo</text>
+			<text x="40" y="190" style="font-family: Arial-Bold; font-size: 20px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,380) scale(1,-1)">PUBLISHED</text>
+			<rect x="326" y="45" width="652" height="325" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="350" y="337" style="font-family: Arial-Bold; font-size: 25px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,674) scale(1,-1)">Ficha · Armario de ejemplo</text>
+			<text x="350" y="293" style="font-family: Arial; font-size: 20px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,586) scale(1,-1)">Estado: PUBLISHED  ·  identidad conservada</text>
+			<rect x="350" y="229" width="241" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="362" y="242" style="font-family: Arial; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,484) scale(1,-1)">Revalidar asset</text>
+			<rect x="604" y="229" width="348" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="616" y="242" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,484) scale(1,-1)">Verificar funcionamiento*</text>
+			<rect x="350" y="174" width="291" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="362" y="187" style="font-family: Arial; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,374) scale(1,-1)">Actualizar original</text>
+			<rect x="654" y="174" width="298" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="666" y="187" style="font-family: Arial; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,374) scale(1,-1)">Adjuntar original</text>
+			<text x="350" y="125" style="font-family: Arial; font-size: 18px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,250) scale(1,-1)">*Solo cuando SAVIC lo ofrece para ese artículo.</text>
+			<text x="350" y="78" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,156) scale(1,-1)">Assets4ALL vinculado: actualizar con paquete completo.</text>
+		</g>
+	</g>
+</svg>

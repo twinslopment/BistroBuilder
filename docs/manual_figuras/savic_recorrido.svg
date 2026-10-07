@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1000" height="430" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1000 430" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1000" height="430"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-430)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1000" height="430" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,15%,17%); fill-rule: evenodd;"/>
+			<rect x="0" y="388" width="1000" height="42" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(8%,10%,12%); fill-rule: evenodd;"/>
+			<text x="20" y="402" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,804) scale(1,-1)">Del modelo al juego</text>
+			<text x="480" y="402" style="font-family: Arial; font-size: 17px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,804) scale(1,-1)">ILUSTRACIÓN APROXIMADA · NO ES CAPTURA REAL</text>
+			<text x="20" y="15" style="font-family: Arial; font-size: 17px;fill: rgb(78%,80%,81%); stroke:none;" transform="translate(0,30) scale(1,-1)">Publicar localmente, versionar el proyecto y distribuir la build son pasos distintos.</text>
+			<rect x="18" y="177" width="180" height="134" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="30" y="266" style="font-family: Arial-Bold; font-size: 22px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,532) scale(1,-1)">Assets4ALL</text>
+			<text x="30" y="222" style="font-family: Arial; font-size: 16px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,444) scale(1,-1)">Preparar y exportar</text>
+			<path d="M 198,244 L 214,244 Z" style="stroke: rgb(89%,72%,34%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="212 244, 205 249, 205 239" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,72%,34%); fill-rule: evenodd;"/>
+			<rect x="216" y="177" width="180" height="134" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="228" y="266" style="font-family: Arial-Bold; font-size: 22px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,532) scale(1,-1)">SAVIC</text>
+			<text x="228" y="222" style="font-family: Arial; font-size: 16px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,444) scale(1,-1)">Catálogo local</text>
+			<path d="M 396,244 L 412,244 Z" style="stroke: rgb(89%,72%,34%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="410 244, 403 249, 403 239" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,72%,34%); fill-rule: evenodd;"/>
+			<rect x="414" y="177" width="180" height="134" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="426" y="266" style="font-family: Arial-Bold; font-size: 22px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,532) scale(1,-1)">Git</text>
+			<text x="426" y="222" style="font-family: Arial; font-size: 16px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,444) scale(1,-1)">Subir e integrar</text>
+			<path d="M 594,244 L 610,244 Z" style="stroke: rgb(89%,72%,34%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="608 244, 601 249, 601 239" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,72%,34%); fill-rule: evenodd;"/>
+			<rect x="612" y="177" width="180" height="134" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="624" y="266" style="font-family: Arial-Bold; font-size: 22px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,532) scale(1,-1)">Unity</text>
+			<text x="624" y="222" style="font-family: Arial; font-size: 16px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,444) scale(1,-1)">Generar build</text>
+			<path d="M 792,244 L 808,244 Z" style="stroke: rgb(89%,72%,34%); stroke-linecap: butt; stroke-width: 2;"/>
+			<polygon points="806 244, 799 249, 799 239" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,72%,34%); fill-rule: evenodd;"/>
+			<rect x="810" y="177" width="180" height="134" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="822" y="266" style="font-family: Arial-Bold; font-size: 20px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,532) scale(1,-1)">Distribución</text>
+			<text x="822" y="222" style="font-family: Arial; font-size: 16px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,444) scale(1,-1)">Entregar carpeta</text>
+			<text x="36" y="112" style="font-family: Arial; font-size: 23px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,224) scale(1,-1)">Usuario: preparar, entregar y revisar.</text>
+			<text x="36" y="68" style="font-family: Arial; font-size: 22px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,136) scale(1,-1)">Responsable del proyecto: Git, integración, build y distribución.</text>
+		</g>
+	</g>
+</svg>

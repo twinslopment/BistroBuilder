@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1000" height="430" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1000 430" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1000" height="430"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-430)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1000" height="430" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,15%,17%); fill-rule: evenodd;"/>
+			<rect x="0" y="388" width="1000" height="42" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(8%,10%,12%); fill-rule: evenodd;"/>
+			<text x="20" y="402" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,804) scale(1,-1)">Blender / Assets4ALL</text>
+			<text x="480" y="402" style="font-family: Arial; font-size: 17px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,804) scale(1,-1)">ILUSTRACIÓN APROXIMADA · NO ES CAPTURA REAL</text>
+			<text x="20" y="15" style="font-family: Arial; font-size: 17px;fill: rgb(78%,80%,81%); stroke:none;" transform="translate(0,30) scale(1,-1)">1. Selecciona el modelo.  2. Abre el panel.  3. Crea la sesión.</text>
+			<path d="M 36,77 L 535,77 Z" style="stroke: rgb(44%,47%,48%); stroke-linecap: butt; stroke-width: 1;"/>
+			<polygon points="185 347, 223 369, 393 369, 355 347" style="stroke: rgb(72%,77%,75%); stroke-linecap: butt; stroke-width: 1; fill: rgb(44%,51%,47%); fill-rule: evenodd;"/>
+			<polygon points="355 92, 393 114, 393 369, 355 347" style="stroke: rgb(72%,77%,75%); stroke-linecap: butt; stroke-width: 1; fill: rgb(26%,35%,32%); fill-rule: evenodd;"/>
+			<rect x="185" y="92" width="170" height="255" style="stroke: rgb(83%,87%,85%); stroke-linecap: butt; stroke-width: 1; fill: rgb(39%,49%,45%); fill-rule: evenodd;"/>
+			<path d="M 270,99 L 270,340 Z" style="stroke: rgb(80%,84%,81%); stroke-linecap: butt; stroke-width: 1.5;"/>
+			<rect x="260.0" y="227.15" width="5.0" height="27.0" rx="2" ry="2" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(84%,86%,85%); fill-rule: evenodd;"/>
+			<rect x="280.0" y="227.15" width="5.0" height="27.0" rx="2" ry="2" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(84%,86%,85%); fill-rule: evenodd;"/>
+			<rect x="195" y="80" width="12" height="12" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(58%,65%,61%); fill-rule: evenodd;"/>
+			<rect x="333" y="80" width="12" height="12" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(58%,65%,61%); fill-rule: evenodd;"/>
+			<text x="78" y="46" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,92) scale(1,-1)">Armario de ejemplo · vista simplificada</text>
+			<rect x="564" y="43" width="414" height="329" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="586" y="343" style="font-family: Arial-Bold; font-size: 23px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,686) scale(1,-1)">Assets4All</text>
+			<text x="586" y="299" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,598) scale(1,-1)">Selecciona el modelo que quieres procesar.</text>
+			<rect x="586" y="227" width="367" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(39%,46%,29%); fill-rule: evenodd;"/>
+			<text x="598" y="240" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,480) scale(1,-1)">CREAR SESIÓN</text>
+			<text x="586" y="182" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,364) scale(1,-1)">Se conserva SOURCE y se crea WORK.</text>
+			<text x="586" y="135" style="font-family: Arial; font-size: 18px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,270) scale(1,-1)">Vista 3D &gt; tecla N &gt; Assets4All</text>
+			<circle cx="545" cy="249" r="15" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(89%,72%,34%); fill-rule: evenodd;"/>
+			<text x="539.716552734375" y="243" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(14%,15%,17%); stroke:none;" transform="translate(0,486) scale(1,-1)">1</text>
+		</g>
+	</g>
+</svg>

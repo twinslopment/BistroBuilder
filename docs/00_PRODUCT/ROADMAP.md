@@ -23,6 +23,7 @@
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales
+- **Assets4ALL → SAVIC:** intercambio V1 implementado y probado con armario real: entregas versionadas, PartKeys, actualización sin duplicados, ajustes protegidos y SaveGame entre revisiones. [Contrato y límites](../10_ARCHITECTURE/ASSETS4ALL_SAVIC_DELIVERY.md). No cierra todas las familias ni BBFFVAS.
 - **BBSIS v1:** COMPLETO, VALIDADO Y CERRADO; hardening solo ante regresión real.
 - **Interaction & Reservation v1:** IMPLEMENTADO, VALIDADO Y CERRADO; auditoría destructiva futura antes de vertical slice/beta.
 - **Character & Interaction Animation v1:** INTEGRADO, VALIDADO Y SUBIDO; futuras ampliaciones son V2/hardening.

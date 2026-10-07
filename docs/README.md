@@ -35,3 +35,6 @@ Regenerar ambos con:
 `Tools/BistroBuilder/RefreshMarkdownKnowledge.ps1`
 
 Los archivos originales siguen siendo la fuente editable; el bundle es un artefacto derivado para contexto.
+## Guía de uso de Assets4ALL y SAVIC
+
+Para usuarios básicos: [guía paso a paso](GUIA_USUARIO_ASSETS4ALL_Y_SAVIC.md), [PDF de Assets4ALL](manuales/Manual_Usuario_Assets4ALL.pdf) y [PDF de SAVIC](manuales/Manual_Usuario_SAVIC.pdf). Las pantallas son ilustraciones aproximadas, no capturas reales.

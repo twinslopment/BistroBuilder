@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="1000" height="430" preserveAspectRatio="xMinYMin meet" viewBox="0 0 1000 430" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="1000" height="430"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-430)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="0" y="0" width="1000" height="430" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,15%,17%); fill-rule: evenodd;"/>
+			<rect x="0" y="388" width="1000" height="42" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(8%,10%,12%); fill-rule: evenodd;"/>
+			<text x="20" y="402" style="font-family: Arial-Bold; font-size: 19px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,804) scale(1,-1)">Unity / SAVIC</text>
+			<text x="480" y="402" style="font-family: Arial; font-size: 17px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,804) scale(1,-1)">ILUSTRACIÓN APROXIMADA · NO ES CAPTURA REAL</text>
+			<text x="20" y="15" style="font-family: Arial; font-size: 17px;fill: rgb(78%,80%,81%); stroke:none;" transform="translate(0,30) scale(1,-1)">El centro de control muestra el estado del contenido local.</text>
+			<rect x="18" y="45" width="176" height="325" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<rect x="25" y="326" width="160" height="33" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(39%,46%,29%); fill-rule: evenodd;"/>
+			<text x="34" y="337" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,674) scale(1,-1)">Resumen</text>
+			<text x="34" y="302" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,604) scale(1,-1)">Cola</text>
+			<text x="34" y="267" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,534) scale(1,-1)">Revisión</text>
+			<text x="34" y="232" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,464) scale(1,-1)">Inventario</text>
+			<text x="34" y="197" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,394) scale(1,-1)">Adopción</text>
+			<text x="34" y="162" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,324) scale(1,-1)">Validación</text>
+			<text x="34" y="127" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,254) scale(1,-1)">Historial</text>
+			<text x="34" y="92" style="font-family: Arial; font-size: 20px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,184) scale(1,-1)">Ajustes</text>
+			<text x="220" y="338" style="font-family: Arial-Bold; font-size: 27px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,676) scale(1,-1)">SAVIC · Resumen</text>
+			<rect x="220" y="275" width="246" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="232" y="288" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,576) scale(1,-1)">Importar carpeta GLB</text>
+			<rect x="479" y="275" width="205" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="491" y="288" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,576) scale(1,-1)">Escanear entrada</text>
+			<rect x="697" y="275" width="266" height="42" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(32%,34%,37%); fill-rule: evenodd;"/>
+			<text x="709" y="288" style="font-family: Arial; font-size: 18px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,576) scale(1,-1)">Actualizar inventario</text>
+			<rect x="220" y="131" width="230" height="103" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="236" y="197" style="font-family: Arial; font-size: 22px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,394) scale(1,-1)">En cola</text>
+			<text x="236" y="155" style="font-family: Arial-Bold; font-size: 31px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,310) scale(1,-1)">0</text>
+			<rect x="470" y="131" width="230" height="103" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="486" y="197" style="font-family: Arial; font-size: 22px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,394) scale(1,-1)">Publicados</text>
+			<text x="486" y="155" style="font-family: Arial-Bold; font-size: 31px;fill: rgb(70%,83%,73%); stroke:none;" transform="translate(0,310) scale(1,-1)">1</text>
+			<rect x="720" y="131" width="230" height="103" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(20%,22%,25%); fill-rule: evenodd;"/>
+			<text x="736" y="197" style="font-family: Arial; font-size: 22px;fill: rgb(96%,96%,94%); stroke:none;" transform="translate(0,394) scale(1,-1)">Revisión</text>
+			<text x="736" y="155" style="font-family: Arial-Bold; font-size: 31px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,310) scale(1,-1)">0</text>
+			<text x="220" y="78" style="font-family: Arial; font-size: 18px;fill: rgb(89%,72%,34%); stroke:none;" transform="translate(0,156) scale(1,-1)">Valores ficticios de ejemplo. Consulta tus propios resultados.</text>
+		</g>
+	</g>
+</svg>

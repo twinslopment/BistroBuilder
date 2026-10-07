@@ -96,6 +96,9 @@ Regenerar ambos con:
 `Tools/BistroBuilder/RefreshMarkdownKnowledge.ps1`
 
 Los archivos originales siguen siendo la fuente editable; el bundle es un artefacto derivado para contexto.
+## Guía de uso de Assets4ALL y SAVIC
+
+Para usuarios básicos: [guía paso a paso](GUIA_USUARIO_ASSETS4ALL_Y_SAVIC.md), [PDF de Assets4ALL](manuales/Manual_Usuario_Assets4ALL.pdf) y [PDF de SAVIC](manuales/Manual_Usuario_SAVIC.pdf). Las pantallas son ilustraciones aproximadas, no capturas reales.
 
 ---
 
@@ -344,6 +347,7 @@ Category: CANONICAL
 | 21A UI/UX definitiva | EN DESARROLLO | diseño vinculante y rama propia; cierre aún no ratificado |
 
 ## Sistemas transversales
+- **Assets4ALL → SAVIC:** intercambio V1 implementado y probado con armario real: entregas versionadas, PartKeys, actualización sin duplicados, ajustes protegidos y SaveGame entre revisiones. [Contrato y límites](../10_ARCHITECTURE/ASSETS4ALL_SAVIC_DELIVERY.md). No cierra todas las familias ni BBFFVAS.
 - **BBSIS v1:** COMPLETO, VALIDADO Y CERRADO; hardening solo ante regresión real.
 - **Interaction & Reservation v1:** IMPLEMENTADO, VALIDADO Y CERRADO; auditoría destructiva futura antes de vertical slice/beta.
 - **Character & Interaction Animation v1:** INTEGRADO, VALIDADO Y SUBIDO; futuras ampliaciones son V2/hardening.
@@ -396,6 +400,113 @@ Operaciones de ventana implementadas y verificadas: importar, reintentar, verifi
 ### SAVIC · miniaturas — 05/10/2026
 
 Cuadrícula compacta en Inventario, alternancia Lista/Miniaturas, selección/ficha y filtros, fallback y virtualización. 16 solicitudes curl PASS con layout nativo 1/2/3/5 columnas; gate 27/27 y auditoría15:47:36 UTC conservan 18 publicados y 0 revisión/FAILED. [Pruebas](../40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
+
+---
+
+## SOURCE: docs/10_ARCHITECTURE/ASSETS4ALL_SAVIC_DELIVERY.md
+
+Category: CANONICAL
+
+# Assets4ALL → SAVIC: entrega versionada V1
+
+Contrato implementado en la rama de trabajo `codex/assets4all-savic-exchange`. Assets4ALL conserva la autoridad sobre SOURCE, WORK y la segmentación; SAVIC conserva clasificación, catálogo, autoría jugable, BBSIS y SaveGame.
+
+## Guía básica de usuario
+
+Para seguir el procedimiento sin conocimientos de programación, consultar la [guía de Assets4ALL y SAVIC](../GUIA_USUARIO_ASSETS4ALL_Y_SAVIC.md). Contiene ilustraciones aproximadas, no capturas reales. Los PDF separados están en [manual de Assets4ALL](../manuales/Manual_Usuario_Assets4ALL.pdf) y [manual de SAVIC](../manuales/Manual_Usuario_SAVIC.pdf).
+
+Para vincular por primera vez una corrección a un artículo existente, exportar inicialmente fuera de `ContentInbox/Deliveries` y seleccionar el artículo mediante Import Delivery antes de activar la detección automática. Una vez vinculado, las siguientes revisiones del mismo UUID pueden usar la carpeta de entregas automática.
+
+## Flujo de uso
+
+1. En Blender, crear la sesión, analizar, esperar a PartGraph READY y aprobar WORK.
+2. Pulsar **ENTREGAR A SAVIC** y elegir una carpeta. Para detección automática, usar `ContentInbox/Deliveries` del proyecto Unity.
+3. En Unity, abrir **Tools → Bistro Builder → SAVIC → Assets4ALL → Import Delivery** y seleccionar la carpeta de revisión.
+4. Para corregir un artículo ya publicado, vincularlo explícitamente en su primera entrega. Después, las revisiones del mismo UUID actualizan ese artículo automáticamente.
+5. Guardar el `.blend`: contiene el UUID y el historial de revisiones. Una nueva importación independiente de otro GLB no infiere la identidad del artículo anterior.
+
+## Archivos y verificaciones
+
+La carpeta final `<assetUuid>_r<revision>` se publica mediante rename tras completar `model.glb`, `asset4all.json`, `partgraph.json` y `delivery.json`. Las carpetas `.pending-*` quedan fuera de la ingesta.
+
+`delivery.json` usa `schemaId=assets4all.savic-delivery`, versión 1, UUID independiente del SHA del modelo, revisión secuencial, fingerprint padre, SHA-256 de cada archivo, hash físico de WORK, generación y revisión de PartGraph, y correspondencia `PartKey → nodeName/sourceUid/triangleCount`. El fingerprint es SHA-256 del objeto JSON canónico con las claves `asset4all.json`, `model.glb`, `partgraph.json` y sus hashes.
+
+Blender exporta clones de las caras exactas de cada pieza, conserva materiales/UV de BMesh, verifica cobertura completa y disjunta y compara los triángulos emitidos. SOURCE y WORK físicos se verifican antes y después. Las normales de exportación se recalculan; no se certifica la preservación de normales personalizadas. Los extras globales de escena se excluyen del GLB para que repetir una entrega no incorpore su propio historial.
+
+SAVIC verifica hashes, contrato, PartGraph, nodos y triángulos del GLB y del modelo importado. Archiva el paquete y la fuente. La evidencia Assets4ALL tiene un registro propio; no se presenta como metadatos Meshy. La membresía se conserva, mientras los roles inciertos siguen como hipótesis y no crean contratos jugables. Una familia sin suficiente evidencia puede quedar en revisión.
+
+## Actualizaciones y protección del trabajo
+
+La publicación de cada revisión pasa por los módulos y gates existentes. Un candidato usa repositorio separado y conserva `savicId`, `canonicalContentId`, GUID de catálogo y fuentes anteriores. Solo un candidato publicado puede sustituir el hash de la fuente canónica. La sustitución consume la API canónica `ReplaceSourceRevision` y su historial `sourceRevisions`, conservando la actualización de GLB/FBX que ya estaba en desarrollo. `assets4AllRevisions` retiene la evidencia externa de cada paquete. El GLB de una revisión histórica vuelve a la misma identidad al pasar por la ingesta convencional.
+
+Se conservan nombre, descripción, precio, condiciones económicas y materiales editados sobre nodos Assets4ALL. La pérdida de una pieza con material protegido bloquea la actualización; V1 solicita resolver su linaje. Las miniaturas de artículos genéricos se generan con el material protegido aplicado. No se afirma implementación completa de BBFFVAS ni reconocimiento universal de familias.
+
+Un diario durable en `SAVIC/Transactions/Assets4All` protege los archivos publicados y catálogos. Ante fallo se restauran los bytes anteriores; al arrancar se recuperan transacciones incompletas. Los recibos se escriben en `SAVIC/Receipts/Assets4All`; distinguen publicación, repetición sin cambios y revisión MODEL/GAME. La detección automática respeta la pausa de SAVIC y no trabaja durante Play Mode o compilación.
+
+## Cómo llega al repositorio y al juego distribuido
+
+El recorrido es **Assets4ALL → entrega local → SAVIC → catálogo del proyecto Unity → Git → integración → build → distribución**. El estado `PUBLISHED` significa publicación en el proyecto local; no implica un push a GitHub ni una actualización del ejecutable de los jugadores.
+
+### Proyecto y carpetas de esta instalación
+
+- Proyecto Unity conectado: `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation`.
+- Destino de exportación automática desde Blender: `C:\Users\mruperez\ProyectoBB\BB_SavicPresentation\ContentInbox\Deliveries`.
+- Archivo del paquete y fuentes: `ContentSource/Assets4All` y `ContentSource/SHA256` dentro del proyecto.
+- Manifiestos canónicos: `SAVIC/Manifests`.
+- Artefactos publicados: `Assets/Generated/BistroBuilder/SAVIC/Published`, con sus dependencias y archivos `.meta`.
+- Catálogo principal de colocables: `Assets/Data/Restaurant/EditMode/Catalog/RestaurantPlaceableCatalog_Main.asset`.
+- Remoto Git configurado: [twinslopment/BistroBuilder](https://github.com/twinslopment/BistroBuilder).
+
+Con Unity abierto, fuera de Play Mode, sin compilación en curso y con SAVIC sin pausar, la carpeta de entregas se procesa automáticamente. Para la primera vinculación a un artículo existente, usar **Tools → Bistro Builder → SAVIC → Assets4ALL → Import Delivery**, seleccionar la subcarpeta `<assetUuid>_r<revision>` y elegir el artículo. Las siguientes revisiones conservan esa vinculación. Guardar el `.blend` conserva UUID e historial.
+
+`PUBLISHED` permite encontrar el artículo en el catálogo de Modo Edición. `NEEDS_REVIEW` requiere resolver la causa indicada antes de publicarlo; aprobar WORK en Assets4ALL no certifica por sí solo todos los contratos jugables de SAVIC.
+
+### Entrega por Git y generación del ejecutable
+
+1. Revisar y hacer commit de los archivos correspondientes a la entrega: fuentes archivadas, manifiestos, artefactos publicados, dependencias, `.meta` y modificaciones de los catálogos afectados. Acotar el commit al cambio validado y conservar los GUID; no incluir en bloque trabajos ajenos ni carpetas temporales.
+2. Hacer push de la rama al remoto del juego. `.gitattributes` configura Git LFS para los GLB de `ContentSource` y de `Assets/Generated/BistroBuilder/SAVIC/SourceMirror`; la subida y la descarga requieren también sus objetos LFS.
+3. Integrar el cambio validado en la rama acumulativa vigente del juego, siguiendo la [política de integración](../00_PRODUCT/BRANCH_AUDIT_20260918.md). Un push publica la rama; no modifica por sí solo otras ramas ni otros checkouts locales.
+4. Abrir el proyecto integrado y generar la build con **Tools → Bistro Builder → Build → Windows Playtest**. El [script de build](../../Assets/Editor/BistroBuilder/Build/BistroBuilderPlaytestBuild.cs) genera `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe` respecto a la raíz del proyecto desde el que se ejecuta.
+5. Distribuir la carpeta completa de la build, incluido el ejecutable y sus datos, por el canal elegido. Un `.exe` generado anteriormente conserva el contenido de su build y necesita una nueva versión para incorporar los cambios.
+
+El puente instalado automatiza la entrega y publicación local. No ejecuta commit, push, integración de ramas, generación de builds ni subida a una plataforma de distribución. `Builds/` está excluido de Git; versionar el proyecto y distribuir su build son operaciones distintas.
+
+## Cómo aplicar cambios de código de SAVIC a esta conexión
+
+El receptor pertenece al propio proyecto Unity, en `Assets/Editor/BistroBuilder/SAVIC`. Assets4ALL entrega un paquete de archivos y SAVIC lo interpreta con el código presente en ese checkout. La conexión no contiene una copia independiente de SAVIC dentro del complemento Blender.
+
+| Cambio | Qué actualizar |
+|---|---|
+| Validación, clasificación o publicación interna de SAVIC, manteniendo sus interfaces y el formato de entrega | Integrar el código en el proyecto Unity conectado. Unity recompila y los siguientes procesados usan la versión nueva. El complemento Assets4ALL puede mantenerse. |
+| Interfaces internas utilizadas por el puente, por ejemplo repositorio, historial de fuentes o publicación | Adaptar también los consumidores del puente y comprobar una entrega real y una actualización del mismo artículo. |
+| Archivos, campos, unidades o estructura que Assets4ALL debe enviar | Actualizar exportador y receptor de forma coordinada; generar el paquete actualizado del complemento e instalarlo en Blender. Mantener compatibilidad con entregas anteriores o implementar una migración explícita. |
+| Comportamiento o datos que deben llegar a jugadores de una build existente | Integrar, validar y generar/distribuir una nueva build. El código situado en `Assets/Editor` se ejecuta en el editor; sus cambios de publicación llegan al jugador mediante los artefactos generados incluidos en la build. |
+
+### Puntos de mantenimiento
+
+- [SavicAssets4AllService.cs](../../Assets/Editor/BistroBuilder/SAVIC/Intake/SavicAssets4AllService.cs): verificación del paquete, importación, revisiones, conservación de ajustes, recuperación y detección de entregas.
+- [SavicAssets4AllModels.cs](../../Assets/Editor/BistroBuilder/SAVIC/Intake/SavicAssets4AllModels.cs): modelos de datos del intercambio.
+- [SavicAssets4AllEvidence.cs](../../Assets/Editor/BistroBuilder/SAVIC/Intake/SavicAssets4AllEvidence.cs): evidencia de piezas y comprobación del modelo importado.
+- [SavicManifestRepository.cs](../../Assets/Editor/BistroBuilder/SAVIC/Core/SavicManifestRepository.cs): `CommitAssets4AllRevision` y la API canónica `ReplaceSourceRevision`.
+- Exportador Blender: `C:\Users\mruperez\Assets4All_LocalGate\v029\blender_extension\assets4all\savic_delivery.py`.
+
+El contrato externo actual es `schemaId=assets4all.savic-delivery`, `schemaVersion=1`. El receptor comprueba expresamente esa versión. Cambiarla solo en el exportador provocaría el rechazo de la entrega; una evolución incompatible requiere soporte en el receptor y un plan para los paquetes archivados. La revisión de un artículo (`revision`) y la versión del formato (`schemaVersion`) tienen funciones diferentes.
+
+### Procedimiento de actualización
+
+1. Desarrollar e integrar los cambios en la rama y el checkout que realmente abre Unity. Si SAVIC se modifica en otra carpeta o rama, llevar esos cambios al proyecto conectado mediante Git; no basta con el push del origen.
+2. Esperar a la recompilación de Unity y resolver cualquier incompatibilidad del puente. Actualizar e instalar el complemento Blender solo cuando cambie su exportador o el contrato de entrega.
+3. Verificar una primera entrega y una nueva revisión con un artículo real: publicación, identidad y GUID conservados, ajustes manuales, rechazo de paquetes inválidos y recuperación ante fallo. Para cambios relevantes de publicación, comprobar además catálogo, colocación y SaveGame y ejecutar las regresiones SAVIC aplicables. Los helpers disponibles se enumeran en la sección de evidencia de este documento.
+4. Reprocesar los artículos ya publicados afectados si el cambio debe regenerar sus artefactos o validaciones. Cambiar código no los regenera automáticamente; repetir una entrega idéntica puede devolver `UNCHANGED` y tampoco fuerza ese reprocesado. Utilizar las operaciones canónicas de SAVIC y comprobar el resultado.
+5. Versionar el cambio validado, actualizar esta documentación y regenerar índice/bundle. Integrar en la rama del juego y generar una nueva build cuando deba llegar a los jugadores.
+
+## Evidencia real del 05/10/2026
+
+Modelo: armario Meshy previamente publicado, `8a5c37cab8eb4366ab675afa66af65ad`. Blender 5.1.1: exportación, repetición idempotente, reapertura del `.blend`, cambio de acabado y corrección de escala/suelo, SOURCE intacto y diez PartKeys conservadas. Unity 6000.3.19f1: primera vinculación, revisiones 2 y 3, Editor nuevo, reprocesado, ajustes de catálogo y material protegidos, 18 identidades sin duplicados, GLB histórico duplicado, rechazo de GLB corrupto y revisión antigua. Una cuarta entrega real verifica además la integración con la API de revisiones y las dependencias actuales del proyecto de uso.
+
+Prueba Play Mode sobre `Prototype_Restaurant`: colocación mediante Edit Mode y catálogo principal; SaveGame con revisión 1; Editor cerrado; actualización a revisión 3; carga de esa misma partida con ItemId/InstanceId y acabado conservados; eliminación del slot de diagnóstico y Console sin Error/Exception/Assert durante el test y cleanup. Prueba destructiva: fallo de material protegido tras comenzar publicación, restauración de archivos y recuperación de diario interrumpido.
+
+Helpers reproducibles: `tools/blender_savic_delivery_probe.py`, `SavicAssets4AllAcceptance`, `SavicAssets4AllSaveGameAcceptance`. Logs y JSON reales quedan en la copia de aceptación `assets4all-savic`; este documento no certifica todas las familias ni una jornada completa de IA.
 
 ---
 
@@ -3617,6 +3728,270 @@ Prueba reproducible: Unity batch `-executeMethod BistroBuilderPointerPlayTest.Ru
 
 ---
 
+## SOURCE: docs/GUIA_USUARIO_ASSETS4ALL_Y_SAVIC.md
+
+Category: SUPPORTING
+
+# Guía de usuario: Assets4ALL y SAVIC
+
+**Para usuarios básicos · Edición del 05/10/2026**
+
+Esta guía explica cómo preparar un modelo 3D en Blender, entregarlo a SAVIC y encontrarlo en el catálogo de Bistro Builder. No necesitas programar para seguir el recorrido habitual. Los cambios de código, Git y la distribución del juego corresponden al responsable del proyecto.
+
+**Sobre las imágenes:** todas las pantallas de esta guía son ilustraciones aproximadas. No son capturas reales ni resultados de una prueba. Simplifican la interfaz y muestran un armario de ejemplo. La posición, el idioma y el aspecto pueden variar según la instalación; los nombres de los controles se han contrastado con el código actual.
+
+**Instalación de referencia:** Assets4ALL 0.1.29, Blender 5.1.1 y proyecto Bistro Builder con el puente Assets4ALL-SAVIC instalado. Si faltan las herramientas, pide al responsable del proyecto que prepare esta instalación antes de empezar.
+
+## Assets4ALL: preparar y entregar un modelo
+
+### 1. Abrir el modelo y crear una sesión
+
+Assets4ALL funciona dentro de **Blender**. Su trabajo es ayudarte a revisar tamaño, apoyo, piezas y apariencia antes de entregar el modelo al juego.
+
+1. Abre Blender. Si retomas un trabajo, abre su archivo `.blend` guardado y continúa con esa sesión.
+2. Para un trabajo nuevo, importa el modelo desde **Archivo > Importar**, eligiendo el formato correspondiente. Un archivo `.glb` se importa con la opción **glTF 2.0**; un `.fbx`, con la opción FBX.
+3. Selecciona todos los objetos de malla que pertenecen a ese modelo. Evita incluir luces, cámaras u otros modelos de la escena.
+4. Sitúa el ratón sobre la vista 3D y pulsa **N**. En el panel lateral, abre la pestaña **Assets4All**.
+5. Pulsa **CREAR SESIÓN**, comprueba el nombre en el cuadro que aparece y confirma.
+
+**Resultado esperado:** aparecen los controles de Assets4ALL y una copia de trabajo del modelo. **SOURCE** es el original conservado; **WORK** es la copia que preparas. Realiza los cambios sobre WORK.
+
+Guarda el trabajo con **Archivo > Guardar como** y un nombre fácil de reconocer, por ejemplo `Armario.blend`. El `.blend` permite retomar la sesión y conservar la identidad de las futuras entregas.
+
+![Ilustración aproximada: modelo seleccionado y botón CREAR SESIÓN.](manual_figuras/a4a_inicio.svg)
+
+### 2. Ajustar el modelo y analizarlo
+
+1. Si el tamaño es incorrecto, pulsa **TAMAÑO**. Mueve el ratón a izquierda o derecha; confirma con clic o **Enter**. **Esc** cancela ese ajuste. **Shift** permite un ajuste más fino.
+2. Para un objeto que debe descansar en el suelo, pulsa **APOYAR EN SUELO**. No lo uses como criterio de instalación para una lámpara de techo o un objeto de pared.
+3. En **Interpretación (opcional)** puedes usar **Automático / Universal** si no tienes una indicación específica del proyecto.
+4. Pulsa **1 · ANALIZAR** y espera a que termine. En modelos grandes puede tardar; evita lanzar varias operaciones seguidas.
+5. Si necesitas la preparación automática, pulsa **2 · PREPARAR + AUTORREPARAR** y revisa de nuevo el resultado y el aspecto del modelo.
+
+**Resultado esperado:** el bloque **RESULTADO** muestra las comprobaciones y **PartGraph: READY**. PartGraph es la información que identifica las piezas del modelo; READY significa que está disponible para las operaciones por pieza.
+
+| Mensaje | Qué significa y qué hacer |
+|---|---|
+| PASS | Esa comprobación ha pasado. |
+| REVIEW | Hay algo que revisar; lee la explicación antes de aprobar. |
+| FAIL | Hay un fallo; resuélvelo antes de seguir. |
+| N/A | Esa comprobación no se aplica o aún no está disponible; revisa el contexto. |
+
+El análisis no garantiza por sí solo que una silla permita sentarse o que un equipo funcione en el juego. SAVIC comprueba después los requisitos de uso jugable.
+
+![Ilustración aproximada: botones de análisis y PartGraph READY.](manual_figuras/a4a_analisis.svg)
+
+### 3. Cambiar la apariencia de una pieza, si lo necesitas
+
+Este paso es opcional. Puedes entregar el modelo con sus materiales originales si son adecuados.
+
+1. Espera a **PartGraph: READY** y pulsa **ELEGIR PIEZAS**.
+2. Haz clic sobre una o varias piezas. Cada clic añade o quita una selección. Comprueba la zona resaltada antes de aplicar una textura.
+3. Pulsa **Enter** o **Esc** para salir del modo de elección. La selección se conserva; **LIMPIAR** la elimina.
+4. Pulsa **DESDE MI EQUIPO** y selecciona una imagen de textura, si ya tienes una.
+5. Como alternativa, escribe una búsqueda en **TEXTURAS ONLINE**, pulsa **BUSCAR** y después **APLICAR** en el resultado elegido. Esta opción necesita conexión y acceso a Internet habilitado en Blender.
+
+**AISLAR** facilita ver las piezas elegidas. **MOSTRAR TODO** recupera la vista completa. **DESHACER TEXTURA** revierte el último cambio de textura compatible.
+
+**Resultado esperado:** cambia la apariencia de las zonas seleccionadas. Comprueba el modelo desde varios ángulos. La textura online modifica el color base; no presupongas que sustituye todos los canales de un material completo.
+
+Después de cambiar la apariencia, vuelve a **ANALIZAR**, revisa el resultado y aprueba de nuevo antes de entregar. **COMPARAR SOURCE** permite consultar el original; después vuelve a ocultarlo para evitar confundirlo con WORK.
+
+![Ilustración aproximada: selección de una puerta y acciones de textura.](manual_figuras/a4a_piezas.svg)
+
+### 4. Aprobar y entregar a SAVIC
+
+1. Revisa el tamaño, el apoyo y los materiales. Comprueba **PartGraph: READY** y resuelve los fallos indicados.
+2. Pulsa **APROBAR WORK**. Si aparece un error, lee el motivo; la aprobación no debe forzarse.
+3. Comprueba que el estado cambia a **APPROVED**. Pulsa **ENTREGAR A SAVIC**.
+4. En el selector de carpeta, elige la carpeta de entregas del proyecto Unity. En esta instalación es:
+
+```text
+C:\Users\mruperez\ProyectoBB\BB_SavicPresentation\ContentInbox\Deliveries
+```
+
+5. Confirma la exportación y espera el mensaje **Entrega guardada**.
+6. **Guarda otra vez el `.blend` después de exportar.** Así conservas la identidad y el historial de revisiones.
+
+**Resultado esperado:** dentro de `Deliveries` se crea una subcarpeta con un identificador y una revisión, por ejemplo `<identificador>_r1`. Contiene `model.glb`, `asset4all.json`, `partgraph.json` y `delivery.json`. Son los archivos de una misma entrega; mantenlos juntos y sin editar.
+
+La carpeta que eliges en Blender es **Deliveries**. La que elegirás en la importación manual de SAVIC es su **subcarpeta de revisión**.
+
+**Si actualizas un artículo que ya existe en SAVIC:** en su primera vinculación, exporta a una carpeta temporal fuera de `ContentInbox/Deliveries` y sigue el paso 2 del manual SAVIC. Así puedes elegir el artículo existente antes de que el detector automático lo trate como nuevo.
+
+![Ilustración aproximada: estado APPROVED y botón ENTREGAR A SAVIC.](manual_figuras/a4a_entrega.svg)
+
+### 5. Retomar un trabajo y corregir problemas
+
+Para actualizar el mismo artículo, abre su **mismo `.blend`**, modifica WORK, analiza y revisa, aprueba, exporta y guarda otra vez. Una entrega con cambios genera una nueva revisión; una entrega idéntica puede reutilizar la anterior. Importar el GLB como un trabajo independiente no recupera automáticamente la identidad del artículo existente.
+
+| Si ocurre esto | Qué hacer |
+|---|---|
+| No aparece Assets4All | Coloca el ratón en la vista 3D, pulsa N y busca su pestaña. Si sigue faltando, consulta si el complemento está instalado y activado. |
+| No se puede crear la sesión | Selecciona los objetos de malla del modelo y vuelve a intentarlo. |
+| No aparece PartGraph READY | Espera al análisis. Si continúa igual, vuelve a analizar y consulta el diagnóstico; no entregues con información de piezas desactualizada. |
+| La textura afecta una zona inesperada | Usa DESHACER TEXTURA, limpia la selección y elige de nuevo comprobando el resaltado. |
+| ENTREGAR A SAVIC está desactivado | Revisa los errores y pulsa APROBAR WORK. Para exportar, usa Modo Objeto. |
+| La entrega se rechaza | Conserva el mensaje de error y el `.blend`; no edites los JSON para intentar aprobarla. |
+
+**Para pedir ayuda:** indica qué intentabas hacer, el nombre del modelo y el mensaje exacto. **COPIAR INFORME PARA CHATGPT** permite obtener un diagnóstico. Pásalo al responsable del proyecto si necesita investigar el problema.
+
+### 6. Lista de comprobación antes de cerrar Blender
+
+- [ ] Trabajo con el `.blend` correcto y la sesión del artículo que quiero actualizar.
+- [ ] El tamaño y el tipo de apoyo son adecuados.
+- [ ] He revisado los avisos y no quedan fallos que impidan aprobar o exportar.
+- [ ] PartGraph indica READY.
+- [ ] He aprobado WORK y la exportación ha terminado con Entrega guardada.
+- [ ] He guardado el `.blend` después de exportar.
+- [ ] Sé qué carpeta de revisión recibirá SAVIC.
+
+**Cuatro palabras útiles:** SOURCE = original conservado; WORK = copia preparada; READY = piezas listas; APPROVED = trabajo aprobado en Assets4ALL.
+
+**El siguiente paso:** abre el proyecto Unity y sigue el manual SAVIC. Entregar desde Blender crea el paquete local. La incorporación al catálogo la realiza SAVIC; Git y la build se gestionan después.
+
+Si vas a cerrar una sesión y crear otra, conserva primero el `.blend` y las entregas que necesites. Crear una sesión nueva para una simple corrección puede hacer que se trate como un artículo nuevo.
+
+## SAVIC: recibir, revisar y publicar un modelo
+
+### 1. Abrir el proyecto y el centro de control
+
+SAVIC funciona dentro del **editor Unity**. Recibe modelos, comprueba sus requisitos, prepara sus artefactos y registra los artículos que pueden publicarse en el catálogo del juego.
+
+1. Abre **Unity Hub** y el proyecto correcto. En esta instalación la carpeta es:
+
+```text
+C:\Users\mruperez\ProyectoBB\BB_SavicPresentation
+```
+
+2. Espera a que Unity termine de importar y compilar. Guarda las escenas abiertas antes de actualizar modelos o verificar su funcionamiento.
+3. Si Unity está ejecutando el juego, detén **Play** para trabajar con la importación.
+4. Abre **Tools > Bistro Builder > SAVIC > Open Control Center**.
+
+**Resultado esperado:** aparece la ventana **SAVIC**. Usa estas secciones:
+
+- **Resumen:** estado general del contenido.
+- **Cola:** trabajos pendientes y control de pausa.
+- **Revisión:** incidencias que necesitan atención.
+- **Inventario:** artículos y sus fichas.
+- **Validación / Historial:** resultados y operaciones anteriores.
+
+**Recargar** actualiza la vista. **Actualizar inventario** vuelve a examinar el contenido del proyecto; no equivale a subirlo a Git ni a generar el ejecutable.
+
+Las entregas automáticas se procesan con Unity abierto, fuera de Play, sin compilación en curso y con SAVIC sin pausar. Si la cola está pausada, abre **Cola** y pulsa **Reanudar cola**.
+
+![Ilustración aproximada: centro de control y navegación de SAVIC.](manual_figuras/savic_resumen.svg)
+
+### 2. Recibir una entrega de Assets4ALL
+
+Para un **artículo nuevo**, puedes exportar desde Blender a `ContentInbox/Deliveries` y esperar la detección automática. Para decidir explícitamente la primera vinculación, utiliza la importación manual.
+
+1. Si es la primera actualización de un artículo ya existente, exporta desde Blender a una carpeta temporal fuera de `ContentInbox/Deliveries`.
+2. En Unity abre **Tools > Bistro Builder > SAVIC > Assets4ALL > Import Delivery**.
+3. Pulsa **Seleccionar entrega…** y elige la **subcarpeta de revisión**, por ejemplo `<identificador>_r1`, que contiene los cuatro archivos. No elijas solo el GLB ni la carpeta padre.
+4. En **Primera vinculación**, elige **Crear artículo nuevo** para añadir uno. Para corregir uno existente, selecciona su nombre en la lista.
+5. Pulsa **Importar o actualizar** y espera el resultado.
+
+**Resultado esperado:** la ventana muestra el estado y el motivo de la operación. Las próximas entregas del mismo `.blend` usan esa identidad y pueden exportarse a la carpeta de detección automática.
+
+La vinculación correcta evita crear un segundo artículo al corregir el primero. Comprueba el nombre elegido antes de importar. Si no lo encuentras en la lista, revisa su publicación en Inventario o consulta al responsable.
+
+**Si recibes un GLB independiente:** el centro de control ofrece **Importar carpeta GLB**, y existe `ContentInbox/DropHere`. Ese recorrido no conserva por sí solo la identidad ni la información de piezas de un paquete Assets4ALL. Para trabajos vinculados a Assets4ALL, usa siempre la entrega completa.
+
+![Ilustración aproximada: seleccionar revisión, vincular e importar.](manual_figuras/savic_entrega.svg)
+
+### 3. Entender el resultado y los avisos
+
+La validación en Blender y la publicación jugable son pasos diferentes. SAVIC puede necesitar más información sobre el uso del objeto, sus dimensiones o sus requisitos funcionales.
+
+| Estado o mensaje | Qué significa y qué hacer |
+|---|---|
+| PUBLISHED | Publicado en el proyecto local. Busca el artículo en Inventario y comprueba el catálogo. |
+| UNCHANGED | La misma revisión ya está incorporada; no se ha creado una actualización nueva. |
+| NEEDS_REVIEW | Necesita revisión. Lee el motivo y quién debe resolverlo. |
+| Ingested / Processing, o En cola / Procesando | El trabajo está pendiente o en curso. Espera sin repetir la importación. |
+| DuplicateExact | SAVIC reconoce esos mismos bytes; no representa un artículo nuevo. |
+| FAILED o mensaje de error | La operación no se ha completado. Conserva el mensaje y revisa la causa. |
+
+En una entrega Assets4ALL, **MODEL** señala una revisión del modelo o del paquete; normalmente se corrige en Blender. **GAME** señala un requisito del proyecto o de su publicación jugable; puede necesitar al responsable de SAVIC.
+
+Si corriges el modelo, vuelve a exportar desde el mismo `.blend` y entrega la revisión nueva. Importar repetidamente el paquete pendiente no garantiza que se vuelva a procesar: SAVIC guarda el resultado de cada entrega.
+
+Puedes consultar ese resultado en la ventana de importación o en `SAVIC/Receipts/Assets4All` dentro del proyecto. Los archivos de esa carpeta son recibos; no necesitan edición manual.
+
+**Ejemplo:** un modelo puede verse bien y aun necesitar una comprobación para que un personaje se siente. Cuando SAVIC ofrezca **Verificar funcionamiento**, sigue el procedimiento de la ficha.
+
+### 4. Consultar la ficha y actualizar un artículo
+
+1. En SAVIC abre **Inventario** y busca el artículo por su nombre. Usa los filtros si aparecen muchos resultados.
+2. Selecciona el artículo y revisa su ficha, estado, validaciones y artefactos.
+3. **Revalidar asset** vuelve a poner un artículo publicado en procesamiento. Para uno pendiente puede aparecer **Reintentar procesamiento**. Úsalos cuando hayas resuelto la causa o debas aplicar un cambio de SAVIC.
+4. Si aparece **Verificar funcionamiento**, guarda las escenas y deja terminar la prueba. Unity puede entrar en Play para comprobar uso, colocación y guardado/carga. Lee el resultado al terminar.
+
+**Si el artículo está vinculado a Assets4ALL:** actualízalo desde su `.blend` y entrega la revisión completa mediante **Import Delivery**. La primera vinculación solo se establece una vez.
+
+**Si procede de un modelo independiente:** **Actualizar original** permite elegir una nueva versión GLB/FBX compatible. Esta acción conserva la identidad del artículo cuando la revisión supera sus comprobaciones. No sustituye al recorrido de paquetes de Assets4ALL.
+
+**Adjuntar original** sirve para recuperar el archivo exacto que falta; no es el botón para enviar una versión modificada.
+
+**Resultado esperado:** una revisión aceptada conserva la identidad del artículo y los ajustes manuales protegidos. Si desaparece una pieza con un material protegido, la actualización puede quedar en revisión. Comprueba la ficha y la apariencia después de cada cambio.
+
+![Ilustración aproximada: Inventario y acciones de una ficha publicada.](manual_figuras/savic_ficha.svg)
+
+### 5. Encontrar el artículo en el juego y distribuirlo
+
+**Para comprobarlo dentro de Unity:**
+
+1. Comprueba que SAVIC ha dejado el artículo en **PUBLISHED**.
+2. Abre la escena de juego o playtest indicada por el proyecto y entra en **Play**.
+3. Fuera del servicio, entra en **Modo Edición** y abre el catálogo.
+4. Busca el artículo e intenta colocarlo en una ubicación adecuada. El juego puede rechazarla si no cumple sus reglas de espacio o instalación.
+5. Revisa su apariencia y, si corresponde, su uso. Guarda y carga una partida de prueba para comprobar que se conserva correctamente.
+
+**Para que llegue a otra copia del proyecto o a los jugadores:** el responsable del proyecto revisa los archivos generados, hace **commit y push** al repositorio [twinslopment/BistroBuilder](https://github.com/twinslopment/BistroBuilder), integra el cambio en la rama del juego y genera una build nueva. Los GLB configurados para ello utilizan **Git LFS**, el sistema de Git para archivos grandes.
+
+La build de playtest se genera con **Tools > Bistro Builder > Build > Windows Playtest** y queda en:
+
+```text
+Builds\Windows\BistroBuilder_Playtest\BistroBuilder.exe
+```
+
+La ruta es relativa al proyecto desde el que se genera. Se distribuye **toda la carpeta de la build**, con el `.exe` y sus datos. Un ejecutable anterior no se actualiza al publicar un artículo en SAVIC.
+
+**PUBLISHED no significa subido a GitHub ni distribuido a jugadores.** El puente automatiza la entrega y publicación local; no hace automáticamente Git, integración de ramas o distribución.
+
+![Ilustración aproximada: del catálogo local al juego distribuido.](manual_figuras/savic_recorrido.svg)
+
+### 6. Problemas frecuentes y comprobación final
+
+| Si ocurre esto | Qué hacer |
+|---|---|
+| No aparece SAVIC en Tools | Comprueba que abriste el proyecto correcto y que terminó de compilar. Consulta al responsable si falta la instalación. |
+| Una entrega no se procesa | Sal de Play, espera la compilación, reanuda la cola y comprueba que la subcarpeta contiene los cuatro archivos de entrega. |
+| La ficha muestra NEEDS_REVIEW | Lee el motivo: corrige en Blender si afecta al modelo o consulta al responsable si requiere autoría del juego. |
+| No aparece en el catálogo | Comprueba PUBLISHED, el nombre, los filtros del catálogo y que estás ejecutando el proyecto o build adecuados. |
+| Actualizo el código y el artículo sigue igual | Revalidar el artículo afectado puede ser necesario. Reimportar un paquete idéntico puede devolver UNCHANGED. |
+| Aparece un artículo duplicado | Comprueba si creaste una sesión independiente o elegiste Crear artículo nuevo al actualizar. Consulta antes de borrar o cambiar identidades. |
+| Tras un fallo aparecen problemas de recuperación | Conserva archivos y mensaje. No borres los diarios o fuentes archivadas para ocultar el fallo; pide ayuda al responsable. |
+
+**Antes de dar una entrega por terminada:**
+
+- [ ] He elegido el artículo correcto en su primera vinculación.
+- [ ] He leído el estado final y resuelto los avisos pendientes.
+- [ ] El artículo publicado aparece en el catálogo y puede colocarse donde corresponde.
+- [ ] He comprobado su apariencia y los requisitos de uso que le correspondan.
+- [ ] Sé si la entrega es local o si ya se ha integrado y distribuido una nueva build.
+
+**Para pedir ayuda:** facilita el nombre del artículo, la carpeta/revisión, el estado y el mensaje exacto. Para cambios de código, formatos y mantenimiento del puente, el responsable debe consultar `docs/10_ARCHITECTURE/ASSETS4ALL_SAVIC_DELIVERY.md` del proyecto Unity.
+
+## Fuentes y mantenimiento de esta guía
+
+Los nombres de controles se han contrastado con `ui_experience_v016.py`, `operators.py`, `asset_scale_ui.py`, `quick_edit_v023.py` y `savic_delivery.py` de Assets4ALL, y con `SavicEditorWindow.cs`, `SavicAssets4AllWindow.cs`, `SavicEditorActionService.cs` y el contrato de entrega del proyecto Unity. La guía describe el recorrido disponible; no certifica todas las familias de modelos ni una nueva sesión de pruebas.
+
+Los dos PDF se generan a partir de las secciones de esta guía. Al cambiar un botón o un procedimiento, actualizar el Markdown, las ilustraciones aproximadas y ambos PDF. En Bistro Builder, regenerar también el índice y el bundle de documentación.
+
+---
+
 ## SOURCE: docs/ModoEdicion/EditInteractionDesign.md
 
 Category: SUPPORTING
@@ -4029,6 +4404,87 @@ Regresión completa del Bloque 18 repetida con estos cambios: **PASS** (Finance,
 Build Windows: **PASS**, generada el 14/09/2026 a las 06:57:59 UTC; 110.878.409 bytes, cero errores y ocho advertencias preexistentes. Ejecutable actualizado en `Builds/Windows/BistroBuilder_Edicion/BistroBuilder.exe`. Registro: `Logs/EditPerformanceWindowsBuild.log`.
 
 Ejecutar: `BistroBuilderEditPerformanceProbe.RunBatch` con `-bistroPerfFinal` para aplicar los límites de regresión; sin ese argumento realiza la medición inicial del diagnóstico completo.
+
+---
+
+## SOURCE: docs/SAVIC_REALISTIC_TEST_PACK_V1.md
+
+Category: SUPPORTING
+
+# SAVIC — Realistic Test Pack V1
+
+## Objetivo
+
+Dar a las builds de prueba de Bistro Builder una base visual más creíble usando únicamente contenido ya presente en el proyecto y contratos existentes de SAVIC/Placeable Factory.
+
+El pack no sustituye al contenido definitivo. Es una selección curada para pruebas funcionales y visuales.
+
+## Contenido
+
+### Colocables ya existentes y reutilizados
+
+- `factory_test_plant`
+- `pf_bb_chair_master_001_olive`
+- `pf_bb_chair_master_001_red`
+- `pf_bb_chair_master_001_white`
+- `pf_bb_chair_master_001_yellow`
+- `chair_bistro_01`
+- `bb_chair_master_002`
+- `table_basic`
+- `table_basic_4`
+- `bb_table_b90c47bde3e949918ec76a13dc17c61c`
+
+### Variantes nuevas que instala el pack
+
+- `chair_bistro_01_oak_warm` — Silla bistró, roble cálido
+- `chair_bistro_01_painted_black` — Silla bistró, negro
+- `chair_bistro_01_painted_white` — Silla bistró, blanco
+- `chair_bistro_01_sage_green` — Silla bistró, verde salvia
+- `chair_bistro_01_walnut_dark` — Silla bistró, nogal oscuro
+
+Estas cinco variantes parten de prefabs visuales ya existentes. El instalador las pasa por `BistroBuilderPlaceableFactoryEngine` con preset `Chair`, por lo que obtiene prefab jugable, `RestaurantPlaceableObject`, `EditableObjectDefinition`, capacidades de seating, collider cuando procede, thumbnail y alta de catálogo.
+
+### Construcción incluida en la validación
+
+- `Pared_0.5m.prefab`
+- `Pared_1.0m.prefab`
+- `Pared_2.0m.prefab`
+- `Pared_4.0m.prefab`
+- `Puerta_roble_abierta.prefab`
+- `Ventana_marco_grafito.prefab`
+
+## Resultado esperado
+
+- 15 artículos colocables disponibles en el catálogo.
+- 6 elementos constructivos válidos.
+- 21 piezas curadas utilizables en pruebas.
+- Todos los placeables deben resolver prefab, icono/preview y `EditableObjectDefinition`.
+- La instalación es idempotente: volver a ejecutarla no debe duplicar artículos.
+
+## Uso
+
+Instalar o reparar:
+
+`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Install or Repair`
+
+Validar:
+
+`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Validate`
+
+También dispone de entradas batch:
+
+- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.InstallOrRepairFromCommandLine`
+- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.ValidateFromCommandLine`
+
+Runner de una sola orden:
+
+`Tools/BistroBuilder/RunSavicRealisticTestPackV1.ps1`
+
+El runner instala/repara el pack, ejecuta después la validación y devuelve código de salida distinto de cero si cualquiera de las dos fases falla.
+
+## Alcance
+
+Este V1 usa solo contenido ya almacenado en Bistro Builder. La siguiente expansión deberá centrarse en añadir variedad real de mesas, iluminación, decoración y equipamiento pasivo mediante SAVIC, evitando incorporar assets externos sin licencia/procedencia clara.
 
 ---
 
@@ -6216,87 +6672,6 @@ Control Center incorpora **Miniaturas / Lista**, con cuadrícula por defecto, im
 La prueba CLI temporal por loopback permite comprobar por curl el componente UI Toolkit real: **16 solicitudes PASS**, anchos 132/330/460/740 → columnas 1/2/3/5, sin solapes, PNG reales y HTTP 404 para imagen ausente. La ventana SAVIC real pasa selección/ficha, cambio de vista y búsqueda mediante eventos nativos. Regresión **27/27 PASS**, proceso exit 0 y auditoría **05/10/2026 15:47:36 UTC**: 18 publicados / 17 placeables / cero revisiones y fallos; proofs actuales. La galería de seis PNG es un ejemplo independiente, no captura del Editor. [Evidencia y reproducción](40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
 
 Cierre tras integrar la actualización remota de Carta `46666878` mediante `a925ea6c`: `savic-thumbnail-grid-merged-final.log`, **exit 0**, **gate 27/27**, contrato de miniaturas PASS y proofs actuales. Auditoría **05/10/2026 15:58:22 UTC**: **18 publicados,17 placeables,0 revisiones,0 fallidos,0 inbox,0 huérfanos**, cola vacía. La cuadrícula conserva el código probado con curl; los nuevos cambios de Carta se incluyen sin sobrescritura.
-
----
-
-## SOURCE: docs/SAVIC_REALISTIC_TEST_PACK_V1.md
-
-Category: SUPPORTING
-
-# SAVIC — Realistic Test Pack V1
-
-## Objetivo
-
-Dar a las builds de prueba de Bistro Builder una base visual más creíble usando únicamente contenido ya presente en el proyecto y contratos existentes de SAVIC/Placeable Factory.
-
-El pack no sustituye al contenido definitivo. Es una selección curada para pruebas funcionales y visuales.
-
-## Contenido
-
-### Colocables ya existentes y reutilizados
-
-- `factory_test_plant`
-- `pf_bb_chair_master_001_olive`
-- `pf_bb_chair_master_001_red`
-- `pf_bb_chair_master_001_white`
-- `pf_bb_chair_master_001_yellow`
-- `chair_bistro_01`
-- `bb_chair_master_002`
-- `table_basic`
-- `table_basic_4`
-- `bb_table_b90c47bde3e949918ec76a13dc17c61c`
-
-### Variantes nuevas que instala el pack
-
-- `chair_bistro_01_oak_warm` — Silla bistró, roble cálido
-- `chair_bistro_01_painted_black` — Silla bistró, negro
-- `chair_bistro_01_painted_white` — Silla bistró, blanco
-- `chair_bistro_01_sage_green` — Silla bistró, verde salvia
-- `chair_bistro_01_walnut_dark` — Silla bistró, nogal oscuro
-
-Estas cinco variantes parten de prefabs visuales ya existentes. El instalador las pasa por `BistroBuilderPlaceableFactoryEngine` con preset `Chair`, por lo que obtiene prefab jugable, `RestaurantPlaceableObject`, `EditableObjectDefinition`, capacidades de seating, collider cuando procede, thumbnail y alta de catálogo.
-
-### Construcción incluida en la validación
-
-- `Pared_0.5m.prefab`
-- `Pared_1.0m.prefab`
-- `Pared_2.0m.prefab`
-- `Pared_4.0m.prefab`
-- `Puerta_roble_abierta.prefab`
-- `Ventana_marco_grafito.prefab`
-
-## Resultado esperado
-
-- 15 artículos colocables disponibles en el catálogo.
-- 6 elementos constructivos válidos.
-- 21 piezas curadas utilizables en pruebas.
-- Todos los placeables deben resolver prefab, icono/preview y `EditableObjectDefinition`.
-- La instalación es idempotente: volver a ejecutarla no debe duplicar artículos.
-
-## Uso
-
-Instalar o reparar:
-
-`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Install or Repair`
-
-Validar:
-
-`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Validate`
-
-También dispone de entradas batch:
-
-- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.InstallOrRepairFromCommandLine`
-- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.ValidateFromCommandLine`
-
-Runner de una sola orden:
-
-`Tools/BistroBuilder/RunSavicRealisticTestPackV1.ps1`
-
-El runner instala/repara el pack, ejecuta después la validación y devuelve código de salida distinto de cero si cualquiera de las dos fases falla.
-
-## Alcance
-
-Este V1 usa solo contenido ya almacenado en Bistro Builder. La siguiente expansión deberá centrarse en añadir variedad real de mesas, iluminación, decoración y equipamiento pasivo mediante SAVIC, evitando incorporar assets externos sin licencia/procedencia clara.
 
 ---
 

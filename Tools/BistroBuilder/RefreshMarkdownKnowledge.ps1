@@ -29,7 +29,7 @@ function Get-DocPriority([string]$Category) {
     }
 }
 
-$paths = @(& git -C $RepoRoot ls-files) |
+$paths = @(& git -C $RepoRoot ls-files --cached --others --exclude-standard) |
     Where-Object { $_.ToLowerInvariant().EndsWith('.md') -and ($_ -notin $generated) }
 
 $entries = foreach ($path in $paths) {
