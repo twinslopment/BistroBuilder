@@ -59,3 +59,45 @@ build_waiter_animation_lab.py rebuilds the source, exports and preview renders.
 validate_waiter_roundtrip.py reimports both exported formats in clean Blender sessions.
 
 This is an animation/rig prototype, not the final skinned production likeness.
+
+
+# BB Waiter Visual V2
+
+Second pass focused on visual resemblance to the supplied waiter references and a broader service animation set.
+
+## V2 visual changes
+
+- tailored black vest silhouette with visible white shirt V and collar;
+- black trousers with shaped waist and tapered legs;
+- short dark hair with side masses;
+- face landmarks (eyes, brows, nose, mouth, chin, ears);
+- smoother shoulders, elbows, knees, cuffs, hands and shoes;
+- tray with rim, plate, dish and glass;
+- 1.908 m total visual height.
+
+## V2 actions
+
+- BB_Waiter_Idle_02
+- BB_Waiter_Walk_02
+- BB_Waiter_WalkTray_02
+- BB_Waiter_IdleTray_02
+- BB_Waiter_PickupTray_01
+- BB_Waiter_Serve_02
+- BB_Waiter_PutDownTray_01
+
+## V2 validation
+
+Build/animation/render/export checks: 30/30 PASS.
+GLB/FBX clean round-trip checks: 18/18 PASS.
+V2 total: 48/48 PASS.
+
+Both exported formats preserve one 21-bone armature, 60 meshes, the tray/vest/face detail set and all seven expected animation clips.
+
+## V2 outputs
+
+Assets/Art/Characters/Waiter/VisualV2/BB_Waiter_VisualV2.blend
+Assets/Art/Characters/Waiter/VisualV2/BB_Waiter_VisualV2.fbx
+Assets/Art/Characters/Waiter/VisualV2/BB_Waiter_VisualV2.glb
+
+Nine preview renders plus a 3x3 contact sheet are stored in:
+Tools/Blender/WaiterAnimation/previews/V2/

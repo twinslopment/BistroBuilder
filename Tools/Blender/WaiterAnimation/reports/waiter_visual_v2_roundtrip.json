@@ -1,0 +1,161 @@
+{
+  "results": {
+    "glb": {
+      "label": "GLB",
+      "armatures": 1,
+      "meshes": 60,
+      "bones": 21,
+      "actions": [
+        "BB_Waiter_IdleTray_02",
+        "BB_Waiter_Idle_02",
+        "BB_Waiter_PickupTray_01",
+        "BB_Waiter_PutDownTray_01",
+        "BB_Waiter_Serve_02",
+        "BB_Waiter_WalkTray_02",
+        "BB_Waiter_Walk_02"
+      ],
+      "matched_expected": [
+        "BB_Waiter_IdleTray_02",
+        "BB_Waiter_Idle_02",
+        "BB_Waiter_PickupTray_01",
+        "BB_Waiter_PutDownTray_01",
+        "BB_Waiter_Serve_02",
+        "BB_Waiter_WalkTray_02",
+        "BB_Waiter_Walk_02"
+      ],
+      "has_tray": true,
+      "has_vest": true,
+      "has_face": true,
+      "has_rig": true,
+      "import_ok": true,
+      "error": ""
+    },
+    "fbx": {
+      "label": "FBX",
+      "armatures": 1,
+      "meshes": 60,
+      "bones": 21,
+      "actions": [
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_IdleTray_02",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_Idle_02",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_PickupTray_01",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_PutDownTray_01",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_Serve_02",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_WalkTray_02",
+        "BB_Waiter_Rig_V2|BB_Waiter_Rig_V2|BB_Waiter_Walk_02"
+      ],
+      "matched_expected": [
+        "BB_Waiter_IdleTray_02",
+        "BB_Waiter_Idle_02",
+        "BB_Waiter_PickupTray_01",
+        "BB_Waiter_PutDownTray_01",
+        "BB_Waiter_Serve_02",
+        "BB_Waiter_WalkTray_02",
+        "BB_Waiter_Walk_02"
+      ],
+      "has_tray": true,
+      "has_vest": true,
+      "has_face": true,
+      "has_rig": true,
+      "import_ok": true,
+      "error": ""
+    }
+  },
+  "checks": [
+    {
+      "name": "glb_import",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "glb_armature",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "name": "glb_bones",
+      "passed": true,
+      "value": 21
+    },
+    {
+      "name": "glb_meshes",
+      "passed": true,
+      "value": 60
+    },
+    {
+      "name": "glb_actions_all",
+      "passed": true,
+      "value": 7
+    },
+    {
+      "name": "glb_tray",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "glb_vest",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "glb_face",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "glb_rig",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "fbx_import",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "fbx_armature",
+      "passed": true,
+      "value": 1
+    },
+    {
+      "name": "fbx_bones",
+      "passed": true,
+      "value": 21
+    },
+    {
+      "name": "fbx_meshes",
+      "passed": true,
+      "value": 60
+    },
+    {
+      "name": "fbx_actions_all",
+      "passed": true,
+      "value": 7
+    },
+    {
+      "name": "fbx_tray",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "fbx_vest",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "fbx_face",
+      "passed": true,
+      "value": null
+    },
+    {
+      "name": "fbx_rig",
+      "passed": true,
+      "value": null
+    }
+  ],
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "total": 18
+  }
+}

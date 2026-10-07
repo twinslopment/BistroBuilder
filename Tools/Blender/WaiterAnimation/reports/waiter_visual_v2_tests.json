@@ -1,0 +1,258 @@
+{
+  "asset": "BB_Waiter_VisualV2",
+  "blender_version": "5.1.1",
+  "visual_target": "semi-realistic game waiter based on supplied frontal/back/profile references",
+  "actions": [
+    "BB_Waiter_Idle_02",
+    "BB_Waiter_Walk_02",
+    "BB_Waiter_WalkTray_02",
+    "BB_Waiter_IdleTray_02",
+    "BB_Waiter_PickupTray_01",
+    "BB_Waiter_Serve_02",
+    "BB_Waiter_PutDownTray_01"
+  ],
+  "metrics": {
+    "bone_count": 21,
+    "mesh_count": 59,
+    "character_height_m": 1.908,
+    "max_tray_tilt_deg": 0.0,
+    "max_tray_vertical_jitter_m": 0.0,
+    "carry_hand_tray_distance_m": 0.373
+  },
+  "summary": {
+    "passed": 30,
+    "failed": 0,
+    "total": 30
+  },
+  "tests": [
+    {
+      "name": "action_exists:BB_Waiter_Idle_02",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_Walk_02",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_WalkTray_02",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_IdleTray_02",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_PickupTray_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_Serve_02",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "action_exists:BB_Waiter_PutDownTray_01",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "loop_continuity:BB_Waiter_Walk_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-05,
+      "note": ""
+    },
+    {
+      "name": "loop_continuity:BB_Waiter_WalkTray_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 1e-05,
+      "note": ""
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_WalkTray_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.5,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_jitter:BB_Waiter_WalkTray_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.025,
+      "note": "meters"
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_IdleTray_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.5,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_jitter:BB_Waiter_IdleTray_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.025,
+      "note": "meters"
+    },
+    {
+      "name": "tray_tilt:BB_Waiter_Serve_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.5,
+      "note": "degrees"
+    },
+    {
+      "name": "tray_jitter:BB_Waiter_Serve_02",
+      "passed": true,
+      "value": 0.0,
+      "limit": 0.025,
+      "note": "meters"
+    },
+    {
+      "name": "character_height",
+      "passed": true,
+      "value": 1.908,
+      "limit": [
+        1.7,
+        1.95
+      ],
+      "note": "meters"
+    },
+    {
+      "name": "carry_hand_near_tray",
+      "passed": true,
+      "value": 0.373,
+      "limit": 0.42,
+      "note": "meters"
+    },
+    {
+      "name": "shoe_floor_penetration",
+      "passed": true,
+      "value": 0.0204,
+      "limit": -0.1,
+      "note": "meters coarse"
+    },
+    {
+      "name": "finite_transforms",
+      "passed": true,
+      "value": null,
+      "limit": null,
+      "note": ""
+    },
+    {
+      "name": "render:01_neutral_front.png",
+      "passed": true,
+      "value": 733876,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:02_neutral_3q.png",
+      "passed": true,
+      "value": 735292,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:03_neutral_side.png",
+      "passed": true,
+      "value": 622296,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:04_neutral_back.png",
+      "passed": true,
+      "value": 610492,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:05_walk_contact.png",
+      "passed": true,
+      "value": 742149,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:06_walk_tray.png",
+      "passed": true,
+      "value": 746028,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:07_serve.png",
+      "passed": true,
+      "value": 738734,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:08_pickup_mid.png",
+      "passed": true,
+      "value": 740190,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "render:09_putdown_mid.png",
+      "passed": true,
+      "value": 739381,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "export_glb",
+      "passed": true,
+      "value": 881980,
+      "limit": 10000,
+      "note": ""
+    },
+    {
+      "name": "export_fbx",
+      "passed": true,
+      "value": 2287852,
+      "limit": 10000,
+      "note": ""
+    }
+  ],
+  "outputs": {
+    "blend": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\VisualV2\\BB_Waiter_VisualV2.blend",
+    "glb": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\VisualV2\\BB_Waiter_VisualV2.glb",
+    "fbx": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Assets\\Art\\Characters\\Waiter\\VisualV2\\BB_Waiter_VisualV2.fbx",
+    "renders": [
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\01_neutral_front.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\02_neutral_3q.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\03_neutral_side.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\04_neutral_back.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\05_walk_contact.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\06_walk_tray.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\07_serve.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\08_pickup_mid.png",
+      "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_Worktrees\\character-animation-v1\\Logs\\WaiterAnimationV2\\09_putdown_mid.png"
+    ]
+  }
+}
