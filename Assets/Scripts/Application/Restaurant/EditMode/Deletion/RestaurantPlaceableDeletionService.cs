@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Restaurant/Placeable Deletion Service")]
-public sealed class RestaurantPlaceableDeletionService : MonoBehaviour
+public sealed partial class RestaurantPlaceableDeletionService : MonoBehaviour
 {
     [SerializeField]
     private RestaurantEditModeService editModeService;

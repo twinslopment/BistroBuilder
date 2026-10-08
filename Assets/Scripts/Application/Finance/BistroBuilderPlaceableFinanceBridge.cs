@@ -166,26 +166,69 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
         out string error)
     {
         error = string.Empty;
-        if (!TryResolveFinancialPlaceable(command, out RestaurantPlaceableObject placeable))
-        {
-            return true;
-        }
 
-        string track = ResolveTrack(command.CommandType);
-        if (!TryBuildInverseOfLatestTrackGroup(
-                placeable,
-                track,
-                direction == RestaurantEditHistoryDirection.Undo
-                    ? "Deshacer " + command.Description
-                    : "Rehacer " + command.Description,
-                out FinancialPlan plan,
-                out error) ||
-            !TryAuthorizePlan(plan, out error))
+        var financialPlaceables =
+            new List<RestaurantPlaceableObject>(8);
+
+        if (!TryCollectFinancialPlaceables(
+                command,
+                financialPlaceables,
+                out error))
         {
             return false;
         }
 
-        pendingHistory[command] = new HistoryPlan(direction, plan, placeable);
+        if (financialPlaceables.Count == 0)
+            return true;
+
+        string track = ResolveTrack(command.CommandType);
+        string description =
+            direction == RestaurantEditHistoryDirection.Undo
+                ? "Deshacer " + command.Description
+                : "Rehacer " + command.Description;
+
+        var mergedRequests =
+            new List<BistroBuilderFinanceTransactionRequest>(
+                financialPlaceables.Count * 2);
+
+        for (int i = 0; i < financialPlaceables.Count; i++)
+        {
+            RestaurantPlaceableObject placeable =
+                financialPlaceables[i];
+
+            if (!TryBuildInverseOfLatestTrackGroup(
+                    placeable,
+                    track,
+                    description,
+                    out FinancialPlan childPlan,
+                    out error))
+            {
+                return false;
+            }
+
+            for (int requestIndex = 0;
+                 requestIndex < childPlan.Requests.Count;
+                 requestIndex++)
+            {
+                mergedRequests.Add(
+                    childPlan.Requests[requestIndex]);
+            }
+        }
+
+        var plan = new FinancialPlan(
+            track,
+            0,
+            mergedRequests);
+
+        if (!TryAuthorizePlan(plan, out error))
+            return false;
+
+        pendingHistory[command] =
+            new HistoryPlan(
+                direction,
+                plan,
+                financialPlaceables[0]);
+
         return true;
     }
 
@@ -195,10 +238,20 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
         out string error)
     {
         error = string.Empty;
-        if (!TryResolveFinancialPlaceable(command, out _))
+
+        var financialPlaceables =
+            new List<RestaurantPlaceableObject>(8);
+
+        if (!TryCollectFinancialPlaceables(
+                command,
+                financialPlaceables,
+                out error))
         {
-            return true;
+            return false;
         }
+
+        if (financialPlaceables.Count == 0)
+            return true;
 
         if (!pendingHistory.TryGetValue(command, out HistoryPlan historyPlan) ||
             historyPlan.Direction != direction)
@@ -626,6 +679,78 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
         return commandType == RestaurantEditHistoryCommandType.Create
             ? CreateTrack
             : DeleteTrack;
+    }
+
+    private static bool TryCollectFinancialPlaceables(
+        IRestaurantEditHistoryCommand command,
+        List<RestaurantPlaceableObject> results,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (results == null)
+        {
+            error = "No existe buffer para resolver la operación financiera.";
+            return false;
+        }
+
+        results.Clear();
+
+        if (command == null ||
+            (command.CommandType != RestaurantEditHistoryCommandType.Create &&
+             command.CommandType != RestaurantEditHistoryCommandType.Delete))
+        {
+            return true;
+        }
+
+        if (command is IRestaurantEditHistoryCommandGroup group)
+        {
+            IReadOnlyList<IRestaurantEditHistoryCommand> children =
+                group.ChildCommands;
+
+            if (children == null || children.Count == 0)
+            {
+                error =
+                    "La operación financiera grupal no contiene miembros.";
+                return false;
+            }
+
+            var instanceIds =
+                new HashSet<string>(StringComparer.Ordinal);
+
+            for (int i = 0; i < children.Count; i++)
+            {
+                IRestaurantEditHistoryCommand child = children[i];
+
+                if (child == null ||
+                    child.CommandType != command.CommandType ||
+                    !TryResolveFinancialPlaceable(
+                        child,
+                        out RestaurantPlaceableObject placeable) ||
+                    placeable == null ||
+                    string.IsNullOrWhiteSpace(placeable.InstanceId))
+                {
+                    error =
+                        "La operación financiera grupal contiene un miembro inválido.";
+                    return false;
+                }
+
+                if (instanceIds.Add(placeable.InstanceId))
+                    results.Add(placeable);
+            }
+
+            return results.Count > 0;
+        }
+
+        if (TryResolveFinancialPlaceable(
+                command,
+                out RestaurantPlaceableObject single) &&
+            single != null)
+        {
+            results.Add(single);
+        }
+
+        return true;
     }
 
     private static bool TryResolveFinancialPlaceable(

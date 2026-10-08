@@ -38,6 +38,12 @@ public sealed class RestaurantLinkedGroupPlacementConstraintRule :
         followerBuffer =
             new List<RestaurantAreaMember>(16);
 
+    // B8: al validar un miembro del grupo reutilizamos el validador
+    // completo. Esa validación vuelve a visitar esta misma regla. El guard
+    // evita reentrar únicamente en la capa de grupo; el resto de reglas
+    // (áreas, colisiones, clearance, etc.) siguen ejecutándose normalmente.
+    private int nestedGroupValidationDepth;
+
     public int Priority => priority;
 
     public bool IsConstraintEnabled => constraintEnabled;
@@ -54,7 +60,8 @@ public sealed class RestaurantLinkedGroupPlacementConstraintRule :
         if (!constraintEnabled ||
             context.Member == null ||
             linkedGroupService == null ||
-            validationService == null)
+            validationService == null ||
+            nestedGroupValidationDepth > 0)
         {
             return RestaurantPlacementConstraintEvaluation.Valid();
         }
@@ -70,43 +77,52 @@ public sealed class RestaurantLinkedGroupPlacementConstraintRule :
             return RestaurantPlacementConstraintEvaluation.Valid();
         }
 
-        for (int index = 0;
-             index < followerBuffer.Count;
-             index++)
+        nestedGroupValidationDepth++;
+
+        try
         {
-            RestaurantAreaMember follower =
-                followerBuffer[index];
-
-            if (follower == null ||
-                !follower.gameObject.activeInHierarchy)
+            for (int index = 0;
+                 index < followerBuffer.Count;
+                 index++)
             {
-                continue;
-            }
+                RestaurantAreaMember follower =
+                    followerBuffer[index];
 
-            RestaurantPlacementValidationResult result =
-                validationService.ValidateCurrentPlacement(
-                    follower
-                );
+                if (follower == null ||
+                    !follower.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
 
-            if (result.IsValid)
-            {
-                continue;
-            }
+                RestaurantPlacementValidationResult result =
+                    validationService.ValidateCurrentPlacement(
+                        follower
+                    );
 
-            return RestaurantPlacementConstraintEvaluation.Invalid(
-                "linked_group_member_invalid",
-                BuildUserMessage(follower, result),
-                BuildTechnicalMessage(
-                    context.Member,
+                if (result.IsValid)
+                {
+                    continue;
+                }
+
+                return RestaurantPlacementConstraintEvaluation.Invalid(
+                    "linked_group_member_invalid",
+                    BuildUserMessage(follower, result),
+                    BuildTechnicalMessage(
+                        context.Member,
+                        follower,
+                        result
+                    ),
                     follower,
-                    result
-                ),
-                follower,
-                true
-            );
-        }
+                    true
+                );
+            }
 
-        return RestaurantPlacementConstraintEvaluation.Valid();
+            return RestaurantPlacementConstraintEvaluation.Valid();
+        }
+        finally
+        {
+            nestedGroupValidationDepth--;
+        }
     }
 
     private static string BuildUserMessage(

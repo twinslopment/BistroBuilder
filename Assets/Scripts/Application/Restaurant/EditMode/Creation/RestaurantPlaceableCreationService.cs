@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Restaurant/Placeable Creation Service")]
-public sealed class RestaurantPlaceableCreationService : MonoBehaviour
+public sealed partial class RestaurantPlaceableCreationService : MonoBehaviour
 {
     [SerializeField]
     private RestaurantPlaceableLifecycleService lifecycleService;

@@ -1,7 +1,7 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 PASS · B8 DESBLOQUEADO
-**Fecha:** 2026-10-06
+**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 PASS · B8 PASS · B9 DESBLOQUEADO
+**Fecha:** 2026-10-08
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
 **Interacción vinculante:** [Edit Interaction Design](../ModoEdicion/EditInteractionDesign.md)  
@@ -382,6 +382,8 @@ PASS:
 - Undo/Redo de una sola acción;
 - relaciones preservadas;
 - elementos siguen pudiendo editarse individualmente.
+
+**Cierre B8 — 2026-10-08: PASS.** Editor V2 incorpora Selection Set determinista con selección primaria, Shift+selección aditiva/toggle, intersección real de capacidades, proyección de la selección explícita sobre Linked Groups y cierre transitivo de relaciones semánticas. Movimiento y rotación conservan geometría relativa sin reparenting; validación, cancelación y commit siguen pasando por Placement/BBSIS. Duplicación y eliminación de conjuntos son transaccionales y publican un único comando compuesto con rollback. Undo/Redo global trata el conjunto como una sola acción y los miembros continúan siendo editables individualmente. Gate B8: 59/59 en tres ejecuciones consecutivas, stress 10.000 poses sin GC tras warmup y regresión B1-B7/Core/Lifecycle/Scene/Queen con exit 0. Evidencia: [Editor V2 B8 Multiselección y grupos](../40_TESTING/EDITOR_V2_B8_MULTI_SELECTION_GROUPS_20261008.md).
 
 ### B9 — Catálogo escalable
 

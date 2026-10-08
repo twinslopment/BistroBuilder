@@ -63,7 +63,7 @@ public interface IBistroBuilderEditorV2SelectionSource
 
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Restaurant/Edit Mode/Editor V2/Selection Coordinator")]
-public sealed class BistroBuilderEditorV2SelectionCoordinator : MonoBehaviour
+public sealed partial class BistroBuilderEditorV2SelectionCoordinator : MonoBehaviour
 {
     [SerializeField] private RestaurantEditModeService editModeService;
     [SerializeField] private BistroBuilderEditorV2Coordinator editorCoordinator;
@@ -211,6 +211,7 @@ public sealed class BistroBuilderEditorV2SelectionCoordinator : MonoBehaviour
         {
             BistroBuilderEditorV2ToolFamily previousFamily = observedFamily;
             ClearSelectionWhenLeavingAuthority(previousFamily, nextFamily);
+            ClearSelectionSet();
             observedFamily = nextFamily;
             ClearInvalidArchitectureSelectionAfterFamilyChange(previousFamily, nextFamily);
         }
@@ -224,6 +225,7 @@ public sealed class BistroBuilderEditorV2SelectionCoordinator : MonoBehaviour
     private void HandleEditModeExited()
     {
         ClearAllSpecialistSelections();
+        ClearSelectionSet();
         observedFamily = BistroBuilderEditorV2ToolFamily.None;
         SetCurrent(BistroBuilderEditorV2Selection.None);
     }
@@ -278,9 +280,18 @@ public sealed class BistroBuilderEditorV2SelectionCoordinator : MonoBehaviour
     private bool SetCurrent(BistroBuilderEditorV2Selection next)
     {
         if (Equivalent(current, next))
+        {
+            if (!next.IsValid)
+                ClearSelectionSet();
+
             return false;
+        }
 
         current = next;
+
+        if (!current.IsValid)
+            ClearSelectionSet();
+
         revision++;
         SelectionChanged?.Invoke(current);
         return true;

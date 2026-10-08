@@ -53,6 +53,12 @@ public sealed class RestaurantEditInteractionController :
     private BistroBuilderEditorV2GlobalHistory globalHistory;
 
     [Tooltip(
+        "Editor V2 B8: selección común y multiselección explícita.")]
+    [SerializeField]
+    private BistroBuilderEditorV2SelectionCoordinator
+        editorV2SelectionCoordinator;
+
+    [Tooltip(
         "Servicio que coordina la creación definitiva de artículos."
     )]
     [SerializeField]
@@ -715,18 +721,53 @@ public sealed class RestaurantEditInteractionController :
     /// </summary>
     public bool TrySelectPlaceable(RestaurantPlaceableObject placeable)
     {
-        if (placeable == null || editModeService == null || !editModeService.IsEditModeActive)
-            return false;
-        if (transactionService != null && transactionService.HasActiveTransaction)
-            return false;
-        if (!placeable.TryGetComponent(out RestaurantEditableObject editableObject) ||
-            !placeable.TryGetComponent(out RestaurantAreaMember member) ||
-            !editableObject.EditingEnabled || !editableObject.HasValidDefinition)
-            return false;
-
-        SelectEditableObject(editableObject, member, placeable.transform.position);
-        return true;
+        return TrySelectPlaceable(
+            placeable,
+            false,
+            false);
     }
+
+    /// <summary>
+    /// Selecciona un colocable añadiéndolo o retirándolo del conjunto B8.
+    /// </summary>
+    public bool TrySelectPlaceable(
+        RestaurantPlaceableObject placeable,
+        bool additive,
+        bool toggle)
+    {
+        if (placeable == null ||
+            editModeService == null ||
+            !editModeService.IsEditModeActive)
+        {
+            return false;
+        }
+
+        if (transactionService != null &&
+            transactionService.HasActiveTransaction)
+        {
+            return false;
+        }
+
+        if (!placeable.TryGetComponent(
+                out RestaurantEditableObject editableObject) ||
+            !placeable.TryGetComponent(
+                out RestaurantAreaMember member) ||
+            !editableObject.EditingEnabled ||
+            !editableObject.HasValidDefinition)
+        {
+            return false;
+        }
+
+        SelectEditableObject(
+            editableObject,
+            member,
+            placeable.transform.position);
+
+        return SyncEditorV2Selection(
+            additive,
+            toggle);
+    }
+
     public bool TryBeginMoveSelected()
     {
         if (!editModeService.IsEditModeActive)
@@ -806,6 +847,8 @@ public sealed class RestaurantEditInteractionController :
         SelectedMemberChanged?.Invoke(
             null
         );
+
+        editorV2SelectionCoordinator?.ClearSelectionSet();
 
         return true;
     }
@@ -1356,6 +1399,11 @@ public sealed class RestaurantEditInteractionController :
             member,
             hitWorldPoint
         );
+
+        bool additiveSelection = IsShiftModifierPressed();
+        SyncEditorV2Selection(
+            additiveSelection,
+            additiveSelection);
     }
 
     private void HandleActivePlacement()
@@ -1455,6 +1503,79 @@ public sealed class RestaurantEditInteractionController :
         LogEvent(
             message
         );
+    }
+
+    private bool SyncEditorV2Selection(
+        bool additive,
+        bool toggle)
+    {
+        CacheDependenciesIfNeeded();
+
+        // Compatibilidad: el controlador de Placement puede seguir
+        // funcionando en una escena que todavía no instale Editor V2.
+        if (editorV2SelectionCoordinator == null)
+            return true;
+
+        editorV2SelectionCoordinator.RefreshSelection();
+
+        BistroBuilderEditorV2Selection clicked =
+            editorV2SelectionCoordinator.Current;
+
+        if (!clicked.IsValid)
+            return false;
+
+        if (!editorV2SelectionCoordinator.AdoptCurrentSelection(
+                additive,
+                toggle,
+                out _))
+        {
+            return false;
+        }
+
+        if (!additive ||
+            !toggle ||
+            editorV2SelectionCoordinator.ContainsSelection(clicked))
+        {
+            return true;
+        }
+
+        // Shift+clic sobre un miembro ya incluido lo retira. La autoridad
+        // local vuelve a apuntar al primario restante para que una orden de
+        // mover nunca se inicie desde un objeto que ya no pertenece al set.
+        BistroBuilderEditorV2Selection primary =
+            editorV2SelectionCoordinator.PrimarySelection;
+
+        if (!primary.IsValid)
+        {
+            ClearSelection();
+            return true;
+        }
+
+        RestaurantPlaceableRegistry registry =
+            FindFirstObjectByType<RestaurantPlaceableRegistry>(
+                FindObjectsInactive.Include);
+
+        if (registry == null ||
+            !registry.TryGetByInstanceId(
+                primary.stableId,
+                out RestaurantPlaceableObject primaryPlaceable) ||
+            primaryPlaceable == null ||
+            !primaryPlaceable.TryGetComponent(
+                out RestaurantEditableObject primaryEditable) ||
+            !primaryPlaceable.TryGetComponent(
+                out RestaurantAreaMember primaryMember))
+        {
+            ClearSelection();
+            return false;
+        }
+
+        SelectEditableObject(
+            primaryEditable,
+            primaryMember,
+            primaryPlaceable.transform.position);
+
+        editorV2SelectionCoordinator.RefreshSelection();
+        return true;
     }
 
     /// <summary>
@@ -2441,6 +2562,14 @@ public sealed class RestaurantEditInteractionController :
                 keyboard.rightAltKey.isPressed);
     }
 
+    private static bool IsShiftModifierPressed()
+    {
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null &&
+               (keyboard.leftShiftKey.isPressed ||
+                keyboard.rightShiftKey.isPressed);
+    }
+
 
     /// <summary>
     /// Indica si existe cualquier modificador de teclado activo.
@@ -2914,6 +3043,14 @@ public sealed class RestaurantEditInteractionController :
         {
             globalHistory = FindFirstObjectByType<BistroBuilderEditorV2GlobalHistory>(
                 FindObjectsInactive.Include);
+        }
+
+        if (editorV2SelectionCoordinator == null)
+        {
+            editorV2SelectionCoordinator =
+                FindFirstObjectByType<
+                    BistroBuilderEditorV2SelectionCoordinator>(
+                        FindObjectsInactive.Include);
         }
 
         if (creationService == null)

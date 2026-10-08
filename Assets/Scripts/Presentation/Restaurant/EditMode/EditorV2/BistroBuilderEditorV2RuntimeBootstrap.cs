@@ -69,6 +69,32 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             construction,
             surfaces);
 
+        BistroBuilderEditorV2GroupOperationService groupOperations =
+            Object.FindFirstObjectByType<
+                BistroBuilderEditorV2GroupOperationService>(
+                    FindObjectsInactive.Include);
+
+        if (groupOperations == null)
+        {
+            groupOperations =
+                host.AddComponent<
+                    BistroBuilderEditorV2GroupOperationService>();
+        }
+
+        groupOperations.Configure(
+            selection,
+            Object.FindFirstObjectByType<RestaurantPlaceableRegistry>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<
+                RestaurantEditInteractionController>(
+                    FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<
+                RestaurantPlaceableCreationService>(
+                    FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<
+                RestaurantPlaceableDeletionService>(
+                    FindObjectsInactive.Include));
+
         BistroBuilderEditorV2GlobalHistory globalHistory =
             Object.FindFirstObjectByType<BistroBuilderEditorV2GlobalHistory>(
                 FindObjectsInactive.Include);
@@ -98,6 +124,30 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             architectureRuntime,
             Object.FindFirstObjectByType<BistroBuilderFinanceService>(
                 FindObjectsInactive.Include));
+
+        RestaurantPlacementLinkedGroupService linkedGroups =
+            Object.FindFirstObjectByType<RestaurantPlacementLinkedGroupService>(
+                FindObjectsInactive.Include);
+        if (linkedGroups != null)
+        {
+            BistroBuilderEditorV2ExplicitSelectionLinkedGroupProvider explicitSelection =
+                linkedGroups.GetComponent<
+                    BistroBuilderEditorV2ExplicitSelectionLinkedGroupProvider>();
+
+            if (explicitSelection == null)
+            {
+                explicitSelection =
+                    linkedGroups.gameObject.AddComponent<
+                        BistroBuilderEditorV2ExplicitSelectionLinkedGroupProvider>();
+            }
+
+            explicitSelection.Configure(
+                selection,
+                Object.FindFirstObjectByType<RestaurantPlaceableRegistry>(
+                    FindObjectsInactive.Include));
+
+            linkedGroups.RefreshProviders();
+        }
 
         RestaurantPlacementSnapService placementSnap =
             Object.FindFirstObjectByType<RestaurantPlacementSnapService>(

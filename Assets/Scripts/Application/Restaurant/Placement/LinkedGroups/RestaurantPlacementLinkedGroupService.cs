@@ -645,44 +645,113 @@ public sealed class RestaurantPlacementLinkedGroupService :
         results.Clear();
         followerInstanceIds.Clear();
 
-        for (int providerIndex = 0;
-             providerIndex < providers.Count;
-             providerIndex++)
+        if (rootMember == null)
+            return;
+
+        /*
+         * B8: cierre transitivo del grafo semántico.
+         *
+         * Antes solo se consultaban relaciones directas de la raíz. Eso era
+         * suficiente para mesa -> sillas, pero no para una multiselección en
+         * la que una relación descubierta actúa a su vez como raíz de otra
+         * relación. El recorrido incremental evita recursión, deduplica por
+         * identidad runtime y corta ciclos de forma natural.
+         */
+        int expansionIndex = -1;
+
+        while (expansionIndex < results.Count)
         {
-            IRestaurantPlacementLinkedGroupProvider provider =
-                providers[providerIndex];
+            RestaurantAreaMember expansionRoot =
+                expansionIndex < 0
+                    ? rootMember
+                    : results[expansionIndex];
 
-            if (provider == null ||
-                !provider.IsLinkEnabled)
+            for (int providerIndex = 0;
+                 providerIndex < providers.Count;
+                 providerIndex++)
             {
-                continue;
-            }
+                IRestaurantPlacementLinkedGroupProvider provider =
+                    providers[providerIndex];
 
-            int previousCount = results.Count;
-
-            provider.CollectLinkedMembers(
-                rootMember,
-                results
-            );
-
-            for (int index = previousCount;
-                 index < results.Count;
-                 index++)
-            {
-                RestaurantAreaMember follower =
-                    results[index];
-
-                if (follower == null ||
-                    ReferenceEquals(follower, rootMember) ||
-                    !followerInstanceIds.Add(
-                        follower.GetInstanceID()
-                    ))
+                if (provider == null ||
+                    !provider.IsLinkEnabled)
                 {
-                    results.RemoveAt(index);
-                    index--;
+                    continue;
+                }
+
+                int previousCount = results.Count;
+
+                provider.CollectLinkedMembers(
+                    expansionRoot,
+                    results
+                );
+
+                for (int index = previousCount;
+                     index < results.Count;
+                     index++)
+                {
+                    RestaurantAreaMember follower =
+                        results[index];
+
+                    if (follower == null ||
+                        ReferenceEquals(follower, rootMember) ||
+                        ReferenceEquals(follower, expansionRoot) ||
+                        !followerInstanceIds.Add(
+                            follower.GetInstanceID()))
+                    {
+                        results.RemoveAt(index);
+                        index--;
+                    }
                 }
             }
+
+            expansionIndex++;
         }
+
+        results.Sort(CompareMembersStable);
+    }
+
+    private static int CompareMembersStable(
+        RestaurantAreaMember first,
+        RestaurantAreaMember second)
+    {
+        if (ReferenceEquals(first, second))
+            return 0;
+        if (first == null)
+            return 1;
+        if (second == null)
+            return -1;
+
+        string firstId = ResolveStableMemberId(first);
+        string secondId = ResolveStableMemberId(second);
+
+        int idComparison = string.Compare(
+            firstId,
+            secondId,
+            StringComparison.Ordinal);
+
+        if (idComparison != 0)
+            return idComparison;
+
+        return first.GetInstanceID().CompareTo(
+            second.GetInstanceID());
+    }
+
+    private static string ResolveStableMemberId(
+        RestaurantAreaMember member)
+    {
+        if (member != null &&
+            member.TryGetComponent(
+                out RestaurantPlaceableObject placeable) &&
+            placeable != null &&
+            !string.IsNullOrWhiteSpace(placeable.InstanceId))
+        {
+            return "P|" + placeable.InstanceId;
+        }
+
+        return "N|" + (member != null
+            ? member.name
+            : string.Empty);
     }
 
     private void EndSessionInternal()

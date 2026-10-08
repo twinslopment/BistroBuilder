@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -51,6 +52,19 @@ public interface IRestaurantEditHistoryCommand
     /// definitivamente del historial, esa instancia debe destruirse.
     /// </summary>
     void ReleaseResources();
+}
+
+/// <summary>
+/// Expone los comandos hijos de una operación compuesta sin romper el
+/// contrato base. Finanzas y diagnóstico pueden inspeccionar una operación
+/// atómica completa sin convertir el historial en una autoridad de dominio.
+/// </summary>
+public interface IRestaurantEditHistoryCommandGroup
+{
+    IReadOnlyList<IRestaurantEditHistoryCommand> ChildCommands
+    {
+        get;
+    }
 }
 
 /// <summary>
