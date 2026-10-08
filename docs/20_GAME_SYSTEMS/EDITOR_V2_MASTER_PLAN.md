@@ -410,7 +410,7 @@ PASS:
 
 ### B10 — Sustitución inteligente
 
-**Estado técnico 08/10/2026:** backend implementado y probado en Unity (40/40 PASS); regresión de B4+B5+B8+B9+B10 (252/252 PASS). Documentación: `docs/40_TESTING/EDITOR_V2_B10_REPLACEMENT_20261008.md`. **Aún NO cerrado**: falta Load real de partida, aceptación de relaciones espaciales complejas, UI aprobada y prueba final de compilación PC.
+**CIERRE DEL NÚCLEO B10 — 08/10/2026: PASS técnico.** Sustitución individual y múltiple, validación canónica, presupuesto económico real, Undo/Redo y rollback: 40/40 PASS. Save/Load **real en Play Mode** PASS (38 artículos, 28 enlaces mesa-silla); regresión B4+B5+B8+B9+B10: **252/252 PASS**; compilación Windows 64 bits: **PASS**. La activación gráfica final del botón de sustituir y el diseño del catálogo se resolverán dentro de `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md` sin reabrir las autoridades de B10. No merge a maestra mientras la integración visual esté pendiente. Evidencia: `docs/40_TESTING/EDITOR_V2_B10_REPLACEMENT_20261008.md`.
 
 **En cristiano:** cambiar esta silla por otra no obliga a recolocar todo desde cero.
 
