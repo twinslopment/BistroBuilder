@@ -218,7 +218,7 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - Al transformar el conjunto, se preserva su disposición relativa. La operación es única para Undo/Redo; cada pieza sigue pudiendo seleccionarse y editarse individualmente.
 - No forzar en un grupo cambios simultáneos de materiales o dimensiones si los objetos tienen perfiles diferentes.
 
-### 6.1 Microanimación al seleccionar — PROPUESTA, NO APROBADA
+### 6.1 Microanimación al seleccionar — APROBADA COMO BASE V1 (2026-10-08)
 **Intención del usuario:** introducir una pequeña animación al pulsar sobre un objeto. Diseñar y enseñar preview animada (o secuencia de fotogramas) antes de marcarla como definitiva.
 
 **Propuesta de tiempos iniciales para evaluar (240 ms en total):**
@@ -236,7 +236,7 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 **Preview HTML interactiva realizada (2026-10-08):** `EditorV2_Seleccion_Animada_INTERACTIVA.html`, entregada en este chat como archivo autónomo; no está copiada ni integrada en Unity ni en la rama Git. El prototipo incluye escena de referencia, zonas de clic sobre mesa y dos sillas, entradas animadas en esquinas doradas, contador superior dinámico, Mayús+clic para añadir o retirar, clic en fondo o Esc para deseleccionar, desvanecido de salida, y botón «Reproducir secuencia». La selección individual también recibe la animación; no es un efecto exclusivo de la multiselección.
 **Pruebas de la preview:** mediante Chromium/Playwright, 1920×1080 y 1280×720: selección simple, entrada y asentamiento, adición sin reanimar los demás, retirada, Escape, reproducción automática, y errores JS 0; PASS en ambas resoluciones. Estas pruebas validan la **demo HTML**, no el comportamiento runtime Unity ni B8.
 **Limitaciones del mockup:** el escenario de fondo es una imagen estática de la maqueta anterior y contiene un gizmo ilustrativo; el único comportamiento interactivo representativo es la selección/microanimación de marcas, contador y actualización del inspector simulado. Sin cambios al pipeline 3D o animaciones reales de assets.
-**Estado:** duraciones, curva easing, intensidad de brillo y respuesta de pastilla superior siguen PENDIENTES de aprobación tras la revisión de la preview interactiva.
+**Decisión expresa del usuario 2026-10-08:** «me convence, no descarto futuros arreglos, pero hoy me vale. avancemos». Queda **APROBADA COMO BASE V1** la microanimación para selección simple, multiselección y deselección tal como se vio en el HTML interactivo, incluidos los tiempos orientativos de entrada ~240 ms y salida ~120 ms, sin alterar escala/posición del asset. Queda abierta a ajustes posteriores de timing, easing, intensidad y acabado. No significa implementación en Unity ni implica aprobación de otros detalles no ensayados.
 
 **Propuesta C — intento no compatible:**
 - Si se intenta Mayús+seleccionar arquitectura con una selección de mobiliario, no alterar el conjunto. Mostrar aviso ámbar/crema localizado: «No puedes combinar mobiliario y arquitectura en la misma selección».
@@ -256,12 +256,54 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - EditorV2_Multiseleccion_Compacta_1280.png: pantalla compacta con inspector plegado.
 Los PNG se entregan en el chat; **no están almacenados dentro de Git**. Fondo 3D y demás barras de una referencia seleccionada del usuario; no se ratifican ni se prueban con estas capturas.
 Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_DRAFT.svg.
-**Estado:** esquinas de latón/miel + pastilla oscura de contador superior APROBADAS. Aún pendientes el inspector de conjunto, microanimación, selección simple y composición responsive exacta. NO programar.
+**Estado:** esquinas de latón/miel + pastilla oscura de contador superior APROBADAS; microanimación de clic simple, Mayús+clic y deselección APROBADA COMO BASE V1 tras prueba HTML. Inspector de conjunto, cierre responsive y pulido posterior de la animación pendientes; NO programar Unity hasta cerrar la UI general.
 
-## 7. Resto de componentes — SIN DISEÑO APROBADO
-Orden: superficies (detalle); Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
+## 7. Aplicar / Descartar reforma — PROPUESTA UX Y VISUAL V1 (PENDIENTE DE APROBACIÓN)
+**Contexto:** diseño posterior a la aprobación como base V1 de la microanimación de selección. Esta sección NO está todavía aprobada por el usuario, ni implica programación en Unity.
+**Fundamento confirmado:** docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md, B5, y BistroBuilderEditorV2RenovationSession.cs. Los métodos TryApplyChanges y TryDiscardChanges existen. El guard de salida impide abandonar edición mientras queden cambios por resolver. Finance y validación estructural son autoridad del coste/viabilidad; la UI no inventa cifras ni resultados.
 
-## 8. Registro de aprobación
+### Composición propuesta
+- **Barra superior del modo edición:** mostrar «Cambios pendientes» y «Coste estimado» cuando exista un snapshot válido de la reforma; controles principales «Aplicar reforma», «Descartar» y «Salir». La barra antigua queda fuera. Los nombres, tamaño y disposición final siguen sujetos a aprobación de la fase de barra superior.
+- **Aplicar** tiene tratamiento miel/latón como acción afirmativa. **Descartar reforma** usa rojo para advertir que revierte TODA la sesión. **Salir** es independiente, con protección de cambios pendientes.
+- **Sin cambios:** botones Aplicar y Descartar deshabilitados o no mostrados según jerarquía responsive; Salir disponible.
+- El jugador no recibe un modal de reforma después de cada mueble: revisión global solo al pedir Aplicar/Descartar/Salir.
+
+### Flujo «Aplicar»
+1. Clic en Aplicar abre un panel de revisión marfil/latón sobre la escena atenuada (la referencia del juego sigue visible).
+2. Mostrar número de operaciones, desglose de mobiliario/arquitectura/superficies cuando se pueda derivar de la sesión, coste neto o devolución y caja prevista SOLO si Finance publica valores fiables.
+3. Mostrar validación/diagnósticos por nombre comprensible, nunca afirmar «sin incidencias» por ausencia de datos. Validación y coste deben proceder de los contratos reales, no de un cálculo de la UI.
+4. «Seguir editando» cierra el panel sin tocar el draft; «Aplicar los cambios» confirma el conjunto solo si el runtime lo autoriza. No eliminar el historial ni declarar éxito hasta que TryApplyChanges devuelva resultado válido.
+5. En validación fallida, suprimir/deshabilitar confirmación y ofrecer «Ver incidencia» conservando el draft. Error técnico se explica sin fingir aplicación.
+6. Tras éxito, la sesión se rebasa al restaurante recién confirmado; se actualiza el contador a 0, sin confundir Apply con guardado persistente de la partida ni con salida automática.
+
+### Flujo «Descartar»
+1. Clic abre confirmación explícita «¿Descartar toda la reforma?»; texto aclara que revierte mobiliario, arquitectura, costes de reforma y relaciones a la baseline.
+2. Acción de riesgo «Sí, descartar reforma» en rojo; alternativa «Cancelar / seguir editando» clara y con foco seguro por defecto.
+3. Solo cuando TryDiscardChanges informa éxito, mostrar baseline restaurada, contador 0 y estado sin pendientes.
+4. Esc o cerrar el modal NO descarta nada. Esc al mover un objeto cancela solo el gesto actual: estas dos operaciones no se equiparan.
+
+### Flujo «Salir»
+- Sin cambios: salir de forma normal según navegación de modo.
+- Con cambios: presentar opciones «Seguir editando», «Revisar para aplicar» y «Descartar…». No salir ni descartar silenciosamente. B5 sigue siendo autoridad sobre CanExitEditMode.
+- Si hay operación provisional activa al iniciar una acción global, B5 debe cancelarla/coordinarla antes de decidir el resultado; no confundir el gesto aún no confirmado con cambios netos de reforma.
+
+### Lenguaje visual y responsive
+- Misma familia de marcos marfil/latón, botones con relieve suave y títulos Recoleta/textos Inter. Se reserva el rojo para Descartar; validación geométrica o económica usa señales informativas ámbar según gravedad y accesibilidad.
+- 1920×1080: panel centrado de revisión con tres cifras y lista legibles, sin ocupar toda la pantalla.
+- 1280×720: anchura máxima acotada al viewport, contenido desplazable si hace falta, acciones visibles sin cortar texto; ESC y botones de cerrar accesibles por teclado.
+- Conservar el contexto Galería Viva y la selección vigente detrás, sin cambiar la apariencia de inspector ni catálogo aprobada.
+
+### Preview y estado de prueba
+- HTML autónomo de demostración: EditorV2_Aplicar_Descartar_INTERACTIVO.html, entregado en esta conversación, sin dependencias externas. Capturas 1920/1280 de estado inicial, revisión y confirmación para revisar visualmente.
+- Incluye escenarios simulados válidos/con incidencias/sin cambios, revisión, confirmación de descarte, guard de salida, cancelar con Escape, activación/desactivación de botones y notificación de resultado. Estos estados son un prototipo de interfaz, **no transacciones reales Unity**; números y restaurante son ilustrativos.
+- Pruebas automatizadas Chromium: flujo Apply, Discard, Exit, bloqueo por incidencias, limpieza de estado, Escape, sin errores JavaScript ni desbordamiento horizontal, PASS a 1920×1080 y 1280×720. No son pruebas funcionales de B5 en Unity.
+- Referencia de jerarquía almacenada en References/ApplyDiscard_ReviewV1_DRAFT.svg. HTML y PNG residen en la conversación, NO en Git.
+- **Pendiente de visto bueno:** distribución exacta de botones de cabecera, contenido y estilo del diálogo, confirmación destructiva y estados de error. No implementar C# hasta cierre del diseño visual.
+
+## 8. Resto de componentes — SIN DISEÑO APROBADO
+Orden: superficies (detalle); feedback/snapping/errores/estados; responsive/coherencia final.
+
+## 9. Registro de aprobación
 - 2026-10-08: cinco zonas de distribución general aceptadas **provisionalmente** como punto de partida. No implica aprobación de la imagen conceptual al detalle, tamaño exacto, microinteracciones o componentes particulares.
 - 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.
 - 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.
@@ -270,5 +312,6 @@ Orden: superficies (detalle); Apply/Discard; feedback/snapping/errores/estados; 
 - 2026-10-08: **estados e inspector V3 complementarios aceptados como dirección de diseño** al continuar hacia construcción; responsive y microinteracciones finales sujetos a pruebas visuales. Mantener controles regidos por capacidades reales y avisos económicos no destructivos sin rojo.
 - 2026-10-08: **organización del Taller de construcción aprobada** tras las previews de pared/habitación (usuario: «si, avancemos»). Galería Viva se sustituye por Taller al pulsar Construir; inspector en contexto estructural. Acabados específicos y microinteracciones pendientes.
 - 2026-10-08: **estilo de multiselección aprobado expresamente** («me quedo con esta forma de seleccion»): esquinas cortas doradas en cada elemento y pastilla superior oscura con contador; quedan descartadas como diseño base las otras variantes de círculos/contornos completos/números.
-- 2026-10-08: **microanimación de selección propuesta por el usuario** («quiza cuando pulses sobre un objeto podría hacer una pequeña animación»). Timing y detalles de efecto por aprobar con preview; no altera la posición ni escala del asset.
+- 2026-10-08: **microanimación de selección aprobada como base V1 tras preview HTML interactiva**: usuario «me convence, no descarto futuros arreglos, pero hoy me vale. avancemos». Abarca clic simple, multiselección aditiva y deselección; conserva la posibilidad de mejoras posteriores, sin tocar Unity.
+- 2026-10-08: **Aplicar / Descartar V1 presentado para revisión** mediante HTML interactivo y láminas 1920×1080 / 1280×720; incluye resumen, coste ilustrativo, confirmación destructiva, salida con pendientes y bloqueo por incidencia. Pendiente de aprobación estética/UX específica.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
