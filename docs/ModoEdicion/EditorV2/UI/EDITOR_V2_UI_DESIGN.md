@@ -132,7 +132,8 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - Las reglas/estado de colocación proceden de los sistemas de validación y deben ser accesibles sin romper la jerarquía.
 **Alcance:** se aprueban el catálogo y panel derecho exclusivamente. Nada en la imagen implica aprobar barras superiores, guardado automático, precios de ejemplo, capacidades XYZ/CAD ni escenario renderizado.
 
-## 4.2 Refinamiento V3 — PRESENTADO PARA REVISIÓN, NO CERRADO
+## 4.2 Refinamiento V3 — ESTADOS Y CRITERIOS DE RESPONSIVE ACEPTADOS COMO DIRECCIÓN; DETALLE PENDIENTE
+**Confirmación de avance:** tras explicar que las vistas de estados e inspector son complementarias, el usuario respondió «adelante, avancemos». Se conservan ambas líneas de diseño y las correcciones indicadas (miel para selección, aviso económico no destructivo sin rojo, controles únicamente cuando existen capacidades reales). No se fija por ello cada píxel, interacción o dimensión de los mockups.
 **Responsive propuesto**
 - 1920×1080: catálogo desplegado con categorías laterales y varias tarjetas según el ancho; inspector desplegado al existir selección; restaurante/viewport sigue siendo el foco.
 - 1280×720: catálogo más estrecho; búsqueda visible, destacado reducido/plegable, relacionados desplazables, rejilla adaptable a 1–2 columnas; inspector normalmente plegado y desplegable en la selección. Sin quitar funciones ni superponer barras.
@@ -163,14 +164,50 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 **Pendiente de visto bueno:** tamaños definitivos, microinteracciones, comportamiento plegable, estados finales y composiciones 1920/1280. Las previews son conceptos, no pruebas de Unity.
 **Referencias presentadas en el chat:** GaleriaViva_V3_VistaAmplia.png, GaleriaViva_V3_VistaCompacta.png, GaleriaViva_V3_Estados_Articulo.png y GaleriaViva_V3_Inspector_Variantes.png. PNG no copiados a Git. Referencia vectorial versionada: References/GaleriaViva_Responsive_States_V3.svg.
 
-## 5. Resto de componentes — SIN DISEÑO APROBADO
-Orden: inspector; construcción; selección/multiselección; Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
+## 5. Herramientas de construcción — PROPUESTA GRÁFICA V1, PENDIENTE DE APROBACIÓN (2026-10-08)
 
-## 6. Registro de aprobación
+### 5.1 Ámbito y fundamento técnico
+- El núcleo Construction Authoring existente tiene acciones de tipo Furniture/Select/Wall/Room/Door/Window/WallModule; las interfaces de contexto NO vuelven a implementar transacciones, coste, BBSIS, Navigation ni validación.
+- Arquitectura activa a través de **Construir** en la barra inferior ya aceptada. Construcción sustituye temporalmente al catálogo de artículos izquierdo con un panel específico denominado de forma **provisional** «Taller de construcción»; al volver a Colocar/Mobiliario reaparece «Catálogo Galería Viva». No incluir puertas/ventanas/segmentos como muebles del catálogo.
+- **Superficies** es otro contexto de la barra inferior, no una pestaña de muebles; se diseñará con el mismo sistema gráfico en su propio subbloque.
+
+### 5.2 Composición visual propuesta
+**Izquierda (Taller):** marco marfil/latón coherente con Galería Viva y barra inferior, Recoleta para encabezados, Inter para controles; acceso «Volver a artículos», alternancia Crear/Editar, cinco familias con icono específico: Habitación, Pared, Puerta, Ventana, Módulo. Herramienta activa en miel. Descripción breve y cómo iniciar el gesto; acciones inexistentes no se representan como funcionales.
+**Centro (viewport):** se conserva el restaurante como protagonista; una pared muestra volumen translúcido tenue, línea de apoyo al suelo y extremos/snapping; una habitación muestra contorno en suelo y volumen provisional de paredes. BBSIS/Placement/Construction informa qué es válido; las guías no confirman nada. Feedback contenido, sin teñir objetos enteros ni cuadrícula siempre encendida.
+**Derecha (inspector):** cambia de mobiliario a selección/trazado estructural. Presenta nombre/estado provisional, esquema breve, dimensiones informativas o calculadas, compatibilidad, zonas, conexiones, costes SOLO si Finance los publica, y diagnóstico localizado. Si faltan datos muestra pendiente, nunca un valor inventado. No duplicar Aplicar/Descartar global.
+**Inferior:** se conserva la barra aprobada MODO/EDITAR/AYUDAS; se señala Construir como modo activo. Deshacer/Rehacer globales no se sustituyen por historiales particulares. «Esc» abandona el gesto actual sin descartar la reforma.
+
+### 5.3 Reglas concretas de cada familia
+- **Pared:** marcar inicio y final del segmento. Preview de longitud y conexión, altura/grosor solo como datos si están expuestos. Snapping en vértices/segmentos según algoritmo existente. Falso que una línea provisional ya esté construida.
+- **Habitación:** delimitar el rectángulo o forma admitida por el tool. Mostrar área, perímetro y zona solo si existen datos calculables/autorados; permitir revisar antes de aceptar. Split/merge respaldados por Construction Authoring, no nuevos botones improvisados.
+- **Puerta/Ventana:** se sitúan en un segmento anfitrión válido mediante opening canónico. No permitirlos flotando; vista previa sobre pared; inspector de tipo y dimensión según datos reales.
+- **Módulo de pared:** únicamente familias/formatos publicados; no inventar curvas, cubiertas o multilayer CAD.
+- **Superficies:** herramienta separada que leerá materiales publicados y destinos válidos; la estética concreta se revisará al diseñarla.
+
+### 5.4 Responsive y estados (propuestos)
+- **1920×1080:** panel izquierdo ~455 px; inspector estructural derecho ~354 px al seleccionar/trazar; viewport amplio. Una columna de herramientas a la izquierda y estados/medidas sobre el inspector, sin popup central pesado.
+- **1280×720:** panel izquierdo ~314 px con herramientas en dos columnas; inspector plegado como pestaña vertical que se puede desplegar bajo demanda; viewport no queda atrapado entre paneles. Reservar espacio a ambas barras horizontales.
+- Activo = miel; hover = iluminación sutil; deshabilitado = crema atenuado + explicación; advertencia económica = ámbar neutral (no rojo destructivo). Conflicto geométrico se explica sin un UI de error rojo genérico. Si no hay selección ni gesto, inspector puede permanecer plegado.
+- Preview no es commit ni garantiza validez. Cancelar un gesto no equivale a Descartar reforma.
+- La tipografía Recoleta/Inter, iconos BB originales, relieve y ornamentos discretos seguirán pendientes de arte final; los símbolos vectoriales usados en la prueba son placeholders, no assets de iconografía aprobados.
+
+### 5.5 Referencias de trabajo y limitaciones de las previews
+- Previews visuales realizadas en el chat (fuera de Unity): `EditorV2_Construccion_Pared_1920.png`, `EditorV2_Construccion_Habitacion_1920.png`, `EditorV2_Construccion_Pared_1280.png`. Todavía no se han integrado como archivos PNG en Git.
+- Plano vectorial versionado y editable: `References/ConstruccionV2_Layout_DRAFT.svg`. Este plano no sustituye a los PNG de revisión.
+- El escenario usado como fondo procede de una referencia ilustrativa y conserva un gizmo de selección de mobiliario previo; **no** define el estado del editor durante construcción ni constituye una prueba de simulación de construcción.
+- Los ejemplos de 4,2 m, 12,4 m², 2,50 m y 0,12 m no fijan especificaciones de gameplay; lo que muestra Unity debe derivarse de la sesión real.
+- La parte superior y la escena de las imágenes son contexto; **no** se aprueban con esta propuesta, ni se prometen autosave, nuevas herramientas de CAD o valores económicos ficticios.
+- **Estado final de este subbloque:** pendiente de visto bueno visual del usuario. No programar ni dar por cerrados iconos y microinteracciones hasta entonces.
+
+## 6. Resto de componentes — SIN DISEÑO APROBADO
+Orden: superficies (detalle); selección/multiselección; Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
+
+## 7. Registro de aprobación
 - 2026-10-08: cinco zonas de distribución general aceptadas **provisionalmente** como punto de partida. No implica aprobación de la imagen conceptual al detalle, tamaño exacto, microinteracciones o componentes particulares.
 - 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.
 - 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.
 - 2026-10-08: **dirección artística y distribución de la barra inferior aceptadas expresamente** («me gusta muchisimo esa barra inferior»). No incluye aprobación de todas las zonas que aparecen en esa escena de ejemplo.
 - 2026-10-08: **Galería Viva elegida expresamente** como concepto artístico y estructural del catálogo y el inspector derecho, exclusivamente. Sustituye la anterior propuesta genérica; las imágenes de los otros menús y el restaurante no se consideran aprobadas.
-- 2026-10-08: **refinamiento responsive y estados V3 presentado**, no aprobado aún en sus microinteracciones y disposiciones exactas. La propuesta combina búsqueda, destacado, relacionados, catálogo, modos compactos y controles del inspector regidos por capacidades reales; evitar controles ficticios y avisos rojos económicos.
+- 2026-10-08: **estados e inspector V3 complementarios aceptados como dirección de diseño** al continuar hacia construcción; responsive y microinteracciones finales sujetos a pruebas visuales. Mantener controles regidos por capacidades reales y avisos económicos no destructivos sin rojo.
+- 2026-10-08: **Construcción V1 (Taller de construcción) presentada como propuesta**, con Pared, Habitación, Puerta, Ventana, Módulo, inspector adaptativo y pared/habitación en preview; pendiente de decisión visual explícita del usuario. No equivale a una implementación.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.

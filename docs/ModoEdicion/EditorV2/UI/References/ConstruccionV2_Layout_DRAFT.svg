@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800">
+<defs><linearGradient id="paper" x2="0" y2="1"><stop stop-color="#fff8e9"/><stop offset="1" stop-color="#e9d0aa"/></linearGradient><linearGradient id="scene" x2="0" y2="1"><stop stop-color="#6e7d69"/><stop offset="1" stop-color="#33493f"/></linearGradient></defs>
+<rect x="0" y="0" width="1600" height="800" rx="0" fill="url(#paper)" stroke="#e4c392" stroke-width="2"/>
+<text x="36" y="53" fill="#513115" font-family="Inter,Arial,sans-serif" font-size="32" font-weight="700" text-anchor="start">EDITOR V2 · HERRAMIENTAS DE CONSTRUCCIÓN</text>
+<text x="36" y="78" fill="#86664c" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="500" text-anchor="start">Referencia de layout V1 para revisión · NO aprobada · no es una captura de Unity</text>
+<text x="35" y="117" fill="#825725" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start">1920×1080 — PARED EN PREVIEW</text>
+<rect x="27" y="133" width="1546" height="388" rx="12" fill="#ead2a8" stroke="#a46f39" stroke-width="2"/>
+<rect x="36" y="140" width="1528" height="48" rx="8" fill="#fff7e7" stroke="#b5844b" stroke-width="2"/>
+<text x="55" y="173" fill="#4a301e" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="700" text-anchor="start">BISTRO BUILDER · MODO EDICIÓN</text>
+<text x="790" y="173" fill="#705536" font-family="Inter,Arial,sans-serif" font-size="17" font-weight="500" text-anchor="middle">Reforma actual</text>
+<text x="1541" y="173" fill="#75573c" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="500" text-anchor="end">Aplicar · Salir</text>
+<rect x="36" y="196" width="385" height="279" rx="9" fill="#f8ebd8" stroke="#b08347" stroke-width="2"/>
+<text x="56" y="222" fill="#412b1e" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700" text-anchor="start">Taller de construcción</text>
+<text x="56" y="243" fill="#795839" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">Crear   |   Editar</text>
+<text x="56" y="270" fill="#845d30" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="700" text-anchor="start">ELIGE UNA HERRAMIENTA</text>
+<rect x="55" y="280" width="335" height="28" rx="5" fill="#fff5e6" stroke="#d4b48a" stroke-width="2"/><text x="73" y="300" fill="#6c4c31" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Habitación</text><rect x="55" y="311" width="335" height="28" rx="5" fill="#e7b978" stroke="#a47238" stroke-width="2"/><text x="73" y="331" fill="#382919" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" text-anchor="start">Pared</text><rect x="55" y="342" width="335" height="28" rx="5" fill="#fff5e6" stroke="#d4b48a" stroke-width="2"/><text x="73" y="362" fill="#6c4c31" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Puerta</text><rect x="55" y="373" width="335" height="28" rx="5" fill="#fff5e6" stroke="#d4b48a" stroke-width="2"/><text x="73" y="393" fill="#6c4c31" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Ventana</text><rect x="55" y="404" width="335" height="28" rx="5" fill="#fff5e6" stroke="#d4b48a" stroke-width="2"/><text x="73" y="424" fill="#6c4c31" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Módulo</text>
+<rect x="433" y="196" width="756" height="279" rx="9" fill="url(#scene)" stroke="#987746" stroke-width="2"/>
+<text x="820" y="222" fill="#fff6d6" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="700" text-anchor="middle">VISTA PREVIA DE PARED</text>
+<polygon points="580,390 1035,351 1035,259 580,299" fill="#fce7bc" fill-opacity=".49" stroke="#fff2c5" stroke-width="2"/>
+<path d="M580 390L1035 351" stroke="#90dfe3" stroke-width="4"/><circle cx="580" cy="390" r="7" fill="#fff3cf" stroke="#79c7d6" stroke-width="4"/><circle cx="1035" cy="351" r="7" fill="#fff3cf" stroke="#79c7d6" stroke-width="4"/>
+<text x="817" y="446" fill="#fff3ce" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="500" text-anchor="middle">Inicio / Final  ·  Snapping  ·  Validación pendiente</text>
+<rect x="1201" y="196" width="362" height="279" rx="9" fill="#f8ebd8" stroke="#b08347" stroke-width="2"/>
+<text x="1219" y="223" fill="#412b1e" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="700" text-anchor="start">Pared provisional</text>
+<text x="1219" y="251" fill="#71533b" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Propiedades (según datos reales)</text>
+<text x="1219" y="283" fill="#6a4a2d" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">Longitud   ·   Altura   ·   Grosor</text>
+<text x="1219" y="317" fill="#6a4a2d" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">Estado   ·   Pendiente de validar</text>
+<text x="1219" y="352" fill="#6a4a2d" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">Coste   ·   Solo si Finance informa</text>
+<text x="1219" y="391" fill="#6a4a2d" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">Esc   ·   Cancelar gesto</text>
+<rect x="36" y="484" width="1528" height="29" rx="4" fill="#fff3dc" stroke="#b18242" stroke-width="2"/>
+<text x="800" y="505" fill="#664428" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="600" text-anchor="middle">MODO [Seleccionar · Colocar · CONSTRUIR · Superficies]    EDITAR [Mover · Girar · Duplicar · Eliminar]    AYUDAS [Snapping · Cuadrícula · Vistas]</text>
+<text x="34" y="562" fill="#825725" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start">1280×720 — RESPONSIVE COMPACTO</text>
+<rect x="30" y="579" width="954" height="169" rx="9" fill="#e7d2ae" stroke="#b08347" stroke-width="2"/>
+<rect x="36" y="585" width="942" height="25" rx="9" fill="#fff5e3" stroke="#b08347" stroke-width="2"/>
+<text x="48" y="603" fill="#50351e" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" text-anchor="start">MODO EDICIÓN</text>
+<rect x="36" y="616" width="246" height="101" rx="9" fill="#f8ebd8" stroke="#b08347" stroke-width="2"/>
+<text x="49" y="636" fill="#4b301d" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" text-anchor="start">Taller de construcción</text>
+<rect x="47" y="646" width="102" height="22" rx="9" fill="#e1bb79" stroke="#b08347" stroke-width="2"/><text x="98" y="662" fill="#5c411d" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="700" text-anchor="middle">Pared</text>
+<rect x="154" y="646" width="112" height="22" rx="9" fill="#fff5e6" stroke="#b08347" stroke-width="2"/><text x="210" y="662" fill="#5c411d" font-family="Inter,Arial,sans-serif" font-size="12" font-weight="500" text-anchor="middle">Habitación</text>
+<text x="49" y="696" fill="#8d6c47" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="500" text-anchor="start">Crear y editar · Panel plegable</text>
+<rect x="290" y="616" width="643" height="101" rx="9" fill="url(#scene)" stroke="#b08347" stroke-width="2"/>
+<text x="612" y="670" fill="#fff5d6" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="500" text-anchor="middle">Viewport 3D: guías de construcción</text>
+<rect x="938" y="616" width="38" height="101" rx="9" fill="#f7e6cd" stroke="#b08347" stroke-width="2"/><text x="957" y="672" fill="#9b7038" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="500" text-anchor="middle">&gt;</text>
+<rect x="36" y="724" width="942" height="18" rx="9" fill="#fff5e6" stroke="#b08347" stroke-width="2"/>
+<text x="507" y="737" fill="#825b38" font-family="Inter,Arial,sans-serif" font-size="11" font-weight="500" text-anchor="middle">Barra inferior accesible</text>
+<rect x="1010" y="579" width="560" height="168" rx="9" fill="#fbf0dd" stroke="#b08347" stroke-width="2"/>
+<text x="1034" y="612" fill="#6d4b27" font-family="Inter,Arial,sans-serif" font-size="20" font-weight="700" text-anchor="start">ESTADOS Y REGLAS DEL INSPECTOR</text>
+<text x="1034" y="638" fill="#4d311b" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">• Vista previa no es confirmación ni publicación</text>
+<text x="1034" y="661" fill="#4d311b" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">• Puertas y ventanas necesitan pared anfitriona</text>
+<text x="1034" y="684" fill="#4d311b" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">• No simular CAD libre, gas, techos o varios pisos</text>
+<text x="1034" y="707" fill="#4d311b" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="500" text-anchor="start">• Miel = modo activo; avisos según resultado real</text>
+<text x="36" y="782" fill="#7c6143" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="500" text-anchor="start">Las barras y cifras son contextuales/ilustrativas; solo se somete a revisión la herramienta de construcción y sus dos paneles.</text>
+</svg>
