@@ -258,8 +258,8 @@ Los PNG se entregan en el chat; **no están almacenados dentro de Git**. Fondo 3
 Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_DRAFT.svg.
 **Estado:** esquinas de latón/miel + pastilla oscura de contador superior APROBADAS; microanimación de clic simple, Mayús+clic y deselección APROBADA COMO BASE V1 tras prueba HTML. Inspector de conjunto, cierre responsive y pulido posterior de la animación pendientes; NO programar Unity hasta cerrar la UI general.
 
-## 7. Aplicar / Descartar reforma — PROPUESTA UX Y VISUAL V1 (PENDIENTE DE APROBACIÓN)
-**Contexto:** diseño posterior a la aprobación como base V1 de la microanimación de selección. Esta sección NO está todavía aprobada por el usuario, ni implica programación en Unity.
+## 7. Aplicar / Descartar reforma — DIRECCIÓN V1 APROBADA, AFINABLE (2026-10-08)
+**Decisión del usuario:** «me gusta, sigamos» tras presentar el HTML interactivo de Aplicar / Descartar con capturas y pruebas de los flujos. Se aprueba **el comportamiento y la dirección visual V1 como base afinable**: revisión antes de aplicar, confirmación de descarte y salida protegida. Esta aprobación NO fija importes simulados, guardado automático, dimensiones exactas ni declara integración en Unity.
 **Fundamento confirmado:** docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md, B5, y BistroBuilderEditorV2RenovationSession.cs. Los métodos TryApplyChanges y TryDiscardChanges existen. El guard de salida impide abandonar edición mientras queden cambios por resolver. Finance y validación estructural son autoridad del coste/viabilidad; la UI no inventa cifras ni resultados.
 
 ### Composición propuesta
@@ -298,12 +298,40 @@ Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_D
 - Incluye escenarios simulados válidos/con incidencias/sin cambios, revisión, confirmación de descarte, guard de salida, cancelar con Escape, activación/desactivación de botones y notificación de resultado. Estos estados son un prototipo de interfaz, **no transacciones reales Unity**; números y restaurante son ilustrativos.
 - Pruebas automatizadas Chromium: flujo Apply, Discard, Exit, bloqueo por incidencias, limpieza de estado, Escape, sin errores JavaScript ni desbordamiento horizontal, PASS a 1920×1080 y 1280×720. No son pruebas funcionales de B5 en Unity.
 - Referencia de jerarquía almacenada en References/ApplyDiscard_ReviewV1_DRAFT.svg. HTML y PNG residen en la conversación, NO en Git.
-- **Pendiente de visto bueno:** distribución exacta de botones de cabecera, contenido y estilo del diálogo, confirmación destructiva y estados de error. No implementar C# hasta cierre del diseño visual.
+- **Estado:** aprobado como dirección V1 de Aplicar/Descartar/Salir con pendientes. Ajustes finos de dimensiones, color, composición responsiva y textos reales aún posibles en el cierre general. No implementar C# hasta cierre del diseño visual.
 
-## 8. Resto de componentes — SIN DISEÑO APROBADO
-Orden: superficies (detalle); feedback/snapping/errores/estados; responsive/coherencia final.
+## 8. Feedback visual, snapping, errores y estados — PROPUESTA V1 PENDIENTE DE APROBACIÓN (2026-10-08)
 
-## 9. Registro de aprobación
+### 8.1 Regla visual canónica y autoridades
+- Base vinculante: EditInteractionDesign.md, decisión 005 Universal Preview; EDITOR_V2_MASTER_PLAN.md B6 (PASS) y B7 (PASS). La UI representa información de Placement Validation, BBSIS, Navigation, Construction y Finance sin sustituir sus decisiones.
+- Estados separados y visibles: **seleccionado**, **en transporte/colocación provisional**, **snapping sugerido**, **validado**, **conflicto**, **confirmado** y **cancelado**. El preview nunca realiza commit solo por existir.
+- Mantener las **esquinas cortas miel/latón y microanimación V1** ya aprobadas al seleccionar. NO volver a cuadros CAD, círculos gigantes u hologramas. Seleccionar no eleva el asset; elevar/asentar suavemente solo al mover/soltar.
+- Posición provisional con huella discreta y ghost tenue de la anterior ubicación cuando sea informativo; la geometría 3D mantiene sus materiales. No pintar modelos enteros de verde o rojo.
+- Snapping se expresa mediante guía cian corta y pulso breve junto al destino; puede sugerir mesa, pared, superficie, anfitrión de opening o relación de grupo según perfil real. **Sugerencia NO equivale a validación**: confirmar depende de Placement/BBSIS/Construction y la validez final.
+- Problemas: localizar el conflicto espacial o ruta comprometida con trama/huella ámbar y explicación concreta en el inspector, sin modal rutinario ni rojo genérico. Reservar rojo UI para acciones destructivas.
+- Un problema no provoca cambios ocultos, compras, commit ni cambios de posición automáticos. El jugador puede corregir, cancelar el gesto con Esc o continuar.
+- En muros y habitaciones, volumen provisional translúcido limitado a geometría relevante; puertas/ventanas solo sobre segmento anfitrión válido. No levantar muros definitivos ni simular trabajo.
+
+### 8.2 Diseño de pantalla propuesto
+- **Centro:** espacio principal del restaurante; la huella y puntos de snap aparecen cerca del objeto; pequeña pastilla contextual informativa por encima o junto a la operación, evitando tapar la zona de trabajo.
+- **Inspector derecho contextual:** título «Vista previa», estado compacto, explicación de una frase, resumen de Snapping / Huella / Validación y, solo si hay conflicto, bloque de causa con el objeto o ruta afectada. «Confirmar gesto» únicamente cuando el validador permita; «Cancelar» nunca descarta la reforma entera.
+- **Catálogo izquierdo y barras:** se mantienen Galería Viva y tres grupos MODO/EDITAR/AYUDAS. Botón Snapping con miel cuando está activado; sin duplicar sistemas de snapping ni categorías de construcción en catálogo mobiliario.
+- **Casos mostrados:** colocación válida; sugerencia de snapping; superposición con otro mueble; ruta de circulación comprometida; construcción de pared provisional. Si una situación carece de diagnóstico real, usar «Comprobando…» / «No se pudo verificar» sin inferir seguridad.
+- **Responsive:** a 1920×1080 inspector abierto, sin tapar viewport. A 1280×720 inspector plegado inicialmente y expandible como rail; las ayudas locales continúan visibles sin invadir ambas barras.
+
+### 8.3 Preview HTML real — creada y probada, NO integrada
+- Archivo autónomo de esta conversación: `EditorV2_Feedback_Snapping_INTERACTIVO.html`. No se copia a Unity ni se modifica el comportamiento runtime.
+- Interacciones de la demo: elegir cinco estados; clic/arrastre de una mesa de prueba; botón de snapping; Comprobar (validador **simulado**) antes de confirmar un snap o pared; Confirmar gesto; Cancelar/Esc; recorrido secuencial animado; inspector desplegable a 1280×720.
+- Capturas 1920×1080 y 1280×720: `EditorV2_Feedback_Valido_1920.png`, `EditorV2_Feedback_Snapping_1920.png`, `EditorV2_Feedback_Conflicto_1920.png`, `EditorV2_Feedback_Construccion_1920.png`, y correspondientes vistas 1280. Escena 3D de referencia **estática**, sobreimpresiones HTML dinámicas, valores y lógica de validación ilustrativos.
+- Verificación Chromium: selección de 5 casos, snap toggle, separación entre sugerencia/comprobación, bloqueo de confirmar ante colisión/ruta, confirmar/cancelar, drag, Escape, recorrido automático, inspector compacto, errores JS 0 y sin overflow horizontal, PASS en 1920×1080 y 1280×720. Son pruebas de UI web, **NO** del código C#/Unity ni de rendimiento del editor.
+- Diagrama vectorial de estados, referencia versionada: `References/FeedbackSnapping_StatesV1_DRAFT.svg`. HTML y PNG solamente como adjuntos del chat.
+
+**Estado:** **PENDIENTE** del visto bueno visual/UX del usuario. Las intensidades, tiempos y textos definitivos se pueden ajustar; no desarrollar ni integrar en Unity hasta cerrar el diseño global.
+
+## 9. Resto de componentes — SIN DISEÑO APROBADO
+Orden: superficies (detalle); responsive/coherencia final y pulidos de barra superior/inspector a partir de las aprobaciones parciales.
+
+## 10. Registro de aprobación
 - 2026-10-08: cinco zonas de distribución general aceptadas **provisionalmente** como punto de partida. No implica aprobación de la imagen conceptual al detalle, tamaño exacto, microinteracciones o componentes particulares.
 - 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.
 - 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.
@@ -313,5 +341,6 @@ Orden: superficies (detalle); feedback/snapping/errores/estados; responsive/cohe
 - 2026-10-08: **organización del Taller de construcción aprobada** tras las previews de pared/habitación (usuario: «si, avancemos»). Galería Viva se sustituye por Taller al pulsar Construir; inspector en contexto estructural. Acabados específicos y microinteracciones pendientes.
 - 2026-10-08: **estilo de multiselección aprobado expresamente** («me quedo con esta forma de seleccion»): esquinas cortas doradas en cada elemento y pastilla superior oscura con contador; quedan descartadas como diseño base las otras variantes de círculos/contornos completos/números.
 - 2026-10-08: **microanimación de selección aprobada como base V1 tras preview HTML interactiva**: usuario «me convence, no descarto futuros arreglos, pero hoy me vale. avancemos». Abarca clic simple, multiselección aditiva y deselección; conserva la posibilidad de mejoras posteriores, sin tocar Unity.
-- 2026-10-08: **Aplicar / Descartar V1 presentado para revisión** mediante HTML interactivo y láminas 1920×1080 / 1280×720; incluye resumen, coste ilustrativo, confirmación destructiva, salida con pendientes y bloqueo por incidencia. Pendiente de aprobación estética/UX específica.
+- 2026-10-08: **Aplicar / Descartar V1 aprobado como base afinable** («me gusta, sigamos»), tras HTML interactivo y previews 1920×1080 / 1280×720. Se fija la separación de aplicar, descartar y salir con cambios; no se aprueba un guardado automático ni cifras simuladas.
+- 2026-10-08: **feedback / snapping / errores y estados V1 presentado para revisión**, con HTML interactivo, escenarios válidos, snap sugerido, obstáculo, circulación y pared provisional. No aprobado aún; pendiente evaluar con el usuario. Confirmar requiere validación: el snapping no la sustituye.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
