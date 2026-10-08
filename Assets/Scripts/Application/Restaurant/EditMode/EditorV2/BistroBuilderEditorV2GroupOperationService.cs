@@ -147,6 +147,62 @@ public sealed class BistroBuilderEditorV2GroupOperationService :
         return true;
     }
 
+    /// <summary>
+    /// B10: provides the replacement action through the selection facade.
+    /// Visual controls remain governed by the separately approved UX.
+    /// </summary>
+    public bool TryReplaceSelection(
+        RestaurantPlaceableItemDefinition replacement,
+        out IReadOnlyList<RestaurantPlaceableObject> created,
+        out string error)
+    {
+        created = Array.Empty<RestaurantPlaceableObject>();
+        if (!TryResolveSelection(
+                BistroBuilderEditorV2SelectionCapability.Inspect,
+                out error))
+            return false;
+
+        if (creationService == null)
+        {
+            error = "El servicio de sustitución no está disponible.";
+            return false;
+        }
+
+        if (!creationService.TryReplaceBatch(
+                scratchPlaceables, replacement, out created,
+                out RestaurantPlaceableReplacementResult result))
+        {
+            error = result.Message;
+            return false;
+        }
+
+        interactionController?.ClearSelection();
+        selectionCoordinator?.ClearSelectionSet();
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryQuoteReplacementSelection(
+        RestaurantPlaceableItemDefinition replacement,
+        out long netCostCents,
+        out string error)
+    {
+        netCostCents = 0L;
+        if (!TryResolveSelection(
+                BistroBuilderEditorV2SelectionCapability.Inspect,
+                out error))
+            return false;
+
+        if (creationService == null)
+        {
+            error = "El servicio económico no está disponible.";
+            return false;
+        }
+
+        return creationService.TryQuoteReplacement(
+            scratchPlaceables, replacement, out netCostCents, out error);
+    }
+
     public int CopySelectedPlaceables(
         List<RestaurantPlaceableObject> results)
     {

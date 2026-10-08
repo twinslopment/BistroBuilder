@@ -410,6 +410,8 @@ PASS:
 
 ### B10 — Sustitución inteligente
 
+**Estado técnico 08/10/2026:** backend implementado y probado en Unity (40/40 PASS); regresión de B4+B5+B8+B9+B10 (252/252 PASS). Documentación: `docs/40_TESTING/EDITOR_V2_B10_REPLACEMENT_20261008.md`. **Aún NO cerrado**: falta Load real de partida, aceptación de relaciones espaciales complejas, UI aprobada y prueba final de compilación PC.
+
 **En cristiano:** cambiar esta silla por otra no obliga a recolocar todo desde cero.
 
 Trabajo:

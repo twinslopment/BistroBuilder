@@ -79,6 +79,7 @@ public sealed class RestaurantPlacementHistoryService : MonoBehaviour
         if (redoStack.Count == 0)
             return;
 
+        ProtectResourcesClaimedByLiveCommands(redoStack);
         ReleaseStackResources(redoStack);
         redoStack.Clear();
         HistoryChanged?.Invoke();
@@ -158,6 +159,7 @@ public sealed class RestaurantPlacementHistoryService : MonoBehaviour
 
         undoStack.Add(command);
         TrimStackIfNeeded(undoStack);
+        ProtectResourcesClaimedByLiveCommands(redoStack);
         ReleaseStackResources(redoStack);
         redoStack.Clear();
         HistoryChanged?.Invoke();
@@ -420,12 +422,79 @@ public sealed class RestaurantPlacementHistoryService : MonoBehaviour
             return;
         }
 
-        for (int index = 0; index < overflow; index++)
-        {
-            stack[index]?.ReleaseResources();
-        }
-
+        // Remove references from the retained stack *before* deciding
+        // ownership. A different still-live command may use the same
+        // GameObject, especially after Undo + a new replacement branch.
+        var retiring = stack.GetRange(0, overflow);
         stack.RemoveRange(0, overflow);
+        ProtectResourcesClaimedByLiveCommands(retiring);
+        ReleaseStackResources(retiring);
+    }
+
+    private void ProtectResourcesClaimedByLiveCommands(
+        List<IRestaurantEditHistoryCommand> retiring)
+    {
+        if (retiring == null || retiring.Count == 0)
+            return;
+
+        var retainedTargets = new HashSet<UnityEngine.Object>();
+        var retiringCommands =
+            new HashSet<IRestaurantEditHistoryCommand>(retiring);
+        var seen = new HashSet<IRestaurantEditHistoryCommand>();
+
+        for (int i = 0; i < undoStack.Count; i++)
+            if (!retiringCommands.Contains(undoStack[i]))
+                CollectCommandTargets(undoStack[i], retainedTargets, seen);
+
+        for (int i = 0; i < redoStack.Count; i++)
+            if (!retiringCommands.Contains(redoStack[i]))
+                CollectCommandTargets(redoStack[i], retainedTargets, seen);
+
+        if (retainedTargets.Count == 0)
+            return;
+
+        seen.Clear();
+        for (int i = 0; i < retiring.Count; i++)
+            ProtectCommandResources(retiring[i], retainedTargets, seen);
+    }
+
+    private static void CollectCommandTargets(
+        IRestaurantEditHistoryCommand command,
+        ISet<UnityEngine.Object> targets,
+        HashSet<IRestaurantEditHistoryCommand> visited)
+    {
+        if (command == null || !visited.Add(command))
+            return;
+
+        if (command.PrimaryTarget != null)
+            targets.Add(command.PrimaryTarget);
+
+        if (command is IRestaurantEditHistoryCommandGroup group &&
+            group.ChildCommands != null)
+        {
+            for (int i = 0; i < group.ChildCommands.Count; i++)
+                CollectCommandTargets(group.ChildCommands[i], targets, visited);
+        }
+    }
+
+    private static void ProtectCommandResources(
+        IRestaurantEditHistoryCommand command,
+        ISet<UnityEngine.Object> retainedTargets,
+        HashSet<IRestaurantEditHistoryCommand> visited)
+    {
+        if (command == null || !visited.Add(command))
+            return;
+
+        if (command is IRestaurantEditHistoryResourceReleaseGuard guard)
+            guard.ProtectReleaseIfReferenced(retainedTargets);
+
+        if (command is IRestaurantEditHistoryCommandGroup group &&
+            group.ChildCommands != null)
+        {
+            for (int i = 0; i < group.ChildCommands.Count; i++)
+                ProtectCommandResources(
+                    group.ChildCommands[i], retainedTargets, visited);
+        }
     }
 
     private static void ReleaseStackResources(

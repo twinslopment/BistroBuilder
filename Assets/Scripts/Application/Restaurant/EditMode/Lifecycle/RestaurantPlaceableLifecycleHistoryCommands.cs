@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -11,7 +12,7 @@ using UnityEngine;
 /// libera definitivamente el GameObject.
 /// </summary>
 public sealed class RestaurantCreatePlaceableHistoryCommand :
-    IRestaurantEditHistoryCommand
+    IRestaurantEditHistoryCommand, IRestaurantEditHistoryResourceReleaseGuard
 {
     private readonly RestaurantPlaceableLifecycleService
         lifecycleService;
@@ -131,21 +132,25 @@ public sealed class RestaurantCreatePlaceableHistoryCommand :
         return activated;
     }
 
+    private bool resourceTransferredToLiveCommand;
+
+    public void ProtectReleaseIfReferenced(ISet<UnityEngine.Object> liveTargets)
+    {
+        if (liveTargets != null && placeable != null &&
+            liveTargets.Contains(placeable))
+            resourceTransferredToLiveCommand = true;
+    }
+
     public void ReleaseResources()
     {
-        if (lifecycleService == null ||
+        if (resourceTransferredToLiveCommand ||
+            lifecycleService == null ||
             placeable == null ||
-            lifecycleService.IsRegistered(
-                placeable
-            ))
-        {
+            lifecycleService.IsRegistered(placeable))
             return;
-        }
 
         lifecycleService.TryPermanentlyDestroyInstance(
-            placeable,
-            out _
-        );
+            placeable, out _);
     }
 
     private bool ValidateCommand(
@@ -317,7 +322,7 @@ public sealed class RestaurantCreatePlaceableHistoryCommand :
 /// Deshacer lo reactiva; rehacer vuelve a retirarlo.
 /// </summary>
 public sealed class RestaurantDeletePlaceableHistoryCommand :
-    IRestaurantEditHistoryCommand
+    IRestaurantEditHistoryCommand, IRestaurantEditHistoryResourceReleaseGuard
 {
     private readonly RestaurantPlaceableLifecycleService
         lifecycleService;
@@ -437,21 +442,25 @@ public sealed class RestaurantDeletePlaceableHistoryCommand :
         return deactivated;
     }
 
+    private bool resourceTransferredToLiveCommand;
+
+    public void ProtectReleaseIfReferenced(ISet<UnityEngine.Object> liveTargets)
+    {
+        if (liveTargets != null && placeable != null &&
+            liveTargets.Contains(placeable))
+            resourceTransferredToLiveCommand = true;
+    }
+
     public void ReleaseResources()
     {
-        if (lifecycleService == null ||
+        if (resourceTransferredToLiveCommand ||
+            lifecycleService == null ||
             placeable == null ||
-            lifecycleService.IsRegistered(
-                placeable
-            ))
-        {
+            lifecycleService.IsRegistered(placeable))
             return;
-        }
 
         lifecycleService.TryPermanentlyDestroyInstance(
-            placeable,
-            out _
-        );
+            placeable, out _);
     }
 
     private bool ValidateCommand(

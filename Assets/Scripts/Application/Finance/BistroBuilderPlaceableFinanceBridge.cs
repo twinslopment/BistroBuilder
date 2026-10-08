@@ -11,7 +11,7 @@ using UnityEngine;
 /// </summary>
 [DisallowMultipleComponent]
 [AddComponentMenu("Bistro Builder/Finance/Placeable Finance Bridge")]
-public sealed class BistroBuilderPlaceableFinanceBridge :
+public sealed partial class BistroBuilderPlaceableFinanceBridge :
     MonoBehaviour,
     IRestaurantPlaceableEconomyGate,
     IRestaurantEditHistoryOperationParticipant
@@ -165,6 +165,9 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
         RestaurantEditHistoryDirection direction,
         out string error)
     {
+        if (command != null && command.CommandType == RestaurantEditHistoryCommandType.Replace)
+            return TryAuthorizeReplacementHistory(command, direction, out error);
+
         error = string.Empty;
 
         var financialPlaceables =
@@ -237,6 +240,9 @@ public sealed class BistroBuilderPlaceableFinanceBridge :
         RestaurantEditHistoryDirection direction,
         out string error)
     {
+        if (command != null && command.CommandType == RestaurantEditHistoryCommandType.Replace)
+            return TryCommitReplacementHistory(command, direction, out error);
+
         error = string.Empty;
 
         var financialPlaceables =
