@@ -200,7 +200,7 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - La parte superior y la escena de las imágenes son contexto; **no** se aprueban con esta propuesta, ni se prometen autosave, nuevas herramientas de CAD o valores económicos ficticios.
 - **Estado final de este subbloque:** organización Taller / contexto Construir **aprobada** el 08/10/2026; arte final, iconos, mediciones, microinteracciones y todos los gestos específicos permanecen pendientes de aprobación visual. No programar todavía.
 
-## 6. Selección y multiselección — V1 PRESENTADA, PENDIENTE DE VISTO BUENO
+## 6. Selección y multiselección — ESTÉTICA MULTISELECCIÓN APROBADA; ANIMACIÓN EN PROPUESTA (2026-10-08)
 **Fundamento técnico comprobado:** B8 PASS sobre Selection Coordinator / Selection Set con selección primaria, Mayús+clic aditivo/toggle, restricciones por autoridad (no mobiliario+arquitectura en la misma selección), capacidades comunes como intersección, operaciones de grupo atómicas, rollback, geometría relativa conservada e historial único. No duplicar este núcleo. Fuente técnica: docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md (B8) y Assets/Scripts/Application/Restaurant/EditMode/EditorV2/BistroBuilderEditorV2SelectionSet.cs.
 
 **Propuesta A — selección individual:**
@@ -208,12 +208,32 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - El inspector derecho mantiene el concepto Galería Viva, con foto, nombre, propiedades con soporte real, materiales cuando proceda y acciones compatibles. La barra inferior conserva su diseño aprobado.
 - Selección ≠ inicio de arrastre: levantar/asentar solo durante manipulación real, de acuerdo con EditInteractionDesign.
 
-**Propuesta B — varios muebles:**
-- Mayús+clic añade o retira objetos compatibles; se indican tres piezas de ejemplo (mesa+2 sillas) con contornos individualizados y conjunto de lectura común, sin convertir la selección en un objeto nuevo.
-- El último elemento añadido puede figurar como primario, sin perder identificación de los demás. Pequeñas etiquetas numéricas con contraste para reconocer cada miembro.
-- El inspector pasa a **«Selección múltiple»**: contador, resumen de familias, elemento primario, miembros y **acciones comunes realmente soportadas** (Mover/Girar/Duplicar/Eliminar solo si las capacidades de todo el conjunto lo permiten). Evitar botones que aparenten funcionalidad no disponible.
+**Multiselección — DIRECCIÓN VISUAL APROBADA (sustituye la propuesta anterior):**
+- Referencia exacta: imagen seleccionada explícitamente por el usuario en el chat el 08/10/2026, `image(20261008-120359).png`, con mesa y dos sillas, **segunda alternativa de la última terna**.
+- **Esquinas breves de latón/miel**, ligeramente luminosas alrededor de cada artículo seleccionado. Sin recuadros completos, círculos en el suelo, perímetros ornamentales ni etiquetas 1/2/3 sobre las piezas. El modelo 3D mantiene su material y posición.
+- **Pastilla superior flotante marrón oscuro con filete fino dorado**, icono de multiselección, texto dinámico «3 artículos seleccionados» y chevrón. No ocupa todo el ancho del viewport.
+- Mayús+clic añade o retira objetos de la misma autoridad, según B8; la última selección puede ser primaria. El gizmo de mover/rotar solo aparece cuando corresponde a la herramienta o gesto, no es parte de la selección pasiva.
+- **Inspector conjunto pendiente de definición:** la imagen elegida conserva el inspector individual de la mesa; NO se interpreta como aprobación de la propuesta anterior de panel «Selección múltiple». Abrir la pastilla podría permitir ver miembros/capacidades comunes, pero exige una nueva validación visual.
+- Transformaciones de grupo solo si están soportadas por todos los miembros; conservar geometría relativa, Undo/Redo y selección individual.
 - Al transformar el conjunto, se preserva su disposición relativa. La operación es única para Undo/Redo; cada pieza sigue pudiendo seleccionarse y editarse individualmente.
 - No forzar en un grupo cambios simultáneos de materiales o dimensiones si los objetos tienen perfiles diferentes.
+
+### 6.1 Microanimación al seleccionar — PROPUESTA, NO APROBADA
+**Intención del usuario:** introducir una pequeña animación al pulsar sobre un objeto. Diseñar y enseñar preview animada (o secuencia de fotogramas) antes de marcarla como definitiva.
+
+**Propuesta de tiempos iniciales para evaluar (240 ms en total):**
+- 0–80 ms: aparecen con suavidad las esquinas cortas de selección doradas; no modificar escala, rotación, posición ni materiales reales del objeto.
+- 80–180 ms: discreto brillo miel recorriendo el borde de esas esquinas; sin holograma, destello fuerte ni capa fluorescente.
+- 180–240 ms: la iluminación se asienta en estado estable persistente, sin bucles.
+- Al deseleccionar: desvanecer las marcas en ~120 ms.
+- Al añadir una pieza con Mayús+clic, animar SOLO esa pieza; las previamente seleccionadas mantienen su estado.
+- Al retirar de la selección, desvanecer solo la pieza retirada; si queda una, debe seguir habiendo selección individual sin alteración de pose.
+- Si empieza un arrastre inmediatamente, no retrasar el gesto para esperar la animación: la interacción tiene prioridad.
+- Un clic repetido sobre el mismo objeto ya seleccionado no reinicia la animación. Desactivar o reducir movimiento si hay una opción de accesibilidad para ello.
+
+**Límites vinculantes:** se animan las marcas visuales, NO se eleva ni hace saltar el mueble por seleccionarlo; cualquier elevación visual suave solo corresponde al inicio real de la operación de transporte/movimiento, siguiendo EditInteractionDesign. La UI no cambia física, selección real B8, snapping, validación ni historial.
+**Pruebas visuales pendientes:** 1920×1080 y 1280×720; uno y varios muebles; clic repetido, Mayús+clic rápido, deselección; coste gráfico insignificante en PC de especificación mínima; comparar brillo con la iluminación de un restaurante oscuro y uno claro.
+**Estado:** duraciones, curva easing, intensidad de brillo y posible respuesta de la pastilla superior permanecen PENDIENTES de aprobación.
 
 **Propuesta C — intento no compatible:**
 - Si se intenta Mayús+seleccionar arquitectura con una selección de mobiliario, no alterar el conjunto. Mostrar aviso ámbar/crema localizado: «No puedes combinar mobiliario y arquitectura en la misma selección».
@@ -233,7 +253,7 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - EditorV2_Multiseleccion_Compacta_1280.png: pantalla compacta con inspector plegado.
 Los PNG se entregan en el chat; **no están almacenados dentro de Git**. Fondo 3D y demás barras de una referencia seleccionada del usuario; no se ratifican ni se prueban con estas capturas.
 Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_DRAFT.svg.
-**Estado:** pendiente de aprobación por el usuario; NO programar.
+**Estado:** esquinas de latón/miel + pastilla oscura de contador superior APROBADAS. Aún pendientes el inspector de conjunto, microanimación, selección simple y composición responsive exacta. NO programar.
 
 ## 7. Resto de componentes — SIN DISEÑO APROBADO
 Orden: superficies (detalle); Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
@@ -246,5 +266,6 @@ Orden: superficies (detalle); Apply/Discard; feedback/snapping/errores/estados; 
 - 2026-10-08: **Galería Viva elegida expresamente** como concepto artístico y estructural del catálogo y el inspector derecho, exclusivamente. Sustituye la anterior propuesta genérica; las imágenes de los otros menús y el restaurante no se consideran aprobadas.
 - 2026-10-08: **estados e inspector V3 complementarios aceptados como dirección de diseño** al continuar hacia construcción; responsive y microinteracciones finales sujetos a pruebas visuales. Mantener controles regidos por capacidades reales y avisos económicos no destructivos sin rojo.
 - 2026-10-08: **organización del Taller de construcción aprobada** tras las previews de pared/habitación (usuario: «si, avancemos»). Galería Viva se sustituye por Taller al pulsar Construir; inspector en contexto estructural. Acabados específicos y microinteracciones pendientes.
-- 2026-10-08: **selección individual y multiselección V1 presentadas** con inspector de grupo, selección primaria, gestos Mayús+clic y advertencias de mezcla de autoridades; nueva aprobación visual pendiente.
+- 2026-10-08: **estilo de multiselección aprobado expresamente** («me quedo con esta forma de seleccion»): esquinas cortas doradas en cada elemento y pastilla superior oscura con contador; quedan descartadas como diseño base las otras variantes de círculos/contornos completos/números.
+- 2026-10-08: **microanimación de selección propuesta por el usuario** («quiza cuando pulses sobre un objeto podría hacer una pequeña animación»). Timing y detalles de efecto por aprobar con preview; no altera la posición ni escala del asset.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
