@@ -164,7 +164,8 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 **Pendiente de visto bueno:** tamaños definitivos, microinteracciones, comportamiento plegable, estados finales y composiciones 1920/1280. Las previews son conceptos, no pruebas de Unity.
 **Referencias presentadas en el chat:** GaleriaViva_V3_VistaAmplia.png, GaleriaViva_V3_VistaCompacta.png, GaleriaViva_V3_Estados_Articulo.png y GaleriaViva_V3_Inspector_Variantes.png. PNG no copiados a Git. Referencia vectorial versionada: References/GaleriaViva_Responsive_States_V3.svg.
 
-## 5. Herramientas de construcción — PROPUESTA GRÁFICA V1, PENDIENTE DE APROBACIÓN (2026-10-08)
+## 5. Herramientas de construcción — ORGANIZACIÓN APROBADA, ACABADO PENDIENTE (2026-10-08)
+**Respuesta del usuario a la propuesta de Taller:** «sí, avancemos». Se ratifica la **organización funcional/visual de áreas**: pulsar Construir sustituye temporalmente Galería Viva por Taller de construcción, el inspector cambia a contexto arquitectónico y la escena permanece protagonista. Esta aprobación no cierra iconografía, medidas, transiciones ni controles exactos de cada herramienta.
 
 ### 5.1 Ámbito y fundamento técnico
 - El núcleo Construction Authoring existente tiene acciones de tipo Furniture/Select/Wall/Room/Door/Window/WallModule; las interfaces de contexto NO vuelven a implementar transacciones, coste, BBSIS, Navigation ni validación.
@@ -197,17 +198,53 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - El escenario usado como fondo procede de una referencia ilustrativa y conserva un gizmo de selección de mobiliario previo; **no** define el estado del editor durante construcción ni constituye una prueba de simulación de construcción.
 - Los ejemplos de 4,2 m, 12,4 m², 2,50 m y 0,12 m no fijan especificaciones de gameplay; lo que muestra Unity debe derivarse de la sesión real.
 - La parte superior y la escena de las imágenes son contexto; **no** se aprueban con esta propuesta, ni se prometen autosave, nuevas herramientas de CAD o valores económicos ficticios.
-- **Estado final de este subbloque:** pendiente de visto bueno visual del usuario. No programar ni dar por cerrados iconos y microinteracciones hasta entonces.
+- **Estado final de este subbloque:** organización Taller / contexto Construir **aprobada** el 08/10/2026; arte final, iconos, mediciones, microinteracciones y todos los gestos específicos permanecen pendientes de aprobación visual. No programar todavía.
 
-## 6. Resto de componentes — SIN DISEÑO APROBADO
-Orden: superficies (detalle); selección/multiselección; Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
+## 6. Selección y multiselección — V1 PRESENTADA, PENDIENTE DE VISTO BUENO
+**Fundamento técnico comprobado:** B8 PASS sobre Selection Coordinator / Selection Set con selección primaria, Mayús+clic aditivo/toggle, restricciones por autoridad (no mobiliario+arquitectura en la misma selección), capacidades comunes como intersección, operaciones de grupo atómicas, rollback, geometría relativa conservada e historial único. No duplicar este núcleo. Fuente técnica: docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md (B8) y Assets/Scripts/Application/Restaurant/EditMode/EditorV2/BistroBuilderEditorV2SelectionSet.cs.
 
-## 7. Registro de aprobación
+**Propuesta A — selección individual:**
+- El objeto elegido recibe contorno fino miel y una indicación de foco, sin teñir el modelo completo ni dibujar una caja CAD permanente.
+- El inspector derecho mantiene el concepto Galería Viva, con foto, nombre, propiedades con soporte real, materiales cuando proceda y acciones compatibles. La barra inferior conserva su diseño aprobado.
+- Selección ≠ inicio de arrastre: levantar/asentar solo durante manipulación real, de acuerdo con EditInteractionDesign.
+
+**Propuesta B — varios muebles:**
+- Mayús+clic añade o retira objetos compatibles; se indican tres piezas de ejemplo (mesa+2 sillas) con contornos individualizados y conjunto de lectura común, sin convertir la selección en un objeto nuevo.
+- El último elemento añadido puede figurar como primario, sin perder identificación de los demás. Pequeñas etiquetas numéricas con contraste para reconocer cada miembro.
+- El inspector pasa a **«Selección múltiple»**: contador, resumen de familias, elemento primario, miembros y **acciones comunes realmente soportadas** (Mover/Girar/Duplicar/Eliminar solo si las capacidades de todo el conjunto lo permiten). Evitar botones que aparenten funcionalidad no disponible.
+- Al transformar el conjunto, se preserva su disposición relativa. La operación es única para Undo/Redo; cada pieza sigue pudiendo seleccionarse y editarse individualmente.
+- No forzar en un grupo cambios simultáneos de materiales o dimensiones si los objetos tienen perfiles diferentes.
+
+**Propuesta C — intento no compatible:**
+- Si se intenta Mayús+seleccionar arquitectura con una selección de mobiliario, no alterar el conjunto. Mostrar aviso ámbar/crema localizado: «No puedes combinar mobiliario y arquitectura en la misma selección».
+- Ofrecer continuidad sin modal obligatorio ni error destructivo en rojo. No inventar operaciones cruzadas ni grupos persistentes entre autoridades.
+
+**Responsive / interacción:**
+- 1920×1080: inspector de selección múltiple puede desplegarse y muestra lista y operaciones disponibles; viewport como protagonista.
+- 1280×720: inspector plegado inicialmente a rail fino, apertura contextual cuando el jugador la solicite; resumen de selección compacto sobre viewport sin cubrir búsqueda ni barra inferior.
+- El menú Galería Viva permanece disponible durante selección de mobiliario. El taller de construcción se ocupa del contexto arquitectónico; nunca mostrar ambos como catálogos principales al mismo tiempo.
+- El panel izquierdo y el inspector bloquean input de mundo bajo ellos. Esc en una manipulación cancela el gesto (no descarta reforma). Salida de selección sin gesto se definirá en revisión de microinteracciones.
+- Distinguir selección, preview de movimiento provisional y aplicación global. Miel para selección, azul/cian solo para guías justificadas de snapping; rojo reservado a acciones destructivas.
+
+**Previews para aprobación visual, generadas fuera de Unity:**
+- EditorV2_Seleccion_single_1920.png: único artículo.
+- EditorV2_Seleccion_multi_1920.png: 3 muebles e inspector conjunto.
+- EditorV2_Seleccion_conflict_1920.png: mezcla de autoridades rechazada.
+- EditorV2_Multiseleccion_Compacta_1280.png: pantalla compacta con inspector plegado.
+Los PNG se entregan en el chat; **no están almacenados dentro de Git**. Fondo 3D y demás barras de una referencia seleccionada del usuario; no se ratifican ni se prueban con estas capturas.
+Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_DRAFT.svg.
+**Estado:** pendiente de aprobación por el usuario; NO programar.
+
+## 7. Resto de componentes — SIN DISEÑO APROBADO
+Orden: superficies (detalle); Apply/Discard; feedback/snapping/errores/estados; responsive/coherencia final.
+
+## 8. Registro de aprobación
 - 2026-10-08: cinco zonas de distribución general aceptadas **provisionalmente** como punto de partida. No implica aprobación de la imagen conceptual al detalle, tamaño exacto, microinteracciones o componentes particulares.
 - 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.
 - 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.
 - 2026-10-08: **dirección artística y distribución de la barra inferior aceptadas expresamente** («me gusta muchisimo esa barra inferior»). No incluye aprobación de todas las zonas que aparecen en esa escena de ejemplo.
 - 2026-10-08: **Galería Viva elegida expresamente** como concepto artístico y estructural del catálogo y el inspector derecho, exclusivamente. Sustituye la anterior propuesta genérica; las imágenes de los otros menús y el restaurante no se consideran aprobadas.
 - 2026-10-08: **estados e inspector V3 complementarios aceptados como dirección de diseño** al continuar hacia construcción; responsive y microinteracciones finales sujetos a pruebas visuales. Mantener controles regidos por capacidades reales y avisos económicos no destructivos sin rojo.
-- 2026-10-08: **Construcción V1 (Taller de construcción) presentada como propuesta**, con Pared, Habitación, Puerta, Ventana, Módulo, inspector adaptativo y pared/habitación en preview; pendiente de decisión visual explícita del usuario. No equivale a una implementación.
+- 2026-10-08: **organización del Taller de construcción aprobada** tras las previews de pared/habitación (usuario: «si, avancemos»). Galería Viva se sustituye por Taller al pulsar Construir; inspector en contexto estructural. Acabados específicos y microinteracciones pendientes.
+- 2026-10-08: **selección individual y multiselección V1 presentadas** con inspector de grupo, selección primaria, gestos Mayús+clic y advertencias de mezcla de autoridades; nueva aprobación visual pendiente.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
