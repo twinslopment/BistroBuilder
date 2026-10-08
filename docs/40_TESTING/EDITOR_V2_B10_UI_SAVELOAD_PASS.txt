@@ -1,0 +1,2 @@
+EDITOR V2 B10 - RUNTIME SAVE/LOAD
+PASS - real Play Mode, orchestrated Save->Load->Delete; replaced 583fb269bc004bdc9f336bb2c99b5cb5 (pf_bb_chair_master_001_olive), objects=38, seat links=28, original ID absent; runtime references reconstructed.

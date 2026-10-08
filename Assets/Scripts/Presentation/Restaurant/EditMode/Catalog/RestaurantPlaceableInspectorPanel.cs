@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
-public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
+public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
 {
     private static readonly Color Panel = new Color32(250, 248, 244, 252);
     private static readonly Color Card = new Color32(255, 253, 249, 255);
@@ -73,6 +73,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     {
         CacheDependencies();
         Subscribe();
+        CacheReplacementDependencies();
     }
 
     private void Start()
@@ -111,6 +112,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
             root.SetAsLastSibling();
         }
 
+        RefreshReplacementIfNeeded();
         ApplyScreenBounds();
     }
 
@@ -253,6 +255,7 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         BuildDimensions();
         BuildRules();
         BuildStatus();
+        BuildReplacementAction();
 
         built = true;
         ApplyScreenBounds();
@@ -588,12 +591,17 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (definition == null)
             return;
 
+        currentReplacementDefinition = definition;
         currentData = RestaurantPlaceableInspectorData.From(definition);
         favorite = false;
         lastInteractionMessage = string.Empty;
 
         BuildIfNeeded();
         BindData(currentData);
+        RefreshReplacementAction();
+        if (replacementSection != null && replacementSection.activeSelf)
+            SetStatus(true, "Sustitución pendiente",
+                "Comprueba el coste y confirma en el panel derecho.");
 
         if (root != null)
         {
@@ -978,6 +986,8 @@ public sealed class RestaurantPlaceableInspectorPanel : MonoBehaviour
     public void Hide()
     {
         currentData = null;
+        currentReplacementDefinition = null;
+        RefreshReplacementAction();
         if (root != null)
             root.gameObject.SetActive(false);
     }

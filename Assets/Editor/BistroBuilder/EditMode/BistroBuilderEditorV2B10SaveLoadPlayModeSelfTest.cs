@@ -2,6 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using TMPro;
+using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -146,33 +149,129 @@ public sealed class BistroBuilderEditorV2B10PlayDriver : MonoBehaviour
                 sources.Add(placed);
         sources.Sort((a, b) =>
             string.CompareOrdinal(a.InstanceId, b.InstanceId));
+        // Exercise the actual catalogue card -> inspector quote -> button,
+        // not the B10 business service directly (covered by other tests).
+        var selection = Object.FindFirstObjectByType<
+            BistroBuilderEditorV2SelectionCoordinator>(FindObjectsInactive.Include);
+        var group = Object.FindFirstObjectByType<
+            BistroBuilderEditorV2GroupOperationService>(FindObjectsInactive.Include);
+        var catalog = Object.FindFirstObjectByType<
+            RestaurantPlaceableCatalogPanel>(FindObjectsInactive.Include);
+        var inspector = Object.FindFirstObjectByType<
+            RestaurantPlaceableInspectorPanel>(FindObjectsInactive.Include);
+        var interaction = Object.FindFirstObjectByType<
+            RestaurantEditInteractionController>(FindObjectsInactive.Include);
+        if (selection == null || group == null || catalog == null ||
+            inspector == null || interaction == null)
+        {
+            Fail("B10 UI wiring missing runtime catalogue, inspector or selection");
+            yield break;
+        }
+        MethodInfo chooseCard = typeof(RestaurantPlaceableCatalogPanel).GetMethod(
+            "HandleItemSelected", BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo actionField = typeof(RestaurantPlaceableInspectorPanel).GetField(
+            "replacementButton", BindingFlags.NonPublic | BindingFlags.Instance);
+        FieldInfo quoteField = typeof(RestaurantPlaceableInspectorPanel).GetField(
+            "replacementCostText", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (chooseCard == null || actionField == null || quoteField == null)
+        {
+            Fail("B10 catalogue/inspector action not wired");
+            yield break;
+        }
+
         bool replaced = false;
+        bool invalidCardChecked = false;
         string lastError = string.Empty;
         for (int i = 0; i < sources.Count && i < 60 && !replaced; i++)
         {
             var source = sources[i];
             if (!registry.ContainsPlaceable(source)) continue;
+            var selected = new BistroBuilderEditorV2Selection {
+                family = BistroBuilderEditorV2ToolFamily.Furniture,
+                kind = BistroBuilderEditorV2SelectionKind.Furniture,
+                stableId = source.InstanceId,
+                displayName = source.name,
+                persistentIdentity = true,
+                capabilities = BistroBuilderEditorV2SelectionCapability.Inspect |
+                    BistroBuilderEditorV2SelectionCapability.Move |
+                    BistroBuilderEditorV2SelectionCapability.Delete |
+                    BistroBuilderEditorV2SelectionCapability.Duplicate
+            };
+            if (!selection.ReplaceSelectionSet(
+                    new[] { selected }, selected.stableId, out lastError))
+                continue;
+            // A non-matching catalogue definition must be rejected in the
+            // inspector without altering placement, world or selection.
+            if (!invalidCardChecked)
+            {
+                foreach (var incompatible in defs)
+                {
+                    if (incompatible.Category == source.ItemDefinition.Category)
+                        continue;
+                    chooseCard.Invoke(catalog, new object[] { incompatible });
+                    inspector.ShowForDefinition(incompatible);
+                    var invalidButton = actionField.GetValue(inspector) as Button;
+                    if (invalidButton == null || invalidButton.interactable ||
+                        interaction.HasActivePlacement || selection.SelectionCount != 1)
+                    {
+                        Fail("Incompatible replacement triggered placement or was enabled");
+                        yield break;
+                    }
+                    invalidCardChecked = true;
+                    break;
+                }
+            }
             for (int j = 0; j < defs.Count && !replaced; j++)
             {
                 var target = defs[j];
                 if (source.ItemDefinition.Category != target.Category ||
                     source.ItemDefinition == target) continue;
-                bool worked = creation.TryReplaceBatch(
-                    new[] { source }, target, out var created,
-                    out RestaurantPlaceableReplacementResult result);
-                if (worked && created.Count == 1)
+                if (!group.TryQuoteReplacementSelection(
+                        target, out long expectedQuote, out lastError)) continue;
+                var idsBefore = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var placed in registry.RegisteredPlaceables)
+                    if (placed != null) idsBefore.Add(placed.InstanceId);
+
+                chooseCard.Invoke(catalog, new object[] { target });
+                inspector.ShowForDefinition(target);
+                var button = actionField.GetValue(inspector) as Button;
+                var priceLabel = quoteField.GetValue(inspector) as TMP_Text;
+                if (interaction.HasActivePlacement || selection.SelectionCount != 1 ||
+                    button == null || !button.interactable || priceLabel == null ||
+                    string.IsNullOrWhiteSpace(priceLabel.text))
                 {
-                    replaced = true;
-                    savedId = created[0].InstanceId;
+                    Fail("Card click launched placement or quote button unavailable");
+                    yield break;
+                }
+                if (expectedQuote != 0 && !priceLabel.text.Contains("€"))
+                {
+                    Fail("Real replacement price was not displayed");
+                    yield break;
+                }
+                button.onClick.Invoke();
+                foreach (var placed in registry.RegisteredPlaceables)
+                {
+                    if (placed == null || idsBefore.Contains(placed.InstanceId) ||
+                        placed.ItemDefinition != target) continue;
+                    savedId = placed.InstanceId;
                     removedId = source.InstanceId;
                     savedDefinitionId = target.ItemId;
+                    replaced = true;
+                    break;
                 }
-                else lastError = result.Message;
+                if (!replaced) lastError = "Replacement CTA rejected: " +
+                    (priceLabel != null ? priceLabel.text : "missing quote");
             }
         }
-        if (!replaced)
+        if (!replaced || !invalidCardChecked)
         {
-            Fail("No runtime-compatible replacement: " + lastError);
+            Fail("UI replacement or incompatible-card rejection not validated: " +
+                lastError);
+            yield break;
+        }
+        if (selection.SelectionCount != 0 || interaction.HasActivePlacement)
+        {
+            Fail("UI replacement left stale selection/placement");
             yield break;
         }
         if (string.IsNullOrWhiteSpace(savedId) ||

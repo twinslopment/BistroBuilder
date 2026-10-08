@@ -86,6 +86,7 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
     private bool initialized;
     private BistroBuilderUiShell uiShell;
+    private BistroBuilderEditorV2GroupOperationService replacementOperations;
     private BistroBuilderEditorV2CatalogVirtualizedList virtualList;
     private readonly BistroBuilderEditorV2CatalogIndex catalogIndex =
         new BistroBuilderEditorV2CatalogIndex();
@@ -552,7 +553,30 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
             return;
         }
 
+        // A furniture selection turns the next catalog card into a
+        // replacement candidate, never an accidental placement/commit.
+        // The inspector quotes and explicitly confirms the operation.
+        if (replacementOperations == null)
+            replacementOperations = FindFirstObjectByType<
+                BistroBuilderEditorV2GroupOperationService>(
+                    FindObjectsInactive.Include);
+        bool previewReplacement =
+            editModeService != null && editModeService.IsEditModeActive &&
+            (interactionController == null ||
+             !interactionController.HasActivePlacement) &&
+            replacementOperations != null &&
+            replacementOperations.SelectedPlaceableCount > 0;
+
         ItemSelected?.Invoke(definition);
+
+        if (previewReplacement)
+        {
+            if (statusText != null)
+                statusText.text =
+                    "Sustitución: revisa el coste y confirma en el panel derecho.";
+            RefreshInteractivity();
+            return;
+        }
 
         if (interactionController == null)
         {

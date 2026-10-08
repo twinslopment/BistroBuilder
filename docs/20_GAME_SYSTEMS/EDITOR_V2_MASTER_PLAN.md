@@ -412,6 +412,8 @@ PASS:
 
 **CIERRE DEL NÚCLEO B10 — 08/10/2026: PASS técnico.** Sustitución individual y múltiple, validación canónica, presupuesto económico real, Undo/Redo y rollback: 40/40 PASS. Save/Load **real en Play Mode** PASS (38 artículos, 28 enlaces mesa-silla); regresión B4+B5+B8+B9+B10: **252/252 PASS**; compilación Windows 64 bits: **PASS**. La activación gráfica final del botón de sustituir y el diseño del catálogo se resolverán dentro de `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md` sin reabrir las autoridades de B10. No merge a maestra mientras la integración visual esté pendiente. Evidencia: `docs/40_TESTING/EDITOR_V2_B10_REPLACEMENT_20261008.md`.
 
+**Conexión UI B10 — 08/10/2026:** catálogo actual + inspector derecho conectados al contrato B8/B10. Al seleccionar muebles y después otro artículo, se presenta coste neto real y botón «Sustituir selección»; sin ejecución automática, sin creación de ghost y con rechazo explícito de candidatos incompatibles. Prueba real de clic en UI + Save/Load: PASS (`Logs/B10_CatalogWiring_Acceptance.log`). El diseño íntegro de Galería Viva no está materializado aún; el cableado se podrá conservar cuando se incorpore. Véase `docs/40_TESTING/EDITOR_V2_B10_CATALOG_WIRING_20261008.md`.
+
 **En cristiano:** cambiar esta silla por otra no obliga a recolocar todo desde cero.
 
 Trabajo:
