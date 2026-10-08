@@ -1,6 +1,6 @@
 # Bistro Builder — Editor V2 Master Plan
 
-**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 PASS · B8 PASS · B9 DESBLOQUEADO
+**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 PASS · B8 PASS · B9 PASS · B10 DESBLOQUEADO
 **Fecha:** 2026-10-08
 **Sistema:** Bloque 18 — Modo Edición / Construcción  
 **Naturaleza:** evolución controlada del editor existente; no reescritura total  
@@ -406,6 +406,8 @@ PASS:
 - memoria y GC medidos;
 - navegación fluida en build Windows objetivo.
 
+**Cierre B9 — 2026-10-08: PASS técnico.** Índice de 10.000 artículos, filtros, ordenación y búsqueda normalizada; tarjetas virtualizadas con pool limitado al viewport; reciclaje correcto de callbacks y favoritos; miniaturas vinculadas a demanda con caché acotada; integración en los componentes UI existentes sin cambiar el aspecto final no aprobado. Gate: 42/42 en tres ejecuciones, 300 desplazamientos reales de UI / 5.346 rebinds / ~17,9 ms, 10.000 frames sin scroll con 0 bytes asignados tras warmup; B8 regresión 74/74 y 59/59; B1–B7, Core, Lifecycle, Scene Validator y Queen PASS. Build Windows 64 bits PASS y prueba de arranque headless sin excepciones. La carga de texturas **asíncrona desde disco** requiere futuro contrato de miniaturas SAVIC; con las definiciones actuales se retrasa la vinculación Sprite, no su serialización. La medición de FPS con viewport gráfico real permanece pendiente de una prueba jugable y no se confunde con estos benchmarks. Evidencia: [Editor V2 B9 Catálogo escalable](../40_TESTING/EDITOR_V2_B9_SCALABLE_CATALOG_20261008.md).
+
 ### B10 — Sustitución inteligente
 
 **En cristiano:** cambiar esta silla por otra no obliga a recolocar todo desde cero.
@@ -715,8 +717,8 @@ Salvo decisión posterior explícita:
 | B5 Reforma transaccional | PASS - 48/48 + Discard exacto + Apply coherente + recovery de commit |
 | B6 Universal Preview | PASS — 37/37 + 10.000 updates 31 ms + 0 B alloc + regresiones B5/B4/B3/B2/B1/Construction exit 0 |
 | B7 Snapping contextual | PASS — 41/41 + 3 repeticiones + fuzz 5.000 + 10.000 resolves 71 ms + 0 B alloc + regresiones B6/B5/B4/B3/B2/B1/Construction PASS |
-| B8 Multiselección/grupos | NO INICIADO |
-| B9 Catálogo escalable | NO INICIADO |
+| B8 Multiselección/grupos | PASS — 59/59; regresión B9 74/74 y 59/59 |
+| B9 Catálogo escalable | PASS 2026-10-08 |
 | B10 Sustitución inteligente | NO INICIADO |
 | B11 Diagnóstico | NO INICIADO |
 | B12 Plantillas | NO INICIADO |

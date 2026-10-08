@@ -86,6 +86,42 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
     private bool initialized;
     private BistroBuilderUiShell uiShell;
+    private BistroBuilderEditorV2CatalogVirtualizedList virtualList;
+    private readonly BistroBuilderEditorV2CatalogIndex catalogIndex =
+        new BistroBuilderEditorV2CatalogIndex();
+    private readonly List<RestaurantPlaceableItemDefinition> queryBuffer =
+        new List<RestaurantPlaceableItemDefinition>(128);
+
+    public BistroBuilderEditorV2CatalogVirtualizedList VirtualList => virtualList;
+
+    private void RefreshCatalogIndex()
+    {
+        catalogIndex.Rebuild(catalogService != null
+            ? catalogService.AvailableItems : null);
+    }
+
+    private void EnsureVirtualList()
+    {
+        if (virtualList == null)
+            virtualList = GetComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
+        if (virtualList == null)
+            virtualList = gameObject.AddComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
+        virtualList.Configure(itemContainer, itemTemplate, HandleItemSelected);
+    }
+
+    public int ApplyB9Query(string search,
+        RestaurantPlaceableEnvironmentScope scope,
+        bool favoritesOnly, bool recentsOnly, HashSet<string> favorites,
+        IList<string> recents, int sort)
+    {
+        if (virtualList == null || !virtualList.IsReady) return 0;
+        catalogIndex.Query(CurrentSection, selectedCategoryCode, search, scope,
+            favoritesOnly, recentsOnly, favorites, recents, sort, queryBuffer);
+        if (!virtualList.ResultsMatch(queryBuffer))
+            virtualList.SetResults(queryBuffer, false);
+        return queryBuffer.Count;
+    }
+
 
     public event Action<RestaurantPlaceableItemDefinition> ItemSelected;
 
@@ -168,6 +204,7 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
         if (categoryTemplate != null) categoryTemplate.gameObject.SetActive(false);
         if (itemTemplate != null) itemTemplate.gameObject.SetActive(false);
 
+        RefreshCatalogIndex();
         RebuildCatalogPresentation();
     }
 
@@ -286,6 +323,8 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
     private void HandleCatalogChanged()
     {
+        virtualList?.InvalidateThumbnails();
+        RefreshCatalogIndex();
         RebuildCatalogPresentation();
     }
 
@@ -408,57 +447,18 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
     private void RebuildItemViews()
     {
-        ClearItemViews();
-
-        if (catalogService == null ||
-            itemContainer == null ||
-            itemTemplate == null)
-        {
+        // B9: el conjunto físico de tarjetas está limitado por viewport.
+        // El filtro/búsqueda actúa sobre definiciones, no GameObjects.
+        if (catalogService == null || itemContainer == null || itemTemplate == null)
             return;
-        }
-
-        IReadOnlyList<RestaurantPlaceableItemDefinition> items =
-            catalogService.AvailableItems;
-
-        for (int index = 0;
-             index < items.Count;
-             index++)
-        {
-            RestaurantPlaceableItemDefinition item =
-                items[index];
-
-            if (item == null ||
-                !MatchesSelectedCategory(item))
-            {
-                continue;
-            }
-
-            RestaurantPlaceableCatalogItemView view =
-                Instantiate(
-                    itemTemplate,
-                    itemContainer
-                );
-
-            view.gameObject.name =
-                "CatalogItem_" +
-                item.ItemId;
-
-            view.gameObject.SetActive(true);
-
-            view.Bind(
-                item,
-                HandleItemSelected
-            );
-
-            itemViews.Add(view);
-        }
-
-        if (statusText != null &&
-            itemViews.Count == 0)
-        {
-            statusText.text =
-                "No hay artículos disponibles en esta categoría.";
-        }
+        EnsureVirtualList();
+        var skin = GetComponent<RestaurantPlaceableCatalogApprovedSkin>();
+        if (skin != null)
+            skin.ApplyVirtualCatalogFilters();
+        else
+            ApplyB9Query(string.Empty,
+                RestaurantPlaceableEnvironmentScope.InteriorAndExterior,
+                false, false, null, null, 0);
     }
 
     private void CreateCategoryView(
@@ -604,16 +604,10 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
              index < itemViews.Count;
              index++)
         {
-            RestaurantPlaceableCatalogItemView view =
-                itemViews[index];
-
-            if (view != null)
-            {
-                view.SetInteractable(
-                    canSelect
-                );
-            }
+            RestaurantPlaceableCatalogItemView view = itemViews[index];
+            if (view != null) view.SetInteractable(canSelect);
         }
+        virtualList?.SetInteractable(canSelect);
     }
 
     public int SelectedCategoryCode => selectedCategoryCode;
@@ -663,6 +657,12 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
     private void ClearItemViews()
     {
+        if (virtualList != null && virtualList.IsReady)
+        {
+            virtualList.SetResults(null, false);
+            itemViews.Clear();
+            return;
+        }
         for (int index = 0;
              index < itemViews.Count;
              index++)

@@ -34,6 +34,9 @@ public sealed class RestaurantPlaceableCatalogService :
     private readonly List<RestaurantPlaceableItemDefinition>
         availableItems =
             new List<RestaurantPlaceableItemDefinition>(64);
+    private readonly Dictionary<string, RestaurantPlaceableItemDefinition>
+        byId = new Dictionary<string, RestaurantPlaceableItemDefinition>(
+            StringComparer.Ordinal);
 
     public event Action CatalogChanged;
 
@@ -89,6 +92,7 @@ public sealed class RestaurantPlaceableCatalogService :
     public void RebuildCatalog()
     {
         availableItems.Clear();
+        byId.Clear();
 
         if (catalogDefinition == null)
         {
@@ -120,6 +124,7 @@ public sealed class RestaurantPlaceableCatalogService :
             }
 
             availableItems.Add(item);
+            byId.Add(item.ItemId, item);
         }
 
         availableItems.Sort(
@@ -135,35 +140,8 @@ public sealed class RestaurantPlaceableCatalogService :
     )
     {
         definition = null;
-
-        if (string.IsNullOrWhiteSpace(itemId))
-        {
-            return false;
-        }
-
-        for (int index = 0;
-             index < availableItems.Count;
-             index++)
-        {
-            RestaurantPlaceableItemDefinition candidate =
-                availableItems[index];
-
-            if (!string.Equals(
-                    candidate.ItemId,
-                    itemId,
-                    StringComparison.Ordinal
-                ))
-            {
-                continue;
-            }
-
-            definition =
-                candidate;
-
-            return true;
-        }
-
-        return false;
+        return !string.IsNullOrWhiteSpace(itemId) &&
+            byId.TryGetValue(itemId.Trim(), out definition);
     }
 
     private static int CompareDefinitions(

@@ -655,6 +655,18 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             grid.childAlignment = TextAnchor.UpperLeft;
         }
 
+        var virtualList = GetComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
+        if (virtualList != null && virtualList.IsReady)
+        {
+            if (fitter != null)
+            {
+                fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+                fitter.enabled = false;
+            }
+            if (grid != null) grid.enabled = false;
+            virtualList.InvalidateGeometry();
+        }
+
         if (scrollRect != null)
         {
             scrollRect.horizontal = false;
@@ -664,6 +676,13 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             scrollRect.decelerationRate = 0.12f;
             scrollRect.scrollSensitivity = 24f;
         }
+    }
+
+    public void StyleVirtualCard(RestaurantPlaceableCatalogItemView view)
+    {
+        if (view == null || view.Definition == null) return;
+        if (bodyFont == null || semiBoldFont == null) LoadFonts();
+        ApplyCard(view.transform, view);
     }
 
     private void ApplyCards()

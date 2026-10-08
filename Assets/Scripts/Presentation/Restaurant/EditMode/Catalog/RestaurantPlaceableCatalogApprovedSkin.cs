@@ -534,13 +534,20 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
     }    private void StyleItemViews()
     {
         if (itemContainer == null) return;
-
         foreach (Transform child in itemContainer)
         {
             RestaurantPlaceableCatalogItemView view =
                 child.GetComponent<RestaurantPlaceableCatalogItemView>();
             if (view == null || view.Definition == null) continue;
+            StyleVirtualCard(view);
+        }
+    }
 
+    public void StyleVirtualCard(RestaurantPlaceableCatalogItemView view)
+    {
+        if (view == null || view.Definition == null) return;
+        Transform child = view.transform;
+        {
             LayoutElement layout = child.GetComponent<LayoutElement>();
             if (layout != null)
             {
@@ -701,9 +708,10 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         if (hookedItemButtons.Contains(id)) return;
         hookedItemButtons.Add(id);
 
-        RestaurantPlaceableItemDefinition definition = view.Definition;
         button.onClick.AddListener(() =>
         {
+            // La tarjeta se recicla: nunca capturar una definición obsoleta.
+            RestaurantPlaceableItemDefinition definition = view.Definition;
             if (definition == null) return;
             activeItemId = definition.ItemId;
             recents.Remove(activeItemId);
@@ -768,9 +776,34 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
         }
     }
 
+    public void ApplyVirtualCatalogFilters() => ApplyFiltersAndOrdering();
+
     private void ApplyFiltersAndOrdering()
     {
         if (itemContainer == null) return;
+        var virtualList = GetComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
+        if (virtualList != null && virtualList.IsReady && panel != null)
+        {
+            int count = panel.ApplyB9Query(
+                searchInput != null ? searchInput.text : string.Empty,
+                scopeFilter, favoritesOnly, recentsOnly, favorites, recents, sortMode);
+            if (countText != null)
+                countText.text = count == 1 ? "1 artículo" : count + " artículos";
+            if (summaryText != null) summaryText.text = GetSummaryLabel();
+            if (emptyState != null)
+            {
+                emptyState.SetActive(count == 0);
+                Text title = emptyState.transform.Find("Title")?.GetComponent<Text>();
+                Text body = emptyState.transform.Find("Body")?.GetComponent<Text>();
+                bool searching = searchInput != null && !string.IsNullOrWhiteSpace(searchInput.text);
+                if (title != null) title.text = searching ? "Sin resultados" :
+                    "No hay artículos en esta categoría";
+                if (body != null) body.text = searching ?
+                    "Prueba otro término o limpia los filtros." :
+                    "Esta categoría todavía no contiene artículos.";
+            }
+            return;
+        }
 
         string query = searchInput != null
             ? searchInput.text.Trim()

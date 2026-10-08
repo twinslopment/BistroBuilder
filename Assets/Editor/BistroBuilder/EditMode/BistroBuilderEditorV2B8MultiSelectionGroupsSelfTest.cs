@@ -1338,12 +1338,59 @@ public static class BistroBuilderEditorV2B8MultiSelectionGroupsSelfTest
                 " no deja estado parcial");
         }
 
+        // En una escena poblada dos artículos arbitrarios pueden carecer
+        // de destino común; no equivale a un fallo del motor de duplicación.
+        // Si el primer par solo produce rechazos espaciales correctos,
+        // buscar otra pareja real, manteniendo la comprobación de rollback.
+        if (!duplicated)
+        {
+            var candidates = FindMovablePlaceables(registry);
+            int examinedPairs = 0;
+            bool rollbackIntact = true;
+            for (int i = 0; i < candidates.Count && !duplicated; i++)
+            {
+                for (int j = i + 1; j < candidates.Count && !duplicated; j++)
+                {
+                    var a = candidates[i];
+                    var b = candidates[j];
+                    if (a == null || b == null ||
+                        a.ItemDefinition == null || b.ItemDefinition == null ||
+                        a.ItemDefinition.Category != b.ItemDefinition.Category)
+                        continue;
+                    if (++examinedPairs > 100) break;
+                    if (!controller.TrySelectPlaceable(a) ||
+                        !controller.TrySelectPlaceable(b, true, true))
+                        continue;
+
+                    for (int k = 0; k < offsets.Length; k++)
+                    {
+                        if (groups.TryDuplicateSelection(
+                                offsets[k], out created, out lastError))
+                        {
+                            p0 = a;
+                            p1 = b;
+                            usedOffset = offsets[k];
+                            duplicated = true;
+                            break;
+                        }
+                        rollbackIntact &=
+                            registry.RegisteredPlaceables.Count == activeBefore &&
+                            history.UndoCount == historyBefore;
+                        if (!rollbackIntact) break;
+                    }
+                    if (!rollbackIntact) break;
+                }
+                if (examinedPairs > 100 || !rollbackIntact) break;
+            }
+            Check(rollbackIntact,
+                "B8 búsqueda adversarial de pareja duplicable no deja estados parciales");
+            Lines.Add("METRIC - B8_DUPLICATE_PAIRS_EXAMINED=" + examinedPairs);
+        }
+
         Check(
             duplicated,
             "B8 encuentra destino real para duplicar dos artículos" +
-            (duplicated
-                ? string.Empty
-                : ": " + lastError));
+            (duplicated ? string.Empty : ": " + lastError));
 
         if (!duplicated)
             return;

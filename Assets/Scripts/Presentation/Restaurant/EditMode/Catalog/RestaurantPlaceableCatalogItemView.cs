@@ -34,6 +34,7 @@ public sealed class RestaurantPlaceableCatalogItemView :
 
     private Action<RestaurantPlaceableItemDefinition>
         selectionCallback;
+    private Func<RestaurantPlaceableItemDefinition, Sprite> thumbnailResolver;
 
     public RestaurantPlaceableItemDefinition Definition
     {
@@ -45,9 +46,11 @@ public sealed class RestaurantPlaceableCatalogItemView :
 
     public void Bind(
         RestaurantPlaceableItemDefinition itemDefinition,
-        Action<RestaurantPlaceableItemDefinition> onSelected
+        Action<RestaurantPlaceableItemDefinition> onSelected,
+        Func<RestaurantPlaceableItemDefinition, Sprite> resolveThumbnail = null
     )
     {
+        thumbnailResolver = resolveThumbnail;
         definition =
             itemDefinition;
 
@@ -150,10 +153,9 @@ public sealed class RestaurantPlaceableCatalogItemView :
                     : "Disponible";
         }
 
-        Sprite icon =
-            definition != null
-                ? definition.CatalogIcon
-                : null;
+        Sprite icon = definition != null
+            ? (thumbnailResolver != null ? thumbnailResolver(definition) : definition.CatalogIcon)
+            : null;
 
         if (iconImage != null)
         {
