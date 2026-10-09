@@ -165,7 +165,10 @@ public sealed partial class BistroBuilderUiShell
             ? 84f
             : (topNavigation != null ? 18f + topNavigation.rect.height : 72f);
         modeSelectorRoot.anchoredPosition = new Vector2(0f, -topOffset);
-        modeSelectorRoot.gameObject.SetActive(!managing && !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
+        // Legacy normal/edit selector is intentionally absent from Edit V2;
+        // the V2 header already contains the route back to Normal mode.
+        modeSelectorRoot.gameObject.SetActive(!editing && !managing &&
+            !BistroBuilderNewGameOpeningPlayerScreen.IsOpeningMenuBlocking);
         modeSelectorRoot.SetAsLastSibling();
 
         ApplyModeSelectorState(normalModeSelectorButton, !editing);

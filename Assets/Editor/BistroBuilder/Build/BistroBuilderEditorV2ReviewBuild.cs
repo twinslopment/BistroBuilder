@@ -8,9 +8,9 @@ using UnityEngine;
 public static class BistroBuilderEditorV2ReviewBuild
 {
     private const string Scene = "Assets/Scenes/Prototype_Restaurant.unity";
-    private const string Folder = "Builds/Windows/EditorV2_Review_20261009";
-    private const string Exe = "BistroBuilder_EditorV2_Review.exe";
-    private const string ReportFile = "EditorV2_Review_Build_Report.txt";
+    private const string Folder = "Builds/Windows/EditorV2_VisibleFix_20261009";
+    private const string Exe = "BistroBuilder_EditorV2_VISIBLE.exe";
+    private const string ReportFile = "EditorV2_VisibleFix_Build_Report.txt";
 
     [MenuItem("Bistro Builder/QA/Editor V2/Windows Review Build")]
     public static void BuildFromMenu() => Build();
@@ -62,8 +62,8 @@ public static class BistroBuilderEditorV2ReviewBuild
                 throw new InvalidOperationException(result);
 
             File.WriteAllText(Path.Combine(destination, "LEEME_EDITOR_V2.txt"),
-                "BISTRO BUILDER - EDITOR V2 - BUILD DE REVISION\n" +
-                "Esta NO es una version final.\n" +
+                "BISTRO BUILDER - EDITOR V2 - BUILD CORREGIDA (VISIBILIDAD)\n" +
+                "Esta build CORRIGE la superposicion del modo edicion antiguo. NO es una version final.\n\n" +
                 "1. Ejecuta " + Exe + ".\n" +
                 "2. Entra en Modo Edicion desde la interfaz del juego.\n" +
                 "3. Abre Colocar para revisar Galeria Viva, Destacado y Relacionados.\n" +

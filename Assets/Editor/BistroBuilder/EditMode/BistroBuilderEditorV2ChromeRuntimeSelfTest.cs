@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -112,6 +113,13 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
             throw new InvalidOperationException(
                 "No se pudo entrar en edición: " + error);
 
+        // Mirror the shell's normal scheduled refresh after the mode change;
+        // the old test never checked which canvas actually rendered in front.
+        typeof(BistroBuilderUiShell)
+            .GetMethod("RefreshReadModels", BindingFlags.NonPublic |
+                BindingFlags.Instance)
+            ?.Invoke(shell, null);
+
         // The live shell reconciles its chrome on its scheduled refresh.
         var root = Object.FindObjectsByType<RectTransform>(
             FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -121,6 +129,38 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
             t.name == BistroBuilderUiShell.EditModeBottomBarName);
         if (top == null || bottom == null)
             throw new InvalidOperationException("No se construyeron las barras.");
+
+        Require(top.gameObject.activeInHierarchy &&
+                bottom.gameObject.activeInHierarchy,
+            "Ambas barras V2 deben ser VISIBLES en edición, no solo existir");
+        var legacy = Object.FindObjectsByType<Canvas>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .FirstOrDefault(c => c.name == "Canvas_BistroBuilder_EditMode");
+        Require(legacy != null, "Canvas antiguo real de la escena");
+        var topCanvas = top.GetComponent<Canvas>();
+        var bottomCanvas = bottom.GetComponent<Canvas>();
+        Require(topCanvas != null && topCanvas.overrideSorting &&
+                topCanvas.sortingOrder > legacy.sortingOrder,
+            "La barra superior V2 debe dibujarse delante del editor antiguo");
+        Require(bottomCanvas != null && bottomCanvas.overrideSorting &&
+                bottomCanvas.sortingOrder > legacy.sortingOrder,
+            "La barra inferior V2 debe dibujarse delante del editor antiguo");
+        Require(top.GetComponent<GraphicRaycaster>()?.isActiveAndEnabled == true &&
+                bottom.GetComponent<GraphicRaycaster>()?.isActiveAndEnabled == true,
+            "Los controles V2 visibles deben recibir los clics");
+        // Sorting passes alone are insufficient if either Canvas has zero scale,
+        // a non-rendering RectTransform or a collapsed player-space footprint.
+        Require(top.rect.width > 900f && top.rect.height > 40f &&
+                bottom.rect.width > 900f && bottom.rect.height > 60f,
+            "V2 requiere rectángulos renderizables (no solo GameObjects activos): " +
+            top.rect.size + " / " + bottom.rect.size);
+        Require(Mathf.Abs(top.lossyScale.x) > .01f &&
+                Mathf.Abs(bottom.lossyScale.x) > .01f,
+            "V2 no puede heredar escala cero del antiguo Canvas");
+        var oldSelector = root.FirstOrDefault(t =>
+            t.name == BistroBuilderUiShell.ModeSelectorName);
+        Require(oldSelector != null && !oldSelector.gameObject.activeInHierarchy,
+            "El selector negro anterior NO debe mostrarse sobre Editor V2");
 
         Require(top.Find("OfficialLogo") != null, "Logo oficial");
         Require(top.Find("EditorV2ModeIdentity") != null, "Placa de edición");
@@ -145,6 +185,11 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
             t.name == "BB_EditorV2_ConfirmReform");
         Require(dialog != null && !dialog.gameObject.activeSelf,
             "Confirmación cerrada inicialmente");
+        var modalCanvas = dialog.GetComponent<Canvas>();
+        Require(modalCanvas != null && modalCanvas.overrideSorting &&
+            modalCanvas.sortingOrder > bottomCanvas.sortingOrder &&
+            dialog.GetComponent<GraphicRaycaster>() != null,
+            "Los diálogos V2 deben quedar sobre las dos barras");
 
         float topWidth = RequiredWidth(top);
         float bottomWidth = RequiredWidth(bottom);
@@ -176,9 +221,11 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
         Require(!dialog.gameObject.activeSelf,
             "No hay confirmación destructiva sin cambios");
 
-        return "Barras y logo creados, 13 controles requeridos, " +
-            "confirmación inicialmente cerrada, ambas resoluciones sin " +
-            "desbordamiento por anchura, controles no conectados deshabilitados." +
+        return "VISIBILITY PASS: barras V2 realmente activas, sorting " +
+            topCanvas.sortingOrder + "/" + bottomCanvas.sortingOrder +
+            " > canvas anterior " + legacy.sortingOrder +
+            ", raycasters funcionales, selector anterior oculto, " +
+            "modal superior; controles y categorías canónicas OK. " +
             " Top=" + topWidth + " px, bottom=" + bottomWidth + " px.";
     }
 

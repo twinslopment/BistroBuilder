@@ -31,6 +31,8 @@ public sealed partial class BistroBuilderUiShell
         root.anchorMin = Vector2.zero;
         root.anchorMax = Vector2.one;
         root.offsetMin = root.offsetMax = Vector2.zero;
+        // Modal must be higher than both V2 chrome canvases and the legacy edit Canvas.
+        EnsureV2OverlayCanvas(root, 220);
         var blockInput = root.gameObject.AddComponent<Image>();
         blockInput.color = new Color32(31, 22, 13, 180);
         blockInput.raycastTarget = true;

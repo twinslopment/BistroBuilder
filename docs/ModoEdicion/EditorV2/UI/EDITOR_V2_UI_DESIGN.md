@@ -527,3 +527,23 @@ Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.
 - **Pendientes obligatorios de revisión por el usuario:** rendimiento, acabado visual, distribución a 1920×1080 y 1280×720, contraste y estilo de los iconos, y ajustes que quiera después de verlo. La primera build no convierte en definitivas las maquetas ni sustituye Halo de Huella/Proyector Inteligente pendientes.
 
 - Paquete local comprimido para pruebas: `C:\\Users\\mruperez\\Downloads\\BistroBuilder_EditorV2_Review_20261009.zip` (99,3 MB), 304 entradas. Verificados: EXE, LEEME y 273 entradas bajo la carpeta de datos del Player. Extraer la carpeta completa antes de ejecutar, no arrancar EXE dentro del ZIP.
+
+## 15. Hotfix crítico de visibilidad real — V2 frente a Canvas heredado (2026-10-09)
+
+**Hallazgo confirmado en escena y comprobado en Play Mode:** `Assets/Scenes/Prototype_Restaurant.unity` conserva `Canvas_BistroBuilder_EditMode` con `sortingOrder=80`, mientras el shell nuevo se monta en `MainHUD/Canvas` con `sortingOrder=0`. Las primeras pruebas de UI solo buscaban GameObjects y botones, por lo que permitían un PASS falso si la UI nueva estaba tapada por un Canvas antiguo. La primera build `EditorV2_Review_20261009` queda **SUPERADA Y NO ACEPTADA** para evaluación visual: el usuario confirmó que seguía viendo el editor antiguo.
+
+**Corrección de producción:** crear Canvas hijo con `overrideSorting=true` en ambas barras V2, `sortingOrder=210` (superior) y 211 (inferior), con `GraphicRaycaster` propio para conservar clics. Diálogo Apply/Discard en Canvas 220. Ocultar el selector de modo heredado mientras edición está activa (el botón nativo V2 permite salir). NO se desactivan el Canvas antiguo completo, sus servicios de colocación, catálogo, datos ni los controladores B0–B12; únicamente se corrige la capa de presentación.
+
+**Regresión añadida a `BistroBuilderEditorV2ChromeRuntimeSelfTest`:** exige barras V2 `activeInHierarchy`, orden real superior al canvas antiguo, receptores de clic, escala y rectángulos de tamaño no nulo, selector heredado oculto, modal por encima y navegación con el catálogo real. Resultado `EditorV2_UI_RuntimeSmoke_Report.txt`: **PASS**, órdenes 210/211 mayores que 80, anchuras superiores/inferiores de 1083/1033, acciones y botones verificados. Estos checks son de montaje y orden de render en Unity, no sustituyen la validación visual del jugador.
+
+**Nueva build diferenciada:** `Builds/Windows/EditorV2_VisibleFix_20261009/BistroBuilder_EditorV2_VISIBLE.exe`. Nueva carpeta y ZIP distinto para que el usuario no pueda abrir por error la versión anterior. Arranque a 1280x720 y 1920x1080. Resultado de compilación Windows y smoke del Player deben anotarse al finalizar; nunca declararlos superados por adelantado.
+
+**Contrato:** sigue pendiente el diseño gráfico completo de iconos y Halo de Huella sobre mallas reales. No se dará por final hasta prueba visible por el usuario a su gusto. No alterar maestra ni trabajar sobre archivos B12 ajenos.
+
+### Validación y entrega del hotfix visible (segunda build)
+- `EditorV2_UI_RuntimeSmoke_Report.txt` y `Logs/EditorV2_UI_Visibility_Gate02.log`: **PASS** Play Mode. Canvas V2 210/211 delante de Canvas viejo 80, `activeInHierarchy`, raycasters, escala y rectángulos renderizables válidos, selector viejo oculto, catálogo y modal operativos. Sin errores C# en la batería.
+- `EditorV2_VisibleFix_Build_Report.txt`: **Build Succeeded**, Windows 64 bits, Unity 6000.3.19f1, cero errores, 12 advertencias, 248325073 bytes declarados.
+- `PLAYER_STARTUP_VISIBLE.log`: arranque de prueba sin GPU: proceso activo tras 16 s, cero excepciones críticas en segmento observado. No equivale a render gráfico de juego.
+- Descargas: `C:\Users\mruperez\Downloads\BistroBuilder_EditorV2_VISIBLEFIX_20261009.zip` (99,3 MiB, 304 entradas leídas sin fallos). Incluye `BistroBuilder_EditorV2_VISIBLE.exe`, su carpeta de datos (273 entradas), `ARRANCAR_1280x720.cmd`, `ARRANCAR_1920x1080.cmd`.
+- **La build previa** `BistroBuilder_EditorV2_Review_20261009.zip` **NO debe emplearse para evaluar Editor V2**, porque no resolvía la prioridad de render. Extraer el ZIP nuevo y ejecutar uno de sus dos lanzadores, sin mezclar archivos de ambas carpetas.
+- Pendiente: aceptación visual en ejecución con GPU y ajustes que el usuario considere necesarios. No confundir el fix de visibilidad con tener terminados todos los iconos, Halo de Huella o todo el inspector definitivo.

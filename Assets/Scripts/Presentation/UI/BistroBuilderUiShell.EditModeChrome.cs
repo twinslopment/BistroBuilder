@@ -36,6 +36,11 @@ public sealed partial class BistroBuilderUiShell
         ResolveEditChrome();
         editModeTopBar=EditBar(EditModeTopBarName,true,12,8,76);
         editModeBottomBar=EditBar(EditModeBottomBarName,false,12,7,104);
+        // The scene still contains Canvas_BistroBuilder_EditMode at order 80.
+        // A child of MainHUD/Canvas (order 0) cannot draw or receive pointer
+        // input above it unless it owns an override-sorting canvas.
+        EnsureV2OverlayCanvas(editModeTopBar, 210);
+        EnsureV2OverlayCanvas(editModeBottomBar, 211);
         var hintRoot=NewUi("EditChromeHint",shellRoot).GetComponent<RectTransform>();
         hintRoot.anchorMin=new Vector2(.5f,0);hintRoot.anchorMax=hintRoot.anchorMin;hintRoot.pivot=new Vector2(.5f,0);
         hintRoot.anchoredPosition=new Vector2(0,104);hintRoot.sizeDelta=new Vector2(610,36);
@@ -48,6 +53,19 @@ public sealed partial class BistroBuilderUiShell
         editModeTopBar.gameObject.SetActive(false);editModeBottomBar.gameObject.SetActive(false);
         editModeChromeBuilt=true;
     }
+    private static void EnsureV2OverlayCanvas(RectTransform rect, int order)
+    {
+        if (rect == null) return;
+        var layer = rect.GetComponent<Canvas>();
+        if (layer == null) layer = rect.gameObject.AddComponent<Canvas>();
+        layer.overrideSorting = true;
+        layer.sortingOrder = order;
+        // GraphicRaycaster does not inherit from the parent Canvas; without
+        // this component the topmost buttons are visible but cannot be clicked.
+        if (rect.GetComponent<GraphicRaycaster>() == null)
+            rect.gameObject.AddComponent<GraphicRaycaster>();
+    }
+
     void ResolveEditChrome()
     {
         if(editModeConstructionTool==null)editModeConstructionTool=FindScene<BistroBuilderConstructionAuthoringRuntimeTool>();
