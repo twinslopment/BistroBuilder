@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 550" width="1280" height="550">
+<rect x="0" y="0" width="1280" height="550" rx="8" fill="#fff9ed" stroke="#b68c51" stroke-width="2"/>
+<text x="24" y="40" font-family="Arial,sans-serif" font-size="25" font-weight="700" fill="#492c18">EDITOR V2 — ICONOGRAFIA / TIPOGRAFIA / RESPONSIVE · V1</text>
+<text x="24" y="63" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="#806044">Esquema versionado; no captura Unity ni aprobacion irreversible</text>
+<text x="23" y="99" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#654328">1920 × 1080 | DOS PANELES</text>
+<rect x="24" y="108" width="1230" height="178" rx="8" fill="#e1cba8" stroke="#b68c51" stroke-width="2"/>
+<rect x="32" y="116" width="1214" height="25" rx="8" fill="#fff6e6" stroke="#b68c51" stroke-width="2"/><text x="47" y="134" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#654328">LOGO OFICIAL · EDITOR V2 · RESTAURANTE · HISTORIAL · REFORMA</text>
+<rect x="32" y="147" width="342" height="107" rx="8" fill="#f9edd7" stroke="#b68c51" stroke-width="2"/><text x="47" y="169" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#654328">Galeria Viva / Taller</text><text x="47" y="190" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#654328">Recoleta titulos / Inter secundarios</text><text x="47" y="214" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#654328">Buscador · 2 columnas · scroll propio</text>
+<rect x="382" y="147" width="540" height="107" rx="8" fill="#594537" stroke="#b68c51" stroke-width="2"/><text x="460" y="191" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#ffe8bc">RESTAURANTE Y HALO DE HUELLA</text><text x="450" y="213" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#fff2d3">objetos y huellas, no offsets fijos</text>
+<rect x="930" y="147" width="316" height="107" rx="8" fill="#f9edd7" stroke="#b68c51" stroke-width="2"/><text x="945" y="171" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#654328">Inspector Principal / Conjunto</text><text x="945" y="196" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#654328">Datos segun capacidades reales</text>
+<rect x="32" y="260" width="1214" height="19" rx="8" fill="#edddc3" stroke="#b68c51" stroke-width="2"/><text x="340" y="274" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#654328">MODO  /  EDITAR  /  AYUDAS — controles visibles</text>
+<text x="24" y="329" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#654328">1280 × 720 | INSPECTOR PLEGADO</text>
+<rect x="24" y="340" width="820" height="160" rx="8" fill="#e1cba8" stroke="#b68c51" stroke-width="2"/>
+<rect x="32" y="348" width="804" height="25" rx="8" fill="#fff6e6" stroke="#b68c51" stroke-width="2"/><text x="46" y="366" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#654328">Logo + Editor V2 + Reforma · compacto</text>
+<rect x="32" y="380" width="240" height="88" rx="8" fill="#f9edd7" stroke="#b68c51" stroke-width="2"/><text x="45" y="404" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#654328">Catalogo con scroll</text><text x="45" y="426" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#654328">Busqueda visible</text>
+<rect x="280" y="380" width="500" height="88" rx="8" fill="#594537" stroke="#b68c51" stroke-width="2"/><text x="348" y="428" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#ffe8bc">VIEWPORT PRINCIPAL LIBRE</text>
+<rect x="788" y="380" width="48" height="88" rx="8" fill="#f9edd7" stroke="#b68c51" stroke-width="2"/><text x="793" y="409" font-family="Arial,sans-serif" font-size="13" font-weight="400" fill="#654328">Rail</text><text x="793" y="430" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#654328">abrir</text>
+<rect x="32" y="474" width="804" height="18" rx="8" fill="#edddc3" stroke="#b68c51" stroke-width="2"/>
+<rect x="862" y="340" width="392" height="160" rx="8" fill="#f9edd7" stroke="#b68c51" stroke-width="2"/><text x="880" y="367" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#654328">INSPECTOR SOLO A DEMANDA</text>
+<text x="880" y="392" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="#654328">Pestañas Principal / Conjunto</text>
+<text x="880" y="419" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="#654328">Plegar conserva la seleccion</text>
+<text x="880" y="446" font-family="Arial,sans-serif" font-size="14" font-weight="400" fill="#654328">0 overflow horizontal</text>
+<text x="880" y="476" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#926a38">Art final y TMP en Unity: PENDIENTE</text>
+<text x="25" y="533" font-family="Arial,sans-serif" font-size="12" font-weight="400" fill="#654328">Fuentes presentes en Assets, no embebidas en HTML. Iconos auditados: 82 SVG (Lucide incluidos); adaptar al arte original BB antes de aprobar.</text>
+</svg>
