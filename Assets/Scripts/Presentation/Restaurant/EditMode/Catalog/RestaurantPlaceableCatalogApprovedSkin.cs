@@ -6,16 +6,16 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
 {
-    private static readonly Color Panel = new Color32(251, 249, 244, 252);
-    private static readonly Color Card = new Color32(255, 253, 250, 255);
-    private static readonly Color Field = new Color32(243, 240, 233, 255);
-    private static readonly Color Line = new Color32(222, 217, 207, 255);
-    private static readonly Color TextPrimary = new Color32(24, 28, 29, 255);
-    private static readonly Color TextMuted = new Color32(119, 123, 120, 255);
-    private static readonly Color Olive = new Color32(113, 143, 77, 255);
-    private static readonly Color OliveDark = new Color32(95, 123, 66, 255);
-    private static readonly Color OliveSoft = new Color32(232, 238, 223, 255);
-    private static readonly Color Gold = new Color32(237, 169, 34, 255);
+    private static readonly Color Panel = new Color32(249, 239, 222, 252);
+    private static readonly Color Card = new Color32(255, 249, 238, 255);
+    private static readonly Color Field = new Color32(246, 231, 207, 255);
+    private static readonly Color Line = new Color32(204, 168, 110, 255);
+    private static readonly Color TextPrimary = new Color32(74, 45, 24, 255);
+    private static readonly Color TextMuted = new Color32(126, 98, 69, 255);
+    private static readonly Color Olive = new Color32(227, 177, 90, 255);
+    private static readonly Color OliveDark = new Color32(151, 101, 39, 255);
+    private static readonly Color OliveSoft = new Color32(255, 237, 207, 255);
+    private static readonly Color Gold = new Color32(241, 188, 91, 255);
 
     private RestaurantPlaceableCatalogPanel panel;
     private RestaurantEditInteractionController interactionController;

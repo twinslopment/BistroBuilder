@@ -6,15 +6,15 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 {
-    private static readonly Color32 Panel = new Color32(247, 243, 237, 255);
-    private static readonly Color32 Card = new Color32(253, 249, 245, 255);
-    private static readonly Color32 Field = new Color32(240, 237, 230, 255);
-    private static readonly Color32 TextPrimary = new Color32(31, 35, 29, 255);
-    private static readonly Color32 TextMuted = new Color32(96, 98, 90, 255);
-    private static readonly Color32 Olive = new Color32(107, 128, 74, 255);
-    private static readonly Color32 OliveSoft = new Color32(235, 241, 226, 255);
-    private static readonly Color32 Gold = new Color32(240, 171, 34, 255);
-    private static readonly Color32 PriceGreen = new Color32(63, 122, 49, 255);
+    private static readonly Color32 Panel = new Color32(248, 237, 219, 255);
+    private static readonly Color32 Card = new Color32(255, 249, 238, 255);
+    private static readonly Color32 Field = new Color32(246, 230, 207, 255);
+    private static readonly Color32 TextPrimary = new Color32(70, 43, 24, 255);
+    private static readonly Color32 TextMuted = new Color32(124, 93, 66, 255);
+    private static readonly Color32 Olive = new Color32(227, 176, 88, 255);
+    private static readonly Color32 OliveSoft = new Color32(255, 233, 196, 255);
+    private static readonly Color32 Gold = new Color32(242, 181, 68, 255);
+    private static readonly Color32 PriceGreen = new Color32(137, 84, 38, 255);
 
     private static Sprite rounded10;
     private static Sprite rounded14;
@@ -27,6 +27,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private ScrollRect scrollRect;
     private TMP_FontAsset bodyFont;
     private TMP_FontAsset semiBoldFont;
+    private TMP_FontAsset titleFont;
     private TMP_InputField tmpSearch;
     private InputField legacySearch;
     private int categoryCount = -1;
@@ -39,6 +40,13 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     private bool lastFiltersVisible;
     private string selectedScopeLabel = "Todos";
 
+    private static string EditorV2GalleryTitle(RestaurantPlaceableCatalogPanel panel)
+    {
+        if (panel == null) return "Catálogo Galería Viva";
+        return RestaurantEditCatalogSections.IsArchitecture(panel.CurrentSection)
+            ? "Taller · " + panel.SectionTitle
+            : "Catálogo Galería Viva";
+    }
     public void RefreshSectionChrome()
     {
         categoryCount = itemCount = -1;
@@ -46,7 +54,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (!TryCacheHierarchy()) return;
         var panel = GetComponent<RestaurantPlaceableCatalogPanel>();
         var title = contentRoot.Find("Header/PreviewTitle")?.GetComponent<TMP_Text>();
-        if (title != null) title.text = panel.SectionTitle;
+        if (title != null) title.text = EditorV2GalleryTitle(panel);
         if (tmpSearch != null)
         {
             tmpSearch.SetTextWithoutNotify(string.Empty);
@@ -121,6 +129,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
     {
         bodyFont = Resources.Load<TMP_FontAsset>(
             "BistroBuilder/UI/Typography/Inter-Regular-SDF");
+        titleFont = Resources.Load<TMP_FontAsset>("BistroBuilder/UI/Typography/Recoleta-SDF");
         semiBoldFont = Resources.Load<TMP_FontAsset>(
             "BistroBuilder/UI/Typography/Inter-SemiBold-SDF");
 
@@ -222,7 +231,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             Vector2.zero,
             Vector2.zero);
 
-        title.text = GetComponent<RestaurantPlaceableCatalogPanel>().SectionTitle;
+        title.text = EditorV2GalleryTitle(GetComponent<RestaurantPlaceableCatalogPanel>());
         title.enableWordWrapping = false;
 
         Transform close = header.Find("ApprovedClose");
@@ -1068,7 +1077,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
         if (title != null)
         {
             title.color = TextPrimary;
-            title.font = semiBoldFont;
+            title.font = titleFont;
             title.fontSize = 27f;
             title.fontWeight = FontWeight.Bold;
             title.extraPadding = true;
@@ -1222,14 +1231,14 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
             float topInset = Mathf.Max(
                 88f,
                 ResolveHorizontalBarInset(
-                    BistroBuilderUiShell.TopBarName,
-                    64f) + 12f);
+                    BistroBuilderUiShell.EditModeTopBarName,
+                    76f) + 12f);
 
             float bottomInset = Mathf.Max(
                 106f,
                 ResolveHorizontalBarInset(
-                    BistroBuilderUiShell.BottomBarName,
-                    64f) + 12f);
+                    BistroBuilderUiShell.EditModeBottomBarName,
+                    76f) + 12f);
 
             panelRect.anchorMin = new Vector2(0f, 0f);
             panelRect.anchorMax = new Vector2(0f, 1f);

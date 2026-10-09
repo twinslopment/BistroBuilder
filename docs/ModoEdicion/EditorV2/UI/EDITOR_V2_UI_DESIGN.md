@@ -496,3 +496,18 @@ Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.
 - Siguen pendientes: validación de aspecto real de 1920x1080 y 1280x720 en build gráfica, calidad de iconografía, rendimiento PC, proyección sobre bounds reales, interacción total con B8 y superficies PBR.
 
 **Criterio de aceptación:** todo diseño es provisional hasta la build; cambiar lo que el usuario no apruebe sin introducir duplicidades ni perder comportamiento válido.
+
+## 13. Galería Viva e inspector de selección V2 — INCREMENTO RUNTIME (2026-10-09)
+
+**Estado:** implementado en feature/editor-v2, provisional hasta prueba de build aprobada por el usuario. No implica que todos los recursos visuales de las referencias estén reproducidos todavía.
+
+- Se reutilizan RestaurantPlaceableCatalogApprovedSkin y RestaurantPlaceableCatalogPreviewSkin, con colores crema, marfil, latón y miel. No se sustituye la autoridad real de catálogo: B9 sigue controlando búsqueda, filtros, economía, orden, categorías y virtualización. Encabezados: **Catálogo Galería Viva** para objetos y **Taller · categoría** para familias arquitectónicas. Altura descontada desde las barras propias de Editor V2.
+- RestaurantPlaceableInspectorPanel conserva la imagen del asset, descripción, dimensiones, variantes y sustitución B10; se adapta a la gama cálida. Cuando se selecciona un objeto del mundo, oculta y limpia la ficha de catálogo anterior.
+- BistroBuilderEditorV2SelectionInspector: presentación de lectura del SelectionCoordinator B8 y RestaurantPlaceableRegistry, instalada una sola vez desde el panel canónico. Ficha Principal/Conjunto, lista de miembros, miniatura/descripcion/precio de la definición autorada, capacidades comunes del grupo e interacción de fila para cambiar principal mediante ReplaceSelectionSet. Nunca modifica muebles, finanzas o acabados directamente, ni deduce propiedades ausentes.
+- Responsive de primera fase: panel derecho en escritorio ancho; inspector plegado por defecto debajo de 1450 unidades, rail de 42 unidades para desplegar, scroll vertical interno. No se da por visualmente aprobado sin build.
+- Pendientes explícitos: sección **Destacado** de Galería Viva y relacionados, iconografía definitiva por familia, tipografías/ornamentos de calidad final, Halo de Huella sobre GLB, Proyector Inteligente, capturas y FPS de build gráfica 1920×1080 y 1280×720.
+
+**Pruebas:** Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2GalleryRuntimeSelfTest.cs. Play Mode sobre Assets/Scenes/Prototype_Restaurant.unity, registro EditorV2_GalleryInspector_Runtime_Report.txt.
+- Primera ejecución: PASS en cambio Galería Viva/Taller, estilo crema, único panel y skin, dos muebles reales, multiselección B8, pestañas, cambio de principal, plegado y deselección.
+- Batería final Play Mode: PASS con clic explícito sobre la fila secundaria, cambio real de principal B8, encabezado oficial Recoleta-SDF y cierre de la ficha antigua al seleccionar mobiliario del mundo. Unity compiló sin errores C#. Resultado de la última ejecución en EditorV2_GalleryInspector_Runtime_Report.txt; log Logs/EditorV2_GalleryInspector_RuntimeFinal.log.
+- Assembly-CSharp: PASS, cero errores CS; advertencias anteriores del proyecto. No se confunde esta prueba headless con aceptación gráfica en una build.

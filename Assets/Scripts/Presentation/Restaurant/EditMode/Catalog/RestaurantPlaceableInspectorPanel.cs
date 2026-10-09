@@ -8,14 +8,14 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
 {
-    private static readonly Color Panel = new Color32(250, 248, 244, 252);
-    private static readonly Color Card = new Color32(255, 253, 249, 255);
-    private static readonly Color Field = new Color32(243, 240, 233, 255);
-    private static readonly Color Line = new Color32(226, 221, 212, 255);
-    private static readonly Color TextPrimary = new Color32(31, 35, 29, 255);
-    private static readonly Color TextMuted = new Color32(111, 115, 108, 255);
-    private static readonly Color Olive = new Color32(103, 128, 70, 255);
-    private static readonly Color OliveSoft = new Color32(234, 241, 226, 255);
+    private static readonly Color Panel = new Color32(249, 238, 219, 252);
+    private static readonly Color Card = new Color32(255, 249, 236, 255);
+    private static readonly Color Field = new Color32(246, 232, 212, 255);
+    private static readonly Color Line = new Color32(204, 168, 112, 255);
+    private static readonly Color TextPrimary = new Color32(72, 44, 26, 255);
+    private static readonly Color TextMuted = new Color32(124, 93, 68, 255);
+    private static readonly Color Olive = new Color32(226, 171, 76, 255);
+    private static readonly Color OliveSoft = new Color32(255, 236, 203, 255);
     private static readonly Color InvalidSoft = new Color32(248, 232, 228, 255);
     private static readonly Color InvalidText = new Color32(153, 74, 64, 255);
 
@@ -33,6 +33,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private RectTransform content;
     private TMP_FontAsset regularFont;
     private TMP_FontAsset semiBoldFont;
+    private TMP_FontAsset titleFont;
 
     private TMP_Text titleText;
     private Image previewImage;
@@ -97,7 +98,9 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         bool managementOpen = uiShell != null &&
             uiShell.HasManagementScreenOpen;
 
-        if (!editMode || managementOpen)
+        var selectedWorld = GetComponent<BistroBuilderEditorV2SelectionInspector>();
+        if (!editMode || managementOpen ||
+            (selectedWorld != null && selectedWorld.IsShowing))
         {
             if (root.gameObject.activeSelf)
                 root.gameObject.SetActive(false);
@@ -138,12 +141,14 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     {
         regularFont = Resources.Load<TMP_FontAsset>(
             "BistroBuilder/UI/Typography/Inter-Regular-SDF");
+        titleFont = Resources.Load<TMP_FontAsset>("BistroBuilder/UI/Typography/Recoleta-SDF");
         semiBoldFont = Resources.Load<TMP_FontAsset>(
             "BistroBuilder/UI/Typography/Inter-SemiBold-SDF");
 
         TMP_FontAsset fallback = TMP_Settings.defaultFontAsset;
         if (regularFont == null) regularFont = fallback;
         if (semiBoldFont == null) semiBoldFont = fallback;
+        if (titleFont == null) titleFont = semiBoldFont;
     }
 
     private void Subscribe()
@@ -278,7 +283,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
             "Title",
             row,
             "Artículo",
-            semiBoldFont,
+            titleFont,
             26f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
