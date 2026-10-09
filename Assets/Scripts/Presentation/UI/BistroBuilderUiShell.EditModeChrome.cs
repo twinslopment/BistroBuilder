@@ -23,19 +23,19 @@ public sealed partial class BistroBuilderUiShell
     bool editModeChromeBuilt;
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
     readonly Dictionary<string, BistroBuilderEditChromeControl> editChromeControls = new Dictionary<string, BistroBuilderEditChromeControl>();
-    static readonly Color EditChromeSurface = new Color32(250,248,244,250);
-    static readonly Color EditChromeText = new Color32(36,39,35,255);
-    static readonly Color EditChromeMuted = new Color32(110,109,105,255);
-    static readonly Color EditChromeOlive = new Color32(103,128,70,255);
-    static readonly Color EditChromeLine = new Color32(226,221,212,255);
+    static readonly Color EditChromeSurface = new Color32(247,236,217,252);
+    static readonly Color EditChromeText = new Color32(70,45,28,255);
+    static readonly Color EditChromeMuted = new Color32(122,89,57,255);
+    static readonly Color EditChromeOlive = new Color32(194,141,61,255);
+    static readonly Color EditChromeLine = new Color32(185,145,91,255);
     static Sprite editChromeRounded;
 
     void EnsureEditModeChrome()
     {
         if(shellRoot==null||editModeChromeBuilt)return;
         ResolveEditChrome();
-        editModeTopBar=EditBar(EditModeTopBarName,true,30,14,62);
-        editModeBottomBar=EditBar(EditModeBottomBarName,false,20,12,80);
+        editModeTopBar=EditBar(EditModeTopBarName,true,12,8,76);
+        editModeBottomBar=EditBar(EditModeBottomBarName,false,12,7,104);
         var hintRoot=NewUi("EditChromeHint",shellRoot).GetComponent<RectTransform>();
         hintRoot.anchorMin=new Vector2(.5f,0);hintRoot.anchorMax=hintRoot.anchorMin;hintRoot.pivot=new Vector2(.5f,0);
         hintRoot.anchoredPosition=new Vector2(0,104);hintRoot.sizeDelta=new Vector2(610,36);
@@ -43,7 +43,8 @@ public sealed partial class BistroBuilderUiShell
         var hintBg=hintRoot.gameObject.AddComponent<Image>();hintBg.sprite=EditChromeRoundedSprite();hintBg.type=Image.Type.Sliced;hintBg.color=EditChromeSurface;hintBg.raycastTarget=false;
         editModeToolStatusText=ChromeText(hintRoot,"Hint","",13,EditChromeMuted);StretchChrome(editModeToolStatusText.rectTransform,12,4,12,4);
         hintRoot.gameObject.SetActive(false);
-        BuildEditTopChrome(editModeTopBar);BuildEditBottomChrome(editModeBottomBar);
+        BuildEditTopChromeV2(editModeTopBar);BuildEditBottomChromeV2(editModeBottomBar);
+        EnsureEditV2Confirmation();
         editModeTopBar.gameObject.SetActive(false);editModeBottomBar.gameObject.SetActive(false);
         editModeChromeBuilt=true;
     }
@@ -68,7 +69,7 @@ public sealed partial class BistroBuilderUiShell
         root.offsetMin=new Vector2(side,top?-edge-height:edge);root.offsetMax=new Vector2(-side,top?-edge:edge+height);
         var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=EditChromeSurface;
         var shadow=root.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.08f);shadow.effectDistance=new Vector2(0,-2);
-        var layout=root.gameObject.AddComponent<HorizontalLayoutGroup>();layout.padding=new RectOffset(14,14,6,6);layout.spacing=8;
+        var layout=root.gameObject.AddComponent<HorizontalLayoutGroup>();layout.padding=new RectOffset(10,10,5,5);layout.spacing=5;
         layout.childAlignment=TextAnchor.MiddleCenter;layout.childControlWidth=layout.childControlHeight=true;
         layout.childForceExpandWidth=false;layout.childForceExpandHeight=false;
         return root;
@@ -217,6 +218,7 @@ public sealed partial class BistroBuilderUiShell
     {
         EnsureEditModeChrome();bool visible=editing&&!managing;
         ReconcileOverlayVisibility();
+        HideEditV2ConfirmationIfInactive(visible);
         if(editModeTopBar!=null)editModeTopBar.gameObject.SetActive(visible);
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
         if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);
@@ -224,29 +226,38 @@ public sealed partial class BistroBuilderUiShell
         if(!visible){if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
         ResolveEditChrome();
         editModeMoneyText.text=finance!=null?BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents):"—";
+        if (editModeSelectionCountText != null)
+        {
+            int count = editModeSelectionCoordinator != null ? editModeSelectionCoordinator.SelectionCount : 0;
+            editModeSelectionCountText.text = count > 1 ? count + " artículos seleccionados" :
+                (editChromeRenovation != null && editChromeRenovation.HasPendingChanges ? "Reforma pendiente" : "Modo edición");
+        }
+        UpdateEditChromeResponsiveV2();
         editModeClockText.text=EditChromeClock();
         var mode=editModeConstructionTool!=null?editModeConstructionTool.Mode:Mode.Furniture;
         var section=editModeCatalogPanel!=null?editModeCatalogPanel.CurrentSection:RestaurantEditCatalogSection.Build;
         bool furniture=mode==Mode.Furniture;
-        ChromeSelected("EditBuild",section==RestaurantEditCatalogSection.Build);
+        ChromeSelected("EditSelect",mode==Mode.Select);
+        ChromeSelected("EditBuild",section==RestaurantEditCatalogSection.Build && mode==Mode.Furniture);
         ChromeSelected("EditSurfaces",section==RestaurantEditCatalogSection.Surfaces);
         ChromeSelected("EditWalls",section==RestaurantEditCatalogSection.Walls);
-        ChromeSelected("EditDecor",section==RestaurantEditCatalogSection.Decoration);
-        ChromeSelected("EditLighting",section==RestaurantEditCatalogSection.Lighting);
-        ChromeSelected("EditServices",section==RestaurantEditCatalogSection.Services);
-        ChromeSelected("EditOther",section==RestaurantEditCatalogSection.Other);
-        ChromeSelected("EditPan",mode==Mode.Select);ChromeSelected("EditGrid",editChromeGrid!=null&&editChromeGrid.enabled);
-        ChromeSelected("EditTerrain",mode==Mode.Room);
+        ChromeSelected("EditGrid",editChromeGrid!=null&&editChromeGrid.enabled);
+        ChromeSelected("EditSnap",false);
+        // No-op or misleading actions are never presented as available.
+        editChromeButtons["EditSnap"].interactable=false;
+        editChromeButtons["EditViews"].interactable=false;
         var commonSelection=CurrentChromeSelection();
         bool placement=editModeFurnitureController!=null&&editModeFurnitureController.HasActivePlacement;
-        editChromeButtons["EditMove"].interactable=!placement&&
+        bool multi=editModeSelectionCoordinator != null && editModeSelectionCoordinator.SelectionCount > 1;
+        // The existing edit controller handles one object; never pretend it moves a B8 group.
+        editChromeButtons["EditMove"].interactable=!placement&&!multi&&
             commonSelection.family==BistroBuilderEditorV2ToolFamily.Furniture&&
             commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Move);
-        editChromeButtons["EditDelete"].interactable=!placement&&
+        editChromeButtons["EditDelete"].interactable=!placement&&!multi&&
             commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Delete);
-        editChromeButtons["EditRotate"].interactable=placement||
-            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Rotate);
-        editChromeButtons["EditDuplicate"].interactable=!placement&&
+        editChromeButtons["EditRotate"].interactable=placement||(!multi&&
+            commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Rotate));
+        editChromeButtons["EditDuplicate"].interactable=!placement&&!multi&&
             commonSelection.Supports(BistroBuilderEditorV2SelectionCapability.Duplicate);
         editChromeButtons["EditUndo"].interactable=editChromeGlobalHistory!=null?editChromeGlobalHistory.CanUndo:(furniture?editChromeHistory!=null&&editChromeHistory.CanUndo:editModeConstructionTool!=null&&editModeConstructionTool.CanUndo);
         editChromeButtons["EditRedo"].interactable=editChromeGlobalHistory!=null?editChromeGlobalHistory.CanRedo:(furniture?editChromeHistory!=null&&editChromeHistory.CanRedo:editModeConstructionTool!=null&&editModeConstructionTool.CanRedo);

@@ -156,6 +156,7 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
     {
         if (!Application.isPlaying) return;
         TickTopMenuInput();
+        if (TickEditV2ConfirmationInput()) return;
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && IsAnyManagementScreenOpen())
         {
             CloseCurrentManagementScreen();

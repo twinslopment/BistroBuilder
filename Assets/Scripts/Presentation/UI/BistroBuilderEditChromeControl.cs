@@ -16,7 +16,9 @@ public sealed class BistroBuilderEditChromeControl : MonoBehaviour, IPointerEnte
     bool hovered, focused, selected, lastEnabled;
     bool action;
     Color tint;
-    static readonly Color Olive = new Color32(103,128,70,255);
+    static readonly Color Honey = new Color32(236,183,92,255);
+    static readonly Color Brass = new Color32(165,111,45,255);
+    static readonly Color Destructive = new Color32(164,47,39,255);
     public void Configure(Button target, BistroBuilderEditChromeIcon glyph, TMP_Text text, TMP_Text tooltip, string help, Color iconColor, bool outlined)
     {
         button=target;background=target.GetComponent<Image>(); icon=glyph;label=text;hint=tooltip;explanation=help;tint=iconColor;action=outlined;
@@ -29,12 +31,23 @@ public sealed class BistroBuilderEditChromeControl : MonoBehaviour, IPointerEnte
     {
         if(button==null)return;
         bool available=button.IsInteractable();
-        background.color=selected?Olive:hovered&&available?new Color32(234,231,225,255):action?(available?new Color32(231,239,220,255):new Color32(228,225,218,255)):Color.clear;
-        Color actionInk=available?new Color32(48,70,33,255):new Color32(99,101,94,255);
-        if(icon!=null)icon.color=selected?Color.white:action?actionInk:new Color(tint.r,tint.g,tint.b,available?1f:.65f);
-        if(label!=null)label.color=selected?Color.white:action?actionInk:new Color(.14f,.15f,.14f,available?1f:.65f);
-        bool keyboard=focused&&BistroBuilderPointerFeedback.KeyboardFocus;
-        outline.enabled=keyboard||action;outline.effectColor=keyboard?new Color32(50,158,220,255):available?new Color32(107,130,77,255):new Color32(156,156,145,255);
+        // Premium ivory/brass treatment: honey is selection, red only destructive.
+        bool destructive = action;
+        Color disabled = new Color32(220,210,191,255);
+        background.color = !available ? disabled
+            : selected ? Honey
+            : destructive ? (hovered ? new Color32(181,59,48,255) : Destructive)
+            : hovered ? new Color32(244,224,186,255)
+            : new Color32(252,244,232,255);
+        Color contentColor = !available ? new Color32(138,126,111,255)
+            : destructive ? Color.white : new Color32(74,46,25,255);
+        if (icon != null) icon.color = contentColor;
+        if (label != null) label.color = contentColor;
+        bool keyboard = focused && BistroBuilderPointerFeedback.KeyboardFocus;
+        outline.enabled = keyboard || selected || hovered || destructive;
+        outline.effectColor = keyboard ? new Color32(69,132,170,255)
+            : selected ? Brass : destructive ? new Color32(135,38,30,255)
+            : new Color32(203,162,97,255);
     }
     public void OnPointerEnter(PointerEventData e){hovered=true;Refresh();if(hint!=null){hint.text=explanation;hint.transform.parent.gameObject.SetActive(true);}}
     public void OnPointerExit(PointerEventData e){hovered=false;Refresh();HideHint();}

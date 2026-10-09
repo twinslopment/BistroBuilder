@@ -475,3 +475,24 @@ Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.
 - 2026-10-09: **revisión de cierre visual de iconos/fuentes/responsive V1 presentada**, con logo oficial, auditoría de 82 SVG (algunos son Lucide), fuentes Recoleta/Inter presentes y demo interactiva 1920/1280. Inspector compacto plegado por defecto y posibilidad de abrir Conjunto. PASS en pruebas HTML; acabado de arte y comportamiento Unity PENDIENTES del visto bueno y de una build jugable.
 - Regla transversal ratificada por el usuario: **todo diseño puede revisarse tras build hasta quedar a su gusto**, sin alterar datos ni mecánicas válidas innecesariamente y sin integrar versiones no aprobadas.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
+
+## 12. Primera implementación Unity de chrome V2 — IMPLEMENTADO EN feature/editor-v2 (2026-10-09)
+**Alcance:** primera implementación REAL de la barra superior, barra inferior y confirmaciones de reforma; no equivale a entregar ya las pieles finales de Galería Viva, Taller, inspector o Halo de Huella. El usuario conserva el derecho de cambiar cualquier aspecto tras verlo en build.
+
+**Fuentes y límites**
+- Assets/Scripts/Presentation/UI/BistroBuilderUiShell.EditModeChromeV2.cs: barra superior propia de edición (logo original, identidad EDITOR V2, estado, Undo/Redo, reloj, caja, Aplicar, Descartar, Salir); barra inferior aprobada con grupos MODO (Seleccionar/Colocar/Construir/Superficies), EDITAR (Mover/Girar/Duplicar/Eliminar), AYUDAS (Snapping/Cuadrícula/Vistas).
+- Assets/Scripts/Presentation/UI/BistroBuilderUiShell.EditModeRenovationDialogV2.cs: panel de confirmación nativo para aplicar, descartar y salir con pendientes. Datos desde BistroBuilderEditorV2RenovationSession.TryGetSnapshot; la confirmación pasa a B5 (TryApplyChanges/TryDiscardChanges). Escape o cancelar conserva los cambios. Desde una revisión no se descarta directamente: requiere confirmación destructiva separada.
+- Cambios de integración en BistroBuilderUiShell.EditModeChrome.cs, BistroBuilderUiShell.cs y BistroBuilderEditChromeControl.cs: interfaz UGUI/TextMeshPro (no JS/CSS ejecutándose dentro de Unity), marfil/latón/miel/rojo destructivo y actualización de disponibilidad.
+- Logo reutilizado sin reinterpretar en Assets/Resources/BistroBuilder/UI/EditorV2/BB_Logo_Aprobado_Referencia.png. Tipografías definitivas obtenidas de los recursos TMP Recoleta e Inter que ya posee el proyecto.
+- Sin duplicar autoridades B5/B8/Construction/Placement. Deshabilitar botones no respaldados (Snapping y Vistas) en lugar de simular funcionamiento. Operaciones individuales no se presentan como operaciones de grupo si el controlador actual es solo de una pieza. Galería Viva e inspector definitivo, Halo de Huella sobre GLB y Proyector Inteligente quedan para los siguientes cortes.
+- Prohibido mezclar en la rama maestra o declarar build aprobada por haber superado solo pruebas de infraestructura.
+
+**QA**
+- Dotnet con referencias de Unity y salida aislada: PASS compilación de Assembly-CSharp; cero errores CS; advertencias previas de otros sistemas.
+- Play Mode real con la escena Prototype_Restaurant.unity y el QA en Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2ChromeRuntimeSelfTest.cs.
+- Primera iteración: FAIL por controles no respaldados temporalmente interactivos. Corregido en inicialización (no esperar al primer refresh).
+- Segunda iteración: PASS de construcción de barras, logo, controles, modal inicialmente cerrado, estado inactivo de controles no conectados y anchuras 1280/1920. Medición: 1083 unidades barra superior y 1033 barra inferior. Informe EditorV2_UI_RuntimeSmoke_Report.txt, log Logs/EditorV2_UI_RuntimeSmoke_Retest3.log.
+- Prueba expandida adicional en Play Mode real: PASS, cambiando realmente el catálogo con Colocar / Superficies y verificando que Descartar sin cambios no abre confirmación destructiva. Sin excepciones en el recorrido; ver el mismo informe y Logs/EditorV2_UI_RuntimeSmoke_Expanded.log.
+- Siguen pendientes: validación de aspecto real de 1920x1080 y 1280x720 en build gráfica, calidad de iconografía, rendimiento PC, proyección sobre bounds reales, interacción total con B8 y superficies PBR.
+
+**Criterio de aceptación:** todo diseño es provisional hasta la build; cambiar lo que el usuario no apruebe sin introducir duplicidades ni perder comportamiento válido.
