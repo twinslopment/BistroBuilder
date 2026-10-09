@@ -1,0 +1,10 @@
+EDITOR V2 B12 HARDENING — REGRESSION 2026-10-09
+B4: 63/63 PASS, EXIT=0, Logs/EditorV2_B4_Regress_B10.log
+B5: 48/48 PASS, EXIT=0, Logs/EditorV2_B5_Regress_B10.log
+B8: 74/74 PASS, EXIT=0, Logs/EditorV2_B8_Regress_B10.log
+B9: 42/42 PASS, second run Logs/B12_RetestB9.log
+B10: 40/40 PASS, second run Logs/B12_RetestB10.log
+TOTAL: 267/267 PASS in completed selftests
+Note: first B9 and B10 invocations EXIT=1 before project load because another parallel Unity.exe held the same project. They were re-executed after it exited and passed fully. Do not treat the original failed starts as tests passing.
+B12 Play Mode: docs/40_TESTING/EDITOR_V2_B12_RUNTIME_PASS.txt — PASS, seatingFive=True, financeRollback=True, stress64=True (99ms for invalid 64-member rejection).
+Independent real Save/Load authority: docs/40_TESTING/EDITOR_V2_B12_SAVELOAD_AUTHORITY_PASS.txt — PASS, 38 objects and 28 seat links; not a five-piece-specific Save/Load test.

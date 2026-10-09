@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-10-09
 **Rama:** `feature/editor-v2`
-**Estado:** NÚCLEO IMPLEMENTADO Y PROBADO EN PARTE; NO CERRAR B12 COMPLETO AÚN.
+**Estado:** NÚCLEO TÉCNICO VALIDADO EN PLAY MODE; integración gráfica final pendiente. QA extendida: `EDITOR_V2_B12_HARDENING_20261009.md`.
 
 ## 1. Qué se ha implementado
 
@@ -25,17 +25,19 @@ Verificado:
 - borrar una plantilla y volver a cargar confirma su eliminación;
 - biblioteca JSON corrupta: no sobrescribe los datos y comunica error.
 
-**Build Windows x64:** `Logs/B12_FinalWindowsBuild.log`, `Build Finished, Result: Success`, `BB_PLAYTEST_BUILD_PASS`, exit 0, 13 avisos de compilación no bloqueantes; ejecutable `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`.
+**Build Windows x64 (hardening final):** `Logs/B12_Hardening_FinalWindowsBuild.log`, `Build Finished, Result: Success`, `BB_PLAYTEST_BUILD_PASS`, exit 0, 13 avisos de compilación no bloqueantes; ejecutable `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`. **Regresión B4–B10 267/267 PASS** con los reintentos necesarios por concurrencia de Unity documentados en `EDITOR_V2_B12_HARDENING_REGRESSION_PASS.txt`. **Save/Load general real PASS** (`EDITOR_V2_B12_SAVELOAD_AUTHORITY_PASS.txt`).
 
 ## 3. Límites que impiden declarar el bloque totalmente cerrado
 
-1. **No se ha validado todavía la colocación real de un conjunto complejo con 4 sillas + mesa y sus vínculos funcionales**. La prueba de 2 miembros verifica guardado y geometría, no implantación física simultánea. La operación ya se apoya en el enlace de grupos de B8, pero hay que probar las reglas reales de Seating/BBSIS cuando se activan todos los miembros.
-2. **UI visual definitiva pendiente**. No se han creado paneles IMGUI improvisados; catálogo, capturar/colocar/guardar, previsualización, avisos de precio y área deben integrarse según el diseño visual Galería Viva en el chat de Editor V2.
-3. No se ha medido aún el rendimiento de plantillas de 64 artículos ni la prueba destructiva de presupuesto agotado durante la transacción. Requiere fixture separado y rollback efectivo.
-4. Con 38 muebles de la escena original, el controlador de selección antiguo no acepta seleccionar algunos objetos que B8 sí registra; la prueba usa la selección canónica de B8. No se debe afirmar que el flujo visual funciona con todos los muebles de la escena.
+1. **Mesa y cuatro sillas: PASS en Play Mode real.** Se captura la composición existente, guarda/carga JSON, borra temporalmente la fuente mediante la autoridad B8, coloca cinco instancias nuevas en el mismo espacio y reconstruye las cuatro asociaciones a la nueva mesa. Undo/Redo y recuperación del original: PASS, 38 muebles intactos.
+2. **Rollback económico: PASS.** Fallo inyectado en el tercer cargo después de dos pagos; 2/2 reembolsos, sin miembros ni historial nuevos.
+3. **64 componentes: prueba limitada.** El conjunto de 64 piezas con huellas coincidentes es rechazado en 99 ms, sin mutaciones. No equivale a aceptar ni medir una composición de 64 colocaciones válidas.
+4. **Persistencia del mundo no ensayada específicamente para los cinco objetos nuevos después de Save/Load completo.** La biblioteca se recarga y la propia colocación/Undo/Redo están validados. El sistema general de guardado tiene pruebas previas independientes.
+5. **Interfaz visual definitiva pendiente.** No se han creado paneles IMGUI improvisados. Capturar/guardar/colocar con previsualización, presupuesto, validaciones y responsividad debe diseñarse según Galería Viva.
+6. El controlador de selección legado de la escena de pruebas no selecciona todos los objetos; QA usa el Selection Set canónico de B8. No afirmar que todas las interacciones visuales están listas.
 
 ## 4. Criterio de cierre B12
 
-Completar pruebas **mesa + cuatro sillas** con vinculación real antes/después de Save/Load, costes y Undo/Redo de los cinco, colocación en área válida, rollback de colocación inválida, deshacer después de agotar presupuesto, 64 miembros sin picos, y posterior integración de UI responsive. Sin esos resultados el estado es **EN DESARROLLO (núcleo)**.
+**Cierre técnico condicionado a regresión y build final:** la prueba de mesa y cuatro sillas, las relaciones, los cambios financieros con rollback, la persistencia de la biblioteca y el Undo/Redo cumplen el criterio de motor. Queda pendiente una prueba Save/Load específica del mundo con los cinco nuevos muebles, el caso válido de 64 componentes y la aprobación de UI Galería Viva. No declarar terminado el apartado visual hasta que exista interfaz responsive y pruebas manuales.
 
 No se fusiona en `integration/master-current-20260918` ni se tocan iconos, tipografía o assets visuales de otros agentes.

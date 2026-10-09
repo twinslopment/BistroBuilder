@@ -7,6 +7,53 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+/// <summary>Failure injection: third purchase rejects; rollback must refund
+/// exactly the first two and leave no placed or history state.</summary>
+public sealed class BistroBuilderB12FailThirdPurchase : IRestaurantPlaceableEconomyGate
+{
+    public int Attempted;
+    public int Charged;
+    public int Reversed;
+    public bool TryAuthorizeCreation(RestaurantPlaceableObject p, out string error)
+    {
+        error = "";
+        return true;
+    }
+    public bool TryCommitCreation(RestaurantPlaceableObject p, out string error)
+    {
+        Attempted++;
+        if (Attempted == 3)
+        {
+            error = "Injected insufficient funds at item three.";
+            return false;
+        }
+        Charged++;
+        error = "";
+        return true;
+    }
+    public bool TryRollbackCreation(RestaurantPlaceableObject p, out string error)
+    {
+        Reversed++;
+        error = "";
+        return true;
+    }
+    public bool TryAuthorizeDeletion(RestaurantPlaceableObject p, out string error)
+    {
+        error = "";
+        return true;
+    }
+    public bool TryCommitDeletion(RestaurantPlaceableObject p, out string error)
+    {
+        error = "";
+        return true;
+    }
+    public bool TryRollbackDeletion(RestaurantPlaceableObject p, out string error)
+    {
+        error = "";
+        return true;
+    }
+}
+
 /// <summary>B12: real scene capture/reload/placement, isolated temporary library.</summary>
 [InitializeOnLoad]
 public static class BistroBuilderEditorV2B12RuntimeSelfTest
@@ -119,6 +166,8 @@ public sealed class BistroBuilderEditorV2B12Driver : MonoBehaviour
         // registered placeables but their legacy EditableObject components
         // do not necessarily permit the older UI controller's selection.
         RestaurantPlaceableObject source = candidates.Find(x =>
+            x.ItemDefinition.ItemId == "table_basic_4") ??
+            candidates.Find(x =>
             x.ItemDefinition.Category == RestaurantPlaceableItemCategory.Decoration)
             ?? candidates.Find(x =>
                 x.ItemDefinition.Category == RestaurantPlaceableItemCategory.Lighting)
@@ -203,6 +252,50 @@ public sealed class BistroBuilderEditorV2B12Driver : MonoBehaviour
             registry.RegisteredPlaceables.Count == initialItems &&
             history.UndoCount == initialUndo;
 
+        var creator = Object.FindFirstObjectByType<
+            RestaurantPlaceableCreationService>(FindObjectsInactive.Include);
+        var duplicateSpec = new BistroBuilderEditorV2TemplateSpawn(
+            source.ItemDefinition, target, Quaternion.identity);
+        bool sameCellRejected = false;
+        if (creator != null)
+        {
+            bool allowedOverlap = creator.TryCreateTemplateBatch(
+                new [] { duplicateSpec, duplicateSpec },
+                out var overlapping, out var overlapResult);
+            sameCellRejected = !allowedOverlap &&
+                overlapResult.CreatedCount == 0 &&
+                overlapping.Count == 0 &&
+                !string.IsNullOrEmpty(overlapResult.Message) &&
+                registry.RegisteredPlaceables.Count == initialItems &&
+                history.UndoCount == initialUndo;
+        }
+        var beyondLimit = new BistroBuilderEditorV2TemplateSpawn[65];
+        for (int i = 0; i < beyondLimit.Length; i++)
+            beyondLimit[i] = duplicateSpec;
+        bool limitRejected = creator != null &&
+            !creator.TryCreateTemplateBatch(beyondLimit, out var excess,
+                out var limitResult) &&
+            limitResult.CreatedCount == 0 && excess.Count == 0 &&
+            registry.RegisteredPlaceables.Count == initialItems &&
+            history.UndoCount == initialUndo;
+
+        bool stress64 = false;
+        long stress64Ms = -1;
+        if (creator != null)
+        {
+            var sixtyFour = new BistroBuilderEditorV2TemplateSpawn[64];
+            for (int i = 0; i < sixtyFour.Length; i++)
+                sixtyFour[i] = duplicateSpec;
+            var timer64 = System.Diagnostics.Stopwatch.StartNew();
+            bool accepted64 = creator.TryCreateTemplateBatch(
+                sixtyFour, out var rejected64, out var status64);
+            timer64.Stop();
+            stress64Ms = timer64.ElapsedMilliseconds;
+            stress64 = !accepted64 && rejected64.Count == 0 &&
+                status64.CreatedCount == 0 &&
+                registry.RegisteredPlaceables.Count == initialItems &&
+                history.UndoCount == initialUndo;
+        }
         bool removed = library.TryRemove(id, out _) &&
             library.TryReload(out _) && library.TemplateCount == 0;
         bool multiRoundTrip = false;
@@ -257,6 +350,175 @@ public sealed class BistroBuilderEditorV2B12Driver : MonoBehaviour
                 }
             }
         }
+        // Five-piece functional composition: table and four actual seats
+        // associated by the live Seating authority, never guessed by distance.
+        bool seating5 = false;
+        bool financeRollback = false;
+        bool seatingFixture = false;
+        string seatingFailure = "";
+        int seatingAttempts = 0;
+        var seating = Object.FindFirstObjectByType<
+            RestaurantSeatingTopologyService>(FindObjectsInactive.Include);
+        if (seating != null && selection != null)
+        {
+            seating.RebuildImmediately();
+            foreach (var tablePlaceable in candidates)
+            {
+                var config = tablePlaceable.GetComponent<
+                    RestaurantTableSeatingConfiguration>();
+                if (config == null) continue;
+                var five = new List<RestaurantPlaceableObject> { tablePlaceable };
+                foreach (var chair in candidates)
+                {
+                    if (chair == tablePlaceable) continue;
+                    var seat = chair.GetComponent<RestaurantSeat>();
+                    if (seat != null && seat.IsAssociated &&
+                        seat.AssociatedTable == config)
+                        five.Add(chair);
+                    if (five.Count == 5) break;
+                }
+                if (five.Count != 5) continue;
+                seatingFixture = true;
+                var references = new List<BistroBuilderEditorV2Selection>();
+                Vector3 center = Vector3.zero;
+                foreach (var item in five)
+                {
+                    center += item.PlacementAnchor.position;
+                    references.Add(new BistroBuilderEditorV2Selection
+                    {
+                        family = BistroBuilderEditorV2ToolFamily.Furniture,
+                        kind = BistroBuilderEditorV2SelectionKind.Furniture,
+                        stableId = item.InstanceId,
+                        displayName = item.DisplayName,
+                        capabilities = BistroBuilderEditorV2SelectionCapability.Inspect,
+                        persistentIdentity = true
+                    });
+                }
+                center /= five.Count;
+                string groupId = null;
+                bool groupCaptured = selection.ReplaceSelectionSet(
+                    references, tablePlaceable.InstanceId, out _) &&
+                    library.TryCaptureSelection("Mesa 4 sillas QA", out groupId, out _);
+                if (!groupCaptured)
+                {
+                    seatingFailure = "No se pudo capturar la selección de 5.";
+                    break;
+                }
+                bool groupLoaded = library.TryReload(out _) &&
+                    library.TryFind(groupId, out var fiveData) &&
+                    fiveData.members.Count == 5;
+                if (!groupLoaded)
+                {
+                    seatingFailure = "No se recuperaron los 5 componentes.";
+                    break;
+                }
+                // Make the exact original 5-piece area free via the B8
+                // deletion authority; recreate it from the saved library.
+                // Undo both operations to restore the source restaurant.
+                for (int k = 0; k < references.Count; k++)
+                {
+                    var selectable = references[k];
+                    selectable.capabilities |=
+                        BistroBuilderEditorV2SelectionCapability.Delete;
+                    references[k] = selectable;
+                }
+                var groupAuthority = Object.FindFirstObjectByType<
+                    BistroBuilderEditorV2GroupOperationService>(
+                        FindObjectsInactive.Include);
+                bool deletedFive = groupAuthority != null &&
+                    selection.ReplaceSelectionSet(references,
+                        tablePlaceable.InstanceId, out _) &&
+                    groupAuthority.TryDeleteSelection(out seatingFailure);
+                // Destructive finance probe: reject the third of five
+                // after two charge events, and verify exact refund and
+                // rollback before allowing the real creation.
+                bool injectedRollback = false;
+                if (deletedFive && creator != null)
+                {
+                    var field = typeof(RestaurantPlaceableCreationService)
+                        .GetField("economyGate",
+                            System.Reflection.BindingFlags.Instance |
+                            System.Reflection.BindingFlags.NonPublic);
+                    if (field != null)
+                    {
+                        object realGate = field.GetValue(creator);
+                        var failingGate = new BistroBuilderB12FailThirdPurchase();
+                        field.SetValue(creator, failingGate);
+                        try
+                        {
+                            bool unexpectedlyCreated = library.TryPlace(
+                                groupId, center, Quaternion.identity,
+                                out var blocked, out string injectedError);
+                            injectedRollback = !unexpectedlyCreated &&
+                                failingGate.Attempted == 3 &&
+                                failingGate.Charged == 2 &&
+                                failingGate.Reversed == 2 &&
+                                blocked.Count == 0 &&
+                                registry.RegisteredPlaceables.Count ==
+                                    initialItems - five.Count &&
+                                history.UndoCount == initialUndo + 1 &&
+                                injectedError.Contains("insufficient funds");
+                            if (unexpectedlyCreated)
+                                history.TryUndo(out _, out _, out _);
+                        }
+                        finally
+                        {
+                            field.SetValue(creator, realGate);
+                        }
+                    }
+                }
+                financeRollback = injectedRollback;
+                bool placedFive = false;
+                IReadOnlyList<RestaurantPlaceableObject> fiveCreated = null;
+                if (deletedFive)
+                {
+                    seatingAttempts++;
+                    placedFive = library.TryPlace(groupId, center,
+                        Quaternion.identity, out fiveCreated, out seatingFailure);
+                }
+                int newSeats = 0;
+                bool undoFive = false, redoFive = false, rewindFive = false;
+                if (placedFive)
+                {
+                    seating.RebuildImmediately();
+                    RestaurantTableSeatingConfiguration newTable = null;
+                    foreach (var item in fiveCreated)
+                    {
+                        var table = item.GetComponent<
+                            RestaurantTableSeatingConfiguration>();
+                        if (table != null) newTable = table;
+                    }
+                    foreach (var item in fiveCreated)
+                    {
+                        var seat = item.GetComponent<RestaurantSeat>();
+                        if (seat != null && seat.IsAssociated &&
+                            seat.AssociatedTable == newTable)
+                            newSeats++;
+                    }
+                    undoFive = history.TryUndo(out _, out _, out _);
+                    redoFive = undoFive &&
+                        history.TryRedo(out _, out _, out _);
+                    rewindFive = redoFive &&
+                        history.TryUndo(out _, out _, out _);
+                }
+                bool restoredFiveOriginal = deletedFive &&
+                    history.TryUndo(out _, out _, out _) &&
+                    registry.RegisteredPlaceables.Count == initialItems &&
+                    history.UndoCount == initialUndo;
+                seating5 = placedFive && fiveCreated.Count == 5 &&
+                    newSeats == 4 && undoFive && redoFive && rewindFive &&
+                    restoredFiveOriginal && financeRollback;
+                if (!seating5)
+                    seatingFailure = "deleted=" + deletedFive +
+                        " placed=" + placedFive + " associated=" + newSeats +
+                        " undo=" + undoFive + " redo=" + redoFive +
+                        " rewind=" + rewindFive +
+                        " originalRestored=" + restoredFiveOriginal +
+                        " cause=" + seatingFailure;
+                library.TryRemove(groupId, out _);
+                break;
+            }
+        }
         string badFile = path + ".corrupt";
         File.WriteAllText(badFile, "{invalid");
         library.UseTemporaryStorageForTest(badFile);
@@ -269,7 +531,9 @@ public sealed class BistroBuilderEditorV2B12Driver : MonoBehaviour
 
         bool passed = beforeGuard && saved && got && loaded && quote &&
             noBadId && identity && undo && redo && rewindNew &&
-            restoredWorld && removed && multiRoundTrip && corruptSafe;
+            restoredWorld && removed && multiRoundTrip && corruptSafe &&
+            sameCellRejected && limitRejected && stress64 &&
+            seatingFixture && seating5;
         BistroBuilderEditorV2B12RuntimeSelfTest.Finish(passed,
             "guard=" + beforeGuard + " capture=" + saved +
             " canonical=" + got + " reload=" + loaded +
@@ -277,6 +541,15 @@ public sealed class BistroBuilderEditorV2B12Driver : MonoBehaviour
             " tried=" + attempts + " placed=" + placed +
             " pose=" + identity + " undo=" + undo + " redo=" + redo +
             " worldRestored=" + restoredWorld + " multi=" + multiRoundTrip +
+            " overlapRejected=" + sameCellRejected +
+            " limit65Rejected=" + limitRejected +
+            " stress64=" + stress64 +
+            " stress64Ms=" + stress64Ms +
+            " seatingFixture=" + seatingFixture +
+            " seatingFive=" + seating5 +
+            " financeRollback=" + financeRollback +
+            " seatingAttempts=" + seatingAttempts +
+            " seatingFailure=" + seatingFailure +
             " remove=" + removed +
             " corruptSafe=" + corruptSafe + " items=" + initialItems +
             " costCents=" + cents +

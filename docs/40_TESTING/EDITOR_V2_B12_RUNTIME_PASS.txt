@@ -1,2 +1,2 @@
 B12 real Play Mode
-PASS guard=True capture=True canonical=True reload=True quote=True invalidId=True tried=6 placed=True pose=True undo=True redo=True worldRestored=True multi=True remove=True corruptSafe=True items=38 costCents=0 source=table_basic_4 category=Furniture placementError=
+PASS guard=True capture=True canonical=True reload=True quote=True invalidId=True tried=6 placed=True pose=True undo=True redo=True worldRestored=True multi=True overlapRejected=True limit65Rejected=True stress64=True stress64Ms=99 seatingFixture=True seatingFive=True financeRollback=True seatingAttempts=1 seatingFailure= remove=True corruptSafe=True items=38 costCents=0 source=table_basic_4 category=Furniture placementError=
