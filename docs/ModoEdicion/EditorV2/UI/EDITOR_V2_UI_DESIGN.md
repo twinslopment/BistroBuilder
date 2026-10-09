@@ -300,7 +300,7 @@ Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_D
 - Referencia de jerarquía almacenada en References/ApplyDiscard_ReviewV1_DRAFT.svg. HTML y PNG residen en la conversación, NO en Git.
 - **Estado:** aprobado como dirección V1 de Aplicar/Descartar/Salir con pendientes. Ajustes finos de dimensiones, color, composición responsiva y textos reales aún posibles en el cierre general. No implementar C# hasta cierre del diseño visual.
 
-## 8. Feedback visual, snapping, errores y estados — PROPUESTA V1 PENDIENTE DE APROBACIÓN (2026-10-08)
+## 8. Feedback visual, snapping, errores y estados — DIRECCIÓN V1 ACEPTADA PARA CONTINUAR (2026-10-09)
 
 ### 8.1 Regla visual canónica y autoridades
 - Base vinculante: EditInteractionDesign.md, decisión 005 Universal Preview; EDITOR_V2_MASTER_PLAN.md B6 (PASS) y B7 (PASS). La UI representa información de Placement Validation, BBSIS, Navigation, Construction y Finance sin sustituir sus decisiones.
@@ -326,12 +326,70 @@ Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_D
 - Verificación Chromium: selección de 5 casos, snap toggle, separación entre sugerencia/comprobación, bloqueo de confirmar ante colisión/ruta, confirmar/cancelar, drag, Escape, recorrido automático, inspector compacto, errores JS 0 y sin overflow horizontal, PASS en 1920×1080 y 1280×720. Son pruebas de UI web, **NO** del código C#/Unity ni de rendimiento del editor.
 - Diagrama vectorial de estados, referencia versionada: `References/FeedbackSnapping_StatesV1_DRAFT.svg`. HTML y PNG solamente como adjuntos del chat.
 
-**Estado:** **PENDIENTE** del visto bueno visual/UX del usuario. Las intensidades, tiempos y textos definitivos se pueden ajustar; no desarrollar ni integrar en Unity hasta cerrar el diseño global.
+**Estado:** el usuario indicó «avancemos, superficies y revisión de coherencia todo junto» tras ver la preview HTML; se consolida la dirección visual/UX V1 para seguir al diseño de Superficies y la revisión final. Intensidades, diagnósticos y tiempos podrán pulirse; no implica validación de implementación Unity ni cierre visual global.
 
-## 9. Resto de componentes — SIN DISEÑO APROBADO
-Orden: superficies (detalle); responsive/coherencia final y pulidos de barra superior/inspector a partir de las aprobaciones parciales.
+## 9. Superficies — PROPUESTA DE DISEÑO V1 (2026-10-09, PENDIENTE DE APROBACIÓN)
+**Aprobaciones de referencia:** estilo Galería Viva/inspector, barra inferior MODO/EDITAR/AYUDAS, marco marfil/latón, Recoleta/Inter, selección miel, no alterar assets al seleccionar y transacciones Apply/Discard. El botón «Superficies» pertenece al grupo MODO, no a la categoría de muebles.
 
-## 10. Registro de aprobación
+### 9.1 Auditoría funcional previa
+- Existe la autoridad de dominio de acabados estructurales: BistroBuilderApplySurfaceFinishCommand y registros SurfaceFinishPatch con Undo/Redo, junto con el contrato B5 de reforma transaccional.
+- Render de superficies observado en BistroBuilderSurfaceFinishVisuals.cs: soporta explícitamente parche con surfaceRole=floor y finishDefinitionId=finish.floor.default, usando el material floorMaterial del kit. **Esto NO demuestra soporte de cualquier textura elegida por jugador**, acabados de pared, techos, zócalos o exterior.
+- La taxonomía antigua RestaurantEditCatalogSections.Tabs(Surfaces) enumera Todas/Suelos/Paredes/Techos/Zócalos/Exterior. La presencia de una pestaña NO demuestra que su aplicación sea funcional. Distinguir el soporte verificado de la UI futura.
+- SAVIC/definiciones publicadas proveen materiales y metadatos; Construction Authoring decide geometría/destinos; BBSIS/validación decide viabilidad; Finance calcula el coste; Preview universal muestra candidatos; Apply/Discard publica/revierte la reforma.
+- No prometer pintura libre con pincel de pixeles, UV dinámicas, redimensionado CAD, techos jugables ni múltiples plantas: requieren definición técnica aparte.
+
+### 9.2 Composición visual propuesta
+- **Izquierda:** «Taller de superficies», mismo tratamiento que el Taller de construcción y Galería Viva. Cabecera, búsqueda, pestañas Todos/Favoritos/Recientes, familias Suelos/Paredes/Zócalos/Exterior; Techos solo si hay contrato real y decisión específica. Muestras de materiales grandes (miniaturas), etiquetas y filtros por ubicación/compatibilidad cuando existan metadatos.
+- **Centro:** elegir acabado y destino sobre una superficie autorizada; overlay muy tenue con patrón del acabado y perímetro miel, sin ocultar el pavimento original ni mantener cuadrícula permanente. En el demo existe una región esquemática clicable; no corresponde a geometría real de Unity. Snapping cian breve cuando la herramienta lo requiera, sin confundir sugerencia con validez.
+- **Derecha:** «Inspector de superficies», imagen grande de la muestra, material, destino, área calculada por geometría, compatibilidad y coste SOLO si Finance publica valores fiables. Estado visible «sin destino», «vista provisional», «comprobando», «compatible», «no compatible»; acciones «Cancelar gesto» y «Confirmar gesto» separadas de «Aplicar reforma» global.
+- **Flujo:** elegir material -> elegir superficie -> previsualizar sin mutación -> verificar con autoridad real -> confirmar gesto en Draft -> Aplicar/Descartar global según B5. Escape cancela un gesto, no toda la reforma. Undo/Redo global conserva orden entre muebles, paredes y superficies.
+- **Colores:** miel indica elección/selección; ámbar informa una limitación; cian solo guía contextual; rojo para Eliminar/Descartar. No teñir objetos enteros de verde/rojo.
+
+### 9.3 Responsive y calidad
+- **1920×1080:** catálogo a la izquierda con dos columnas de muestras, escena central predominante e inspector derecho visible. Mantener ambas barras y límites de clic legibles.
+- **1280×720:** catálogo compacto de dos muestras por fila si hay ancho y scroll propio; inspector como rail plegable inicialmente y desplegado al iniciar una preview o solicitar propiedades; escenario nunca tapado por un modal rutinario.
+- La escena de la preview conserva partes de una maqueta previa (marcas de selección de mueble) integradas en la fotografía fuente; no son parte aprobada de la herramienta Superficies y se eliminarán del arte de runtime.
+- No se integran materiales, shader ni familia Surface nueva en Unity en este bloque de diseño.
+
+### 9.4 HTML de prueba
+- Entregado en esta conversación: EditorV2_Superficies_Coherencia_INTERACTIVO.html, autónomo con fotografía fuente y cinco muestras de textura generadas para la demo. Clic sobre muestras, elección de tipo, previsualización, comprobación simulada, confirmación simulada al Draft, cancelación/Escape, Undo/Redo, revisión general y modales ilustrativos.
+- Pruebas de navegador Chromium/Playwright: en **1920×1080 y 1280×720 PASS**, sin errores JavaScript, sin desbordamiento horizontal; selección de acabado, preview que no permite confirmar antes de comprobar, confirmación de suelo, Undo/Redo, rechazo de familia sin soporte verificado, revisión de coherencia, modales y Escape.
+- Capturas de la conversación: EditorV2_Superficies_1920.png, EditorV2_Superficies_Preview_1920.png, EditorV2_Superficies_1280.png, EditorV2_Superficies_Preview_1280.png. **No son capturas ni pruebas de Unity**.
+- Referencia versionada en Git: References/Superficies_CoherenciaV1_DRAFT.svg. Los PNG/HTML viven en el chat, no en la rama hasta contar con un mecanismo de copia aprobado.
+**Estado:** dirección artística/UX propuesta, por aprobar; la fotografía, materiales y cifras de la demo no son activos canónicos.
+
+## 10. Revisión de coherencia conjunta — DIAGNÓSTICO, NO CIERRE AUTOMÁTICO (2026-10-09)
+**Resultado del diseño actual:** estructura de cinco zonas, barra superior diferenciada y badge Opción 1, barra inferior en tres grupos, Galería Viva, inspector adaptativo, Taller de construcción, selección con esquinas doradas/microanimación, reforma Apply/Discard y lenguaje Universal Preview son compatibles como CONCEPTO. No se ha realizado una build Unity por este chat.
+
+| Área | Evaluación | Decisión / trabajo restante |
+|---|---|---|
+| Identidad visual global | CONSOLIDADA | Mantener marfil/latón, miel activo, tipografía Recoleta e Inter y el logo aportado; no reinterpretar el logotipo ni incluir textos autosave no demostrados |
+| Barra inferior | APROBADA EN DIRECCIÓN | Tres grupos MODO/EDITAR/AYUDAS; habilitación real por capacidades; confirmar iconos BB, variantes de hover y proporciones finales |
+| Catálogo e inspector | APROBADOS EN DIRECCIÓN | Galería Viva; datos de SAVIC; selección de objeto cambia inspector; sin controles imaginarios de escalado o rotación |
+| Taller de construcción | ORGANIZACIÓN APROBADA | Construir reemplaza catálogo de muebles; confirmar acabados/iconos y estados por herramienta |
+| Selección y grupos | BASE VISUAL APROBADA | Esquinas doradas + pastilla de contador; microanimación simple/múltiple; falta acabar inspector para varios artículos sin perder el primario |
+| Aplicar/Descartar | BASE V1 APROBADA | Revisión, confirmación destructiva, bloqueo de salida; ajustes de copy/medidas/resultado runtime |
+| Feedback y snapping | BASE V1 ACEPTADA PARA SEGUIR | Preview universal contextual; snapping sugiere, validación manda; no enseñar ghost como elemento ya creado |
+| Superficies | PROPUESTA SIN APROBAR | Comprobar soporte de familias/variantes y pipeline de materiales; no afirmar que todos los acabados ya se aplican |
+| Responsive 1280×720 | DEMO WEB PASS | Inspector plegable, cabeceras legibles y herramientas a la vista; quedan comprobaciones en Unity, escalas TMP, resolución y cámara |
+| Rendimiento / accesibilidad | PENDIENTE EN UNITY | Probar interacción PC, scroll, foco y ratón; contrastes, miniaturas masivas y rendimiento real sobre hardware objetivo |
+
+### 10.1 Reglas para la futura implementación
+1. Una sola herramienta/familia activa: Colocar = Galería Viva; Construir = Taller estructural; Superficies = Taller de acabados; Seleccionar = inspector de selección. No colocar categorías de muebles dentro de arquitectura.
+2. La selección pasiva no mueve un objeto; solo el gesto de transporte produce elevación. Las marcas de selección y su animación no escriben el estado de dominio.
+3. Una vista previa NUNCA aplica reforma. Previsualizar, Confirmar gesto dentro del Draft y Aplicar global son acciones separadas y reversibles.
+4. Habilitación de acciones, coste y diagnósticos proceden de SelectionCapabilities, Construction/Placement/BBSIS/Finance. La pantalla no declara soportada una categoría por existir como tab.
+5. UX sin móvil: resolver 1920×1080 y 1280×720 con scroll local en catálogos e inspector plegable; conservar barras visibles.
+6. Los iconos oficiales de BB son requisito de arte final. No sustituir su identidad por glifos Unicode usados solo como placeholders en esta demo.
+7. Estado de aprobación registrado por COMPONENTE; ninguna pantalla completa generada concede automáticamente aprobación a toda la UI.
+
+### 10.2 Preview y resultado de verificación
+- El HTML mencionado incluye botón **«Revisión UX»** con 10 apartados (seis sin contradicción de concepto, cuatro abiertos), demostración de cambio de modos, visor de material, inspector y barra inferior.
+- Las capturas EditorV2_Coherencia_1920.png y EditorV2_Coherencia_1280.png documentan la jerarquía de referencia. La demo PASS navegador en ambos tamaños no equivale a validación final ni prueba de Unity.
+- No se han cerrado nuevas decisiones visuales de Superficies, inspector múltiple, iconografía o responsive final sin la validación del usuario.
+- Para cerrar el diseño se requiere revisar esta preview y los bloqueos de la tabla, y registrar el visto bueno explícito.
+
+## 11. Registro de aprobación
 - 2026-10-08: cinco zonas de distribución general aceptadas **provisionalmente** como punto de partida. No implica aprobación de la imagen conceptual al detalle, tamaño exacto, microinteracciones o componentes particulares.
 - 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.
 - 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.
@@ -342,5 +400,6 @@ Orden: superficies (detalle); responsive/coherencia final y pulidos de barra sup
 - 2026-10-08: **estilo de multiselección aprobado expresamente** («me quedo con esta forma de seleccion»): esquinas cortas doradas en cada elemento y pastilla superior oscura con contador; quedan descartadas como diseño base las otras variantes de círculos/contornos completos/números.
 - 2026-10-08: **microanimación de selección aprobada como base V1 tras preview HTML interactiva**: usuario «me convence, no descarto futuros arreglos, pero hoy me vale. avancemos». Abarca clic simple, multiselección aditiva y deselección; conserva la posibilidad de mejoras posteriores, sin tocar Unity.
 - 2026-10-08: **Aplicar / Descartar V1 aprobado como base afinable** («me gusta, sigamos»), tras HTML interactivo y previews 1920×1080 / 1280×720. Se fija la separación de aplicar, descartar y salir con cambios; no se aprueba un guardado automático ni cifras simuladas.
-- 2026-10-08: **feedback / snapping / errores y estados V1 presentado para revisión**, con HTML interactivo, escenarios válidos, snap sugerido, obstáculo, circulación y pared provisional. No aprobado aún; pendiente evaluar con el usuario. Confirmar requiere validación: el snapping no la sustituye.
+- 2026-10-09: **feedback / snapping / errores y estados V1 adoptado como base de diseño para continuar** («avancemos, superficies y revisión de coherencia todo junto»). HTML presentado con validez, snap sugerido, obstáculo, circulación y pared provisional. Confirmar requiere validación: snapping no la sustituye.
+- 2026-10-09: **Superficies + coherencia global V1** presentadas en una única preview HTML interactiva y dos tamaños, con 10 verificaciones de coherencia. Superficies y cierre responsive PENDIENTES del visto bueno; solo el diseño gráfico existente aprobado permanece vinculante. El soporte runtime verificado de superficies no incluye automáticamente todas las familias del catálogo heredado.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.
