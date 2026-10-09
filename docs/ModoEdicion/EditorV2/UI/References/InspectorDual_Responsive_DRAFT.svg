@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="680" viewBox="0 0 1320 680">
+<rect x="0" y="0" width="1320" height="680" rx="9" fill="#fff8eb" stroke="#e2ceaf" stroke-width="2"/>
+<text x="25" y="42" font-family="Arial,sans-serif" font-size="27" font-weight="bold" fill="#513218">EDITOR V2 · INSPECTOR DOBLE CONTEXTO · DRAFT V1</text>
+<text x="25" y="65" font-family="Arial,sans-serif" font-size="15" font-weight="normal" fill="#94744a">Jerarquía de referencia, no screenshot ni implementación Unity · selección dorada existente intacta</text>
+<text x="30" y="104" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#674725">1920 × 1080</text>
+<rect x="25" y="116" width="1260" height="288" rx="9" fill="#e6ceaa" stroke="#a47736" stroke-width="2"/>
+<rect x="33" y="124" width="1244" height="32" rx="9" fill="#fff6e4" stroke="#b4874c" stroke-width="2"/>
+<text x="49" y="147" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#4a2b16">BISTRO BUILDER · MODO EDICIÓN</text>
+<rect x="33" y="163" width="340" height="205" rx="9" fill="#fbebd3" stroke="#b4874c" stroke-width="2"/>
+<text x="49" y="187" font-family="Arial,sans-serif" font-size="21" font-weight="bold" fill="#402a18">Catálogo Galería Viva</text>
+<rect x="48" y="199" width="304" height="26" rx="9" fill="#fffaed" stroke="#b4874c" stroke-width="2"/>
+<text x="57" y="218" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">Buscar artículos</text>
+<rect x="48" y="237" width="95" height="28" rx="9" fill="#edbd70" stroke="#b4874c" stroke-width="2"/><text x="58" y="256" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#4a321a">Todos</text>
+<text x="50" y="295" font-family="Arial,sans-serif" font-size="15" font-weight="normal" fill="#52351b">Destacado / Relacionados / Rejilla</text>
+<rect x="381" y="163" width="560" height="205" rx="9" fill="#544235" stroke="#755639" stroke-width="2"/><text x="511" y="223" font-family="Arial,sans-serif" font-size="22" font-weight="bold" fill="#ffe9bf">RESTAURANTE / VIEWPORT</text><rect x="566" y="258" width="165" height="35" rx="9" fill="#3b2718" stroke="#d7a453" stroke-width="2"/><text x="579" y="283" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#ffe0a7">3 artículos seleccionados</text>
+<rect x="950" y="163" width="327" height="205" rx="9" fill="#fae9d1" stroke="#b4874c" stroke-width="2"/>
+<text x="966" y="186" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="#402a18">Inspector</text>
+<rect x="963" y="201" width="140" height="29" rx="9" fill="#f4d49c" stroke="#b4874c" stroke-width="2"/><text x="974" y="220" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#4d3018">Principal</text>
+<rect x="1111" y="201" width="148" height="29" rx="9" fill="#f2e4ce" stroke="#b4874c" stroke-width="2"/><text x="1121" y="220" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">Conjunto (3)</text>
+<text x="967" y="254" font-family="Arial,sans-serif" font-size="14" font-weight="normal" fill="#52351b">Ficha del principal (mesa)</text>
+<text x="967" y="275" font-family="Arial,sans-serif" font-size="14" font-weight="normal" fill="#52351b">o lista del grupo</text>
+<text x="967" y="303" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">Capacidades comunes B8</text>
+<text x="967" y="328" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#866949">Sin editar acabados ficticios</text>
+<rect x="33" y="373" width="1244" height="23" rx="9" fill="#f4ddbc" stroke="#b4874c" stroke-width="2"/>
+<text x="405" y="390" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#6e4924">MODO  ·  EDITAR  ·  AYUDAS</text>
+<text x="30" y="453" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#674725">1280 × 720</text>
+<rect x="25" y="465" width="856" height="157" rx="9" fill="#e6ceaa" stroke="#a47736" stroke-width="2"/>
+<rect x="33" y="474" width="840" height="20" rx="9" fill="#fff6e4" stroke="#b4874c" stroke-width="2"/><text x="42" y="488" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#52351b">BISTRO BUILDER · MODO EDICIÓN</text>
+<rect x="33" y="501" width="244" height="102" rx="9" fill="#f6e5cc" stroke="#b4874c" stroke-width="2"/><text x="45" y="525" font-family="Arial,sans-serif" font-size="15" font-weight="bold" fill="#4b301b">Catálogo compacto</text>
+<rect x="284" y="501" width="434" height="102" rx="9" fill="#544235" stroke="#b4874c" stroke-width="2"/><text x="402" y="560" font-family="Arial,sans-serif" font-size="18" font-weight="bold" fill="#ffe9bf">VIEWPORT CENTRAL</text>
+<rect x="725" y="501" width="148" height="102" rx="9" fill="#f3e2c7" stroke="#b4874c" stroke-width="2"/><text x="739" y="525" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#50341b">Rail inspector</text>
+<text x="740" y="549" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#52351b">3 seleccionados</text>
+<text x="739" y="578" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#52351b">Abrir / plegar</text>
+<rect x="33" y="608" width="840" height="8" rx="9" fill="#f4ddbc" stroke="#b4874c" stroke-width="2"/>
+<rect x="909" y="465" width="376" height="157" rx="9" fill="#f9ecda" stroke="#b4874c" stroke-width="2"/>
+<text x="926" y="492" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#4f321b">Inspector desplegado cuando se solicita</text>
+<text x="927" y="520" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">Pestañas: Principal y Conjunto</text>
+<text x="927" y="544" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">El grupo conserva su principal</text>
+<text x="927" y="568" font-family="Arial,sans-serif" font-size="13" font-weight="normal" fill="#52351b">Scroll local, escena visible</text>
+<text x="927" y="598" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#8a662f">Pendiente de visto bueno visual</text>
+<text x="25" y="656" font-family="Arial,sans-serif" font-size="12" font-weight="normal" fill="#765638">No mezclar autoridades · Mayús+clic suma o retira · ESC cancela selección, no la reforma · Sin guardado automático ficticio</text>
+</svg>
