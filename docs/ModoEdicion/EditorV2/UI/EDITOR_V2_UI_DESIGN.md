@@ -200,7 +200,7 @@ Las siguientes notas conservan la primera propuesta como registro histórico; la
 - La parte superior y la escena de las imágenes son contexto; **no** se aprueban con esta propuesta, ni se prometen autosave, nuevas herramientas de CAD o valores económicos ficticios.
 - **Estado final de este subbloque:** organización Taller / contexto Construir **aprobada** el 08/10/2026; arte final, iconos, mediciones, microinteracciones y todos los gestos específicos permanecen pendientes de aprobación visual. No programar todavía.
 
-## 6. Selección y multiselección — MARCAS Y MICROANIMACIÓN APROBADAS COMO V1; INSPECTOR DE GRUPO EN REVISIÓN
+## 6. Selección y multiselección — HALO DE HUELLA APROBADO COMO CONCEPTO VISUAL; INSPECTOR DE GRUPO EN REVISIÓN
 **Fundamento técnico comprobado:** B8 PASS sobre Selection Coordinator / Selection Set con selección primaria, Mayús+clic aditivo/toggle, restricciones por autoridad (no mobiliario+arquitectura en la misma selección), capacidades comunes como intersección, operaciones de grupo atómicas, rollback, geometría relativa conservada e historial único. No duplicar este núcleo. Fuente técnica: docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md (B8) y Assets/Scripts/Application/Restaurant/EditMode/EditorV2/BistroBuilderEditorV2SelectionSet.cs.
 
 **Propuesta A — selección individual:**
@@ -258,7 +258,25 @@ Los PNG se entregan en el chat; **no están almacenados dentro de Git**. Fondo 3
 Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_DRAFT.svg.
 **Estado:** esquinas de latón/miel + pastilla oscura de contador superior APROBADAS; microanimación de clic simple, Mayús+clic y deselección APROBADA COMO BASE V1 tras prueba HTML. Inspector de conjunto, cierre responsive y pulido posterior de la animación pendientes; NO programar Unity hasta cerrar la UI general.
 
-### 6.2 Inspector de doble contexto — PROPUESTA VISUAL V1 (2026-10-09; NO APROBADA AÚN)
+### 6.2 Halo de Huella — CONCEPTO VISUAL ELEGIDO (2026-10-09)
+**Decisión vigente y vinculante:** el usuario mostró expresamente como preferido el **«Concepto 2 · Halo de Huella»** (imagen elegida en la conversación el 09/10/2026) y confirmó «así es como quiero que sea». Esta aprobación sustituye los anteriores marcos descentrados, cápsulas genéricas y las alternativas de «Huella de Precisión» y «Marco Adaptativo de Grupo». La imagen de inspiración contiene Galería Viva y el inspector ya aprobados, pero **no constituye aprobación del guardado automático ilustrativo ni de los datos ficticios**.
+
+**Composición aceptada:**
+- **Objeto individual**: pequeñas esquinas miel/latón, centradas y ajustadas al rectángulo proyectado del **volumen visible completo** de ese asset; además, halo delgado cálido sobre su **huella real en suelo**. Sillas: recoger respaldo, asiento y patas; mesas redondas: contorno/huella elíptica proyectada, no una caja descentrada; mesas rectangulares: huella cuadrangular ajustada a orientación, no una cápsula.
+- **Multiselección**: mantener las esquinas y halos individuales sin reiniciarlos para cada nuevo clic. Añadir un **perímetro de grupo sutil calculado** con las huellas proyectadas de sus miembros y la pastilla superior oscura existente con contador. El grupo no fusiona muebles ni cambia sus relaciones o autoridad de selección.
+- **Animación**: conservar entrada ~240 ms y salida ~120 ms aprobadas, sin levitar ni reescalar objetos por seleccionar. La huella/halo debe ser menos brillante que las esquinas y no persistir como halo gigante o círculo decorativo.
+- **Sin obstrucciones**: no colocar etiquetas blancas encima del mueble ni gizmos de movimiento en selección pasiva. Un clic de selección no mueve ni altera ninguna instancia.
+- **Precisión**: no calcular offsets fijos manuales a partir de una captura. El futuro renderer debe transformar bounds/silueta útil y huella espacial desde datos del asset (Renderer bounds, pivote/collider e información SAVIC/Construction Authoring cuando proceda) a proyección de cámara en cada fotograma necesario. Corregir mallas descentradas y pivotes incorrectos mediante metadatos legítimos; no esconderlos detrás de offsets dibujados a ojo.
+- **Rotación y cámara**: actualizar al rotar, girar cámara, cambiar zoom o mover. Minimizar visitas a los meshes y evitar recálculos exhaustivos continuos: caché/invalidación por cambio de objeto, pose, encuadre o definición; integrar sin crear otro núcleo que compita con BB Universal Preview/B8.
+- **Jerarquía**: proyección del volumen visible para esquinas; huella sobre superficie de apoyo para halo; envolvente del conjunto calculada de huellas compatibles. El perímetro del grupo se oculta en selección individual o si no se puede calcular de forma válida; nunca inventar medidas.
+- **Responsive**: 1920x1080 y 1280x720, proyección ajustada al viewport real; no atar marcas a un diseño HTML con ancho fijo.
+
+**Prueba interactiva de geometría (NO Unity):** archivo de esta conversación `EditorV2_HaloDeHuella_SeleccionPrecisa_INTERACTIVO.html`. Renderiza cinco muebles geométricos en SVG y usa las mismas medidas locales para dibujar sus marcas; ofrece sillas, mesa circular, mesa rectangular y mesa + dos sillas. Incluye Mayús+clic, pestañas Principal/Conjunto, contador, Esc, deselección, Undo/Redo de la demo y entrada animada. Los modelos de la demo son esquemáticos, NO los GLB definitivos.
+**Verificación web:** Chromium/Playwright a 1920x1080 y 1280x720, PASS en selección individual, multiselección, vuelta automática de Conjunto a Principal al quedar un miembro, contador sin pérdida de selección, Escape, Undo/Redo, no errores JS/no scroll horizontal. La medición de cajas SVG confirma que las marcas envuelven el dibujo completo de silla, mesa redonda y rectangular. **No se han probado aún los Renderers, bounds ni oclusión en Unity**.
+Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.png`, `EditorV2_HaloHuella_Redonda_1920.png`, `EditorV2_HaloHuella_Redonda_1280.png`. La referencia geométrica versionada se denomina `References/HaloDeHuella_Proyeccion_V1.svg`.
+**Estado:** concepto estético APROBADO; fórmula de proyección 3D/render, arte y rendimiento pendientes de un prototipo Unity + aceptación visual en build. El inspector doble contexto de 6.3 sigue siendo una propuesta que requiere visto bueno separado.
+
+### 6.3 Inspector de doble contexto — PROPUESTA VISUAL V1 (2026-10-09; NO APROBADA AÚN)
 **Motivo:** la imagen exacta elegida por el usuario para multiselección contiene 3 muebles marcados y mantiene abierto el inspector individual de la mesa. No reemplazarlo unilateralmente por una ficha exclusiva de grupo.
 
 **Propuesta mostrada en HTML:** `EditorV2_Inspector_DobleContexto_INTERACTIVO.html` (archivo autónomo de esta conversación). La foto de fondo pertenece a la maqueta elegida; los controles HTML superpuestos, no Unity, constituyen la parte interactiva. No se han modificado código, materiales ni escenas Unity.
@@ -394,7 +412,7 @@ Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_D
 | Barra inferior | APROBADA EN DIRECCIÓN | Tres grupos MODO/EDITAR/AYUDAS; habilitación real por capacidades; confirmar iconos BB, variantes de hover y proporciones finales |
 | Catálogo e inspector | APROBADOS EN DIRECCIÓN | Galería Viva; datos de SAVIC; selección de objeto cambia inspector; sin controles imaginarios de escalado o rotación |
 | Taller de construcción | ORGANIZACIÓN APROBADA | Construir reemplaza catálogo de muebles; confirmar acabados/iconos y estados por herramienta |
-| Selección y grupos | BASE VISUAL APROBADA | Esquinas doradas + pastilla de contador; microanimación simple/múltiple; falta acabar inspector para varios artículos sin perder el primario |
+| Selección y grupos | HALO DE HUELLA APROBADO VISUALMENTE | Esquinas doradas por volumen proyectado + halo de huella de suelo + perímetro común de grupo; contador y microanimación; falta validar proyección en GLB y decidir inspector de grupo |
 | Aplicar/Descartar | BASE V1 APROBADA | Revisión, confirmación destructiva, bloqueo de salida; ajustes de copy/medidas/resultado runtime |
 | Feedback y snapping | BASE V1 ACEPTADA PARA SEGUIR | Preview universal contextual; snapping sugiere, validación manda; no enseñar ghost como elemento ya creado |
 | Superficies | CONCEPTO PREFERIDO PROVISIONAL | «Proyector Inteligente» sujeto a aceptación en build jugable; material realmente integrado en geometría y revisión de todas las familias. Cambio de técnica permitido sin rehacer dominios |
@@ -431,4 +449,5 @@ Referencia esquemática versionada: References/Seleccion_Multiseleccion_Layout_D
 - 2026-10-09: **Superficies + coherencia global V1** presentadas en una única preview HTML interactiva y dos tamaños, con 10 verificaciones de coherencia. Superficies y cierre responsive PENDIENTES del visto bueno; solo el diseño gráfico existente aprobado permanece vinculante. El soporte runtime verificado de superficies no incluye automáticamente todas las familias del catálogo heredado.
 - 2026-10-09: **«Proyector Inteligente» elegido provisionalmente** para la preview de superficies; aceptación final SOLO tras programar y probar en build real. Si no convence, cambiarlo manteniendo contratos de materiales, transacciones y datos, y sin publicar versiones fallidas.
 - 2026-10-09: **Inspector de doble contexto Principal/Conjunto presentado en HTML**, preservando Galería Viva, foto/propiedades del principal y grupo accesible desde pestaña o contador. Propuesta responsive 1920/1280 con rail en compacto. Demo web probada, pendiente visto bueno; no modifica Unity.
+- 2026-10-09: **«Halo de Huella» (Concepto 2) elegido expresamente** con imagen aportada por el usuario («así es como quiero que sea»), supersede las alternativas y los anteriores overlays descentrados. Prueba SVG+HTML 1920/1280 PASS geométrico; pruebas 3D Unity pendientes. Se conserva el criterio de geometría real/huella, sin offsets por pantalla.
 - No implementar C#/Unity ni sustituir UI heredada antes del cierre visual explícito.

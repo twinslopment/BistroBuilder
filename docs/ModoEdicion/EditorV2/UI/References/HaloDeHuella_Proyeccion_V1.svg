@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="490" viewBox="0 0 1320 490"><rect x="0" y="0" width="1320" height="490" rx="10" fill="#fff9ef" stroke="#bc925a" stroke-width="2"/><text x="24" y="45" font-family="Arial,sans-serif" font-weight="700" font-size="27" fill="#4f351d">BISTRO BUILDER — HALO DE HUELLA (CONCEPTO 2 APROBADO)</text><text x="24" y="68" font-family="Arial,sans-serif" font-weight="400" font-size="15" fill="#7d6041">Geométrico: esquinas del volumen visible + halo de huella sobre el suelo + perímetro del conjunto</text>
+<rect x="24" y="88" width="400" height="325" rx="10" fill="#4b382c" stroke="#bc925a" stroke-width="2"/><rect x="458" y="88" width="400" height="325" rx="10" fill="#4b382c" stroke="#bc925a" stroke-width="2"/><rect x="892" y="88" width="400" height="325" rx="10" fill="#4b382c" stroke="#bc925a" stroke-width="2"/>
+<text x="43" y="119" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ffe6ad">01 · Silla pequeña</text>
+<path d="M151 343 L244 315 L283 343 L191 372 Z" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<g stroke="#372014" stroke-width="8" fill="none" stroke-linecap="round"><path d="M184 324 L176 364 M254 324 L260 361 M188 245 Q166 215 196 188 Q225 181 239 244"/></g>
+<ellipse cx="215" cy="304" rx="42" ry="24" fill="#2e5040" stroke="#b58a58" stroke-width="6"/>
+<path d="M168,172 H154 V186 M261,172 H275 V186 M154,370 V384 H168 M261,384 H275 V370" fill="none" stroke="#f2c978" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="45" y="440" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="#4f351d">Huella poligonal y marcas completas</text>
+<text x="477" y="119" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ffe6ad">02 · Mesa circular</text>
+<path d="M544 342 a91 43 0 1 0 182 0 a91 43 0 1 0 -182 0" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<g stroke="#46291a" stroke-width="12" stroke-linecap="round" fill="none"><path d="M635 268 L635 340 M634 340 L596 361 M635 340 L683 361"/></g>
+<ellipse cx="635" cy="240" rx="90" ry="42" fill="#a76a3e" stroke="#422714" stroke-width="8"/>
+<ellipse cx="635" cy="237" rx="78" ry="34" fill="none" stroke="#e1b172" stroke-width="3"/>
+<path d="M540,182 H526 V196 M731,182 H745 V196 M526,367 V381 H540 M731,381 H745 V367" fill="none" stroke="#f2c978" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="478" y="440" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="#4f351d">Huella circular proyectada, no caja genérica</text>
+<text x="911" y="119" font-family="Arial,sans-serif" font-weight="700" font-size="18" fill="#ffe6ad">03 · Grupo de 3 muebles</text>
+<path d="M942 342 L982 255 L1127 215 L1234 306 L1194 375 L982 391 Z" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<path d="M1002 335 l57 -20 l39 31 l-59 23 Z" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<path d="M1138 344 l42 -15 l25 24 l-46 18 Z" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<path d="M1040 277 a74 34 0 1 0 148 0 a74 34 0 1 0 -148 0" fill="#f5c46a" fill-opacity=".05" stroke="#e6b85b" stroke-width="2.5"/>
+<g stroke="#322018" fill="none" stroke-width="8"><path d="M1041 290 L1036 341 M1078 294 L1083 345 M1157 306 L1155 354 M1182 307 L1186 357"/></g>
+<ellipse cx="1061" cy="316" rx="29" ry="19" fill="#2e5040" stroke="#b58a58" stroke-width="5"/>
+<ellipse cx="1170" cy="325" rx="30" ry="18" fill="#2e5040" stroke="#b58a58" stroke-width="5"/>
+<ellipse cx="1114" cy="245" rx="76" ry="35" fill="#a76a3e" stroke="#422714" stroke-width="8"/>
+<path d="M1030,190 H1016 V204 M1197,190 H1211 V204 M1016,361 V375 H1030 M1197,375 H1211 V361" fill="none" stroke="#f2c978" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="911" y="440" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="#4f351d">Miembros individuales + perímetro común sutil</text>
+<text x="24" y="472" font-family="Arial,sans-serif" font-weight="400" font-size="13" fill="#6c5136">No captura Unity: el runtime deberá proyectar bounds/huellas de los GLB reales y actualizar al mover, rotar, cambiar zoom o cámara.</text></svg>
