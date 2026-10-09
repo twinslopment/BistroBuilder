@@ -1,0 +1,41 @@
+B11 NAVIGATION EXACT OLD-vs-OPTIMIZED PLAY MODE
+Checked dimensions: reachability, kind, length (1 mm), every waypoint (1 mm).
+PASS customer_1 old=5ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=11,2203/11,2203 waypoints=1/1
+PASS customer_8 old=1064ms optimized=69ms ok=True/True kind=OperationalDock/OperationalDock meters=8,5127/8,5127 waypoints=2/2
+PASS customer_10 old=34ms optimized=34ms ok=True/True kind=GridFallback/GridFallback meters=13,3347/13,3347 waypoints=3/3
+PASS customer_2 old=4019ms optimized=82ms ok=True/True kind=OperationalDock/OperationalDock meters=9,3807/9,3807 waypoints=2/2
+PASS customer_7 old=1122ms optimized=60ms ok=True/True kind=OperationalDock/OperationalDock meters=7,3154/7,3154 waypoints=2/2
+PASS customer_5 old=15ms optimized=14ms ok=True/True kind=GridFallback/GridFallback meters=8,6247/8,6247 waypoints=2/2
+PASS customer_9 old=24ms optimized=24ms ok=True/True kind=GridFallback/GridFallback meters=12,1602/12,1602 waypoints=2/2
+PASS customer_4 old=54ms optimized=56ms ok=True/True kind=GridFallback/GridFallback meters=15,4588/15,4588 waypoints=3/3
+PASS customer_3 old=0ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=9,1047/9,1047 waypoints=1/1
+PASS customer_6 old=905ms optimized=61ms ok=True/True kind=OperationalDock/OperationalDock meters=7,1653/7,1653 waypoints=2/2
+PASS waiter_0_1 old=6956ms optimized=224ms ok=True/True kind=OperationalDock/OperationalDock meters=16,7989/16,7989 waypoints=3/3
+PASS waiter_0_8 old=0ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=11,6809/11,6809 waypoints=1/1
+PASS waiter_0_10 old=34ms optimized=34ms ok=True/True kind=GridFallback/GridFallback meters=12,1577/12,1577 waypoints=2/2
+PASS waiter_0_2 old=40ms optimized=42ms ok=True/True kind=GridFallback/GridFallback meters=13,2159/13,2159 waypoints=3/3
+PASS waiter_0_7 old=31ms optimized=28ms ok=True/True kind=GridFallback/GridFallback meters=10,8411/10,8411 waypoints=3/3
+PASS waiter_0_5 old=1727ms optimized=86ms ok=True/True kind=OperationalDock/OperationalDock meters=9,8755/9,8755 waypoints=2/2
+PASS waiter_0_9 old=0ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=7,8560/7,8560 waypoints=1/1
+PASS waiter_0_4 old=6361ms optimized=119ms ok=True/True kind=OperationalDock/OperationalDock meters=13,6754/13,6754 waypoints=2/2
+PASS waiter_0_3 old=62ms optimized=52ms ok=True/True kind=GridFallback/GridFallback meters=15,5284/15,5284 waypoints=4/4
+PASS waiter_0_6 old=1417ms optimized=88ms ok=True/True kind=OperationalDock/OperationalDock meters=9,5711/9,5711 waypoints=2/2
+PASS warehouse old=0ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=3,1000/3,1000 waypoints=1/1
+PASS customer_1_offset old=25ms optimized=25ms ok=True/True kind=GridFallback/GridFallback meters=11,7662/11,7662 waypoints=2/2
+PASS customer_1_wide old=1404ms optimized=33ms ok=True/True kind=OperationalDock/OperationalDock meters=11,3392/11,3392 waypoints=2/2
+PASS customer_8_offset old=15ms optimized=16ms ok=True/True kind=GridFallback/GridFallback meters=8,7052/8,7052 waypoints=2/2
+PASS customer_8_wide old=1965ms optimized=30ms ok=True/True kind=OperationalDock/OperationalDock meters=8,4918/8,4918 waypoints=2/2
+PASS customer_10_offset old=38ms optimized=40ms ok=True/True kind=GridFallback/GridFallback meters=13,7042/13,7042 waypoints=3/3
+PASS customer_10_wide old=2509ms optimized=241ms ok=False/False kind=None/None meters=0,0000/0,0000 waypoints=0/0
+PASS customer_2_offset old=0ms optimized=0ms ok=True/True kind=GridFallback/GridFallback meters=8,6868/8,6868 waypoints=1/1
+PASS customer_2_wide old=2397ms optimized=31ms ok=True/True kind=OperationalDock/OperationalDock meters=9,1181/9,1181 waypoints=2/2
+PASS customer_7_offset old=13ms optimized=13ms ok=True/True kind=GridFallback/GridFallback meters=7,2473/7,2473 waypoints=2/2
+PASS customer_7_wide old=1842ms optimized=30ms ok=True/True kind=OperationalDock/OperationalDock meters=7,2171/7,2171 waypoints=2/2
+PASS customer_5_offset old=14ms optimized=14ms ok=True/True kind=GridFallback/GridFallback meters=7,9732/7,9732 waypoints=2/2
+PASS customer_5_wide old=2311ms optimized=39ms ok=True/True kind=OperationalDock/OperationalDock meters=8,1433/8,1433 waypoints=2/2
+PASS customer_9_offset old=21ms optimized=22ms ok=True/True kind=GridFallback/GridFallback meters=11,5083/11,5083 waypoints=2/2
+PASS customer_9_wide old=2461ms optimized=1139ms ok=True/True kind=OperationalDock/OperationalDock meters=14,0604/14,0604 waypoints=4/4
+PASS customer_4_offset old=46ms optimized=47ms ok=True/True kind=GridFallback/GridFallback meters=16,1806/16,1806 waypoints=4/4
+PASS customer_4_wide old=2515ms optimized=314ms ok=False/False kind=None/None meters=0,0000/0,0000 waypoints=0/0
+BASE_CASES=21 ADVERSARIAL_CASES=16 OLD_MS=41446 OPTIMIZED_MS=3107 NAVIGATION_UNCHANGED=True
+RESULT: 37 PASS / 0 FAIL; COMPARISON=PASS

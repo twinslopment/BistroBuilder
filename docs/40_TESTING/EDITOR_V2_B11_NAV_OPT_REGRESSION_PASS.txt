@@ -1,0 +1,45 @@
+B11 / NAVIGATION 17 ROUTING OPTIMIZATION — FINAL QA, 2026-10-09
+
+B11 Navigation exact legacy-vs-optimized Play Mode:
+  21 real routes + 16 adversarial variants = 37/37 PASS.
+  Legacy 41446 ms; optimized 3107 ms in same Play Mode acceptance run.
+  Verified reachability, route kind, length +-0.001m, all ordered points +-0.001m.
+  Source: docs/40_TESTING/EDITOR_V2_B11_NAV_EQUIVALENCE_PASS.txt
+
+B11 Diagnosis own Self-Test: 33/33 PASS; confirmed after final changes.
+Navigation V1 Core: 44/44 PASS; exit 0.
+Navigation 17: 22/22 PASS; exit 0.
+Navigation 17 Play Mode: PASS; exit 0.
+Navigation 17 real Save/Load: PASS; exit 0.
+
+B11 real Play Mode (three consecutive fresh Unity sessions):
+  21/21 routes, 38/38 placeables unchanged, cancel-on-close PASS.
+  Navigation full calculation: 2983 ms, 2701 ms, 2951 ms.
+  All tests exit 0. Median 2951 ms, max 2983 ms.
+  Source: docs/40_TESTING/EDITOR_V2_B11_NAV_OPT_THREE_RUNS.txt
+
+Canonical Editor V2 regression:
+  B4 Undo/Redo: 63/63 PASS (exit 0)
+  B5 Renovation: 48/48 PASS (exit 0)
+  B8 MultiSelection & Groups: 74/74 PASS (exit 0)
+  B9 Catalog: 42/42 PASS (exit 0)
+  B10 Replacement: 40/40 PASS (exit 0)
+  TOTAL: 267/267 PASS, suite exit 0.
+  Tool: Tools/BistroBuilder/RunEditorV2B10Regression.ps1
+
+HIGH-LOAD ISSUE OPEN (NOT CLAIMED PASS):
+  50-NPC Stress-Soak did not drain within its 12-second final-drain window
+  both with original exhaustive route search (15 active) and with optimized
+  search in the first attempt (48 active). This is a separate, outstanding
+  high-load trip progress/deadlock investigation. Do not alter the test's
+  criteria or claim high-load acceptance.
+  Legacy source: docs/40_TESTING/NAVIGATION17_STRESS50_LEGACY_FAILURE_20261009.txt
+  Optimized second run also fails draining (34 active, 0 deadlocks, failed=0).
+  Optimized second source: docs/40_TESTING/NAVIGATION17_STRESS50_OPTIMIZED_REPEAT_20261009.txt
+
+Final PC Windows build SUCCESS, Unity exit 0, 13 non-blocking warnings.
+  Unity log: Logs/B11_NavOptimize_FinalWindowsBuild.log
+  Player: Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe (181379399 bytes).
+
+Unity logs in worktree Logs/B11_Optimized_*, Logs/B11_NavEquivalence_37Cases.log,
+and Logs/B11_NavOptimize_FinalBench{1,2,3}.log.

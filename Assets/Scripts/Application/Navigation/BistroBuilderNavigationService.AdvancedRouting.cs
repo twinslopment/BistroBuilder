@@ -7,6 +7,20 @@ using UnityEngine;
 /// </summary>
 public sealed partial class BistroBuilderNavigationService
 {
+    private readonly struct DockCandidate
+    {
+        public readonly Vector3 point;
+        public readonly float bound;
+        public readonly int ordinal;
+
+        public DockCandidate(Vector3 point, float bound, int ordinal)
+        {
+            this.point = point;
+            this.bound = bound;
+            this.ordinal = ordinal;
+        }
+    }
+
     private bool TryBuildOperationalDockRoute(
         string requesterId,
         BistroBuilderNavigationAgentMask agent,
@@ -16,13 +30,27 @@ public sealed partial class BistroBuilderNavigationService
         List<Vector3> points,
         out float length)
     {
+        B11DockCalls++;
         length = 0f;
         var candidateRoute = new List<Vector3>(48);
         var bestRoute = new List<Vector3>(48);
         float bestScore = float.PositiveInfinity;
         const int angularSamples = 16;
         float[] rings = { 0.55f, 0.8f, 1.05f, 1.3f, 1.6f };
-
+#if UNITY_EDITOR
+        bool legacy = B11UseLegacyDockForQA;
+#else
+        const bool legacy = false;
+#endif
+        if (!legacy) BeginDockStructuralCache();
+        try
+        {
+        // Search promising docks first. Every admissible lower bound is
+        // ordered before A*; an incumbent can rule out all remaining
+        // candidates without changing which route minimizes the full score.
+        // Original order is the tie-breaker to keep the historical result.
+        var candidates = new List<DockCandidate>(angularSamples * rings.Length);
+        int ordinal = 0;
         for (int ring = 0; ring < rings.Length; ring++)
         {
             float distance = rings[ring];
@@ -31,48 +59,54 @@ public sealed partial class BistroBuilderNavigationService
                 float angle = sample * Mathf.PI * 2f / angularSamples;
                 Vector3 candidate = destination +
                     new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * distance;
-
-                candidateRoute.Clear();
-                bool routeOk = TryBuildNavMeshRoute(
-                    requesterId,
-                    agent,
-                    origin,
-                    candidate,
-                    mobilityRadius,
-                    candidateRoute,
-                    out float routeMeters,
-                    out float routeCongestion);
-
-                if (!routeOk)
-                {
-                    candidateRoute.Clear();
-                    routeOk = TryBuildGridRoute(
-                        requesterId,
-                        agent,
-                        origin,
-                        candidate,
-                        mobilityRadius,
-                        candidateRoute,
-                        out routeMeters,
-                        out routeCongestion);
-                }
-
-                if (!routeOk)
-                    continue;
-
-                float score = routeMeters +
-                    Vector3.Distance(candidate, destination) * 0.35f +
-                    routeCongestion * congestionWeight;
-                if (score >= bestScore)
-                    continue;
-
-                bestScore = score;
-                bestRoute.Clear();
-                bestRoute.AddRange(candidateRoute);
-                if (bestRoute.Count == 0 ||
-                    (bestRoute[bestRoute.Count - 1] - candidate).sqrMagnitude > 0.001f)
-                    bestRoute.Add(candidate);
+                float bound = Vector3.Distance(origin, candidate) +
+                    Vector3.Distance(candidate, destination) * 0.35f;
+                candidates.Add(new DockCandidate(candidate, bound, ordinal++));
             }
+        }
+        if (!legacy)
+            candidates.Sort((left, right) =>
+            {
+                int byBound = left.bound.CompareTo(right.bound);
+                return byBound != 0 ? byBound : left.ordinal.CompareTo(right.ordinal);
+            });
+
+        int winningOrdinal = int.MaxValue;
+        for (int index = 0; index < candidates.Count; index++)
+        {
+            DockCandidate option = candidates[index];
+            if (!legacy && option.bound > bestScore) break;
+            if (option.bound == bestScore &&
+                option.ordinal >= winningOrdinal) continue;
+
+            Vector3 candidate = option.point;
+            candidateRoute.Clear();
+            bool routeOk = TryBuildNavMeshRoute(
+                requesterId, agent, origin, candidate, mobilityRadius,
+                candidateRoute, out float routeMeters, out float routeCongestion);
+            if (!routeOk)
+            {
+                candidateRoute.Clear();
+                routeOk = TryBuildGridRoute(
+                    requesterId, agent, origin, candidate, mobilityRadius,
+                    candidateRoute, out routeMeters, out routeCongestion);
+            }
+            if (!routeOk) continue;
+
+            float score = routeMeters +
+                Vector3.Distance(candidate, destination) * 0.35f +
+                routeCongestion * congestionWeight;
+            if (score > bestScore ||
+                (score == bestScore && option.ordinal >= winningOrdinal))
+                continue;
+
+            bestScore = score;
+            winningOrdinal = option.ordinal;
+            bestRoute.Clear();
+            bestRoute.AddRange(candidateRoute);
+            if (bestRoute.Count == 0 ||
+                (bestRoute[bestRoute.Count - 1] - candidate).sqrMagnitude > 0.001f)
+                bestRoute.Add(candidate);
         }
 
         if (bestRoute.Count == 0)
@@ -90,6 +124,11 @@ public sealed partial class BistroBuilderNavigationService
             previous = points[i];
         }
         return true;
+        }
+        finally
+        {
+            if (!legacy) EndDockStructuralCache();
+        }
     }
 
     private bool SegmentAllowedForNavMesh(
@@ -127,18 +166,26 @@ public sealed partial class BistroBuilderNavigationService
             HorizontalDistanceSquared(point, routeStart) < endpointToleranceSquared ||
             HorizontalDistanceSquared(point, routeEnd) < endpointToleranceSquared;
 
-        if (!nearEndpoint && areas.Count > 0 && !IsInsideAllowedArea(point, agent))
-            return false;
+        if (nearEndpoint) return true;
 
-        if (!nearEndpoint)
+        // This part of the predicate is *exactly* independent of the
+        // destination. Candidate docking trials share many sampling points.
+        if (TryGetDockStructuralCached(point, radius, agent, out bool cached))
+            return cached;
+
+        bool allowed = areas.Count == 0 || IsInsideAllowedArea(point, agent);
+        if (allowed)
         {
             float clearance = Mathf.Max(0.05f, radius) + staticClearance;
             for (int i = 0; i < staticShapes.Count; i++)
             {
-                if (PointInsideShape(point, staticShapes[i], clearance))
-                    return false;
+                if (!PointInsideShape(point, staticShapes[i], clearance)) continue;
+                allowed = false;
+                break;
             }
         }
+        RememberDockStructural(point, radius, agent, allowed);
+        if (!allowed) return false;
 
         // Dynamic Sweeps, Mobility/Carry leases y otros NPC no invalidan
         // topología global: los resuelve el solver local y Traffic Coordinator.

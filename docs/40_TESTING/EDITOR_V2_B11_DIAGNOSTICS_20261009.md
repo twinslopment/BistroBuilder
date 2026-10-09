@@ -33,6 +33,10 @@ El `BistroBuilderEditorV2DiagnosisOverlay` se instala idempotentemente en la esc
 
 Informes automáticos generados en raíz del worktree: `EditorV2_B11_Diagnosis_Report.txt`, `EditorV2_B11_RuntimePlay_Report.txt`; logs de Unity en `Logs/EditorV2_B11_*.log`. Los informes versionados que acompañan a este documento se identifican por su nombre de cierre.
 
+## Actualización posterior: optimización Navigation 17 (2026-10-09)
+
+El coste de **29.175 ms** reflejado arriba corresponde al cierre inicial B11 y ya **no es el rendimiento vigente**. La optimización de A* y dock reduce el cálculo exhaustivo a **2.983 / 2.701 / 2.951 ms** en tres ejecuciones reales consecutivas; 21 rutas y 38 muebles intactos en todas. Comparativa exacta con la implementación anterior sobre **37 casos: 37/37 PASS**, incluidas posiciones de todos los waypoints. Nav V1 44/44, Nav17 22/22 y Play Mode/SaveLoad de Nav17 también PASS. La regresión Editor V2 más reciente ha validado 267/267 PASS. Consultar `docs/40_TESTING/NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md` y sus reportes reproducibles. El estrés de 50 NPC continúa presentando falta de convergencia con **ambas** variantes; se registra como riesgo abierto, no como PASS.
+
 ## Convivencia / seguridad
 
 Solo rama `feature/editor-v2`, commit exclusivo de archivos B11. No merge a la rama `integration/master-current-20260918` sin integración con el diseño visual y coordinación de trabajo concurrente. No tocar `Assets/Resources/BistroBuilder/UI/Typography`, iconografía ajena ni ajustes gráficos compartidos.

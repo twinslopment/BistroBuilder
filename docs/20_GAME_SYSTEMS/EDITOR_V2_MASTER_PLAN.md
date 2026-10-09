@@ -435,6 +435,8 @@ PASS:
 
 **CIERRE TÉCNICO B11 — 09/10/2026: PASS.** Cinco capas de análisis activables (circulación, accesibilidad, capacidad, interacción y distribución), con avisos, explicaciones, recomendaciones y localización cuando la autoridad la ofrece. QA B11 **33/33 PASS**; Play Mode con restaurante real **PASS** (38 muebles, 21 rutas, 0 mutaciones, cancelación al cerrar); regresiones B4/B5/B8/B9/B10 **252/252 PASS** y build Windows x64 **PASS**. Primer resultado visible en **1,50 s**; navegación exhaustiva progresiva en 20 pasos con **29,2 s de coste acumulado**, limitación del A* de respaldo documentada. F8 abre un visor provisional; estilo final Galería Viva queda pendiente de integración visual. Rama `feature/editor-v2`, sin merge a maestra. Evidencias: `docs/40_TESTING/EDITOR_V2_B11_DIAGNOSTICS_20261009.md`.
 
+**OPTIMIZACIÓN NAVIGATION 17 — 09/10/2026:** resuelto el cuello de botella original de búsqueda exhaustiva; **2,70–2,98 s** en tres repeticiones completas sobre las 21 rutas reales frente a **29,2 s** medidos antes. **37/37** equivalencias exactas (tipo, longitud y waypoints) frente al algoritmo anterior, más 267/267 regresiones Editor V2. Ver `docs/40_TESTING/NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md`. El estrés con 50 NPC mantiene una incidencia de convergencia incluso usando el algoritmo anterior: no se declara resuelta.
+
 **En cristiano:** antes de abrir, el juego puede decirte qué parte de tu distribución va a dar problemas.
 
 Capas opcionales:

@@ -518,6 +518,7 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
         out float length,
         out float congestion)
     {
+        B11GridCalls++;
         float radius = Mathf.Max(0.05f, mobilityRadius);
         length = 0f;
         congestion = 0f;
@@ -561,6 +562,9 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
         int[] dx = { -1, 0, 1, -1, 1, -1, 0, 1 };
         int[] dz = { -1, -1, -1, 0, 0, 1, 1, 1 };
+        // Cache expensive cell checks within this exact A* query.
+        // The goal exemption and segment collision tests remain unchanged.
+        var traversableCells = new Dictionary<int, bool>(512);
         int expanded = 0;
         bool found = false;
 
@@ -592,9 +596,16 @@ public sealed partial class BistroBuilderNavigationService : MonoBehaviour
 
                 Vector3 world = CellWorld(nx, nz, minX, minZ, origin.y);
                 bool isGoal = key == goalKey;
-                if (!isGoal && !IsPointStructurallyTraversableForRoute(world, radius,
-                        agent, origin, destination))
-                    continue;
+                if (!isGoal)
+                {
+                    if (!traversableCells.TryGetValue(key, out bool traversable))
+                    {
+                        traversable = IsPointStructurallyTraversableForRoute(
+                            world, radius, agent, origin, destination);
+                        traversableCells[key] = traversable;
+                    }
+                    if (!traversable) continue;
+                }
                 if (!SegmentAllowedForNavMesh(currentWorld, world, radius,
                         agent, requesterId, origin, destination))
                     continue;

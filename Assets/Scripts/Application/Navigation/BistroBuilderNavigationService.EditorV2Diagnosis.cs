@@ -9,10 +9,31 @@ using UnityEngine;
 /// </summary>
 public sealed partial class BistroBuilderNavigationService
 {
+    public int B11GridCalls { get; private set; }
+    public int B11DockCalls { get; private set; }
+    public readonly System.Collections.Generic.List<string> B11RouteTimings =
+        new System.Collections.Generic.List<string>(32);
+
+    private void B11CheckTimed(
+        BistroBuilderCirculationHealthReport report, string id,
+        Vector3 from, Vector3 to, BistroBuilderNavigationAgentMask agent,
+        string label)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        int beforeGrid = B11GridCalls;
+        int beforeDock = B11DockCalls;
+        CheckConnection(report, id, from, to, agent, label);
+        watch.Stop();
+        B11RouteTimings.Add(id + ":ms=" + watch.ElapsedMilliseconds +
+            ":grid=" + (B11GridCalls - beforeGrid) +
+            ":dock=" + (B11DockCalls - beforeDock));
+    }
+
     public IEnumerator ScanCirculationIncrementally(
         BistroBuilderCirculationHealthReport report)
     {
         if (report == null) yield break;
+        B11RouteTimings.Clear();
         CirculationHealthEvaluationCount++;
         GameObject entranceObject = GameObject.Find("RestaurantEntrancePoint");
         Transform entrance = entranceObject != null ?
@@ -33,7 +54,7 @@ public sealed partial class BistroBuilderNavigationService
                 RestaurantTable table = tables[i];
                 if (table == null || table.CustomerApproachPoint == null)
                     continue;
-                CheckConnection(report, "customer_table_" + table.TableId,
+                B11CheckTimed(report, "customer_table_" + table.TableId,
                     entrance.position, table.CustomerApproachPoint.position,
                     BistroBuilderNavigationAgentMask.Customer,
                     "Entrada -> mesa " + table.TableId);
@@ -48,7 +69,7 @@ public sealed partial class BistroBuilderNavigationService
             {
                 RestaurantTable table = tables[i];
                 if (table == null || table.WaiterServicePoint == null) continue;
-                CheckConnection(report,
+                B11CheckTimed(report,
                     "waiter_kitchen_table_" + k + "_" + table.TableId,
                     kitchen.PickupPoint.position,
                     table.WaiterServicePoint.position,
@@ -63,7 +84,7 @@ public sealed partial class BistroBuilderNavigationService
         if (receiving != null && receiving.SupplyAccessPoint != null &&
             receiving.WarehouseDropPoint != null)
         {
-            CheckConnection(report, "delivery_warehouse",
+            B11CheckTimed(report, "delivery_warehouse",
                 receiving.SupplyAccessPoint.position,
                 receiving.WarehouseDropPoint.position,
                 BistroBuilderNavigationAgentMask.Delivery,

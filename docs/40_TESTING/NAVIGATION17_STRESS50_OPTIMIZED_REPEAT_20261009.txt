@@ -1,0 +1,2 @@
+=== BISTRO BUILDER - BLOQUE 17 / STRESS-SOAK ===
+[FAIL] El drenaje final no convergio. Frames=203, active=34, pending=0, requesting=0, following=15, waiting=19, recovering=0, failed=0, dependencies=1, deadlocks=0, sample=stress:000 FollowingRoute/None/None/progress=4,20/pos=(-0.44, 0.90, -6.84)/blocker=stress:006/decision=Scheduled route resolved and accepted..

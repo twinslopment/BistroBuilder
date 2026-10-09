@@ -150,6 +150,15 @@ public sealed class BistroBuilderEditorV2B11RuntimeDriver : MonoBehaviour
         bool allRoutesChecked = !report.navigationPending &&
             report.complete && report.scannedRoutes >= 20;
         int found = report.findings.Count;
+        var routeAuthority = Object.FindFirstObjectByType<
+            BistroBuilderNavigationService>(FindObjectsInactive.Include);
+        if (routeAuthority != null)
+        {
+            string timingFile = System.IO.Path.GetFullPath(
+                "EditorV2_B11_NavRouteTimings.txt");
+            System.IO.File.WriteAllLines(timingFile,
+                routeAuthority.B11RouteTimings);
+        }
 
         bool single = diagnostic.TryScan(
             BistroBuilderEditorV2DiagnosisLayer.Layout,
