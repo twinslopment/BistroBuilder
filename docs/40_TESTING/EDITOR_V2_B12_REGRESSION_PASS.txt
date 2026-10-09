@@ -1,0 +1,11 @@
+B12 CORE REGRESSION 2026-10-09
+RunEditorV2B10Regression.ps1 EXIT=0
+B4 63/63 PASS
+B5 48/48 PASS
+B8 74/74 PASS
+B9 42/42 PASS
+B10 40/40 PASS
+TOTAL 267/267 PASS
+Logs: Logs/EditorV2_B{4,5,8,9,10}_Regress_B10.log
+B12 real Play Mode: docs/40_TESTING/EDITOR_V2_B12_RUNTIME_PASS.txt
+NOTE: B12 complex 5-item physical placement / linked seating remains unverified.

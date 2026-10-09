@@ -1,0 +1,2 @@
+B12 real Play Mode
+PASS guard=True capture=True canonical=True reload=True quote=True invalidId=True tried=6 placed=True pose=True undo=True redo=True worldRestored=True multi=True remove=True corruptSafe=True items=38 costCents=0 source=table_basic_4 category=Furniture placementError=

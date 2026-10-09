@@ -185,6 +185,21 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
                 host.AddComponent<BistroBuilderEditorV2DiagnosisOverlay>();
         diagnosisOverlay.Configure(diagnosis, editMode);
 
+        // B12 library is user-persistent, while actual instantiation always
+        // passes the canonical catalog and the B8 atomic creation authority.
+        BistroBuilderEditorV2TemplateLibrary templates =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2TemplateLibrary>(
+                FindObjectsInactive.Include);
+        if (templates == null)
+            templates = host.AddComponent<BistroBuilderEditorV2TemplateLibrary>();
+        templates.Configure(
+            editMode,
+            groupOperations,
+            Object.FindFirstObjectByType<RestaurantPlaceableCatalogService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<RestaurantPlaceableCreationService>(
+                FindObjectsInactive.Include));
+
         RestaurantPlacementSnapService placementSnap =
             Object.FindFirstObjectByType<RestaurantPlacementSnapService>(
                 FindObjectsInactive.Include);

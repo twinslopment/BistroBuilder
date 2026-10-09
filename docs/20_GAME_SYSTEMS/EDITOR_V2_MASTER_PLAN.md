@@ -729,7 +729,7 @@ Salvo decisión posterior explícita:
 | B9 Catálogo escalable | PASS 2026-10-08 |
 | B10 Sustitución inteligente | PASS técnico 2026-10-08 — 40/40, Save/Load real PASS, conexión catálogo PASS |
 | B11 Diagnóstico | PASS técnico 2026-10-09 — 33/33, Play Mode PASS, regresión B4–B10 252/252, Windows PASS; Nav progresiva |
-| B12 Plantillas | NO INICIADO |
+| B12 Plantillas | EN DESARROLLO — núcleo JSON + batch atómico, Play Mode PASS (1 miembro + serialización 2 miembros); falta prueba física mesa+4 sillas y UI Galería Viva |
 | B13 Cámara/visibilidad | NO INICIADO |
 | B14 Rendimiento | NO INICIADO |
 | B15 Queen destructiva | NO INICIADO |
