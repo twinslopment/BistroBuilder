@@ -1,0 +1,2 @@
+B11 REAL RESTAURANT PLAY MODE
+PASS objects=38 placementExamined=38 routes=21 findings=0 scanMs=1501 spatialMs=27 navigationMs=29175 placementMs=1471 capacityMs=0 architectureMs=0 complete=True noBackground=True noMutation=True progressive=True fullRoutes=True cancelWhenClosed=True frames=20 layoutFilter=True

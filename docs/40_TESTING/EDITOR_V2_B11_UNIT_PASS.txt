@@ -1,0 +1,37 @@
+B11 - DIAGNOSTICO DEL RESTAURANTE
+OK - B11 acepta problemas conocidos de rutas, capacidad y distribucion
+OK - identidad estable evita avisos duplicados
+OK - cuenta bloqueos y advertencias, no informativos
+OK - ordena por severidad con resultados reproducibles
+OK - filtro por capa no incorpora problemas de otras capas
+OK - BBSIS identifica movilidad y portales en circulacion
+OK - BBSIS identifica entrada a mesa y plazas
+OK - BBSIS separa espacio funcional de incidencias generales
+OK - propuestas de correccion accionables por tipo de conflicto
+OK - BBSIS real DTO: mesa obstruye un paso, se convierte en aviso
+OK - BBSIS localiza conflicto del pasillo y lo considera bloqueo
+OK - Navigation DTO: trayecto cocina-mesa bloqueado
+OK - Navigation distingue informacion de advertencia
+OK - Seating DTO: dos sillas sin mesa activan problema de capacidad
+OK - cuentas de los tres proveedores sin falsas alarmas
+OK - aforo sin asientos denuncia la capacidad inexistente
+OK - desactivar circulacion evita mostrar hallazgos BBSIS ajenos
+OK - bootstrap instala servicio y overlay B11 de forma idempotente
+OK - sin modo edicion no diagnostica ni incrementa contador
+OK - filtro vacio se rechaza antes de ejecutar consultas
+OK - entra en modo edicion con guardas reales
+OK - cero scans, refrescos o asignaciones de informes cuando esta inactivo
+METRIC - B11_DORMANT_50000_READS_MS=0,05
+OK - analisis explicito consulta las autoridades existentes:
+OK - informe identifica capas y revision de evaluacion
+OK - contadores reales no negativos
+OK - avisos unicos y con solucion para el jugador
+OK - analizar BBSIS y Navigation no altera posicion, numero ni historial
+OK - overlay accesible bajo demanda, escanea una vez al abrir
+OK - filtro capacidad no escanea otras capas
+OK - al cerrar no quedan analisis en segundo plano
+OK - no se permite solicitar diagnostico vacio
+OK - tras filtros y overlay el restaurante sigue intacto
+OK - ejecucion independiente de capa circulacion
+METRIC - B11_SCANS=3 FINDINGS=29 OBJECTS=0 ROUTES=0 COMPLETE=False
+Resultado: 33 OK / 0 fallos.

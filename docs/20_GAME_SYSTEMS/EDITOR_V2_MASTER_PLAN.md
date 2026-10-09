@@ -433,6 +433,8 @@ PASS:
 
 ### B11 — Diagnóstico del restaurante
 
+**CIERRE TÉCNICO B11 — 09/10/2026: PASS.** Cinco capas de análisis activables (circulación, accesibilidad, capacidad, interacción y distribución), con avisos, explicaciones, recomendaciones y localización cuando la autoridad la ofrece. QA B11 **33/33 PASS**; Play Mode con restaurante real **PASS** (38 muebles, 21 rutas, 0 mutaciones, cancelación al cerrar); regresiones B4/B5/B8/B9/B10 **252/252 PASS** y build Windows x64 **PASS**. Primer resultado visible en **1,50 s**; navegación exhaustiva progresiva en 20 pasos con **29,2 s de coste acumulado**, limitación del A* de respaldo documentada. F8 abre un visor provisional; estilo final Galería Viva queda pendiente de integración visual. Rama `feature/editor-v2`, sin merge a maestra. Evidencias: `docs/40_TESTING/EDITOR_V2_B11_DIAGNOSTICS_20261009.md`.
+
 **En cristiano:** antes de abrir, el juego puede decirte qué parte de tu distribución va a dar problemas.
 
 Capas opcionales:
@@ -723,8 +725,8 @@ Salvo decisión posterior explícita:
 | B7 Snapping contextual | PASS — 41/41 + 3 repeticiones + fuzz 5.000 + 10.000 resolves 71 ms + 0 B alloc + regresiones B6/B5/B4/B3/B2/B1/Construction PASS |
 | B8 Multiselección/grupos | PASS — 59/59; regresión B9 74/74 y 59/59 |
 | B9 Catálogo escalable | PASS 2026-10-08 |
-| B10 Sustitución inteligente | NO INICIADO |
-| B11 Diagnóstico | NO INICIADO |
+| B10 Sustitución inteligente | PASS técnico 2026-10-08 — 40/40, Save/Load real PASS, conexión catálogo PASS |
+| B11 Diagnóstico | PASS técnico 2026-10-09 — 33/33, Play Mode PASS, regresión B4–B10 252/252, Windows PASS; Nav progresiva |
 | B12 Plantillas | NO INICIADO |
 | B13 Cámara/visibilidad | NO INICIADO |
 | B14 Rendimiento | NO INICIADO |

@@ -1,0 +1,17 @@
+EDITOR V2 B11 - CANONICAL REGRESSION (2026-10-09)
+Executed: Tools/BistroBuilder/RunEditorV2B10Regression.ps1
+Second full suite: EDITOR V2 B4,B5,B8,B9,B10 REGRESSION PASS (exit 0)
+B4 Global History: 63 OK / 0 fails / exit 0
+B5 Renovation: 48 OK / 0 fails / exit 0
+B8 MultiSelection & Groups: 59 OK / 0 fails / exit 0
+B9 Scalable Catalog: 42 OK / 0 fails / exit 0
+B10 Replacement: 40 OK / 0 fails / exit 0
+TOTAL: 252 OK / 0 fails.
+B11 own self-test: 33 OK / 0 fails.
+B11 real Play Mode: PASS, 38 placed objects, 21 route checks, 1501ms initial diagnosis,
+  20 navigation steps, 29175ms accumulated route work, no mutations, cancellation PASS.
+Known intermittent test harness issue: first full B8 run failed when its search of 100
+  duplicate pairs found no valid destination (FootprintOutsideCandidateArea).
+  Isolated B8 and second full suite passed; retained as a QA fixture instability.
+Logs: Logs/EditorV2_B{4,5,8,9,10}_Regress_B10.log
+Reports: EditorV2_B{4,5,8,9,10}_*_Report.txt

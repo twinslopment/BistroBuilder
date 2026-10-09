@@ -149,6 +149,42 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             linkedGroups.RefreshProviders();
         }
 
+        // B11 diagnosis is installed once and stays dormant until a player
+        // asks to scan. Existing BBSIS/Navigation/Placement are authorities.
+        BistroBuilderEditorV2DiagnosisService diagnosis =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2DiagnosisService>(
+                FindObjectsInactive.Include);
+        if (diagnosis == null)
+            diagnosis = host.AddComponent<BistroBuilderEditorV2DiagnosisService>();
+        diagnosis.Configure(
+            editMode,
+            Object.FindFirstObjectByType<BistroBuilderSpatialAssessmentService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<BistroBuilderSpatialInteractionService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<BistroBuilderNavigationService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<RestaurantPlacementRegistry>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<RestaurantPlacementValidationService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<RestaurantSeatRegistry>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<RestaurantSeatingTopologyService>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<BistroBuilderEditNavigationValidationProvider>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<BistroBuilderEditDocumentRuntimeService>(
+                FindObjectsInactive.Include));
+
+        BistroBuilderEditorV2DiagnosisOverlay diagnosisOverlay =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2DiagnosisOverlay>(
+                FindObjectsInactive.Include);
+        if (diagnosisOverlay == null)
+            diagnosisOverlay =
+                host.AddComponent<BistroBuilderEditorV2DiagnosisOverlay>();
+        diagnosisOverlay.Configure(diagnosis, editMode);
+
         RestaurantPlacementSnapService placementSnap =
             Object.FindFirstObjectByType<RestaurantPlacementSnapService>(
                 FindObjectsInactive.Include);
