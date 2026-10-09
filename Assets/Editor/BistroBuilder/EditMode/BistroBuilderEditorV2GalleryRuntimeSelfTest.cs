@@ -130,6 +130,32 @@ public sealed class BistroBuilderEditorV2GalleryDriver : MonoBehaviour
 
         Assert(catalog.GetComponents<BistroBuilderEditorV2SelectionInspector>().Length == 1,
             "no duplicar inspector B8");
+        var showcase = catalog.GetComponent<BistroBuilderEditorV2GalleryShowcase>();
+        Assert(showcase != null &&
+            catalog.GetComponents<BistroBuilderEditorV2GalleryShowcase>().Length == 1,
+            "Galería Viva sin escaparate duplicado");
+        Assert(showcase.IsShowing && showcase.Featured != null,
+            "Destacado vinculado a un artículo real");
+        var showcaseRoot = catalog.transform.Find(
+            "CatalogContent/BB_EditorV2_GalleryShowcase");
+        Assert(showcaseRoot != null && showcaseRoot.gameObject.activeSelf,
+            "Destacado visible en catálogo");
+        var labelPrice = showcaseRoot.Find("FeaturedCard/Price")
+            ?.GetComponent<TMP_Text>();
+        Assert(labelPrice != null && labelPrice.text ==
+            showcase.Featured.PurchasePrice.ToString("N0") + " €",
+            "Precio de Destacado procede de definición real");
+        showcase.OpenFeatured();
+        var detailFromShowcase = Object.FindObjectsByType<RectTransform>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None)
+            .FirstOrDefault(x => x.name == "BB_UIUX_PlaceableInspector");
+        Assert(detailFromShowcase != null &&
+            detailFromShowcase.gameObject.activeSelf,
+            "Destacado abre ficha canónica del inspector");
+        var itemScroll = catalog.transform.Find("CatalogContent/ItemsScroll")
+            as RectTransform;
+        Assert(itemScroll != null && itemScroll.offsetMax.y < -300f,
+            "Destacado reserva espacio sin ocultar la cuadrícula");
         Assert(catalog.GetComponents<RestaurantPlaceableCatalogPreviewSkin>().Length == 1,
             "piel preview única");
         Assert(catalog.GetComponents<RestaurantPlaceableCatalogApprovedSkin>().Length == 1,

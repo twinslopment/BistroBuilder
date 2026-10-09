@@ -170,6 +170,8 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
         if (GetComponent<BistroBuilderEditorV2SelectionInspector>() == null)
             gameObject.AddComponent<BistroBuilderEditorV2SelectionInspector>();
+        if (GetComponent<BistroBuilderEditorV2GalleryShowcase>() == null)
+            gameObject.AddComponent<BistroBuilderEditorV2GalleryShowcase>();
     }
 
     private void Start()
