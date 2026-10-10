@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using BistroBuilder.CameraSystem;
 using UnityEditor;
@@ -89,7 +90,34 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         }
         var before = controllers[0].CurrentState;
         var wallGo = new GameObject("__B13QAWallRenderer");
+        wallGo.transform.position = new Vector3(200f, 40f, 200f);
         var wall = wallGo.AddComponent<MeshRenderer>();
+        var wallCollider = wallGo.AddComponent<BoxCollider>();
+        wallCollider.size = Vector3.one * 2f;
+        var offAxisGo = new GameObject("__B13OffAxis");
+        offAxisGo.transform.position = new Vector3(200f, 40f, 207f);
+        var offAxis = offAxisGo.AddComponent<MeshRenderer>();
+        offAxisGo.AddComponent<BoxCollider>();
+        var triggerGo = new GameObject("__B13TriggerNotObstacle");
+        triggerGo.transform.position = new Vector3(205f, 40f, 200f);
+        var triggerVisual = triggerGo.AddComponent<MeshRenderer>();
+        var triggerCollider = triggerGo.AddComponent<BoxCollider>();
+        triggerCollider.isTrigger = true;
+        var behindGo = new GameObject("__B13BehindTarget");
+        behindGo.transform.position = new Vector3(230f, 40f, 200f);
+        var behind = behindGo.AddComponent<MeshRenderer>();
+        behindGo.AddComponent<BoxCollider>();
+        var rayStart = new Vector3(190f, 40f, 200f);
+        var rayTarget = new Vector3(220f, 40f, 200f);
+        var allowedVisuals = new Renderer[] {
+            wall, offAxis, triggerVisual, behind, wall
+        };
+        var detected = new List<Renderer>(8);
+        detected.Add(wall);
+        bool beforeEditOcclusionGuard =
+            !context.TryFindOccludingCandidates(
+                rayStart, rayTarget, allowedVisuals, detected) &&
+            detected.Count == 0;
         var disabledGo = new GameObject("__B13QADisabledRenderer");
         var disabled = disabledGo.AddComponent<MeshRenderer>();
         disabled.enabled = false;
@@ -99,6 +127,37 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         yield return null;
         bool memoryEdit = context.IsEditCameraContext &&
             camera.CurrentMode == BistroBuilderCameraContextMode.Edit;
+        Physics.SyncTransforms(); // QA objects moved explicitly this frame.
+        bool obstructionFound = context.TryFindOccludingCandidates(
+            rayStart, rayTarget, allowedVisuals, detected) &&
+            detected.Count == 1 && detected[0] == wall &&
+            wall.enabled && wallCollider.enabled &&
+            triggerCollider.isTrigger && context.HiddenRendererCount == 0;
+        bool strictWhitelist = context.TryFindOccludingCandidates(
+            rayStart, rayTarget, new Renderer[] { offAxis }, detected) &&
+            detected.Count == 0;
+        // Stress the fixed 128-ray-hit buffer. A saturated query MUST
+        // fail closed rather than returning a misleading partial list.
+        var crowdedRoot = new GameObject("__B13QACrowdedPhysics");
+        for (int index = 0; index < 140; index++)
+        {
+            var node = new GameObject("Occluder_" + index);
+            node.transform.SetParent(crowdedRoot.transform, false);
+            node.transform.position = new Vector3(
+                194f + index * 0.07f, 40f, 200f);
+            var collider = node.AddComponent<BoxCollider>();
+            collider.size = Vector3.one * 0.05f;
+        }
+        Physics.SyncTransforms();
+        detected.Add(wall);
+        bool saturationFailClosed = !context.TryFindOccludingCandidates(
+            rayStart, rayTarget, allowedVisuals, detected) &&
+            detected.Count == 0 && wall.enabled;
+        Destroy(crowdedRoot);
+        detected.Add(wall);
+        bool badRayRejected = !context.TryFindOccludingCandidates(
+            new Vector3(float.NaN, 0f, 0f), rayTarget,
+            allowedVisuals, detected) && detected.Count == 0;
         bool idempotent = entered && context.TryHideObstruction(wall) &&
             context.TryHideObstruction(wall) && !wall.enabled &&
             context.HiddenRendererCount == 1;
@@ -119,6 +178,10 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         bool remembered = before.IsFinite && serviceState.IsFinite &&
             Vector3.Distance(before.FocusPoint, serviceState.FocusPoint) < 0.75f;
         bool afterExitGuard = !context.TryHideObstruction(wall);
+        detected.Add(wall);
+        bool afterExitQueryGuard = !context.TryFindOccludingCandidates(
+            rayStart, rayTarget, allowedVisuals, detected) &&
+            detected.Count == 0;
         // Adversarial: leave edit mode WHILE TopDown remains active.
         // This must clear pitch override and restore hidden visuals.
         bool secondEntered = mode.TryEnterEditMode(out _, out _);
@@ -138,13 +201,27 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         // Ensure no mutated user scene or stray mesh component survives QA.
         Destroy(wallGo);
         Destroy(disabledGo);
+        Destroy(offAxisGo);
+        Destroy(triggerGo);
+        Destroy(behindGo);
         BistroBuilderEditorV2B13CameraRuntimeSelfTest.End(
-            outsideGuard && entered && memoryEdit && idempotent &&
+            outsideGuard && entered && memoryEdit &&
+            beforeEditOcclusionGuard && obstructionFound &&
+            strictWhitelist && saturationFailClosed &&
+            badRayRejected && afterExitQueryGuard &&
+            idempotent &&
             disabledKept && selectedRestore && precision && free &&
             exited && cleaned && remembered && afterExitGuard &&
             directReturnSafe,
             "guard=" + outsideGuard + " entered=" + entered +
-            " contextEdit=" + memoryEdit + " rendererIdempotent=" + idempotent +
+            " contextEdit=" + memoryEdit +
+            " queryOutsideGuard=" + beforeEditOcclusionGuard +
+            " obstructionExact=" + obstructionFound +
+            " whitelist=" + strictWhitelist +
+            " saturationFailClosed=" + saturationFailClosed +
+            " invalidRayFailClosed=" + badRayRejected +
+            " queryAfterExitGuard=" + afterExitQueryGuard +
+            " rendererIdempotent=" + idempotent +
             " disabledOriginal=" + disabledKept + " individualRestore=" +
             selectedRestore + " topDown=" + precision + " freeView=" + free +
             " exited=" + exited + " restoredVisuals=" + cleaned +

@@ -18,6 +18,9 @@ public sealed class BistroBuilderEditorV2CameraVisibilityContext : MonoBehaviour
         new Dictionary<Renderer, bool>(32);
     private bool subscribed;
     private bool pendingCameraSync;
+    // Explicit, on-demand ray query only. Saturation fails closed instead
+    // of silently omitting a nearer obstruction. No per-frame allocations.
+    private readonly RaycastHit[] occlusionHits = new RaycastHit[128];
 
     public int HiddenRendererCount => originalRendererStates.Count;
     public bool IsEditCameraContext =>
@@ -134,6 +137,71 @@ public sealed class BistroBuilderEditorV2CameraVisibilityContext : MonoBehaviour
             return false;
         return views.TryRestorePreviousView(immediate);
     }
+
+    /// <summary>
+    /// Discovers only explicitly authorized, visible renderers whose OWN
+    /// collider intersects the camera-to-target segment. This is a read-only
+    /// proposal: it does not hide, fade, mutate colliders or move the camera.
+    /// The caller owns the candidate whitelist and any subsequent UI decision.
+    /// Geometry transforms should be synchronized by the owning placement
+    /// authority, not by this query (no global Physics.SyncTransforms).
+    /// False means unsafe/unavailable input, and always clears the output.
+    /// </summary>
+    public bool TryFindOccludingCandidates(
+        Vector3 cameraPosition,
+        Vector3 targetPosition,
+        IReadOnlyList<Renderer> allowedCandidates,
+        List<Renderer> results)
+    {
+        if (results == null) return false;
+        results.Clear();
+        if (!isActiveAndEnabled || editMode == null ||
+            !editMode.IsEditModeActive || !IsEditCameraContext ||
+            !HasCameraAuthority || allowedCandidates == null ||
+            !IsFinite(cameraPosition) || !IsFinite(targetPosition))
+            return false;
+
+        Vector3 path = targetPosition - cameraPosition;
+        float distance = path.magnitude;
+        if (distance < 0.05f || float.IsInfinity(distance)) return false;
+        int hitCount = Physics.RaycastNonAlloc(
+            new Ray(cameraPosition, path / distance), occlusionHits,
+            distance - 0.02f, Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Ignore);
+        // Never trust a truncated raycast result: this would silently miss
+        // physical occluders in crowded/complex architecture.
+        if (hitCount >= occlusionHits.Length) return false;
+
+        for (int index = 0; index < allowedCandidates.Count; index++)
+        {
+            Renderer candidate = allowedCandidates[index];
+            if (candidate == null || !candidate.enabled ||
+                !candidate.gameObject.activeInHierarchy) continue;
+            bool obstructs = false;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                Collider obstacle = occlusionHits[hitIndex].collider;
+                if (obstacle == null) continue;
+                Transform hitTransform = obstacle.transform;
+                // An explicit wall renderer may own several CHILD colliders.
+                // Never match a broad ancestor collider (e.g. a whole building).
+                if (hitTransform == candidate.transform ||
+                    hitTransform.IsChildOf(candidate.transform))
+                {
+                    obstructs = true;
+                    break;
+                }
+            }
+            if (obstructs && !results.Contains(candidate))
+                results.Add(candidate);
+        }
+        return true;
+    }
+
+    private static bool IsFinite(Vector3 point) =>
+        !float.IsNaN(point.x) && !float.IsInfinity(point.x) &&
+        !float.IsNaN(point.y) && !float.IsInfinity(point.y) &&
+        !float.IsNaN(point.z) && !float.IsInfinity(point.z);
 
     /// <summary>
     /// Edit-only visual obstruction, with exact original enabled state.

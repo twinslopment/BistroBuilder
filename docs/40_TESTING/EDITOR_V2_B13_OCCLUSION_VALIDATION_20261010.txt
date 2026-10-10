@@ -1,0 +1,23 @@
+EDITOR V2 — B13 Camera / Conservative Occlusion Query — 2026-10-10
+Branch: feature/editor-v2; master integration/master-current-20260918 untouched.
+
+Unity 6000.3.19f1 real Play Mode: PASS
+Method: BistroBuilderEditorV2B13CameraRuntimeSelfTest.RunFromCommandLine
+Log: Logs/B13_Occlusion_Saturation02.log
+Report: docs/40_TESTING/EDITOR_V2_B13_OCCLUSION_RUNTIME_PASS.txt
+Verified: single 369A camera, original 369B top-down preset, edit/service 369C camera memories, restored visible and originally invisible renderers, edit-only guards, no persistent obstructions, exit while TopDown active.
+New query PASS: explicit candidate whitelist; physics collider on ray detected; off-axis, behind-target and trigger excluded; duplicate candidate included only once; invalid NaN cleared; outside edit mode cleared; 140 intersecting colliders cause 128-buffer saturation fail-closed without hiding renderers.
+Query remains on-demand, read-only and does not select walls or apply fade automatically.
+
+Full regressions after change, Unity EXIT=0 each:
+B4 = 63/63, B5 = 48/48, B8 = 60/60, B9 = 42/42, B10 = 40/40.
+Total checks in this run: 253/253 PASS (B8 count varies across valid/adversarial fixtures).
+Logs: Logs/EditorV2_B4_Regress_B10.log, B5, B8, B9, B10 accordingly.
+
+Windows Standalone x64: PASS, Unity EXIT=0, Build Finished Result Success, BB_PLAYTEST_BUILD_PASS.
+Log: Logs/B13_Occlusion_WindowsBuild.log
+Executable: Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe
+Warnings=13 (nonblocking).
+
+B13 still not fully closed: user-approved fade/transparency, real architectural wall selection & visual build checks 1920x1080 and 1280x720 have not been completed.
+No claim of GC-zero or universal performance latency. No scene or master changes.

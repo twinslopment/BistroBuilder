@@ -19,3 +19,13 @@ Prueba real: entrada/salida de edición, guardas de modo, controlador único, vi
 **No declarar B13 cerrado**: falta selección real/automatizada de paredes que obstruyen la vista, política visual de fade por pieza y no por edificio, previsualización con aprobado del usuario y verificaciones manuales a 1920×1080 y 1280×720 en build Windows. La API habilita ocultación contextual, pero todavía no elige paredes automáticamente ni aplica transparencia gradual. No debe ocultar paredes sin autorización y sin criterio de oclusión validado.
 
 Sin modificaciones en `integration/master-current-20260918`; no se han mezclado ficheros de UI de otros agentes.
+
+## Fase técnica 2 — descubrimiento geométrico seguro (2026-10-10)
+
+- Incorporada API `TryFindOccludingCandidates(cameraPosition, targetPosition, allowedCandidates, results)`. Utiliza `Physics.RaycastNonAlloc` únicamente por solicitud, no consulta cada frame y no hace `Physics.SyncTransforms` de forma global.
+- Solo propone renderers **visibles y presentes en la lista explícita autorizada** si su collider, o el de uno de sus hijos, intersecta el segmento entre cámara y objetivo. No se basa en `Renderer.bounds` ni acepta un collider ascendente del edificio entero como prueba para ocultar una pared concreta.
+- Los triggers, elementos por detrás del objetivo, fuera del segmento, duplicados y elementos fuera de la lista no producen candidatos. Los datos NaN, el modo servicio y un resultado de raycast saturado (128 impactos en buffer) devuelven falso y vacían la lista, evitando decisiones con resultados incompletos.
+- **Ningún candidato se oculta automáticamente.** La API es de lectura; la autorización del usuario, selección de paredes reales y el efecto visual/fade todavía requieren diseño y aprobación de la interfaz. La cámara 369A/B/C sigue intacta.
+- Prueba `BistroBuilderEditorV2B13CameraRuntimeSelfTest.RunFromCommandLine`, log `Logs/B13_Occlusion_Saturation02.log`, informe `EditorV2_B13_Camera_Report.txt`. PASS real Play Mode: obstáculo físico autorizado correcto, exclusion de off-axis/trigger/behind, whitelist estricta, modo normal bloqueado, NaN rechazado, saturación de 140 colliders falla con seguridad, restauración al salir y vista cenital intacta.
+- El escenario de 140 colliders se genera exclusivamente en Play Mode y se destruye; no se modifican escenas, assets visuales, finanzas ni navegación.
+- **Pendiente para PASS integral de B13:** selección automática/semiautomática de paredes reales con criterio probado, fade de pieza individual aprobado visualmente, pruebas en build Windows 1920×1080 y 1280×720. Por ahora B13 continúa EN DESARROLLO.
