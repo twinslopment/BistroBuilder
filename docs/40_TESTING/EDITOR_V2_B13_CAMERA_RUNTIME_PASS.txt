@@ -1,0 +1,2 @@
+B13 camera/visibility actual Play Mode
+PASS guard=True entered=True contextEdit=True rendererIdempotent=True disabledOriginal=True individualRestore=True topDown=True freeView=True exited=True restoredVisuals=True cameraMemory=True postExitGuard=True exitDuringTopDown=True controllers=1

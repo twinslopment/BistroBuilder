@@ -200,6 +200,23 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
             Object.FindFirstObjectByType<RestaurantPlaceableCreationService>(
                 FindObjectsInactive.Include));
 
+        // B13 bridges the existing 369C camera memories to edit mode, and
+        // offers reversible visibility control. It NEVER moves a Camera:
+        // 369A remains the only controller.
+        BistroBuilderEditorV2CameraVisibilityContext cameraContext =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2CameraVisibilityContext>(
+                FindObjectsInactive.Include);
+        if (cameraContext == null)
+            cameraContext = host.AddComponent<BistroBuilderEditorV2CameraVisibilityContext>();
+        cameraContext.Configure(
+            editMode,
+            Object.FindFirstObjectByType<
+                BistroBuilder.CameraSystem.BistroBuilderCameraInspectionService>(
+                    FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<
+                BistroBuilder.CameraSystem.BistroBuilderCameraViewService>(
+                    FindObjectsInactive.Include));
+
         RestaurantPlacementSnapService placementSnap =
             Object.FindFirstObjectByType<RestaurantPlacementSnapService>(
                 FindObjectsInactive.Include);
