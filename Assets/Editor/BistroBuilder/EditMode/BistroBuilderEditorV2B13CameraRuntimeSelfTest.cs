@@ -71,6 +71,8 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
             FindObjectsInactive.Include);
         var context = Object.FindFirstObjectByType<
             BistroBuilderEditorV2CameraVisibilityContext>(FindObjectsInactive.Include);
+        var wallFade = Object.FindFirstObjectByType<
+            BistroBuilderEditorV2WallFadeController>(FindObjectsInactive.Include);
         var camera = Object.FindFirstObjectByType<
             BistroBuilderCameraInspectionService>(FindObjectsInactive.Include);
         var views = Object.FindFirstObjectByType<
@@ -78,7 +80,7 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         var controllers = Object.FindObjectsByType<
             BistroBuilderProfessionalCameraController>(
                 FindObjectsInactive.Include, FindObjectsSortMode.None);
-        if (mode == null || context == null || camera == null ||
+        if (mode == null || context == null || wallFade == null || camera == null ||
             views == null || !context.HasCameraAuthority ||
             controllers.Length != 1 || !controllers[0].IsInitialized)
         {
@@ -172,6 +174,33 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         detected.Add(wall);
         bool noAuthoritySource = !context.TryFindOccludingArchitectureWalls(
             rayStart, rayTarget, null, detected) && detected.Count == 0;
+        // Real shader+rendering contract, without affecting the authored finish.
+        // The test uses the same canonical wall mesh/material as runtime.
+        Material originalWallMaterial = wallAllowlist[0].sharedMaterial;
+        var canonicalCollider = wallAllowlist[0].GetComponent<MeshCollider>();
+        var originalWallMesh = canonicalCollider.sharedMesh;
+        wallFade.Configure(mode, context, materializer, camera);
+        bool materialFaded = wallFade.TryRefreshSightline(
+            rayStart, rayTarget, true) &&
+            wallFade.FadedWallCount == 1 &&
+            wallAllowlist[0].enabled &&
+            wallAllowlist[0].sharedMaterial != originalWallMaterial &&
+            wallAllowlist[0].sharedMaterial.GetFloat("_Surface") == 1f &&
+            wallAllowlist[0].sharedMaterial.GetColor("_BaseColor").a <= 0.21f &&
+            canonicalCollider.sharedMesh == originalWallMesh &&
+            canonicalCollider.enabled &&
+            originalWallMaterial.GetFloat("_Surface") == 0f;
+        int fadeMaterialId = wallAllowlist[0].sharedMaterial.GetInstanceID();
+        bool fadeIdempotent = wallFade.TryRefreshSightline(
+            rayStart, rayTarget, true) &&
+            wallFade.FadedWallCount == 1 &&
+            wallAllowlist[0].sharedMaterial.GetInstanceID() == fadeMaterialId;
+        bool offAxisRestored = wallFade.TryRefreshSightline(
+            rayStart, new Vector3(220f, 40f, 210f), true) &&
+            wallFade.FadedWallCount == 0 &&
+            wallAllowlist[0].sharedMaterial == originalWallMaterial;
+        bool fadeExitRestored = wallFade.TryRefreshSightline(
+            rayStart, rayTarget, true) && wallFade.FadedWallCount == 1;
 
         // Stress the fixed 128-ray-hit buffer. A saturated query MUST
         // fail closed rather than returning a misleading partial list.
@@ -190,6 +219,10 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         bool saturationFailClosed = !context.TryFindOccludingCandidates(
             rayStart, rayTarget, allowedVisuals, detected) &&
             detected.Count == 0 && wall.enabled;
+        bool fadeSaturationRestored = !wallFade.TryRefreshSightline(
+            rayStart, rayTarget, true) &&
+            wallFade.FadedWallCount == 0 &&
+            wallAllowlist[0].sharedMaterial == originalWallMaterial;
         Destroy(crowdedRoot);
         detected.Add(wall);
         bool badRayRejected = !context.TryFindOccludingCandidates(
@@ -210,7 +243,9 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         yield return null;
         bool cleaned = wall.enabled &&
             !disabled.enabled && context.HiddenRendererCount == 0 &&
-            !context.IsEditCameraContext;
+            !context.IsEditCameraContext &&
+            wallFade.FadedWallCount == 0 &&
+            wallAllowlist[0].sharedMaterial == originalWallMaterial;
         var serviceState = controllers[0].TargetState;
         bool remembered = before.IsFinite && serviceState.IsFinite &&
             Vector3.Distance(before.FocusPoint, serviceState.FocusPoint) < 0.75f;
@@ -249,6 +284,8 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         BistroBuilderEditorV2B13CameraRuntimeSelfTest.End(
             canonicalSource && canonicalHit && visibleBefore &&
             disabledExcluded && noAuthoritySource && clearedRegistry &&
+            materialFaded && fadeIdempotent && offAxisRestored &&
+            fadeExitRestored && fadeSaturationRestored &&
             outsideGuard && entered && memoryEdit &&
             beforeEditOcclusionGuard && obstructionFound &&
             strictWhitelist && saturationFailClosed &&
@@ -266,6 +303,11 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
             " disabledWallExcluded=" + disabledExcluded +
             " invalidWallSourceGuard=" + noAuthoritySource +
             " clearedWallRegistry=" + clearedRegistry +
+            " materialFade=" + materialFaded +
+            " fadeIdempotent=" + fadeIdempotent +
+            " saturationFadeRestore=" + fadeSaturationRestored +
+            " offAxisFadeRestore=" + offAxisRestored +
+            " exitFadeRestore=" + fadeExitRestored +
             " whitelist=" + strictWhitelist +
             " saturationFailClosed=" + saturationFailClosed +
             " invalidRayFailClosed=" + badRayRejected +

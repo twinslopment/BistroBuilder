@@ -217,6 +217,22 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
                 BistroBuilder.CameraSystem.BistroBuilderCameraViewService>(
                     FindObjectsInactive.Include));
 
+        // B13: one conservative, on-demand wall fade authority; it never
+        // creates a second camera or modifies architecture/physics materials.
+        BistroBuilderEditorV2WallFadeController wallFade =
+            Object.FindFirstObjectByType<BistroBuilderEditorV2WallFadeController>(
+                FindObjectsInactive.Include);
+        if (wallFade == null)
+            wallFade = host.AddComponent<BistroBuilderEditorV2WallFadeController>();
+        wallFade.Configure(
+            editMode,
+            cameraContext,
+            Object.FindFirstObjectByType<BistroBuilderArchitectureRuntimeMaterializer>(
+                FindObjectsInactive.Include),
+            Object.FindFirstObjectByType<
+                BistroBuilder.CameraSystem.BistroBuilderCameraInspectionService>(
+                    FindObjectsInactive.Include));
+
         RestaurantPlacementSnapService placementSnap =
             Object.FindFirstObjectByType<RestaurantPlacementSnapService>(
                 FindObjectsInactive.Include);
