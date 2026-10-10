@@ -21,6 +21,7 @@ public sealed class BistroBuilderEditorV2CameraVisibilityContext : MonoBehaviour
     // Explicit, on-demand ray query only. Saturation fails closed instead
     // of silently omitting a nearer obstruction. No per-frame allocations.
     private readonly RaycastHit[] occlusionHits = new RaycastHit[128];
+    private readonly List<Renderer> authorizedWallVisuals = new List<Renderer>(64);
 
     public int HiddenRendererCount => originalRendererStates.Count;
     public bool IsEditCameraContext =>
@@ -196,6 +197,26 @@ public sealed class BistroBuilderEditorV2CameraVisibilityContext : MonoBehaviour
                 results.Add(candidate);
         }
         return true;
+    }
+
+    /// <summary>
+    /// Conservatively discovers the materializer's real, canonical wall
+    /// renderers blocking an edit sightline. Returns proposals only; no fade
+    /// or hiding occurs. Floors, furniture and temporary previews are excluded
+    /// because only generated wall roots enter the allowlist.
+    /// </summary>
+    public bool TryFindOccludingArchitectureWalls(
+        Vector3 cameraPosition,
+        Vector3 targetPosition,
+        BistroBuilderArchitectureRuntimeMaterializer materializer,
+        List<Renderer> results)
+    {
+        if (results == null) return false;
+        results.Clear();
+        if (materializer == null) return false;
+        materializer.CollectWallOcclusionCandidates(authorizedWallVisuals);
+        return TryFindOccludingCandidates(
+            cameraPosition, targetPosition, authorizedWallVisuals, results);
     }
 
     private static bool IsFinite(Vector3 point) =>

@@ -136,6 +136,43 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         bool strictWhitelist = context.TryFindOccludingCandidates(
             rayStart, rayTarget, new Renderer[] { offAxis }, detected) &&
             detected.Count == 0;
+
+        // B13 phase 3: wall sources originate in the canonical materializer,
+        // not a scene-wide collider scan or a list crafted by the UI.
+        var wallSourceGo = new GameObject("__B13CanonicalWallSourceQA");
+        var materializer = wallSourceGo.AddComponent<BistroBuilderArchitectureRuntimeMaterializer>();
+        materializer.ConfigureSpatialProjectionRuntime(null, false, false);
+        var wallDoc = new BistroBuilderEditDocument();
+        var authoredWall = new BistroBuilderWallRecord
+        {
+            wallId = BistroBuilderEditId.NewId(), buildPlaneId = "default",
+            wallDefinitionId = "wall.default",
+            axisStart = new Vector2(210f, 198f),
+            axisEnd = new Vector2(210f, 202f),
+            baseElevation = 39f, height = 2.8f, thickness = 0.18f
+        };
+        wallDoc.walls.Add(authoredWall);
+        var wallSummary = materializer.Rebuild(wallDoc);
+        Physics.SyncTransforms(); // QA fixture created in the same frame.
+        var wallAllowlist = new List<Renderer>(4);
+        int canonicalCount = materializer.CollectWallOcclusionCandidates(wallAllowlist);
+        bool canonicalSource = wallSummary.wallObjects == 1 &&
+            canonicalCount == 1 && wallAllowlist[0] != wall &&
+            wallAllowlist[0].gameObject.name == "Wall_" + authoredWall.wallId.Value;
+        bool canonicalHit = context.TryFindOccludingArchitectureWalls(
+            rayStart, rayTarget, materializer, detected) &&
+            detected.Count == 1 && detected[0] == wallAllowlist[0] &&
+            context.HiddenRendererCount == 0;
+        // A disabled real wall is never proposed; absence of a source fails closed.
+        bool visibleBefore = wallAllowlist.Count == 1 && wallAllowlist[0].enabled;
+        if (visibleBefore) wallAllowlist[0].enabled = false;
+        bool disabledExcluded = context.TryFindOccludingArchitectureWalls(
+            rayStart, rayTarget, materializer, detected) && detected.Count == 0;
+        if (visibleBefore) wallAllowlist[0].enabled = true;
+        detected.Add(wall);
+        bool noAuthoritySource = !context.TryFindOccludingArchitectureWalls(
+            rayStart, rayTarget, null, detected) && detected.Count == 0;
+
         // Stress the fixed 128-ray-hit buffer. A saturated query MUST
         // fail closed rather than returning a misleading partial list.
         var crowdedRoot = new GameObject("__B13QACrowdedPhysics");
@@ -204,7 +241,14 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
         Destroy(offAxisGo);
         Destroy(triggerGo);
         Destroy(behindGo);
+        materializer.ClearGenerated();
+        bool clearedRegistry =
+            materializer.CollectWallOcclusionCandidates(wallAllowlist) == 0 &&
+            wallAllowlist.Count == 0;
+        Destroy(wallSourceGo);
         BistroBuilderEditorV2B13CameraRuntimeSelfTest.End(
+            canonicalSource && canonicalHit && visibleBefore &&
+            disabledExcluded && noAuthoritySource && clearedRegistry &&
             outsideGuard && entered && memoryEdit &&
             beforeEditOcclusionGuard && obstructionFound &&
             strictWhitelist && saturationFailClosed &&
@@ -217,6 +261,11 @@ public sealed class BistroBuilderEditorV2B13CameraDriver : MonoBehaviour
             " contextEdit=" + memoryEdit +
             " queryOutsideGuard=" + beforeEditOcclusionGuard +
             " obstructionExact=" + obstructionFound +
+            " canonicalWallSource=" + canonicalSource +
+            " canonicalWallOcclusion=" + canonicalHit +
+            " disabledWallExcluded=" + disabledExcluded +
+            " invalidWallSourceGuard=" + noAuthoritySource +
+            " clearedWallRegistry=" + clearedRegistry +
             " whitelist=" + strictWhitelist +
             " saturationFailClosed=" + saturationFailClosed +
             " invalidRayFailClosed=" + badRayRejected +

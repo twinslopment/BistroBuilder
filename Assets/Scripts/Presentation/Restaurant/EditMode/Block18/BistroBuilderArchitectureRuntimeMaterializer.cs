@@ -32,6 +32,10 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     [SerializeField, Min(0.05f)] private float wallVisualModuleHeight = 1.89958f;
     [SerializeField, Min(0.005f)] private float wallVisualModuleThickness = 0.03436f;
 
+    // Canonical, per-wall visual registry; refreshed only on Rebuild.
+    // Occlusion queries never scan the whole scene or re-find walls by name.
+    private readonly List<MeshRenderer> authoredWallRenderers =
+        new List<MeshRenderer>(64);
     private readonly List<BistroBuilderOpeningRecord> hostedOpenings =
         new List<BistroBuilderOpeningRecord>(8);
     private readonly List<Vector2> blockedIntervals = new List<Vector2>(8);
@@ -48,6 +52,28 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
 
     public BistroBuilderEditDocument LastDocument =>
         lastDocument != null ? lastDocument.DeepClone() : null;
+
+    /// <summary>
+    /// Supplies an explicit whitelist of rendered, collider-backed wall roots
+    /// from this materializer's current canonical document. No global scene
+    /// search, visual mutation or ownership of the obstruction decision.
+    /// </summary>
+    public int CollectWallOcclusionCandidates(List<Renderer> results)
+    {
+        if (results == null) return 0;
+        results.Clear();
+        if (generatedRoot == null || lastDocument == null) return 0;
+        for (int index = 0; index < authoredWallRenderers.Count; index++)
+        {
+            MeshRenderer renderer = authoredWallRenderers[index];
+            if (renderer == null || !renderer.enabled ||
+                !renderer.gameObject.activeInHierarchy) continue;
+            MeshCollider collider = renderer.GetComponent<MeshCollider>();
+            if (collider != null && collider.enabled && !collider.isTrigger)
+                results.Add(renderer);
+        }
+        return results.Count;
+    }
 
     public BistroBuilderArchitectureMaterializationSummary Rebuild(
         BistroBuilderEditDocument document)
@@ -112,6 +138,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
     public void ClearGenerated()
     {
         EnsureRoot();
+        authoredWallRenderers.Clear();
         for (int i = generatedRoot.childCount - 1; i >= 0; i--)
             DestroyGeneratedObject(generatedRoot.GetChild(i).gameObject);
     }
@@ -143,6 +170,7 @@ public sealed class BistroBuilderArchitectureRuntimeMaterializer : MonoBehaviour
             var collider = go.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
+        authoredWallRenderers.Add(renderer);
 
         BistroBuilderOpeningVisuals.Build(go.transform, wall, openings, renderer.sharedMaterial);
 
