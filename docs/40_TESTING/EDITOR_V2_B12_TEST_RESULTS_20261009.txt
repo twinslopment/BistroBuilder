@@ -1,0 +1,13 @@
+EDITOR V2 B12 — 2026-10-09 — TECHNICAL VERIFICATION
+Branch: feature/editor-v2; master integration/master-current-20260918 untouched.
+
+B12 real scene runtime: PASS, exit=0, seatingFive=True, financeRollback=True, overlapRejected=True, undo/redo PASS.
+B12 five-piece full Save/Load: PASS, exit=0, savedFive=True, loadedFive=True, seatsBefore=4, seatsAfter=4, exactLinks=True, QA slot deleted.
+B12 valid64 fixture: 3/3 PASS across two independent sequential runs. Last run creationMs=240,262,354; reloadMs=283,271,312. All unique IDs, 64/64 created, atomic undo/redo, 38 baseline objects restored.
+BBSIS Phase2C: PASS, exit=0, contemporaneous Play Mode log contains '[PASS] PASS - preflight...'.
+B8 intermittent fixture fixed: isolated positive duplicate QA added. Three manual reruns all exit=0; last official regression B8 75/75 PASS.
+B4 and B5 latest regression exit=0; B9 and B10 have existing earlier PASS (42/42, 40/40). Current later B9/B10 cannot complete because concurrent untracked UI component BistroBuilderEditorV2PremiumLayout references missing SetGalleryTab/SelectedGalleryTab on RestaurantPlaceableCatalogApprovedSkin; UI agent actively editing. Do NOT mark latest complete regression PASS.
+Windows x64 build of B12 optimized core: PASS, exit=0, BB_PLAYTEST_BUILD_PASS, 13 warnings, Logs/B12_SEQ_WINDOWS_BUILD.log, Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe. This PASS predates the actively modified/uncompiled UI files.
+False-negative QA runner history: original script spawned overlapping Unity sessions and queried stale BBSIS file. Tools/BistroBuilder/RunEditorV2B12FinalQA.ps1 now waits for Unity process exit and checks fresh reports/logs.
+Important: 64 trial uses wide empty QA dining area; GC.GetAllocatedBytesForCurrentThread returning 0 is not proof of zero Unity allocations; table fixture has zero catalog cost; financial rollback tested by controlled third-payment rejection.
+B12 template UI remains in development and has not been visually approved in responsive build.

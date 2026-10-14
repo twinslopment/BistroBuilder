@@ -66,6 +66,7 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (GetComponent<BistroBuilderGalleryViva>() != null) return;
         if (panel == null) return;
         if (service == null)
             service = FindFirstObjectByType<RestaurantPlaceableCatalogService>(
@@ -81,7 +82,9 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         if (root == null || itemsScroll == null) return;
 
         RectTransform scrollRect = itemsScroll.transform as RectTransform;
-        bool compact = content.rect.height < 635f;
+        bool premium = GetComponent<BistroBuilderEditorV2PremiumLayout>() != null;
+        bool compact = premium ? Screen.width < 1500 || Screen.height < 840 :
+            content.rect.height < 635f;
         bool hasOverlay = content.Find("ApprovedFilters")?.gameObject.activeSelf == true ||
             content.Find("ApprovedPlacement")?.gameObject.activeSelf == true;
         var list = service != null ? service.AvailableItems : null;
@@ -112,47 +115,67 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         for (int i = 0; i < relatedButtons.Length; i++)
             if (relatedButtons[i] != null)
                 relatedButtons[i].interactable = catalogClickAllowed;
-        float top = 286f;
-        float block = compact ? 84f : (RelatedCount == 0 ? 142f : 208f);
+        float top = premium ? 222f : 286f;
+        float block = premium ? (compact ? 194f : 300f) :
+            (compact ? 84f : (RelatedCount == 0 ? 142f : 208f));
         root.anchorMin = root.anchorMax = new Vector2(0f, 1f);
         root.pivot = new Vector2(0f, 1f);
-        root.anchoredPosition = new Vector2(20f, -top);
-        root.sizeDelta = new Vector2(Mathf.Max(270f, content.rect.width - 40f), block);
+        float rail = premium ? (compact ? 162f : 183f) : 0f;
+        root.anchoredPosition = new Vector2(premium ? rail + 10f : 20f, -top);
+        root.sizeDelta = new Vector2(Mathf.Max(220f,
+            content.rect.width - (premium ? rail + 23f : 40f)), block);
         var featuredCard = root.Find("FeaturedCard") as RectTransform;
         if (featuredCard != null)
         {
             featuredCard.anchorMin = new Vector2(0, 1);
             featuredCard.anchorMax = new Vector2(1, 1);
             featuredCard.pivot = new Vector2(.5f, 1);
-            featuredCard.offsetMin = new Vector2(0, -(compact ? 84 : 142));
+            featuredCard.offsetMin = new Vector2(0, -(premium
+                ? (compact ? 194f : 190f)
+                : (compact ? 114f : 142f)));
             featuredCard.offsetMax = Vector2.zero;
         }
         if (mainImage != null)
         {
             var imgRect = mainImage.rectTransform;
-            imgRect.sizeDelta = new Vector2(compact ? 64 : 120,
-                compact ? 63 : 109);
+            imgRect.sizeDelta = new Vector2(premium
+                ? (compact ? 132f : 160f) : (compact ? 68f : 120f),
+                premium ? (compact ? 169f : 169f)
+                    : (compact ? 90f : 109f));
         }
         if (mainDescription != null)
-            mainDescription.gameObject.SetActive(!compact);
+            mainDescription.gameObject.SetActive(premium || !compact);
         if (mainName != null)
         {
-            Fixed(mainName.rectTransform, compact ? 83 : 139,
-                compact ? 24 : 65, compact ? 213 : 225, compact ? 27 : 35);
-            Fixed(mainPrice.rectTransform, compact ? 83 : 139,
-                compact ? 3 : 7, 82, 24);
-            Fixed(mainAction.rectTransform, compact ? 190 : 244,
-                compact ? 3 : 7, 104, 24);
+            float labelX = premium ? (compact ? 150f : 178f) :
+                (compact ? 83f : 139f);
+            Fixed(mainName.rectTransform, labelX,
+                premium ? (compact ? 107f : 105f) : (compact ? 38f : 73f),
+                premium ? (compact ? 270f : 275f) :
+                    (compact ? 152f : 225f),
+                premium ? 48f : (compact ? 30f : 42f));
+            if (premium && mainDescription != null)
+                Fixed(mainDescription.rectTransform, labelX,
+                    compact ? 63f : 54f, compact ? 255f : 265f, 46f);
+            Fixed(mainPrice.rectTransform, labelX,
+                premium ? 15f : (compact ? 4f : 8f), 105f, 30f);
+            Fixed(mainAction.rectTransform,
+                premium ? (compact ? 290f : 327f) :
+                    (compact ? 151f : 244f),
+                premium ? 15f : (compact ? 4f : 8f),
+                premium ? 132f : (compact ? 95f : 104f), 30f);
             var badge = featuredCard != null ?
                 featuredCard.Find("Badge") as RectTransform : null;
             if (badge != null)
-                Fixed(badge, compact ? 83 : 139,
-                    compact ? 57 : 104, 140, 17);
+                Fixed(badge, labelX,
+                    premium ? (compact ? 164f : 165f) :
+                        (compact ? 79f : 125f), 156f, 19f);
         }
         if (relatedArea != null)
             relatedArea.SetActive(!compact && RelatedCount > 0);
         var scroll = scrollRect;
-        float minimum = top + block + 9f;
+        float minimum = premium ? (compact ? 434f : 532f) :
+            top + block + 9f;
         // The preview skin sets the ordinary top inset; reserve ONLY the extra
         // height occupied by this strip and preserve the existing bottom edge.
         if (scroll.offsetMax.y > -minimum)
@@ -170,7 +193,27 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
             if (category >= 0 && (int)definition.Category != category) continue;
             candidates.Add(definition);
         }
-        featured = candidates.Count > 0 ? candidates[0] : null;
+        // A gallery highlight must not blindly promote a test cube priced
+        // at zero when authored, purchasable furniture exists. All values
+        // still come from the live catalog, with deterministic tie-breaking.
+        int bestIndex = -1;
+        int bestScore = -1;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            var item = candidates[i];
+            int score = item.InspectorPreview != null ? 4 : 0;
+            if (item.PurchasePrice > 0) score += 4;
+            if (item.Category == RestaurantPlaceableItemCategory.Furniture)
+                score += 2;
+            if (item.DisplayName.IndexOf("bistr", StringComparison.OrdinalIgnoreCase) >= 0)
+                score += 1;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+        featured = bestIndex >= 0 ? candidates[bestIndex] : null;
         if (featured == null)
         {
             RelatedCount = 0;
@@ -183,10 +226,23 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         mainPrice.text = featured.PurchasePrice.ToString("N0") + " €";
         mainImage.sprite = featured.InspectorPreview;
         mainImage.enabled = mainImage.sprite != null;
-        RelatedCount = Mathf.Min(3, candidates.Count - 1);
+        // Related articles prefer the same family, then other genuine
+        // catalog items. No duplicate featured card or placeholder records.
+        RelatedCount = 0;
+        for (int pass = 0; pass < 2 && RelatedCount < 3; pass++)
+        {
+            for (int i = 0; i < candidates.Count && RelatedCount < 3; i++)
+            {
+                var item = candidates[i];
+                if (item == featured) continue;
+                bool sameFamily = item.Category == featured.Category;
+                if ((pass == 0) != sameFamily) continue;
+                relatedDefinitions[RelatedCount++] = item;
+            }
+        }
         for (int i = 0; i < relatedDefinitions.Length; i++)
         {
-            relatedDefinitions[i] = i < RelatedCount ? candidates[i + 1] : null;
+            if (i >= RelatedCount) relatedDefinitions[i] = null;
             relatedButtons[i].gameObject.SetActive(i < RelatedCount);
             if (i >= RelatedCount) continue;
             var definition = relatedDefinitions[i];
@@ -217,7 +273,8 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         root = NewRect("BB_EditorV2_GalleryShowcase", content);
         var card = NewRect("FeaturedCard", root);
         var cardImage = card.gameObject.AddComponent<Image>();
-        cardImage.color = Ivory;
+        BistroBuilderEditorV2BrassArt.Decorate(cardImage,
+            BistroBuilderEditorV2BrassArt.Style.Dark);
         var border = card.gameObject.AddComponent<Outline>();
         border.effectColor = Brass;
         border.effectDistance = new Vector2(1f, -1f);
@@ -231,16 +288,20 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         imageRect.anchorMin = imageRect.anchorMax = new Vector2(0f, .5f);
         imageRect.pivot = new Vector2(0f, .5f);
         imageRect.anchoredPosition = new Vector2(8, 0);
-        var badge = CreateText(card, "Badge", "DESTACADO", 10, Brass, inter);
+        var badge = CreateText(card, "Badge", "DESTACADO", 11,
+            new Color32(253, 204, 115, 255), inter);
         Fixed(badge.rectTransform, 139, 104, 135, 16);
-        mainName = CreateText(card, "Name", "Artículo", 18, Ink, recoleta);
+        mainName = CreateText(card, "Name", "Artículo", 22,
+            new Color32(255, 246, 224, 255), recoleta);
         Fixed(mainName.rectTransform, 139, 65, 225, 35);
-        mainDescription = CreateText(card, "Description", "", 10, Muted, inter);
+        mainDescription = CreateText(card, "Description", "", 15,
+            new Color32(244, 224, 192, 255), inter);
         mainDescription.textWrappingMode = TextWrappingModes.Normal;
         Fixed(mainDescription.rectTransform, 139, 28, 222, 37);
-        mainPrice = CreateText(card, "Price", "", 14, Ink, inter);
+        mainPrice = CreateText(card, "Price", "", 19,
+            new Color32(255, 208, 121, 255), inter);
         Fixed(mainPrice.rectTransform, 139, 7, 82, 24);
-        mainAction = CreateText(card, "Action", "Ver ficha ›", 11, Brass, inter);
+        mainAction = CreateText(card, "Action", "Ver ficha ›", 15, Brass, inter);
         Fixed(mainAction.rectTransform, 244, 7, 112, 24);
 
         relatedArea = NewRect("Related", root).gameObject;
@@ -249,12 +310,12 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
         relatedRect.anchorMax = new Vector2(1, 0);
         relatedRect.pivot = new Vector2(.5f, 0);
         relatedRect.offsetMin = new Vector2(0, 0);
-        relatedRect.offsetMax = new Vector2(0, 62);
+        relatedRect.offsetMax = new Vector2(0, 103);
         var relatedTitle = CreateText(relatedRect, "Heading", "Artículos relacionados",
-            12, Ink, recoleta);
+            17, Ink, recoleta);
         relatedTitle.rectTransform.anchorMin = new Vector2(0, 1);
         relatedTitle.rectTransform.anchorMax = new Vector2(1, 1);
-        relatedTitle.rectTransform.offsetMin = new Vector2(5, -18);
+        relatedTitle.rectTransform.offsetMin = new Vector2(5, -24);
         relatedTitle.rectTransform.offsetMax = new Vector2(-5, 0);
         for (int i = 0; i < 3; i++)
         {
@@ -264,18 +325,18 @@ public sealed class BistroBuilderEditorV2GalleryShowcase : MonoBehaviour
             mini.anchorMax = new Vector2((i + 1) / 3f, 0f);
             mini.pivot = new Vector2(.5f, 0);
             mini.offsetMin = new Vector2(2f, 0);
-            mini.offsetMax = new Vector2(-2f, 41);
+            mini.offsetMax = new Vector2(-2f, 76);
             mini.gameObject.AddComponent<Image>().color = Cream;
             relatedButtons[i] = mini.gameObject.AddComponent<Button>();
             relatedButtons[i].onClick.AddListener(() => OpenRelated(index));
             relatedImages[i] = NewRect("Thumbnail", mini).gameObject.AddComponent<Image>();
             relatedImages[i].preserveAspect = true;
             relatedImages[i].raycastTarget = false;
-            Fixed(relatedImages[i].rectTransform, 5, 3, 40, 35);
-            relatedNames[i] = CreateText(mini, "Title", "", 10, Ink, inter);
+            Fixed(relatedImages[i].rectTransform, 6, 5, 68, 58);
+            relatedNames[i] = CreateText(mini, "Title", "", 13, Ink, inter);
             relatedNames[i].rectTransform.anchorMin = Vector2.zero;
             relatedNames[i].rectTransform.anchorMax = Vector2.one;
-            relatedNames[i].rectTransform.offsetMin = new Vector2(48, 2);
+            relatedNames[i].rectTransform.offsetMin = new Vector2(77, 4);
             relatedNames[i].rectTransform.offsetMax = new Vector2(-2, -2);
         }
         root.gameObject.SetActive(false);

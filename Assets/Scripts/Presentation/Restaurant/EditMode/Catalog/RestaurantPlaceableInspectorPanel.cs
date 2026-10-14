@@ -28,6 +28,8 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private RestaurantEditInteractionController interactionController;
     private RestaurantEditModeService editModeService;
     private BistroBuilderUiShell uiShell;
+    private BistroBuilderGalleryViva gallery;
+    private RectTransform topChrome, bottomChrome;
 
     private RectTransform root;
     private RectTransform content;
@@ -56,6 +58,11 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private string lastInteractionMessage = string.Empty;
     private bool favorite;
     private bool built;
+    private bool resetScrollOnShow;
+    private BistroBuilderEditorV2ItemDetailsView referenceView;
+    private bool replacementPreviewRequested;
+    public bool IsReplacementPreview => replacementPreviewRequested && currentReplacementDefinition != null;
+
 
     private readonly List<GameObject> dynamicVariants =
         new List<GameObject>(8);
@@ -100,6 +107,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         var selectedWorld = GetComponent<BistroBuilderEditorV2SelectionInspector>();
         if (!editMode || managementOpen ||
+            (catalogPanel != null && RestaurantEditCatalogSections.IsArchitecture(catalogPanel.CurrentSection)) ||
             (selectedWorld != null && selectedWorld.IsShowing))
         {
             if (root.gameObject.activeSelf)
@@ -116,11 +124,32 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         }
 
         RefreshReplacementIfNeeded();
+        if (gallery != null && currentReplacementDefinition != null && favoriteText != null)
+        {
+            bool currentFavorite = gallery.IsFavorite(currentReplacementDefinition);
+            if (favorite != currentFavorite)
+            {
+                favorite = currentFavorite;
+                favoriteText.text = favorite ? "♥" : "♡";
+                favoriteText.color = favorite ? Olive : TextMuted;
+            }
+        }
+        referenceView?.RefreshFavorite();
+        referenceView?.RefreshTransformValues();
         ApplyScreenBounds();
+        if (resetScrollOnShow && root.gameObject.activeInHierarchy)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(content);
+            Canvas.ForceUpdateCanvases();
+            var scroll = root.GetComponent<ScrollRect>();
+            scroll.StopMovement(); scroll.verticalNormalizedPosition = 1f;
+            resetScrollOnShow = false;
+        }
     }
 
     private void CacheDependencies()
     {
+        if (gallery == null) gallery = GetComponent<BistroBuilderGalleryViva>();
         if (catalogPanel == null)
             catalogPanel = GetComponent<RestaurantPlaceableCatalogPanel>();
         if (interactionController == null)
@@ -202,6 +231,9 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
             new GameObject("BB_UIUX_PlaceableInspector", typeof(RectTransform));
 
         rootObject.transform.SetParent(canvas.transform, false);
+        // This native V2 inspector owns its light-paper palette. Generic HUD
+        // theme scans must not recolor its text white as on a dark HUD panel.
+        rootObject.AddComponent<BistroBuilderEditChromeSurface>();
         root = rootObject.GetComponent<RectTransform>();
         root.anchorMin = new Vector2(1f, 1f);
         root.anchorMax = new Vector2(1f, 1f);
@@ -210,7 +242,8 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         Image panelImage = rootObject.AddComponent<Image>();
         panelImage.color = Panel;
-        ApplyRounded(panelImage, 24);
+        BistroBuilderEditorV2BrassArt.Decorate(panelImage,
+            BistroBuilderEditorV2BrassArt.Style.Frame);
 
         Shadow panelShadow = rootObject.AddComponent<Shadow>();
         panelShadow.effectColor = new Color(0f, 0f, 0f, 0.10f);
@@ -226,7 +259,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         scroll.scrollSensitivity = 22f;
 
         RectTransform viewport = CreateRect("Viewport", root);
-        Stretch(viewport, 8f, 8f, 8f, 8f);
+        Stretch(viewport, 8f, 8f, 8f, 68f);
         viewport.gameObject.AddComponent<RectMask2D>();
 
         content = CreateRect("Content", viewport);
@@ -242,7 +275,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         layout.spacing = 7f;
         layout.childAlignment = TextAnchor.UpperCenter;
         layout.childControlWidth = true;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
 
@@ -262,6 +295,23 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         BuildStatus();
         BuildReplacementAction();
 
+        // B10 quote/confirmation stays in this adapter. Only the approved
+        // native details view is exposed; the previous composition is hidden.
+        if (gallery == null) gallery = GetComponent<BistroBuilderGalleryViva>();
+        if (gallery != null)
+        {
+            foreach (Transform child in root)
+                if (child.name != "V2Paper") child.gameObject.SetActive(false);
+            referenceView = new BistroBuilderEditorV2ItemDetailsView(root, gallery, Hide);
+            if (replacementSection != null)
+            {
+                replacementSection.transform.SetParent(root,false);
+                var drawer=(RectTransform)replacementSection.transform;
+                BistroBuilderGalleryViva.Place(drawer,14,606,290,111);
+                var cancel=gallery.SymbolButton("CancelReplacement",drawer,260,4,24,24,BistroBuilderGalleryVivaSymbol.Shape.Close,Hide);
+                replacementSection.SetActive(false);
+            }
+        }
         built = true;
         ApplyScreenBounds();
         root.gameObject.SetActive(false);
@@ -270,12 +320,15 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     private void BuildHeader()
     {
         RectTransform row = CreateLayoutRow("Header", 44f);
+        row.SetParent(root, false);
+        row.anchorMin = new Vector2(0, 1); row.anchorMax = new Vector2(1, 1); row.pivot = new Vector2(.5f, 1);
+        row.offsetMin = new Vector2(14, -58); row.offsetMax = new Vector2(-14, -14);
         HorizontalLayoutGroup layout =
             row.gameObject.AddComponent<HorizontalLayoutGroup>();
         layout.spacing = 6f;
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlHeight = true;
-        layout.childControlWidth = false;
+        layout.childControlWidth = true;
         layout.childForceExpandHeight = true;
         layout.childForceExpandWidth = false;
 
@@ -287,7 +340,9 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
             26f,
             TextPrimary,
             TextAlignmentOptions.MidlineLeft);
-        AddLayout(titleText.gameObject, 0f, 1f);
+        AddLayout(titleText.gameObject, 0f, 1f).minWidth = 0;
+        titleText.enableAutoSizing = true; titleText.fontSizeMax = 26; titleText.fontSizeMin = 16;
+        titleText.overflowMode = TextOverflowModes.Overflow;
 
         Button close = CreateTextButton(
             "Close",
@@ -335,7 +390,12 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
             favoriteButton.GetComponentInChildren<TMP_Text>(true);
         favoriteButton.onClick.AddListener(() =>
         {
-            favorite = !favorite;
+            if (gallery != null && currentReplacementDefinition != null)
+            {
+                gallery.ToggleFavorite(currentReplacementDefinition);
+                favorite = gallery.IsFavorite(currentReplacementDefinition);
+            }
+            else favorite = !favorite;
             if (favoriteText != null)
             {
                 favoriteText.text = favorite ? "♥" : "♡";
@@ -597,12 +657,25 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
             return;
 
         currentReplacementDefinition = definition;
+        CacheReplacementDependencies();
+        replacementPreviewRequested = replacementSelection != null && replacementSelection.SelectionCount > 0;
         currentData = RestaurantPlaceableInspectorData.From(definition);
-        favorite = false;
+        favorite = gallery != null && gallery.IsFavorite(definition);
         lastInteractionMessage = string.Empty;
 
         BuildIfNeeded();
         BindData(currentData);
+        interactionController?.PrepareInspectorDefinition(definition);
+        bool configure = !replacementPreviewRequested && interactionController != null;
+        referenceView?.Bind(definition, Vector3.zero,
+            configure && interactionController.CanConfigureInspectorDimensions(definition)
+                ? dims => interactionController.TrySetInspectorDimensions(definition, null, dims) : null,
+            configure && definition.EditableDefinition != null && definition.EditableDefinition.CanRotate
+                ? angles => interactionController.TrySetInspectorRotation(definition, null, angles) : null,
+            interactionController != null && interactionController.ActiveMember != null ? id => TryApplyVariant(id) : null,
+            configure ? () => interactionController.GetInspectorDimensions(definition) : null,
+            configure ? () => interactionController.GetInspectorRotation(definition) : null,
+            configure ? () => interactionController.InspectorTransformMessage : null);
         RefreshReplacementAction();
         if (replacementSection != null && replacementSection.activeSelf)
             SetStatus(true, "Sustitución pendiente",
@@ -612,6 +685,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         {
             root.gameObject.SetActive(true);
             root.SetAsLastSibling();
+            resetScrollOnShow = true;
         }
     }
 
@@ -648,8 +722,8 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
 
         if (favoriteText != null)
         {
-            favoriteText.text = "♡";
-            favoriteText.color = TextMuted;
+            favoriteText.text = favorite ? "♥" : "♡";
+            favoriteText.color = favorite ? Olive : TextMuted;
         }
 
         RebuildVariants(data);
@@ -990,6 +1064,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
     /// </summary>
     public void Hide()
     {
+        replacementPreviewRequested = false;
         currentData = null;
         currentReplacementDefinition = null;
         RefreshReplacementAction();
@@ -1002,43 +1077,7 @@ public sealed partial class RestaurantPlaceableInspectorPanel : MonoBehaviour
         if (root == null)
             return;
 
-        float topInset = 84f;
-        float bottomInset = 92f;
-
-        GameObject topBar =
-            GameObject.Find(BistroBuilderUiShell.EditModeTopBarName);
-        if (topBar != null &&
-            topBar.TryGetComponent(out RectTransform topRect) &&
-            topRect.rect.height > 1f)
-        {
-            topInset = topRect.rect.height + 26f;
-        }
-
-        GameObject bottomBar =
-            GameObject.Find(BistroBuilderUiShell.EditModeBottomBarName);
-        if (bottomBar != null &&
-            bottomBar.TryGetComponent(out RectTransform bottomRect) &&
-            bottomRect.rect.height > 1f)
-        {
-            bottomInset = bottomRect.rect.height + 24f;
-        }
-
-        RectTransform canvasRect =
-            root.parent as RectTransform;
-
-        float canvasHeight =
-            canvasRect != null && canvasRect.rect.height > 0f
-                ? canvasRect.rect.height
-                : 1080f;
-
-        float available =
-            Mathf.Max(420f, canvasHeight - topInset - bottomInset);
-
-        root.anchorMin = new Vector2(1f, 1f);
-        root.anchorMax = new Vector2(1f, 1f);
-        root.pivot = new Vector2(1f, 1f);
-        root.sizeDelta = new Vector2(388f, Mathf.Min(830f, available));
-        root.anchoredPosition = new Vector2(-24f, -topInset);
+        BistroBuilderEditorV2ReferenceLayout.Panel(root, true, 318);
     }
 
     private RectTransform CreateLayoutRow(string name, float height)

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Editor V2 · Paneles R4</title>
+  <link rel="stylesheet" href="editor-v2.css?v=20261012-r4-4">
+</head>
+<body>
+  <main id="editor" aria-label="Editor V2: revisión del diseño aprobado">
+    <div id="restaurant-reference" role="img" aria-label="Ilustración del restaurante de la referencia aprobada"></div>
+    <header id="topbar" class="paper ornate">
+      <div id="brand" aria-label="Bistro Builder"></div>
+      <button id="editor-badge" aria-label="Acciones de la reforma">
+        <span data-icon="tools"></span><span><strong>EDITOR V2</strong><small>MODO EDICIÓN</small></span>
+      </button>
+      <div id="venue" class="paper ornate"><strong>La Petite Brasserie</strong><span>Guardado automático · 10:24</span><button aria-label="Cambiar nombre del restaurante" data-icon="pencil" id="rename"></button></div>
+      <nav id="top-actions" aria-label="Vista y opciones">
+        <button id="undo" aria-label="Deshacer" data-icon="undo"></button>
+        <button id="redo" aria-label="Rehacer" data-icon="redo"></button>
+        <div id="day-control"><span data-icon="sun"></span><select id="day" aria-label="Iluminación"><option>Día</option><option>Atardecer</option><option>Noche</option></select></div>
+        <button id="photo" aria-label="Capturar diseño" data-icon="camera"></button>
+        <button id="settings" aria-label="Opciones de revisión" data-icon="gear"></button>
+      </nav>
+    </header>
+
+    <aside id="catalog" class="paper ornate" aria-label="Catálogo Galería Viva">
+      <div class="catalog-heading"><span id="fleur"></span><h1>Catálogo Galería Viva</h1><p>Mobiliario y equipamiento para tu restaurante</p></div>
+      <button class="catalog-close" id="collapse-catalog" aria-label="Plegar catálogo" data-icon="close"></button>
+      <div class="search-row"><span data-icon="search"></span><input id="search" type="search" placeholder="Buscar artículos…" aria-label="Buscar artículos"><button id="filter-toggle" aria-label="Filtros" aria-expanded="false" data-icon="filter"></button></div>
+      <div class="catalog-tabs" role="tablist" aria-label="Colección">
+        <button data-tab="all" role="tab" aria-selected="true"><span data-icon="grid-fill"></span>Todos</button>
+        <button data-tab="favorites" role="tab" aria-selected="false"><span data-icon="star-fill"></span>Favoritos</button>
+        <button data-tab="recent" role="tab" aria-selected="false"><span data-icon="clock"></span>Recientes</button>
+      </div>
+      <nav id="categories" aria-label="Categorías del catálogo"></nav>
+      <section id="featured" aria-label="Artículo destacado">
+        <div class="hero-art" aria-hidden="true"></div>
+        <span class="featured-badge"><span data-icon="bag"></span>DESTACADO</span>
+        <h2 id="featured-name"></h2><p id="featured-description"></p><strong id="featured-price"></strong>
+        <button id="featured-details">Ver detalles <span data-icon="arrow"></span></button>
+        <button class="heart" id="featured-favorite" aria-label="Guardar destacado en favoritos" data-icon="heart"></button>
+        <button class="round hero-previous" aria-label="Anterior destacado" data-icon="left"></button><button class="round hero-next" aria-label="Siguiente destacado" data-icon="right"></button>
+        <div id="featured-dots" aria-label="Elegir destacado"></div>
+      </section>
+      <section id="related" aria-label="Artículos relacionados"><h2 class="section-heading">Artículos relacionados</h2><button id="all-related">Ver todos <span data-icon="arrow"></span></button><div id="related-cards"></div><button class="round related-previous" aria-label="Anteriores relacionados" data-icon="left"></button><button class="round related-next" aria-label="Siguientes relacionados" data-icon="right"></button></section>
+      <section id="all-items" aria-label="Todos los artículos"><h2 class="section-heading" id="all-heading">Todos los artículos — Mesas</h2><select id="order" aria-label="Orden del catálogo"><option value="relevance">Orden: relevancia</option><option value="price-asc">Precio: menor primero</option><option value="price-desc">Precio: mayor primero</option><option value="name">Nombre</option></select><div id="items-grid"></div><p id="empty" hidden>No hay artículos con estos filtros.</p></section>
+      <form id="filters" class="paper popup" hidden aria-label="Filtrar artículos">
+        <h2>Filtrar artículos</h2><button type="button" id="filter-close" class="popup-close" aria-label="Cerrar filtros" data-icon="close"></button>
+        <fieldset><legend>Ubicación</legend><div class="scope-options"><label><input type="radio" name="scope" value="all" checked> Todas</label><label><input type="radio" name="scope" value="interior"> Interior</label><label><input type="radio" name="scope" value="exterior"> Exterior</label></div></fieldset>
+        <fieldset><legend>Precio (€)</legend><div class="price-inputs"><input id="price-min" type="number" min="0" placeholder="Desde" aria-label="Precio mínimo"><input id="price-max" type="number" min="0" placeholder="Hasta" aria-label="Precio máximo"></div></fieldset>
+        <p id="filter-error" role="alert"></p><div class="filter-actions"><button type="button" id="filter-reset">Limpiar filtros</button><button type="submit" class="selected">Aplicar filtros</button></div>
+      </form>
+    </aside>
+    <button id="catalog-rail" class="paper ornate" hidden aria-label="Desplegar catálogo"><span data-icon="right"></span></button>
+
+    <aside id="inspector" class="paper ornate" aria-label="Detalles del artículo">
+      <h1 id="inspector-title">Mesa bistró clásica</h1><button id="inspector-favorite" aria-label="Guardar artículo en favoritos" data-icon="star"></button>
+      <div id="inspector-preview"><div id="large-product"></div><button id="zoom" aria-label="Ampliar imagen" data-icon="zoom"></button></div>
+      <p id="inspector-description">Mesa clásica de bistró con tablero de madera y base de hierro fundido. Un diseño versátil y atemporal que encaja en cualquier ambiente.</p>
+      <section id="dimensions" class="property-section"><h2>Dimensiones</h2><div class="dimension-row"><label for="width">Ancho</label><select id="width" aria-label="Ancho"><option>80 cm</option></select></div><div class="dimension-row"><label for="depth">Profundidad</label><select id="depth" aria-label="Profundidad"><option>80 cm</option></select></div><div class="dimension-row"><label for="height">Altura</label><select id="height" aria-label="Altura"><option>75 cm</option></select></div><button id="lock-ratio" class="ratio" aria-label="Vincular dimensiones" aria-pressed="true" data-icon="link"></button></section>
+      <section id="rotation" class="property-section"><h2>Rotación</h2><div class="rotation-fields"><label>X<select id="rotation-x" aria-label="Rotación X"><option>0°</option><option>90°</option><option>180°</option><option>270°</option></select></label><label>Y<select id="rotation-y" aria-label="Rotación Y"><option>0°</option><option>90°</option><option>180°</option><option>270°</option></select></label><label>Z<select id="rotation-z" aria-label="Rotación Z"><option>0°</option><option>90°</option><option>180°</option><option>270°</option></select></label></div></section>
+      <section id="materials" class="property-section"><h2>Materiales</h2><label><span class="wood-swatch"></span><select id="wood-material" aria-label="Material del tablero"><option>Madera de roble</option><option>Mármol claro</option><option>Nogal oscuro</option></select></label><label><span class="metal-swatch"></span><select id="base-material" aria-label="Material de la base"><option>Hierro negro</option><option>Latón envejecido</option></select></label></section>
+      <section id="variants" class="property-section"><h2>Variantes</h2><div id="variant-cards"></div></section>
+    </aside>
+
+    <footer id="bottom-bar" class="paper ornate" aria-label="Herramientas de edición">
+      <fieldset id="mode-tools"><legend>MODO</legend><button class="selected" data-tool="select"><span data-icon="cursor"></span>Seleccionar</button><button data-tool="place"><span data-icon="chair"></span>Colocar</button><button data-tool="build"><span data-icon="hammer"></span>Construir</button><button data-tool="surfaces"><span data-icon="layers"></span>Superficies</button></fieldset>
+      <fieldset id="edit-tools"><legend>EDITAR</legend><button data-action="move"><span data-icon="move"></span>Mover</button><button data-action="rotate"><span data-icon="rotate"></span>Girar</button><button data-action="duplicate"><span data-icon="duplicate"></span>Duplicar</button><button class="destructive" data-action="delete"><span data-icon="trash"></span>Eliminar</button></fieldset>
+      <fieldset id="help-tools"><legend>AYUDAS</legend><button class="selected" id="snapping" aria-pressed="true"><span data-icon="magnet"></span>Snapping</button><button id="grid-toggle" aria-pressed="false"><span data-icon="grid"></span>Cuadrícula</button><button id="views"><span data-icon="cube"></span>Vistas</button></fieldset>
+    </footer>
+    <dialog id="zoom-dialog" class="paper ornate"><button aria-label="Cerrar imagen ampliada" id="zoom-close" data-icon="close"></button><div id="zoom-product"></div></dialog>
+    <dialog id="review-dialog" class="paper"><h2>Opciones</h2><button id="review-fullscreen">Abrir en pantalla completa</button><button id="review-close">Cerrar</button></dialog>
+    <div id="toast" role="status" hidden></div>
+    <div id="fullscreen-entry" class="paper" hidden><p>Editor V2</p><button id="fullscreen-enter" class="selected">Probar en pantalla completa</button><button id="fullscreen-skip">Abrir en ventana</button></div>
+  </main>
+  <script src="editor-v2-glyphs.js?v=20261012-r4-4"></script>
+  <script src="editor-v2.js?v=20261012-r4-4"></script>
+</body>
+</html>

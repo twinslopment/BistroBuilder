@@ -1,0 +1,35 @@
+# Editor V2 — R8 Windows: catálogo, ficha, sillas y scroll — 13/10/2026
+
+## Decisión del usuario y resultado
+
+Se elimina «Galería Viva» del título y queda **Catálogo**. Las tres pestañas y las nueve categorías usan doce siluetas originales SDF con relieve de latón, brillo y sombra; Inter real con peso Semibold y medidas comunes, incluido Almacenamiento. Se integra el módulo autorizado del chat «Averiguar cómo activar un agente», conservado en `Tools/EditorV2CatalogStyle`.
+
+La nueva petición sobre Asientos corrige también la lista: cuatro columnas calculadas desde el ancho real del viewport, tarjetas de altura uniforme 119, imagen separada, hasta tres líneas de nombre y una línea de precio. Los relacionados reservan dos líneas de nombre y una de precio. No se fuerza el texto largo a una única línea. Se mantiene ellipsis cuando un nombre publicado excede esas líneas. Los títulos de sección tienen altura suficiente para la fuente real. Las tarjetas de Asientos omiten el prefijo redundante «Silla» y separan la variante en su línea, conservando las distinciones publicadas completas y las palabras sin partir. La ficha mantiene el nombre publicado completo. No cambia el catálogo ni sus datos.
+
+El ancho antiguo 399 no vuelve a imponerse tras ensanchar el rail. La lista tiene ancho 366, viewport 352 y un carril de scroll nativo de latón de 12 dentro del panel. Fondo en canal, extremos redondeados, bisel y tres marcas de agarre. La máscara RectMask2D termina 14 unidades antes del borde inferior; las tarjetas no se dibujan fuera del marco ni debajo del scroll. El ScrollRect y el servicio común siguen siendo la autoridad de navegación. El carril solo aparece si hay desbordamiento.
+
+## Ficha y autoridad de transformación
+
+La previsualización y su ampliación tienen pivote central y caja centrada, con aspecto conservado. Dimensiones se introducen en centímetros mediante TMP_InputField nativo o presets; el candado enlaza proporciones. Rotación acepta X/Y/Z y presets en grados. No se altera el asset de definición ni el prefab publicado.
+
+Esta petición explícita del usuario actualiza la limitación anterior de dimensiones informativas. El catálogo prepara un borrador transitorio para la siguiente creación; la creación provisional consume escala/orientación una sola vez, permite ajustes y conserva cancelación. Una selección de un objeto colocado utiliza la transacción canónica de placement, restricciones BBSIS y el historial global. Una operación rechazada restaura su snapshot y no crea historia. Grupos y familias sin capacidad válida mantienen sus controles indisponibles.
+
+Las dimensiones, posición y rotación se guardan por el proveedor canónico de estructura ya existente, sin estado persistente paralelo. XYZ inclinado utiliza proyección conservadora de los bounds de la geometría sobre el plano, además de la huella publicada, para no descartar altura al comprobar solapamientos.
+
+## Tipografía
+
+Se usan fuentes aprobadas del proyecto: Inter Regular/Semibold y Recoleta para títulos. La Recoleta Regular DEMO publicada contiene caracteres españoles que apuntan al contorno marcador; la copia de ejecución elimina esos marcadores y usa la cadena de fallback Georgia/Inter existente. No se inventa un contorno de Recoleta completo ni se modifica el OTF fuente. El módulo conserva el inventario y el análisis de cobertura. Las leyendas MODO/EDITAR/AYUDAS se ajustan a 14 con altura 20 para respetar la métrica real; Atardecer dispone de ancho 68. Se conservan cabecera superior, pie de 85 y botones R7.
+
+## Verificación funcional y visual
+
+- `Logs/editor_v2_r8_panels_qa_9.log`: **381 comprobaciones nativas Play Mode PASS**, salida 0. Incluye filtros, búsquedas con acentos, favoritos, recientes, ubicación/precio/orden, cuatro columnas y reciclado B9; los textos de sillas y relacionados generan glifos reales; títulos caben, el viewport/scroll están dentro del marco, el arrastre nativo del thumb llega a la última fila y su precio permanece visible. Incluye también ratio/presets, valores inválidos, creación provisional real, transacciones sobre objeto colocado, rechazo sin historia, Undo/Redo y guardado JSON/reconstrucción real con identidad, dimensiones y XYZ intactos.
+- `Logs/editor_v2_r8_spatial_regression.log`: BBSIS Phase2C PASS sobre preflight, feedback, commit, historial y reconstrucción espacial.
+- `Logs/editor_v2_r8_b8_regression.log`: B8 selección/grupos, **75 OK / 0 FAIL**.
+- `Logs/editor_v2_r8_panels_build_5.log`: Windows x64 Unity 6000.3.19f1, BUILD=Succeeded, 0 errores. El número de advertencias se conserva en BUILD_REPORT.txt.
+- `GalleryVivaQA/panels.txt`: recorrido GPU del Player con `CAPTURE_COMPLETE` (`Logs/editor_v2_r8_panels_player_6.log`), sin errores/excepciones en ese recorrido. Catálogo/ficha, presets de dimensiones/rotación, geometría provisional real, favoritos/recientes/Almacenamiento, Asientos arriba y abajo, 1280 × 720 y regreso a fullscreen físico 1920 × 1080. Las imágenes 3840 × 2160 usan supersampling 2×; no son prueba de monitor físico 4K. Los recortes se conservan sin reescalado y se inspeccionan visualmente.
+
+No se atribuye PASS a intentos incompletos. Se conservan logs de compilación y QA anteriores: duplicación de un bloque de política eliminada; aplicación doble del borrador eliminada; altura de leyendas y ancho de Atardecer corregidos según métricas; variable local de QA renombrada; margen de tarjeta probado en unidades locales para no depender del tamaño de la ventana batch. La revisión visual posterior al PASS de 374 encontró que el handle conservaba sizeDelta además del tamaño impuesto por Scrollbar: se corrigen sus anchors/offsets y se comprueba el rectángulo real del agarre dentro del canal, no solo el root. También se compactan los nombres de Asientos y se comprueba el ancho real de «Contemporánea» y ausencia de overflow en las seis sillas. El QA completo de 381 contiene las correcciones de anchors y nombres. La inspección GPU añadió un ajuste exclusivamente gráfico de pixels-per-unit para evitar estirar los extremos redondeados del sprite a toda la altura. El último build y la captura final incluyen ese ajuste; el arnés GPU comprueba que los extremos de carril y agarre ocupan 12 unidades, además de su inspección visual.
+
+Las primeras capturas no completaron su recorrido. Otra abortó porque una interacción física cambió la pestaña durante el recorrido automático y la ficha quedó sin definición. Ahora los presets comprueban definición/disponibilidad y el arnés de capturas aísla entrada física solo cuando se pasa la bandera explícita de QA; las sesiones interactivas normales conservan sus eventos y controles.
+
+Sigue presente la excepción preexistente del indexador del editor Unity Search, registrada desde R6, ajena al PASS funcional. El Player conserva la advertencia preexistente de script de GameSystems ausente en esa escena. La revisión no sustituye los modelos publicados por el mobiliario artístico de la ilustración ni certifica igualdad pixel a pixel de toda la referencia. Se entregan fuentes, evidencia, manifiesto SHA256 y un EXE nuevo separado; las revisiones anteriores permanecen disponibles.

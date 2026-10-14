@@ -44,6 +44,8 @@ public sealed class RestaurantPlaceableCatalogItemView :
         }
     }
 
+    public void ConfigureNativeButton(Button nativeButton) => button = nativeButton;
+
     public void Bind(
         RestaurantPlaceableItemDefinition itemDefinition,
         Action<RestaurantPlaceableItemDefinition> onSelected,
@@ -54,7 +56,7 @@ public sealed class RestaurantPlaceableCatalogItemView :
         definition =
             itemDefinition;
 
-        var feedback = BistroBuilderInteractionSurface.Attach(button);
+        var feedback = GetComponent<BistroBuilderGalleryVivaCard>() == null ? BistroBuilderInteractionSurface.Attach(button) : null;
         if (feedback != null) feedback.IsCard = true;
 
         selectionCallback =

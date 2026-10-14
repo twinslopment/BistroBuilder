@@ -15,7 +15,7 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         public bool Available=true;
         public string PreviewResource => "BistroBuilder/UI/Architecture/"+Id;
     }
-    static readonly Color Paper=new Color32(250,248,244,255), Ink=new Color32(31,35,29,255), Muted=new Color32(111,115,108,255), Olive=new Color32(103,128,70,255), Field=new Color32(240,237,231,255);
+    static readonly Color Paper=new Color32(250,242,226,255), Ink=new Color32(58,40,26,255), Muted=new Color32(126,106,83,255), Olive=new Color32(150,91,33,255), Field=new Color32(246,234,214,255);
     public static readonly Entry[] WallEntries = {
         new Entry{Id="wall-interior",Name="Pared",Description="Divide espacios y define ambientes. Arrastra sobre el suelo para trazar una pared.",Tariff="wall.default",Mode=BistroBuilderConstructionRuntimeMode.Wall},
         new Entry{Id="door",Name="Puerta",Description="Inserta una puerta sobre una pared existente. La abertura respeta los límites y otros huecos.",Tariff="door",Mode=BistroBuilderConstructionRuntimeMode.Door},
@@ -63,7 +63,8 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         var canvas=GetComponentInParent<Canvas>(true);if(canvas==null)return;
         left=Panel("BB_ArchitectureCatalog",canvas.transform,false);
         right=Panel("BB_ArchitectureInspector",canvas.transform,true);
-        title=Text(left,"Title","",27,42);At(title.rectTransform,22,14,365,42);
+        title=Text(left,"Title","",25,42);At(title.rectTransform,62,14,300,42);
+        var ornament=Node("V2Ornament",left);At(ornament,18,14,32,38);var fleur=ornament.gameObject.AddComponent<Image>();fleur.sprite=BistroBuilderGalleryVivaArt.Ornament(0);fleur.preserveAspect=true;fleur.raycastTarget=false;
         ButtonAt(left,"Close","×",377,17,30,32,()=>{closed=true;});
         var input=Node("Search",left);At(input,20,66,387,46);Background(input,Color.white);
         search=input.gameObject.AddComponent<TMP_InputField>();
@@ -87,19 +88,19 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         commit=ButtonAt(foot,"ApplyDraft","Aplicar cambios",0,0,235,48,()=>{tool.TryCommitDraft(out var error);status.text=error;});
         ButtonAt(foot,"Discard","Descartar",245,0,140,48,()=>{tool.TryCancelDraft(out var error);status.text=error;});
         // The inspector scrolls on shorter viewports; its close control stays outside the scrolling content.
-        inspectorTitle=Text(right,"Title","",26,44);At(inspectorTitle.rectTransform,20,14,310,44);
-        ButtonAt(right,"Close","×",342,18,30,30,()=>inspectorClosed=true);
+        inspectorTitle=Text(right,"Title","",26,44);At(inspectorTitle.rectTransform,22,13,249,34);
+        ButtonAt(right,"Close","×",274,14,28,30,()=>inspectorClosed=true);
         var detailViewport=Node("Viewport",right);Stretch(detailViewport,16,14,16,64);detailViewport.gameObject.AddComponent<RectMask2D>();
         var detailScroll=detailViewport.gameObject.AddComponent<ScrollRect>();detailScroll.horizontal=false;detailScroll.scrollSensitivity=25;detailScroll.movementType=ScrollRect.MovementType.Clamped;
         details=Node("Content",detailViewport);details.anchorMin=new Vector2(0,1);details.anchorMax=new Vector2(1,1);details.pivot=new Vector2(.5f,1);details.sizeDelta=Vector2.zero;
         var vl=details.gameObject.AddComponent<VerticalLayoutGroup>();vl.spacing=10;vl.childControlWidth=vl.childControlHeight=true;vl.childForceExpandHeight=false;
         details.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;detailScroll.viewport=detailViewport;detailScroll.content=details;
-        var picture=Node("Preview",details);Height(picture,238);Background(picture,Field);var art=Node("Image",picture);Stretch(art,8,8,8,8);preview=art.gameObject.AddComponent<Image>();preview.preserveAspect=true;preview.raycastTarget=false;
-        description=Text(details,"Description","",16,70);
-        price=Text(details,"Price","",27,39);price.color=Olive;
-        dimensions=Text(details,"Dimensions","",15,62);
-        rules=Text(details,"Rules","",15,115);
-        selectionText=Text(details,"Selection","",14,75);selectionText.color=Muted;
+        var picture=Node("Preview",details);Height(picture,169);Background(picture,Field);var art=Node("Image",picture);Stretch(art,8,8,8,8);preview=art.gameObject.AddComponent<Image>();preview.preserveAspect=true;preview.raycastTarget=false;
+        description=Text(details,"Description","",13,70);
+        price=Text(details,"Price","",22,34);price.color=Olive;
+        dimensions=Text(details,"Dimensions","",13,62);
+        rules=Text(details,"Rules","",13,105);
+        selectionText=Text(details,"Selection","",12,65);selectionText.color=Muted;
         apply=ButtonAt(details,"Choose","",0,0,350,48,ExecuteSelected);Height((RectTransform)apply.transform,48);
         status=Text(details,"Status","",15,70);status.color=Olive;
         var room=ButtonAt(details,"CreateRoom","Dibujar habitación",0,0,350,42,()=>tool.SetMode(BistroBuilderConstructionRuntimeMode.Room));Height((RectTransform)room.transform,42);
@@ -116,11 +117,12 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         section=value;closed=inspectorClosed=false;selectedTab=0;scopeIndex=0;selected=null;lastStatus=null;lastSurfacePreviewKey=null;
         if(value!=RestaurantEditCatalogSection.Surfaces)tool?.ClearSurfacePreview();
         if(left==null||!RestaurantEditCatalogSections.IsArchitecture(value))return;
-        title.text=RestaurantEditCatalogSections.Title(value);((TMP_Text)search.placeholder).text=RestaurantEditCatalogSections.SearchHint(value);search.SetTextWithoutNotify("");
+        title.text=value==RestaurantEditCatalogSection.Walls?"Taller · Paredes":"Taller · Superficies";((TMP_Text)search.placeholder).text=RestaurantEditCatalogSections.SearchHint(value);search.SetTextWithoutNotify("");
         foreach(Transform child in tabs){child.gameObject.SetActive(false);Destroy(child.gameObject);}tabButtons.Clear();
         var labels=RestaurantEditCatalogSections.Tabs(value);
         for(int i=0;i<labels.Length;i++)
-        {int tab=i;var b=ButtonAt(tabs,"Tab"+i,labels[i],0,0,60,value==RestaurantEditCatalogSection.Walls?43:68,()=>{selectedTab=tab;if(value==RestaurantEditCatalogSection.Walls&&tab==1)tool.SetMode(BistroBuilderConstructionRuntimeMode.Select);Filter();});Height((RectTransform)b.transform,value==RestaurantEditCatalogSection.Walls?43:68);if(value==RestaurantEditCatalogSection.Surfaces){var label=b.GetComponentInChildren<TMP_Text>();label.alignment=TextAlignmentOptions.Bottom;var iconRect=Node("Icon",b.transform);At(iconRect,18,8,25,25);var icon=iconRect.gameObject.AddComponent<BistroBuilderEditChromeIcon>();var symbols=new[]{BistroBuilderEditChromeSymbol.Grid,BistroBuilderEditChromeSymbol.Surfaces,BistroBuilderEditChromeSymbol.Walls,BistroBuilderEditChromeSymbol.Home,BistroBuilderEditChromeSymbol.Terrain,BistroBuilderEditChromeSymbol.Sun};icon.Configure(symbols[i],Muted);}tabButtons.Add(b);}
+        {int tab=i;var b=ButtonAt(tabs,"Tab"+i,labels[i],0,0,60,value==RestaurantEditCatalogSection.Walls?43:68,()=>{selectedTab=tab;if(value==RestaurantEditCatalogSection.Walls&&tab==1)tool.SetMode(BistroBuilderConstructionRuntimeMode.Select);Filter();});Height((RectTransform)b.transform,value==RestaurantEditCatalogSection.Walls?43:68);if(value==RestaurantEditCatalogSection.Surfaces){var label=b.GetComponentInChildren<TMP_Text>();label.alignment=TextAlignmentOptions.Bottom;
+            label.textWrappingMode=TextWrappingModes.NoWrap;label.enableAutoSizing=true;label.fontSizeMin=10;label.fontSizeMax=14;var iconRect=Node("Icon",b.transform);At(iconRect,18,8,25,25);var icon=iconRect.gameObject.AddComponent<BistroBuilderEditChromeIcon>();var symbols=new[]{BistroBuilderEditChromeSymbol.Grid,BistroBuilderEditChromeSymbol.Surfaces,BistroBuilderEditChromeSymbol.Walls,BistroBuilderEditChromeSymbol.Home,BistroBuilderEditChromeSymbol.Terrain,BistroBuilderEditChromeSymbol.Sun};icon.Configure(symbols[i],Muted);}tabButtons.Add(b);}
         scopes.gameObject.SetActive(value==RestaurantEditCatalogSection.Surfaces);RebuildCards();Select((section==RestaurantEditCatalogSection.Surfaces?SurfaceEntries:WallEntries)[0]);
     }
     void RebuildCards()
@@ -147,8 +149,8 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
             if(section==RestaurantEditCatalogSection.Surfaces&&scopeIndex==2)matches=false; if(i<cards.Count)cards[i++].SetActive(matches);if(matches)count++;
         }
         empty.gameObject.SetActive(count==0);
-        for(int s=0;s<scopes.childCount;s++){var child=scopes.GetChild(s);child.GetComponent<Image>().color=s==scopeIndex?Olive:Field;child.GetComponentInChildren<TMP_Text>().color=s==scopeIndex?Color.white:Ink;}
-        for(int t=0;t<tabButtons.Count;t++){tabButtons[t].GetComponent<Image>().color=t==selectedTab?Olive:Field;tabButtons[t].GetComponentInChildren<TMP_Text>().color=t==selectedTab?Color.white:Ink;}
+        for(int s=0;s<scopes.childCount;s++){var child=scopes.GetChild(s);child.GetComponent<Image>().sprite=BistroBuilderGalleryVivaArt.Surface(s==scopeIndex);child.GetComponent<Image>().color=Color.white;child.GetComponentInChildren<TMP_Text>().color=Ink;}
+        for(int t=0;t<tabButtons.Count;t++){tabButtons[t].GetComponent<Image>().sprite=BistroBuilderGalleryVivaArt.Surface(t==selectedTab);tabButtons[t].GetComponent<Image>().color=Color.white;tabButtons[t].GetComponentInChildren<TMP_Text>().color=Ink;}
     }
     public void SelectById(string id){foreach(var entry in section==RestaurantEditCatalogSection.Surfaces?SurfaceEntries:WallEntries)if(entry.Id==id){Select(entry);return;}}
     void Select(Entry entry)
@@ -160,7 +162,7 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
         rules.text=surface?"Reglas de aplicación\n• Selecciona una habitación cerrada\n• El acabado respeta su contorno\n• Confirma el borrador para aplicar el coste":"Reglas de colocación\n• Encaja con la construcción existente\n• Respeta paredes y otros huecos\n• Confirma el borrador para construir";
         apply.GetComponentInChildren<TMP_Text>().text=surface?"Aplicar a la habitación":selectedTab==1?"Editar en el restaurante":"Usar herramienta";
         status.text=entry.Available?(surface?"Selecciona una habitación en el restaurante.":"Lista para trazar. Usa la herramienta sobre la escena."):"Aplicación en paredes pendiente de integración.";
-        foreach(var pair in cardImages)pair.Value.GetComponent<Outline>().effectColor=pair.Key==entry?Olive:new Color32(225,221,212,255);
+        foreach(var pair in cardImages){pair.Value.sprite=BistroBuilderGalleryVivaArt.Surface(pair.Key==entry);pair.Value.GetComponent<Outline>().effectColor=pair.Key==entry?Olive:new Color32(225,201,166,255);}
         if(!surface)ExecuteSelected();
     }
     void ExecuteSelected()
@@ -173,7 +175,9 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     }
     void LateUpdate()
     {
-        if(left==null)return; if(tool==null)tool=FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
+        if(left==null)return;
+        BistroBuilderEditorV2ReferenceLayout.Panel(left,false,427);
+        BistroBuilderEditorV2ReferenceLayout.Panel(right,true,318); if(tool==null)tool=FindFirstObjectByType<BistroBuilderConstructionAuthoringRuntimeTool>();
         bool visible=catalog!=null&&RestaurantEditCatalogSections.IsArchitecture(catalog.CurrentSection)&&editMode!=null&&editMode.IsEditModeActive&&(shell==null||!shell.HasManagementScreenOpen);
         left.gameObject.SetActive(visible&&!closed);right.gameObject.SetActive(visible&&selected!=null&&!inspectorClosed);
         if(!visible){if(lastSurfacePreviewKey!=null){tool?.ClearSurfacePreview();lastSurfacePreviewKey=null;}return;}
@@ -206,14 +210,14 @@ public sealed class RestaurantArchitectureCatalogPanel : MonoBehaviour
     static RectTransform Panel(string name,Transform parent,bool right)
     {
         var r=Node(name,parent);r.gameObject.AddComponent<BistroBuilderEditChromeSurface>();r.anchorMin=new Vector2(right?1:0,0);r.anchorMax=new Vector2(right?1:0,1);
-        r.offsetMin=new Vector2(right?-412:18,106);r.offsetMax=new Vector2(right?-24:445,-88);Background(r,Paper);return r;
+        r.offsetMin=new Vector2(right?-412:18,136);r.offsetMax=new Vector2(right?-24:445,-110);var frame=Background(r,Paper);BistroBuilderEditorV2BrassArt.Decorate(frame,BistroBuilderEditorV2BrassArt.Style.Frame);return r;
     }
-    static Image Background(RectTransform r,Color c){var i=r.gameObject.AddComponent<Image>();i.sprite=Rounded();i.type=Image.Type.Sliced;i.color=c;return i;}
-    static TMP_Text Text(Transform parent,string name,string value,float size,float height){var r=Node(name,parent);Height(r,height);var t=r.gameObject.AddComponent<TextMeshProUGUI>();t.font=BistroBuilderTypography.Body;t.text=value;t.fontSize=size;t.color=Ink;t.raycastTarget=false;t.textWrappingMode=TextWrappingModes.Normal;return t;}
+    static Image Background(RectTransform r,Color c){var i=r.gameObject.AddComponent<Image>();i.sprite=BistroBuilderGalleryVivaArt.Surface();i.type=Image.Type.Sliced;i.color=Color.white;return i;}
+    static TMP_Text Text(Transform parent,string name,string value,float size,float height){var r=Node(name,parent);Height(r,height);var t=r.gameObject.AddComponent<TextMeshProUGUI>();t.font=name=="Title"||name=="Price"?BistroBuilderEditorV2ReferenceLayout.Heading:BistroBuilderEditorV2ReferenceLayout.Body;t.text=value;t.fontSize=size;t.color=Ink;t.raycastTarget=false;t.textWrappingMode=TextWrappingModes.Normal;return t;}
     static Button ButtonAt(Transform parent,string name,string value,float x,float y,float w,float h,Action action){var r=Node(name,parent);At(r,x,y,w,h);var bg=Background(r,Field);var b=r.gameObject.AddComponent<Button>();b.targetGraphic=bg;b.onClick.AddListener(()=>action());var t=Text(r,"Label",value,14,h);t.alignment=TextAlignmentOptions.Center;Stretch(t.rectTransform,4,4,4,4);return b;}
     static void At(RectTransform r,float x,float y,float w,float h){r.anchorMin=r.anchorMax=r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);}
     static void Stretch(RectTransform r,float l,float b,float rr,float t){r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;r.offsetMin=new Vector2(l,b);r.offsetMax=new Vector2(-rr,-t);}
-    static void Height(RectTransform r,float h){var le=r.GetComponent<LayoutElement>();if(le==null)le=r.gameObject.AddComponent<LayoutElement>();le.minHeight=le.preferredHeight=h;le.flexibleHeight=0;}
+    static void Height(RectTransform r,float h){var le=r.GetComponent<LayoutElement>();if(le==null)le=r.gameObject.AddComponent<LayoutElement>();le.minHeight=le.preferredHeight=h;le.flexibleHeight=0;le.minWidth=le.preferredWidth=0;le.flexibleWidth=1;le.layoutPriority=2;}
     static Sprite Rounded()
     {
         if(rounded!=null)return rounded;const int n=48;var t=new Texture2D(n,n,TextureFormat.RGBA32,false);var pixels=new Color32[n*n];

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a207848f54bfdc4d8882f98da7a9564, type: 3}
+  m_Name: BistroBuilderMotionRecipeCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMotionRecipeCatalog
+  recipes:
+  - {fileID: 11400000, guid: dc12919df07cebc49acf942c4d469198, type: 2}
+  - {fileID: 11400000, guid: 090b419050304f74b97d1c14efa4a720, type: 2}
+  - {fileID: 11400000, guid: 5b0f6bcb99deb1740958561b46a67333, type: 2}
+  - {fileID: 11400000, guid: 55dc2f29fa33e574b90b8c7e4c7a66ad, type: 2}
+  - {fileID: 11400000, guid: 244916f496882fe49ade2c56d1fe3a80, type: 2}
+  - {fileID: 11400000, guid: 71d684f05c4fc334ba53727bd0ac1418, type: 2}
+  - {fileID: 11400000, guid: 741654057ea97ff4b822165063da5f45, type: 2}
+  - {fileID: 11400000, guid: a6e57b3d8d636d343a9673e67f272e48, type: 2}
+  - {fileID: 11400000, guid: 56f8d45ef0210f847a37c54b2c7afa20, type: 2}
+  - {fileID: 11400000, guid: 11f116b255f1553438d130a0bca97ef3, type: 2}
+  - {fileID: 11400000, guid: 79155d03f3bbc194b801f06529f76ed4, type: 2}
+  - {fileID: 11400000, guid: 0b4bd411bcec8e24fb43a5ef9c5047fc, type: 2}
+  - {fileID: 11400000, guid: 7dc8d450a47c7024c8bf26eee796d6f7, type: 2}
+  - {fileID: 11400000, guid: a2b07a81017722c44a3e091c93c9ec6f, type: 2}
+  - {fileID: 11400000, guid: 0bd8cbc6f3fdd344aa1c16efe02260b3, type: 2}
+  - {fileID: 11400000, guid: 1e53458c93d11194c803b735a686bbcd, type: 2}
+  - {fileID: 11400000, guid: 6e43445bccf27474e867aad6c26cb176, type: 2}
+  - {fileID: 11400000, guid: eeadb1dadf23caa4db52297c8058d386, type: 2}
+  - {fileID: 11400000, guid: 8101abd637b5b32409f8640552dc7a39, type: 2}
+  - {fileID: 11400000, guid: ec700f9bb29eaff45bbc5d55a150d02e, type: 2}

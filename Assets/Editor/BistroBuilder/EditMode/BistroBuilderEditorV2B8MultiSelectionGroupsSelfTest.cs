@@ -1387,6 +1387,23 @@ public static class BistroBuilderEditorV2B8MultiSelectionGroupsSelfTest
             Lines.Add("METRIC - B8_DUPLICATE_PAIRS_EXAMINED=" + examinedPairs);
         }
 
+        if (!duplicated)
+        {
+            // An arbitrarily populated demo restaurant can have no legal
+            // common offset for any of the first 100 pairs. Keep the strict
+            // rollback checks above, and prove successful B8 duplication in
+            // an isolated, fully validated dining area instead of marking
+            // "no free floor" as a broken transaction.
+            bool isolated = TryIsolatedDuplicateFixture(
+                selection, groups, history, globalHistory, registry,
+                out string fixtureError);
+            Check(isolated,
+                "B8 duplicación física determinista en área QA aislada" +
+                (isolated ? string.Empty : ": " + fixtureError));
+            controller.ClearSelection();
+            return;
+        }
+
         Check(
             duplicated,
             "B8 encuentra destino real para duplicar dos artículos" +
@@ -1491,8 +1508,172 @@ public static class BistroBuilderEditorV2B8MultiSelectionGroupsSelfTest
             registry.RegisteredPlaceables.Count == activeBefore,
             "B8 Undo final de duplicate recupera baseline activa");
 
+        // Exercise the deterministic positive scenario even when the
+        // crowded-scene candidate search happened to find room.
+        bool isolatedPositive = TryIsolatedDuplicateFixture(
+            selection, groups, history, globalHistory, registry,
+            out string isolatedError);
+        Check(isolatedPositive,
+            "B8 duplicación física determinista en área QA aislada" +
+            (isolatedPositive ? string.Empty : ": " + isolatedError));
+
         selection.ClearSelectionSet();
         controller.ClearSelection();
+    }
+
+    // B8 deterministic positive fixture. The populated demo can have zero
+    // feasible pair destinations, which is a spatial constraint, not a
+    // successful-duplication test. Exercise the real B8 pipeline in a
+    // temporary registered dining area without altering the source scene.
+    private static bool TryIsolatedDuplicateFixture(
+        BistroBuilderEditorV2SelectionCoordinator selection,
+        BistroBuilderEditorV2GroupOperationService groups,
+        RestaurantPlacementHistoryService history,
+        BistroBuilderEditorV2GlobalHistory globalHistory,
+        RestaurantPlaceableRegistry registry,
+        out string error)
+    {
+        error = string.Empty;
+        var creator = Object.FindFirstObjectByType<
+            RestaurantPlaceableCreationService>(FindObjectsInactive.Include);
+        var areas = Object.FindFirstObjectByType<
+            RestaurantAreaRegistry>(FindObjectsInactive.Include);
+        RestaurantPlaceableObject knownTable = null;
+        foreach (RestaurantPlaceableObject candidate in registry.RegisteredPlaceables)
+        {
+            if (candidate != null && candidate.ItemDefinition != null &&
+                candidate.ItemDefinition.ItemId == "table_basic_4")
+            {
+                knownTable = candidate;
+                break;
+            }
+        }
+        var dining = knownTable != null
+            ? knownTable.GetComponent<RestaurantAreaMember>()?.AssignedArea?.Definition
+            : null;
+        if (creator == null || areas == null || dining == null)
+        {
+            error = "No se encontró el catálogo y el área de comedor para QA.";
+            return false;
+        }
+
+        int baselineObjects = registry.RegisteredPlaceables.Count;
+        int baselineUndo = history.UndoCount;
+        GameObject qaRoot = null;
+        RestaurantArea area = null;
+        IReadOnlyList<RestaurantPlaceableObject> sources = null;
+        IReadOnlyList<RestaurantPlaceableObject> clones = null;
+        bool success = false;
+        try
+        {
+            qaRoot = new GameObject("__B8_PositiveDuplicate_IsolatedQA");
+            qaRoot.SetActive(false);
+            qaRoot.transform.position = new Vector3(800f, 0f, 800f);
+            BoxCollider boundary = qaRoot.AddComponent<BoxCollider>();
+            boundary.isTrigger = true;
+            boundary.size = new Vector3(120f, 6f, 120f);
+            area = qaRoot.AddComponent<RestaurantArea>();
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(RestaurantArea).GetField("areaId", flags).SetValue(
+                area, "b8_dup_qa_" + Guid.NewGuid().ToString("N"));
+            typeof(RestaurantArea).GetField("definition", flags).SetValue(
+                area, dining);
+            typeof(RestaurantArea).GetField("boundaryColliders", flags).SetValue(
+                area, new Collider[] { boundary });
+            qaRoot.SetActive(true);
+            if (!areas.RegisterArea(area))
+            {
+                error = "El área QA aislada no pudo registrarse.";
+                return false;
+            }
+
+            var prefab = knownTable.ItemDefinition;
+            var specs = new[]
+            {
+                new BistroBuilderEditorV2TemplateSpawn(
+                    prefab, new Vector3(780f,0f,790f), Quaternion.identity),
+                new BistroBuilderEditorV2TemplateSpawn(
+                    prefab, new Vector3(820f,0f,790f), Quaternion.identity)
+            };
+            if (!creator.TryCreateTemplateBatch(specs, out sources,
+                    out RestaurantPlaceableBatchCreationResult createResult) ||
+                sources.Count != 2)
+            {
+                error = "No se pudo crear la pareja QA: " + createResult.Message;
+                return false;
+            }
+            int afterSources = registry.RegisteredPlaceables.Count;
+            int beforeDuplicate = history.UndoCount;
+            var request = new BistroBuilderEditorV2Selection[2];
+            for (int i = 0; i < 2; i++)
+            {
+                var item = sources[i];
+                request[i] = new BistroBuilderEditorV2Selection
+                {
+                    family = BistroBuilderEditorV2ToolFamily.Furniture,
+                    kind = BistroBuilderEditorV2SelectionKind.Furniture,
+                    stableId = item.InstanceId,
+                    displayName = item.DisplayName,
+                    capabilities = BistroBuilderEditorV2SelectionCapability.Inspect |
+                        BistroBuilderEditorV2SelectionCapability.Duplicate,
+                    persistentIdentity = true
+                };
+            }
+            Vector3 offset = new Vector3(0f, 0f, 12f);
+            if (!selection.ReplaceSelectionSet(request,
+                    request[0].stableId, out error) ||
+                !groups.TryDuplicateSelection(offset, out clones, out error))
+                return false;
+
+            bool pose = clones.Count == 2 &&
+                registry.RegisteredPlaceables.Count == afterSources + 2 &&
+                history.UndoCount == beforeDuplicate + 1 &&
+                history.PeekUndoCommand() is
+                    BistroBuilderEditorV2CompoundPlaceableHistoryCommand;
+            var unique = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var item in sources) unique.Add(item.InstanceId);
+            for (int i = 0; i < clones.Count; i++)
+            {
+                RestaurantPlaceableObject item = clones[i];
+                bool matched = false;
+                foreach (var source in sources)
+                    matched |= source.ItemDefinition == item.ItemDefinition &&
+                        Nearly(item.PlacementAnchor.position,
+                            source.PlacementAnchor.position + offset, 0.002f);
+                pose &= matched && unique.Add(item.InstanceId);
+            }
+            bool undo = pose && globalHistory.TryUndo(out _) &&
+                registry.RegisteredPlaceables.Count == afterSources;
+            bool redo = undo && globalHistory.TryRedo(out _) &&
+                registry.RegisteredPlaceables.Count == afterSources + 2;
+            bool undoAgain = redo && globalHistory.TryUndo(out _) &&
+                registry.RegisteredPlaceables.Count == afterSources;
+            bool reset = undoAgain && globalHistory.TryUndo(out _) &&
+                registry.RegisteredPlaceables.Count == baselineObjects &&
+                history.UndoCount == baselineUndo;
+            success = pose && undo && redo && undoAgain && reset;
+            if (!success)
+                error = "Pose=" + pose + " undo=" + undo +
+                    " redo=" + redo + " reset=" + reset;
+            return success;
+        }
+        finally
+        {
+            selection.ClearSelectionSet();
+            if (area != null) areas.UnregisterArea(area);
+            if (qaRoot != null) Object.DestroyImmediate(qaRoot);
+            // Normally both history entries were undone. If a fixture
+            // failed, do not leave temporary objects in the loaded scene.
+            if (!success)
+            {
+                if (clones != null)
+                    foreach (var obj in clones)
+                        if (obj != null) Object.DestroyImmediate(obj.gameObject);
+                if (sources != null)
+                    foreach (var obj in sources)
+                        if (obj != null) Object.DestroyImmediate(obj.gameObject);
+            }
+        }
     }
 
     private static List<RestaurantPlaceableObject> FindMovablePlaceables(

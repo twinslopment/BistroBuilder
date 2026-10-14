@@ -180,10 +180,13 @@ public static class BistroBuilderEditorV2RuntimeBootstrap
         BistroBuilderEditorV2DiagnosisOverlay diagnosisOverlay =
             Object.FindFirstObjectByType<BistroBuilderEditorV2DiagnosisOverlay>(
                 FindObjectsInactive.Include);
-        if (diagnosisOverlay == null)
-            diagnosisOverlay =
-                host.AddComponent<BistroBuilderEditorV2DiagnosisOverlay>();
-        diagnosisOverlay.Configure(diagnosis, editMode);
+        // B11 remains a read-only service. Its prototype IMGUI presentation
+        // is not part of the approved native Editor V2 interface.
+        if (diagnosisOverlay != null)
+        {
+            diagnosisOverlay.SetVisible(false);
+            diagnosisOverlay.enabled = false;
+        }
 
         // B12 library is user-persistent, while actual instantiation always
         // passes the canonical catalog and the B8 atomic creation authority.

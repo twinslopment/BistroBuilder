@@ -69,6 +69,8 @@ public static class BistroBuilderCatalogThumbnailService
             get;
         }
 
+        public bool StudioFraming { get; }
+
         public Vector3 ViewDirection
         {
             get;
@@ -82,7 +84,8 @@ public static class BistroBuilderCatalogThumbnailService
             float fillIntensity,
             float exposure,
             float shadowLift,
-            Vector3 viewDirection
+            Vector3 viewDirection,
+            bool studioFraming = false
         )
         {
             Name = name;
@@ -93,6 +96,7 @@ public static class BistroBuilderCatalogThumbnailService
             Exposure = exposure;
             ShadowLift = shadowLift;
             ViewDirection = viewDirection;
+            StudioFraming = studioFraming;
         }
     }
 
@@ -130,6 +134,16 @@ public static class BistroBuilderCatalogThumbnailService
                 new Vector3(1.12f, 0.68f, -1.0f)
             )
         };
+
+    // ViewDirection points FROM the camera TO the model. Negative Y therefore
+    // produces an elevated camera. All finishes share the same family framing.
+    private static readonly ThumbnailRenderProfile[] SeatingRenderProfiles =
+    {
+        new ThumbnailRenderProfile("Seating_Studio", 1.10f, .72f, 1.65f, 1.05f, 1.08f, .025f,
+            new Vector3(-.85f, -.70f, -1f), true),
+        new ThumbnailRenderProfile("Seating_SoftFill", 1.10f, .90f, 1.8f, 1.25f, 1.5f, .075f,
+            new Vector3(-.85f, -.70f, -1f), true)
+    };
 
     /// <summary>
     /// Resultado de una generación individual.
@@ -280,11 +294,13 @@ public static class BistroBuilderCatalogThumbnailService
             );
         }
 
-        int resolvedSize =
-            Mathf.Clamp(size, 64, 1024);
+        bool seatingPhoto = definition.Category == RestaurantPlaceableItemCategory.Seating;
+        int resolvedSize = Mathf.Clamp(seatingPhoto ? Mathf.Max(size, 1024) : size, 64, 1024);
 
         string iconPath =
             BuildIconAssetPath(definition);
+
+        bool bindingChanges = !string.Equals(AssetDatabase.GetAssetPath(previousIcon), iconPath, StringComparison.Ordinal);
 
         byte[] previousFileBytes = null;
         bool hadPreviousFile = false;
@@ -312,6 +328,7 @@ public static class BistroBuilderCatalogThumbnailService
             if (!TryRenderPrefabToPng(
                     definition.Prefab.gameObject,
                     resolvedSize,
+                    seatingPhoto,
                     out byte[] pngBytes,
                     out string renderError
                 ))
@@ -352,6 +369,7 @@ public static class BistroBuilderCatalogThumbnailService
             if (!ConfigureTextureAsCatalogSprite(
                     iconPath,
                     resolvedSize,
+                    seatingPhoto,
                     out string importerError
                 ))
             {
@@ -372,28 +390,29 @@ public static class BistroBuilderCatalogThumbnailService
                 );
             }
 
-            SerializedObject serializedDefinition =
-                new SerializedObject(definition);
-
-            SerializedProperty iconProperty =
-                serializedDefinition.FindProperty(
-                    "catalogIcon"
-                );
-
-            if (iconProperty == null)
+            // Reimport updates an existing sprite in place. Preserve manual
+            // detail art; repair only generated previews bound to another item.
+            bool repairGeneratedPreview = seatingPhoto &&
+                IsGeneratedIcon(definition.InspectorPreview) &&
+                !string.Equals(AssetDatabase.GetAssetPath(definition.InspectorPreview),
+                    iconPath, StringComparison.Ordinal);
+            if (bindingChanges || repairGeneratedPreview)
             {
-                throw new InvalidOperationException(
-                    "RestaurantPlaceableItemDefinition no contiene " +
-                    "la propiedad catalogIcon."
-                );
+                var serializedDefinition = new SerializedObject(definition);
+                var iconProperty = serializedDefinition.FindProperty("catalogIcon");
+                if (iconProperty == null)
+                    throw new InvalidOperationException("The definition has no catalogIcon property.");
+                if (bindingChanges) iconProperty.objectReferenceValue = generatedSprite;
+                if (repairGeneratedPreview)
+                {
+                    var previewProperty = serializedDefinition.FindProperty("inspectorPreview");
+                    if (previewProperty == null)
+                        throw new InvalidOperationException("The definition has no inspectorPreview property.");
+                    previewProperty.objectReferenceValue = generatedSprite;
+                }
+                serializedDefinition.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(definition);
             }
-
-            iconProperty.objectReferenceValue =
-                generatedSprite;
-
-            serializedDefinition.ApplyModifiedPropertiesWithoutUndo();
-
-            EditorUtility.SetDirty(definition);
 
             if (saveAssets)
             {
@@ -568,6 +587,7 @@ public static class BistroBuilderCatalogThumbnailService
     private static bool TryRenderPrefabToPng(
         GameObject prefabAsset,
         int size,
+        bool seatingPhoto,
         out byte[] pngBytes,
         out string errorMessage
     )
@@ -594,12 +614,13 @@ public static class BistroBuilderCatalogThumbnailService
         List<string> attemptErrors =
             new List<string>();
 
+        var profiles = seatingPhoto ? SeatingRenderProfiles : RenderProfiles;
         for (int index = 0;
-             index < RenderProfiles.Length;
+             index < profiles.Length;
              index++)
         {
             ThumbnailRenderProfile profile =
-                RenderProfiles[index];
+                profiles[index];
 
             if (!TryRenderSingleProfile(
                     prefabAsset,
@@ -1110,10 +1131,25 @@ public static class BistroBuilderCatalogThumbnailService
                     -1.05f
                 ).normalized;
 
-        camera.transform.position =
-            bounds.center -
-            viewDirection *
-            distance;
+        if (profile.StudioFraming)
+        {
+            // Fit every projected bounds corner, including depth perspective.
+            // This prevents cropping while avoiding the loose sphere framing.
+            var cameraRotation = Quaternion.LookRotation(viewDirection, Vector3.up);
+            var inverseRotation = Quaternion.Inverse(cameraRotation);
+            float tangent = Mathf.Tan(halfFieldOfViewRadians);
+            distance = MinimumRenderRadius;
+            for(int corner=0; corner<8; corner++)
+            {
+                var delta = new Vector3((corner&1)==0 ? -bounds.extents.x : bounds.extents.x,
+                    (corner&2)==0 ? -bounds.extents.y : bounds.extents.y,
+                    (corner&4)==0 ? -bounds.extents.z : bounds.extents.z);
+                var projected = inverseRotation * delta;
+                distance = Mathf.Max(distance,
+                    Mathf.Max(Mathf.Abs(projected.x),Mathf.Abs(projected.y))*profile.CameraPadding/tangent-projected.z);
+            }
+        }
+        camera.transform.position = bounds.center - viewDirection * distance;
 
         camera.transform.rotation =
             Quaternion.LookRotation(
@@ -1156,6 +1192,7 @@ public static class BistroBuilderCatalogThumbnailService
 
             lights[0].shadows =
                 LightShadows.Soft;
+            if(profile.StudioFraming)lights[0].shadowStrength=.22f;
 
             lights[0].transform.rotation =
                 Quaternion.Euler(
@@ -1195,6 +1232,7 @@ public static class BistroBuilderCatalogThumbnailService
     private static bool ConfigureTextureAsCatalogSprite(
         string iconPath,
         int maximumSize,
+        bool seatingPhoto,
         out string errorMessage
     )
     {
@@ -1222,15 +1260,15 @@ public static class BistroBuilderCatalogThumbnailService
             TextureImporterAlphaSource.FromInput;
 
         importer.alphaIsTransparency = true;
-        importer.mipmapEnabled = false;
+        importer.mipmapEnabled = seatingPhoto;
         importer.isReadable = false;
         importer.sRGBTexture = true;
         importer.wrapMode = TextureWrapMode.Clamp;
-        importer.filterMode = FilterMode.Bilinear;
+        importer.filterMode = seatingPhoto ? FilterMode.Trilinear : FilterMode.Bilinear;
         importer.npotScale = TextureImporterNPOTScale.None;
         importer.maxTextureSize = maximumSize;
         importer.textureCompression =
-            TextureImporterCompression.Compressed;
+            seatingPhoto ? TextureImporterCompression.Uncompressed : TextureImporterCompression.Compressed;
         importer.compressionQuality = 75;
         importer.spritePixelsPerUnit = 100f;
 

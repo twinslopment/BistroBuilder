@@ -102,8 +102,9 @@ public static class BistroBuilderOperationalSpatialBindingUtility
         BistroBuilderBarServiceSpot spot,
         BistroBuilderAdaptiveSpatialProxy proxy)
     {
+        bool rootOwnsBody = spot.GetComponentInParent<BistroBuilderBarBodySpatialAdapter>() != null;
         proxy.Configure(
-            BistroBuilderAdaptiveSpatialProxyMode.Layered);
+            rootOwnsBody ? BistroBuilderAdaptiveSpatialProxyMode.Simple : BistroBuilderAdaptiveSpatialProxyMode.Layered);
         proxy.ClearParts();
 
         Vector3 customerLocal = spot.transform.InverseTransformPoint(
@@ -118,7 +119,7 @@ public static class BistroBuilderOperationalSpatialBindingUtility
             0.45f,
             Mathf.Abs(customerLocal.x - waiterLocal.x) + 0.35f);
 
-        proxy.AddPart(new BistroBuilderSpatialProxyPart
+        if (!rootOwnsBody) proxy.AddPart(new BistroBuilderSpatialProxyPart
         {
             partId = "bar.body",
             layer = BistroBuilderSpatialProxyLayer.Static,

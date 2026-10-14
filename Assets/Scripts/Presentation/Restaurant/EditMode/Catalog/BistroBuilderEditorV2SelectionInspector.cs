@@ -52,6 +52,9 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
     private readonly List<BistroBuilderEditorV2Selection> scratch =
         new List<BistroBuilderEditorV2Selection>(16);
 
+    private BistroBuilderEditorV2ItemDetailsView referenceView;
+    private RestaurantEditInteractionController referenceInteraction;
+
     public bool IsShowing { get; private set; }
     public bool IsExpanded => IsShowing && expanded;
     public int VisibleSelectionCount =>
@@ -94,6 +97,9 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         Resolve();
         bool active = selection != null && editMode != null &&
             editMode.IsEditModeActive &&
+            !RestaurantEditCatalogSections.IsArchitecture(GetComponent<RestaurantPlaceableCatalogPanel>().CurrentSection) &&
+            selection.Current.family == BistroBuilderEditorV2ToolFamily.Furniture &&
+            (catalogInspector == null || !catalogInspector.IsReplacementPreview) &&
             (selection.SelectionCount > 0 || selection.Current.IsValid) &&
             (shell == null || !shell.HasManagementScreenOpen);
         bool wasShowing = IsShowing;
@@ -107,16 +113,14 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         var parent = root.parent as RectTransform;
         float width = parent != null ? parent.rect.width : Screen.width;
         float height = parent != null ? parent.rect.height : Screen.height;
-        bool nextCompact = width < 1450f;
+        bool nextCompact = false;
         if (nextCompact != compact)
         {
             compact = nextCompact;
             expanded = !compact;
             ApplyExpansion();
         }
-        root.sizeDelta = new Vector2(expanded ? (compact ? 338f : 370f) : 42f,
-            Mathf.Max(290f, height - 215f));
-        root.anchoredPosition = new Vector2(-12f, -89f);
+        BistroBuilderEditorV2ReferenceLayout.Panel(root, true, expanded ? 318 : 42);
         root.SetAsLastSibling();
 
         var primary = selection.PrimarySelection.IsValid ?
@@ -131,6 +135,8 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
             RefreshContent(primary, count);
         }
         if (railCount != null) railCount.text = count.ToString();
+        referenceView?.RefreshFavorite();
+        referenceView?.RefreshTransformValues();
     }
 
     public void ExpandInspector()
@@ -147,7 +153,8 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
 
     private void ApplyExpansion()
     {
-        if (panelBody != null) panelBody.SetActive(expanded);
+        if (panelBody != null) panelBody.SetActive(expanded && showingGroup);
+        if (referenceView != null) referenceView.Root.gameObject.SetActive(expanded && !showingGroup);
         if (rail != null) rail.SetActive(!expanded);
         if (root != null)
         {
@@ -165,6 +172,8 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
 
     private void ShowPage()
     {
+        if (panelBody != null) panelBody.SetActive(expanded && showingGroup);
+        if (referenceView != null) referenceView.Root.gameObject.SetActive(expanded && !showingGroup);
         if (singlePage != null) singlePage.SetActive(!showingGroup);
         if (groupPage != null) groupPage.SetActive(showingGroup);
         if (singleTab != null) singleTab.color = !showingGroup ? Honey : Ivory;
@@ -191,11 +200,14 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         }
 
         RestaurantPlaceableItemDefinition definition = null;
+        RestaurantPlaceableObject selectedPlaceable = null;
         if (registry != null &&
             primary.kind == BistroBuilderEditorV2SelectionKind.Furniture &&
             registry.TryGetByInstanceId(primary.stableId, out var placeable) &&
             placeable != null)
-            definition = placeable.ItemDefinition;
+        {
+            definition = placeable.ItemDefinition; selectedPlaceable = placeable;
+        }
 
         if (definition != null)
         {
@@ -219,6 +231,17 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
             preview.enabled = false;
         }
 
+        if (referenceInteraction == null) referenceInteraction = FindFirstObjectByType<RestaurantEditInteractionController>();
+        bool configure = count == 1 && selectedPlaceable != null && referenceInteraction != null;
+        referenceView?.Bind(definition, selectedPlaceable != null ? selectedPlaceable.transform.eulerAngles : Vector3.zero,
+            configure && referenceInteraction.CanConfigureInspectorDimensions(definition)
+                ? dims => referenceInteraction.TrySetInspectorDimensions(definition, selectedPlaceable, dims) : null,
+            configure && primary.Supports(BistroBuilderEditorV2SelectionCapability.Rotate)
+                ? angles => referenceInteraction.TrySetInspectorRotation(definition, selectedPlaceable, angles) : null,
+            null,
+            configure ? () => referenceInteraction.GetInspectorDimensions(definition, selectedPlaceable) : null,
+            configure ? () => referenceInteraction.GetInspectorRotation(definition, selectedPlaceable) : null,
+            configure ? () => referenceInteraction.InspectorTransformMessage : null);
         RebuildGroupRows();
         if (count < 2) showingGroup = false;
         ShowPage();
@@ -238,7 +261,10 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
             string id = item.stableId;
             bool main = string.Equals(id, primaryId, StringComparison.Ordinal);
             var row = CreateRect("GroupMember", list);
-            row.gameObject.AddComponent<Image>().color = main ? Honey : Ivory;
+            var rowImage = row.gameObject.AddComponent<Image>();
+            BistroBuilderEditorV2BrassArt.Decorate(rowImage,
+                main ? BistroBuilderEditorV2BrassArt.Style.Selected :
+                BistroBuilderEditorV2BrassArt.Style.Button);
             var height = row.gameObject.AddComponent<LayoutElement>();
             height.minHeight = height.preferredHeight = 53f;
             var button = row.gameObject.AddComponent<Button>();
@@ -280,14 +306,16 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         if (heading == null) heading = regular;
 
         root = CreateRect("BB_EditorV2_SelectionInspector", canvas.transform);
+        root.gameObject.AddComponent<BistroBuilderEditChromeSurface>();
         root.anchorMin = root.anchorMax = new Vector2(1f, 1f);
         root.pivot = new Vector2(1f, 1f);
-        root.anchoredPosition = new Vector2(-12f, -89f);
+        root.anchoredPosition = new Vector2(-12f, -110f);
         root.sizeDelta = new Vector2(370, 640);
-        root.gameObject.AddComponent<Image>().color = Cream;
-        var border = root.gameObject.AddComponent<Outline>();
-        border.effectColor = Brass;
-        border.effectDistance = new Vector2(2f, -2f);
+        var rootImage = root.gameObject.AddComponent<Image>();
+        BistroBuilderEditorV2BrassArt.Decorate(rootImage,
+            BistroBuilderEditorV2BrassArt.Style.Frame);
+        rootImage.raycastTarget = false;
+
 
         panelBody = CreateRect("Panel", root).gameObject;
         Stretch(panelBody.GetComponent<RectTransform>(), 8, 8, 8, 8);
@@ -295,7 +323,7 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         column.padding = new RectOffset(8, 8, 8, 8);
         column.spacing = 8;
         column.childControlWidth = true;
-        column.childControlHeight = false;
+        column.childControlHeight = true;
         column.childForceExpandHeight = false;
         var bar = CreateRect("Heading", panelBody.transform);
         SetHeight(bar, 39);
@@ -338,7 +366,7 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         var pages = CreateRect("Pages", viewport);
         var pagesLayout = pages.gameObject.AddComponent<VerticalLayoutGroup>();
         pagesLayout.childControlWidth = true;
-        pagesLayout.childControlHeight = false;
+        pagesLayout.childControlHeight = true;
         pagesLayout.childForceExpandHeight = false;
         pages.anchorMin = new Vector2(0, 1);
         pages.anchorMax = new Vector2(1, 1);
@@ -385,13 +413,16 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         rail = CreateRect("InspectorRail", root).gameObject;
         Stretch(rail.GetComponent<RectTransform>(), 0, 0, 0, 0);
         var railBg = rail.AddComponent<Image>();
-        railBg.color = Honey;
+        BistroBuilderEditorV2BrassArt.Decorate(railBg,
+            BistroBuilderEditorV2BrassArt.Style.Selected);
         var railBtn = rail.AddComponent<Button>();
         railBtn.targetGraphic = railBg;
         railBtn.onClick.AddListener(ExpandInspector);
         railCount = Label(rail.transform, "RailLabel", "0", 17, Ink, heading);
         Stretch(railCount.rectTransform, 3, 3, 3, 3);
         railCount.alignment = TextAlignmentOptions.Center;
+        var gallery = GetComponent<BistroBuilderGalleryViva>();
+        if (gallery != null) referenceView = new BistroBuilderEditorV2ItemDetailsView(root, gallery, CollapseInspector);
         ApplyExpansion();
         root.gameObject.SetActive(false);
     }
@@ -402,7 +433,7 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         var layout = page.gameObject.AddComponent<VerticalLayoutGroup>();
         layout.spacing = 8;
         layout.childControlWidth = true;
-        layout.childControlHeight = false;
+        layout.childControlHeight = true;
         layout.childForceExpandHeight = false;
         page.gameObject.AddComponent<ContentSizeFitter>().verticalFit =
             ContentSizeFitter.FitMode.PreferredSize;
@@ -436,7 +467,8 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
     {
         var rect = CreateRect(name, parent);
         var image = rect.gameObject.AddComponent<Image>();
-        image.color = Ivory;
+        BistroBuilderEditorV2BrassArt.Decorate(image,
+            BistroBuilderEditorV2BrassArt.Style.Button);
         var button = rect.gameObject.AddComponent<Button>();
         button.targetGraphic = image;
         button.onClick.AddListener(() => action?.Invoke());
@@ -453,6 +485,7 @@ public sealed class BistroBuilderEditorV2SelectionInspector : MonoBehaviour
         var layout = rect.GetComponent<LayoutElement>();
         if (layout == null) layout = rect.gameObject.AddComponent<LayoutElement>();
         layout.minHeight = layout.preferredHeight = height;
+        layout.flexibleHeight = 0;
     }
 
     private static void Stretch(RectTransform rect, float l, float b, float r, float t)

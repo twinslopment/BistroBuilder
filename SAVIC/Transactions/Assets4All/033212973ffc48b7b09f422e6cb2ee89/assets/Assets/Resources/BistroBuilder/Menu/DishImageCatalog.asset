@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 894079c126f231c488281c561726002b, type: 3}
+  m_Name: DishImageCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderDishImageCatalog
+  entries:
+  - dishId: anchoas
+    image: {fileID: 21300000, guid: a6834623f932f0e49a8e10fb7d48c9e7, type: 3}
+    sourceFileName: anchoas.jpg
+  - dishId: arroz_con_leche
+    image: {fileID: 21300000, guid: a7545a50215bf4646bfab2fb55556aa1, type: 3}
+    sourceFileName: arroz_con_leche.jpg
+  - dishId: atun_encebollado
+    image: {fileID: 21300000, guid: 1f263b8c05bec354a9db039994383bba, type: 3}
+    sourceFileName: atun_encebollado.jpg
+  - dishId: boquerones
+    image: {fileID: 21300000, guid: 6b47c27e6e9b0ad41a80188fb8b0fcfb, type: 3}
+    sourceFileName: boquerones.jpg
+  - dishId: calamares_a_la_romana
+    image: {fileID: 21300000, guid: 9b58a03408a07584eb68d56a7c50ec67, type: 3}
+    sourceFileName: calamares_a_la_romana.jpg
+  - dishId: cazon_en_adobo
+    image: {fileID: 21300000, guid: f200778d7d2b89f4695a6890715b055d, type: 3}
+    sourceFileName: cazon_en_adobo.jpg
+  - dishId: champinones_al_ajillo
+    image: {fileID: 21300000, guid: d50ef3c5fdf9bf547a37406301f52936, type: 3}
+    sourceFileName: champinones_al_ajillo.jpg
+  - dishId: cocido_madrileno
+    image: {fileID: 21300000, guid: bca3995a797ea0545a23cf7ecc004be5, type: 3}
+    sourceFileName: cocido_madrileno.jpg
+  - dishId: dish_aceitunas_alinadas
+    image: {fileID: 21300000, guid: c1b7045f995a9bf4d83c46838aac0b22, type: 3}
+    sourceFileName: aceitunas_alinadas.jpg
+  - dishId: dish_fabada_asturiana
+    image: {fileID: 21300000, guid: 3c3bb632cb0efb84ca883c0545271411, type: 3}
+    sourceFileName: fabada_asturiana.jpg
+  - dishId: dish_tarta_queso
+    image: {fileID: 21300000, guid: 312d7799da3e4904995e24983c10d691, type: 3}
+    sourceFileName: tarta_queso.jpg
+  - dishId: ensaladilla_rusa
+    image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
+    sourceFileName: ensaladilla_rusa.jpg
+  - dishId: flan
+    image: {fileID: 21300000, guid: 6e636560ddddeb04a8641b9526ad499e, type: 3}
+    sourceFileName: flan.jpg
+  - dishId: gazpacho_andaluz
+    image: {fileID: 21300000, guid: bf2f46b9960955e479fe989d14c779be, type: 3}
+    sourceFileName: gazpacho_andaluz.jpg
+  - dishId: huevos_rotos
+    image: {fileID: 21300000, guid: 28a59fd5fbcea1f4da937c82f24b8141, type: 3}
+    sourceFileName: huevos_rotos.jpg
+  - dishId: jamon_iberico
+    image: {fileID: 21300000, guid: 39254f63978a73047bc260ee744eac03, type: 3}
+    sourceFileName: jamon_iberico.jpg
+  - dishId: lentejas_estofadas
+    image: {fileID: 21300000, guid: 9c0e8bce0ad0ae1488db51e9cd97b132, type: 3}
+    sourceFileName: lentejas_estofadas.jpg
+  - dishId: marmitako
+    image: {fileID: 21300000, guid: 8046c0728b94d2649bef623fa9f71cab, type: 3}
+    sourceFileName: marmitako.jpg
+  - dishId: natillas
+    image: {fileID: 21300000, guid: 3ece75d5b2bd5354680e9c5fef0c43f6, type: 3}
+    sourceFileName: natillas.jpg
+  - dishId: pan_con_tomate
+    image: {fileID: 21300000, guid: b548153c5aba4124ea6f4622bcc0e8b6, type: 3}
+    sourceFileName: pan_con_tomate.jpg
+  - dishId: patatas_bravas
+    image: {fileID: 21300000, guid: ab4466d8b0634b64bb6306f2c6668061, type: 3}
+    sourceFileName: patatas_bravas.jpg
+  - dishId: pimientos_padron
+    image: {fileID: 21300000, guid: 2fbd290f716518641bad888d7c44eff4, type: 3}
+    sourceFileName: pimientos_padron.jpg
+  - dishId: pollo_al_ajillo
+    image: {fileID: 21300000, guid: 22bcba944d2fdf84494315c6fa429e59, type: 3}
+    sourceFileName: pollo_al_ajillo.jpg
+  - dishId: pote_asturiano
+    image: {fileID: 21300000, guid: d69ad27604f2a624d89dc5d4a7dee983, type: 3}
+    sourceFileName: pote_asturiano.jpg
+  - dishId: pulpo_a_la_gallega
+    image: {fileID: 21300000, guid: 243120fbe5ca3184ba67af6a5a261b5a, type: 3}
+    sourceFileName: pulpo_a_la_gallega.jpg
+  - dishId: queso_manchego
+    image: {fileID: 21300000, guid: 6262e773ffd37b84c80017fe71b447bc, type: 3}
+    sourceFileName: queso_manchego.jpg
+  - dishId: tabla_embutidos_ibericos
+    image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
+    sourceFileName: tabla_embutidos_ibericos.jpg
+  - dishId: torrijas
+    image: {fileID: 21300000, guid: 3c07e323060f04a44abe83f7301c61ca, type: 3}
+    sourceFileName: torrijas.jpg
+  - dishId: tortilla_patatas
+    image: {fileID: 21300000, guid: 72d34134d296de24c8d7009c5b4bb3e9, type: 3}
+    sourceFileName: tortilla_patatas.jpg

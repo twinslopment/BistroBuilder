@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_kitchenequipment_a277db61032b4eaaacf45794d62a11db
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_kitchenequipment_a277db61032b4eaaacf45794d62a11db
+  displayName: Wine Cooler Cabinet 1001081746
+  category: 4
+  placementScope: 0
+  description: "Equipamiento pasivo de cocina preparado autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 84999305f11adf049b33f1f56b88d13c, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: cb3c8e2fe6442484fa7d16c15d288eea, type: 3}
+  dimensionsCentimeters: {x: 87.298, y: 190.3046, z: 88.4986}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 7318074731719232514, guid: e4df8415c86a74641ac5035d84fdfbc3, type: 3}
+  editableDefinition: {fileID: 11400000, guid: e1dae18c098af5d44b86ad26e74a9da5, type: 2}
+  purchasePrice: 918
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

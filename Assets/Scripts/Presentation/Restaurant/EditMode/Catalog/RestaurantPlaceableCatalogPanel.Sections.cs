@@ -23,9 +23,47 @@ public sealed partial class RestaurantPlaceableCatalogPanel
         if(titleText!=null)titleText.text=SectionTitle;
         RebuildCatalogPresentation();
         GetComponent<RestaurantPlaceableCatalogApprovedSkin>()?.OpenSection();
-        GetComponent<RestaurantPlaceableCatalogPreviewSkin>()?.RefreshSectionChrome();
+        if (GetComponent<BistroBuilderGalleryViva>() == null)
+            GetComponent<RestaurantPlaceableCatalogPreviewSkin>()?.RefreshSectionChrome();
         SectionChanged?.Invoke(section);
+        // The catalog changes more than its own UI: B8's selection source
+        // must match the active specialist, otherwise selecting a valid
+        // furniture piece is cleared on the next LateUpdate.
+        SyncEditorV2Authority(section);
         RefreshVisibility();
+    }
+
+    public void EnsureEditorV2DefaultAuthority()
+    {
+        var coordinator = FindFirstObjectByType<BistroBuilderEditorV2Coordinator>(
+            FindObjectsInactive.Include);
+        if (coordinator != null &&
+            coordinator.ActiveFamily == BistroBuilderEditorV2ToolFamily.None)
+            SyncEditorV2Authority(CurrentSection);
+    }
+
+    private static void SyncEditorV2Authority(RestaurantEditCatalogSection section)
+    {
+        var service = FindFirstObjectByType<RestaurantEditModeService>(
+            FindObjectsInactive.Include);
+        if (service == null || !service.IsEditModeActive)
+            return;
+        var coordinator = FindFirstObjectByType<BistroBuilderEditorV2Coordinator>(
+            FindObjectsInactive.Include);
+        if (coordinator == null)
+            return;
+        var family = RestaurantEditCatalogSections.IsArchitecture(section)
+            ? section == RestaurantEditCatalogSection.Surfaces
+                ? BistroBuilderEditorV2ToolFamily.Surfaces
+                : BistroBuilderEditorV2ToolFamily.Construction
+            : BistroBuilderEditorV2ToolFamily.Furniture;
+        string toolId = family == BistroBuilderEditorV2ToolFamily.Furniture
+            ? "furniture"
+            : family == BistroBuilderEditorV2ToolFamily.Surfaces
+                ? "floor" : "select";
+        if (!coordinator.TryActivateTool(family, toolId, out string error))
+            Debug.LogWarning("[EditorV2] No se pudo activar la autoridad " +
+                family + ": " + error);
     }
     void CreateSectionCategories()
     {

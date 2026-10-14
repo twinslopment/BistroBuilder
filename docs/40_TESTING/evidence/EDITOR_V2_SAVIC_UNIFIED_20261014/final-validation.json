@@ -1,0 +1,218 @@
+{
+  "status": "PASS",
+  "liveGalleryChecks": 465,
+  "b8Checks": 75,
+  "protectedFiles": [
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/bb_chair_master_002.png",
+      "sha256": "4b4967899b9a7ae0044da5b3883ed21d730088d94f220bea922eba5ec283ea40",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/bb_chair_master_002.png.meta",
+      "sha256": "b70a380df3a26abedfc4c250f628a3330177d1c368b3adc85f7e0f11f2062cd0",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/chair_bistro_01.png",
+      "sha256": "956e521b306b73352254dbce0792d61c4bcd708ecd01c8741753a0c12ed48bf0",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_olive.png",
+      "sha256": "e79cc477c2c265f3e4deaced19cf3fd9c6d0a7899f6457a2078e2267f7f5c610",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_olive.png.meta",
+      "sha256": "d39e61ec772722bf84a76b7d7e3d34f898ecd06cac9a71b15a9462faf1bf0b74",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_red.png",
+      "sha256": "7206a2626591644cef03f8eea955ac079f541ab3395465f0cc80e43e2bee80e6",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_red.png.meta",
+      "sha256": "c074124a03583d751802fece604578f244e5d9295e92d8d9c12ac4d712ab63ae",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_white.png",
+      "sha256": "9104bb2a2e209c06f2c1ec9abe10c07a061a357d9f0714bf47d370009c748759",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_white.png.meta",
+      "sha256": "e9f0ae4d3c1f71aea94e66a789b6b10833d1c2f405abfb8022a47328cdd3e446",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_yellow.png",
+      "sha256": "70f312acd3d013de342d412939e4b0d11ba260f9827c3c1954f5ae803aea8faf",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Generated/BistroBuilder/CatalogIcons/pf_bb_chair_master_001_yellow.png.meta",
+      "sha256": "89dfda8ef208e3bf39c6940255a79293851b4cd9c1027aa3f1f804095a9a329f",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-LICENSE.txt",
+      "sha256": "b3195af0fb14368d1b3b10fb9d3fe503b7163ea083859d2ee553bc74da07c320",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-LICENSE.txt.meta",
+      "sha256": "0b9a732e5e2c0e430c5da1cc94c0dea104499b08c825f5862ce8aa6a417600a5",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-Regular-SDF.asset",
+      "sha256": "4143daa5206d4465c7750f45bfe6339929fd5fd9edf317c2cdf60d6cf83f4ea2",
+      "unchangedFromRehearsalBaseline": false,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-Regular-SDF.asset.meta",
+      "sha256": "537ac2b6ab5b12a98b0e0432f1caae8328b82d74750bb19f2d903bc605879ca1",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-Regular.ttf",
+      "sha256": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-Regular.ttf.meta",
+      "sha256": "33f2a7c29bd7340e51942a375305d5eb357ccec33260154124f548a6129e4319",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-SemiBold-SDF.asset",
+      "sha256": "1377e138b9b27ef2181eea04d57d20b53260c9e7b2b2013cbbb1b10499dbf6da",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-SemiBold-SDF.asset.meta",
+      "sha256": "369adb77d5065e9422b874c1341598481656114fdac128b7304d2f95d49a5e31",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-SemiBold.ttf",
+      "sha256": "78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Inter-SemiBold.ttf.meta",
+      "sha256": "4c86bd01dd31a5862afb572dbc20386b77653ad330af856f624511473873bb13",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Recoleta-SDF.asset",
+      "sha256": "ce3c215ac4e24778e8a3d86c239c413021ae419bb10f464915f79fa8862e7c20",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Recoleta-SDF.asset.meta",
+      "sha256": "d089be92869a93dc78580a0997d162b8a2688db56143d07259058520f041ad44",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Recoleta.otf",
+      "sha256": "0b50976e7f82800242ad73d06ea7be763f226f8192cd42644b1411ab2996227c",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    },
+    {
+      "path": "Assets/Resources/BistroBuilder/UI/Typography/Recoleta.otf.meta",
+      "sha256": "bc7e92364fed8b9801abe7b44f52792d6c735a7a3b1555914d0829b0f20588e5",
+      "unchangedFromRehearsalBaseline": true,
+      "preservedFontAndPresentationData": true
+    }
+  ],
+  "productionReceipts": [
+    "SAVIC/Receipts/Assets4All/504e04a7bfee447e882b62d4c4b26f09_r1.json"
+  ],
+  "acceptance": {
+    "publicFlow": {
+      "status": "PASS",
+      "implementation": "C:\\Users\\mruperez\\Assets4All_LocalGate\\v029\\tmp\\editor-savic-integration-20261013\\Assets4All",
+      "partGraphAfterAnalyze": "N/A",
+      "materialReadiness": {
+        "gate": "PASS",
+        "valid": true,
+        "coverage": 1.0,
+        "totalFaces": 108188,
+        "coveredFaces": 108188,
+        "issueCount": 0,
+        "issueCodes": [],
+        "issues": []
+      },
+      "firstRevision": "C:\\Users\\mruperez\\Assets4All_LocalGate\\v029\\tmp\\editor-savic-integration-20261013\\deliveries\\dadb72782bd04256bd340c351b6d94a8_r1",
+      "partGraphAfterDelivery": "READY",
+      "secondRevision": "C:\\Users\\mruperez\\Assets4All_LocalGate\\v029\\tmp\\editor-savic-integration-20261013\\deliveries\\dadb72782bd04256bd340c351b6d94a8_r2",
+      "sameIdentity": true,
+      "idempotentRepeat": true,
+      "partCount": 10,
+      "modifiedWorkRejected": true,
+      "partGraphErrorRejected": true,
+      "nakedWorkRejected": true
+    },
+    "first": {
+      "status": "PASS",
+      "phase": "first",
+      "savicId": "8a5c37cab8eb4366ab675afa66af65ad",
+      "canonicalContentId": "bb_storagefurniture_8a5c37cab8eb4366ab675afa66af65ad",
+      "sourceHash": "9ed73e826f97dc859bfe1b771b71560c67dbdfa0886f6f3dbdccac98c83aac7a",
+      "revision": 1,
+      "manifestCount": 31,
+      "partCount": 10
+    },
+    "update": {
+      "status": "PASS",
+      "phase": "update",
+      "savicId": "8a5c37cab8eb4366ab675afa66af65ad",
+      "canonicalContentId": "bb_storagefurniture_8a5c37cab8eb4366ab675afa66af65ad",
+      "sourceHash": "fa8c61efabc535f8a3727feaed8a489e77582818cc9c98f8bdfdb941ad98ac64",
+      "revision": 2,
+      "manifestCount": 31,
+      "partCount": 10
+    },
+    "restart": {
+      "status": "PASS",
+      "phase": "restart",
+      "savicId": "8a5c37cab8eb4366ab675afa66af65ad",
+      "canonicalContentId": "bb_storagefurniture_8a5c37cab8eb4366ab675afa66af65ad",
+      "sourceHash": "fa8c61efabc535f8a3727feaed8a489e77582818cc9c98f8bdfdb941ad98ac64",
+      "revision": 2,
+      "manifestCount": 31,
+      "partCount": 10
+    }
+  },
+  "build": "BUILD=Succeeded\nERRORS=0\nWARNINGS=13",
+  "gpuCapture": "REAL UNITY PLAYER\nGPU=Intel(R) Iris(R) Xe Graphics\nAll_1672|VisibleInspectors=0\nAll_1672|Resolution=1672x941|Results=31|Columns=4|Pool=31\nAll_1672|CapturePixels=1672x941|Supersize=1\nSeating_1672|VisibleInspectors=0\nSeating_1672|Resolution=1672x941|Results=18|Columns=4|Pool=31\nSeating_1672|CapturePixels=1672x941|Supersize=1\nAll_1280|VisibleInspectors=0\nAll_1280|Resolution=1280x720|Results=31|Columns=4|Pool=31\nAll_1280|CapturePixels=1280x720|Supersize=1\nSeating_1280|VisibleInspectors=0\nSeating_1280|Resolution=1280x720|Results=18|Columns=4|Pool=31\nSeating_1280|CapturePixels=1280x720|Supersize=1\nSearch_Basica_1280|VisibleInspectors=0\nSearch_Basica_1280|Resolution=1280x720|Results=2|Columns=4|Pool=31\nSearch_Basica_1280|CapturePixels=1280x720|Supersize=1\nEmpty_1280|VisibleInspectors=0\nEmpty_1280|Resolution=1280x720|Results=0|Columns=4|Pool=31\nEmpty_1280|CapturePixels=1280x720|Supersize=1\nFilters_1280|VisibleInspectors=0\nFilters_1280|Resolution=1280x720|Results=18|Columns=4|Pool=31\nFilters_1280|CapturePixels=1280x720|Supersize=1\nInspector_1280|VisibleInspectors=1\nInspector_1280|Resolution=1280x720|Results=18|Columns=4|Pool=31\nInspector_1280|CapturePixels=1280x720|Supersize=1\nConstruction_1280|VisibleInspectors=1\nConstruction_1280|Resolution=1280x720|Results=0|Columns=4|Pool=31\nConstruction_1280|CapturePixels=1280x720|Supersize=1\nSurfaces_1280|VisibleInspectors=1\nSurfaces_1280|Resolution=1280x720|Results=0|Columns=4|Pool=31\nSurfaces_1280|CapturePixels=1280x720|Supersize=1\nSurfaceSelection=True \nSurfaceSelection_1908|VisibleInspectors=1\nSurfaceSelection_1908|Resolution=1908x1042|Results=0|Columns=4|Pool=31\nSurfaceSelection_1908|CapturePixels=1908x1042|Supersize=1\nWorldSelection_1672|VisibleInspectors=1\nWorldSelection_1672|Resolution=1672x941|Results=31|Columns=4|Pool=31\nWorldSelection_1672|CapturePixels=1672x941|Supersize=1\nWorldSelection_4K|VisibleInspectors=1\nWorldSelection_4K|Resolution=1920x1080|Results=31|Columns=4|Pool=31\nWorldSelection_4K|CapturePixels=3840x2160|Supersize=2\nFULLSCREEN_NATIVE=True|Mode=FullScreenWindow|Desktop=1920x1080\nFullscreen_Native|VisibleInspectors=1\nFullscreen_Native|Resolution=1920x1080|Results=31|Columns=4|Pool=31\nFullscreen_Native|CapturePixels=1920x1080|Supersize=1\nFULLSCREEN_RETURN_WINDOW=True\nCAPTURE_COMPLETE\n"
+}

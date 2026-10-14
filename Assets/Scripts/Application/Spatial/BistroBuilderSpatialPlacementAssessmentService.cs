@@ -159,7 +159,8 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
             subject.GetComponents<MonoBehaviour>();
         for (int i = 0; i < candidateProviders.Length; i++)
             if (candidateProviders[i] is
-                IBistroBuilderSpatialSemanticProvider provider)
+                IBistroBuilderSpatialSemanticProvider provider &&
+                !(candidateProviders[i] is IBistroBuilderSpatialCandidateSemanticProvider))
                 provider.WriteSemanticVolumes(candidateSemantics);
 
         Quaternion deltaRotation =
@@ -176,6 +177,10 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
                 candidatePosition,
                 deltaRotation);
         }
+
+        for (int i = 0; i < candidateProviders.Length; i++)
+            if (candidateProviders[i] is IBistroBuilderSpatialCandidateSemanticProvider candidateProvider)
+                candidateProvider.WriteCandidateSemanticVolumes(candidatePosition, candidateRotation, candidateSemantics);
 
         for (int i = 0; i < candidateSemantics.Count; i++)
         {
@@ -247,6 +252,8 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
             if (behaviour == null ||
                 !behaviour.isActiveAndEnabled ||
                 !(behaviour is IBistroBuilderSpatialSemanticProvider provider))
+                continue;
+            if (provider is IBistroBuilderSpatialLifecycleOwner owner && !owner.IsSpatialLifecycleActive)
                 continue;
             provider.WriteSemanticVolumes(semantics);
         }
@@ -326,7 +333,7 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
                         subject.SubjectId,
                         StringComparison.Ordinal) ||
                     IsRelatedToSubject(other, subject.SubjectId) ||
-                    CandidateIsRelatedTo(other.subjectId) ||
+                    CandidateIsRelatedTo(other) ||
                     IsBodySemanticCompatible(subject, other) ||
                     !body.Overlaps(other.volume))
                     continue;
@@ -399,14 +406,18 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
         if (source.shapeKind == BistroBuilderSpatialShapeKind.Circle)
             return BistroBuilderSpatialVolume.Circle(
                 center,
-                source.radius);
+                source.radius).WithHeightRange(TransformHeightRange(source, center, deltaRotation));
 
         return BistroBuilderSpatialVolume.Box(
             center,
             deltaRotation * source.rightAxis,
             deltaRotation * source.forwardAxis,
-            source.halfExtents);
+            source.halfExtents).WithHeightRange(TransformHeightRange(source, center, deltaRotation));
     }
+
+    private static BistroBuilderSpatialHeightRange TransformHeightRange(BistroBuilderSpatialVolume source,
+        Vector3 center, Quaternion deltaRotation) => Vector3.Dot(deltaRotation * Vector3.up, Vector3.up) > 0.9999f
+        ? source.heightRange.Shifted(center.y - source.center.y) : default;
 
     private static bool IsInsideArea(
         BistroBuilderSpatialVolume volume,
@@ -445,7 +456,8 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
         BistroBuilderSpatialSemanticVolume second)
     {
         return IsRelatedToSubject(first, second.subjectId) ||
-               IsRelatedToSubject(second, first.subjectId);
+               IsRelatedToSubject(second, first.subjectId) ||
+               IsRelatedToSemantic(first, second) || IsRelatedToSemantic(second, first);
     }
 
     private static bool IsRelatedToSubject(
@@ -460,10 +472,21 @@ public sealed class BistroBuilderSpatialPlacementAssessmentService :
                    StringComparison.Ordinal);
     }
 
-    private bool CandidateIsRelatedTo(string subjectId)
+    private static bool IsRelatedToSemantic(BistroBuilderSpatialSemanticVolume first,
+        BistroBuilderSpatialSemanticVolume second)
+    {
+        return first != null && second != null &&
+            !string.IsNullOrWhiteSpace(first.relatedSemanticSubjectId) &&
+            !string.IsNullOrWhiteSpace(first.relatedSemanticId) &&
+            string.Equals(first.relatedSemanticSubjectId, second.subjectId, StringComparison.Ordinal) &&
+            string.Equals(first.relatedSemanticId, second.semanticId, StringComparison.Ordinal);
+    }
+
+    private bool CandidateIsRelatedTo(BistroBuilderSpatialSemanticVolume other)
     {
         for (int i = 0; i < candidateSemantics.Count; i++)
-            if (IsRelatedToSubject(candidateSemantics[i], subjectId))
+            if (IsRelatedToSubject(candidateSemantics[i], other.subjectId) ||
+                IsRelatedToSemantic(candidateSemantics[i], other))
                 return true;
         return false;
     }

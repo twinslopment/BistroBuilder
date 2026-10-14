@@ -1,0 +1,2 @@
+PASS: Actual MainCatalog/SaveDefinitionCatalog; originalSHA/currentPlan, provisional isolation, real kitchen placement, native bounded body/claims/underpass, two real SaveGame loads with stable ItemId/InstanceId and fresh objects, canonical cleanup, diagnostic slot deleted, Console clean through Editor. No extraction/ventilation gameplay or ceiling inferred.
+2026-10-03T16:31:33.1700394Z

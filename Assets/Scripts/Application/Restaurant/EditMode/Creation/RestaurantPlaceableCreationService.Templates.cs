@@ -220,7 +220,10 @@ public sealed partial class RestaurantPlaceableCreationService
             return false;
         }
 
-        NotifyBatchRelationshipRebuild(clones);
+        // All members and their areas were confirmed above. Providers
+        // still receive the group event; only the redundant spatial
+        // revalidation of every follower is omitted.
+        NotifyBatchRelationshipRebuild(clones, true);
         foreach (var item in clones)
             CreationCommitted?.Invoke(item);
         created = clones;

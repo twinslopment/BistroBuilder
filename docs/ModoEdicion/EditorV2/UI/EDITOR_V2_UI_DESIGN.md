@@ -547,3 +547,78 @@ Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.
 - Descargas: `C:\Users\mruperez\Downloads\BistroBuilder_EditorV2_VISIBLEFIX_20261009.zip` (99,3 MiB, 304 entradas leídas sin fallos). Incluye `BistroBuilder_EditorV2_VISIBLE.exe`, su carpeta de datos (273 entradas), `ARRANCAR_1280x720.cmd`, `ARRANCAR_1920x1080.cmd`.
 - **La build previa** `BistroBuilder_EditorV2_Review_20261009.zip` **NO debe emplearse para evaluar Editor V2**, porque no resolvía la prioridad de render. Extraer el ZIP nuevo y ejecutar uno de sus dos lanzadores, sin mezclar archivos de ambas carpetas.
 - Pendiente: aceptación visual en ejecución con GPU y ajustes que el usuario considere necesarios. No confundir el fix de visibilidad con tener terminados todos los iconos, Halo de Huella o todo el inspector definitivo.
+
+## 16. Galería Viva nativa — 10/10/2026 — sustituye la presentación de catálogo de los incrementos 13–15
+
+El usuario autoriza expresamente implementar en código el detalle de Galería Viva de 535 × 719 y exige que no aparezca nada de la presentación anterior del modo edición. `BistroBuilderGalleryViva` pasa a ser el único propietario visual del catálogo de objetos; ApprovedSkin, PreviewSkin y GalleryShowcase anteriores quedan desactivados. El shell V2 conserva sus barras nativas y el Taller conserva su autoridad de construcción. Se retira el overlay IMGUI provisional de diagnóstico.
+
+Buscador, Todos/Favoritos/Recientes, categorías laterales, ámbito, precio y ordenación ejecutan consultas B9 reales. Destacado y relacionados respetan esos filtros. La cuadrícula de cuatro columnas mantiene el pool B9 y los comandos B8/B10/colocación provisional. Se utilizan los ornamentos de la referencia exacta, las fuentes y las miniaturas canónicas. Precio o foto de maqueta no sustituyen los datos de un producto real.
+
+Prueba Play Mode: **61 comprobaciones PASS**, con clics por raycaster, campos de precio, ámbito, reinicio, rebind y exclusión de renderizadores anteriores. Regresión B9: **42 OK / 0 fallos** con 10.000 definiciones. Build Windows separada y capturas GPU a 1920 × 1080 y 1280 × 720. La entrega no cierra la aprobación visual de todo Editor V2: quedan los recursos de las ocho mesas de la referencia y los acabados generales pendientes. [Evidencia, implementación y límites](../../../40_TESTING/EDITOR_V2_GALERIA_VIVA_NATIVE_20261010.md).
+## 17. Revisión R2 tras rechazo gráfico — 11/10/2026
+
+El usuario rechaza la build del apartado 16 por duplicidades, marcos apilados y distancia frente a la referencia completa de 1672 × 941. Esa entrega queda SUPERADA Y NO ACEPTADA VISUALMENTE. El PASS funcional anterior no cierra la aprobación gráfica.
+
+Se implementa un sistema común de medidas, barras de 74/100, marcos finos sin paneles anidados en la barra inferior y ficha compartida de producto/selección. B8 no muestra mobiliario sobre arquitectura o superficies; B10 conserva su prioridad. Diseño inicial mantiene sus acciones en el menú V2, sin página flotante. Fuentes SDF sin tracking sintético, controles nativos y datos canónicos. La selección múltiple conserva una sola ficha y abre Conjunto solo cuando se solicita.
+
+Se incorpora `Tools/EditorV2ReferencePreview/`, una vista HTML/CSS/JavaScript para revisar el diseño con los ocho productos de la imagen, filtros operativos y capturas 4K. Su restaurante central es una ilustración: no representa un cambio de modelos ni de una partida Unity.
+
+Verificación Play Mode R2: 106 comprobaciones PASS, incluido exactamente un inspector en superficies y multiselección, contenido dentro de sus paneles, barra inferior dentro de la ventana y píldora de 280 × 43. La igualdad gráfica completa y la aceptación visual siguen pendientes: el juego conserva su escena de prototipo y nueve definiciones reales. [Evidencia, alcance y límites R2](../../../40_TESTING/EDITOR_V2_REFERENCE_R2_20261011.md).
+
+Resultado GPU R2: Windows Player salida 0 / CAPTURE_COMPLETE, capturas 1672 × 941, 1280 × 720, superficies 1908 × 1042 y multiselección supersampleada 3840 × 2160. Build Windows sin errores y con 13 advertencias. Carpeta de revisión diferenciada `Builds/Windows/EditorV2_R2_20261011/`; no modifica la aceptación visual pendiente.
+
+## 18. Revisión R3 y pantalla completa — 11/10/2026
+
+El usuario exige continuar con la referencia exacta y probar a pantalla completa. R3 ajusta el catálogo a la composición de 557 × 730, usa fuentes SDF Arial/Times, marcos de cabecera/placa/pie medidos y segmentos vacíos sin rótulos raster residuales. Se afinan los iconos y los divisores del inspector. El catálogo refleja la selección primaria real B8 y respeta la prioridad de B10.
+
+Player de revisión: resolución nativa del monitor en FullScreenWindow, F11 y acción del menú V2 para alternar ventana. La vista HTML incorpora Fullscreen API con gesto de usuario, conserva los ocho artículos de revisión y mejora el pie y las tarjetas. 106 comprobaciones nativas y 16 de navegador PASS; captura de pantalla completa física 1920 × 1080 y HTML 3840 × 2160. La escena Unity sigue usando los modelos de prototipo; no se declara identidad gráfica absoluta ni aceptación visual. [Evidencia, entrega y límites R3](../../../40_TESTING/EDITOR_V2_REFERENCE_R3_20261011.md).
+
+
+## 19. R4 — destino Windows nativo — 12/10/2026
+
+El usuario confirma que la ejecución será un EXE normal de Windows. La fuente de ejecución y las acciones son los controles nativos de Unity/TMP y las autoridades existentes; HTML/CSS/JavaScript sirve solo como comparación del diseño. R4 traslada las cajas medidas, 28 siluetas SDF, pie sin divisores añadidos, preview ornamental y tarjeta crema al Player. La cuadrícula alterna filas altas/compactas y conserva B9. Arranque directo en V2 a pantalla completa sin crear una partida nueva.
+
+134 comprobaciones nativas y regresión B9 42/42 PASS; build Windows sin errores (13 advertencias); capturas GPU y arranque 1920 × 1080 con un inspector y Seleccionar. La igualdad gráfica por píxel, el acabado restante y los productos/variantes de la ilustración siguen pendientes. [Evidencia R4 Windows](../../../40_TESTING/EDITOR_V2_REFERENCE_R4_WINDOWS_20261012.md).
+
+
+## 20. R5 — ajuste del pie solicitado por el usuario — 12/10/2026
+
+La barra inferior se reduce de 101 a 85 unidades y pasa a ocupar todo el ancho, a posición inferior 0. El papel es continuo y opaco bajo MODO, EDITAR y AYUDAS y hasta todas las esquinas. Rótulos de 16 en lugar de 20, centrados en sus huecos ornamentales; botones de 54, iconos al 85 % y etiquetas de 13. Esta petición actualiza expresamente la altura y el margen inferior de R4; no añade paneles ni modifica los filtros/autoridades.
+
+147 comprobaciones nativas PASS, build Windows sin errores (13 advertencias), capturas GPU y arranque a pantalla completa 1920 × 1080 verificados. Captura real del pie revisada: no queda restaurante visible debajo y las leyendas descansan sobre el papel de sus celdas. [Evidencia R5 Windows](../../../40_TESTING/EDITOR_V2_FOOTER_R5_WINDOWS_20261012.md).
+
+
+## 21. R6 — cabecera al borde superior y texto de luz estable — 12/10/2026
+
+La cabecera pasa a posición superior 0 y ancho completo, con papel opaco en todo su rectángulo y marco ornamental por encima. Conserva 74 unidades de alto; el logo queda dentro del rectángulo. La etiqueta de Día/Atardecer/Noche se enlaza por su nombre, separada del glifo del sol: tamaño 14 y caja fija de 63 × 48 antes de la flecha. Se elimina el texto duplicado grande causado por actualizar el primer TMP descendiente. Continúa el pie compacto R5.
+
+184 comprobaciones nativas PASS, build Windows sin errores (13 advertencias), ciclo de iluminación mediante clics con raycaster y capturas GPU de los cuatro estados/menú a pantalla completa 1920 × 1080 verificados. [Evidencia R6 Windows](../../../40_TESTING/EDITOR_V2_HEADER_R6_WINDOWS_20261012.md).
+
+
+## 22. R7 — acabado profesional de los once botones del pie — 13/10/2026
+
+El usuario solicita mejorar Eliminar y el resto de la barra. Eliminar cambia a burdeos con tinta clara disponible y rosado suave con tinta legible desactivado; usa una papelera vectorial original TMP SDF de trazos uniformes. Los once botones tienen relieve fino, borde discreto, iconos centrados de altura 30 y etiquetas semibold de 13. Hover, pulsación y selección son superficies opacas reutilizadas; pulsar baja el contenido una unidad sin mover el área de clic. La disponibilidad y las acciones siguen bajo las autoridades existentes. Se conserva el pie compacto R5, su marco/posición/títulos y la cabecera R6.
+
+293 comprobaciones nativas PASS, build Windows sin errores (13 advertencias), capturas GPU de los cuatro estados de Eliminar y revisión de recortes 1920 × 98. [Evidencia R7 Windows](../../../40_TESTING/EDITOR_V2_TOOLBAR_R7_WINDOWS_20261013.md).
+
+
+## 23. Decisión posterior — R8: Catálogo, ficha editable y Asientos — 13/10/2026
+
+El usuario pide título «Catálogo», iconos propios con relieve, etiquetas de categorías uniformes, previsualización centrada y dimensiones/rotación activas. Posteriormente pide corregir la visualización de todas las sillas y rediseñar el scroll dentro del panel. Se aplica al EXE nativo, conservando las barras y la composición aprobada.
+
+Doce iconos vectoriales SDF nuevos usan latón con brillo/sombra; pestañas Inter Semibold 14 y categorías 12,5 con espacio suficiente para Almacenamiento. Recoleta e Inter proceden de las fuentes aprobadas; el fallback de marcadores del DEMO se documenta y conserva. Leyendas del pie 14 y caja de Atardecer 68 para la métrica real.
+
+La petición actualiza la decisión anterior de dimensiones informativas: inputs de centímetros y grados X/Y/Z, presets y proporciones enlazadas. Borrador transitorio de catálogo, transformación de ghost por creación canónica y de objeto individual mediante placement/BBSIS/historial global. Restricciones y capacidades no se eluden; rechazo restaura, Undo/Redo y guardado canónico reconstruyen la geometría real. Grupos y familias incompatibles no reciben acciones artificiales.
+
+Asientos usa tarjetas uniformes de 119 y cuatro columnas calculadas desde el viewport; nombres en hasta tres líneas y precios separados. Relacionados reserva dos líneas y precio. Asientos omite el prefijo redundante Silla y separa la variante para mantener nombres completos sin partir palabras; la ficha conserva el nombre publicado completo. Textos futuros que excedan las cajas mantienen ellipsis. Viewport enmascarado 352, lista 366 y scroll de latón 12, todo dentro del marco y con 14 de margen inferior. Se elimina la imposición posterior del ancho 399 y las filas alternas que recortaban texto. La navegación sigue bajo ScrollRect/servicio común; el nuevo acabado no ejecuta acciones de juego.
+
+381 comprobaciones nativas PASS, regresión espacial PASS y B8 75/75 PASS, build Windows sin errores y capturas reales GPU. [Evidencia R8 Windows](../../../40_TESTING/EDITOR_V2_PANELS_R8_WINDOWS_20261013.md). Esta revisión permanece en la rama sin integrar; la igualdad absoluta de toda la referencia no se declara cerrada.
+
+
+## 24. R9 — fotografía profesional de Asientos — 13/10/2026
+
+Tras aceptar la corrección de formato/scroll R8, el usuario solicita mejorar las miniaturas de sillas. La familia Asientos se fotografía desde una cámara elevada, con vista frontal de tres cuartos, asiento visible y encuadre uniforme que conserva todas las patas. PNG reales 1024 × 1024 con alpha, sin compresión y mipmaps trilineales; imagen centrada en las tarjetas existentes. El generador y las métricas pertenecen al servicio canónico SAVIC y las fotos representan exactamente los prefabs/materiales publicados. No hay casos de render por nombre de silla ni sustitución artística del mobiliario.
+
+Se repara la regresión demostrada de la silla roja, cuya ficha estaba vinculada a la foto de otra silla. La política común repara solo referencias a previews generadas de otro artículo; las manuales se conservan. Las demás familias y datos canónicos permanecen intactos. Las fichas actuales usan el mismo derivado mejorado, sin dar por implementado el futuro builder independiente de detalle.
+
+56 comprobaciones de generación PASS con calidad Good en seis imágenes; 393 comprobaciones nativas PASS; build Windows sin errores y capturas GPU del catálogo, scroll y seis fichas a fullscreen físico 1920 × 1080 y ventana 1280 × 720. R9 inicia en Asientos y mantiene F11 y la interacción normal. [Evidencia R9 Windows](../../../40_TESTING/EDITOR_V2_CHAIR_PHOTOS_R9_WINDOWS_20261013.md). Se conserva R8 y la rama sigue sin integrar; la igualdad absoluta de la referencia continúa abierta.

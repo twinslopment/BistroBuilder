@@ -180,6 +180,18 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
             "Eliminar");
         Require(bottom.Find("EditViewTools/Buttons/EditGrid") != null,
             "Cuadrícula");
+        var selectRect = bottom.Find("ModeTools/Buttons/EditSelect")
+            as RectTransform;
+        var selectCaption = selectRect != null ?
+            selectRect.Find("Label")?.GetComponent<TMPro.TMP_Text>() : null;
+        Canvas.ForceUpdateCanvases();
+        Require(selectRect != null && selectRect.rect.width >= 145f &&
+                selectRect.rect.height >= 78f &&
+                selectCaption != null && selectCaption.fontSize >= 17f,
+            "Botones inferiores legibles, con superficie clicable de PC. Actual: " +
+            "width=" + (selectRect != null ? selectRect.rect.width : -1f) +
+            ", height=" + (selectRect != null ? selectRect.rect.height : -1f) +
+            ", caption=" + (selectCaption != null ? selectCaption.fontSize : -1f));
 
         var dialog = root.FirstOrDefault(t =>
             t.name == "BB_EditorV2_ConfirmReform");
@@ -193,10 +205,19 @@ public sealed class BistroBuilderEditorV2ChromeSmokeDriver : MonoBehaviour
 
         float topWidth = RequiredWidth(top);
         float bottomWidth = RequiredWidth(bottom);
-        Require(topWidth <= 1280 - 24, "Topbar 1280: " + topWidth);
-        Require(bottomWidth <= 1280 - 24, "Bottombar 1280: " + bottomWidth);
-        Require(topWidth <= 1920 - 24, "Topbar 1920");
-        Require(bottomWidth <= 1920 - 24, "Bottombar 1920");
+        // Unity's 1920-reference CanvasScaler shrinks the same layout at
+        // 1280x720. Check the actual reference-space budget; the old test
+        // compared raw Canvas units against 1280 physical pixels.
+        const float referenceWidth = 1920f;
+        float compactScale = 1280f / referenceWidth;
+        Require(topWidth <= referenceWidth - 28f,
+            "Topbar 1920 reference overflow: " + topWidth);
+        Require(bottomWidth <= referenceWidth - 28f,
+            "Bottombar 1920 reference overflow: " + bottomWidth);
+        Require(topWidth * compactScale <= 1280f - 24f,
+            "Topbar physical overflow at 1280: " + topWidth);
+        Require(bottomWidth * compactScale <= 1280f - 24f,
+            "Bottombar physical overflow at 1280: " + bottomWidth);
 
         var snap = bottom.Find("EditViewTools/Buttons/EditSnap")
             .GetComponent<Button>();

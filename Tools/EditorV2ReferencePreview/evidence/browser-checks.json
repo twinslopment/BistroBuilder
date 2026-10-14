@@ -1,0 +1,117 @@
+{
+  "utc": "2026-10-11T20:17:59.086Z",
+  "checks": [
+    {
+      "check": "Búsqueda sin distinción de mayúsculas y acentos",
+      "products": [
+        "Mesa mármol claro"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Precio 275–315 combinado con Interior",
+      "prices": [
+        "290 €",
+        "315 €",
+        "275 €"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Orden ascendente dentro de filtros",
+      "prices": [
+        "275 €",
+        "290 €",
+        "315 €"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Intervalo inválido conserva resultados",
+      "error": "El mínimo no puede superar el máximo.",
+      "pass": true
+    },
+    {
+      "check": "Favoritos filtra catálogo y destacado",
+      "products": [
+        "Mesa mármol claro"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Recientes ordena la última selección primero",
+      "products": [
+        "Mesa nogal cuadrada",
+        "Mesa mármol claro"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Zoom abre un solo diálogo",
+      "pass": true
+    },
+    {
+      "check": "Consulta vacía retira destacado y relacionados",
+      "pass": true
+    },
+    {
+      "check": "Plegar conserva estado y muestra un único rail",
+      "pass": true
+    },
+    {
+      "check": "Categoría Exterior",
+      "products": [
+        "Mesa terraza exterior"
+      ],
+      "pass": true
+    },
+    {
+      "check": "Composición 4K sin paneles superpuestos",
+      "geometry": {
+        "dpr": 1.0000000149011612,
+        "height": 2160,
+        "panels": [
+          {
+            "bottom": 1889.1394348144531,
+            "height": 1677.9598388671875,
+            "id": "catalog",
+            "right": 1300.2260627746582,
+            "width": 1278.5546875,
+            "x": 21.671375274658203,
+            "y": 211.1795959472656
+          },
+          {
+            "bottom": 1886.8436584472656,
+            "height": 1675.6640625,
+            "id": "inspector",
+            "right": 3816.0181274414062,
+            "width": 729.9470825195312,
+            "x": 3086.071044921875,
+            "y": 211.1795959472656
+          },
+          {
+            "bottom": 188.22530555725095,
+            "height": 169.8618621826172,
+            "id": "topbar",
+            "right": 3820.6088542938232,
+            "width": 3801.23291015625,
+            "x": 19.37594413757324,
+            "y": 18.36344337463379
+          },
+          {
+            "bottom": 2141.6365814208984,
+            "height": 231.83848571777344,
+            "id": "bottom-bar",
+            "right": 3820.6088542938232,
+            "width": 3801.23291015625,
+            "x": 19.37594413757324,
+            "y": 1909.798095703125
+          }
+        ],
+        "width": 3840
+      },
+      "pass": true
+    }
+  ],
+  "scope": "HTML reference fixture; not Unity world interaction"
+}

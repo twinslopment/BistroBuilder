@@ -60,6 +60,7 @@ public sealed class BistroBuilderSpatialFamilyCatalog : ScriptableObject
         AddFamily("generic", "Genérico", "spatial.generic");
         AddFamily("seating.table", "Mesa", "seating.table", "service.table");
         AddFamily("seating.chair", "Silla", "seating.chair", "dynamic.seat");
+        AddFamily("seating.bar", "Taburete de barra", "seating.bar", "seat.static", "service.bar");
         AddFamily("architecture.door", "Puerta", "architecture.door", "dynamic.sweep");
         AddFamily("work.kitchen", "Cocina", "work.station", "service.kitchen");
         AddFamily("work.bar", "Barra", "work.edge", "service.bar");

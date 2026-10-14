@@ -58,6 +58,14 @@ public sealed class RestaurantEditableObjectDefinition :
     [SerializeField]
     private bool canRotate = true;
 
+    [Header("Dimensiones del inspector")]
+    [SerializeField] private bool canResize = true;
+    [SerializeField, Range(.1f, 1f)] private float minimumInspectorScale = .25f;
+    [SerializeField, Range(1f, 10f)] private float maximumInspectorScale = 4f;
+    public bool CanResize => canResize;
+    public float MinimumInspectorScale => Mathf.Clamp(minimumInspectorScale, .1f, 1f);
+    public float MaximumInspectorScale => Mathf.Clamp(maximumInspectorScale, 1f, 10f);
+
     [Header("Cuadrícula")]
 
     [Tooltip(

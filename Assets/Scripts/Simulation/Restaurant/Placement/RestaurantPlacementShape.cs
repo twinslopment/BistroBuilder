@@ -42,6 +42,8 @@ public readonly struct RestaurantPlacementShape
     /// No forma parte del tamaño físico real.
     /// </summary>
     public float MinimumClearance { get; }
+    public BistroBuilderSpatialHeightRange HeightRange { get; }
+    public bool RequiresCompleteClearance { get; }
 
     public float HalfWidth =>
         HalfExtents.x;
@@ -54,10 +56,14 @@ public readonly struct RestaurantPlacementShape
         Vector3 rightAxis,
         Vector3 forwardAxis,
         Vector2 halfExtents,
-        float minimumClearance
+        float minimumClearance,
+        BistroBuilderSpatialHeightRange heightRange = default,
+        bool requiresCompleteClearance = false
     )
     {
         Center = center;
+        HeightRange = heightRange;
+        RequiresCompleteClearance = requiresCompleteClearance || heightRange.bounded;
 
         RightAxis =
             NormalizeHorizontalAxis(

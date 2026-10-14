@@ -1,27 +1,104 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public enum BistroBuilderEditChromeSymbol
 {
     Home, Pencil, Undo, Redo, Hand, Move, Grid, Terrain, Paint,
-    Sun, Play, Plot, Chair, Surfaces, Walls, Plant, Bulb, Settings, More, Delete, Rotate, Duplicate
+    Sun, Play, Plot, Chair, Surfaces, Walls, Plant, Bulb, Settings, More, Delete, Rotate, Duplicate, Cursor, Hammer, Layers, Magnet, Camera, Tools, Down, Spark
 }
 
 /// <summary>Original, resolution-independent silhouettes from the approved edit-mode reference.
-/// Geometry uses a 32-unit design grid; no font glyphs, textures or per-frame allocations.</summary>
+/// Approved silhouettes use a cached native SDF vector font; remaining symbols use a 32-unit mesh.</summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(CanvasRenderer))]
 public sealed class BistroBuilderEditChromeIcon : MaskableGraphic
 {
     public BistroBuilderEditChromeSymbol Symbol { get; private set; }
     VertexHelper mesh; Color ink;
+    TMP_Text approved;
+    bool toolbarDelete;
+    public bool UsesApprovedVector => approved != null;
+    static string ApprovedKey(BistroBuilderEditChromeSymbol symbol)
+    {
+        switch(symbol)
+        {
+            case BistroBuilderEditChromeSymbol.Tools:return "tools";
+            case BistroBuilderEditChromeSymbol.Cursor:return "cursor";
+            case BistroBuilderEditChromeSymbol.Chair:return "chair";
+            case BistroBuilderEditChromeSymbol.Hammer:return "hammer";
+            case BistroBuilderEditChromeSymbol.Layers:return "layers";
+            case BistroBuilderEditChromeSymbol.Move:return "move";
+            case BistroBuilderEditChromeSymbol.Rotate:return "rotate";
+            case BistroBuilderEditChromeSymbol.Duplicate:return "duplicate";
+            case BistroBuilderEditChromeSymbol.Delete:return "trash";
+            case BistroBuilderEditChromeSymbol.Magnet:return "magnet";
+            case BistroBuilderEditChromeSymbol.Grid:return "grid";
+            case BistroBuilderEditChromeSymbol.Plot:return "cube";
+            case BistroBuilderEditChromeSymbol.Undo:return "undo";
+            case BistroBuilderEditChromeSymbol.Redo:return "redo";
+            case BistroBuilderEditChromeSymbol.Sun:return "sun";
+            case BistroBuilderEditChromeSymbol.Camera:return "camera";
+            case BistroBuilderEditChromeSymbol.Settings:return "gear";
+            case BistroBuilderEditChromeSymbol.Pencil:return "pencil";
+            default:return null;
+        }
+    }
+    void LateUpdate(){if(approved!=null)approved.color=color;}
+    protected override void OnRectTransformDimensionsChange()
+    {
+        base.OnRectTransformDimensionsChange();
+        FitApprovedGlyph();
+    }
+    void FitApprovedGlyph()
+    {
+        if(approved==null || !BistroBuilderApprovedGlyphsR4.Resolve(ApprovedKey(Symbol),out _,out float aspect))return;
+        if(toolbarDelete)aspect=24f/28f;
+        var rect=approved.rectTransform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;
+        rect.offsetMin=rect.offsetMax=Vector2.zero;
+        approved.fontSize=Mathf.Min(rectTransform.rect.height,rectTransform.rect.width/aspect);
+    }
+
+    public void ConfigureToolbarGlyph()
+    {
+        if(Symbol!=BistroBuilderEditChromeSymbol.Delete || approved==null)return;
+        var font=BistroBuilderEditorV2ToolbarArt.DeleteFont;if(font==null)return;
+        toolbarDelete=true;approved.font=font;FitApprovedGlyph();
+    }
+
     public void Configure(BistroBuilderEditChromeSymbol symbol, Color tint)
-    { Symbol = symbol; color = tint; raycastTarget = false; SetVerticesDirty(); }
+    {
+        Symbol=symbol;color=tint;raycastTarget=false;
+        string key=ApprovedKey(symbol);
+        if(key!=null && approved==null)
+            approved=BistroBuilderApprovedGlyphsR4.Create(transform,"ApprovedVectorGlyph",key,0,0,rectTransform.rect.width,rectTransform.rect.height,tint);
+        FitApprovedGlyph(); SetVerticesDirty();
+    }
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         mesh = vh; ink = color; vh.Clear();
+        if(approved!=null)return;
         switch (Symbol)
         {
+            case BistroBuilderEditChromeSymbol.Down: Stroke(6,11,16,21,26,11);break;
+            case BistroBuilderEditChromeSymbol.Spark: Poly(16,1,21,11,31,16,21,21,16,31,11,21,1,16,11,11);break;
+            case BistroBuilderEditChromeSymbol.Cursor:
+                Poly(5,1,28,19,18,20,23,29,17,32,12,23,5,29); break;
+            case BistroBuilderEditChromeSymbol.Hammer:
+                Poly(3,8,10,1,15,4,18,2,27,11,22,17,17,13,13,14,8,9);
+                Poly(13,13,19,18,8,31,2,26); break;
+            case BistroBuilderEditChromeSymbol.Layers:
+                Poly(16,2,31,10,16,18,1,10); Poly(1,16,5,14,16,20,27,14,31,16,16,24);
+                Poly(1,23,5,21,16,27,27,21,31,23,16,31); break;
+            case BistroBuilderEditChromeSymbol.Magnet:
+                Arc(16,17,10,0,180,7); Line(6,17,6,4,7); Line(26,17,26,4,7);
+                CutLine(3,9,9,9); CutLine(23,9,29,9); break;
+            case BistroBuilderEditChromeSymbol.Camera:
+                Poly(2,8,9,8,12,3,22,3,25,8,30,8,30,29,2,29);
+                var cameraInk=ink;ink=new Color32(250,242,226,255);Arc(17,18,6,0,360,2);ink=cameraInk; CutLine(5,11,8,11); break;
+            case BistroBuilderEditChromeSymbol.Tools:
+                Line(5,29,24,8,5); Poly(19,4,23,1,23,7,28,8,31,4,31,11,26,15,20,11);
+                Line(7,7,27,29,5); Poly(1,6,7,1,14,8,9,13); break;
             case BistroBuilderEditChromeSymbol.Home:
                 Poly(5,15,16,5,27,15,27,29,19,29,19,20,13,20,13,29,5,29);
                 Stroke(2,15,16,2,30,15); Stroke(23,8,23,3,27,3,27,12); break;
@@ -49,13 +126,15 @@ public sealed class BistroBuilderEditChromeIcon : MaskableGraphic
                 Disc(16,16,7);for(int i=0;i<8;i++){float a=i*Mathf.PI/4;Line(16+Mathf.Cos(a)*11,16+Mathf.Sin(a)*11,16+Mathf.Cos(a)*15,16+Mathf.Sin(a)*15,1.6f);}break;
             case BistroBuilderEditChromeSymbol.Play: Poly(7,2,29,16,7,30);break;
             case BistroBuilderEditChromeSymbol.Plot:
+                Stroke(16,2,29,9,29,24,16,31,3,24,3,9,16,2);
+                Line(16,2,16,16,2.2f);Line(3,9,16,16,2.2f);Line(29,9,16,16,2.2f);Line(16,16,16,31,2.2f);break;
             case BistroBuilderEditChromeSymbol.Walls:
                 Poly(3,8,16,2,29,8,16,14); Poly(3,10,15,16,15,30,3,24); Poly(17,16,29,10,29,24,17,30);
                 if(Symbol==BistroBuilderEditChromeSymbol.Plot){CutLine(5,21,12,18);CutLine(19,10,24,8);}break;
             case BistroBuilderEditChromeSymbol.Chair:
-                Poly(9,2,23,2,24,16,8,16); Poly(6,18,26,18,26,22,6,22);
-                Line(8,21,6,30,2.5f);Line(24,21,26,30,2.5f);Line(11,22,11,28,1.6f);Line(21,22,21,28,1.6f);
-                Line(7,13,7,20);Line(25,13,25,20);break;
+                Stroke(8,3,24,3,24,20,8,20,8,3);
+                Line(12,3,12,16,1.6f);Line(16,3,16,16,1.6f);Line(20,3,20,16,1.6f);Line(8,13,24,13,1.6f);
+                Line(5,20,27,20,2.5f);Line(8,20,5,30,2.2f);Line(24,20,27,30,2.2f);break;
             case BistroBuilderEditChromeSymbol.Surfaces:
                 Poly(16,1,31,19,16,31,1,19);
                 CutLine(7,18,16,25);CutLine(16,25,25,18);CutLine(11,14,16,8);CutLine(16,8,21,14);CutLine(11,14,16,19);CutLine(16,19,21,14);break;
@@ -71,7 +150,7 @@ public sealed class BistroBuilderEditChromeIcon : MaskableGraphic
             case BistroBuilderEditChromeSymbol.Delete:
                 Stroke(7,9,9,29,23,29,25,9);Line(4,7,28,7);Stroke(12,7,12,3,20,3,20,7);Line(13,12,13,24);Line(19,12,19,24);break;
             case BistroBuilderEditChromeSymbol.Rotate:
-                Arc(16,16,11,205,350,1.9f);Arc(16,16,11,25,170,1.9f);Stroke(21,6,27,13,30,5);Stroke(11,26,5,19,2,27);break;
+                Arc(16,16,10,30,330,3.6f);Poly(18,2,29,3,27,15);break;
             case BistroBuilderEditChromeSymbol.Duplicate:
                 Stroke(11,10,28,10,28,29,11,29,11,10);Stroke(7,23,4,23,4,3,21,3,21,6);break;
         }

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_chair_658f416fd62b42909fccec951f0d9dfa
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_chair_658f416fd62b42909fccec951f0d9dfa
+  displayName: Light Wooden Spindle
+  category: 1
+  placementScope: 0
+  description: "Silla integrada autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: 8215e2f6f348f734aaa1fb6eed1daf23, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 6813953df699c9f45b432fddc27879bc, type: 3}
+  dimensionsCentimeters: {x: 39.102028, y: 88.54622, z: 54.19572}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 1986789120621568513, guid: b83296a38be203847a0ec9561bbc2bd2, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 459759af79b246649aee7f368b5ad989, type: 2}
+  purchasePrice: 60
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

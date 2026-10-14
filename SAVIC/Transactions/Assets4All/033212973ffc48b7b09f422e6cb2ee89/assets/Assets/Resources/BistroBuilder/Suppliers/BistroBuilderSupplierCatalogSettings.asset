@@ -1,0 +1,874 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f437c88cd34d5c29c870db2e02ba78b7, type: 3}
+  m_Name: BistroBuilderSupplierCatalogSettings
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderSupplierCatalogSettings
+  schemaVersion: 2
+  suppliers:
+  - supplierId: supplier_carnes_selectas
+    displayName: Carnes Selectas
+    description: Proveedor profesional especializado en carnes y preparado para futuras
+      gamas de calidad y origen.
+    active: 1
+    minimumOrderCents: 7000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_costa_fresca
+    displayName: Costa Fresca
+    description: "Especialista en pescado y marisco con disponibilidad y tarifas
+      algo m\xE1s din\xE1micas."
+    active: 1
+    minimumOrderCents: 6500
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_distribuciones_norte
+    displayName: Distribuciones Norte
+    description: "Mayorista de cat\xE1logo amplio, formatos grandes y coste unitario
+      competitivo."
+    active: 1
+    minimumOrderCents: 12000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_hosteleria_express
+    displayName: "Hosteler\xEDa Express"
+    description: "Proveedor de respuesta r\xE1pida para necesidades urgentes y reposiciones
+      de \xFAltima hora."
+    active: 1
+    minimumOrderCents: 2000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_huerta_clara
+    displayName: Huerta Clara
+    description: "Especialista regional en frutas y verduras frescas para hosteler\xEDa."
+    active: 1
+    minimumOrderCents: 4000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  - supplierId: supplier_mercado_central
+    displayName: Mercado Central
+    description: Proveedor generalista equilibrado para el abastecimiento habitual
+      del restaurante.
+    active: 1
+    minimumOrderCents: 3000
+    standardLeadTimeDays: 1
+    currencyCode: EUR
+    priceFactorBasisPoints: 11400
+    legacyMinimumOrderValue: 80
+    legacyPriceFactor: 1.14
+  products:
+  - productId: offer_supplier_carnes_selectas_package_ingredient_aceitunas_alinadas_tray_1kg
+    supplierId: supplier_carnes_selectas
+    ingredientId: ingredient_aceitunas_alinadas
+    displayName: Bandeja 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 560
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_carnes_selectas_package_ingredient_chorizo_tray_2kg
+    supplierId: supplier_carnes_selectas
+    ingredientId: ingredient_chorizo
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2005
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_carnes_selectas_package_ingredient_morcilla_tray_2kg
+    supplierId: supplier_carnes_selectas
+    ingredientId: ingredient_morcilla
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2115
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_carnes_selectas_package_ingredient_panceta_tray_2kg
+    supplierId: supplier_carnes_selectas
+    ingredientId: ingredient_panceta
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2115
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_costa_fresca_package_ingredient_merluza_box_3kg
+    supplierId: supplier_costa_fresca
+    ingredientId: ingredient_merluza
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 3625
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_aceite_oliva_jug_5l
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_aceite_oliva
+    displayName: Garrafa 5 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 3080
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_agua_cocina_jug_10l
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_agua_cocina
+    displayName: Garrafa 10 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 255
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_azucar_sack_5kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_azucar
+    displayName: Saco 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 530
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_botella_agua_mineral_box_24u
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_botella_agua_mineral
+    displayName: Caja 24 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1270
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_fabes_sack_5kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_fabes
+    displayName: Saco 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2640
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_galleta_box_3kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_galleta
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1850
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_huevo_box_30u
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_huevo
+    displayName: Caja 30 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 660
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_mantequilla_case_5kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_mantequilla
+    displayName: Caja 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 3960
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_nata_jug_5l
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_nata
+    displayName: Garrafa 5 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2640
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_queso_crema_case_5kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_queso_crema
+    displayName: Caja 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2640
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_refresco_lata_box_24u
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_refresco_lata
+    displayName: Caja 24 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 955
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_sal_case_2kg
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_sal
+    displayName: Caja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1410
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_distribuciones_norte_package_ingredient_vino_casa_jug_5l
+    supplierId: supplier_distribuciones_norte
+    ingredientId: ingredient_vino_casa
+    displayName: Garrafa 5 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 530
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_aceite_oliva_bottle_1l
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_aceite_oliva
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 925
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_aceitunas_alinadas_tray_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_aceitunas_alinadas
+    displayName: Bandeja 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 660
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_agua_cocina_jug_5l
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_agua_cocina
+    displayName: Garrafa 5 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 195
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_ajo_mesh_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_ajo
+    displayName: Malla 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 595
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_azucar_pack_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_azucar
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 160
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_botella_agua_mineral_pack_6u
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_botella_agua_mineral
+    displayName: Pack 6 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 475
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_cebolla_mesh_5kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_cebolla
+    displayName: Malla 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 900
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_chorizo_tray_2kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_chorizo
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2375
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_fabes_pack_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_fabes
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 795
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_galleta_box_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_galleta
+    displayName: Caja 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 925
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_huevo_box_12u
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_huevo
+    displayName: Caja 12 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 400
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_limon_mesh_2kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_limon
+    displayName: Malla 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 740
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_mantequilla_block_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_mantequilla
+    displayName: Bloque 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1190
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_merluza_box_3kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_merluza
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 4420
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_morcilla_tray_2kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_morcilla
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2505
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_nata_bottle_1l
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_nata
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 795
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_panceta_tray_2kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_panceta
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 2505
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_patata_box_3kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_patata
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 960
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_queso_crema_pack_1kg
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_queso_crema
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 795
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_refresco_lata_pack_6u
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_refresco_lata
+    displayName: Pack 6 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 360
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_sal_jar_500g
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_sal
+    displayName: Bote 500 g
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 530
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_hosteleria_express_package_ingredient_vino_casa_bottle_1l
+    supplierId: supplier_hosteleria_express
+    ingredientId: ingredient_vino_casa
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 160
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_huerta_clara_package_ingredient_ajo_mesh_1kg
+    supplierId: supplier_huerta_clara
+    ingredientId: ingredient_ajo
+    displayName: Malla 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 440
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_huerta_clara_package_ingredient_cebolla_mesh_5kg
+    supplierId: supplier_huerta_clara
+    ingredientId: ingredient_cebolla
+    displayName: Malla 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 660
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_huerta_clara_package_ingredient_limon_mesh_2kg
+    supplierId: supplier_huerta_clara
+    ingredientId: ingredient_limon
+    displayName: Malla 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 545
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_huerta_clara_package_ingredient_patata_box_3kg
+    supplierId: supplier_huerta_clara
+    ingredientId: ingredient_patata
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 705
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_aceite_oliva_bottle_1l
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_aceite_oliva
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 725
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_aceitunas_alinadas_tray_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_aceitunas_alinadas
+    displayName: Bandeja 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 515
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_agua_cocina_jug_5l
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_agua_cocina
+    displayName: Garrafa 5 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 150
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_ajo_mesh_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_ajo
+    displayName: Malla 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 465
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_azucar_pack_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_azucar
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 125
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_botella_agua_mineral_pack_6u
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_botella_agua_mineral
+    displayName: Pack 6 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 375
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_cebolla_mesh_5kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_cebolla
+    displayName: Malla 5 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 700
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_chorizo_tray_2kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_chorizo
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1855
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_fabes_pack_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_fabes
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 620
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_galleta_box_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_galleta
+    displayName: Caja 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 725
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_huevo_box_12u
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_huevo
+    displayName: Caja 12 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 310
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_limon_mesh_2kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_limon
+    displayName: Malla 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 580
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_mantequilla_block_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_mantequilla
+    displayName: Bloque 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 930
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_merluza_box_3kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_merluza
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 3450
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_morcilla_tray_2kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_morcilla
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1960
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_nata_bottle_1l
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_nata
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 620
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_panceta_tray_2kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_panceta
+    displayName: Bandeja 2 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 1960
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_patata_box_3kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_patata
+    displayName: Caja 3 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 750
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_queso_crema_pack_1kg
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_queso_crema
+    displayName: Paquete 1 kg
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 620
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_refresco_lata_pack_6u
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_refresco_lata
+    displayName: Pack 6 uds.
+    packageLabel: Envase 1 kg
+    baseUnit: 4
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 280
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_sal_jar_500g
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_sal
+    displayName: Bote 500 g
+    packageLabel: Envase 1 kg
+    baseUnit: 0
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 415
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR
+  - productId: offer_supplier_mercado_central_package_ingredient_vino_casa_bottle_1l
+    supplierId: supplier_mercado_central
+    ingredientId: ingredient_vino_casa
+    displayName: Botella 1 L
+    packageLabel: Envase 1 kg
+    baseUnit: 2
+    packageCanonicalMilliUnits: 1000000
+    packPriceCents: 125
+    minimumPacks: 1
+    leadTimeDays: 1
+    available: 1
+    currencyCode: EUR

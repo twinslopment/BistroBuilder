@@ -1,0 +1,331 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+
+namespace BistroBuilder.Editor.Savic
+{
+    internal sealed class SavicManifestRepository
+    {
+        private readonly SavicStorageLayout layout;
+        private readonly string manifestRoot;
+        private readonly Dictionary<string, SavicManifest> bySourceHash =
+            new Dictionary<string, SavicManifest>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, string> pathBySavicId =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly Dictionary<string, SavicManifest> bySavicId =
+            new Dictionary<string, SavicManifest>(StringComparer.OrdinalIgnoreCase);
+
+        private bool loaded;
+
+        internal SavicManifestRepository(SavicStorageLayout layout)
+            : this(layout, null)
+        {
+        }
+
+        internal SavicManifestRepository(
+            SavicStorageLayout layout,
+            string manifestRootOverride)
+        {
+            this.layout =
+                layout ?? throw new ArgumentNullException(nameof(layout));
+
+            manifestRoot =
+                string.IsNullOrWhiteSpace(manifestRootOverride)
+                    ? this.layout.ManifestsRoot
+                    : Path.GetFullPath(manifestRootOverride);
+        }
+
+        internal event Action Changed;
+
+        internal int Count
+        {
+            get
+            {
+                EnsureLoaded();
+                return bySourceHash.Count;
+            }
+        }
+
+        internal bool TryGetBySourceHash(string sourceHash, out SavicManifest manifest)
+        {
+            EnsureLoaded();
+            return bySourceHash.TryGetValue(sourceHash ?? string.Empty, out manifest);
+        }
+
+        internal bool TryGetBySavicId(
+            string savicId,
+            out SavicManifest manifest)
+        {
+            EnsureLoaded();
+            return bySavicId.TryGetValue(
+                savicId ?? string.Empty,
+                out manifest);
+        }
+
+        internal IReadOnlyList<SavicManifest> GetAll()
+        {
+            EnsureLoaded();
+
+            List<SavicManifest> manifests =
+                new List<SavicManifest>(bySavicId.Values);
+
+            manifests.Sort(
+                (left, right) =>
+                    string.Compare(
+                        left?.createdUtc,
+                        right?.createdUtc,
+                        StringComparison.Ordinal));
+
+            return manifests;
+        }
+
+        internal bool TryGetManifestPath(
+            string savicId,
+            out string manifestPath)
+        {
+            EnsureLoaded();
+            return pathBySavicId.TryGetValue(
+                savicId ?? string.Empty,
+                out manifestPath);
+        }
+
+
+        internal bool TryGetArchivedRevision(string hash, out SavicManifest owner, out SavicSourceRecord revision)
+        {
+            EnsureLoaded();
+            foreach (var m in bySavicId.Values)
+            {
+                var prior = m.sourceRevisions?.FirstOrDefault(s => s.sourceHash == hash);
+                if (prior != null) { owner = m; revision = prior; return true; }
+            }
+            owner = null; revision = null; return false;
+        }
+
+        internal SavicManifest CreateIngested(
+            string sourceHash,
+            string originalFileName,
+            string archivedAbsolutePath,
+            long byteLength,
+            long originalLastWriteUtcTicks,
+            SavicSourceKind sourceKind)
+        {
+            if (TryGetBySourceHash(sourceHash, out SavicManifest existing))
+                return existing;
+
+            string now = DateTime.UtcNow.ToString("O");
+            SavicManifest manifest = new SavicManifest
+            {
+                savicId = Guid.NewGuid().ToString("N"),
+                createdUtc = now,
+                updatedUtc = now,
+                source = new SavicSourceRecord
+                {
+                    sourceHash = sourceHash,
+                    originalFileName = originalFileName ?? string.Empty,
+                    extension = Path.GetExtension(originalFileName ?? string.Empty).ToLowerInvariant(),
+                    sourceKind = sourceKind.ToString(),
+                    archivedRelativePath = layout.ToProjectRelativePath(archivedAbsolutePath),
+                    byteLength = byteLength,
+                    originalLastWriteUtcTicks = originalLastWriteUtcTicks,
+                    ingestedUtc = now
+                }
+            };
+
+            Save(manifest);
+            return manifest;
+        }
+
+        internal void Save(SavicManifest manifest)
+        {
+            if (manifest == null)
+                throw new ArgumentNullException(nameof(manifest));
+            if (string.IsNullOrWhiteSpace(manifest.savicId))
+                throw new InvalidOperationException("Manifest has no SavicId.");
+            if (manifest.source == null || string.IsNullOrWhiteSpace(manifest.source.sourceHash))
+                throw new InvalidOperationException("Manifest has no source hash.");
+
+            EnsureLoaded();
+
+            if (bySourceHash.TryGetValue(
+                    manifest.source.sourceHash,
+                    out SavicManifest sourceOwner) &&
+                !string.Equals(
+                    sourceOwner.savicId,
+                    manifest.savicId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "SourceHash already belongs to another SAVIC identity.");
+            }
+
+            if (bySavicId.TryGetValue(
+                    manifest.savicId,
+                    out SavicManifest idOwner) &&
+                idOwner?.source != null &&
+                !string.Equals(
+                    idOwner.source.sourceHash,
+                    manifest.source.sourceHash,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "SavicId already belongs to another source.");
+            }
+
+            manifest.schemaVersion = SavicVersion.ManifestSchemaVersion;
+            manifest.savicVersion = SavicVersion.ProductVersion;
+            manifest.updatedUtc = DateTime.UtcNow.ToString("O");
+
+            string path = GetManifestPath(manifest.savicId);
+            SavicAtomicFile.WriteJson(path, manifest);
+
+            loaded = true;
+            bySourceHash[manifest.source.sourceHash] = manifest;
+            bySavicId[manifest.savicId] = manifest;
+            pathBySavicId[manifest.savicId] = path;
+            NotifyChanged();
+        }
+
+
+        internal void ReplaceSourceRevision(SavicManifest revised, string expectedPreviousHash)
+        {
+            EnsureLoaded();
+            if (!bySavicId.TryGetValue(revised.savicId, out var previous) || previous.source.sourceHash != expectedPreviousHash ||
+                revised.canonicalContentId != previous.canonicalContentId || revised.source == null ||
+                revised.sourceRevisions == null || !revised.sourceRevisions.Any(s => s.sourceHash == expectedPreviousHash))
+                throw new InvalidOperationException("Source revision identity changed.");
+            if (bySourceHash.TryGetValue(revised.source.sourceHash, out var owner) && owner.savicId != revised.savicId)
+                throw new InvalidOperationException("Source revision belongs to another asset.");
+            revised.schemaVersion = SavicVersion.ManifestSchemaVersion;
+            revised.updatedUtc = DateTime.UtcNow.ToString("O");
+            string path = GetManifestPath(revised.savicId);
+            SavicAtomicFile.WriteJson(path, revised);
+            bySourceHash.Remove(expectedPreviousHash);
+            bySourceHash[revised.source.sourceHash] = revised;
+            bySavicId[revised.savicId] = revised;
+            pathBySavicId[revised.savicId] = path;
+            NotifyChanged();
+        }
+
+        internal void Reload()
+        {
+            loaded = false;
+            bySourceHash.Clear();
+            bySavicId.Clear();
+            pathBySavicId.Clear();
+            EnsureLoaded();
+            NotifyChanged();
+        }
+
+        internal void CommitAssets4AllRevision(SavicManifest candidate, string expectedPreviousHash)
+        {
+            EnsureLoaded();
+            if (candidate?.assets4All?.delivery == null || candidate.status != "PUBLISHED")
+                throw new InvalidOperationException("Only a published Assets4ALL candidate may change source revision.");
+            bySavicId.TryGetValue(candidate.savicId, out SavicManifest previous);
+            if ((previous?.source?.sourceHash ?? "") != (expectedPreviousHash ?? ""))
+                throw new InvalidOperationException("Published source changed while the candidate was prepared.");
+            if (previous != null && (previous.canonicalContentId != candidate.canonicalContentId ||
+                (previous.assets4All?.delivery != null && previous.assets4All.delivery.assetUuid != candidate.assets4All.delivery.assetUuid)))
+                throw new InvalidOperationException("Revision cannot replace another canonical identity.");
+            if (previous == null) Save(candidate);
+            else ReplaceSourceRevision(candidate, expectedPreviousHash);
+        }
+
+        internal bool TryGetHistoricalSource(string hash, out SavicManifest manifest)
+        {
+            if (TryGetArchivedRevision(hash, out var owner, out var source))
+            {
+                manifest = JsonUtility.FromJson<SavicManifest>(JsonUtility.ToJson(owner));
+                manifest.source = source;
+                return true;
+            }
+            manifest = null; return false;
+        }
+
+        private void NotifyChanged()
+        {
+            try
+            {
+                Changed?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[SAVIC] Manifest change listener failed safely: " +
+                    exception);
+            }
+        }
+
+        private void EnsureLoaded()
+        {
+            if (loaded)
+                return;
+
+            layout.EnsureInfrastructure();
+            Directory.CreateDirectory(manifestRoot);
+            bySourceHash.Clear();
+            bySavicId.Clear();
+            pathBySavicId.Clear();
+
+            string[] paths = Directory.GetFiles(
+                manifestRoot,
+                "*.json",
+                SearchOption.TopDirectoryOnly);
+
+            Array.Sort(paths, StringComparer.OrdinalIgnoreCase);
+
+            foreach (string path in paths)
+            {
+                try
+                {
+                    SavicManifest manifest = SavicAtomicFile.ReadJson<SavicManifest>(path);
+                    if (manifest?.source == null ||
+                        string.IsNullOrWhiteSpace(manifest.savicId) ||
+                        string.IsNullOrWhiteSpace(manifest.source.sourceHash))
+                    {
+                        Debug.LogWarning("[SAVIC] Ignoring invalid manifest: " + path);
+                        continue;
+                    }
+
+                    if (bySourceHash.ContainsKey(manifest.source.sourceHash))
+                    {
+                        Debug.LogError(
+                            "[SAVIC] Duplicate SourceHash in manifests: " +
+                            manifest.source.sourceHash + " (" + path + ")");
+                        continue;
+                    }
+
+                    if (bySavicId.ContainsKey(manifest.savicId))
+                    {
+                        Debug.LogError(
+                            "[SAVIC] Duplicate SavicId in manifests: " +
+                            manifest.savicId + " (" + path + ")");
+                        continue;
+                    }
+
+                    bySourceHash.Add(manifest.source.sourceHash, manifest);
+                    bySavicId.Add(manifest.savicId, manifest);
+                    pathBySavicId[manifest.savicId] = path;
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogError(
+                        "[SAVIC] Failed to read manifest '" + path + "': " +
+                        exception.Message);
+                }
+            }
+
+            loaded = true;
+        }
+
+        private string GetManifestPath(string savicId)
+        {
+            Directory.CreateDirectory(manifestRoot);
+            return Path.Combine(manifestRoot, savicId + ".json");
+        }
+    }
+}

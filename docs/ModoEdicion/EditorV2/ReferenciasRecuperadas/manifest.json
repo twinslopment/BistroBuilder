@@ -1,0 +1,429 @@
+{
+  "recoveredAt": "2026-10-10",
+  "recoveryStatus": "partial_originals_recovered",
+  "userValidation": "El usuario afirma el 10/10/2026 que el diseño gráfico exacto fue validado en Diseño visual Editor V2 y Analizar Bistro Builder. Esta recuperación no exige nueva aprobación.",
+  "chats": [
+    {
+      "id": "6ac73d2a-5f3c-83eb-89e1-577f100c7d77",
+      "title": "Diseño visual Editor V2"
+    },
+    {
+      "id": "6aca167e-9be8-83ed-9aea-1f388b0f7dca",
+      "title": "Analizar Bistro Builder"
+    }
+  ],
+  "extraction": "Decodificación de los bytes base64 originales, sin redibujar, reescalar ni recomprimir. Duplicados agrupados por SHA256.",
+  "originals": [
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_Aplicar_Descartar_INTERACTIVO.html",
+      "file": "HTML_Originales/EditorV2_Aplicar_Descartar_INTERACTIVO.html",
+      "sha256": "9F990AA9027B6A146345F194BB47F5FB7DB399E658A7CBF5414EA2460FFB9E5D"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_CierreVisual_Iconos_Tipografia_Responsive.html",
+      "file": "HTML_Originales/EditorV2_CierreVisual_Iconos_Tipografia_Responsive.html",
+      "sha256": "233BFFB0262D72F0FF43A1A5583B4E7AF65F4B5B062131A88C6A0491B4C13555"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_Feedback_Snapping_INTERACTIVO.html",
+      "file": "HTML_Originales/EditorV2_Feedback_Snapping_INTERACTIVO.html",
+      "sha256": "9B64B0DB26A0C2602F2BBA85CB9D8E19545719B94FE9E73528E22530FE871875"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_HaloDeHuella_SeleccionPrecisa_INTERACTIVO.html",
+      "file": "HTML_Originales/EditorV2_HaloDeHuella_SeleccionPrecisa_INTERACTIVO.html",
+      "sha256": "7F43AA64B53ED8125D1D903A4BAA6DE6F9B5D0F2E8A8EB9AB6109BBDF8C89380"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+      "file": "HTML_Originales/EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+      "sha256": "042A6FAE69C9A6E64E215CB114A28B57472B2DB3B6F364B20764BB221A28FCC6"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_Seleccion_Animada_INTERACTIVA.html",
+      "file": "HTML_Originales/EditorV2_Seleccion_Animada_INTERACTIVA.html",
+      "sha256": "BE9D0F596C4325436A1D19128C658668127AC1F95A571B5CAC310BD7CBB5E03F"
+    },
+    {
+      "type": "html",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+      "file": "HTML_Originales/EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+      "sha256": "1FDE10B628EB9E3B9E28A0B87A66D18632BE19AE4021EAA84E8C2E77B890071B"
+    },
+    {
+      "type": "png",
+      "source": "C:\\Users\\mruperez\\Downloads\\EditorV2_BarraInferior_Detalle.png",
+      "file": "Imagenes_Originales/EditorV2_BarraInferior_Detalle.png",
+      "sha256": "07CCB28115EEC5F7A80F6EB81092AD3B5A3F2686E477AEA711A055A8968E6005"
+    }
+  ],
+  "embeddedImages": [
+    {
+      "file": "Imagenes_Originales/EditorV2_Aplicar_Descartar_INTERACTIVO_imagen_01.jpg",
+      "sha256": "5C326A0BD40E5D88353F579C3860BFE807DC1293A5F74C608722E5E5599CA5D6",
+      "bytes": 221682,
+      "width": 767,
+      "height": 727,
+      "sources": [
+        {
+          "html": "EditorV2_Aplicar_Descartar_INTERACTIVO.html",
+          "dataUriPosition": 1
+        },
+        {
+          "html": "EditorV2_Aplicar_Descartar_INTERACTIVO.html",
+          "dataUriPosition": 2
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Aplicar_Descartar_INTERACTIVO_imagen_03.png",
+      "sha256": "E1CC50E888C5963647971E989C92D0A9CA41449E0151AA06E076946A3B3CFBB5",
+      "bytes": 128584,
+      "width": 390,
+      "height": 214,
+      "sources": [
+        {
+          "html": "EditorV2_Aplicar_Descartar_INTERACTIVO.html",
+          "dataUriPosition": 3
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 3
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_CierreVisual_Iconos_Tipografia_Responsive_imagen_01.png",
+      "sha256": "AF476AB041E132A5A01D226C958F6DC091855C91C5378DFA45E7708261E1AE4A",
+      "bytes": 116530,
+      "width": 390,
+      "height": 214,
+      "sources": [
+        {
+          "html": "EditorV2_CierreVisual_Iconos_Tipografia_Responsive.html",
+          "dataUriPosition": 1
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 2
+        },
+        {
+          "html": "EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+          "dataUriPosition": 2
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Feedback_Snapping_INTERACTIVO_imagen_01.jpg",
+      "sha256": "CE54B63C43134921428FB7AD19622F03B2FB9847617A7A107DDC8A509990BFBA",
+      "bytes": 192736,
+      "width": 948,
+      "height": 570,
+      "sources": [
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 1
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 2
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Feedback_Snapping_INTERACTIVO_imagen_04.jpg",
+      "sha256": "AFFDFB895E4DF826212007F9CB6853EF72F11D156B549152960E459402AF1772",
+      "bytes": 6037,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 4
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 5
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 6
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 7
+        },
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 9
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Feedback_Snapping_INTERACTIVO_imagen_08.png",
+      "sha256": "2C58629E1A93B129FE0E912336467228991EF64B5B9F12C14AA8A86239F82C11",
+      "bytes": 46047,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Feedback_Snapping_INTERACTIVO.html",
+          "dataUriPosition": 8
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_MaquetaCompleta_Original.jpg",
+      "sha256": "F49A789D59C6EE6E9B41B3512CD4506D3F50AE4F9B362CB1E1EB3A956EB79B95",
+      "bytes": 528647,
+      "width": 1672,
+      "height": 941,
+      "sources": [
+        {
+          "html": "EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+          "dataUriPosition": 1
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Inspector_DobleContexto_INTERACTIVO_imagen_02.jpg",
+      "sha256": "EE86B56D3338123D33CEF518CFF45C7093ECC179C8C6A47F61BC8F0ED03E7513",
+      "bytes": 6869,
+      "width": 271,
+      "height": 160,
+      "sources": [
+        {
+          "html": "EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+          "dataUriPosition": 2
+        },
+        {
+          "html": "EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+          "dataUriPosition": 3
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Inspector_DobleContexto_INTERACTIVO_imagen_04.jpg",
+      "sha256": "E6691864B8ACC6CEBEF8A3F7876D8EB43399B116D35FBE6D99379888F223A81A",
+      "bytes": 12658,
+      "width": 132,
+      "height": 219,
+      "sources": [
+        {
+          "html": "EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+          "dataUriPosition": 4
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Inspector_DobleContexto_INTERACTIVO_imagen_05.jpg",
+      "sha256": "4206A7EB1A56C5F8C5E7C89B5DE1268FB31A4CCD657A4F54DFFFF91956960EEC",
+      "bytes": 14537,
+      "width": 149,
+      "height": 236,
+      "sources": [
+        {
+          "html": "EditorV2_Inspector_DobleContexto_INTERACTIVO.html",
+          "dataUriPosition": 5
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Seleccion_Animada_INTERACTIVA_imagen_01.jpg",
+      "sha256": "439598E5142C6F1A323F8DFE5EF34EE2F92D789A272EBBB4D96922F6608A025E",
+      "bytes": 7228,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 1
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 3
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 7
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 12
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 14
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 15
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 17
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Seleccion_Animada_INTERACTIVA_imagen_04.jpg",
+      "sha256": "D6D5AE1584150727E833D5696FE051E35C42691C76A9F94E0FFCD54D728FBE92",
+      "bytes": 7473,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 4
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 8
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 16
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Seleccion_Animada_INTERACTIVA_imagen_05.jpg",
+      "sha256": "95FE8ACCACB7C53093CF7EB8B56B8685B0A3D146721ED56C718BFCA14EE7A5B8",
+      "bytes": 6580,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 5
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 9
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Seleccion_Animada_INTERACTIVA_imagen_06.jpg",
+      "sha256": "C008833B462F42FECF7983F709B0DAD9FDABF17AF7A16BF6BA7F1C8A09550645",
+      "bytes": 6631,
+      "width": 200,
+      "height": 188,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 6
+        },
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 10
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Seleccion_EscenaOriginal.jpg",
+      "sha256": "2E2FF1F9561C0E18117755B4468FBBE56FF2BE57B47F6B826ADE9E3BE1A23BC7",
+      "bytes": 238265,
+      "width": 948,
+      "height": 570,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 11
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_BarraInferior_Original.png",
+      "sha256": "FAB2DB830F52B7E121D1A47B9FDA196ABE76D7830F368429A57DF36E280FC7B6",
+      "bytes": 265176,
+      "width": 1619,
+      "height": 133,
+      "sources": [
+        {
+          "html": "EditorV2_Seleccion_Animada_INTERACTIVA.html",
+          "dataUriPosition": 13
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Superficies_EscenaOriginal.jpg",
+      "sha256": "2DFD27DD3A40346AA79A1C16DC5509D5B5137C9C89182E8446FA1C0B08724B74",
+      "bytes": 247799,
+      "width": 900,
+      "height": 870,
+      "sources": [
+        {
+          "html": "EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+          "dataUriPosition": 1
+        }
+      ]
+    },
+    {
+      "file": "Imagenes_Originales/EditorV2_Superficies_Coherencia_INTERACTIVO_imagen_03.png",
+      "sha256": "62AF7ACEC57277DEC63D88FD6585895DC5AE9093ED6C2A83BE74DA610F9C1825",
+      "bytes": 1253,
+      "width": 144,
+      "height": 144,
+      "sources": [
+        {
+          "html": "EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+          "dataUriPosition": 3
+        },
+        {
+          "html": "EditorV2_Superficies_Coherencia_INTERACTIVO.html",
+          "dataUriPosition": 4
+        }
+      ]
+    }
+  ],
+  "mentionedFilesWithoutLocalOriginal": [
+    "EditorV2_BarraInferior_Preview_1280.png",
+    "EditorV2_BarraInferior_Preview_1920.png",
+    "EditorV2_Catalogo_Detalle.png",
+    "EditorV2_Catalogo_Preview_1280.png",
+    "EditorV2_Catalogo_Preview_1920.png",
+    "EditorV2_CierreVisual_1280_Inspector.png",
+    "EditorV2_CierreVisual_1280_Plegado.png",
+    "EditorV2_CierreVisual_1920.png",
+    "EditorV2_Coherencia_1280.png",
+    "EditorV2_Coherencia_1920.png",
+    "EditorV2_Construccion_Habitacion_1920.png",
+    "EditorV2_Construccion_Pared_1280.png",
+    "EditorV2_Construccion_Pared_1920.png",
+    "EditorV2_Feedback_Conflicto_1920.png",
+    "EditorV2_Feedback_Construccion_1920.png",
+    "EditorV2_Feedback_Snapping_1920.png",
+    "EditorV2_Feedback_Valido_1920.png",
+    "EditorV2_HaloHuella_Grupo_1280.png",
+    "EditorV2_HaloHuella_Grupo_1920.png",
+    "EditorV2_HaloHuella_Redonda_1280.png",
+    "EditorV2_HaloHuella_Redonda_1920.png",
+    "EditorV2_Inspector_Grupo_1280.png",
+    "EditorV2_Inspector_Grupo_1920.png",
+    "EditorV2_Inspector_Plegado_1280.png",
+    "EditorV2_Inspector_Principal_1280.png",
+    "EditorV2_Inspector_Principal_1920.png",
+    "EditorV2_Multiseleccion_Compacta_1280.png",
+    "EditorV2_Seleccion_conflict_1920.png",
+    "EditorV2_Seleccion_multi_1920.png",
+    "EditorV2_Seleccion_single_1920.png",
+    "EditorV2_Superficies_1280.png",
+    "EditorV2_Superficies_1920.png",
+    "EditorV2_Superficies_Concepto03_ProyectorInteligente.html",
+    "EditorV2_Superficies_Preview_1280.png",
+    "EditorV2_Superficies_Preview_1920.png",
+    "GaleriaViva_V3_Estados_Articulo.png",
+    "GaleriaViva_V3_Inspector_Variantes.png",
+    "GaleriaViva_V3_VistaAmplia.png",
+    "GaleriaViva_V3_VistaCompacta.png",
+    "image(20261008-120359).png"
+  ],
+  "limitation": "read_thread solo devolvió los turnos recientes y no los originales gráficos antiguos; el navegador disponible mostró ChatGPT sin sesión iniciada. Los PNG enumerados como pendientes no se han sustituido por capturas nuevas."
+}

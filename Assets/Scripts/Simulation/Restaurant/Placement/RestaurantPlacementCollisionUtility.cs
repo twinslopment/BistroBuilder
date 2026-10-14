@@ -130,6 +130,7 @@ public static class RestaurantPlacementCollisionUtility
         float requiredClearance
     )
     {
+        if (!first.HeightRange.Overlaps(second.HeightRange, requiredClearance)) return false;
         float clearance =
             Mathf.Max(
                 0f,

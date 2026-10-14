@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -22,7 +22,7 @@ using UnityEngine.InputSystem;
 [AddComponentMenu(
     "Bistro Builder/Restaurant/Edit Interaction Controller"
 )]
-public sealed class RestaurantEditInteractionController :
+public sealed partial class RestaurantEditInteractionController :
     MonoBehaviour
 {
     [Header("Dependencias")]
@@ -685,6 +685,7 @@ public sealed class RestaurantEditInteractionController :
             return false;
         }
 
+        ApplyPreparedInspectorTransform(definition, placeable);
         InitializeActivePlacementState(
             editableObject,
             member,

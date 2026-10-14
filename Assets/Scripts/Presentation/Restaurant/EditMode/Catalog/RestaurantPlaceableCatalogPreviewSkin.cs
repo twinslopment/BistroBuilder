@@ -68,6 +68,7 @@ public sealed class RestaurantPlaceableCatalogPreviewSkin : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (GetComponent<BistroBuilderGalleryViva>() != null) return;
         if (!TryCacheHierarchy())
         {
             return;

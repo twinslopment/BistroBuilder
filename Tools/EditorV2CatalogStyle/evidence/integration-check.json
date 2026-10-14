@@ -1,0 +1,18 @@
+{
+  "installer": "PASS",
+  "idempotence": "PASS",
+  "preserved_native_callbacks": true,
+  "uniform_control_fonts": true,
+  "file_hashes": {
+    "Assets\\Resources\\BistroBuilder\\UI\\GalleryViva\\CatalogOptionsR8.ttf": "bfe407130b3c22375b7799ddc6354647ddaa7ca655267be4aa287491b52322b1",
+    "Assets\\Resources\\BistroBuilder\\UI\\GalleryViva\\CatalogOptionsR8.ttf.meta": "42e2aab42fcb07b0994310bb4a4a9e12a907fa68ccae9fb1956cec607e6189cb",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderCatalogOptionStyle.cs": "2337b4d1d1c21594acabbb37d817941c262f2d75b8d07903aa622a9a171f21f9",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderCatalogOptionStyle.cs.meta": "64f2fb14140e20d8747c6d36249585754038168f7264def4a26506ba42c4742a",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderEditorV2ApprovedTypography.cs": "ae45c6fea6a1ddbf68c16bba733fdbc4e971246277437832673d2cb8405cd867",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderEditorV2ApprovedTypography.cs.meta": "cfc93d9ce3a319700bb7af9a27fd9567a93cf1ea1ecb7c7a53da697a5e131403",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderEditorV2ReferenceLayout.cs": "75fc492308686be073a5c01d5246f15aeedd2deea0bad5454990cd3d3c1b1c5e",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderRecoletaDemoCoverage.cs": "7e8ac3a07334332ef0f49015db4ea5261f430b4f016c20ea6ef3c8eb07836ae6",
+    "Assets\\Scripts\\Presentation\\UI\\BistroBuilderRecoletaDemoCoverage.cs.meta": "c184897c845943fd422eecc1db65c0e36f6ff7363e4f410aa11b14b4ba773fdb",
+    "Assets\\Scripts\\Presentation\\Restaurant\\EditMode\\Catalog\\BistroBuilderGalleryViva.cs": "bc344d5cfa70705988a13d54be50b70ce75c6f69fde4ef81adf17420974f63fd"
+  }
+}

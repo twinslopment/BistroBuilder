@@ -15,6 +15,7 @@ public sealed partial class BistroBuilderUiShell
     RestaurantPlaceableCatalogPanel editModeCatalogPanel;
     RestaurantEditInteractionController editModeFurnitureController;
     BistroBuilderEditorV2SelectionCoordinator editModeSelectionCoordinator;
+    BistroBuilderEditorV2Coordinator editChromeCoordinator;
     RestaurantPlaceableDeletionService editChromeDeletion;
     RestaurantPlacementHistoryService editChromeHistory;
     BistroBuilderEditorV2GlobalHistory editChromeGlobalHistory;
@@ -24,7 +25,7 @@ public sealed partial class BistroBuilderUiShell
     readonly Dictionary<string, Button> editChromeButtons = new Dictionary<string, Button>();
     readonly Dictionary<string, BistroBuilderEditChromeControl> editChromeControls = new Dictionary<string, BistroBuilderEditChromeControl>();
     static readonly Color EditChromeSurface = new Color32(247,236,217,252);
-    static readonly Color EditChromeText = new Color32(70,45,28,255);
+    static readonly Color EditChromeText = new Color32(32,26,20,255);
     static readonly Color EditChromeMuted = new Color32(122,89,57,255);
     static readonly Color EditChromeOlive = new Color32(194,141,61,255);
     static readonly Color EditChromeLine = new Color32(185,145,91,255);
@@ -34,8 +35,8 @@ public sealed partial class BistroBuilderUiShell
     {
         if(shellRoot==null||editModeChromeBuilt)return;
         ResolveEditChrome();
-        editModeTopBar=EditBar(EditModeTopBarName,true,12,8,76);
-        editModeBottomBar=EditBar(EditModeBottomBarName,false,12,7,104);
+        editModeTopBar=EditBar(EditModeTopBarName,true,8,8,74);
+        editModeBottomBar=EditBar(EditModeBottomBarName,false,8,8,100);
         // The scene still contains Canvas_BistroBuilder_EditMode at order 80.
         // A child of MainHUD/Canvas (order 0) cannot draw or receive pointer
         // input above it unless it owns an override-sorting canvas.
@@ -71,6 +72,7 @@ public sealed partial class BistroBuilderUiShell
         if(editModeConstructionTool==null)editModeConstructionTool=FindScene<BistroBuilderConstructionAuthoringRuntimeTool>();
         if(editModeCatalogPanel==null)editModeCatalogPanel=FindScene<RestaurantPlaceableCatalogPanel>();
         if(editModeFurnitureController==null)editModeFurnitureController=FindScene<RestaurantEditInteractionController>();
+        if(editChromeCoordinator==null)editChromeCoordinator=FindScene<BistroBuilderEditorV2Coordinator>();
         if(editModeSelectionCoordinator==null)editModeSelectionCoordinator=FindScene<BistroBuilderEditorV2SelectionCoordinator>();
         if(editChromeHistory==null)editChromeHistory=FindScene<RestaurantPlacementHistoryService>();
         if(editChromeGlobalHistory==null)editChromeGlobalHistory=FindScene<BistroBuilderEditorV2GlobalHistory>();
@@ -85,7 +87,9 @@ public sealed partial class BistroBuilderUiShell
         root.anchorMin=new Vector2(0,top?1:0);root.anchorMax=new Vector2(1,top?1:0);
         root.pivot=new Vector2(.5f,top?1:0);
         root.offsetMin=new Vector2(side,top?-edge-height:edge);root.offsetMax=new Vector2(-side,top?-edge:edge+height);
-        var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=EditChromeSurface;
+        var bg=root.gameObject.AddComponent<Image>();
+        BistroBuilderEditorV2BrassArt.DecorateReferenceFrame(bg, top ? "Header" : "Footer");
+        bg.raycastTarget = false;
         var shadow=root.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.08f);shadow.effectDistance=new Vector2(0,-2);
         var layout=root.gameObject.AddComponent<HorizontalLayoutGroup>();layout.padding=new RectOffset(10,10,5,5);layout.spacing=5;
         layout.childAlignment=TextAnchor.MiddleCenter;layout.childControlWidth=layout.childControlHeight=true;
@@ -151,6 +155,7 @@ public sealed partial class BistroBuilderUiShell
     bool IsFurnitureTool()=>editModeConstructionTool==null||editModeConstructionTool.Mode==Mode.Furniture;
     BistroBuilderEditorV2Selection CurrentChromeSelection()
     {
+        if(editChromeCoordinator==null)editChromeCoordinator=FindScene<BistroBuilderEditorV2Coordinator>();
         if(editModeSelectionCoordinator==null)return BistroBuilderEditorV2Selection.None;
         editModeSelectionCoordinator.RefreshSelection();
         return editModeSelectionCoordinator.Current;
@@ -241,7 +246,7 @@ public sealed partial class BistroBuilderUiShell
         if(editModeBottomBar!=null)editModeBottomBar.gameObject.SetActive(visible);
         if(topNavigation!=null)topNavigation.gameObject.SetActive(!editing);
         if(bottomOperations!=null)bottomOperations.gameObject.SetActive(!editing);
-        if(!visible){if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
+        if(!visible){RestoreEditorLightPreview();if(editModeToolStatusText!=null)editModeToolStatusText.transform.parent.gameObject.SetActive(false);return;}
         ResolveEditChrome();
         editModeMoneyText.text=finance!=null?BistroBuilderFinanceUiFormat.Money(finance.CurrentBalanceCents):"—";
         if (editModeSelectionCountText != null)
@@ -255,15 +260,22 @@ public sealed partial class BistroBuilderUiShell
         var mode=editModeConstructionTool!=null?editModeConstructionTool.Mode:Mode.Furniture;
         var section=editModeCatalogPanel!=null?editModeCatalogPanel.CurrentSection:RestaurantEditCatalogSection.Build;
         bool furniture=mode==Mode.Furniture;
-        ChromeSelected("EditSelect",mode==Mode.Select);
-        ChromeSelected("EditBuild",section==RestaurantEditCatalogSection.Build && mode==Mode.Furniture);
+        var v2 = editChromeCoordinator;
+        bool selectActive = v2 != null &&
+            v2.ActiveFamily == BistroBuilderEditorV2ToolFamily.Furniture &&
+            string.Equals(v2.ActiveToolId, "select", System.StringComparison.OrdinalIgnoreCase);
+        ChromeSelected("EditSelect", selectActive ||
+            (v2 == null && mode == Mode.Select));
+        ChromeSelected("EditBuild",
+            section == RestaurantEditCatalogSection.Build &&
+            mode == Mode.Furniture && !selectActive);
         ChromeSelected("EditSurfaces",section==RestaurantEditCatalogSection.Surfaces);
         ChromeSelected("EditWalls",section==RestaurantEditCatalogSection.Walls);
         ChromeSelected("EditGrid",editChromeGrid!=null&&editChromeGrid.enabled);
         ChromeSelected("EditSnap",false);
         // No-op or misleading actions are never presented as available.
         editChromeButtons["EditSnap"].interactable=false;
-        editChromeButtons["EditViews"].interactable=false;
+        editChromeButtons["EditViews"].interactable=editV2Views!=null;
         var commonSelection=CurrentChromeSelection();
         bool placement=editModeFurnitureController!=null&&editModeFurnitureController.HasActivePlacement;
         bool multi=editModeSelectionCoordinator != null && editModeSelectionCoordinator.SelectionCount > 1;
@@ -316,15 +328,15 @@ public sealed partial class BistroBuilderUiShell
         var root=ChromeBlock(parent,key,width,height);var bg=root.gameObject.AddComponent<Image>();bg.sprite=EditChromeRoundedSprite();bg.type=Image.Type.Sliced;bg.color=Color.clear;
         var button=root.gameObject.AddComponent<Button>();button.targetGraphic=bg;button.transition=Selectable.Transition.None;
         button.navigation=new UnityEngine.UI.Navigation{mode=UnityEngine.UI.Navigation.Mode.Automatic};if(action!=null)button.onClick.AddListener(action);
-        var icon=ChromeIcon(root,"Icon",symbol,tint??EditChromeMuted,vertical?new Vector2(width/2,23):string.IsNullOrEmpty(title)?new Vector2(width/2,height/2):new Vector2(26,height/2),vertical?28:outlined?26:30);
-        TMP_Text label=null;if(!string.IsNullOrEmpty(title)){label=ChromeText(root,"Label",title,outlined?15:14,EditChromeText);if(outlined)label.fontStyle=FontStyles.Bold;if(vertical){ChromeBox(label.rectTransform,0,43,width,22);label.alignment=TextAlignmentOptions.Center;}else ChromeBox(label.rectTransform,48,0,width-53,height);}
+        var icon=ChromeIcon(root,"Icon",symbol,tint??EditChromeMuted,vertical?new Vector2(width/2,24):string.IsNullOrEmpty(title)?new Vector2(width/2,height/2):new Vector2(26,height/2),vertical?40:outlined?24:27);
+        TMP_Text label=null;if(!string.IsNullOrEmpty(title)){label=ChromeText(root,"Label",title,vertical?14:outlined?14:14,EditChromeText);if(outlined)label.fontStyle=FontStyles.Bold;if(vertical){ChromeBox(label.rectTransform,0,40,width,21);label.alignment=TextAlignmentOptions.Center;}else ChromeBox(label.rectTransform,48,0,width-53,height);}
         var control=root.gameObject.AddComponent<BistroBuilderEditChromeControl>();control.Configure(button,icon,label,editModeToolStatusText,help,tint??EditChromeMuted,outlined);
         editChromeButtons.Add(key,button);editChromeControls.Add(key,control);return button;
     }
     BistroBuilderEditChromeIcon ChromeIcon(Transform parent,string name,Symbol symbol,Color color,Vector2 center,float size)
     {var r=NewUi(name,parent).GetComponent<RectTransform>();ChromeBox(r,center.x-size/2,center.y-size/2,size,size);var icon=r.gameObject.AddComponent<BistroBuilderEditChromeIcon>();icon.Configure(symbol,color);return icon;}
     TMP_Text ChromeText(Transform parent,string name,string value,float size,Color color)
-    {var text=NewUi(name,parent).AddComponent<TextMeshProUGUI>();text.font=BistroBuilderTypography.Body;text.text=value;text.fontSize=size;text.color=color;text.alignment=TextAlignmentOptions.MidlineLeft;text.raycastTarget=false;text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Ellipsis;return text;}
+    {var text=NewUi(name,parent).AddComponent<TextMeshProUGUI>();text.font=BistroBuilderEditorV2ReferenceLayout.Body;text.text=value;text.fontSize=size;text.color=color;text.alignment=TextAlignmentOptions.MidlineLeft;text.raycastTarget=false;text.textWrappingMode=TextWrappingModes.NoWrap;text.overflowMode=TextOverflowModes.Overflow;return text;}
     RectTransform ChromeBlock(Transform parent,string name,float width,float height){var r=NewUi(name,parent).GetComponent<RectTransform>();ChromeWidth(r.gameObject,width,height);return r;}
     static void ChromeWidth(GameObject go,float width,float height){var e=go.AddComponent<LayoutElement>();e.minWidth=e.preferredWidth=width;e.minHeight=e.preferredHeight=height;e.flexibleWidth=0;e.flexibleHeight=0;}
     static void ChromeBox(RectTransform r,float x,float y,float w,float h){r.anchorMin=r.anchorMax=new Vector2(0,1);r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);}

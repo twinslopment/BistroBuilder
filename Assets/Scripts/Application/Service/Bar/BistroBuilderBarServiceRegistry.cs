@@ -103,6 +103,9 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
         registeredSpots.Clear();
         byId.Clear();
         DiscoverSceneSpots();
+        foreach (BistroBuilderBarPlaceableBinding binding in FindObjectsByType<BistroBuilderBarPlaceableBinding>(
+                     FindObjectsInactive.Exclude, FindObjectsSortMode.InstanceID))
+            binding.TryRegisterRuntime(out _);
     }
 
     public bool RegisterSpot(BistroBuilderBarServiceSpot spot)
@@ -489,11 +492,9 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
             RebuildRegistryFromScene();
         }
 
-        if (registeredSpots.Count == 0)
-        {
-            error = "No existe ninguna plaza de barra registrada.";
-            return false;
-        }
+        // An empty layout has no bar capacity, but is a valid registry.
+        // Keep the service available for bars placed later through the native lifecycle.
+        // Reservation/allocation still require actual free registered spots.
 
         HashSet<string> unique = new HashSet<string>(StringComparer.Ordinal);
         Dictionary<CustomerGroup, int> capacityByGroup =
@@ -577,6 +578,10 @@ public sealed class BistroBuilderBarServiceRegistry : MonoBehaviour
 
         for (int index = 0; index < spots.Length; index++)
         {
+            // Las plazas de catálogo pertenecen al ciclo de vida de su colocable.
+            // Su binder las registra después de confirmar la instancia.
+            if (spots[index].GetComponentInParent<BistroBuilderBarPlaceableBinding>() != null)
+                continue;
             RegisterSpot(spots[index]);
         }
     }

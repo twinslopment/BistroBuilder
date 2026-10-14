@@ -12,6 +12,10 @@ public sealed class BistroBuilderSpatialSemanticVolume
     public string subjectId = string.Empty;
     public string semanticId = string.Empty;
     public string relatedSubjectId = string.Empty;
+    // A port-specific relationship never exempts the rest of that subject's
+    // work/transfer space or its physical geometry.
+    public string relatedSemanticSubjectId = string.Empty;
+    public string relatedSemanticId = string.Empty;
     public BistroBuilderSpatialSemanticRole role =
         BistroBuilderSpatialSemanticRole.OperationalClearance;
     public BistroBuilderSpatialProxyLayer layer =
@@ -29,6 +33,13 @@ public interface IBistroBuilderSpatialSemanticProvider
 {
     string SpatialSubjectId { get; }
     int WriteSemanticVolumes(List<BistroBuilderSpatialSemanticVolume> results);
+}
+
+/// <summary>Candidate semantics in the proposed world pose, without moving scene objects.</summary>
+public interface IBistroBuilderSpatialCandidateSemanticProvider
+{
+    int WriteCandidateSemanticVolumes(Vector3 position, Quaternion rotation,
+        List<BistroBuilderSpatialSemanticVolume> results);
 }
 
 [Serializable]

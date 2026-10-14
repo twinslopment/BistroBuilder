@@ -19,6 +19,7 @@ public sealed class RestaurantPlacementFootprint :
     MonoBehaviour
 {
     private const int SamplePointCount = 5;
+    private Renderer[] inspectorGeometry;
 
     [Header("Huella física")]
 
@@ -128,6 +129,35 @@ public sealed class RestaurantPlacementFootprint :
         Vector3 forwardAxis =
             candidateRootRotation *
             Vector3.forward;
+
+        // XYZ inspector rotation projects the real visual volume conservatively
+        // onto the ground. The existing upright/yaw footprint remains unchanged.
+        if ((candidateRootRotation * Vector3.up).y < .99999f)
+        {
+            if (inspectorGeometry == null) inspectorGeometry = GetComponentsInChildren<Renderer>(true);
+            Vector3 lo = worldCenter, hi = worldCenter;
+            for (int i = 0; i < 4; i++)
+            {
+                Vector3 corner = worldCenter + rightAxis * halfWidth * ((i & 1) == 0 ? -1 : 1) +
+                    forwardAxis * halfDepth * ((i & 2) == 0 ? -1 : 1);
+                lo = Vector3.Min(lo, corner); hi = Vector3.Max(hi, corner);
+            }
+            foreach (var renderer in inspectorGeometry)
+            {
+                if (renderer == null || !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
+                Bounds bounds = renderer.localBounds;
+                Matrix4x4 local = transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 vertex = bounds.center + Vector3.Scale(bounds.extents, new Vector3(
+                        (i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    Vector3 world = candidateRootPosition + candidateRootRotation * Vector3.Scale(local.MultiplyPoint3x4(vertex), currentScale);
+                    lo = Vector3.Min(lo, world); hi = Vector3.Max(hi, world);
+                }
+            }
+            return new RestaurantPlacementShape((lo + hi) * .5f, Vector3.right, Vector3.forward,
+                new Vector2((hi.x - lo.x) * .5f, (hi.z - lo.z) * .5f), minimumClearance);
+        }
 
         return new RestaurantPlacementShape(
             worldCenter,

@@ -1,0 +1,11 @@
+{
+    "assetUuid": "504e04a7bfee447e882b62d4c4b26f09",
+    "revision": 1,
+    "fingerprint": "7727e00b29a28719142deff0f148fd0dbb4e104beddcb0e14964d9dbc8184c19",
+    "savicId": "",
+    "canonicalContentId": "",
+    "state": "NEEDS_REVIEW",
+    "owner": "GAME",
+    "reason": "GAME: Model analyzed but content type has no automatic publication module.",
+    "updatedUtc": "2026-10-13T09:51:37.8498136Z"
+}

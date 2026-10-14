@@ -12,6 +12,8 @@ public sealed class BistroBuilderSpatialSubject : MonoBehaviour
     [SerializeField] private string subjectId = string.Empty;
     [SerializeField] private BistroBuilderSpatialContractDefinition contract;
     [SerializeField] private BistroBuilderAdaptiveSpatialProxy proxy;
+    [SerializeField] private MonoBehaviour lifecycleOwner;
+    [SerializeField] private bool requiresLifecycleOwner;
 
     private BistroBuilderSpatialInteractionService service;
     private BistroBuilderSpatialPortAnchors portAnchors;
@@ -19,6 +21,8 @@ public sealed class BistroBuilderSpatialSubject : MonoBehaviour
     public string SubjectId => subjectId;
     public BistroBuilderSpatialContractDefinition Contract => contract;
     public BistroBuilderAdaptiveSpatialProxy Proxy => proxy;
+    public bool IsRegistrationEligible => !requiresLifecycleOwner ||
+        (lifecycleOwner != null && lifecycleOwner is IBistroBuilderSpatialLifecycleOwner owner && owner.IsSpatialLifecycleActive);
 
     private void Awake()
     {
@@ -28,7 +32,7 @@ public sealed class BistroBuilderSpatialSubject : MonoBehaviour
     private void OnEnable()
     {
         CacheReferences();
-        service?.RegisterSubject(this);
+        if (IsRegistrationEligible) service?.RegisterSubject(this);
     }
 
     private void OnDisable()
@@ -130,8 +134,19 @@ public sealed class BistroBuilderSpatialSubject : MonoBehaviour
 
         // AddComponent ejecuta OnEnable antes de que el binder pueda asignar el
         // subjectId. Registrar aquí evita un RebuildSubjects global posterior.
-        if (isActiveAndEnabled && service != null && !string.IsNullOrWhiteSpace(subjectId))
+        if (isActiveAndEnabled && IsRegistrationEligible && service != null && !string.IsNullOrWhiteSpace(subjectId))
             service.RegisterSubject(this);
+    }
+
+    public void ConfigureLifecycleOwner(MonoBehaviour owner)
+    {
+        if (owner != null && (!(owner is IBistroBuilderSpatialLifecycleOwner) || !transform.IsChildOf(owner.transform)))
+            throw new ArgumentException("A spatial lifecycle owner must own this subject hierarchy.", nameof(owner));
+        lifecycleOwner = owner;
+        requiresLifecycleOwner = owner != null;
+        CacheReferences();
+        if (!IsRegistrationEligible) service?.UnregisterSubject(this);
+        else if (isActiveAndEnabled && !string.IsNullOrWhiteSpace(subjectId)) service?.RegisterSubject(this);
     }
 #if UNITY_EDITOR
     public void ConfigureForEditor(

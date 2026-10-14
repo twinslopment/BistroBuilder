@@ -107,22 +107,28 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
             virtualList = GetComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
         if (virtualList == null)
             virtualList = gameObject.AddComponent<BistroBuilderEditorV2CatalogVirtualizedList>();
-        virtualList.Configure(itemContainer, itemTemplate, HandleItemSelected);
+        var viva = GetComponent<BistroBuilderGalleryViva>();
+        viva?.EnsureBuilt();
+        virtualList.Configure(viva != null && viva.IsReady ? viva.ItemContainer : itemContainer,
+            viva != null && viva.IsReady ? viva.ItemTemplate : itemTemplate, HandleItemSelected);
     }
 
     public int ApplyB9Query(string search,
         RestaurantPlaceableEnvironmentScope scope,
         bool favoritesOnly, bool recentsOnly, HashSet<string> favorites,
-        IList<string> recents, int sort)
+        IList<string> recents, int sort, int minimumPrice = 0, int maximumPrice = int.MaxValue)
     {
         if (virtualList == null || !virtualList.IsReady) return 0;
-        catalogIndex.Query(CurrentSection, selectedCategoryCode, search, scope,
-            favoritesOnly, recentsOnly, favorites, recents, sort, queryBuffer);
+        catalogIndex.Query(GetComponent<BistroBuilderGalleryViva>() != null && !RestaurantEditCatalogSections.IsArchitecture(CurrentSection) ? RestaurantEditCatalogSection.Build : CurrentSection, selectedCategoryCode, search, scope,
+            favoritesOnly, recentsOnly, favorites, recents, sort, queryBuffer, minimumPrice, maximumPrice);
         if (!virtualList.ResultsMatch(queryBuffer))
             virtualList.SetResults(queryBuffer, false);
         return queryBuffer.Count;
     }
 
+
+    public IReadOnlyList<RestaurantPlaceableItemDefinition> GalleryResults => queryBuffer;
+    public void SelectGalleryCategory(int categoryCode) => HandleCategorySelected(categoryCode);
 
     public event Action<RestaurantPlaceableItemDefinition> ItemSelected;
 
@@ -150,6 +156,8 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
     private void Awake()
     {
         CacheDependenciesIfNeeded();
+        if (GetComponent<BistroBuilderGalleryViva>() == null)
+            gameObject.AddComponent<BistroBuilderGalleryViva>();
 
         if (GetComponent<RestaurantPlaceableCatalogApprovedSkin>() == null)
         {
@@ -172,6 +180,10 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
             gameObject.AddComponent<BistroBuilderEditorV2SelectionInspector>();
         if (GetComponent<BistroBuilderEditorV2GalleryShowcase>() == null)
             gameObject.AddComponent<BistroBuilderEditorV2GalleryShowcase>();
+        if (GetComponent<BistroBuilderEditorV2PremiumLayout>() == null)
+            gameObject.AddComponent<BistroBuilderEditorV2PremiumLayout>();
+        if (GetComponent<BistroBuilderEditorV2FootprintHalo>() == null)
+            gameObject.AddComponent<BistroBuilderEditorV2FootprintHalo>();
     }
 
     private void Start()
@@ -459,7 +471,10 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
             return;
         EnsureVirtualList();
         var skin = GetComponent<RestaurantPlaceableCatalogApprovedSkin>();
-        if (skin != null)
+        var viva = GetComponent<BistroBuilderGalleryViva>();
+        if (viva != null && viva.OwnsPresentation)
+            viva.ApplyQuery();
+        else if (skin != null)
             skin.ApplyVirtualCatalogFilters();
         else
             ApplyB9Query(string.Empty,
@@ -535,7 +550,7 @@ public sealed partial class RestaurantPlaceableCatalogPanel :
 
         RestaurantPlaceableCatalogApprovedSkin approvedSkin =
             GetComponent<RestaurantPlaceableCatalogApprovedSkin>();
-        if (approvedSkin != null)
+        if (approvedSkin != null && GetComponent<BistroBuilderGalleryViva>() == null)
         {
             approvedSkin.NotifyCategoryChanged(
                 categoryCode == AllCategoriesCode

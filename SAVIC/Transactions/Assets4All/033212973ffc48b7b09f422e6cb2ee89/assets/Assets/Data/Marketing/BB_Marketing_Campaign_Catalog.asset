@@ -1,0 +1,683 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9007d364c76585541963ab462a46c3a1, type: 3}
+  m_Name: BB_Marketing_Campaign_Catalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderMarketingCampaignCatalog
+  campaigns:
+  - campaignId: marketing.local.flyers
+    displayName: Reparto de flyers en el barrio
+    description: "Promoci\xF3n f\xEDsica de corto alcance para captar vecinos cercanos."
+    type: 0
+    targetKind: 0
+    baseCostCents: 8000
+    durationDays: 3
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 0
+      basisPoints: 600
+      flatPoints: 0
+      segment: 1
+      dayPart: 0
+    - kind: 6
+      basisPoints: 200
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.local.posters
+    displayName: "Carteler\xEDa por la zona"
+    description: Presencia sostenida en calles cercanas al restaurante.
+    type: 0
+    targetKind: 0
+    baseCostCents: 15000
+    durationDays: 7
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 0
+      basisPoints: 700
+      flatPoints: 0
+      segment: 1
+      dayPart: 0
+  - campaignId: marketing.local.press
+    displayName: Publicidad en prensa local
+    description: "Anuncio local orientado a p\xFAblico adulto y tradicional."
+    type: 0
+    targetKind: 0
+    baseCostCents: 35000
+    durationDays: 7
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 0
+      basisPoints: 900
+      flatPoints: 0
+      segment: 7
+      dayPart: 0
+    - kind: 3
+      basisPoints: 0
+      flatPoints: 1
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.local.radio
+    displayName: "Campa\xF1a de radio local"
+    description: "Cobertura amplia con segmentaci\xF3n limitada."
+    type: 0
+    targetKind: 0
+    baseCostCents: 60000
+    durationDays: 5
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 0
+      basisPoints: 1200
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.local.city
+    displayName: "Gran campa\xF1a de ciudad"
+    description: "Campa\xF1a de notoriedad amplia para un restaurante consolidado."
+    type: 0
+    targetKind: 0
+    baseCostCents: 180000
+    durationDays: 7
+    minProgressionLevel: 5
+    modifiers:
+    - kind: 0
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 6
+      basisPoints: 700
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.promo.menu_day
+    displayName: "Men\xFA del d\xEDa promocionado"
+    description: "Refuerza la captaci\xF3n de trabajadores durante el servicio de
+      comida."
+    type: 1
+    targetKind: 0
+    baseCostCents: 12000
+    durationDays: 5
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 0
+      basisPoints: 1600
+      flatPoints: 0
+      segment: 2
+      dayPart: 2
+    - kind: 4
+      basisPoints: -700
+      flatPoints: 0
+      segment: 2
+      dayPart: 2
+  - campaignId: marketing.promo.happy_hour
+    displayName: Happy Hour
+    description: "Aumenta tr\xE1fico joven y social en una franja concreta."
+    type: 1
+    targetKind: 0
+    baseCostCents: 10000
+    durationDays: 5
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 2
+      basisPoints: 1400
+      flatPoints: 0
+      segment: 3
+      dayPart: 4
+    - kind: 4
+      basisPoints: -900
+      flatPoints: 0
+      segment: 3
+      dayPart: 4
+  - campaignId: marketing.promo.two_for_one
+    displayName: 2x1 seleccionado
+    description: "Promoci\xF3n agresiva para clientes sensibles al precio."
+    type: 1
+    targetKind: 0
+    baseCostCents: 18000
+    durationDays: 3
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 0
+      basisPoints: 2400
+      flatPoints: 0
+      segment: 8
+      dayPart: 0
+    - kind: 4
+      basisPoints: -1800
+      flatPoints: 0
+      segment: 8
+      dayPart: 0
+    - kind: 6
+      basisPoints: 700
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.promo.weekday
+    displayName: Descuento entre semana
+    description: Ayuda a rellenar jornadas de baja demanda.
+    type: 1
+    targetKind: 0
+    baseCostCents: 25000
+    durationDays: 7
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 0
+      basisPoints: 1000
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 4
+      basisPoints: -600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.promo.celebration_week
+    displayName: "Semana de celebraci\xF3n"
+    description: "Promoci\xF3n intensa de varios d\xEDas con fuerte presi\xF3n operativa."
+    type: 1
+    targetKind: 0
+    baseCostCents: 70000
+    durationDays: 7
+    minProgressionLevel: 4
+    modifiers:
+    - kind: 0
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 4
+      basisPoints: -500
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 6
+      basisPoints: 1000
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.digital.sponsored_local
+    displayName: Publicaciones patrocinadas locales
+    description: Anuncios sociales de proximidad con coste contenido.
+    type: 2
+    targetKind: 0
+    baseCostCents: 20000
+    durationDays: 5
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 0
+      basisPoints: 900
+      flatPoints: 0
+      segment: 3
+      dayPart: 0
+  - campaignId: marketing.digital.menu_photos
+    displayName: "Campa\xF1a fotogr\xE1fica de la carta"
+    description: Contenido visual patrocinado centrado en una carta concreta.
+    type: 2
+    targetKind: 2
+    baseCostCents: 30000
+    durationDays: 7
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 7
+      basisPoints: 1600
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 0
+      basisPoints: 500
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+  - campaignId: marketing.digital.geo
+    displayName: Anuncio geolocalizado
+    description: "Captaci\xF3n inmediata de personas pr\xF3ximas al restaurante."
+    type: 2
+    targetKind: 0
+    baseCostCents: 18000
+    durationDays: 3
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 2
+      basisPoints: 1300
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.digital.online_reservations
+    displayName: "Campa\xF1a de reservas online"
+    description: "Convierte planificaci\xF3n digital en reservas futuras."
+    type: 2
+    targetKind: 0
+    baseCostCents: 35000
+    durationDays: 7
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 1
+      basisPoints: 1700
+      flatPoints: 0
+      segment: 9
+      dayPart: 0
+  - campaignId: marketing.digital.viral_brand
+    displayName: "Campa\xF1a viral de marca"
+    description: "Campa\xF1a de alcance alto cuyo aprovechamiento depender\xE1 de
+      sistemas posteriores."
+    type: 2
+    targetKind: 0
+    baseCostCents: 90000
+    durationDays: 5
+    minProgressionLevel: 5
+    modifiers:
+    - kind: 0
+      basisPoints: 2200
+      flatPoints: 0
+      segment: 3
+      dayPart: 0
+    - kind: 6
+      basisPoints: 900
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.influencer.micro_local
+    displayName: Invitar a microinfluencer local
+    description: "Colaboraci\xF3n peque\xF1a con alcance local cre\xEDble."
+    type: 3
+    targetKind: 0
+    baseCostCents: 25000
+    durationDays: 4
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 0
+      basisPoints: 800
+      flatPoints: 0
+      segment: 3
+      dayPart: 0
+  - campaignId: marketing.influencer.food_creator
+    displayName: "Colaboraci\xF3n con creador gastron\xF3mico"
+    description: Contenido de un creador centrado en un plato concreto.
+    type: 3
+    targetKind: 1
+    baseCostCents: 50000
+    durationDays: 5
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 7
+      basisPoints: 2200
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 6
+      basisPoints: 500
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.influencer.local_pack
+    displayName: "Campa\xF1a con varios creadores locales"
+    description: Varios perfiles coordinados amplifican la notoriedad social.
+    type: 3
+    targetKind: 0
+    baseCostCents: 85000
+    durationDays: 5
+    minProgressionLevel: 4
+    modifiers:
+    - kind: 0
+      basisPoints: 1600
+      flatPoints: 0
+      segment: 3
+      dayPart: 0
+  - campaignId: marketing.influencer.press_preview
+    displayName: "Presentaci\xF3n para prensa gastron\xF3mica"
+    description: "Acci\xF3n orientada a p\xFAblico exigente y reputaci\xF3n gastron\xF3mica."
+    type: 3
+    targetKind: 0
+    baseCostCents: 100000
+    durationDays: 7
+    minProgressionLevel: 5
+    modifiers:
+    - kind: 0
+      basisPoints: 1200
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 3
+      basisPoints: 0
+      flatPoints: 2
+      segment: 0
+      dayPart: 0
+    - kind: 6
+      basisPoints: 600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.influencer.major
+    displayName: "Gran influencer gastron\xF3mico"
+    description: "Pico de exposici\xF3n capaz de saturar un restaurante no preparado."
+    type: 3
+    targetKind: 0
+    baseCostCents: 220000
+    durationDays: 4
+    minProgressionLevel: 7
+    modifiers:
+    - kind: 0
+      basisPoints: 3000
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 1
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 6
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.event.romantic_dinner
+    displayName: "Cena rom\xE1ntica"
+    description: "Experiencia nocturna para parejas con mayor predisposici\xF3n a
+      reservar."
+    type: 4
+    targetKind: 0
+    baseCostCents: 25000
+    durationDays: 1
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 1
+      basisPoints: 2000
+      flatPoints: 0
+      segment: 5
+      dayPart: 4
+    - kind: 4
+      basisPoints: 500
+      flatPoints: 0
+      segment: 5
+      dayPart: 4
+    - kind: 6
+      basisPoints: 600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.event.live_music
+    displayName: "Noche de m\xFAsica en directo"
+    description: Evento nocturno social con mayor permanencia y demanda.
+    type: 4
+    targetKind: 0
+    baseCostCents: 50000
+    durationDays: 1
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 0
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 4
+      dayPart: 4
+    - kind: 4
+      basisPoints: 300
+      flatPoints: 0
+      segment: 4
+      dayPart: 4
+    - kind: 6
+      basisPoints: 900
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.event.tasting_menu
+    displayName: "Men\xFA degustaci\xF3n especial"
+    description: "Experiencia gastron\xF3mica temporal asociada a una carta concreta."
+    type: 4
+    targetKind: 2
+    baseCostCents: 30000
+    durationDays: 2
+    minProgressionLevel: 4
+    modifiers:
+    - kind: 7
+      basisPoints: 1700
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 4
+      basisPoints: 1500
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 6
+      basisPoints: 900
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.event.theme_night
+    displayName: "Noche tem\xE1tica"
+    description: Evento puntual atractivo para grupos y clientes sociales.
+    type: 4
+    targetKind: 0
+    baseCostCents: 45000
+    durationDays: 1
+    minProgressionLevel: 4
+    modifiers:
+    - kind: 0
+      basisPoints: 2200
+      flatPoints: 0
+      segment: 4
+      dayPart: 4
+    - kind: 6
+      basisPoints: 1200
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.event.food_festival
+    displayName: "Festival gastron\xF3mico del restaurante"
+    description: Evento de gran alcance con demanda y visibilidad elevadas.
+    type: 4
+    targetKind: 0
+    baseCostCents: 120000
+    durationDays: 2
+    minProgressionLevel: 6
+    modifiers:
+    - kind: 0
+      basisPoints: 3000
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 3
+      basisPoints: 0
+      flatPoints: 2
+      segment: 0
+      dayPart: 0
+    - kind: 6
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.loyalty.card
+    displayName: Tarjeta de cliente habitual
+    description: Incentivo sencillo para aumentar la frecuencia de retorno.
+    type: 5
+    targetKind: 0
+    baseCostCents: 18000
+    durationDays: 14
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 5
+      basisPoints: 800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.loyalty.return_week
+    displayName: Programa Vuelve esta semana
+    description: "Activa la repetici\xF3n de clientes recientes a corto plazo."
+    type: 5
+    targetKind: 0
+    baseCostCents: 15000
+    durationDays: 7
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 5
+      basisPoints: 1000
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.loyalty.bring_friend
+    displayName: Trae a un amigo
+    description: "Convierte clientes satisfechos en nuevos acompa\xF1antes."
+    type: 5
+    targetKind: 0
+    baseCostCents: 25000
+    durationDays: 7
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 0
+      basisPoints: 700
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 5
+      basisPoints: 600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.loyalty.club
+    displayName: Club de clientes
+    description: "Programa estable que favorece retorno y planificaci\xF3n."
+    type: 5
+    targetKind: 0
+    baseCostCents: 45000
+    durationDays: 21
+    minProgressionLevel: 4
+    modifiers:
+    - kind: 5
+      basisPoints: 1200
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 1
+      basisPoints: 500
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.loyalty.vip
+    displayName: Programa VIP
+    description: "Retenci\xF3n de clientes de alto valor con mayor gasto potencial."
+    type: 5
+    targetKind: 0
+    baseCostCents: 60000
+    durationDays: 21
+    minProgressionLevel: 6
+    modifiers:
+    - kind: 5
+      basisPoints: 1400
+      flatPoints: 0
+      segment: 10
+      dayPart: 0
+    - kind: 4
+      basisPoints: 700
+      flatPoints: 0
+      segment: 10
+      dayPart: 0
+  - campaignId: marketing.menu.dish_week
+    displayName: Plato de la semana
+    description: Da visibilidad temporal a un plato elegido por el jugador.
+    type: 6
+    targetKind: 1
+    baseCostCents: 12000
+    durationDays: 7
+    minProgressionLevel: 1
+    modifiers:
+    - kind: 7
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 0
+      basisPoints: 400
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.menu.house_specialty
+    displayName: Especialidad de la casa
+    description: "Posiciona un plato como referencia gastron\xF3mica del local."
+    type: 6
+    targetKind: 1
+    baseCostCents: 25000
+    durationDays: 10
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 7
+      basisPoints: 2200
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 3
+      basisPoints: 0
+      flatPoints: 1
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.menu.new_dish
+    displayName: Nuevo plato en carta
+    description: Comunica una novedad para atraer de nuevo a clientes habituales.
+    type: 6
+    targetKind: 1
+    baseCostCents: 15000
+    durationDays: 5
+    minProgressionLevel: 2
+    modifiers:
+    - kind: 7
+      basisPoints: 1600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 5
+      basisPoints: 300
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.menu.star_menu
+    displayName: "Men\xFA estrella promocionado"
+    description: "Promociona una carta o men\xFA concreto como oferta principal."
+    type: 6
+    targetKind: 2
+    baseCostCents: 35000
+    durationDays: 7
+    minProgressionLevel: 3
+    modifiers:
+    - kind: 7
+      basisPoints: 1800
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+    - kind: 0
+      basisPoints: 600
+      flatPoints: 0
+      segment: 0
+      dayPart: 0
+  - campaignId: marketing.menu.signature_product
+    displayName: Producto insignia
+    description: Convierte un plato elegido en reclamo distintivo del restaurante.
+    type: 6
+    targetKind: 1
+    baseCostCents: 60000
+    durationDays: 14
+    minProgressionLevel: 5
+    modifiers:
+    - kind: 7
+      basisPoints: 2800
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 0
+      basisPoints: 800
+      flatPoints: 0
+      segment: 6
+      dayPart: 0
+    - kind: 3
+      basisPoints: 0
+      flatPoints: 2
+      segment: 0
+      dayPart: 0

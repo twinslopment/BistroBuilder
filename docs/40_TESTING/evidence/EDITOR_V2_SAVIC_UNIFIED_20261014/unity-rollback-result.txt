@@ -1,0 +1,1 @@
+PASS: rejected post-publication fault, prior source identity retained, published bytes restored, interrupted journal recovered.

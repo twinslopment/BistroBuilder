@@ -8,9 +8,9 @@ using UnityEngine;
 public static class BistroBuilderEditorV2ReviewBuild
 {
     private const string Scene = "Assets/Scenes/Prototype_Restaurant.unity";
-    private const string Folder = "Builds/Windows/EditorV2_VisibleFix_20261009";
-    private const string Exe = "BistroBuilder_EditorV2_VISIBLE.exe";
-    private const string ReportFile = "EditorV2_VisibleFix_Build_Report.txt";
+    private const string Folder = "Builds/Windows/EditorV2_PremiumReview_20261010_R5";
+    private const string Exe = "BistroBuilder_EditorV2_PREMIUM_R5.exe";
+    private const string ReportFile = "EditorV2_PremiumReview_R5_Build_Report.txt";
 
     [MenuItem("Bistro Builder/QA/Editor V2/Windows Review Build")]
     public static void BuildFromMenu() => Build();

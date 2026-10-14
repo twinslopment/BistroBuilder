@@ -11,8 +11,11 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
     private void RefreshInitialActions()
     {
         var shell = FindFirstObjectByType<BistroBuilderUiShell>();
+        // Initial-design actions belong to the V2 actions menu while editing.
+        // Never place the earlier floating page over the approved composition.
+        var editing = openingService != null && openingService.IsInitialEditModeActive;
         bool show = isActiveAndEnabled && openingService != null && openingService.Phase == BistroBuilderNewGamePhase.InitialSetup &&
-            !IsOpeningMenuBlocking && (shell == null || !shell.HasManagementScreenOpen) &&
+            !editing && !IsOpeningMenuBlocking && (shell == null || !shell.HasManagementScreenOpen) &&
             BistroBuilderConstructionPlayerPanel.Instance?.BlocksWorldInput != true;
         if (show && initialActionsCanvas == null)
         {
@@ -46,5 +49,17 @@ public sealed partial class BistroBuilderNewGameOpeningPlayerScreen
         initialActionsCanvas.scaleFactor = Mathf.Clamp(Mathf.Min(Screen.width / 1920f, Screen.height / 1080f), .7f, 1.4f);
         initialSave.interactable = initialContinue.interactable = !openingService.IsSaveBusy;
         initialStatus.text = ResolveLiveStatus();
+    }
+
+    public bool TrySaveInitialDesignFromEditor(out string error)
+    {
+        if (!TryCommitArchitectureBeforeTransition(out error)) return false;
+        return openingService.TryRequestInitialSave(out error);
+    }
+
+    public bool TryValidateInitialDesignFromEditor(out string error)
+    {
+        if (!TryCommitArchitectureBeforeTransition(out error) || !TryValidateAndEnterGame(out error)) return false;
+        Hide(); return true;
     }
 }

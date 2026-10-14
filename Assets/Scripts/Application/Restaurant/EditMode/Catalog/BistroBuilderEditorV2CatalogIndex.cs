@@ -90,7 +90,8 @@ public sealed class BistroBuilderEditorV2CatalogIndex
         RestaurantEditCatalogSection section, int categoryCode, string search,
         RestaurantPlaceableEnvironmentScope scope, bool favoritesOnly,
         bool recentsOnly, HashSet<string> favorites, IList<string> recents,
-        int sortMode, List<RestaurantPlaceableItemDefinition> destination)
+        int sortMode, List<RestaurantPlaceableItemDefinition> destination,
+        int minimumPrice = 0, int maximumPrice = int.MaxValue)
     {
         if (destination == null) return 0;
         destination.Clear();
@@ -110,7 +111,12 @@ public sealed class BistroBuilderEditorV2CatalogIndex
         {
             Row row = rows[i];
             var item = row.Item;
-            if (!RestaurantEditCatalogSections.Matches(section, categoryCode, item))
+            if (item.PurchasePrice < minimumPrice || item.PurchasePrice > maximumPrice)
+                continue;
+            bool categoryMatches = section == RestaurantEditCatalogSection.Build && categoryCode >= 2000
+                ? MatchesGalleryCategory(categoryCode, item)
+                : RestaurantEditCatalogSections.Matches(section, categoryCode, item);
+            if (!categoryMatches)
                 continue;
 
             if (scope != RestaurantPlaceableEnvironmentScope.InteriorAndExterior &&
@@ -134,7 +140,9 @@ public sealed class BistroBuilderEditorV2CatalogIndex
             if (searchOk) matched.Add(row);
         }
 
-        if (sortMode == 1)
+        if (sortMode == 0 && recentsOnly && recents != null)
+            matched.Sort((a, b) => recents.IndexOf(a.Item.ItemId).CompareTo(recents.IndexOf(b.Item.ItemId)));
+        else if (sortMode == 1)
             matched.Sort((a, b) => {
                 int c = a.Item.PurchasePrice.CompareTo(b.Item.PurchasePrice);
                 return c != 0 ? c : StableCompare(a.Item, b.Item);
@@ -155,6 +163,18 @@ public sealed class BistroBuilderEditorV2CatalogIndex
         for (int i = 0; i < matched.Count; i++)
             destination.Add(matched[i].Item);
         return destination.Count;
+    }
+
+    private static bool MatchesGalleryCategory(int code, RestaurantPlaceableItemDefinition item)
+    {
+        string subcategory = item.CatalogSubcategory.Trim().ToLowerInvariant();
+        switch (code)
+        {
+            case 2001: return subcategory == "bar" || subcategory == "counter";
+            case 2002: return subcategory == "storage" || subcategory == "shelving";
+            case 2003: return item.PlacementScope == RestaurantPlaceableEnvironmentScope.ExteriorOnly || subcategory == "exterior";
+            default: return false;
+        }
     }
 
     private static int StableCompare(RestaurantPlaceableItemDefinition a,

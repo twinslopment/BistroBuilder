@@ -618,6 +618,10 @@ Debe reutilizar y evolucionar BistroBuilderCatalogThumbnailService y BistroBuild
 
 El detalle grande será un builder adicional que comparta escena, framing y quality metrics con el servicio existente.
 
+### Actualización Editor V2 R9 — Asientos — 13/10/2026
+
+La revisión solicitada de las sillas evoluciona el servicio existente con framing elevado por familia y ajuste de bounds al frustum. Asientos genera un derivado 1024 × 1024 sin compresión, con alpha y mipmaps trilineales, manteniendo GUID y prefabs/materiales. Los dos perfiles comparten cámara/encuadre y prueban exposición/relleno según las métricas canónicas. Las fichas existentes pueden consumir este derivado; no sustituye la decisión de crear un builder independiente de Detail Preview. Miniaturas manuales se conservan y una ficha generada erróneamente vinculada al derivado de otro artículo puede repararse a su propio derivado. [Evidencia de seis sillas y regresión corregida](40_TESTING/EDITOR_V2_CHAIR_PHOTOS_R9_WINDOWS_20261013.md).
+
 ## 23. Registro en catálogo y menús
 
 SAVIC registra contenido; la UI descubre contenido por datos.

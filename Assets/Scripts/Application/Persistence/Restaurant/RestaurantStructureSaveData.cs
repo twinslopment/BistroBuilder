@@ -18,6 +18,17 @@ public sealed class RestaurantStructureSaveData
 
     public List<RestaurantSeatLinkSaveRecord> seatLinks =
         new List<RestaurantSeatLinkSaveRecord>();
+
+    public List<RestaurantBarSeatLinkSaveRecord> barSeatLinks =
+        new List<RestaurantBarSeatLinkSaveRecord>();
+}
+
+[Serializable]
+public sealed class RestaurantBarSeatLinkSaveRecord
+{
+    public string seatInstanceId = string.Empty;
+    public string barInstanceId = string.Empty;
+    public int spotIndex = -1;
 }
 
 [Serializable]

@@ -87,6 +87,8 @@ public sealed class RestaurantPlaceableRegistry :
         }
     }
 
+    public string LastRegistrationError { get; private set; } = string.Empty;
+
     public IReadOnlyCollection<RestaurantPlaceableObject>
         RegisteredPlaceables
     {
@@ -129,6 +131,7 @@ public sealed class RestaurantPlaceableRegistry :
         RestaurantPlaceableObject placeable
     )
     {
+        LastRegistrationError = string.Empty;
         if (placeable == null)
         {
             return false;
@@ -201,11 +204,43 @@ public sealed class RestaurantPlaceableRegistry :
             placeable.ItemDefinition
         );
 
+        // The generic identity is now visible to functional adapters, but the
+        // registration is not accepted until their native integrations commit.
+        MonoBehaviour[] behaviours = placeable.GetComponents<MonoBehaviour>();
+        try
+        {
+            foreach (MonoBehaviour behaviour in behaviours)
+                if (behaviour != null && behaviour.isActiveAndEnabled &&
+                    behaviour is IRestaurantPlaceableActivationParticipant participant &&
+                    !participant.TryCompleteActivation(out string error))
+                {
+                    LastRegistrationError = string.IsNullOrWhiteSpace(error)
+                        ? "Functional placeable activation was rejected." : error;
+                    RollbackActivation(placeable, behaviours);
+                    return false;
+                }
+        }
+        catch (Exception exception)
+        {
+            LastRegistrationError = exception.Message;
+            RollbackActivation(placeable, behaviours);
+            Debug.LogException(exception, placeable);
+            return false;
+        }
+
         PlaceableRegistered?.Invoke(
             placeable
         );
 
         return true;
+    }
+
+    private void RollbackActivation(RestaurantPlaceableObject placeable, MonoBehaviour[] behaviours)
+    {
+        for (int index = behaviours.Length - 1; index >= 0; index--)
+            if (behaviours[index] is IRestaurantPlaceableActivationParticipant participant)
+                participant.RollbackActivation();
+        UnregisterPlaceable(placeable);
     }
 
     /// <summary>
@@ -437,4 +472,15 @@ public sealed class RestaurantPlaceableRegistry :
             );
         }
     }
+}
+
+/// <summary>
+/// Optional functional part of the canonical registration transaction. A false
+/// commit rolls back both native effects and the generic placeable indexes.
+/// It adds no independent registration or occupancy authority.
+/// </summary>
+public interface IRestaurantPlaceableActivationParticipant
+{
+    bool TryCompleteActivation(out string error);
+    void RollbackActivation();
 }

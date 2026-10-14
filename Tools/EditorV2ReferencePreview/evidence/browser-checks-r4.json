@@ -1,0 +1,456 @@
+{
+  "revision": "R4",
+  "date": "2026-10-12",
+  "reference": [
+    1672,
+    941
+  ],
+  "checks": [
+    {
+      "name": "Ocho artículos al abrir",
+      "pass": true
+    },
+    {
+      "name": "Búsqueda sin acentos ni mayúsculas",
+      "pass": true
+    },
+    {
+      "name": "Filtros combinados ubicación/precio",
+      "pass": true,
+      "details": [
+        "Mesa mármol claro",
+        "Mesa industrial",
+        "Mesa roble rústica",
+        "Mesa cuatro plazas"
+      ]
+    },
+    {
+      "name": "Precio descendente",
+      "pass": true,
+      "details": [
+        "420 €",
+        "420 €",
+        "380 €",
+        "315 €"
+      ]
+    },
+    {
+      "name": "Rango inválido no altera resultados",
+      "pass": true
+    },
+    {
+      "name": "Limpiar ubicación y precio",
+      "pass": true
+    },
+    {
+      "name": "Categoría Exterior",
+      "pass": true
+    },
+    {
+      "name": "Categoría vacía sin artículos falsos",
+      "pass": true
+    },
+    {
+      "name": "Búsqueda sin coincidencias",
+      "pass": true
+    },
+    {
+      "name": "La estrella decorativa permite guardar favorito",
+      "pass": true
+    },
+    {
+      "name": "Pestaña Favoritos",
+      "pass": true
+    },
+    {
+      "name": "Favoritos persisten tras recargar",
+      "pass": true
+    },
+    {
+      "name": "Quitar favorito actualiza colección",
+      "pass": true
+    },
+    {
+      "name": "Recientes en orden de selección",
+      "pass": true,
+      "details": [
+        "Mesa nogal cuadrada",
+        "Mesa mármol claro",
+        "Mesa bistró redonda"
+      ]
+    },
+    {
+      "name": "Cambiar destacado",
+      "pass": true
+    },
+    {
+      "name": "Un indicador activo al recorrer el carrusel",
+      "pass": true
+    },
+    {
+      "name": "Cambiar relacionados",
+      "pass": true
+    },
+    {
+      "name": "Variante y ficha sincronizadas",
+      "pass": true
+    },
+    {
+      "name": "La ficha mantiene los valores al filtrar",
+      "pass": true,
+      "details": {
+        "rotation": "90°",
+        "wood": "Nogal oscuro"
+      }
+    },
+    {
+      "name": "Ampliar imagen",
+      "pass": true
+    },
+    {
+      "name": "Plegar catálogo",
+      "pass": true
+    },
+    {
+      "name": "Snapping conmuta",
+      "pass": true
+    },
+    {
+      "name": "Modo activo único",
+      "pass": true
+    },
+    {
+      "name": "Opciones sin texto técnico sobrante",
+      "pass": true
+    },
+    {
+      "name": "Entrada real en pantalla completa",
+      "pass": null,
+      "details": "La lectura de fullscreenElement no está disponible en la proyección DOM del navegador. Se verifica mediante fullscreenchange y la opción visible de volver a ventana."
+    },
+    {
+      "name": "Entrada en pantalla completa confirmada por fullscreenchange",
+      "pass": true
+    },
+    {
+      "name": "Salida de pantalla completa confirmada por fullscreenchange",
+      "pass": true
+    },
+    {
+      "name": "Paneles únicos, sin capas duplicadas",
+      "pass": true,
+      "details": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "name": "Paneles completos a 4K",
+      "pass": true,
+      "details": {
+        "cardText": [
+          {
+            "h": 114,
+            "id": "bistro",
+            "nameBottom": 92,
+            "priceBottom": 114
+          },
+          {
+            "h": 116,
+            "id": "walnut",
+            "nameBottom": 92,
+            "priceBottom": 114
+          },
+          {
+            "h": 116,
+            "id": "marble",
+            "nameBottom": 92,
+            "priceBottom": 114
+          },
+          {
+            "h": 116,
+            "id": "pedestal",
+            "nameBottom": 92,
+            "priceBottom": 114
+          },
+          {
+            "h": 91,
+            "id": "industrial",
+            "nameBottom": 69,
+            "priceBottom": 91
+          },
+          {
+            "h": 91,
+            "id": "rustic",
+            "nameBottom": 80,
+            "priceBottom": 91
+          },
+          {
+            "h": 91,
+            "id": "four",
+            "nameBottom": 80,
+            "priceBottom": 91
+          },
+          {
+            "h": 91,
+            "id": "terrace",
+            "nameBottom": 80,
+            "priceBottom": 91
+          }
+        ],
+        "count": [
+          1,
+          1,
+          1
+        ],
+        "editor": {
+          "bottom": 2160,
+          "height": 2160,
+          "left": 1,
+          "right": 3838.949951171875,
+          "top": 0,
+          "width": 3837.949951171875,
+          "x": 1,
+          "y": 0
+        },
+        "panels": [
+          {
+            "bottom": 188.2125072479248,
+            "height": 169.85000610351562,
+            "id": "topbar",
+            "left": 19.36250114440918,
+            "right": 3820.587598800659,
+            "top": 18.36250114440918,
+            "width": 3801.22509765625,
+            "x": 19.36250114440918,
+            "y": 18.36250114440918
+          },
+          {
+            "bottom": 1886.8374786376953,
+            "height": 1675.6624755859375,
+            "id": "catalog",
+            "left": 21.649999618530273,
+            "right": 1300.2000484466553,
+            "top": 211.1750030517578,
+            "width": 1278.550048828125,
+            "x": 21.649999618530273,
+            "y": 211.1750030517578
+          },
+          {
+            "bottom": 1886.8374786376953,
+            "height": 1675.6624755859375,
+            "id": "inspector",
+            "left": 3086.050048828125,
+            "right": 3815.987548828125,
+            "top": 211.1750030517578,
+            "width": 729.9375,
+            "x": 3086.050048828125,
+            "y": 211.1750030517578
+          },
+          {
+            "bottom": 2141.624984741211,
+            "height": 231.83750915527344,
+            "id": "bottom-bar",
+            "left": 19.36250114440918,
+            "right": 3820.587598800659,
+            "top": 1909.7874755859375,
+            "width": 3801.22509765625,
+            "x": 19.36250114440918,
+            "y": 1909.7874755859375
+          }
+        ],
+        "viewport": [
+          3840,
+          2160,
+          1.0000000149011612
+        ]
+      }
+    },
+    {
+      "name": "Nombres y precios sin recorte",
+      "pass": true,
+      "details": [
+        {
+          "h": 114,
+          "id": "bistro",
+          "nameBottom": 92,
+          "priceBottom": 114
+        },
+        {
+          "h": 116,
+          "id": "walnut",
+          "nameBottom": 92,
+          "priceBottom": 114
+        },
+        {
+          "h": 116,
+          "id": "marble",
+          "nameBottom": 92,
+          "priceBottom": 114
+        },
+        {
+          "h": 116,
+          "id": "pedestal",
+          "nameBottom": 92,
+          "priceBottom": 114
+        },
+        {
+          "h": 91,
+          "id": "industrial",
+          "nameBottom": 69,
+          "priceBottom": 91
+        },
+        {
+          "h": 91,
+          "id": "rustic",
+          "nameBottom": 80,
+          "priceBottom": 91
+        },
+        {
+          "h": 91,
+          "id": "four",
+          "nameBottom": 80,
+          "priceBottom": 91
+        },
+        {
+          "h": 91,
+          "id": "terrace",
+          "nameBottom": 80,
+          "priceBottom": 91
+        }
+      ]
+    },
+    {
+      "name": "Exterior combinado con precio máximo",
+      "pass": true
+    },
+    {
+      "name": "Sin errores de navegador",
+      "pass": true,
+      "details": []
+    }
+  ],
+  "pass": 31,
+  "inconclusive": 1,
+  "layout4K": {
+    "cardText": [
+      {
+        "h": 114,
+        "id": "bistro",
+        "nameBottom": 92,
+        "priceBottom": 114
+      },
+      {
+        "h": 116,
+        "id": "walnut",
+        "nameBottom": 92,
+        "priceBottom": 114
+      },
+      {
+        "h": 116,
+        "id": "marble",
+        "nameBottom": 92,
+        "priceBottom": 114
+      },
+      {
+        "h": 116,
+        "id": "pedestal",
+        "nameBottom": 92,
+        "priceBottom": 114
+      },
+      {
+        "h": 91,
+        "id": "industrial",
+        "nameBottom": 69,
+        "priceBottom": 91
+      },
+      {
+        "h": 91,
+        "id": "rustic",
+        "nameBottom": 80,
+        "priceBottom": 91
+      },
+      {
+        "h": 91,
+        "id": "four",
+        "nameBottom": 80,
+        "priceBottom": 91
+      },
+      {
+        "h": 91,
+        "id": "terrace",
+        "nameBottom": 80,
+        "priceBottom": 91
+      }
+    ],
+    "count": [
+      1,
+      1,
+      1
+    ],
+    "editor": {
+      "bottom": 2160,
+      "height": 2160,
+      "left": 1,
+      "right": 3838.949951171875,
+      "top": 0,
+      "width": 3837.949951171875,
+      "x": 1,
+      "y": 0
+    },
+    "panels": [
+      {
+        "bottom": 188.2125072479248,
+        "height": 169.85000610351562,
+        "id": "topbar",
+        "left": 19.36250114440918,
+        "right": 3820.587598800659,
+        "top": 18.36250114440918,
+        "width": 3801.22509765625,
+        "x": 19.36250114440918,
+        "y": 18.36250114440918
+      },
+      {
+        "bottom": 1886.8374786376953,
+        "height": 1675.6624755859375,
+        "id": "catalog",
+        "left": 21.649999618530273,
+        "right": 1300.2000484466553,
+        "top": 211.1750030517578,
+        "width": 1278.550048828125,
+        "x": 21.649999618530273,
+        "y": 211.1750030517578
+      },
+      {
+        "bottom": 1886.8374786376953,
+        "height": 1675.6624755859375,
+        "id": "inspector",
+        "left": 3086.050048828125,
+        "right": 3815.987548828125,
+        "top": 211.1750030517578,
+        "width": 729.9375,
+        "x": 3086.050048828125,
+        "y": 211.1750030517578
+      },
+      {
+        "bottom": 2141.624984741211,
+        "height": 231.83750915527344,
+        "id": "bottom-bar",
+        "left": 19.36250114440918,
+        "right": 3820.587598800659,
+        "top": 1909.7874755859375,
+        "width": 3801.22509765625,
+        "x": 19.36250114440918,
+        "y": 1909.7874755859375
+      }
+    ],
+    "viewport": [
+      3840,
+      2160,
+      1.0000000149011612
+    ]
+  },
+  "captureLimitation": "El proveedor de capturas IAB produce imágenes reescaladas y borrosas; los archivos 4K no certifican nitidez física ni identidad por píxel.",
+  "nativeChrome": "El control Windows se detuvo al no poder confirmar la URL actual. No se automatizó Chrome."
+}

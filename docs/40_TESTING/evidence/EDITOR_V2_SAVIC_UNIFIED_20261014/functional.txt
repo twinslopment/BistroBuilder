@@ -1,0 +1,467 @@
+PASS
+Mode entered through canonical service
+Native gallery is the presentation owner
+Gallery title has visible glyphs: Catálogo rect=(x:0.00, y:-34.00, width:417.00, height:34.00) font=Recoleta approved Editor V2 characters=8
+Prototype IMGUI diagnostic overlay is excluded from V2
+Prototype construction IMGUI is excluded from V2
+Catalog uses all canonical real definitions
+Approved four-column grid
+All 28 approved vector silhouettes are present in the native SDF font
+Catalog title contains only Catálogo
+Native option font/vector/label/grid validation: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 0: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 1: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 2: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 3: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 4: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 5: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 6: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 7: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Uniform native option style after category 8: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Native option style survives scope tab 0: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Native option style survives scope tab 1: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Native option style survives scope tab 2: 12 vectors; full Inter labels; four B9 columns; decorative raycasts disabled.
+Approved fleur silhouette actually produces a native text mesh
+First grid row retains fully visible prices: table_basic
+First grid row retains fully visible prices: table_basic_4
+First grid row retains fully visible prices: bb_table_40b9adf572e4445b8d85ade6c8cbbd84
+First grid row retains fully visible prices: bb_table_0c5c5d0e53554e3582f99ad3dde5a18a
+B9 pool bounded by viewport
+Raycast Category_Asientos point=(38.66, 341.63) graphicDepth=52 culled=False hits=Category_Asientos/Category_Asientos,IvoryFrame/
+Category rail receives real pointer click
+Gallery owns its native brass scrollbar
+Scrollbar stays inset inside catalogue frame
+Masked chair viewport is inset and separate from scrollbar
+Actual brass handle stays inside the channel on both axes
+Chair images and text are clipped by the native viewport
+Chair section heading fits and renders: RelatedHeading
+Chair section heading fits and renders: AllHeading
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Chair photo is centered within the native card: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Chair name occupies up to three readable lines: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Compact chair label preserves whole words and its complete published distinction: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Chair price renders within its reserved line: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Chair price remains within its uniform card: bb_barstool_bab4d97bded34d2f9e716a4cee34f24b
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Chair photo is centered within the native card: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Chair name occupies up to three readable lines: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Compact chair label preserves whole words and its complete published distinction: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Chair price renders within its reserved line: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Chair price remains within its uniform card: bb_barstool_0b450ebc99e34230b7e4fa28cef62f5e
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Chair photo is centered within the native card: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Chair name occupies up to three readable lines: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Compact chair label preserves whole words and its complete published distinction: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Chair price renders within its reserved line: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Chair price remains within its uniform card: bb_chair_34c8bcd0a2c24c05970ecf15c1b710a4
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Chair photo is centered within the native card: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Chair name occupies up to three readable lines: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Compact chair label preserves whole words and its complete published distinction: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Chair price renders within its reserved line: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Chair price remains within its uniform card: bb_chair_beddc1e77da84ec69e941731af8bb7a4
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Chair photo is centered within the native card: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Chair name occupies up to three readable lines: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Compact chair label preserves whole words and its complete published distinction: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Chair price renders within its reserved line: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Chair price remains within its uniform card: bb_chair_658f416fd62b42909fccec951f0d9dfa
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Chair photo is centered within the native card: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Chair name occupies up to three readable lines: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Compact chair label preserves whole words and its complete published distinction: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Chair price renders within its reserved line: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Chair price remains within its uniform card: bb_chair_e6bcf31ac7a446f185751377a3b7ea9d
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01
+Chair photo is centered within the native card: chair_bistro_01
+Chair name occupies up to three readable lines: chair_bistro_01
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01
+Chair price renders within its reserved line: chair_bistro_01
+Chair price remains within its uniform card: chair_bistro_01
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01_painted_white
+Chair photo is centered within the native card: chair_bistro_01_painted_white
+Chair name occupies up to three readable lines: chair_bistro_01_painted_white
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01_painted_white
+Chair price renders within its reserved line: chair_bistro_01_painted_white
+Chair price remains within its uniform card: chair_bistro_01_painted_white
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01_painted_black
+Chair photo is centered within the native card: chair_bistro_01_painted_black
+Chair name occupies up to three readable lines: chair_bistro_01_painted_black
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01_painted_black
+Chair price renders within its reserved line: chair_bistro_01_painted_black
+Chair price remains within its uniform card: chair_bistro_01_painted_black
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01_walnut_dark
+Chair photo is centered within the native card: chair_bistro_01_walnut_dark
+Chair name occupies up to three readable lines: chair_bistro_01_walnut_dark
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01_walnut_dark
+Chair price renders within its reserved line: chair_bistro_01_walnut_dark
+Chair price remains within its uniform card: chair_bistro_01_walnut_dark
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01_oak_warm
+Chair photo is centered within the native card: chair_bistro_01_oak_warm
+Chair name occupies up to three readable lines: chair_bistro_01_oak_warm
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01_oak_warm
+Chair price renders within its reserved line: chair_bistro_01_oak_warm
+Chair price remains within its uniform card: chair_bistro_01_oak_warm
+Chair native card preserves manual art or uses full 1024-pixel derivative: chair_bistro_01_sage_green
+Chair photo is centered within the native card: chair_bistro_01_sage_green
+Chair name occupies up to three readable lines: chair_bistro_01_sage_green
+Compact chair label preserves whole words and its complete published distinction: chair_bistro_01_sage_green
+Chair price renders within its reserved line: chair_bistro_01_sage_green
+Chair price remains within its uniform card: chair_bistro_01_sage_green
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_chair_master_002
+Chair photo is centered within the native card: bb_chair_master_002
+Chair name occupies up to three readable lines: bb_chair_master_002
+Compact chair label preserves whole words and its complete published distinction: bb_chair_master_002
+Chair price renders within its reserved line: bb_chair_master_002
+Chair price remains within its uniform card: bb_chair_master_002
+Chair native card preserves manual art or uses full 1024-pixel derivative: pf_bb_chair_master_001_yellow
+Chair photo is centered within the native card: pf_bb_chair_master_001_yellow
+Chair name occupies up to three readable lines: pf_bb_chair_master_001_yellow
+Compact chair label preserves whole words and its complete published distinction: pf_bb_chair_master_001_yellow
+Chair price renders within its reserved line: pf_bb_chair_master_001_yellow
+Chair price remains within its uniform card: pf_bb_chair_master_001_yellow
+Chair native card preserves manual art or uses full 1024-pixel derivative: pf_bb_chair_master_001_white
+Chair photo is centered within the native card: pf_bb_chair_master_001_white
+Chair name occupies up to three readable lines: pf_bb_chair_master_001_white
+Compact chair label preserves whole words and its complete published distinction: pf_bb_chair_master_001_white
+Chair price renders within its reserved line: pf_bb_chair_master_001_white
+Chair price remains within its uniform card: pf_bb_chair_master_001_white
+Chair native card preserves manual art or uses full 1024-pixel derivative: pf_bb_chair_master_001_olive
+Chair photo is centered within the native card: pf_bb_chair_master_001_olive
+Chair name occupies up to three readable lines: pf_bb_chair_master_001_olive
+Compact chair label preserves whole words and its complete published distinction: pf_bb_chair_master_001_olive
+Chair price renders within its reserved line: pf_bb_chair_master_001_olive
+Chair price remains within its uniform card: pf_bb_chair_master_001_olive
+Chair native card preserves manual art or uses full 1024-pixel derivative: pf_bb_chair_master_001_red
+Chair photo is centered within the native card: pf_bb_chair_master_001_red
+Chair name occupies up to three readable lines: pf_bb_chair_master_001_red
+Compact chair label preserves whole words and its complete published distinction: pf_bb_chair_master_001_red
+Chair price renders within its reserved line: pf_bb_chair_master_001_red
+Chair price remains within its uniform card: pf_bb_chair_master_001_red
+Chair native card preserves manual art or uses full 1024-pixel derivative: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Chair photo is centered within the native card: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Chair name occupies up to three readable lines: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Compact chair label preserves whole words and its complete published distinction: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Chair price renders within its reserved line: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Chair price remains within its uniform card: bb_barstool_631e22da6e70449ca5655ab45e72a5ee
+Related chair text actually renders: 0/Name
+Related chair text actually renders: 0/Price
+Related chair text actually renders: 1/Name
+Related chair text actually renders: 1/Price
+Related chair text actually renders: 2/Name
+Related chair text actually renders: 2/Price
+Related chair text actually renders: 3/Name
+Related chair text actually renders: 3/Price
+Native scrollbar thumb drag reaches final chair row
+Last chair price is fully visible after scroll
+Empty favorites also clear featured
+Favorites query and editorial agree
+Recents ordered newest first
+Case and accent insensitive search
+No stale featured or related after empty search
+Real price interval filter
+Ascending real prices
+Descending real prices
+Scope combined with price filter
+Seating category
+Category change preserves selected filters
+Collapse preserves query
+Raycast Filters point=(202.11, 412.63) graphicDepth=19 culled=False hits=Filters/Filters,IvoryFrame/
+Filter popup receives actual UI raycast
+Raycast ApplyFilters point=(164.98, 322.49) graphicDepth=431 culled=False hits=ApplyFilters/ApplyFilters,FiltersPopup/,Featured/,IvoryFrame/
+Native price inputs and apply button execute combined query
+Raycast Filters point=(202.11, 412.63) graphicDepth=19 culled=False hits=Filters/Filters,IvoryFrame/
+Raycast Scope_2 point=(174.93, 369.57) graphicDepth=289 culled=False hits=Scope_2/Scope_2,FiltersPopup/,Featured/,IvoryFrame/
+Native exterior button executes scope query
+Raycast ResetFilters point=(96.65, 322.49) graphicDepth=303 culled=False hits=ResetFilters/ResetFilters,FiltersPopup/,Featured/,IvoryFrame/
+Native reset button clears combined filters
+Raycast Filters point=(202.11, 412.63) graphicDepth=19 culled=False hits=Filters/Filters,IvoryFrame/
+Raycast Favorite point=(99.23, 239.62) graphicDepth=185 culled=False hits=Favorite/Favorite,EditorV2_B9_PooledCard_0/EditorV2_B9_PooledCard_0,Viewport/,IvoryFrame/
+Recycled favorite callback targets current item
+Raycast EditorV2_B9_PooledCard_0 point=(88.28, 221.82) graphicDepth=181 culled=False hits=EditorV2_B9_PooledCard_0/EditorV2_B9_PooledCard_0,Viewport/,IvoryFrame/
+Native card uses canonical provisional placement
+Raycast Favorite point=(99.23, 239.62) graphicDepth=164 culled=False hits=Favorite/Favorite,EditorV2_B9_PooledCard_0/EditorV2_B9_PooledCard_0,Viewport/,IvoryFrame/
+Favorite still correct after pool rebind to another query
+Legacy catalog remains hidden after filters and theme scan
+Only native V2 content may be active in gallery host
+Previous catalog renderers and layout are disabled
+Featured never escapes active query
+Product inspector owns the native V2 paper palette
+Product inspector has no white text on light paper
+Only the approved native details composition is visible
+Product preview uses the approved 172px reference height
+Product inspector title has visible glyphs
+Raycast Favorite point=(623.92, 434.07) graphicDepth=409 culled=False hits=Favorite/Favorite,BB_UIUX_PlaceableInspector/
+Inspector star updates the same favorites query
+Raycast Zoom point=(621.05, 368.23) graphicDepth=418 culled=False hits=Zoom/Zoom,Preview/,BB_UIUX_PlaceableInspector/
+Native product zoom opens
+Raycast CloseZoom point=(614.35, 407.66) graphicDepth=515 culled=False hits=CloseZoom/CloseZoom,PreviewZoom/,Preview/,BB_UIUX_PlaceableInspector/
+Native product zoom closes
+Catalog details has one inspector owner
+Published table has real dimensions and editable policy
+Main preview preserves aspect around the actual frame center
+All dimension inputs are genuinely interactive
+Raycast Presets point=(609.38, 314.64) graphicDepth=434 culled=False hits=Presets/Presets,Width/,BB_UIUX_PlaceableInspector/
+Raycast Value3 point=(587.56, 270.05) graphicDepth=519 culled=False hits=Value3/Value3,NumericPresets/,BB_UIUX_PlaceableInspector/
+Dimension dropdown receives pointer raycast and configures real placement draft
+Raycast DimensionRatio point=(621.82, 304.11) graphicDepth=456 culled=False hits=DimensionRatio/DimensionRatio,BB_UIUX_PlaceableInspector/
+Chain control changes dimensions proportionally
+Raycast DimensionRatio point=(621.82, 304.11) graphicDepth=456 culled=False hits=DimensionRatio/DimensionRatio,BB_UIUX_PlaceableInspector/
+Unlocked dimensions are independently editable
+Negative dimension is rejected and input restores authoritative value
+Invalid or extreme dimensions never reach placement
+Rotation X has an active native numeric field
+Rotation Y has an active native numeric field
+Rotation Z has an active native numeric field
+All three rotation fields configure the exact requested orientation
+Configured catalog item enters canonical provisional creation
+Creation consumes dimensions and XYZ rotation, rather than resetting them
+Tilted candidate footprint conservatively encloses real geometry: Mesa básica_9c8f246b
+Dimension edit during placement changes the actual provisional instance
+Cancel destroys configured provisional placement safely
+Canceled draft leaves no placed instance
+Reference chrome exists
+Inspector lies strictly between the top and bottom bars
+All bottom tools stay inside the viewport
+Bottom tool groups have no nested panel frames
+Top identity has rendered glyphs
+Bottom caption renders: ModeTools/Caption
+Bottom caption renders: EditSelectionTools/Caption
+Bottom caption renders: EditViewTools/Caption
+Only the approved outer ornaments frame the footer: ModeTools
+Reference button positions remain explicit: ModeTools
+Only the approved outer ornaments frame the footer: EditSelectionTools
+Reference button positions remain explicit: EditSelectionTools
+Only the approved outer ornaments frame the footer: EditViewTools
+Reference button positions remain explicit: EditViewTools
+Footer touches the bottom screen edge without a restaurant gap
+Opaque footer covers the full screen width
+Compact footer takes less than a tenth of the screen height
+Continuous opaque paper covers the entire footer including its corners | Footer=(x:0.00, y:0.00, width:640.00, height:32.54) Paper=(x:0.00, y:0.00, width:640.00, height:32.54) Alpha=1
+Compact footer title fits its cell: ModeTools
+Footer title is entirely over paper: ModeTools
+Footer title and buttons never overlap: ModeTools
+Compact footer title fits its cell: EditSelectionTools
+Footer title is entirely over paper: EditSelectionTools
+Footer title and buttons never overlap: EditSelectionTools
+Compact footer title fits its cell: EditViewTools
+Footer title is entirely over paper: EditViewTools
+Footer title and buttons never overlap: EditViewTools
+Footer buttons use the approved compact box
+Footer icon uses a native SDF silhouette: Cursor
+Footer icon uses a native SDF silhouette: Chair
+Footer icon uses a native SDF silhouette: Hammer
+Footer icon uses a native SDF silhouette: Layers
+Footer icon uses a native SDF silhouette: Move
+Footer icon uses a native SDF silhouette: Rotate
+Footer icon uses a native SDF silhouette: Duplicate
+Footer icon uses a native SDF silhouette: Delete
+Footer icon uses a native SDF silhouette: Magnet
+Footer icon uses a native SDF silhouette: Grid
+Footer icon uses a native SDF silhouette: Plot
+Delete without a world selection stays unavailable
+Unavailable delete uses a fully opaque disabled surface
+Unavailable delete ignores hover/press/click and cannot execute its action
+Unavailable delete has readable text at both gradient ends
+Header touches the top screen edge without a restaurant gap
+Header covers the full screen width
+Header has continuous opaque paper to every edge and corner
+Header ornaments render above the continuous paper
+Logo remains inside the docked header without clipping
+Raycast EditDay point=(544.88, 465.45) graphicDepth=21 culled=False hits=EditDay/EditDay
+Lighting menu opens for Día
+Raycast LightPreset0 point=(538.56, 437.13) graphicDepth=29 culled=False hits=LightPreset0/LightPreset0,LightingPreviewMenu/,BB_UIUX_PlaceableInspector/
+Lighting selection updates its label and closes its menu: Día
+Lighting selection preserves the sun silhouette: Día
+Lighting text keeps its size and position: Día
+Lighting text fits before the dropdown arrow: Día width=21,36
+Lighting label never overlaps its arrow: Día
+Raycast EditDay point=(544.88, 465.45) graphicDepth=21 culled=False hits=EditDay/EditDay
+Lighting menu opens for Atardecer
+Raycast LightPreset1 point=(538.56, 423.35) graphicDepth=33 culled=False hits=LightPreset1/LightPreset1,LightingPreviewMenu/,Preview/,BB_UIUX_PlaceableInspector/
+Lighting selection updates its label and closes its menu: Atardecer
+Lighting selection preserves the sun silhouette: Atardecer
+Lighting text keeps its size and position: Atardecer
+Lighting text fits before the dropdown arrow: Atardecer width=65,1
+Lighting label never overlaps its arrow: Atardecer
+Raycast EditDay point=(544.88, 465.45) graphicDepth=21 culled=False hits=EditDay/EditDay
+Lighting menu opens for Noche
+Raycast LightPreset2 point=(538.56, 409.57) graphicDepth=37 culled=False hits=LightPreset2/LightPreset2,LightingPreviewMenu/,Preview/,BB_UIUX_PlaceableInspector/
+Lighting selection updates its label and closes its menu: Noche
+Lighting selection preserves the sun silhouette: Noche
+Lighting text keeps its size and position: Noche
+Lighting text fits before the dropdown arrow: Noche width=43,39
+Lighting label never overlaps its arrow: Noche
+Raycast EditDay point=(544.88, 465.45) graphicDepth=21 culled=False hits=EditDay/EditDay
+Lighting menu opens for Día
+Raycast LightPreset0 point=(538.56, 437.13) graphicDepth=29 culled=False hits=LightPreset0/LightPreset0,LightingPreviewMenu/,BB_UIUX_PlaceableInspector/
+Lighting selection updates its label and closes its menu: Día
+Lighting selection preserves the sun silhouette: Día
+Lighting text keeps its size and position: Día
+Lighting text fits before the dropdown arrow: Día width=21,36
+Lighting label never overlaps its arrow: Día
+Construction opens native V2 Workshop
+Raycast Tab1 point=(123.06, 383.16) graphicDepth=13 culled=False hits=Tab1/Tab1,BB_ArchitectureCatalog/
+Native Workshop edit tab calls canonical construction tool
+Surfaces reuse native V2 Workshop
+Select real room through Construction authority: 
+Reproduce user surface selection
+Selected surface has exactly one inspector; B8 and catalog cannot overlay it
+Reference chrome exists
+Inspector lies strictly between the top and bottom bars
+All bottom tools stay inside the viewport
+Bottom tool groups have no nested panel frames
+Top identity has rendered glyphs
+Bottom caption renders: ModeTools/Caption
+Bottom caption renders: EditSelectionTools/Caption
+Bottom caption renders: EditViewTools/Caption
+Architecture content stays within inspector: Preview
+Architecture content stays within inspector: Description
+Architecture content stays within inspector: Price
+Architecture content stays within inspector: Dimensions
+Architecture content stays within inspector: Rules
+Architecture content stays within inspector: Selection
+Architecture content stays within inspector: Choose
+Architecture content stays within inspector: Status
+Architecture content stays within inspector: CreateRoom
+Architecture content stays within inspector: Zone_zone.dining
+Architecture content stays within inspector: Zone_zone.kitchen
+Architecture content stays within inspector: Zone_zone.bathroom
+Architecture content stays within inspector: Zone_zone.bar
+Architecture content stays within inspector: Zone_zone.terrace
+Returning from Workshop never revives previous gallery
+Toolbar selects a real deletable object: chair_bistro_01
+The toolbar still exposes exactly eleven native actions
+Toolbar surface owns opaque hover/press visuals: EditSelect
+Toolbar icon is centered and its native label fits: EditSelect
+Toolbar icon and label retain a clear gap: EditSelect
+Toolbar label contrasts at both surface gradient ends: EditSelect
+Toolbar surface owns opaque hover/press visuals: EditBuild
+Toolbar icon is centered and its native label fits: EditBuild
+Toolbar icon and label retain a clear gap: EditBuild
+Toolbar label contrasts at both surface gradient ends: EditBuild
+Toolbar surface owns opaque hover/press visuals: EditWalls
+Toolbar icon is centered and its native label fits: EditWalls
+Toolbar icon and label retain a clear gap: EditWalls
+Toolbar label contrasts at both surface gradient ends: EditWalls
+Toolbar surface owns opaque hover/press visuals: EditSurfaces
+Toolbar icon is centered and its native label fits: EditSurfaces
+Toolbar icon and label retain a clear gap: EditSurfaces
+Toolbar label contrasts at both surface gradient ends: EditSurfaces
+Toolbar surface owns opaque hover/press visuals: EditMove
+Toolbar icon is centered and its native label fits: EditMove
+Toolbar icon and label retain a clear gap: EditMove
+Toolbar label contrasts at both surface gradient ends: EditMove
+Toolbar surface owns opaque hover/press visuals: EditRotate
+Toolbar icon is centered and its native label fits: EditRotate
+Toolbar icon and label retain a clear gap: EditRotate
+Toolbar label contrasts at both surface gradient ends: EditRotate
+Toolbar surface owns opaque hover/press visuals: EditDuplicate
+Toolbar icon is centered and its native label fits: EditDuplicate
+Toolbar icon and label retain a clear gap: EditDuplicate
+Toolbar label contrasts at both surface gradient ends: EditDuplicate
+Toolbar surface owns opaque hover/press visuals: EditDelete
+Toolbar icon is centered and its native label fits: EditDelete
+Toolbar icon and label retain a clear gap: EditDelete
+Toolbar label contrasts at both surface gradient ends: EditDelete
+Toolbar surface owns opaque hover/press visuals: EditSnap
+Toolbar icon is centered and its native label fits: EditSnap
+Toolbar icon and label retain a clear gap: EditSnap
+Toolbar label contrasts at both surface gradient ends: EditSnap
+Toolbar surface owns opaque hover/press visuals: EditGrid
+Toolbar icon is centered and its native label fits: EditGrid
+Toolbar icon and label retain a clear gap: EditGrid
+Toolbar label contrasts at both surface gradient ends: EditGrid
+Toolbar surface owns opaque hover/press visuals: EditViews
+Toolbar icon is centered and its native label fits: EditViews
+Toolbar icon and label retain a clear gap: EditViews
+Toolbar label contrasts at both surface gradient ends: EditViews
+A canonical single selection enables Delete
+Delete renders its clean native SDF bin silhouette
+Available Delete text contrasts with both burgundy gradient ends
+Available toolbar hover changes only its surface: EditSelect
+Toolbar press has a controlled one-unit inset: EditSelect
+Toolbar release restores its content and cached hover: EditSelect
+Toolbar pointer exit restores its cached resting surface: EditSelect
+Right click never presses a toolbar action: EditSelect
+Available toolbar hover changes only its surface: EditBuild
+Toolbar press has a controlled one-unit inset: EditBuild
+Toolbar release restores its content and cached hover: EditBuild
+Toolbar pointer exit restores its cached resting surface: EditBuild
+Right click never presses a toolbar action: EditBuild
+Available toolbar hover changes only its surface: EditWalls
+Toolbar press has a controlled one-unit inset: EditWalls
+Toolbar release restores its content and cached hover: EditWalls
+Toolbar pointer exit restores its cached resting surface: EditWalls
+Right click never presses a toolbar action: EditWalls
+Available toolbar hover changes only its surface: EditSurfaces
+Toolbar press has a controlled one-unit inset: EditSurfaces
+Toolbar release restores its content and cached hover: EditSurfaces
+Toolbar pointer exit restores its cached resting surface: EditSurfaces
+Right click never presses a toolbar action: EditSurfaces
+Available toolbar hover changes only its surface: EditMove
+Toolbar press has a controlled one-unit inset: EditMove
+Toolbar release restores its content and cached hover: EditMove
+Toolbar pointer exit restores its cached resting surface: EditMove
+Right click never presses a toolbar action: EditMove
+Available toolbar hover changes only its surface: EditRotate
+Toolbar press has a controlled one-unit inset: EditRotate
+Toolbar release restores its content and cached hover: EditRotate
+Toolbar pointer exit restores its cached resting surface: EditRotate
+Right click never presses a toolbar action: EditRotate
+Available toolbar hover changes only its surface: EditDuplicate
+Toolbar press has a controlled one-unit inset: EditDuplicate
+Toolbar release restores its content and cached hover: EditDuplicate
+Toolbar pointer exit restores its cached resting surface: EditDuplicate
+Right click never presses a toolbar action: EditDuplicate
+Available toolbar hover changes only its surface: EditDelete
+Toolbar press has a controlled one-unit inset: EditDelete
+Toolbar release restores its content and cached hover: EditDelete
+Toolbar pointer exit restores its cached resting surface: EditDelete
+Right click never presses a toolbar action: EditDelete
+Available toolbar hover changes only its surface: EditGrid
+Toolbar press has a controlled one-unit inset: EditGrid
+Toolbar release restores its content and cached hover: EditGrid
+Toolbar pointer exit restores its cached resting surface: EditGrid
+Right click never presses a toolbar action: EditGrid
+Available toolbar hover changes only its surface: EditViews
+Toolbar press has a controlled one-unit inset: EditViews
+Toolbar release restores its content and cached hover: EditViews
+Toolbar pointer exit restores its cached resting surface: EditViews
+Right click never presses a toolbar action: EditViews
+Canonical availability updates after clearing the world selection
+Losing the canonical selection cancels a held press and restores its layout
+Delete without a world selection stays unavailable
+Unavailable delete uses a fully opaque disabled surface
+Unavailable delete ignores hover/press/click and cannot execute its action
+Unavailable delete has readable text at both gradient ends
+Real world multiselection uses B8 furniture authority
+B8 selection shows its V2 inspector and hides product inspector
+World selection opens approved details without extra Principal/Conjunto headers
+Multiselection still has exactly one inspector
+Selection pill retains 280x43 reference proportions
+Selection pill switches to the actual B8 group view without stacking pages
+Reference chrome exists
+Inspector lies strictly between the top and bottom bars
+All bottom tools stay inside the viewport
+Bottom tool groups have no nested panel frames
+Top identity has rendered glyphs
+Bottom caption renders: ModeTools/Caption
+Bottom caption renders: EditSelectionTools/Caption
+Bottom caption renders: EditViewTools/Caption
+Canonical nonfunctional fixture creation starts
+Fixture is actually committed at a valid position through BBSIS
+Real single selection opens editable inspector
+Selected dimension edit commits one canonical history command without starting pointer drag
+Global Undo restores exact original dimensions
+Global Redo restores resized geometry
+Shrink all dimensions through real transaction
+Selected XYZ rotation fields commit actual world orientation
+Rejected world edit creates no history and leaves exact geometry intact
+World rotation participates in global Undo
+World rotation participates in global Redo
+Canonical persistence captures real resized and rotated world
+Actual JSON file round trip validates through canonical structure provider
+Canonical reload reconstructs exact dimensions and XYZ orientation with same instance identity
+Round trip duplicates no placed objects or IDs
+CHECKS=465

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9126b73d4dee4ffc81373bf2d155a021, type: 3}
+  m_Name: BistroBuilderRecipeCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::BistroBuilderRecipeCatalog
+  definitions:
+  - {fileID: 11400000, guid: cef52402e773db442b9c49e68fb3f0c1, type: 2}
+  - {fileID: 11400000, guid: 30a217f2752a3394195b07d7e4216033, type: 2}
+  - {fileID: 11400000, guid: 7e7fdcc5975a13f47a7628ad07238d4d, type: 2}
+  - {fileID: 11400000, guid: 9b62f853929d08f47ac0a874ba849513, type: 2}
+  - {fileID: 11400000, guid: 9940bfe8105be79419da0b2e6d362a8f, type: 2}
+  - {fileID: 11400000, guid: 72e61b1cb61c73c4ea81562b8eef86ee, type: 2}
+  - {fileID: 11400000, guid: fa757515651f8514e9fe002dec94b5f2, type: 2}
+  - {fileID: 11400000, guid: 2cb741825cf6aab4f89503a99306b4c2, type: 2}

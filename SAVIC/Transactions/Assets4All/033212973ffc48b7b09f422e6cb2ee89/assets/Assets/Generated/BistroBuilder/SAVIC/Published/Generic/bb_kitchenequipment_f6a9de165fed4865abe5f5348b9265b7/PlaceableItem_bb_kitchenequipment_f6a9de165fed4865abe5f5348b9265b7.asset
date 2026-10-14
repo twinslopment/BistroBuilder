@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e03676899ed839945b85f2e453586ea7, type: 3}
+  m_Name: PlaceableItem_bb_kitchenequipment_f6a9de165fed4865abe5f5348b9265b7
+  m_EditorClassIdentifier: Assembly-CSharp::RestaurantPlaceableItemDefinition
+  itemId: bb_kitchenequipment_f6a9de165fed4865abe5f5348b9265b7
+  displayName: Commercial Kitchen Exhaust Hood
+  category: 4
+  placementScope: 0
+  description: "Equipamiento pasivo de cocina preparado autom\xE1ticamente por SAVIC."
+  catalogIcon: {fileID: 21300000, guid: cbd89c619fd689d45b5a40d90aeb265b, type: 3}
+  inspectorPreview: {fileID: 21300000, guid: 8984ea8e45ce4a640a224ca3f283e7b7, type: 3}
+  dimensionsCentimeters: {x: 200, y: 51.690952, z: 98.10693}
+  finishProfile: {fileID: 0}
+  inspectorRules: 3
+  prefab: {fileID: 5076358733579145649, guid: 4dc526552c5580c4fbb86762ce06a9ea, type: 3}
+  editableDefinition: {fileID: 11400000, guid: 221151603b5a1f74fb0239273dd6babf, type: 2}
+  purchasePrice: 768
+  disposalMode: 0
+  resaleBasisPoints: 5000
+  removalCost: 0
+  demolitionBasisPoints: 1500

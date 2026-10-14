@@ -147,7 +147,7 @@ $cmdLines = @(
     $cmdLines,
     [Text.Encoding]::ASCII)
 
-Start-Process explorer.exe -ArgumentList ('"' + $cmdPath + '"')
+Start-Process -FilePath $env:ComSpec -WindowStyle Hidden -ArgumentList @('/d', '/c', ('"' + $cmdPath + '"')) | Out-Null
 $deadline = [DateTime]::UtcNow.AddSeconds(
     [Math]::Max(30, $TimeoutSeconds))
 

@@ -1,0 +1,2635 @@
+[
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\REVISION_TECNICA_367C.md",
+    "relativePath": "REVISION_TECNICA_367C.md",
+    "sha256": "EEF3E0093D870B081F3FE997877EC58B2EA9C7634D2EE1E91202E763BCC8197A",
+    "bytes": 2048,
+    "headings": [
+      "# BistroBuilder 367C — Revisión técnica",
+      "## Decisión arquitectónica",
+      "## Atomicidad",
+      "## Autoridades",
+      "## Preparación para service.runtime",
+      "## Limitación consciente"
+    ],
+    "editorReferences": [
+      "`BistroBuilderCanonicalOrder`.",
+      "autoridad canónica la ha aplicado correctamente. Esto evita una sincronización",
+      "- `BistroBuilderCanonicalOrderService`: identidad, líneas, platos, precios y",
+      "  estado canónico.",
+      "- `BistroBuilderCanonicalOrderIntegrationService`: traducción y puerta",
+      "- Canonical OrderId.",
+      "comandas canónicas y después recrear las fachadas operativas mediante el mismo"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\AGENTS.md",
+    "relativePath": "AGENTS.md",
+    "sha256": "9C56FF88068C7888E7D615E061E660C45E48C3492AD3B94C3590D9BA8742C93D",
+    "bytes": 2627,
+    "headings": [
+      "# Bistro Builder — instrucciones para agentes",
+      "## Ingesta Markdown obligatoria",
+      "## Precedencia documental",
+      "## Reglas obligatorias",
+      "## Estado vivo"
+    ],
+    "editorReferences": [
+      "2. `CANONICAL`: decisiones vigentes y documentos de `00_PRODUCT`, `10_ARCHITECTURE`, `20_GAME_SYSTEMS`, `30_UI_UX`, `40_TESTING` y `90_DECISIONS`.",
+      "Una fuente histórica nunca prevalece sobre una decisión canónica posterior.",
+      "- BBSIS decide viabilidad espacial; Interaction & Reservation derechos lógicos; Navigation rutas/tráfico; Animation representación; Gameplay/IA intención y resultado.",
+      "- Modo Edición funciona fuera de servicio y no simula obreros construyendo.",
+      "- Al encontrar contradicciones, conservar evidencia y actualizar la fuente canónica; no borrar historia."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\REVISION_TECNICA_367E.md",
+    "relativePath": "REVISION_TECNICA_367E.md",
+    "sha256": "7B48A321236313B257C7320A1BCDEC438BFAF563919F3E13DB8BE73AAFB3CE0A",
+    "bytes": 4099,
+    "headings": [
+      "# BistroBuilder 367E — Revisión técnica",
+      "## Objetivo",
+      "## Autoridad y responsabilidades",
+      "## Flujo individual",
+      "## Atomicidad",
+      "## Protección contra reentrada",
+      "## Recuperación transaccional",
+      "## Cuenta y pago",
+      "## Persistencia futura",
+      "## Rendimiento",
+      "## Compatibilidad",
+      "## Alcance diferido"
+    ],
+    "editorReferences": [
+      "`BistroBuilderCustomerDiningService` es la única autoridad de consumo. Mantiene una sesión por comanda canónica activa y un runtime persistible por cliente.",
+      "`BistroBuilderCanonicalOrderService.TryConsumeServedLines` opera sobre una copia profunda del agregado. Valida todos los `LineId` antes de sustituir la comanda original.",
+      "Las mutaciones canónicas publican eventos síncronos. 367E no ejecuta reconciliaciones dentro de esos eventos: únicamente encola el `OrderId`.",
+      "- el agregado canónico está `Completed`;",
+      "- `BistroBuilderCanonicalOrderService.cs`"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\REVISION_TECNICA_367D1.md",
+    "relativePath": "REVISION_TECNICA_367D1.md",
+    "sha256": "ABD557CF60755273A1D562731BCFE5C5D1DF44BF2ED033988484ECFB089A5174",
+    "bytes": 1758,
+    "headings": [
+      "# BistroBuilder 367D1 — revisión técnica del hotfix",
+      "## Causa raíz",
+      "## Corrección",
+      "## Invariantes resultantes",
+      "## Compatibilidad"
+    ],
+    "editorReferences": [
+      "la primera y dejar una línea canónica huérfana en `Preparing`.",
+      "- No cambia el modelo canónico, los IDs ni el formato de snapshots."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\REVISION_TECNICA_367D.md",
+    "relativePath": "REVISION_TECNICA_367D.md",
+    "sha256": "186D87951FC4B780761BC15330D91E43C51DB38E3B0778AD577DB7B7305E8AB1",
+    "bytes": 2978,
+    "headings": [
+      "# BistroBuilder 367D — Revisión técnica",
+      "## Arquitectura",
+      "## Decisiones de integridad",
+      "## Persistencia futura",
+      "## Compatibilidad",
+      "## Comprobaciones estáticas realizadas"
+    ],
+    "editorReferences": [
+      "367D conserva `BistroBuilderCanonicalOrderService` como única autoridad de",
+      "1. `OrderSystem` y 367C crean y enlazan la comanda canónica.",
+      "- Los precios continúan congelados en la línea canónica creada por 367B.",
+      "- `CanonicalOrderId`;",
+      "La restauración exige que las comandas legacy y canónicas ya estén disponibles"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\REVISION_TECNICA_367F.md",
+    "relativePath": "REVISION_TECNICA_367F.md",
+    "sha256": "BE97FB53692F19B0906323C7634352A2449EE8386DC28A9DB3D9E667C7291627",
+    "bytes": 3601,
+    "headings": [
+      "# BistroBuilder 367F — Revisión técnica",
+      "## Objetivo",
+      "## Autoridades",
+      "## Flujo canónico",
+      "## Políticas publicadas",
+      "## Protección frente a reentrada",
+      "## Operaciones atómicas nuevas",
+      "## Compatibilidad legacy",
+      "## Persistencia futura",
+      "## Alcance diferido"
+    ],
+    "editorReferences": [
+      "- `BistroBuilderCanonicalOrderService`: única autoridad transaccional de estados de línea.",
+      "## Flujo canónico",
+      "Los eventos canónicos y de consumo son síncronos, pero los manejadores de 367F solo encolan `OrderId`. La evaluación se drena bajo una guardia explícita después de terminar la mutación que originó el evento. La cocina aplica el mismo patrón para descubrir líneas liberadas posteriormente. Esto evita repetir la reentrada de corrutinas encontrada en 367D."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\AUDITORIA_BLOQUE_5_HORARIOS.md",
+    "relativePath": "AUDITORIA_BLOQUE_5_HORARIOS.md",
+    "sha256": "51C1CD456BD8BFA2C6200031AC4594B411B6A0500661F7081D08CA24ECB22E72",
+    "bytes": 4222,
+    "headings": [
+      "# Bistro Builder — Bloque 5: Horarios y Turnos",
+      "## Alcance",
+      "### 5A — Fundación",
+      "### 5B — Planificación y cobertura",
+      "### 5C — Integración de servicio",
+      "### 5D — Persistencia",
+      "### 5E — UI",
+      "### 5F — Queen Test",
+      "## Gates acumulativos",
+      "## Genealogía",
+      "## Condición de cierre"
+    ],
+    "editorReferences": [
+      "- Perfil canónico de ventanas y horizonte de planificación.",
+      "- El gate de carga cruzada canónico dispone de `.meta` estable y no existe una segunda implementación duplicada.",
+      "La cadena canónica se ha reconciliado contra el HEAD actual de 4G y cada tramo queda con **0 commits por detrás** de su base inmediata:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\UI\\Servicio\\ActivityIconFamilies.md",
+    "relativePath": "docs\\UI\\Servicio\\ActivityIconFamilies.md",
+    "sha256": "721B8A4F913BBE50DC464F42D7CA903A508D9181BA97EABD8A02D45E710CA9FF",
+    "bytes": 5210,
+    "headings": [
+      "# Bistro Builder — Familias de iconos de ACTIVIDAD",
+      "## Objetivo",
+      "## Lenguaje visual",
+      "## Semántica de color",
+      "## Lote V1 — 28 familias",
+      "## Variantes por familia",
+      "## Iconos que NO necesitan familia propia",
+      "## Prioridad de producción gráfica",
+      "## Exportación recomendada",
+      "## Regla canónica",
+      "## Registro de aprobaciones"
+    ],
+    "editorReferences": [
+      "## Regla canónica"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\UI\\Servicio\\ActivityEventCatalog.md",
+    "relativePath": "docs\\UI\\Servicio\\ActivityEventCatalog.md",
+    "sha256": "608EB0C7C626D14585552D1538279E9D185EFB235FCAB398E83FAAE68E7C8D9A",
+    "bytes": 13896,
+    "headings": [
+      "# Bistro Builder — Catálogo canónico de eventos de ACTIVIDAD",
+      "## Propósito",
+      "## Modelo de datos",
+      "## Pipeline de runtime",
+      "## Presentación",
+      "## Reglas anti-spam y determinismo",
+      "## Catálogo — Mesas y clientes",
+      "## Catálogo — Comandas, platos y cocina",
+      "## Catálogo — Entrada, sala, barra y espera",
+      "## Catálogo — Reservas",
+      "## Catálogo — Inventario y proveedores",
+      "## Catálogo — Personal y operación",
+      "## Catálogo — Reputación, marketing y oportunidades",
+      "## Eventos condicionados por sistemas futuros",
+      "## Agrupaciones canónicas",
+      "## Persistencia",
+      "## Contrato de implementación",
+      "## Criterios de aceptación"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — Catálogo canónico de eventos de ACTIVIDAD",
+      "- `IconKey`: familia visual canónica.",
+      "Regla vigente: no se generan eventos de no-show ni de retraso de clientes reservados.",
+      "## Agrupaciones canónicas",
+      "Este documento es la fuente canónica para implementar las frases del panel ACTIVIDAD."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\UI\\Servicio\\ActivityApprovedIcons.md",
+    "relativePath": "docs\\UI\\Servicio\\ActivityApprovedIcons.md",
+    "sha256": "23EAA74C0D074A8C51BE4E8FA10C86AE30BF406D38719D20C91732AC9285DB4C",
+    "bytes": 4268,
+    "headings": [
+      "# Bistro Builder — Iconos aprobados de ACTIVIDAD",
+      "## Cierre de familias",
+      "## Regla de aprobación"
+    ],
+    "editorReferences": [
+      "Rama canónica: `integration/ui-combined-final-20260917-v2`",
+      "Este documento registra exclusivamente iconos aprobados por el usuario. Cada selección queda vinculada a su imagen canónica en la Library de ChatGPT para evitar pérdidas o sustituciones accidentales.",
+      "| Familia | Estado | Archivo canónico | Library file id |"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\TipografiaYProfundidad.md",
+    "relativePath": "docs\\TipografiaYProfundidad.md",
+    "sha256": "197D740B5C82160946C0A2919F2DCD8C12D6E0EB4489037AEF3DD1011C97A432",
+    "bytes": 3152,
+    "headings": [
+      "# Tipografía y profundidad visual",
+      "## Fuentes",
+      "## Capas",
+      "## Estados semánticos",
+      "## Comprobación"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_BLOCK_5_SCHEDULING.md",
+    "relativePath": "docs\\STAFF_BLOCK_5_SCHEDULING.md",
+    "sha256": "629B0F6FCBBC4E55F36DE6B9F49D66D84F90005A051D2BFE8E9E7B56FD4B1BBC",
+    "bytes": 2097,
+    "headings": [
+      "# Bistro Builder — Bloque 5 / Horarios y Turnos",
+      "## Objetivo",
+      "## Alcance V1",
+      "## Roadmap técnico",
+      "## Gates de cierre"
+    ],
+    "editorReferences": [
+      "- **5F — Queen Test**: planificar -> abrir -> binding filtrado -> Save/Load activo -> cerrar -> Load -> rollback.",
+      "El Bloque 5 solo podrá cerrarse después de compilación Unity 0 errores, instaladores/validadores/autotests limpios, prueba visual de UI, Save/Load activo y Queen Test real sin duplicados ni errores de Console."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_BLOCK_4_ARCHITECTURE.md",
+    "relativePath": "docs\\STAFF_BLOCK_4_ARCHITECTURE.md",
+    "sha256": "67DFF2138867485FF679DDFA6EE2A58E7F3032CDA4B124B0D7123CEF55B809E9",
+    "bytes": 9165,
+    "headings": [
+      "# Bistro Builder — Bloque 4 Personal",
+      "## Estado",
+      "## Auditoría previa obligatoria del runtime existente",
+      "### `Waiter` ya es el agente operativo",
+      "### `WaiterTaskCoordinator` sigue siendo autoridad de tareas",
+      "### `service.runtime` ya persiste el servicio activo",
+      "### Economía 3E ya tiene el contrato correcto",
+      "## Arquitectura objetivo",
+      "## 4A — Fundación canónica",
+      "### Identidad",
+      "### Estado canónico",
+      "### Employee V1",
+      "### Estados separados",
+      "### Roles dirigidos por datos",
+      "### Authority",
+      "## Orden de subhitos",
+      "### 4A — Fundación canónica de Personal",
+      "### 4B — Plantilla, contratación y despido",
+      "### 4C — Experiencia, habilidades, rendimiento y formación",
+      "### 4D — Binding Personal ↔ Servicio",
+      "### 4E — Persistencia y Save/Load",
+      "### 4F — UI jugable definitiva",
+      "### 4G — Integración y Queen Test Real",
+      "## Invariantes vinculantes para todo el Bloque 4",
+      "## Gate 4A"
+    ],
+    "editorReferences": [
+      "## 4A — Fundación canónica",
+      "### Estado canónico",
+      "4A define el modelo pero todavía no registra el proveedor de Save. La integración real con Save/Load corresponde a 4E, después de que 4D haya definido el binding que también debe sobrevivir a un guardado activo.",
+      "### 4A — Fundación canónica de Personal",
+      "### 4E — Persistencia y Save/Load",
+      "Servicio representativo con varios empleados/agentes, actividad real, Save/Load activo, contratación/despido, progresión y regresiones de comandas/cocina/sala/barra.",
+      "11. Save/Load activo no puede crear dos bindings para un mismo EmployeeId ni dos EmployeeId para un agente."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_4G_QUEEN_TEST_PLAN.md",
+    "relativePath": "docs\\STAFF_4G_QUEEN_TEST_PLAN.md",
+    "sha256": "5776E0D6F663B2E5F62BDF35C2A0E4F999EE8671D30556757304E836032BBA30",
+    "bytes": 5773,
+    "headings": [
+      "# 4G — Queen Test real de Personal",
+      "## Objetivo",
+      "## Herramientas 4G",
+      "## Precondición obligatoria",
+      "## Contrato Save/Load endurecido",
+      "## Queen flow reversible implementado",
+      "## Gates de cierre",
+      "## Principio de seguridad"
+    ],
+    "editorReferences": [
+      "- `Tools > Bistro Builder > Personal > 4G - Autotest estático`: exige que el runner use las autoridades canónicas y prohíbe fabricar `Waiter`, `WaiterTask`, otra cola o aplicar XP directamente.",
+      "- `Tools > Bistro Builder > Personal > 4G - Autotest mutación observable`: exige que el Save/Load activo demuestre primero una divergencia real entre el checkpoint y el runtime posterior.",
+      "- UI 4F correctamente cableada y con opciones de formación derivadas del perfil canónico 4C;",
+      "## Contrato Save/Load endurecido",
+      "5. Cambia la disponibilidad del empleado a `Unavailable` y de vuelta a `Available` por la autoridad canónica.",
+      "- Save/Load durante servicio activo sin duplicar `Employee`, `Waiter`, tareas ni secciones;"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_4E_REBASE_AUDIT.md",
+    "relativePath": "docs\\STAFF_4E_REBASE_AUDIT.md",
+    "sha256": "F07B9FF6E84EEBD91E0167F1654AE97604DB87847304B0A393EA7F9D8BC37025",
+    "bytes": 5401,
+    "headings": [
+      "# Bistro Builder — 4E Personal / Rebase y auditoría estática",
+      "## Base autoritativa",
+      "## Secciones de Save incluidas",
+      "## Orden de carga vinculante",
+      "### Prepare — orden DESCENDENTE",
+      "### Apply — orden ASCENDENTE",
+      "### Finalize — orden ASCENDENTE y scope de restauración",
+      "## Compatibilidad con partidas antiguas",
+      "## Endurecimiento 4D exigido por 4E",
+      "## Gate de serialización real",
+      "## Gates aún pendientes antes de cerrar 4D/4E"
+    ],
+    "editorReferences": [
+      "`feature/4e-staff-persistence-v2` es una extensión lineal de la rama canónica `feature/4d-staff-service-binding`. La rama anterior `feature/4e-staff-persistence` quedó divergida y no debe usarse como base de nuevas modificaciones.",
+      "Los gates 4D de elegibilidad transaccional, preflight de restore/cierre y preparación segura de Load viven en la rama canónica 4D; 4E v2 los hereda sin duplicar su autoridad.",
+      "Los helpers de seguridad están integrados en `BistroBuilderStaffSessionService` y existen en la rama canónica 4D:",
+      "`BistroBuilderStaff4EJsonRoundTripSelfTest` usa directamente `BistroBuilderJsonSaveSerializer` (`unity-json-v1`) para serializar y deserializar `staff.state`, `staff.recruitment` y `staff.session.runtime`, y vuelve a ejecutar sus validaciones canónicas.",
+      "Este gate no sustituye una prueba real de Save/Load: detecta incompatibilidades de modelo/JsonUtility de forma temprana y determinista.",
+      "2. Instalación acumulativa sobre la escena canónica.",
+      "4. Round-trip Save/Load real durante servicio activo, verificando el mismo `EmployeeId ↔ WaiterId`, ausencia de duplicados, tareas coherentes y métricas sin doble aplicación."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_4D_HARDENING_20260820.md",
+    "relativePath": "docs\\STAFF_4D_HARDENING_20260820.md",
+    "sha256": "2A4FD407978AB066475D80D124553404333286785642BE209A4C0BA09E27714C",
+    "bytes": 2354,
+    "headings": [
+      "# 4D — Hardening previo a 4E",
+      "## Hallazgo estático",
+      "## Decisión vinculante de hardening",
+      "## Invariantes que no pueden romperse",
+      "## Gate para permitir 4E"
+    ],
+    "editorReferences": [
+      "Esto no corrompe `staff.state` ni la cola de tareas, pero puede dejar un estado runtime de elegibilidad parcialmente aplicado. Ese estado no debe propagarse a 4E Save/Load."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_4C_DESIGN.md",
+    "relativePath": "docs\\STAFF_4C_DESIGN.md",
+    "sha256": "E1A7A7AC3A9451C34569A8DA6F1C1018C8C62A91946E3A8A37B2FD16E22DBD61",
+    "bytes": 3147,
+    "headings": [
+      "# Bistro Builder — 4C Experiencia, habilidades, rendimiento y formación",
+      "## Principios",
+      "## Progresión V1",
+      "## Rendimiento",
+      "## Formación V1",
+      "## Autoridad",
+      "## Persistencia futura"
+    ],
+    "editorReferences": [
+      "Toda mutación sigue terminando en `BistroBuilderStaffService`. El motor 4C produce un snapshot candidato y `TryCommitDomainMutation` comprueba que deriva exactamente de la revisión actual antes de publicarlo. Esto impide que una operación normal se disfrace de restauración Save/Load y evita commits obsoletos."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\STAFF_4B_DESIGN.md",
+    "relativePath": "docs\\STAFF_4B_DESIGN.md",
+    "sha256": "6ACBAFFB53AF8490C4027DD9C2EFE88340E5140531450B7BC6AA60026C9089B4",
+    "bytes": 2037,
+    "headings": [
+      "# Bistro Builder — 4B Plantilla, contratación y despido",
+      "## Principios",
+      "## Mercado V1",
+      "## Despido V1",
+      "## Persistencia"
+    ],
+    "editorReferences": [
+      "Política canónica:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\SAVIC.md",
+    "relativePath": "docs\\SAVIC.md",
+    "sha256": "4462F220C470095BE5A28A630B68D83914192DC93C384DD9D01C15993C2BD283",
+    "bytes": 38725,
+    "headings": [
+      "# SAVIC — Sistema de Autoría, Validación e Integración de Contenido",
+      "## 0. Resumen en cristiano",
+      "## 1. Misión exacta",
+      "## 2. Qué resuelve y qué no",
+      "## 3. Principios no negociables",
+      "## 4. Flujo automático completo",
+      "## 5. Estados canónicos",
+      "## 6. Estructura de carpetas",
+      "## 7. Inventario del contenido que ya existe",
+      "## 8. Identidad y procedencia",
+      "## 9. Manifest o ficha SAVIC",
+      "## 10. Cómo reconoce qué tiene delante",
+      "## 11. Familias 3D V1",
+      "## 12. Aprendizajes trasladados desde Assets4All",
+      "## 13. Sistema de reglas",
+      "## 14. Autocorrección y convergencia",
+      "## 15. Materiales, texturas y acabados",
+      "## 16. Piezas, zonas semánticas y partes móviles",
+      "## 17. Colliders",
+      "## 18. Colocación y snapping",
+      "## 19. Navegación",
+      "## 20. BBSIS e interacción espacial",
+      "## 21. Save/Load",
+      "## 22. Previews automáticas",
+      "## 23. Registro en catálogo y menús",
+      "## 24. Campos automáticos y campos protegidos",
+      "## 25. Actualización de assets existentes",
+      "## 26. Duplicados y similitud",
+      "## 27. Arquitectura interna",
+      "## 28. Reutilización de herramientas ya existentes",
+      "## 29. Validadores",
+      "## 30. Pruebas reales antes de publicar",
+      "## 31. Publicación atómica",
+      "## 32. Procesamiento por lotes",
+      "## 33. Rendimiento, caché e invalidación",
+      "## 34. Detección de DropHere",
+      "## 35. Importación FBX y GLB",
+      "## 36. Processing Plan",
+      "## 37. Cola de revisión humana",
+      "## 38. Aprendizaje controlado",
+      "## 39. UX del Editor",
+      "## 40. Undo/Redo y rollback",
+      "## 41. Errores y recuperación",
+      "## 42. Git y ramas",
+      "## 43. Versionado y migraciones",
+      "## 44. IA",
+      "## 45. Investigación técnica obligatoria antes de mecanismos delicados",
+      "## 46. Pruebas automatizadas",
+      "## 47. Roadmap de implementación",
+      "### Bloque 0 — Contrato y baseline",
+      "### Bloque 1 — Kernel + Intake",
+      "### Bloque 2 — Rule/Validation/Fix Engines",
+      "### Bloque 3 — Adopción del contenido existente",
+      "### Bloque 4 — Vertical completa Mesa",
+      "### Bloque 5 — Silla",
+      "### Bloque 6 — Editor UX",
+      "### Bloque 7 — Batch, recovery y rendimiento",
+      "### Bloque 8 — Decoración y equipamiento",
+      "### Bloque 9 — Puertas, paredes y ventanas",
+      "### Bloque 10 — Materiales, imágenes y UI",
+      "### Bloque 11 — Platos, ingredientes, recetas y proveedores",
+      "### Bloque 12 — CI/headless validation",
+      "### Bloque 13 — Intelligence Layer",
+      "## 48. Criterios de salida de SAVIC 3D V1",
+      "## 49. Primera prueba real propuesta",
+      "## 50. Decisión final de arquitectura"
+    ],
+    "editorReferences": [
+      "# SAVIC — Sistema de Autoría, Validación e Integración de Contenido",
+      "SAVIC es la fábrica automática de contenido de Bistro Builder.",
+      "El flujo normal debe ser: crear o descargar un recurso, copiarlo a \"ContentInbox/DropHere\" y dejar que SAVIC haga el resto.",
+      "SAVIC detecta el recurso, averigua qué es, lo analiza, corrige lo seguro, prepara prefab/materiales/colliders/previews/metadatos, lo registra en los sistemas de Bistro Builder, lo prueba y devuelve uno de estos resultados:",
+      "La revisión humana debe ser la excepción. Si una misma revisión aparece repetidamente, se considera una carencia de SAVIC y debe convertirse en una mejora general del sistema.",
+      "SAVIC nunca debe caer en bucles infinitos de analizar-corregir-reanalizar. Cada corrección tiene límites, medición de progreso y rollback.",
+      "SAVIC sí resuelve:",
+      "- contratos de colocación, navegación, BBSIS y Save/Load;",
+      "SAVIC no será:",
+      "- BBSIS;",
+      "- Save/Load;",
+      "[V1] Integración mediante contratos con sistemas canónicos existentes.",
+      "2. SAVIC espera a que cada archivo termine de copiarse.",
+      "DropHere debe volver a quedar vacía automáticamente cuando SAVIC haya recogido los recursos.",
+      "## 5. Estados canónicos",
+      "│  └─ [originales archivados por SAVIC]",
+      "├─ SAVIC/",
+      "      └─ SAVIC/",
+      "[V1] Library/BistroBuilder/SAVIC contiene todo lo reconstruible y no se versiona.",
+      "[V1] SAVIC no obligará a volver a pasar por ContentInbox todo lo que ya existe en Bistro Builder.",
+      "- GESTIONADO POR SAVIC.",
+      "SAVIC manejará:",
+      "- SavicId: identidad interna estable del registro de autoría.",
+      "- CanonicalContentId: ID estable del sistema propietario en Bistro Builder.",
+      "Para placeables, el CanonicalContentId debe mapear al ItemId estable de RestaurantPlaceableItemDefinition en lugar de inventar un segundo ID runtime competidor.",
+      "## 9. Manifest o ficha SAVIC",
+      "- SavicId;",
+      "- CanonicalContentId y IDs de integración;",
+      "Los índices rápidos de SAVIC serán reconstruibles y no serán fuente de verdad.",
+      "SAVIC combinará evidencias, no una sola pista.",
+      "- BBSIS seating.table cuando corresponda.",
+      "- visual + mapeo a tipo canónico de gameplay existente;",
+      "- SAVIC nunca inventa comportamiento de gameplay.",
+      "- integración con el sistema constructivo canónico;",
+      "- no duplicar alturas, grosores o reglas como constantes SAVIC;",
+      "[V1] SAVIC debe poder agrupar varias geometrías que forman una sola pieza conceptual.",
+      "SAVIC debe intentar arreglar lo máximo posible, pero de forma medible y segura.",
+      "- MANUAL_ONLY: SAVIC no modifica.",
+      "SAVIC analizará:",
+      "[V1] Las superficies elegibles se conectan al Sistema de Acabados y Variantes mediante su contrato; SAVIC no implementa ese sistema.",
+      "SAVIC podrá almacenar grupos semánticos como:",
+      "Si una parte móvil es evidente, SAVIC puede prepararla.",
+      "SAVIC no implementa el motor de colocación. Produce/configura los datos que el motor actual necesita.",
+      "[V1] El snapping se expresa mediante perfiles/contratos del sistema de colocación/construcción, no mediante lógica duplicada en SAVIC.",
+      "SAVIC prepara datos; Navigation decide cómo navegar.",
+      "## 20. BBSIS e interacción espacial",
+      "SAVIC asignará perfiles espaciales canónicos existentes.",
+      "SAVIC genera/configura Spatial Subject/Contract, traits, ports, work edges, seat bays, sweeps o envelopes solo a través de builders/adapters aprobados.",
+      "BBSIS sigue siendo la autoridad espacial.",
+      "SAVIC debe validar que los puntos/volúmenes generados no estén en posiciones absurdas y que el contrato sea aceptado por el sistema real.",
+      "## 21. Save/Load",
+      "- ID canónico estable;",
+      "SAVIC no introduce otro formato de partida.",
+      "SAVIC probará varios encuadres/perfiles cuando la calidad sea insuficiente antes de mandar el caso a revisión.",
+      "SAVIC registra contenido; la UI descubre contenido por datos.",
+      "SAVIC completará:",
+      "- subcategoría/ruta de catálogo cuando el catálogo canónico la soporte;",
+      "SAVIC controla normalmente:",
+      "El precio sugerido por SAVIC y el precio definitivo del juego son conceptos distintos.",
+      "- SAVIC compara con inventario;",
+      "- conserva identidad canónica si es actualización;",
+      "- cambia geometría → revalidar pivot, collider, footprint, previews, BBSIS si procede;",
+      "- cambia tamaño → revalidar placement/navigation/BBSIS;",
+      "SAVIC nunca elimina/fusiona automáticamente dos assets distintos solo porque se parezcan.",
+      "SAVIC debe aprovechar lo que Bistro Builder ya tiene y que ha demostrado valor.",
+      "- BBSIS/Interaction bridges existentes;",
+      "- Save/Load canónico.",
+      "SAVIC orquestará o refactorizará estas piezas hacia servicios reutilizables cuando convenga. No se creará una segunda fábrica de placeables, un segundo catálogo o una segunda solución de thumbnails.",
+      "- BBSIS.ContractSatisfied;",
+      "Además de validación estática, SAVIC tendrá sandbox automático.",
+      "- comprobar BBSIS cuando aplique;",
+      "SAVIC reutilizará el patrón ya existente de BistroBuilderPlaceablePipelineSelfTest: creación real en sandbox, comprobación y limpieza.",
+      "Un asset no puede aparecer en catálogo si todavía tiene roto collider, Save/Load o referencias críticas.",
+      "SAVIC debe soportar:",
+      "La carpeta está fuera de Assets para que Unity no importe antes que SAVIC.",
+      "FBX utilizará el ModelImporter/Asset Pipeline de Unity mediante un adaptador SAVIC.",
+      "SAVIC debe ocultar el importador concreto detrás de ISourceImportAdapter para que cambiar de implementación no afecte al kernel.",
+      "Antes de tocar nada, SAVIC genera un plan.",
+      "Validate BBSIS",
+      "Validate Save/Load",
+      "- decisión SAVIC;",
+      "Una revisión repetitiva es una señal para mejorar SAVIC, no trabajo normal.",
+      "SAVIC puede aprender de decisiones humanas, pero no cambiar reglas críticas silenciosamente.",
+      "\"Tools > Bistro Builder > SAVIC\"",
+      "## 40. Undo/Redo y rollback",
+      "Undo/Redo de Unity se utilizará en cambios interactivos de revisión y edición de ScriptableObjects cuando sea fiable.",
+      "SAVIC usará Publication Transaction + backup/rollback para operaciones de pipeline.",
+      "Tras domain reload, recompilación, cierre o crash, SAVIC reconstruye jobs pendientes desde estado persistido.",
+      "[V1] SAVIC será Git-aware pero no hará merges/push automáticos.",
+      "- código SAVIC;",
+      "Política de Bistro Builder: los cambios finales de SAVIC se integrarán en \"integration/master-current-20260918\" mediante trabajo por ramas SAVIC.",
+      "[R] SAVIC podrá preparar un resumen de cambios para commit.",
+      "- SAVIC version;",
+      "Cambio BBSIS → revalidar solo contenido afectado.",
+      "No existe \"ha cambiado SAVIC, rehacerlo todo\" salvo migración excepcional y explícita.",
+      "- Save/Load;",
+      "Si no hay Internet, SAVIC sigue funcionando.",
+      "- Save/Load roundtrip;",
+      "- congelar este documento como SAVIC Architecture v1;",
+      "GLB/FBX → análisis → clasificación → scale/orientation → pivot → materiales → acabados → collider → prefab → previews → catálogo → placement → BBSIS → navigation → Save/Load → PASS.",
+      "## 48. Criterios de salida de SAVIC 3D V1",
+      "- BBSIS funciona cuando aplica;",
+      "- Save/Load roundtrip pasa;",
+      "17. BBSIS seating.table;",
+      "19. Save/Load;",
+      "SAVIC no será una colección de scripts que \"arreglan assets\"."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\RendimientoModoEdicion.md",
+    "relativePath": "docs\\RendimientoModoEdicion.md",
+    "sha256": "9634B129262FC1B7284521840BEE869206F2EC0CD37E9E3E3CD12003435EAAB3",
+    "bytes": 3114,
+    "headings": [
+      "# Corrección de bloqueos al editar y cargar · 14/09/2026",
+      "## Cambio",
+      "## Medición"
+    ],
+    "editorReferences": [
+      "- Las actualizaciones automáticas de BBSIS y navegación se agrupan durante una carga y se publican al terminar, también después de un rollback. Las actualizaciones explícitas de los proveedores de persistencia siguen disponibles.",
+      "Regresión completa del Bloque 18 repetida con estos cambios: **PASS** (Finance, BBSIS, Navigation, Save/Load, restricciones de servicio y rollback). Registro: `Logs/EditPerformanceQueen.log`."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\README.md",
+    "relativePath": "docs\\README.md",
+    "sha256": "2E99C7C6957ABFCD97E8E59E305126DD7C9468197438201B82E407CC7B508971",
+    "bytes": 2558,
+    "headings": [
+      "# Bistro Builder — documentación canónica",
+      "## Leer en este orden",
+      "## Fuente de verdad",
+      "## Chats sin artefacto",
+      "## Ideas no canónicas",
+      "## Historia y auditoría",
+      "## Ingesta global para agentes"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — documentación canónica",
+      "7. [`20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md`](20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md) para Modo Edición player-ready.",
+      "Una decisión posterior y explícita prevalece sobre una propuesta antigua. Los documentos legacy permanecen como trazabilidad, no como autoridad cuando contradicen el Decision Register o un documento canónico más reciente.",
+      "## Ideas no canónicas",
+      "[`90_DECISIONS/OPEN_QUESTIONS_AND_LEGACY_IDEAS.md`](90_DECISIONS/OPEN_QUESTIONS_AND_LEGACY_IDEAS.md) separa brainstorming histórico de requisitos vigentes."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\OpcionesYCarta.md",
+    "relativePath": "docs\\OpcionesYCarta.md",
+    "sha256": "7D1268F2EE6130999E18742509B34BD213262FBBE6551B32201476E59E6308B0",
+    "bytes": 1663,
+    "headings": [
+      "# Opciones y Carta"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\ModoEdicionConstruccion.md",
+    "relativePath": "docs\\ModoEdicionConstruccion.md",
+    "sha256": "6E797BE03D28C832F0692FF4E6BACE60B7EF69797B8110A12711508C6C120DAF",
+    "bytes": 11434,
+    "headings": [
+      "# Modo edición · construcción y assets",
+      "## Diseño aplicado",
+      "## Referencia gráfica aprobada · Propuesta C revisada",
+      "## Uso",
+      "## Assets incluidos",
+      "## Integración",
+      "## Validación reproducible",
+      "## Resultado verificado · 12 septiembre 2026",
+      "## Ejecutar a pantalla completa"
+    ],
+    "editorReferences": [
+      "# Modo edición · construcción y assets",
+      "- **Catálogo de artículos vertical y compacto a la izquierda**, inspector a la derecha, restaurante en el centro y acciones de construcción/edición abajo. Al entrar en Modo Edición, el catálogo sustituye temporalmente a Actividad; al salir, Actividad vuelve a ocupar ese lateral. La barra horizontal inferior no se usa como catálogo principal.",
+      "- Barra superior conserva la identidad general de Bistro Builder y muestra de forma inequívoca que se está en `Modo Edición`.",
+      "- La previsualización sólo genera representación visual. Finance, BBSIS, Navigation y el documento persistente cambian a través del commit canónico.",
+      "- El flujo inicial utiliza la misma herramienta, reconoce los IDs canónicos `zone.*` y conserva compatibilidad con los IDs de zona antiguos.",
+      "- `BistroBuilderEditBlock18QueenTest.RunFromCommandLine`: regresión del commit financiero, materialización, BBSIS, navegación y guardado/carga.",
+      "- Queen Test Block 18: **PASS** (commit financiero, BBSIS, Navigation, Save/Load, bloqueo durante servicio y rollback exacto).",
+      "![Modo edición en Unity, con los assets generados](ModoEdicionConstruccion.png)"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\ModoEdicion\\EditorV2\\UI\\EDITOR_V2_UI_DESIGN.md",
+    "relativePath": "docs\\ModoEdicion\\EditorV2\\UI\\EDITOR_V2_UI_DESIGN.md",
+    "sha256": "0FCD52A9B7F6488A1F8D04489B05062AFEECA6F4C53D16AA012482309BE712D5",
+    "bytes": 90957,
+    "headings": [
+      "# Bistro Builder — Editor V2 — Diseño UI/UX",
+      "## 0. Principios visuales vinculantes aportados por el usuario",
+      "## 1. Estructura general — BASE ACEPTADA, REVISABLE (2026-10-08)",
+      "## 2. Barra superior — ESTRUCTURA DE MODOS APROBADA; DISEÑO VISUAL PENDIENTE",
+      "## 2.1 Propuesta V2 de distribución — A REVISAR (2026-10-08)",
+      "## 2.2 Identidad oficial y elección del distintivo — APROBADO EN SU ALCANCE (2026-10-08)",
+      "## 3. Barra inferior — DIRECCIÓN VISUAL ACEPTADA (2026-10-08)",
+      "## 4. Catálogo lateral e inspector derecho — CONCEPTO VISUAL ELEGIDO (2026-10-08)",
+      "### Función y límites",
+      "### Primera propuesta visual",
+      "### Responsive a comprobar",
+      "### Referencias y alcance del mockup",
+      "## 4.1 Galería Viva — REFERENCIA ARTÍSTICA Y ESTRUCTURA APROBADAS",
+      "## 4.2 Refinamiento V3 — ESTADOS Y CRITERIOS DE RESPONSIVE ACEPTADOS COMO DIRECCIÓN; DETALLE PENDIENTE",
+      "## 5. Herramientas de construcción — ORGANIZACIÓN APROBADA, ACABADO PENDIENTE (2026-10-08)",
+      "### 5.1 Ámbito y fundamento técnico",
+      "### 5.2 Composición visual propuesta",
+      "### 5.3 Reglas concretas de cada familia",
+      "### 5.4 Responsive y estados (propuestos)",
+      "### 5.5 Referencias de trabajo y limitaciones de las previews",
+      "## 6. Selección y multiselección — HALO DE HUELLA APROBADO COMO CONCEPTO VISUAL; INSPECTOR DE GRUPO EN REVISIÓN",
+      "### 6.1 Microanimación al seleccionar — APROBADA COMO BASE V1 (2026-10-08)",
+      "### 6.2 Halo de Huella — CONCEPTO VISUAL ELEGIDO (2026-10-09)",
+      "### 6.3 Inspector de doble contexto — PROPUESTA VISUAL V1 (2026-10-09; NO APROBADA AÚN)",
+      "## 7. Aplicar / Descartar reforma — DIRECCIÓN V1 APROBADA, AFINABLE (2026-10-08)",
+      "### Composición propuesta",
+      "### Flujo «Aplicar»",
+      "### Flujo «Descartar»",
+      "### Flujo «Salir»",
+      "### Lenguaje visual y responsive",
+      "### Preview y estado de prueba",
+      "## 8. Feedback visual, snapping, errores y estados — DIRECCIÓN V1 ACEPTADA PARA CONTINUAR (2026-10-09)",
+      "### 8.1 Regla visual canónica y autoridades",
+      "### 8.2 Diseño de pantalla propuesto",
+      "### 8.3 Preview HTML real — creada y probada, NO integrada",
+      "## 9. Superficies — PROPUESTA DE DISEÑO V1 (2026-10-09, PENDIENTE DE APROBACIÓN)",
+      "### 9.1 Auditoría funcional previa",
+      "### 9.2 Composición visual propuesta",
+      "### 9.3 Responsive y calidad",
+      "### 9.4 HTML de prueba",
+      "### 9.5 Decisión provisional — «Proyector Inteligente» (2026-10-09)",
+      "## 10. Revisión de coherencia conjunta — DIAGNÓSTICO, NO CIERRE AUTOMÁTICO (2026-10-09)",
+      "### 10.1 Reglas para la futura implementación",
+      "### 10.2 Preview y resultado de verificación",
+      "### 10.3 Auditoría de iconografía, fuentes y responsive — REVISIÓN V1 (2026-10-09; APROBACIÓN DE ACABADO PENDIENTE)",
+      "## 11. Registro de aprobación",
+      "## 12. Primera implementación Unity de chrome V2 — IMPLEMENTADO EN feature/editor-v2 (2026-10-09)",
+      "## 13. Galería Viva e inspector de selección V2 — INCREMENTO RUNTIME (2026-10-09)",
+      "## 14. Incremento visual Destacado / Relacionados y build de revisión (09/10/2026)",
+      "### Resultado comprobado de la build de revisión",
+      "## 15. Hotfix crítico de visibilidad real — V2 frente a Canvas heredado (2026-10-09)",
+      "### Validación y entrega del hotfix visible (segunda build)"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — Editor V2 — Diseño UI/UX",
+      "- No asumir los menús actuales ni los mockups anteriores como UI final del Editor V2.",
+      "1. **Superior:** identidad de Editor V2, estado de la reforma, historial y acceso a Aplicar / Descartar.",
+      "**Decisión aprobada 2026-10-08:** al entrar en Editor V2, desaparecen de la barra superior las diez secciones de navegación habituales del modo normal. En su lugar aparece una barra específica de reforma y edición, con una identidad de modo inequívoca. Al salir se restaura la navegación habitual. No debe confundirse visualmente el modo edición con el servicio/normal, pero mantiene la identidad gráfica del mismo juego (marfil, latón, Recoleta, Inter, iconos BB).",
+      "Las referencias del modo normal indican identidad visual; no fuerzan composición ni navegación idénticas en Editor V2.",
+      "1. Marca original «Bistro Builder» y distintivo visible «MODO EDICIÓN» con tratamiento algo más marcado de latón.",
+      "- **Fuente gráfica canónica en la barra superior actual:** `Assets/Resources/BistroBuilder/UI/TopBar/BistroBuilder_NormalTopBar_v3.png`. La documentación `docs/30_UI_UX/UI_UX_DEFINITIVE.md` declara aprobado ese recurso visual y especifica reutilizar las partes sin repintarlas. El recorte `Assets/Resources/BistroBuilder/UI/TopBar/Parts/asset-0.png` es una textura fuente de la barra y tampoco constituye un PNG del emblema aislado.",
+      "- **Elección confirmada explícitamente:** distintivo «MODO EDICIÓN», **Opción 1 de la primera serie**, placa de latón con icono de lápiz y regla cruzados, independiente del logotipo oficial. Confirmación del usuario: «opcion 1 de la primera serie».",
+      "- El logotipo oficial del juego se conserva sin cambios en el editor; la insignia «MODO EDICIÓN» es una pieza independiente. El arte final, proporciones, hover y responsive aún requieren preview y visto bueno específico.",
+      "2. **Editar selección:** Mover, Girar, Duplicar, Eliminar. Capacidad contextual determinada por Editor V2 Selection; botones no aplicables desactivados/ocultos según se valide más adelante. Eliminar es destructiva; rojo únicamente aquí.",
+      "**Previews generadas para revisión del usuario en este chat** (no derivadas de Unity): `EditorV2_BarraInferior_Preview_1920.png` y `EditorV2_BarraInferior_Preview_1280.png`. La referencia del layout que queda en este worktree es `References/BarraInferior_V2_Layout_DRAFT.svg` (vector esquemático), no el PNG del chat. Ni el código C# ni la UI Unity se han modificado.",
+      "- Autoría e inventario de assets procedentes de SAVIC; las miniaturas y precios de los mockups son **solo ejemplos**, no catálogo real aprobado ni contratos de gameplay.",
+      "- El clic en artículo activa la operación de colocación provisional / universal preview aprobada, pero no hace commit. Esc cancela la operación actual, no descarta la reforma global. BBSIS/Placement decide validez; el catálogo no la inventa.",
+      "- Previews de esta conversación: `EditorV2_Catalogo_Preview_1920.png`, `EditorV2_Catalogo_Preview_1280.png`, `EditorV2_Catalogo_Detalle.png`. Estos PNG fueron generados como imágenes de revisión fuera de Unity; **no están copiados a la rama**. No se deben presentar como capturas del juego ni assets SAVIC integrados.",
+      "- Rotación/Mover/Duplicar/Eliminar: visibles o habilitados conforme a las capacidades reales de BistroBuilderEditorV2Selection, no automáticamente por familia gráfica.",
+      "- El núcleo Construction Authoring existente tiene acciones de tipo Furniture/Select/Wall/Room/Door/Window/WallModule; las interfaces de contexto NO vuelven a implementar transacciones, coste, BBSIS, Navigation ni validación.",
+      "**Centro (viewport):** se conserva el restaurante como protagonista; una pared muestra volumen translúcido tenue, línea de apoyo al suelo y extremos/snapping; una habitación muestra contorno en suelo y volumen provisional de paredes. BBSIS/Placement/Construction informa qué es válido; las guías no confirman nada. Feedback contenido, sin teñir objetos enteros ni cuadrícula siempre encendida.",
+      "- **Puerta/Ventana:** se sitúan en un segmento anfitrión válido mediante opening canónico. No permitirlos flotando; vista previa sobre pared; inspector de tipo y dimensión según datos reales.",
+      "- Previews visuales realizadas en el chat (fuera de Unity): `EditorV2_Construccion_Pared_1920.png`, `EditorV2_Construccion_Habitacion_1920.png`, `EditorV2_Construccion_Pared_1280.png`. Todavía no se han integrado como archivos PNG en Git.",
+      "**Fundamento técnico comprobado:** B8 PASS sobre Selection Coordinator / Selection Set con selección primaria, Mayús+clic aditivo/toggle, restricciones por autoridad (no mobiliario+arquitectura en la misma selección), capacidades comunes como intersección, operaciones de grupo atómicas, rollback, geometría relativa conservada e historial único. No duplicar este núcleo. Fuente técnica: docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md (B8) y Assets/Scripts/Application/Restaurant/EditMode/EditorV2/BistroBuilderEditorV2SelectionSet.cs.",
+      "- Transformaciones de grupo solo si están soportadas por todos los miembros; conservar geometría relativa, Undo/Redo y selección individual.",
+      "- Al transformar el conjunto, se preserva su disposición relativa. La operación es única para Undo/Redo; cada pieza sigue pudiendo seleccionarse y editarse individualmente.",
+      "**Preview HTML interactiva realizada (2026-10-08):** `EditorV2_Seleccion_Animada_INTERACTIVA.html`, entregada en este chat como archivo autónomo; no está copiada ni integrada en Unity ni en la rama Git. El prototipo incluye escena de referencia, zonas de clic sobre mesa y dos sillas, entradas animadas en esquinas doradas, contador superior dinámico, Mayús+clic para añadir o retirar, clic en fondo o Esc para deseleccionar, desvanecido de salida, y botón «Reproducir secuencia». La selección individual también recibe la animación; no es un efecto exclusivo de la multiselección.",
+      "- EditorV2_Seleccion_single_1920.png: único artículo.",
+      "- EditorV2_Seleccion_multi_1920.png: 3 muebles e inspector conjunto.",
+      "- EditorV2_Seleccion_conflict_1920.png: mezcla de autoridades rechazada.",
+      "- EditorV2_Multiseleccion_Compacta_1280.png: pantalla compacta con inspector plegado.",
+      "**Decisión vigente y vinculante:** el usuario mostró expresamente como preferido el **«Concepto 2 · Halo de Huella»** (imagen elegida en la conversación el 09/10/2026) y confirmó «así es como quiero que sea». Esta aprobación sustituye los anteriores marcos descentrados, cápsulas genéricas y las alternativas de «Huella de Precisión» y «Marco Adaptativo de Grupo». La imagen de inspiración contiene Galería Viva y el inspector ya aprobados, pero **no constituye aprobación del guardado automático ilustrativo ni de los datos ficticios**.",
+      "- **Precisión**: no calcular offsets fijos manuales a partir de una captura. El futuro renderer debe transformar bounds/silueta útil y huella espacial desde datos del asset (Renderer bounds, pivote/collider e información SAVIC/Construction Authoring cuando proceda) a proyección de cámara en cada fotograma necesario. Corregir mallas descentradas y pivotes incorrectos mediante metadatos legítimos; no esconderlos detrás de offsets dibujados a ojo.",
+      "**Prueba interactiva de geometría (NO Unity):** archivo de esta conversación `EditorV2_HaloDeHuella_SeleccionPrecisa_INTERACTIVO.html`. Renderiza cinco muebles geométricos en SVG y usa las mismas medidas locales para dibujar sus marcas; ofrece sillas, mesa circular, mesa rectangular y mesa + dos sillas. Incluye Mayús+clic, pestañas Principal/Conjunto, contador, Esc, deselección, Undo/Redo de la demo y entrada animada. Los modelos de la demo son esquemáticos, NO los GLB definitivos.",
+      "**Verificación web:** Chromium/Playwright a 1920x1080 y 1280x720, PASS en selección individual, multiselección, vuelta automática de Conjunto a Principal al quedar un miembro, contador sin pérdida de selección, Escape, Undo/Redo, no errores JS/no scroll horizontal. La medición de cajas SVG confirma que las marcas envuelven el dibujo completo de silla, mesa redonda y rectangular. **No se han probado aún los Renderers, bounds ni oclusión en Unity**.",
+      "Capturas: `EditorV2_HaloHuella_Grupo_1920.png`, `EditorV2_HaloHuella_Grupo_1280.png`, `EditorV2_HaloHuella_Redonda_1920.png`, `EditorV2_HaloHuella_Redonda_1280.png`. La referencia geométrica versionada se denomina `References/HaloDeHuella_Proyeccion_V1.svg`.",
+      "**Propuesta mostrada en HTML:** `EditorV2_Inspector_DobleContexto_INTERACTIVO.html` (archivo autónomo de esta conversación). La foto de fondo pertenece a la maqueta elegida; los controles HTML superpuestos, no Unity, constituyen la parte interactiva. No se han modificado código, materiales ni escenas Unity.",
+      "- **Vista «Conjunto» a demanda:** al pulsar la pestaña o el contador flotante, mostrar 2/3/... miembros, principal distinguido en miel, lista con miniaturas/categoría y solo **acciones realmente comunes** obtenidas de `BistroBuilderEditorV2SelectionCoordinator.AggregateCapabilities`. El botón no soportado permanece deshabilitado o desaparece; no inventar cambio de materiales masivo sobre familias incompatibles. Preservar la estrategia actual de `B10` para Sustituir selección, con presupuesto real y confirmación.",
+      "- **Copy y datos:** nombres y dimensiones de la preview son ilustrativos; en runtime proceden de definiciones SAVIC y componentes existentes. Materiales, sustitución, movilidad, costes, capacidades, relaciones funcionales y validación nunca se deducen de la maqueta.",
+      "**Pruebas de preview HTML (no Unity):** Playwright/Chromium en 1920×1080 y 1280×720; pestañas, selección de 1/2/3 objetos, cambio de principal, Mayús+clic, grupo, rechazo de arquitectura, Esc, apertura responsive del inspector: PASS, 0 errores de JS, sin scroll horizontal de documento. Las capturas de la conversación son `EditorV2_Inspector_Grupo_1920.png`, `EditorV2_Inspector_Grupo_1280.png`, `EditorV2_Inspector_Principal_1920.png`, `EditorV2_Inspector_Principal_1280.png`, `EditorV2_Inspector_Plegado_1280.png`. La foto de la maqueta incluye un gizmo de transformación estático que NO se aprueba como estado pasivo de selección.",
+      "**Fundamento confirmado:** docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md, B5, y BistroBuilderEditorV2RenovationSession.cs. Los métodos TryApplyChanges y TryDiscardChanges existen. El guard de salida impide abandonar edición mientras queden cambios por resolver. Finance y validación estructural son autoridad del coste/viabilidad; la UI no inventa cifras ni resultados.",
+      "- **Barra superior del modo edición:** mostrar «Cambios pendientes» y «Coste estimado» cuando exista un snapshot válido de la reforma; controles principales «Aplicar reforma», «Descartar» y «Salir». La barra antigua queda fuera. Los nombres, tamaño y disposición final siguen sujetos a aprobación de la fase de barra superior.",
+      "- Conservar el contexto Galería Viva y la selección vigente detrás, sin cambiar la apariencia de inspector ni catálogo aprobada.",
+      "- HTML autónomo de demostración: EditorV2_Aplicar_Descartar_INTERACTIVO.html, entregado en esta conversación, sin dependencias externas. Capturas 1920/1280 de estado inicial, revisión y confirmación para revisar visualmente.",
+      "### 8.1 Regla visual canónica y autoridades",
+      "- Base vinculante: EditInteractionDesign.md, decisión 005 Universal Preview; EDITOR_V2_MASTER_PLAN.md B6 (PASS) y B7 (PASS). La UI representa información de Placement Validation, BBSIS, Navigation, Construction y Finance sin sustituir sus decisiones.",
+      "- Snapping se expresa mediante guía cian corta y pulso breve junto al destino; puede sugerir mesa, pared, superficie, anfitrión de opening o relación de grupo según perfil real. **Sugerencia NO equivale a validación**: confirmar depende de Placement/BBSIS/Construction y la validez final.",
+      "- Archivo autónomo de esta conversación: `EditorV2_Feedback_Snapping_INTERACTIVO.html`. No se copia a Unity ni se modifica el comportamiento runtime.",
+      "- Capturas 1920×1080 y 1280×720: `EditorV2_Feedback_Valido_1920.png`, `EditorV2_Feedback_Snapping_1920.png`, `EditorV2_Feedback_Conflicto_1920.png`, `EditorV2_Feedback_Construccion_1920.png`, y correspondientes vistas 1280. Escena 3D de referencia **estática**, sobreimpresiones HTML dinámicas, valores y lógica de validación ilustrativos.",
+      "- Existe la autoridad de dominio de acabados estructurales: BistroBuilderApplySurfaceFinishCommand y registros SurfaceFinishPatch con Undo/Redo, junto con el contrato B5 de reforma transaccional.",
+      "- SAVIC/definiciones publicadas proveen materiales y metadatos; Construction Authoring decide geometría/destinos; BBSIS/validación decide viabilidad; Finance calcula el coste; Preview universal muestra candidatos; Apply/Discard publica/revierte la reforma.",
+      "- **Flujo:** elegir material -> elegir superficie -> previsualizar sin mutación -> verificar con autoridad real -> confirmar gesto en Draft -> Aplicar/Descartar global según B5. Escape cancela un gesto, no toda la reforma. Undo/Redo global conserva orden entre muebles, paredes y superficies.",
+      "- Entregado en esta conversación: EditorV2_Superficies_Coherencia_INTERACTIVO.html, autónomo con fotografía fuente y cinco muestras de textura generadas para la demo. Clic sobre muestras, elección de tipo, previsualización, comprobación simulada, confirmación simulada al Draft, cancelación/Escape, Undo/Redo, revisión general y modales ilustrativos.",
+      "- Pruebas de navegador Chromium/Playwright: en **1920×1080 y 1280×720 PASS**, sin errores JavaScript, sin desbordamiento horizontal; selección de acabado, preview que no permite confirmar antes de comprobar, confirmación de suelo, Undo/Redo, rechazo de familia sin soporte verificado, revisión de coherencia, modales y Escape.",
+      "- Capturas de la conversación: EditorV2_Superficies_1920.png, EditorV2_Superficies_Preview_1920.png, EditorV2_Superficies_1280.png, EditorV2_Superficies_Preview_1280.png. **No son capturas ni pruebas de Unity**.",
+      "**Estado:** dirección artística/UX propuesta, por aprobar; la fotografía, materiales y cifras de la demo no son activos canónicos.",
+      "- Se toma como referencia de intención el HTML `EditorV2_Superficies_Concepto03_ProyectorInteligente.html` mostrado en el chat. El HTML se basa en CSS sobre una fotografía: **NO demuestra** mapeado correcto en la geometría real, oclusión de muebles ni materiales PBR. No presentar efectos de la demo como resultados de Unity.",
+      "- Dividir interfaz/visualización de catálogo, selección de acabado, inspector y Preview Universal respecto del método concreto de proyección/aplicación del material. Respetar SAVIC, Construction Authoring, BBSIS/validación, Finanzas, B5 y Save/Load; no introducir una segunda autoridad de estado. Conservar claves de acabado y parámetros reproducibles para permitir cambios de presentación sin migraciones improvisadas ni romper partidas.",
+      "- **Revisión obligatoria tras build:** probar variedad de pavimentos (madera, baldosas, patrones direccionales) en geometrías rectangulares, irregulares, límites y encuentros; objetos encima del suelo; cámara inclinada y zoom; luces variadas; 1920×1080 y 1280×720; uso real de mouse/teclado; frame time/FPS en PC objetivo; Undo/Redo, Cancelar, Aplicar/Descartar, Save/Load. Comprobar especialmente que no parece un parche pegado.",
+      "| Catálogo e inspector | APROBADOS EN DIRECCIÓN | Galería Viva; datos de SAVIC; selección de objeto cambia inspector; sin controles imaginarios de escalado o rotación |",
+      "4. Habilitación de acciones, coste y diagnósticos proceden de SelectionCapabilities, Construction/Placement/BBSIS/Finance. La pantalla no declara soportada una categoría por existir como tab.",
+      "- Las capturas EditorV2_Coherencia_1920.png y EditorV2_Coherencia_1280.png documentan la jerarquía de referencia. La demo PASS navegador en ambos tamaños no equivale a validación final ni prueba de Unity.",
+      "- `EditorV2_CierreVisual_Iconos_Tipografia_Responsive.html` — archivo HTML autónomo entregado en conversación. Integra logotipo oficial facilitado, dos SVG con trazados comprobados de la biblioteca BB, marca propia Editor V2, Galería Viva esquemática, escena SVG de Halo de Huella y selección/inspector. No contiene fuentes originales, ni editor real, ni datos SAVIC/Finanzas.",
+      "- Previews: `EditorV2_CierreVisual_1920.png`, `EditorV2_CierreVisual_1280_Plegado.png`, `EditorV2_CierreVisual_1280_Inspector.png`; solo documentan apariencia de la DEMO web.",
+      "- Referencia vectorial breve versionada en Git: `References/EditorV2_CierreVisual_Responsive_V1.svg`; los PNG y HTML siguen siendo adjuntos de la conversación.",
+      "- 2026-10-08: **aprobado** que la barra de Editor V2 sustituya completamente la navegación superior normal de diez secciones y se diferencie de modo inequívoco; la apariencia y los controles definitivos siguen pendientes de preview y revisión.",
+      "- 2026-10-08: **confirmada Opción 1** del distintivo «MODO EDICIÓN», lápiz y regla cruzados, manteniendo el logotipo oficial sin reinterpretarlo.",
+      "- Assets/Scripts/Presentation/UI/BistroBuilderUiShell.EditModeChromeV2.cs: barra superior propia de edición (logo original, identidad EDITOR V2, estado, Undo/Redo, reloj, caja, Aplicar, Descartar, Salir); barra inferior aprobada con grupos MODO (Seleccionar/Colocar/Construir/Superficies), EDITAR (Mover/Girar/Duplicar/Eliminar), AYUDAS (Snapping/Cuadrícula/Vistas).",
+      "- Assets/Scripts/Presentation/UI/BistroBuilderUiShell.EditModeRenovationDialogV2.cs: panel de confirmación nativo para aplicar, descartar y salir con pendientes. Datos desde BistroBuilderEditorV2RenovationSession.TryGetSnapshot; la confirmación pasa a B5 (TryApplyChanges/TryDiscardChanges). Escape o cancelar conserva los cambios. Desde una revisión no se descarta directamente: requiere confirmación destructiva separada.",
+      "- Logo reutilizado sin reinterpretar en Assets/Resources/BistroBuilder/UI/EditorV2/BB_Logo_Aprobado_Referencia.png. Tipografías definitivas obtenidas de los recursos TMP Recoleta e Inter que ya posee el proyecto.",
+      "- Play Mode real con la escena Prototype_Restaurant.unity y el QA en Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2ChromeRuntimeSelfTest.cs.",
+      "- Segunda iteración: PASS de construcción de barras, logo, controles, modal inicialmente cerrado, estado inactivo de controles no conectados y anchuras 1280/1920. Medición: 1083 unidades barra superior y 1033 barra inferior. Informe EditorV2_UI_RuntimeSmoke_Report.txt, log Logs/EditorV2_UI_RuntimeSmoke_Retest3.log.",
+      "- Prueba expandida adicional en Play Mode real: PASS, cambiando realmente el catálogo con Colocar / Superficies y verificando que Descartar sin cambios no abre confirmación destructiva. Sin excepciones en el recorrido; ver el mismo informe y Logs/EditorV2_UI_RuntimeSmoke_Expanded.log.",
+      "- Se reutilizan RestaurantPlaceableCatalogApprovedSkin y RestaurantPlaceableCatalogPreviewSkin, con colores crema, marfil, latón y miel. No se sustituye la autoridad real de catálogo: B9 sigue controlando búsqueda, filtros, economía, orden, categorías y virtualización. Encabezados: **Catálogo Galería Viva** para objetos y **Taller · categoría** para familias arquitectónicas. Altura descontada desde las barras propias de Editor V2.",
+      "- BistroBuilderEditorV2SelectionInspector: presentación de lectura del SelectionCoordinator B8 y RestaurantPlaceableRegistry, instalada una sola vez desde el panel canónico. Ficha Principal/Conjunto, lista de miembros, miniatura/descripcion/precio de la definición autorada, capacidades comunes del grupo e interacción de fila para cambiar principal mediante ReplaceSelectionSet. Nunca modifica muebles, finanzas o acabados directamente, ni deduce propiedades ausentes.",
+      "**Pruebas:** Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2GalleryRuntimeSelfTest.cs. Play Mode sobre Assets/Scenes/Prototype_Restaurant.unity, registro EditorV2_GalleryInspector_Runtime_Report.txt.",
+      "- Batería final Play Mode: PASS con clic explícito sobre la fila secundaria, cambio real de principal B8, encabezado oficial Recoleta-SDF y cierre de la ficha antigua al seleccionar mobiliario del mundo. Unity compiló sin errores C#. Resultado de la última ejecución en EditorV2_GalleryInspector_Runtime_Report.txt; log Logs/EditorV2_GalleryInspector_RuntimeFinal.log.",
+      "- Nuevo componente idempotente `BistroBuilderEditorV2GalleryShowcase` adherido al catálogo real; utiliza `AvailableItems`, imágenes `InspectorPreview`, precios `PurchasePrice` y categoría elegida. Encabezado Destacado y hasta tres relacionados, sin inventar nombres ni precios. Un clic abre la ficha de catálogo ya existente, sin colocar ni cobrar objetos. Si hay selección de mundo, botones de ficha deshabilitados para preservar el inspector B8.",
+      "- Responsive: versión compacta por altura disponible, sin sección relacionada que tape la cuadrícula; en escritorio grande se ve encabezado y relacionados. Cambios solo visuales; panel B9 sigue con scroll y filtros canónicos. Ocultar el escaparate al editar filtros/colocar o en otra familia.",
+      "- Build independiente de revisión `BistroBuilderEditorV2ReviewBuild`: una sola escena `Assets/Scenes/Prototype_Restaurant.unity`, Windows x64, carpeta `Builds/Windows/EditorV2_Review_20261009/`, ventanas 1280×720 y 1920×1080 con lanzadores. No sobrescribir la build principal ni mezclar a la maestra.",
+      "- Play Mode / Galería Viva QA: **PASS**, reporte `EditorV2_GalleryInspector_Runtime_Report.txt`. Incluye Destacado desde definición real, coste y apertura de ficha, B8 y catálogo. No demuestra fidelidad gráfica por píxel.",
+      "- Unity 6000.3.19f1, Windows Standalone x64: **Build Succeeded** con 0 errores y 12 advertencias; tamaño informado **248324942 bytes**. Reporte `EditorV2_Review_Build_Report.txt`, log `Logs/EditorV2_Review_Build.log`.",
+      "- Carpeta independiente: `Builds/Windows/EditorV2_Review_20261009/`. Contiene `BistroBuilder_EditorV2_Review.exe`, scripts `ARRANCAR_1280x720.cmd`, `ARRANCAR_1920x1080.cmd` y `LEEME_EDITOR_V2.txt`. No sobrescribe builds previas ni modifica la maestra.",
+      "- Paquete local comprimido para pruebas: `C:\\\\Users\\\\mruperez\\\\Downloads\\\\BistroBuilder_EditorV2_Review_20261009.zip` (99,3 MB), 304 entradas. Verificados: EXE, LEEME y 273 entradas bajo la carpeta de datos del Player. Extraer la carpeta completa antes de ejecutar, no arrancar EXE dentro del ZIP.",
+      "**Hallazgo confirmado en escena y comprobado en Play Mode:** `Assets/Scenes/Prototype_Restaurant.unity` conserva `Canvas_BistroBuilder_EditMode` con `sortingOrder=80`, mientras el shell nuevo se monta en `MainHUD/Canvas` con `sortingOrder=0`. Las primeras pruebas de UI solo buscaban GameObjects y botones, por lo que permitían un PASS falso si la UI nueva estaba tapada por un Canvas antiguo. La primera build `EditorV2_Review_20261009` queda **SUPERADA Y NO ACEPTADA** para evaluación visual: el usuario confirmó que seguía viendo el editor antiguo.",
+      "**Regresión añadida a `BistroBuilderEditorV2ChromeRuntimeSelfTest`:** exige barras V2 `activeInHierarchy`, orden real superior al canvas antiguo, receptores de clic, escala y rectángulos de tamaño no nulo, selector heredado oculto, modal por encima y navegación con el catálogo real. Resultado `EditorV2_UI_RuntimeSmoke_Report.txt`: **PASS**, órdenes 210/211 mayores que 80, anchuras superiores/inferiores de 1083/1033, acciones y botones verificados. Estos checks son de montaje y orden de render en Unity, no sustituyen la validación visual del jugador.",
+      "**Nueva build diferenciada:** `Builds/Windows/EditorV2_VisibleFix_20261009/BistroBuilder_EditorV2_VISIBLE.exe`. Nueva carpeta y ZIP distinto para que el usuario no pueda abrir por error la versión anterior. Arranque a 1280x720 y 1920x1080. Resultado de compilación Windows y smoke del Player deben anotarse al finalizar; nunca declararlos superados por adelantado.",
+      "- `EditorV2_UI_RuntimeSmoke_Report.txt` y `Logs/EditorV2_UI_Visibility_Gate02.log`: **PASS** Play Mode. Canvas V2 210/211 delante de Canvas viejo 80, `activeInHierarchy`, raycasters, escala y rectángulos renderizables válidos, selector viejo oculto, catálogo y modal operativos. Sin errores C# en la batería.",
+      "- `EditorV2_VisibleFix_Build_Report.txt`: **Build Succeeded**, Windows 64 bits, Unity 6000.3.19f1, cero errores, 12 advertencias, 248325073 bytes declarados.",
+      "- Descargas: `C:\\Users\\mruperez\\Downloads\\BistroBuilder_EditorV2_VISIBLEFIX_20261009.zip` (99,3 MiB, 304 entradas leídas sin fallos). Incluye `BistroBuilder_EditorV2_VISIBLE.exe`, su carpeta de datos (273 entradas), `ARRANCAR_1280x720.cmd`, `ARRANCAR_1920x1080.cmd`.",
+      "- **La build previa** `BistroBuilder_EditorV2_Review_20261009.zip` **NO debe emplearse para evaluar Editor V2**, porque no resolvía la prioridad de render. Extraer el ZIP nuevo y ejecutar uno de sus dos lanzadores, sin mezclar archivos de ambas carpetas."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\ModoEdicion\\EditorV2\\UI\\EDITOR_V2_ICON_AUDIT_20261009.md",
+    "relativePath": "docs\\ModoEdicion\\EditorV2\\UI\\EDITOR_V2_ICON_AUDIT_20261009.md",
+    "sha256": "640DB8ACC1F95A844D48A98FC9660A3A606464FDCB372A3F7B7CEDF94A63E6FA",
+    "bytes": 2071,
+    "headings": [
+      "# Editor V2 — Inventario de iconos · 09/10/2026",
+      "## Resultado de auditoría (revisión real de la rama feature/editor-v2)",
+      "## Regla vinculante"
+    ],
+    "editorReferences": [
+      "# Editor V2 — Inventario de iconos · 09/10/2026",
+      "- Logo oficial: asset aprobado en `Assets/Resources/BistroBuilder/UI/EditorV2/BB_Logo_Aprobado_Referencia.png`."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\ModoEdicion\\EditInteractionDesign.md",
+    "relativePath": "docs\\ModoEdicion\\EditInteractionDesign.md",
+    "sha256": "0D8282D176D185B5D66E243C9DDE3AF0A2F124B41EA9E3C80B59B7B78C61D857",
+    "bytes": 14638,
+    "headings": [
+      "# Bistro Builder — Edit Interaction Design",
+      "## 1. Propósito",
+      "## 2. Reglas permanentes",
+      "## 3. Sistemas que deben tenerse en cuenta",
+      "## 4. Decisión aprobada 001 — Coger, mover y soltar mobiliario",
+      "### Experiencia del jugador",
+      "### Sensación visual",
+      "### Regla de implementación",
+      "### Integración obligatoria",
+      "### Criterio de aceptación",
+      "## 5. Decisión aprobada 002 — Preview antes de confirmar",
+      "### Regla funcional",
+      "### Base existente que se conserva",
+      "### Nueva capa visual requerida",
+      "## 6. Decisión aprobada 003 — UX de manipulación directa",
+      "### Regla de compatibilidad",
+      "### Objetivo de experiencia",
+      "## 7. Decisión aprobada 004 — Sistema global de cámaras",
+      "### Base existente que se conserva",
+      "### Evolución aprobada",
+      "### Regla",
+      "## 8. Decisión aprobada 005 — BB Universal Preview System",
+      "### Objetivo",
+      "### Alcance",
+      "### Principios visuales",
+      "### Arquitectura aprobada",
+      "### Sistemas existentes que conservan autoridad",
+      "### Regla de extensibilidad",
+      "### Referencias visuales V1",
+      "### Criterio de aceptación",
+      "## 9. Registro de próximas decisiones"
+    ],
+    "editorReferences": [
+      "**Documento canónico:** decisiones aprobadas sobre interacción del modo edición.",
+      "**Plan rector de ejecución:** [Editor V2 Master Plan](../20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md)",
+      "Editor V2 desarrolla y coordina las decisiones aprobadas en este documento; no las invalida ni autoriza una reescritura total de las autoridades existentes.",
+      "- El modo edición debe ocultar la complejidad técnica al jugador y ofrecer feedback inmediato, claro y reversible.",
+      "- BBSIS — Spatial Interaction System.",
+      "- SAVIC.",
+      "- Selección, snapping y validación del modo edición actual.",
+      "- Cámara y presentación visual del modo edición.",
+      "- Save/Load y persistencia.",
+      "- **BBSIS:** validará requisitos espaciales, zonas de uso, envolventes y restricciones relevantes.",
+      "- **SAVIC:** los assets deben aportar los datos necesarios para que el sistema sepa qué son y cómo pueden colocarse.",
+      "- **Save/Load:** la transformación confirmada debe persistir y rehidratarse correctamente.",
+      "- BBSIS y Navigation seguirán actualizándose de forma controlada y no se reconstruirán innecesariamente cada frame.",
+      "- Undo/Redo y Save/Load continuarán trabajando sobre cambios confirmados.",
+      "La UX del modo edición se rediseñará priorizando manipulación directa, feedback inmediato y mínimo número de pasos.",
+      "- Se conservarán los servicios de dominio y aplicación que ya resuelven correctamente selección autorizada, colocación, validación, snapping, transacciones, historial, BBSIS, navegación, persistencia y reglas de gameplay.",
+      "La cámara profesional actual pasa a considerarse el núcleo del sistema global de cámaras de Bistro Builder, no una solución exclusiva del modo edición.",
+      "- BBSIS decide viabilidad y requisitos espaciales cuando corresponda.",
+      "- Undo/Redo, Save/Load y gameplay solo consideran definitivos los cambios confirmados.",
+      "- SAVIC aporta identidad y datos de los assets; no decide la presentación de preview."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\INTERACTION_V1_FUTURE_HARDENING_AUDIT.md",
+    "relativePath": "docs\\INTERACTION_V1_FUTURE_HARDENING_AUDIT.md",
+    "sha256": "6ADBD5FF18EEABE61226344E5E74FE7EC48492669B5ECD952AB9386C15B7BAF8",
+    "bytes": 2579,
+    "headings": [
+      "# BB Interaction & Reservation v1.0 — Auditoría futura de robustez",
+      "## Cuándo debe activarse",
+      "## Objetivo",
+      "## Áreas obligatorias",
+      "## Criterio de cierre de la auditoría",
+      "## Recordatorio para futuras sesiones"
+    ],
+    "editorReferences": [
+      "Se debe detectar especialmente cuando ya estén estabilizados e integrados con gameplay real: BBSIS, Navigation/Crowd Flow, Animation, cocina, camareros, seating, platos/custody y Save/Load.",
+      "- Save/Load en puntos incómodos de transferencias, cocina, pickup, seating y WaitingAtBar → mesa.",
+      "- Auditoría de fronteras: Interaction no invade autoridad de BBSIS, Navigation, Gameplay/IA, Inventory ni Animation.",
+      "No dar PASS sólo porque compile. Debe existir evidencia de pruebas largas y destructivas, invariantes finales limpias, 0 derechos huérfanos, 0 duplicidades exclusivas y Save/Load repetido sin corrupción lógica."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\Assets\\BistroBuilder\\UI\\Iconography\\THIRD_PARTY_NOTICES.md",
+    "relativePath": "Assets\\BistroBuilder\\UI\\Iconography\\THIRD_PARTY_NOTICES.md",
+    "sha256": "18B01F6B0EF05ED33B15B60BE8C45CA0531965429D3E4BADDE3B167CA3DCD2D7",
+    "bytes": 966,
+    "headings": [
+      "# Third-party notices — Iconografía 21B",
+      "## Lucide"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\Assets\\BistroBuilder\\UI\\Iconography\\README.md",
+    "relativePath": "Assets\\BistroBuilder\\UI\\Iconography\\README.md",
+    "sha256": "6939BED3D798B693CA5B878F5F2C304735B1AE7FF96A8FF944AA7E12313E5029",
+    "bytes": 3103,
+    "headings": [
+      "# Bistro Builder — Iconografía 21B",
+      "## Estado visual",
+      "## Instalación en Unity",
+      "## Uso runtime",
+      "## Familias incluidas",
+      "## Fuente gráfica"
+    ],
+    "editorReferences": [
+      "Sistema canónico y data-driven para implementar la propuesta de iconografía de Bistro Builder en Unity.",
+      "Tamaños canónicos: **16 / 24 / 32 / 48 px**.",
+      "- `Icon Id`: concepto canónico que representa el control."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\FINANCE_BLOCK_3_CLOSURE_20260828.md",
+    "relativePath": "docs\\FINANCE_BLOCK_3_CLOSURE_20260828.md",
+    "sha256": "238B3AF7AD646044CF4AA9C8A1FDD3A3FDDF0C2AF05EB1C145ED6AE96AFAF6A1",
+    "bytes": 2383,
+    "headings": [
+      "# Bistro Builder — Cierre formal Bloque 3",
+      "## Alcance cerrado",
+      "## Correcciones finales de cierre",
+      "## Evidencia final"
+    ],
+    "editorReferences": [
+      "- caja y ledger canónicos;",
+      "La auditoría final detectó dos huecos reales sobre la escena vigente:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\FINANCE_3J_UI.md",
+    "relativePath": "docs\\FINANCE_3J_UI.md",
+    "sha256": "0BE2AC207CFE8717C850C90B06523DC42507258F584DA18DBFECC83CF44F995C",
+    "bytes": 6212,
+    "headings": [
+      "# Bistro Builder — 3J UI jugable de Finanzas y Caja",
+      "## Estado",
+      "## Principio arquitectónico",
+      "## Pantallas jugables",
+      "### Resumen",
+      "### Resultados",
+      "### Caja",
+      "### Históricos",
+      "### Financiación",
+      "## Integración de input",
+      "## Seguridad visual",
+      "## Herramientas de validación",
+      "### Instalación",
+      "### Validador",
+      "### Autotest",
+      "### Prueba runtime real",
+      "## Gate de cierre"
+    ],
+    "editorReferences": [
+      "La implementación original de `feature/3j-finance-cash-ui` quedó integrada en la escena vigente y revalidada junto al endurecimiento 3A–3I, la Queen financiera global y la integración posterior con Personal/Horarios.",
+      "- 3A `BistroBuilderFinanceService` → caja y ledger canónicos.",
+      "- referencias exactas a las autoridades canónicas;",
+      "- root único `BB_3J_FinanceUI` bajo el HUD canónico;"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\FINANCE_3A_3I_HARDENING_AUDIT.md",
+    "relativePath": "docs\\FINANCE_3A_3I_HARDENING_AUDIT.md",
+    "sha256": "13D3CAE73410309EC7399B83305C63103F46A89D9559C1E3F100F654F8647E8F",
+    "bytes": 5911,
+    "headings": [
+      "# Bistro Builder — Endurecimiento financiero 3A–3I",
+      "## Objetivo",
+      "## Riesgos corregidos",
+      "## Semántica contable de bajas de inventario",
+      "## Gate estructural y autotest global",
+      "## Queen Test financiera global endurecida",
+      "## Criterio de avance a 3J — CUMPLIDO"
+    ],
+    "editorReferences": [
+      "Menú canónico:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\CursoresYFocus.md",
+    "relativePath": "docs\\CursoresYFocus.md",
+    "sha256": "A24FAB13FD5869A754930041A599C7B3D1B7F6A28661C27F999F52D23A9BF84D",
+    "bytes": 1983,
+    "headings": [
+      "# Cursores, selección y foco"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\BBPLFS_V1_DESIGN.md",
+    "relativePath": "docs\\BBPLFS_V1_DESIGN.md",
+    "sha256": "CEBC03165582FF2AEE0D703A022EE28540EC4D5C4523378712BF2D09A86E8281",
+    "bytes": 30048,
+    "headings": [
+      "# BB Procedural Layout & Furnishing System (BBPLFS)",
+      "## Permanent principles",
+      "## Block 1 — System contract",
+      "## Block 2 — Premises Model",
+      "## Block 3 — AI + LayoutBrief",
+      "### LayoutBrief — minimum contract",
+      "### Interpretation rules",
+      "### Examples",
+      "## Closed decisions so far",
+      "## Block 4 — Asset Layout Profiles",
+      "## Block 5 — Furnishing Sets",
+      "## Asset matching rule",
+      "## Current closure state",
+      "## Block 6 — Layout Generator",
+      "### 6.1 Input",
+      "### 6.2 Placement domain",
+      "### 6.3 Candidate generation",
+      "### 6.4 Irregular geometry",
+      "### 6.5 Layout construction",
+      "### 6.6 Validation ladder",
+      "### 6.7 Candidate budget",
+      "### 6.8 Determinism",
+      "### 6.9 Output",
+      "### V1 generator decisions",
+      "## Closed decisions so far",
+      "## Block 7 — Constraint Model, Validation, Scoring and Optimization",
+      "### 7.1 Hard constraints",
+      "### 7.2 Soft objectives",
+      "### 7.3 Metric authority",
+      "### 7.4 Validation ladder",
+      "### 7.5 Scoring",
+      "### 7.6 Goal profiles",
+      "### 7.7 Optimization loop",
+      "### 7.8 Alternatives and diversity",
+      "### 7.9 Infeasible requests",
+      "### V1 decisions",
+      "## Closed decisions so far",
+      "## Macro-block A — Incremental re-layout + mixed manual/procedural editing",
+      "### Re-layout states",
+      "### Incremental repair",
+      "### Mixed workflow",
+      "### Edit Mode transaction",
+      "### UX contract",
+      "### Preservation rule",
+      "## Macro-block B — Auto Furnish, reusable layouts, scale and persistence",
+      "### Auto Furnish",
+      "### Reusable parametric layouts",
+      "### Multi-room / whole-premises generation",
+      "### Change tracking and invalidation",
+      "### Performance and graceful degradation",
+      "### Failure/fallback behavior",
+      "### Persistence",
+      "## Macro-block C — V1 architecture audit and closure",
+      "### Authority audit",
+      "### Public V1 contracts",
+      "### V1 invariants",
+      "### V1 acceptance criteria",
+      "### Explicitly outside V1",
+      "### Main implementation risks",
+      "### Final simplification audit",
+      "# BBPLFS V1.0 — DESIGN CLOSED / READY FOR UNITY IMPLEMENTATION"
+    ],
+    "editorReferences": [
+      "- BBPLFS does not duplicate BBSIS, Navigation, Interaction & Reservation, Economy, or Edit Mode authority.",
+      "- requesting spatial validation from BBSIS;",
+      "`PotentiallyUsable` is never equivalent to BBSIS validity.",
+      "- declare BBSIS or Navigation validity;",
+      "`AssetLayoutProfile` is the small BBPLFS-facing description of an asset. It does not duplicate full asset, BBSIS or Economy data.",
+      "- `AssetRef` — canonical catalog asset.",
+      "- `BBSISDescriptorRef` — authoritative spatial-validation reference.",
+      "- `FastFootprintRef` is disposable cache data; if stale, it is rebuilt from canonical data.",
+      "- Sets describe what must exist together; BBSIS decides whether the concrete arrangement is spatially usable.",
+      "- The generator first works with a small compatible candidate pool/layout families, then resolves concrete assets before final BBSIS/Navigation validation.",
+      "2. BBSIS validation for shortlisted layouts;",
+      "3. Navigation evaluation for layouts that pass BBSIS.",
+      "BBSIS remains the authority for Seat Bays, Work Edges, Ports, Sweeps, doors, envelopes and spatial gates.",
+      "- BBSIS and Navigation validate shortlisted layouts through their own authority.",
+      "- BBSIS authoritative spatial validation;",
+      "- Comfort uses BBPLFS layout-level spacing/composition metrics plus BBSIS results where relevant.",
+      "2. BBSIS validates true spatial usability;",
+      "4. revalidates any change that can affect BBSIS or Navigation;",
+      "- BBSIS and Navigation remain authoritative validators.",
+      "Premises/Scope → LayoutBrief → compatible sets/assets → candidate generation → BBSIS → Navigation → scoring → alternatives.",
+      "It may never reduce BBSIS/Navigation validity requirements or silently relax hard constraints.",
+      "- BBSIS owns spatial usability and spatial contracts.",
+      "- Catalog/Assets4All owns canonical asset identity/metadata sources; BBPLFS consumes layout profiles.",
+      "- BBSIS validation request/result adapter;",
+      "- BBSIS/Navigation failures cannot be overridden by BBPLFS scoring.",
+      "- Derived caches are disposable and never replace canonical project data.",
+      "- reject layouts failing BBSIS or mandatory Navigation checks;",
+      "- replacing BBSIS/Navigation with BBPLFS geometry estimates;",
+      "2. Expensive repeated BBSIS/Navigation validation — shortlist aggressively and cache revision-safe results."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\BarraSuperiorIconos.md",
+    "relativePath": "docs\\BarraSuperiorIconos.md",
+    "sha256": "3BBEA6A2993A5C679B5240E55AFE23F4B35D01204582AD376AF81358452BC9BE",
+    "bytes": 4230,
+    "headings": [
+      "# Barra superior del juego",
+      "## Versión vigente — 25/09/2026",
+      "## Verificación",
+      "## Histórico",
+      "## Corrección de nitidez — 26/09/2026",
+      "## Revisión de detalle y respuesta — 28/09/2026"
+    ],
+    "editorReferences": [
+      "## Versión vigente — 25/09/2026",
+      "La V3 anterior usaba una placa raster completa con hotspots; no satisfacía el tamaño compacto solicitado. El intento posterior de recortar cada icono en un cuadrado cortaba partes del arte y recibía estilos oscuros automáticos. Estas implementaciones quedan sustituidas por la composición responsive actual. La autoridad vigente de diseño se recoge en `docs/30_UI_UX/UI_UX_DEFINITIVE.md`."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\LEGACY_SOURCE_REGISTER.md",
+    "relativePath": "docs\\99_HISTORY\\LEGACY_SOURCE_REGISTER.md",
+    "sha256": "C4D8AF33CC2EC9451F5D3C0A133F9917A8702DEEAC8B7FD289E83B16B55486D9",
+    "bytes": 1809,
+    "headings": [
+      "# Bistro Builder — registro de fuentes históricas",
+      "## Documentos del repositorio",
+      "## Documentos externos localizados",
+      "## Conversaciones",
+      "## Política"
+    ],
+    "editorReferences": [
+      "Este registro preserva la procedencia sin convertir todo material antiguo en requisito vigente.",
+      "Desde abril de 2026 se tomaron decisiones que nunca generaron DOCX/PDF. Se consideran fuente histórica válida cuando contienen una decisión explícita. Las decisiones vigentes recuperadas se trasladan a `90_DECISIONS/DECISION_REGISTER.md` y al documento canónico del sistema correspondiente."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\ZonasRestaurante.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\ZonasRestaurante.md",
+    "sha256": "5AE437F62199DC984C83609012C16AA6B189B671B5738668E51C870D04F4192B",
+    "bytes": 158,
+    "headings": [
+      "# Legacy source - ZonasRestaurante"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\TiposClientes.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\TiposClientes.md",
+    "sha256": "1CC7942BA4EFB6636669F5940D880923F0238F468B6AA1D320BD53BA01554176",
+    "bytes": 323,
+    "headings": [
+      "# Legacy source - TiposClientes"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\ProyectoRestaurants_.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\ProyectoRestaurants_.md",
+    "sha256": "FE6010B7309669FD340AC359790AF7D7105F48903B23DE45929AE5C181F05E3A",
+    "bytes": 13476,
+    "headings": [
+      "# Legacy source - ProyectoRestaurants!",
+      "## IDEA PRINCIPAL",
+      "## CONTRATAR PERSONAL",
+      "## PROVEEDORES",
+      "## MARKETING",
+      "## HORARIOS",
+      "## TIEMPO DE SERVICIO",
+      "## COSAS PARA DIFERENCIARNOS"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence.",
+      "Ya con el local disponible, se abrirá la vista desde dentro y como estará diáfano hay que editarlo desde el modo Edición:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\Propinas.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\Propinas.md",
+    "sha256": "C215C7E920EDA16BF3F28FA9F02110EBDE4575167555B1BBB008C35BD4719518",
+    "bytes": 150,
+    "headings": [
+      "# Legacy source - Propinas"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\PedidosOnline.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\PedidosOnline.md",
+    "sha256": "9E86A875E80E1F8E99CF155841C13B3554F166A9883593207D02FA913ED5714C",
+    "bytes": 3313,
+    "headings": [
+      "# Legacy source - PedidosOnline"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\MenudelDia.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\MenudelDia.md",
+    "sha256": "E5FEEF77CA7090D2ECE0164254BCFC92B0857DD9E3DA366DB33E0BE48F435364",
+    "bytes": 817,
+    "headings": [
+      "# Legacy source - MenudelDia"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\legacy-docx\\DISCULPAS.md",
+    "relativePath": "docs\\99_HISTORY\\legacy-docx\\DISCULPAS.md",
+    "sha256": "BD8EC4F391040DF23419B4751573F2B1FBB434C14C257DB309861B95E2FC2E4E",
+    "bytes": 1105,
+    "headings": [
+      "# Legacy source - DISCULPAS",
+      "## DISCULPAS_"
+    ],
+    "editorReferences": [
+      "> Preservation conversion. Historical source; canonical docs take precedence."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\99_HISTORY\\CHAT_SOURCE_REGISTER.md",
+    "relativePath": "docs\\99_HISTORY\\CHAT_SOURCE_REGISTER.md",
+    "sha256": "98E3AB471E2CA15E3D21A148896E03E0236F166F832F1EA2AD8EA44D64938892",
+    "bytes": 2181,
+    "headings": [
+      "# Bistro Builder — registro de decisiones procedentes de chats",
+      "## Regla",
+      "## Limitación de la migración"
+    ],
+    "editorReferences": [
+      "| Implementar / Continuar BBSIS Unity | cierre BBSIS v1, contratos espaciales y hardening posterior |",
+      "| Investigar sistema de reservas / Interaction & Reservation | primitivas lógicas, Logical Grant Kernel y fronteras con BBSIS/Nav/Animation |",
+      "| Implementa modo edición / Bistro listo para probar | Bloque 18, playtests, feedback, problemas UX y Construction Authoring |",
+      "| Procedural Layout & Furnishing System | BBPLFS, rama propia y obligación de integración con sistemas canónicos |",
+      "Cuando una conversación posterior cambie una decisión, actualizar `90_DECISIONS/DECISION_REGISTER.md` y el documento canónico afectado. No copiar conversaciones completas al repositorio: conservar la decisión, su estado y su impacto técnico.",
+      "El objetivo es preservar decisiones de producto/arquitectura, no transcribir cada intercambio. Las conversaciones son evidencia histórica; los Markdown canónicos son la fuente operativa para agentes y desarrollo."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\90_DECISIONS\\OPEN_QUESTIONS_AND_LEGACY_IDEAS.md",
+    "relativePath": "docs\\90_DECISIONS\\OPEN_QUESTIONS_AND_LEGACY_IDEAS.md",
+    "sha256": "0A19621F4682CA358E4A3EA46270A6087A952C3E7C6C34440591E206E600E9B9",
+    "bytes": 1687,
+    "headings": [
+      "# Bistro Builder — ideas históricas no canónicas / preguntas abiertas",
+      "## Identidad y nueva partida",
+      "## Carta y restaurante",
+      "## Servicio ampliado",
+      "## Personal/marketing históricos",
+      "## Regla"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — ideas históricas no canónicas / preguntas abiertas",
+      "Estas ideas aparecen en documentación fundacional o chats, pero **no deben tratarse como requisito vigente** salvo promoción explícita al PRD/Decision Register."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\90_DECISIONS\\DECISION_REGISTER.md",
+    "relativePath": "docs\\90_DECISIONS\\DECISION_REGISTER.md",
+    "sha256": "271F3A802DFB9DE0B75678068CCDCCD2A04D49871F7EF63F1CB1E47D575C0517",
+    "bytes": 6734,
+    "headings": [
+      "# Bistro Builder — registro de decisiones vinculantes"
+    ],
+    "editorReferences": [
+      "**Regla:** una decisión explícita posterior prevalece sobre propuestas anteriores. `VIGENTE` = obligatoria; `SUPERADA` = conservar solo como historia.",
+      "| D-001 | VIGENTE | Arquitectura modular, data-driven, validable; evitar hardcode por asset. |",
+      "| D-002 | VIGENTE | Modo Edición solo fuera de servicio y sin obreros simulados. |",
+      "| D-003 | VIGENTE | No simular agua, extracción, gas ni ventilación como gameplay. |",
+      "| D-004 | VIGENTE | Un único almacén jugable; FEFO; lotes no gestionados manualmente. |",
+      "| D-005 | VIGENTE | Espera general virtual; espera física solo en barra cuando corresponda. |",
+      "| D-006 | VIGENTE | Cocina usa estados Fluida/Cargada/Saturada/Bloqueada y máximo 3 comandas priorizadas. |",
+      "| D-007 | VIGENTE | Camareros por zonas con asignación automática por cercanía/carga/prioridad; jefe de sala opcional. |",
+      "| D-008 | VIGENTE | BBSIS es única autoridad espacial; Render no equivale a Spatial. |",
+      "| D-009 | VIGENTE | Interaction & Reservation solo gobierna derechos lógicos; Wait Ticket únicamente para colas semánticas reales. |",
+      "| D-010 | VIGENTE | Navigation gobierna rutas/circulación; Animation solo representa. |",
+      "| D-011 | VIGENTE | Character Animation V1 está integrado/cerrado; futuras ampliaciones son V2/hardening. |",
+      "| D-012 | VIGENTE | BBSIS V1 está cerrado; no reabrir salvo regresión real. |",
+      "| D-013 | VIGENTE | UI de Servicio: navegación horizontal superior; Actividad izquierda; contexto derecha; barra inferior operativa. La ubicación de indicadores globales se rige por D-033. |",
+      "| D-014 | VIGENTE | `Caja` = dinero del servicio; `Satisfacción` = satisfacción del servicio. |",
+      "| D-015 | VIGENTE | No mostrar/reservar vistas predefinidas de cámara en UI final. |",
+      "| D-017 | VIGENTE | WASD queda reservado al control de cámara. |",
+      "| D-018 | VIGENTE | Clima sin dirección ni subtipos de lluvia/nieve/viento; condición exterior uniforme. |",
+      "| D-019 | VIGENTE | Interior confortable; sin simulación térmica interior extrema. |",
+      "| D-020 | VIGENTE | Todos los cambios de sistemas deben integrarse/subirse a su rama correspondiente. |",
+      "| D-021 | VIGENTE | Cada commit solicitado al usuario debe llevar Summary/Description exactos proporcionados por el asistente. |",
+      "| D-022 | VIGENTE | BBPLFS es sistema transversal activo; no debe operar como herramienta aislada del proyecto. |",
+      "| D-023 | VIGENTE | Feedback universal de edición: preview/snapping/materialización/validez/Undo-Redo, abstracto y no destructivo. |",
+      "| D-024 | VIGENTE | La presentación visual base es común a los locales salvo excepción explícita. |",
+      "| D-025 | VIGENTE | Los PASS visuales/espaciales requieren evidencia visual/funcional, no solo métricas. |",
+      "| D-026 | VIGENTE | La persistencia es universal/versionada; no crear guardados paralelos para un mismo dominio. |",
+      "| D-027 | VIGENTE | Modo Edición adopta como dirección gráfica la Propuesta C revisada: catálogo claro vertical a la izquierda, viewport central, inspector claro a la derecha con Reglas de colocación y franja inferior de herramientas/acciones. |",
+      "| D-028 | VIGENTE | BBFFVAS es una herramienta interna de autoría; no es una mecánica ni interfaz destinada al jugador. |",
+      "| D-029 | VIGENTE | Una variante puramente visual comparte geometría, footprint, collider y contratos espaciales; los acabados no justifican duplicar prefabs. |",
+      "| D-030 | VIGENTE | Acabado Automático solo completa zonas/canales missing o incompletos; nunca sobrescribe trabajo válido salvo orden explícita. |",
+      "| D-031 | VIGENTE | Toda propuesta automática requiere preview y aplicación explícita; reutilizar acabados canónicos tiene prioridad sobre generar nuevos. |",
+      "| D-032 | VIGENTE | Si la semántica de una superficie es incierta, el sistema solicita clasificación y no asigna materiales a ciegas. |",
+      "| D-033 | VIGENTE | En modo normal/servicio, la barra horizontal inferior integra **Velocidad**, `Caja` y **Climatología**, además de las acciones contextuales que correspondan. Estos tres elementos no se colocan en la barra superior. |",
+      "| D-034 | VIGENTE | Los tiempos y estados de espera del servicio se definen desde configuración canónica compartida; no se hardcodean por pantalla/acción. Cocina admite `tiempo específico -> perfil de preparación -> default global`, por lo que la carta puede completarse progresivamente sin inventar tiempos de platos aún no diseñados. |",
+      "| D-035 | VIGENTE | Las acciones contextuales aparecen solo cuando existe una condición semántica válida del objeto seleccionado; no forman un menú fijo. `Disculpa`, `Explicar demora` y `Agilizar cuenta` están ratificadas para Mesa/Cliente; nuevas acciones permanecen como propuestas hasta decisión explícita. |",
+      "| D-036 | VIGENTE | `Agilizar cuenta` no aparece desde que se solicita la cuenta: se ofrece a partir del estado **Atención**. En Demora se destaca, en Incidencia puede coexistir con `Disculpa`, no admite pulsaciones repetidas sobre la misma necesidad y desaparece cuando la cuenta ya está siendo atendida o resuelta. |",
+      "| D-037 | VIGENTE | `Explicar demora` se ofrece desde **Demora** en adelante y solo una vez por necesidad activa. Mitiga de forma configurable la penalización de satisfacción atribuible a la espera, pero no reduce el tiempo real, no cambia el estado semántico y no altera la prioridad de la tarea; el valor concreto de balance permanece provisional. |",
+      "| D-038 | VIGENTE | `Disculpa` se ofrece cuando una necesidad alcanza **Incidencia/Crítico** o existe un fallo explícito recuperable de la comanda canónica. No elimina la causa ni acelera el servicio: recupera solo parte del impacto de satisfacción. `CustomerChange` no cuenta como fallo del restaurante. La aplicación no es repetible sobre la misma incidencia ya cubierta, puede reaparecer ante nuevas incidencias explícitas y todo su tuning de recuperación permanece configurable/provisional. |",
+      "| D-039 | VIGENTE | El timing contextual de Mesa/Cliente se extiende a `TakeOrder` y `FoodDelivery` reutilizando los contadores canónicos existentes. `TakeOrder` usa perfil configurable; `FoodDelivery` deriva Atención/Demora/Incidencia/Crítico del tiempo esperado real de la comanda, resolviendo los tiempos de preparación efectivos de la carta de la partida y usando el catálogo canónico solo como fallback, sin cronómetro paralelo ni tiempo fijo universal. `Explicar demora` entra desde Demora y `Disculpa` desde Incidencia/Crítico. `Priorizar atención` permanece pendiente de ratificación y no se implementa. |"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\UI_VIDEO_AUDIT_2026-09-29.md",
+    "relativePath": "docs\\40_TESTING\\UI_VIDEO_AUDIT_2026-09-29.md",
+    "sha256": "81C52A98CF6396F6CF324247FF9FF627936F86EA6B711854C6DCE698B61A2610",
+    "bytes": 4449,
+    "headings": [
+      "# UI — revisión del vídeo del 28/09/2026",
+      "## Correcciones",
+      "## Validación reproducible",
+      "## Alcance de la evidencia",
+      "## Integración aprobada — 29/09/2026"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md",
+    "relativePath": "docs\\40_TESTING\\NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md",
+    "sha256": "D05180F6A71BB199864C7C3262F8DAA081F11374F6A8D19359D5466D08D0ED2B",
+    "bytes": 6292,
+    "headings": [
+      "# Navigation 17 / B11 — Optimización de cálculo exhaustivo",
+      "## 1. Diagnóstico del cuello de botella",
+      "## 2. Mejoras aceptadas y fundamento de equivalencia",
+      "## 3. Evidencia de resultado real",
+      "### Prueba de estrés 50 NPC: incidencia diferenciada",
+      "### Restricciones conocidas",
+      "## 4. Reproducción"
+    ],
+    "editorReferences": [
+      "**Equivalencia ejecutable:** `BistroBuilderEditorV2NavigationEquivalencePlayModeSelfTest.RunFromCommandLine`. Compara, para cada uno de los 21 recorridos reales y 16 variantes de destino/radio, ambos motores en el mismo fotograma: alcanzabilidad, `BistroBuilderNavigationRouteKind`, longitud (±0,001 m), número de puntos y la posición de **cada** waypoint (±0,001 m). 37 coincidencias y ninguna discrepancia; no se desplazó mobiliario ni cambió la revisión de navegación. Evidencia versionada: `docs/40_TESTING/EDITOR_V2_B11_NAV_EQUIVALENCE_PASS.txt`, Unity log `Logs/B11_NavEquivalence_37Cases.log`. Las tres repeticiones se registran en `docs/40_TESTING/EDITOR_V2_B11_NAV_OPT_THREE_RUNS.txt`; mediana Navigation 2.951 ms, máximo 2.983 ms en esas ejecuciones, sin mutaciones ni rutas omitidas.",
+      "**Pruebas de componentes:** `BistroBuilderNavigationV1CoreSelfTest` **44/44 PASS** y `BistroBuilderNavigation17SelfTest` **22/22 PASS**. `BistroBuilderNavigation17PlayModeSelfTest` y `BistroBuilderNavigation17SaveLoadSelfTest`, ambos exit code 0. **Regresión Editor V2 B4–B10: 267/267 PASS, exit 0** (B4 63, B5 48, B8 74, B9 42, B10 40); evidencia `docs/40_TESTING/EDITOR_V2_B11_NAV_OPT_REGRESSION_PASS.txt`. **Build Windows x64 PASS**, `Logs/B11_NavOptimize_FinalWindowsBuild.log`, `Build Finished, Result: Success`, `BB_PLAYTEST_BUILD_PASS`, tamaño 181379399 bytes, 13 warnings no bloqueantes. Ejecutable `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`.",
+      "Unity 6000.3.19f1, `Prototype_Restaurant.unity`, Editor V2. Métodos CLI verificables:",
+      "- `BistroBuilderEditorV2NavigationEquivalencePlayModeSelfTest.RunFromCommandLine` (**sin** `-quit`, entra y sale de Play Mode).",
+      "- `BistroBuilderEditorV2B11RuntimePlayModeSelfTest.RunFromCommandLine` (**sin** `-quit`)."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_BASELINE_20261005.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_BASELINE_20261005.md",
+    "sha256": "70EE54F9BF55377B05CD64F6A1F53AE345504B3DF5BC9F851CCDE69C7238918B",
+    "bytes": 9018,
+    "headings": [
+      "# Editor V2 — Baseline técnica B0",
+      "## 1. Objetivo",
+      "## 2. Punto de partida inmutable",
+      "### MASTER del proyecto",
+      "### Editor V2",
+      "## 3. Equipo de referencia",
+      "## 4. Validación ejecutada",
+      "### 4.1 Core Self Test — PASS",
+      "### 4.2 Scene Validator — PASS",
+      "### 4.3 Runtime Lifecycle — PASS",
+      "### 4.4 Queen Test integrada — PASS",
+      "### 4.5 Placement / estructura espacial de mobiliario — baseline válida",
+      "## 5. Baseline de rendimiento",
+      "### 5.1 Medición completa",
+      "### 5.2 Gate de rendimiento presupuestado — FAIL PREEXISTENTE",
+      "## 6. Incidencias conocidas de la baseline",
+      "### B0-KI-01 — Load por encima del presupuesto",
+      "### B0-KI-02 — Diagnóstico completo de circulación extremadamente costoso",
+      "### B0-ENV-01 — Unity Search Index",
+      "### B0-ENV-02 — servicios externos de Unity",
+      "## 7. Qué NO se ha cambiado",
+      "## 8. Criterio de cierre B0",
+      "## 9. Próximo gate"
+    ],
+    "editorReferences": [
+      "# Editor V2 — Baseline técnica B0",
+      "B0 fija una fotografía reproducible del Modo Edición antes de desarrollar Editor V2.",
+      "- comportamiento que ya existía antes de Editor V2;",
+      "- regresión introducida por Editor V2;",
+      "### Editor V2",
+      "- Alias humano: **EDITOR V2**",
+      "- Worktree: `C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2`",
+      "El commit inicial de Editor V2 añade únicamente documentación respecto a MASTER.",
+      "Por tanto, al cerrar B0 no existe ninguna diferencia funcional de código, Assets o ProjectSettings atribuible a Editor V2.",
+      "- Undo/Redo estructural;",
+      "- BBSIS;",
+      "- Save/Load;",
+      "`Logs/EditorV2_B0_Core.log`",
+      "`Logs/EditorV2_B0_Scene.log`",
+      "- Save/Load guard durante sesión semántica;",
+      "`Logs/EditorV2_B0_RuntimeLifecycle.log`",
+      "Resultado canónico:",
+      "**PASS — commit económico, BBSIS, Navigation, Save/Load, servicio y rollback verificados.**",
+      "`Logs/EditorV2_B0_Queen.log`",
+      "Existe además `RestaurantPlacementTransactionSmokeTest`, pero actualmente es un MonoBehaviour de desarrollo y no un gate CLI instalado en la escena canónica. B0 no modifica producción para forzarlo. Su conversión futura a gate automatizable puede hacerse como hardening de tests, no como requisito para alterar esta baseline.",
+      "Esto es una incidencia de la baseline previa a Editor V2. No es una regresión de Editor V2.",
+      "Editor V2 no debe disparar este diagnóstico en drag, borrado, colocación, Load ni por frame. B11/B14 deberán diseñar diagnóstico y rendimiento teniendo esta baseline presente.",
+      "- BBSIS;",
+      "- Save/Load;",
+      "- Editor V2 parte de ese código sin diferencias funcionales;",
+      "**B0 PASS → cerrar Assets4All → SAVIC → validar ese gate → comenzar B1 Editor V2.**"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B9_SCALABLE_CATALOG_20261008.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B9_SCALABLE_CATALOG_20261008.md",
+    "sha256": "036681EFC04C53044EE4806D3661A798BEF7EF0659CEE785C8ECA930767BF0D1",
+    "bytes": 5381,
+    "headings": [
+      "# Editor V2 — B9 Catálogo escalable",
+      "## Propósito",
+      "## Implementación",
+      "## Límite explícito de las miniaturas",
+      "## Pruebas realizadas",
+      "## Regresión e integración",
+      "## Entrega"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B9 Catálogo escalable",
+      "catálogo ni cambiar las autoridades de SAVIC, Placement, Finance o Save/Load. El diseño",
+      "gráfico final de Editor V2 sigue sujeto al documento UI/UX y a aprobación del usuario.",
+      "- Índice canónico de artículos válidos por ItemId y búsqueda multi-término, normalizada",
+      "requiere que SAVIC publique un proveedor/ruta de miniaturas apta para carga diferida.",
+      "Selftest: `BistroBuilderEditorV2B9ScalableCatalogSelfTest.RunFromCommandLine`.",
+      "- Escena real `Assets/Scenes/Prototype_Restaurant.unity`: catálogo y servicio canónicos,",
+      "La integración visual definitiva de Editor V2 sigue pendiente de aprobación UI/UX. No se han dado por medidos FPS del catálogo en una sesión de juego renderizada, ni se ha declarado streaming asincrónico de miniaturas sin contrato SAVIC.",
+      "Los archivos ajenos al Editor V2 y las aprobaciones gráficas del chat UI/UX"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B8_MULTI_SELECTION_GROUPS_20261008.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B8_MULTI_SELECTION_GROUPS_20261008.md",
+    "sha256": "BD076446FFC108D7A062C05C3CD0A529417D824AE96B27D753B6B84A080E0EC5",
+    "bytes": 3986,
+    "headings": [
+      "# Editor V2 — B8 Multiselección y grupos",
+      "## Objetivo",
+      "## Implementación validada",
+      "## Gate B8",
+      "## Rendimiento",
+      "## Regresión",
+      "## Gate de cierre"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B8 Multiselección y grupos",
+      "B8 convierte la selección múltiple en una capacidad transaccional de Editor V2, no en una agrupación visual. Una operación sobre varios colocables debe conservar identidades y relaciones, validarse como conjunto, confirmar todo o nada y aparecer como una única acción en el historial global.",
+      "- `BistroBuilderEditorV2SelectionCoordinator` mantiene Selection Set, selección primaria, deduplicación, orden estable e intersección de capacidades.",
+      "- `BistroBuilderEditorV2ExplicitSelectionLinkedGroupProvider` proyecta la selección explícita sobre `RestaurantPlacementLinkedGroupService`.",
+      "- `RestaurantLinkedGroupPlacementConstraintRule` valida los seguidores con las autoridades de Placement/BBSIS antes de confirmar.",
+      "- `BistroBuilderEditorV2CompoundPlaceableHistoryCommand` encapsula operaciones grupales y revierte los miembros ya aplicados si falla un hijo.",
+      "- La capa visual definitiva de multiselección queda fuera de B8 y se resolverá en el diseño UI/UX de Editor V2.",
+      "`BistroBuilderEditorV2B8MultiSelectionGroupsSelfTest.RunFromCommandLine`",
+      "- Undo/Redo compuesto.",
+      "- eliminación grupal + Undo/Redo con identidad y registro restaurados.",
+      "- Undo/Redo de duplicación en una sola acción.",
+      "- Queen Test: **PASS**, incluyendo Finance, BBSIS, Navigation, Save/Load, servicio y rollback.",
+      "B8 queda cerrado porque la operación grupal es atómica, Undo/Redo representa una sola acción, las relaciones semánticas se conservan/reconstruyen mediante sus providers, los elementos continúan siendo editables individualmente y las regresiones permanecen verdes."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B7_CONTEXTUAL_SNAPPING_20261007.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B7_CONTEXTUAL_SNAPPING_20261007.md",
+    "sha256": "FF18DE313126FA21EE8EB44D49C0F861344048BD795BFD8647DB6CB1133E37B6",
+    "bytes": 1986,
+    "headings": [
+      "# Editor V2 — B7 Snapping contextual — Validación 2026-10-07",
+      "## Resultado",
+      "## Cobertura validada",
+      "## Pruebas adversariales y de propiedades",
+      "## Rendimiento",
+      "## Repetibilidad",
+      "## Regresiones",
+      "## Gate"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B7 Snapping contextual — Validación 2026-10-07",
+      "- perfil canónico resoluble desde `RestaurantPlaceableItemDefinition` / contenido SAVIC;",
+      "- Placement/BBSIS conserva autoridad final y puede rechazar una pose sugerida;",
+      "La regla se mantiene: **Snapping propone. Placement/BBSIS valida.**"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B6_UNIVERSAL_PREVIEW_20261007.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B6_UNIVERSAL_PREVIEW_20261007.md",
+    "sha256": "302977923D03F607F8D8BEBF05305AAEB2D095FE945CCEB2798A624A70A9C795",
+    "bytes": 1295,
+    "headings": [
+      "# Editor V2 — B6 Universal Preview — Validación 2026-10-07",
+      "## Resultado",
+      "## Cobertura validada",
+      "## Rendimiento",
+      "## Regresiones posteriores",
+      "## Gate"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B6 Universal Preview — Validación 2026-10-07",
+      "- documento canónico idéntico tras la prueba."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B3_COMMON_SELECTION_20261006.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B3_COMMON_SELECTION_20261006.md",
+    "sha256": "6F12E7D5154B52D485DB209ED31BFE251B48681E33AB1FE404A64A3ED4FA2797",
+    "bytes": 8265,
+    "headings": [
+      "# Editor V2 — B3 Selección común",
+      "## Objetivo",
+      "## Principio de autoridad",
+      "## Modelo común",
+      "### Tipos de selección",
+      "### Capacidades",
+      "### Identidad",
+      "## Fuentes de selección",
+      "### Furniture",
+      "### Construction",
+      "### Surfaces",
+      "## Coordinador de selección",
+      "### Regla Construction ↔ Surfaces",
+      "## Seleccionar no modifica",
+      "## Integración de UI",
+      "## Bootstrap runtime",
+      "## Gate B3",
+      "## Regresión final sobre el árbol B3",
+      "## Decisión"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B3 Selección común",
+      "Unificar el concepto de selección de Editor V2 sin sustituir las autoridades que ya seleccionan y editan mobiliario o arquitectura.",
+      "- Editor V2: proyecta el estado anterior mediante `BistroBuilderEditorV2SelectionCoordinator`.",
+      "La selección común es una proyección observable. No es el lugar donde vive la geometría ni el estado canónico del restaurante.",
+      "`Assets/Scripts/Application/Restaurant/EditMode/EditorV2/BistroBuilderEditorV2Selection.cs`",
+      "`BistroBuilderEditorV2SelectionKind`:",
+      "`BistroBuilderEditorV2SelectionCapability` es un conjunto de flags:",
+      "`BistroBuilderEditorV2Selection` expone:",
+      "Los adaptadores B2 implementan además `IBistroBuilderEditorV2SelectionSource`.",
+      "`BistroBuilderEditorV2SelectionCoordinator`:",
+      "- limpia toda selección al salir del modo edición.",
+      "`BistroBuilderUiShell.EditModeChrome` consume ahora `BistroBuilderEditorV2SelectionCoordinator` y sus capacidades.",
+      "Undo/Redo sigue especializado en B3. Su coordinación global pertenece expresamente a B4.",
+      "`BistroBuilderEditorV2RuntimeBootstrap` compone ahora:",
+      "`BistroBuilderEditorV2B3SelectionSelfTest.cs`",
+      "La pared temporal del test, cuando es necesaria, se crea exclusivamente en el Draft de prueba mediante el comando arquitectónico existente y se descarta. Nunca se publica en la escena ni en Save/Load.",
+      "Editor V2 dispone ya de:",
+      "**B4 — Undo/Redo global queda desbloqueado.**"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B2_COORDINATOR_20261006.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B2_COORDINATOR_20261006.md",
+    "sha256": "45A16BCE74A22B105388065B5A414C40A0D70C7196B65A66C141A40FAB8B535F",
+    "bytes": 4721,
+    "headings": [
+      "# Editor V2 — B2 Coordinator",
+      "## Objetivo",
+      "## Implementación",
+      "### Contrato común",
+      "### Coordinator",
+      "### Adaptadores",
+      "### Bootstrap",
+      "## Prueba específica B2",
+      "## Ejemplos reales",
+      "### Cambio normal",
+      "### Operación incompatible",
+      "### Superficies",
+      "### Herramienta inválida",
+      "## Regresión posterior",
+      "## Decisión"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B2 Coordinator",
+      "Introducir una única capa de coordinación entre las familias del modo edición sin sustituir las autoridades existentes.",
+      "- si el modo edición está activo;",
+      "No decide geometría, validez espacial, dinero, navegación, BBSIS, persistencia ni historial especializado.",
+      "`BistroBuilderEditorV2Contracts.cs`",
+      "- `BistroBuilderEditorV2ToolFamily`;",
+      "- `BistroBuilderEditorV2OperationState`;",
+      "- `BistroBuilderEditorV2Snapshot`;",
+      "- `IBistroBuilderEditorV2ToolAdapter`.",
+      "`BistroBuilderEditorV2Coordinator.cs`",
+      "- no activa herramientas fuera del modo edición;",
+      "- al salir de modo edición limpia únicamente estado de coordinación;",
+      "`BistroBuilderEditorV2ToolAdapters.cs`",
+      "`BistroBuilderEditorV2RuntimeBootstrap.cs`",
+      "- crea un único `BB_EditorV2Coordinator`;",
+      "`BistroBuilderEditorV2B2CoordinatorSelfTest.cs`",
+      "1. no activa herramientas fuera de modo edición;",
+      "12. bootstrap Editor V2 idempotente;"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B1_HARDENING_20261006.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B1_HARDENING_20261006.md",
+    "sha256": "77AD7FF406680665A6749F79EADAE98479D359F9FEF08FD58B3248A36525F948",
+    "bytes": 5524,
+    "headings": [
+      "# Editor V2 — B1 Hardening",
+      "## Hallazgos confirmados y corregidos",
+      "### B1-01 — Commit arquitectura/economía",
+      "### B1-02 — Doble materialización en Load",
+      "### B1-03 — Physics.SyncTransforms en preview",
+      "## Test Unity preparado",
+      "## Limitación actual de validación",
+      "## Verificación adicional — 06/10/2026",
+      "### Cierre final"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B1 Hardening",
+      "`Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2B1HardeningSelfTest.cs`",
+      "- `EditorV2_B1_Hardening_navfix.log`: **20/20 OK**, sin `error CS`, sin `FAIL -`, sin excepción funcional y sin retorno 1.",
+      "- `EditorV2_B1_CoreRegression.log`: **84/84 OK**.",
+      "- `EditorV2_B1_SceneRegression.log`: **77/77 OK**.",
+      "- `EditorV2_B1_QueenRegression.log`: PASS y salida batch `return code 0`, sin errores de compilación ni excepciones.",
+      "- `EditorV2_B1_PerformanceNavFix.log`: la carga real pasa de **2 rebuilds de topología a 1**; `loadHealthEvaluations=0`."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B13_CAMERA_CONTEXT_20261010.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B13_CAMERA_CONTEXT_20261010.md",
+    "sha256": "327D8F9AB4034C1CCF3A792095623C7A71BF6D9472C61A6C47B8061566F96B0F",
+    "bytes": 4635,
+    "headings": [
+      "# Editor V2 — B13: cámara por contexto y visibilidad reversible (fase técnica 1)",
+      "## Alcance implementado",
+      "## QA y límites",
+      "## Fase técnica 2 — descubrimiento geométrico seguro (2026-10-10)"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B13: cámara por contexto y visibilidad reversible (fase técnica 1)",
+      "- `BistroBuilderEditorV2CameraVisibilityContext` se instala desde el bootstrap de Editor V2, sin crear otra cámara ni sustituir controladores: 369A sigue siendo el único controlador, 369B gestiona vistas y 369C la memoria por contexto.",
+      "- API de visibilidad `TryHideObstruction(Renderer)`, `TryRestoreObstruction(Renderer)`, `RestoreAllObstructions`: solo se altera `Renderer.enabled`, guardando el valor original (incluido false); no modifica colisionadores, mallas, navegación, Save/Load, objetos o materiales. Se restaura al salir de edición, desactivar o destruir el componente. Operación idempotente.",
+      "Prueba: `BistroBuilderEditorV2B13CameraRuntimeSelfTest.RunFromCommandLine` en `Prototype_Restaurant.unity`. Archivo `EditorV2_B13_Camera_Report.txt`. Log `Logs/B13_Camera_02.log`. Usa únicamente dos renderers provisionales de QA y no escribe la escena.",
+      "- Prueba `BistroBuilderEditorV2B13CameraRuntimeSelfTest.RunFromCommandLine`, log `Logs/B13_Occlusion_Saturation02.log`, informe `EditorV2_B13_Camera_Report.txt`. PASS real Play Mode: obstáculo físico autorizado correcto, exclusion de off-axis/trigger/behind, whitelist estricta, modo normal bloqueado, NaN rechazado, saturación de 140 colliders falla con seguridad, restauración al salir y vista cenital intacta."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B12_TEMPLATES_20261009.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B12_TEMPLATES_20261009.md",
+    "sha256": "BAE8AE995409D94FC462D51B945F6D24418C12D45D9E1737EE06436FE095FCBC",
+    "bytes": 5454,
+    "headings": [
+      "# Editor V2 — B12 Plantillas y composiciones: núcleo técnico",
+      "## 1. Qué se ha implementado",
+      "## 2. Evidencia de Play Mode",
+      "## 3. Límites que impiden declarar el bloque totalmente cerrado",
+      "## 4. Criterio de cierre B12"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B12 Plantillas y composiciones: núcleo técnico",
+      "- `BistroBuilderEditorV2TemplateLibrary` guarda una selección de 1 a 64 artículos en una biblioteca independiente de la partida. Solo serializa `itemId` canónico, posición relativa al centro de la composición y rotación de cada miembro. Nunca almacena ni duplica las mallas, prefabs, texturas, ni identificadores de instancias originales. La misma plantilla puede usarse en otras partidas.",
+      "- Persistencia versionada **JSON schema=1** bajo `Application.persistentDataPath/EditorV2/editor_v2_templates_v1.json`. Escribe primero fichero temporal y utiliza sustitución del archivo con copia `.bak` en Windows. Biblioteca corrupta o de versión desconocida: modo seguro, bloquea escritura, conserva el original. Hasta 100 plantillas, con GUID por plantilla.",
+      "- Instalación idempotente en `BistroBuilderEditorV2RuntimeBootstrap`; prohibidas las operaciones fuera del modo edición.",
+      "Informe: `docs/40_TESTING/EDITOR_V2_B12_RUNTIME_PASS.txt` (copia versionada de `EditorV2_B12_Runtime_Report.txt`). **Regresión completa Editor V2 B4–B10: 267/267 PASS, exit 0** (evidencia `docs/40_TESTING/EDITOR_V2_B12_REGRESSION_PASS.txt`). Banco: `BistroBuilderEditorV2B12RuntimeSelfTest.RunFromCommandLine`, en `Prototype_Restaurant.unity`, con 38 muebles reales y una biblioteca temporal de QA aislada del usuario.",
+      "- guarda y relee archivo real con artículo canónico y presupuesto;",
+      "**Build Windows x64 (hardening final):** `Logs/B12_Hardening_FinalWindowsBuild.log`, `Build Finished, Result: Success`, `BB_PLAYTEST_BUILD_PASS`, exit 0, 13 avisos de compilación no bloqueantes; ejecutable `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`. **Regresión B4–B10 267/267 PASS** con los reintentos necesarios por concurrencia de Unity documentados en `EDITOR_V2_B12_HARDENING_REGRESSION_PASS.txt`. **Save/Load general real PASS** (`EDITOR_V2_B12_SAVELOAD_AUTHORITY_PASS.txt`).",
+      "1. **Mesa y cuatro sillas: PASS en Play Mode real.** Se captura la composición existente, guarda/carga JSON, borra temporalmente la fuente mediante la autoridad B8, coloca cinco instancias nuevas en el mismo espacio y reconstruye las cuatro asociaciones a la nueva mesa. Undo/Redo y recuperación del original: PASS, 38 muebles intactos.",
+      "4. **Persistencia del mundo no ensayada específicamente para los cinco objetos nuevos después de Save/Load completo.** La biblioteca se recarga y la propia colocación/Undo/Redo están validados. El sistema general de guardado tiene pruebas previas independientes.",
+      "6. El controlador de selección legado de la escena de pruebas no selecciona todos los objetos; QA usa el Selection Set canónico de B8. No afirmar que todas las interacciones visuales están listas.",
+      "**Cierre técnico condicionado a regresión y build final:** la prueba de mesa y cuatro sillas, las relaciones, los cambios financieros con rollback, la persistencia de la biblioteca y el Undo/Redo cumplen el criterio de motor. Queda pendiente una prueba Save/Load específica del mundo con los cinco nuevos muebles, el caso válido de 64 componentes y la aprobación de UI Galería Viva. No declarar terminado el apartado visual hasta que exista interfaz responsive y pruebas manuales."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B12_HARDENING_20261009.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B12_HARDENING_20261009.md",
+    "sha256": "7672B0AC2D5021BA4BD1A79F3651D828B8E3E1C30EA975A221588B5AE05E733C",
+    "bytes": 4144,
+    "headings": [
+      "# Editor V2 — B12: hardening de composiciones (2026-10-09)",
+      "## Incidencias detectadas y corregidas",
+      "## QA real con escena de 38 muebles",
+      "## Límites de la evidencia"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B12: hardening de composiciones (2026-10-09)",
+      "Método: `BistroBuilderEditorV2B12RuntimeSelfTest.RunFromCommandLine`. Archivo de resultado runtime `EditorV2_B12_Runtime_Report.txt`; log `Logs/B12_FinanceRollback02.log`.",
+      "- PASS: captura → JSON → recarga → resolución de ID canónico → coste → nueva colocación en posición válida → identidad propia → Undo/Redo/Undo → 38 originales intactos.",
+      "- PASS: fixture de **mesa + cuatro sillas realmente asociadas** por `RestaurantSeatingTopologyService`. Se guarda y recarga el JSON, se libera temporalmente el espacio original con el servicio oficial de borrado grupal, se reconstruyen los cinco en el mismo sitio desde la plantilla. El nuevo grupo presenta cuatro sillas asociadas a la **mesa nueva**, no a la original. Undo/Redo y reversión de ambas transacciones dejan 38 muebles e historial idénticos a los originales.",
+      "- PASS: biblioteca JSON corrupta no se sobrescribe, permisos de modo edición, consultas de ID no existente.",
+      "- No hay aún una prueba automatizada de **Save/Load del mundo de juego** con los cinco nuevos muebles confirmados; la persistencia comprobada es la biblioteca de plantillas, junto con el historial y las autoridades de colocación existentes."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B12_FINAL_VALIDATION_20261009.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B12_FINAL_VALIDATION_20261009.md",
+    "sha256": "C446EEC22A042377B03E78A403DE08EA147C6916AA700DC9D2EAC9B8545C0093",
+    "bytes": 4541,
+    "headings": [
+      "# Editor V2 B12 — aceptación técnica y repetición independiente",
+      "## Cambios y garantía de integridad",
+      "## Pruebas reales terminadas",
+      "## Interpretación correcta de métricas y límites",
+      "## Evidencia y ejecución"
+    ],
+    "editorReferences": [
+      "# Editor V2 B12 — aceptación técnica y repetición independiente",
+      "- Creación transaccional de plantillas (1–64 miembros) con catálogo, geometría real, validación de área y espacios operativos, finanzas, Undo/Redo y restauración de fallos.",
+      "- B8: se conserva la búsqueda adversarial de parejas en el restaurante real, con rollback obligatorio en cada intento fallido. Para evitar que un comedor lleno invalide una prueba positiva, hay una segunda prueba con área de comedor temporal y dos muebles canónicos: duplicar, verificar identificadores, geometría, historial, Undo/Redo, volver al inventario inicial. La prueba positiva se ejecuta aun cuando la escena principal encuentre un hueco.",
+      "- Runner nuevo `Tools/BistroBuilder/RunEditorV2B12FinalQA.ps1`: Unity se invoca **secuencialmente**, se espera el proceso principal y se verifica **exit code + informe de esta ejecución**, en lugar de confiar en archivos antiguos. BBSIS se valida por su log nuevo porque su reporte histórico no se actualiza.",
+      "- **B12 Runtime:** PASS con IDs canónicos, catálogo, biblioteca JSON versionada, rechazo de conflictos espaciales internos, rechazo 65 miembros, Undo/Redo, restauración del mundo y fallo financiero inducido en el tercer cargo (2 cargos compensados).",
+      "- **B12 cinco piezas + Save/Load real:** PASS; mesa y cuatro sillas asociadas, JSON, slot QA 970–989, persistencia del mundo y restauración de exactamente las cuatro asociaciones y sus identidades. Slot temporal eliminado.",
+      "- **B12 válido 64:** 3/3 PASS en **dos series independientes** en la misma escena de prueba. En la última serie: creación 240 / 262 / 354 ms y reconstrucción 283 / 271 / 312 ms, respectivamente; 64 objetos con identificadores únicos, 1 Undo agrupado y Undo/Redo/Undo sin residuos en registro.",
+      "- **BBSIS Phase 2C Play Mode:** PASS, exit 0, log actual `Logs/B12_SEQ_BBSIS_PHASE2C.log`.",
+      "- `Logs/B12_Final_Sequential_Suite.txt`: QA secuencial B12, cinco miembros, 64×3 y BBSIS. Históricamente se detectó un false negative por leer un informe BBSIS del 7/10, y fue corregido para comprobar el log del mismo proceso.",
+      "- `EditorV2_B12_Runtime_Report.txt`, `EditorV2_B12_FiveSaveLoad_Report.txt`, `EditorV2_B12_Valid64_Report.txt`."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B12_64_OPT_20261009.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B12_64_OPT_20261009.md",
+    "sha256": "F26296661142A66D36E1FC12298ED79439F8E407A83148A1B074B2EEA1BECCF1",
+    "bytes": 4364,
+    "headings": [
+      "# Editor V2 B12 — Save/Load de cinco piezas y optimización positiva de 64",
+      "## Resultados específicos",
+      "### Guardado/carga real de cinco muebles",
+      "### Ensayo de 64 válido",
+      "## Seguridad y compatibilidad"
+    ],
+    "editorReferences": [
+      "# Editor V2 B12 — Save/Load de cinco piezas y optimización positiva de 64",
+      "- Fixture real en `Prototype_Restaurant.unity`: una mesa y cuatro sillas asociadas por el servicio canónico.",
+      "- **PASS:** `EditorV2_B12_FiveSaveLoad_Report.txt`: `savedFive=True loadedFive=True originalAbsent=True seatsBefore=4 seatsAfter=4 exactLinks=True objectsBefore=38 objectsAfter=38 saveSlotDeleted=True`.",
+      "- Prueba: `BistroBuilderEditorV2B12FiveSaveLoadSelfTest.RunFromCommandLine`. `UseTemporaryStorageForTest` evita modificar la biblioteca real de jugador. Los datos de Save/Load de prueba usan slots libres reservados y son eliminados.",
+      "- Escenario aislado construido solo en memoria durante Play Mode, no se altera `.unity`: área funcional extensa basada en la definición canónica del restaurante, 64 prefabs reales de mesa del catálogo, cuadrícula 8×8 a 9 m de separación.",
+      "- Captura 64 objetos seleccionados → persiste JSON → recarga → presupuesto en céntimos → Undo de 64 como una operación → coloca de nuevo desde biblioteca con nuevas identidades → Undo/Redo/Undo → registro y UndoCount retornan exactamente al punto original. No queda área ni fichero QA persistente.",
+      "- `BistroBuilderEditorV2B12Valid64SelfTest.RunFromCommandLine`: **PASS**, 64/64 válidos.",
+      "- Se respetan los controles de colisión entre miembros provisionales, validación de áreas/espacios funcionales, caja, rollback, topología, Undo/Redo y límite 64."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B11_DIAGNOSTICS_20261009.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B11_DIAGNOSTICS_20261009.md",
+    "sha256": "AE0524D9353E9DC0F6DFE21BF7FAEE06CFB5760F1F532217C5FE39AA42845D96",
+    "bytes": 6961,
+    "headings": [
+      "# Editor V2 — B11: diagnóstico del restaurante",
+      "## Alcance técnico",
+      "## Acceso de jugador",
+      "## Tests y garantías",
+      "## Actualización posterior: optimización Navigation 17 (2026-10-09)",
+      "## Convivencia / seguridad"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B11: diagnóstico del restaurante",
+      "- **BBSIS**: `BistroBuilderSpatialAssessmentService.EvaluateCurrentLayout`, `LastLedger.records`; roles `MobilityEnvelope`, `CarryEnvelope`, `TraversalGate`, `SeatBay`, `Approach`, `WorkZone`, etc.",
+      "El componente `BistroBuilderEditorV2DiagnosisService` no utiliza `Update` ni `InvokeRepeating`: analiza bajo demanda con `TryScan(layers, out report, out error)` y, si se solicita circulación, utiliza una única corutina de revisión progresiva. Se cancela al cerrar, cambiar filtros, desactivar el componente o salir de edición. Rechaza peticiones fuera del modo edición o con capas vacías. Los hallazgos repetidos se deduplican por ID y se ordenan de forma determinista (gravedad, capa, ID). Una autoridad ausente se marca explícitamente como *no evaluada*: **nunca equivale a un diagnóstico sin problemas**.",
+      "El `BistroBuilderEditorV2DiagnosisOverlay` se instala idempotentemente en la escena de Editor V2, se muestra con **F8** y contiene capas y botón **Analizar**. Permite consultar explicaciones, soluciones y coordenadas, además de pequeños indicadores sobre la vista 3D para hallazgos localizados. No modifica ni selecciona objetos del mundo, y cerrar el panel deja el diagnóstico inactivo.",
+      "**Límite UX:** es una capa funcional de Unity IMGUI para poder comprobar B11, **no el diseño gráfico definitivo Galería Viva**; trasladar el aspecto a la interfaz aprobada de Editor V2 será una tarea visual separada. No altera `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md`.",
+      "- **B11 QA 33/33 PASS**, evidencia `docs/40_TESTING/EDITOR_V2_B11_UNIT_PASS.txt`; QA de DTO reales de BBSIS, Navigation y Seating: paso bloqueado, cocina/mesa sin ruta, sillas sin mesa, sala sin asientos; severidad y soluciones correctas, localización si existe, deduplicación y filtros.",
+      "- QA sobre escena real en Editor: entrada en modo edición, rechazo de análisis fuera de edición, falta de capas, idempotencia bootstrap y panel, bloqueo de análisis de fondo y restauración intacta de historia/poses.",
+      "- **Build Windows x64 PASS** — `Logs/EditorV2_B11_FinalWindowsBuild.log`: `Build Finished, Result: Success`, `BB_PLAYTEST_BUILD_PASS`, exit 0, 13 avisos no bloqueantes, 181376327 bytes según la salida de la build. Ejecutable: `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`.",
+      "Informes automáticos generados en raíz del worktree: `EditorV2_B11_Diagnosis_Report.txt`, `EditorV2_B11_RuntimePlay_Report.txt`; logs de Unity en `Logs/EditorV2_B11_*.log`. Los informes versionados que acompañan a este documento se identifican por su nombre de cierre.",
+      "El coste de **29.175 ms** reflejado arriba corresponde al cierre inicial B11 y ya **no es el rendimiento vigente**. La optimización de A* y dock reduce el cálculo exhaustivo a **2.983 / 2.701 / 2.951 ms** en tres ejecuciones reales consecutivas; 21 rutas y 38 muebles intactos en todas. Comparativa exacta con la implementación anterior sobre **37 casos: 37/37 PASS**, incluidas posiciones de todos los waypoints. Nav V1 44/44, Nav17 22/22 y Play Mode/SaveLoad de Nav17 también PASS. La regresión Editor V2 más reciente ha validado 267/267 PASS. Consultar `docs/40_TESTING/NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md` y sus reportes reproducibles. El estrés de 50 NPC continúa presentando falta de convergencia con **ambas** variantes; se registra como riesgo abierto, no como PASS."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B10_REPLACEMENT_20261008.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B10_REPLACEMENT_20261008.md",
+    "sha256": "13B2EA60B90DC3A2091F9FA60D41005FBFB4F9900FF7FE34E1652167D10B4807",
+    "bytes": 7521,
+    "headings": [
+      "# Editor V2 — B10 Sustitución inteligente (08/10/2026)",
+      "## Estado / autoridad",
+      "## Contrato funcional implementado",
+      "## Evidencia obtenida",
+      "## Limitaciones verificadas / pendientes",
+      "## Regresiones",
+      "## Compilación PC y reparación de catálogo",
+      "## Reglas de mantenimiento"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B10 Sustitución inteligente (08/10/2026)",
+      "**B10 NÚCLEO CERRADO (PASS técnico) en la rama aislada `feature/editor-v2`.** Save/Load real en Play Mode, regresión B4–B10 y build de Windows 64 bits superados. La conexión con el botón definitivo del catálogo y el nuevo inspector continúa en el proyecto visual Editor V2: no está incluida en el cierre de las autoridades de B10. No se ha mezclado con la rama maestra.",
+      "Referencias vinculantes: `docs/20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md`, BBSIS/Placement, `RestaurantPlaceableLifecycleService`, `RestaurantPlacementHistoryService`, `BistroBuilderPlaceableFinanceBridge` y `restaurant.structure`. B10 no implementa un segundo motor de colocación, finanzas ni guardado.",
+      "- Reutiliza lifecycle/registry, validación espacial, regeneración de relaciones, Finance y el historial central. Rechaza modo edición inactivo, transacciones concurrentes y autoridad financiera no enlazada.",
+      "- `BistroBuilderEditorV2ReplaceHistoryCommand` representa retirada + compra como una sola operación. Undo/Redo aplica fases en orden seguro e invierte las fases completadas si una falla.",
+      "- `BistroBuilderPlaceableFinanceBridge.Replacement` invierte conjuntamente los asientos de compra/venta en Undo/Redo sin reutilizar erróneamente una única categoría contable para ambas.",
+      "- `BistroBuilderEditorV2GroupOperationService` publica cotización y sustitución desde la selección (sin modificar visuales pendientes de aprobación).",
+      "Comando de prueba: `BistroBuilderEditorV2B10ReplacementSelfTest.RunFromCommandLine` mediante Unity 6000.3.19f1, escena real `Assets/Scenes/Prototype_Restaurant.unity`.",
+      "**Resultado B10: 40 OK / 0 fallos** (`EditorV2_B10_Replacement_Report.txt`; log de Unity `Logs/B10_PaidLoop2.log`). Comprueba:",
+      "- historial compuesto, orden de Undo/Redo, reintentos y fault injection con rollback;",
+      "- Undo/Redo real de Finanzas y colocables;",
+      "- sustitución simultánea de dos mesas, un único historial y Undo/Redo con recuperación de caja;",
+      "- fixture financiero **temporal e in-memory** (no se modifica el catálogo): compra a **250 EUR**, gasto **25 000 céntimos**, reventa al **50 %** con recuperación de **12 500 céntimos**, varias inversiones Undo/Redo sin duplicación de movimientos.",
+      "1. **Save/Load real: PASS.** Batería `BistroBuilderEditorV2B10SaveLoadPlayModeSelfTest.RunFromCommandLine` (Unity Editor Play Mode real; sin `-quit`): sustitución de silla, SaveGame -> carga real -> borrado de slot diagnóstico (950–969), 38 colocables recuperados, 28 vínculos de plazas-mesas consistentes, ID nuevo presente y antiguo ausente. Reporte: `EditorV2_B10_SaveLoadPlay_Report.txt`; log: `Logs/B10_SaveLoadPlay6.log`. El test estabiliza primero la topología de asientos; no altera una partida existente.",
+      "2. Pendientes fuera del núcleo validado: prueba visual interactiva de jugador final y estrés B10 masivo en diferentes perfiles BBSIS, incluidos cambios grandes de dimensiones; los casos que no caben se rechazan mediante validación canónica.",
+      "4. No integrar en `integration/master-current-20260918` hasta enlazar y aceptar visualmente la operación en el Editor V2. La ejecución real sin UI está disponible como API en el servicio de grupos.",
+      "Lanzador reproducible: `Tools/BistroBuilder/RunEditorV2B10Regression.ps1`. Ejecutado en serie con Unity 6000.3.19f1; cada subproceso devolvió **exit code 0** y se verificó su informe:",
+      "Logs reproducibles: `Logs/EditorV2_B4_Regress_B10.log` a `Logs/EditorV2_B10_Regress_B10.log`. La prueba B10 incluye los datos financieros de 250 EUR y 50 % de reventa. Esta batería es una regresión de Editor en modo `-batchmode`, no sustituye una prueba de jugador ni una compilación Windows posterior a B10.",
+      "El Save/Load real descubrió un problema preexistente de catálogo: el archivo de escena sólo tenía cuatro definiciones serializadas aunque había nueve definiciones de colocables válidas (incluida `pf_bb_chair_master_001_olive`). Se añadieron exactamente las cinco referencias omitidas a `Assets/Scenes/Prototype_Restaurant.unity` sin cambiar otros objetos. La autoridad existente para sincronizar futuras definiciones sigue siendo el instalador canónico `BistroBuilderUniversalSaveFoundationInstaller` (no se ha añadido un segundo sincronizador). Durante la ejecución headless inicial Unity bloqueó el renombrado temporal del archivo de escena, por lo que se aplicó y verificó un parche YAML acotado con copia recuperable en `Library/B10_SceneCatalogBackup_20261008.unity`. Después de esa actualización, Save/Load completó correctamente el ciclo completo. No atribuir este fallo a una pérdida de datos ni ocultarlo en auditorías.",
+      "- No tocar `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md` durante las pruebas de lógica B10."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_B10_CATALOG_WIRING_20261008.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_B10_CATALOG_WIRING_20261008.md",
+    "sha256": "03AE1ED20A18611D2841B486F84857F00049D9D84942A309443BCB0593355FC1",
+    "bytes": 5494,
+    "headings": [
+      "# Editor V2 — B10 «Sustituir selección» en catálogo e inspector (08/10/2026)",
+      "## Estado de integración",
+      "## Recorrido de jugador",
+      "## Archivos",
+      "## Evidencias",
+      "## Regresión y comportamiento no determinista de QA",
+      "## Build Windows de cierre",
+      "## Convivencia"
+    ],
+    "editorReferences": [
+      "# Editor V2 — B10 «Sustituir selección» en catálogo e inspector (08/10/2026)",
+      "**Conexión funcional implementada y verificada en Unity.** El catálogo de artículos existente y el inspector derecho invocan la fachada B8 `BistroBuilderEditorV2GroupOperationService`, que delega en las autoridades B10. No se ha implementado una segunda operación de sustitución ni se ha alterado la maqueta visual Galería Viva en el archivo `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md`.",
+      "1. Entrar en modo edición y seleccionar un mueble o varios de la misma familia mediante B8.",
+      "5. Al pulsar se recalcula el presupuesto en Finance; si ha cambiado, se exige revisar el nuevo importe y pulsar otra vez. Si permanece válido, se ejecuta una sola transacción B10, con Undo/Redo agrupado y restauración canónica de relaciones y contabilidad.",
+      "- `Assets/Editor/BistroBuilder/EditMode/BistroBuilderEditorV2B10SaveLoadPlayModeSelfTest.cs`: ejercita mediante Play Mode el clic de tarjeta y botón real, rechazo de categoría incompatible, más el Save -> Load -> Delete de partida QA.",
+      "- Prueba en escena `Prototype_Restaurant.unity`: `Logs/B10_CatalogWiring_FinalPlay.log`; evidencia versionada `docs/40_TESTING/EDITOR_V2_B10_UI_SAVELOAD_PASS.txt`. PASS: click de catálogo, botón habilitado para la cotización válida y deshabilitado para categoría incompatible; el botón crea la sustitución, quita la selección original y no deja colocación activa; Save/Load reconstruye 38 colocables, 28 relaciones y el ID nuevo.",
+      "- Batería canónica independiente B10: 40/40 PASS antes de enlazar la UI.",
+      "La batería B4/B5/B8/B9/B10, repetida después de conectar la UI, acabó con **252/252 PASS**, exit code 0 para cada proceso (63+48+59+42+40). Se ejecutó con `Tools/BistroBuilder/RunEditorV2B10Regression.ps1`.",
+      "**Incidencia transparente:** la primera ejecución conjunta arrojó un fallo en **B8** (`68 OK / 1 fallo`), al no hallar en los primeros 100 pares un hueco para duplicación grupal (`FootprintOutsideCandidateArea`). Una repetición independiente de B8 obtuvo **74/74 PASS** y la siguiente batería conjunta **59/59 PASS** en B8. Esta variación de escenario/prueba de estrés debe examinarse si reaparece; no se modificó ni desactivó el motor ni el caso para forzar éxito. El enlace UI B10 y el Save/Load real no fallaron.",
+      "No alterar ni reemplazar el diseño aprobado del otro hilo ni mezclar con la rama maestra hasta que se complete Galería Viva y su aceptación en pantalla. `BistroBuilderEditorV2GroupOperationService` es el contrato público de la futura presentación sin tocar Finance, BBSIS, historial o Save/Load."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\EDITOR_V2_A4A_SAVIC_GATE_20261005.md",
+    "relativePath": "docs\\40_TESTING\\EDITOR_V2_A4A_SAVIC_GATE_20261005.md",
+    "sha256": "299B2C029391503786A8154ED823BF688A8C50D6022BDAC5C146842AD881DC74",
+    "bytes": 6239,
+    "headings": [
+      "# Editor V2 — Gate Assets4All → SAVIC",
+      "## 1. Contrato verificado",
+      "## 2. Cinco familias reales",
+      "## 3. Evidencia end-to-end profunda",
+      "## 4. Endpoints de familia",
+      "## 5. Versionado del puente",
+      "### Assets4All",
+      "### SAVIC / Bistro Builder",
+      "## 6. Matriz Unity aislada adicional",
+      "## 7. Decisión"
+    ],
+    "editorReferences": [
+      "# Editor V2 — Gate Assets4All → SAVIC",
+      "**Decisión:** B1 de Editor V2 queda desbloqueado.",
+      "**Alcance:** gate de dependencia entre Assets4All, SAVIC y Editor V2; no autoriza por sí solo merge a MASTER.",
+      "`schemaId = assets4all.savic-delivery`",
+      "Assets4All conserva la autoridad sobre SOURCE, WORK y PartGraph. SAVIC conserva clasificación, publicación, catálogo, contratos jugables, BBSIS y persistencia.",
+      "El receptor SAVIC verifica:",
+      "Se han generado y comprobado entregas reales de revisión 1 para las cinco familias exigidas por Editor V2:",
+      "- `schemaId=assets4all.savic-delivery`;",
+      "La aceptación profunda existente utiliza el armario/equipamiento SAVIC:",
+      "- identidad canónica estable;",
+      "- colocación en Modo Edición;",
+      "Helpers canónicos:",
+      "- `SavicAssets4AllAcceptance`;",
+      "- `SavicAssets4AllSaveGameAcceptance`;",
+      "- `tools/blender_savic_delivery_probe.py`.",
+      "Los cinco tipos objetivo ya disponen de contenido publicado/materializado por SAVIC y de sus publishers/validadores correspondientes.",
+      "**Assets4All → delivery V1 común → SavicAssets4AllService → clasificación/publicación SAVIC → definición/prefab/catálogo → Editor**",
+      "El receptor del paquete no contiene ramas específicas por mesa, silla, lámpara, decoración o equipamiento. La especialización posterior sigue perteneciendo a SAVIC. Por ello, el gate de integración no exige duplicar cinco veces las pruebas destructivas del receptor ya cubiertas end-to-end.",
+      "El exportador `savic_delivery.py` está versionado en el commit:",
+      "### SAVIC / Bistro Builder",
+      "`feature/savic-assets4all-delivery-v1`",
+      "`a5efc06f — feat(savic): version Assets4All delivery bridge`",
+      "Existe además la rama de validación `validation/a4a-savic-gate-20261006` con el commit `b094ab6c`.",
+      "No se requiere integrar estas ramas en MASTER para desbloquear B1. Su integración en la rama acumulativa de SAVIC sigue siendo una operación separada y deberá conservar las regresiones de SAVIC.",
+      "- los cinco endpoints de familia existen en SAVIC;",
+      "No se atribuye el fallo del clon al contrato Assets4All → SAVIC.",
+      "**Gate Assets4All → SAVIC = PASS.**",
+      "- mezclar la rama completa de SAVIC;",
+      "- reducir las regresiones de SAVIC;",
+      "La dependencia necesaria para comenzar Editor V2 B1 queda suficientemente estable, trazable y demostrada."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\DOCUMENTATION_MIGRATION_AUDIT_20260912.md",
+    "relativePath": "docs\\40_TESTING\\DOCUMENTATION_MIGRATION_AUDIT_20260912.md",
+    "sha256": "C076D5008523ABFDE836A14DBDACB9FE5E2DB6D3A102BBB319BB2B80F139CC99",
+    "bytes": 1747,
+    "headings": [
+      "# Auditoría — migración documental canónica 12/09/2026",
+      "## Resultado",
+      "## Fuentes incorporadas",
+      "## Contradicciones reconciliadas",
+      "## Comprobaciones",
+      "## Criterio de uso"
+    ],
+    "editorReferences": [
+      "# Auditoría — migración documental canónica 12/09/2026",
+      "**PASS documental** para la consolidación realizada en `docs/canonical-knowledge-20260912`.",
+      "- estado de ramas y código actual para distinguir infraestructura existente de UX vigente.",
+      "- **BBSIS/Interaction/Animation:** diseño/autoridad cerrados; fixes posteriores se clasifican como hardening, no rediseño.",
+      "A partir de esta migración, agentes y desarrolladores deben arrancar por `AGENTS.md` + `docs/README.md`. Los documentos históricos sirven para trazabilidad, no para contradecir el Decision Register o los documentos canónicos."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\40_TESTING\\ACCEPTANCE_AND_VALIDATION.md",
+    "relativePath": "docs\\40_TESTING\\ACCEPTANCE_AND_VALIDATION.md",
+    "sha256": "BA79954D613AE973F252AA37B94176BDC1208791CE16D86A369544E68C3C15B9",
+    "bytes": 1620,
+    "headings": [
+      "# Bistro Builder — aceptación y validación",
+      "## Definición de PASS",
+      "## Gates mínimos",
+      "## Sistemas visuales/espaciales",
+      "## Rendimiento",
+      "## Persistencia",
+      "## Queen / pruebas destructivas",
+      "## Cierre documental"
+    ],
+    "editorReferences": [
+      "- Save/Load cuando el sistema persista estado;"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\30_UI_UX\\UI_UX_DEFINITIVE.md",
+    "relativePath": "docs\\30_UI_UX\\UI_UX_DEFINITIVE.md",
+    "sha256": "826C608B93860F737FEBAEE551DA41357B0BDF3CBECC1CA58EA1F2E52E1C9BBD",
+    "bytes": 5880,
+    "headings": [
+      "# Bistro Builder — UI/UX definitiva",
+      "## Composición base",
+      "## Interacción",
+      "## Estados visuales",
+      "## Tipografía y tono",
+      "## Modo Edición — composición visual",
+      "## Principios",
+      "## Nueva partida — decisión 24/09/2026",
+      "## Barra superior aprobada — adaptación responsive 25/09/2026",
+      "## Nitidez del player — 26/09/2026",
+      "## Revisión de paneles — 29/09/2026"
+    ],
+    "editorReferences": [
+      "- Barra horizontal inferior operativa para el modo normal/servicio: integra de forma permanente **Velocidad**, `Caja` y **Climatología**, además de las acciones del contexto actual cuando procedan. El catálogo canónico de estas acciones vive en `CONTEXTUAL_ACTION_CATALOG.md`.",
+      "## Modo Edición — composición visual",
+      "Durante Modo Edición, `Actividad` deja temporalmente su lateral al **Catálogo de artículos**. La dirección visual aprobada es la **Propuesta C revisada**:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\30_UI_UX\\NEW_GAME_APPROVED.md",
+    "relativePath": "docs\\30_UI_UX\\NEW_GAME_APPROVED.md",
+    "sha256": "E18E64BC8E9295DCDCFE4F93CFDB22C0C8671409B32479481162E1FB68D60FCE",
+    "bytes": 4846,
+    "headings": [
+      "# Nueva partida — marfil clásico aprobado",
+      "## Diseño vinculante",
+      "## Integración en el juego — 24/09/2026",
+      "## Archivos y comprobación",
+      "## Validación nativa",
+      "## Correcciones de apertura — 25/09/2026"
+    ],
+    "editorReferences": [
+      "Pantalla nativa uGUI/TMP conectada al servicio de apertura existente. No se ejecuta un navegador dentro de Unity. Nombre editable, selección única, validación de nombre vacío y bloqueo de doble creación. Atrás conduce a un menú con Nueva partida, Continuar partida y Salir. Crear abre el modo edición; allí se conservan Guardar recuperación y Validar y continuar.",
+      "BistroBuilderOpeningIvorySelfTest.Run: PASS en creación por botón, Atrás/reapertura, nombre vacío, selección única, tres tarjetas iguales y guardar/cargar los tres perfiles. Resultado: 0 artículos/0 mesas, 6 artículos/2 mesas y 38 artículos/10 mesas respectivamente en la escena canónica. Panel completo y texto sin desbordamiento a 1920×1080, 1280×720 y 3440×1440, con capturas renderizadas e inspección visual. Pruebas usan ranuras libres 901–999 y eliminan únicamente los guardados que generan."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\30_UI_UX\\CONTEXTUAL_ACTION_CATALOG.md",
+    "relativePath": "docs\\30_UI_UX\\CONTEXTUAL_ACTION_CATALOG.md",
+    "sha256": "F5AC93F57050DB9D1E10333B927D62BCD8B330DFCC794FAAE07E412AF2B1D5EC",
+    "bytes": 13706,
+    "headings": [
+      "# Bistro Builder — Catálogo canónico de acciones contextuales",
+      "## Principio de la barra inferior",
+      "## Estados canónicos de espera/servicio",
+      "## Fuente única de tiempos",
+      "## Cocina y carta incompleta",
+      "## Contexto Mesa / Cliente",
+      "### Acciones ya ratificadas",
+      "#### Vertical runtime: esperas de mesa",
+      "### Acciones pendientes de ratificación",
+      "## Contexto Cocina",
+      "## Regla de implementación incremental"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — Catálogo canónico de acciones contextuales",
+      "## Estados canónicos de espera/servicio",
+      "No se deben hardcodear umbrales independientes en cada pantalla, acción o sistema. La intención es disponer de una fuente canónica configurable, conceptualmente **ServiceTimingCatalog**, consultada por UI y gameplay.",
+      "Tuning provisional de prueba para `TakeOrder`, usando el contador canónico existente mientras la mesa/grupo permanecen en `WaitingForWaiter`:",
+      "Para `FoodDelivery` no se usa un tiempo fijo universal. La referencia es el **tiempo esperado real de la comanda**, resolviendo para cada plato el tiempo de preparación efectivo de la carta de esa partida (`BistroBuilderRestaurantMenuService`) y usando la definición canónica del plato solo como fallback cuando corresponda. La comanda toma como referencia el mayor tiempo efectivo entre sus líneas activas. Los umbrales provisionales se derivan dinámicamente:",
+      "La espera canónica de cuenta se lee del seguimiento de experiencia ya existente mientras el grupo permanece en `WaitingForBill`; no se crea un segundo cronómetro. La acción eleva la tarea real `DeliverBill` de la cola autoritativa de camareros a prioridad urgente únicamente mientras sigue pendiente. Si un camarero ya la ha asumido, la acción desaparece y la UI puede indicar `Cuenta en camino`.",
+      "Si el jugador ha aplicado `Agilizar cuenta` y realiza un guardado de servicio activo mientras la necesidad sigue vigente, el estado de priorización debe conservarse y rehidratarse al cargar; no puede perderse ni duplicar tareas.",
+      "`Explicar demora` aparece **desde Demora**, no en Atención. No acelera la tarea física de cuenta. Es de una sola aplicación por necesidad activa y puede coexistir con `Agilizar cuenta`. Su efecto es mitigar parte del impacto de la espera en satisfacción mientras la causa sigue existiendo. La mitigación inicial de prueba queda en **1500 pb (15 % de la penalización de espera de cuenta recuperable)**, configurada en `ServiceTimingCatalog`; es un valor **provisional de balance**, no una cifra definitiva. El estado explicado se persiste dentro de `reputation.runtime` para sobrevivir a Save/Load.",
+      "`Disculpa` aparece cuando la espera de cuenta alcanza **Incidencia/Crítico** o cuando la visita tiene una incidencia explícita recuperable procedente de la comanda canónica. En esta primera integración se consideran fallos del restaurante: `WrongDish`, `DuplicateOrder`, `KitchenError`, `QualityIssue`, `AllergyRisk`, `MissingItem` y `ServiceError`. `CustomerChange` no se considera fallo del restaurante y no habilita `Disculpa` por sí solo.",
+      "No incorporar todavía como acciones canónicas sin diseño adicional:"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\30_UI_UX\\CAMERA_369.md",
+    "relativePath": "docs\\30_UI_UX\\CAMERA_369.md",
+    "sha256": "B19694815E28BFADF11F9517E3C728317CC86473F92EC24310AD9F17E5243853",
+    "bytes": 1821,
+    "headings": [
+      "# Bistro Builder — cámara profesional 369",
+      "## Controles reservados",
+      "## Comportamiento contextual",
+      "## 369B — decisión sustituida",
+      "## 369C — regla no destructiva",
+      "## Protección de UI"
+    ],
+    "editorReferences": [
+      "La cámara contextual/inspección nunca redistribuye mobiliario ni modifica el layout. Una versión temprana produjo una regresión destructiva sobre `Prototype_Restaurant.unity`; 369C3 fijó que la cámara solo observa/transiciona y que el layout pertenece al Modo Edición canónico."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\SYSTEM_CATALOG.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\SYSTEM_CATALOG.md",
+    "sha256": "4ACDD0431594EDD1B8487FB27E5372F5948E81B8B96A905EA8A38235613E1592",
+    "bytes": 2163,
+    "headings": [
+      "# Bistro Builder — catálogo canónico de sistemas de juego",
+      "## Regla"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — catálogo canónico de sistemas de juego",
+      "| 11 | Comandas avanzadas | CERRADO V1 | extensión sobre flujo canónico 367 |",
+      "| 18 | Modo Edición / Construcción | ACTIVO | 18M/18N + Construction Authoring |"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\SERVICE_SYSTEMS.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\SERVICE_SYSTEMS.md",
+    "sha256": "D5D754AC5A9AEE53F21CBD74040D6A2CFA798181ECBFF6925713B73E69D2BF82",
+    "bytes": 3193,
+    "headings": [
+      "# Bistro Builder — servicio, clientes, comandas, cocina y sala",
+      "## Clientes y mesas",
+      "## Comandas",
+      "## Cocina",
+      "## Camareros",
+      "## Entrada, sala y barra",
+      "## Asignación de mesa",
+      "## Fin de servicio/día",
+      "## Regla de experiencia"
+    ],
+    "editorReferences": [
+      "Las condiciones de aparición, estados semánticos de espera y contrato de UI de estas acciones se centralizan en `docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md`. Los tiempos no se hardcodean en Presentation ni se duplican por acción. Mesa/Cliente reutiliza los contadores canónicos existentes para `WaitingForWaiter`, `WaitingForFood` y `WaitingForBill`. `TakeOrder` usa un perfil configurable; `FoodDelivery` deriva sus umbrales del tiempo esperado real de la comanda, calculado a partir de los tiempos de preparación efectivos de la carta de la partida y con fallback al catálogo canónico; `BillDelivery` conserva su perfil configurable. `Explicar demora` se habilita desde Demora y `Disculpa` desde Incidencia/Crítico o por fallos explícitos recuperables; ninguna de las dos acelera físicamente la tarea. `Agilizar cuenta` sigue siendo exclusiva de la cuenta y eleva únicamente la tarea real `DeliverBill` a través de `WaiterTaskCoordinator`. Recuperaciones, incidencias y priorización sobreviven a Save/Load sin crear autoridades paralelas.",
+      "La comanda canónica soporta líneas, consumidores múltiples y pases. En compartidos, una línea puede permanecer `Served` hasta que todos los consumidores hayan reclamado/consumido; los pases se liberan según política. La autoridad de estados de línea no pertenece a Kitchen ni a UI.",
+      "Algoritmos de política previstos/aprobados: **Equilibrado**, **Priorizar satisfacción**, **Rotación**, **Proteger reservas** y **Equilibrar zonas**. La política selecciona; BBSIS/Navigation resuelven viabilidad y desplazamiento."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\MANAGEMENT_SYSTEMS.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\MANAGEMENT_SYSTEMS.md",
+    "sha256": "C8509C9C5F1BC0CA752F3FF5EC0471B8622814169A1782839A621CEDBC5FD811",
+    "bytes": 2138,
+    "headings": [
+      "# Bistro Builder — sistemas de gestión",
+      "## Inventario / Almacén (2.2)",
+      "## Proveedores (2.3)",
+      "## Economía (3)",
+      "## Personal (4)",
+      "## Horarios (5)",
+      "## Reservas (6)",
+      "## Marketing, Reputación y Progresión (7–9)",
+      "## Regla transversal"
+    ],
+    "editorReferences": [
+      "Datos maestros separados de mercado dinámico y estado de partida. Pedidos con ciclo `Draft → Confirmed → PendingDelivery → InDelivery → Delivered / Cancelled`. Formatos comerciales y ofertas desde V1. Editores de Proveedores e Ingredientes mantienen logos/imágenes, Undo/Redo, Dirty y validación. La recomendación automática se denomina **Inteligente**.",
+      "Gestiona capacidad y disponibilidad temporal/lógica de reservas de clientes, integrada con seating y servicio sin apropiarse de las reservas espaciales BBSIS."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\FURNITURE_FINISHES_VARIANTS_AUTHORING.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\FURNITURE_FINISHES_VARIANTS_AUTHORING.md",
+    "sha256": "1BB869540A329980A62785D87A41DFA127C9F9A00D2D83E5BFD672597CD72B06",
+    "bytes": 15575,
+    "headings": [
+      "# Bistro Builder — Sistema de Acabados y Variantes de Mobiliario",
+      "## 1. Objetivo",
+      "## 2. Principios vinculantes",
+      "## 3. Qué es y qué no es una variante",
+      "## 4. Modelo conceptual",
+      "## 5. Zonas semánticas de acabado",
+      "## 6. Familias de acabado",
+      "## 7. Definición de un acabado",
+      "## 8. Ventana de autoría",
+      "## 9. Flujo de creación manual",
+      "## 10. Vinculación de zonas",
+      "## 11. Preview 3D",
+      "## 12. Miniaturas",
+      "## 13. Acabado Automático",
+      "## 14. Qué se considera missing",
+      "## 15. Completar frente a sustituir",
+      "## 16. Orden de resolución automática",
+      "## 17. Señales para la propuesta automática",
+      "## 18. Incertidumbre semántica",
+      "## 19. Generación de acabado nuevo",
+      "## 20. Protección del original",
+      "## 21. Resolver todo automáticamente",
+      "## 22. Validación previa a publicación",
+      "## 23. Guardar y publicar",
+      "## 24. Integración con Assets4All",
+      "## 25. Integración con BBSIS y Modo Edición",
+      "## 26. Integración con BBPLFS",
+      "## 27. Integración con catálogo, economía y persistencia",
+      "## 28. Estrategia Unity",
+      "## 29. Patrones de industria adoptados",
+      "## 30. Criterios de aceptación V1",
+      "## 31. Frontera de autoridad"
+    ],
+    "editorReferences": [
+      "El caso base es un único mueble maestro —por ejemplo `BB_Chair_Master_001`— del que pueden publicarse múltiples acabados comerciales manteniendo geometría, pivote, footprint, colliders, contratos BBSIS y comportamiento.",
+      "8. **Undo/Redo real.** Las operaciones de autoría deben ser reversibles mediante el sistema de edición del Editor.",
+      "Cada instancia de `FurnitureFinishVariant` referencia acabados canónicos; no almacena copias innecesarias de texturas o materiales.",
+      "4. Buscar un acabado compatible en la biblioteca canónica.",
+      "El proveedor o tecnología concreta de IA no forma parte del contrato V1 y puede cambiar sin afectar a los datos canónicos.",
+      "**Publicar** registra la variante como contenido canónico consumible por el resto de Bistro Builder.",
+      "## 25. Integración con BBSIS y Modo Edición",
+      "- Persistence conserva IDs estables según los contratos canónicos.",
+      "11. Aplicar/Descartar y Undo/Redo funcionan.",
+      "13. Publica IDs estables consumibles por los sistemas canónicos.",
+      "14. No altera BBSIS, navegación, colliders ni reglas espaciales.",
+      "No posee geometría base, segmentación 3D primaria, gameplay, BBSIS, navegación, catálogo de jugador, economía, layouts BBPLFS ni persistencia global."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\EDIT_MODE.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\EDIT_MODE.md",
+    "sha256": "1BC732E3E88B28ADE7D7ACBD7ECD895527F8804E17E431A9FB707E8A22FD4D18",
+    "bytes": 8479,
+    "headings": [
+      "# Bistro Builder — Modo Edición / Construcción",
+      "## Objetivo de producto",
+      "## Reglas vinculantes",
+      "## Catálogo de artículos — UX vinculante",
+      "## Dirección gráfica aprobada — Propuesta C revisada",
+      "## Feedback universal aprobado",
+      "## Requisitos de interacción",
+      "## Evolución vinculante — Editor V2",
+      "## Gate player-ready"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — Modo Edición / Construcción",
+      "**Estado reconciliado:** arquitectura/core V1 cerrados en su alcance; **Editor V2 dispone de plan canónico aprobado y su implementación todavía no ha comenzado**. Construction Authoring/UX continúa siendo la base que debe evolucionarse, no reescribirse.",
+      "- Edición consume contratos de BBSIS, Navigation, Interaction/Reservation, Economía y persistencia; no duplica sus autoridades.",
+      "- El catálogo de mobiliario y equipamiento es un **panel vertical compacto en el lateral izquierdo** durante Modo Edición; sustituye temporalmente a `Actividad`.",
+      "- Al salir de Modo Edición, el catálogo desaparece y el lateral izquierdo vuelve a `Actividad`.",
+      "- La barra superior conserva la identidad global de Bistro Builder, el estado `Modo Edición`, controles de cámara/edición compatibles, fecha/hora, caja y acceso a continuar/salir sin competir con el viewport.",
+      "Preview/ghost, snapping suave y visible, medidas útiles, materialización breve, pulsos/reveal discretos, estados de validez y Undo/Redo. El feedback es abstracto: no simula obra física.",
+      "## Evolución vinculante — Editor V2",
+      "El desarrollo futuro del Modo Edición se rige por [Editor V2 Master Plan](EDITOR_V2_MASTER_PLAN.md).",
+      "- Editor V2 evoluciona el núcleo actual; no crea un segundo editor paralelo.",
+      "- BBSIS, Navigation, Finance, Save/Load, Placement, Construction Authoring, SAVIC, cámara 369 y Universal Preview conservan sus responsabilidades.",
+      "- La implementación empieza por B0 (baseline/protección), se pausa para cerrar el gate Assets4All → SAVIC y continúa después con B1–B16.",
+      "- Undo/Redo global, reforma transaccional y Save/Load son gates críticos; un fallo bloquea el avance."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\EDITOR_V2_MASTER_PLAN.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\EDITOR_V2_MASTER_PLAN.md",
+    "sha256": "691FC2FB42846D6841E4D80806140681836901385515E8D4095DE0F6D11D52A1",
+    "bytes": 34773,
+    "headings": [
+      "# Bistro Builder — Editor V2 Master Plan",
+      "## 0. Resumen en cristiano",
+      "## 1. Objetivo de producto",
+      "## 2. Regla principal de arquitectura",
+      "## 3. Autoridades que se conservan",
+      "## 4. Qué existe y debe aprovecharse",
+      "## 5. Hallazgos que deben verificarse antes de ampliar",
+      "### 5.1 Historial dividido",
+      "### 5.2 Reconstrucciones durante Load",
+      "### 5.3 Secuencia de publicación y economía",
+      "### 5.4 Escalabilidad del catálogo",
+      "### 5.5 Preview de mobiliario y física",
+      "## 6. Arquitectura objetivo",
+      "### 6.1 Editor V2 Coordinator",
+      "## 7. Modelo de estado objetivo",
+      "## 8. Orden global de trabajo",
+      "### Fase A — Cinturón de seguridad",
+      "### Fase B — Dependencia de contenido",
+      "### Fase C — Editor V2",
+      "## 9. Guion de implementación bloque a bloque",
+      "### B0 — Baseline y protección",
+      "### B1 — Cerrar riesgos de la auditoría",
+      "### B2 — Editor V2 Coordinator",
+      "### B3 — Selección común",
+      "### B4 — Undo/Redo global",
+      "### B5 — Reforma transaccional",
+      "### B6 — Universal Preview consolidado",
+      "### B7 — Snapping contextual",
+      "### B8 — Multiselección y grupos",
+      "### B9 — Catálogo escalable",
+      "### B10 — Sustitución inteligente",
+      "### B11 — Diagnóstico del restaurante",
+      "### B12 — Plantillas y composiciones",
+      "### B13 — Cámara y visibilidad de arquitectura",
+      "### B14 — Hardening de rendimiento",
+      "### B15 — Queen Test destructiva",
+      "### B16 — Integración y retirada de legado",
+      "## 10. Gate obligatorio Assets4All → SAVIC",
+      "### Gate mínimo de conexión",
+      "## 11. Gates de seguridad que no se pueden saltar",
+      "### Gate A — Baseline",
+      "### Gate B — Undo/Redo",
+      "### Gate C — Reforma",
+      "### Gate D — Save/Load",
+      "### Gate final — Queen + rendimiento",
+      "## 12. Política Git e integración",
+      "## 13. Reglas de persistencia y rollback",
+      "## 14. Reglas de rendimiento",
+      "## 15. Reglas UX",
+      "## 16. Fuera de alcance de Editor V2",
+      "## 17. Estado de bloques",
+      "## 18. Definición final de DONE",
+      "## 19. Regla para agentes y futuras sesiones"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — Editor V2 Master Plan",
+      "**Estado:** PLAN CANÓNICO APROBADO · B0 PASS · GATE ASSETS4ALL → SAVIC PASS · B1 PASS · B2 PASS · B3 PASS · B4 PASS · B5 PASS · B6 PASS · B7 PASS · B8 PASS · B9 PASS · B10 DESBLOQUEADO",
+      "**Sistema:** Bloque 18 — Modo Edición / Construcción  ",
+      "Editor V2 no significa tirar el modo edición actual y empezar otra vez.",
+      "Bistro Builder ya dispone de piezas valiosas y funcionales: colocación de mobiliario, validación, snapping, Construction Authoring, Draft/Baseline, Undo/Redo, Save/Load, BBSIS, Navigation, Finance y Universal Preview. Editor V2 debe conseguir que todas esas piezas se comporten para el jugador como un único editor profesional.",
+      "Editor V2 debe permitir que el jugador construya y reforme el restaurante con libertad, precisión y seguridad sin tener que entender los subsistemas internos.",
+      "- entrar en Modo Edición únicamente fuera de servicio;",
+      "- trabajar con catálogos grandes alimentados por SAVIC sin tirones injustificados.",
+      "**Este documento no autoriza una reescritura completa del modo edición.**",
+      "Editor V2 debe evolucionar las autoridades y servicios existentes. Solo podrá sustituirse un componente cuando exista evidencia de que:",
+      "| Responsabilidad | Autoridad que se conserva | Regla Editor V2 |",
+      "| Viabilidad espacial | BBSIS | Editor V2 consulta y representa; no decide por su cuenta |",
+      "| Rutas y circulación | Navigation & Crowd Flow | Editor V2 invalida/solicita; Navigation calcula |",
+      "| Persistencia | Save/Load canónico | No crear segundo formato de partida |",
+      "| Contenido publicado | SAVIC + definiciones canónicas | Editor consume datos; no analiza meshes para suplir metadatos |",
+      "- integración incremental de BBSIS durante edición;",
+      "- proveedores de Save/Load de estructura y arquitectura;",
+      "Mobiliario y arquitectura disponen de mecanismos de historial diferentes y la UI actual dirige Undo/Redo a uno u otro según la herramienta activa.",
+      "**Riesgo:** comportamiento insuficiente cuando SAVIC alimente cientos o miles de recursos.",
+      "→ Editor V2 Coordinator  ",
+      "→ autoridades existentes: Placement, Edit/Structure, BBSIS, Navigation, Finance, Interaction, Save/Load, SAVIC.",
+      "### 6.1 Editor V2 Coordinator",
+      "- si el Modo Edición está activo;",
+      "- decidir si una silla cabe sin BBSIS/Placement Validation;",
+      "Editor V2 distinguirá como mínimo:",
+      "1. **Restaurante confirmado:** estado canónico jugable.",
+      "Cerrar la conexión **Assets4All → SAVIC** hasta el gate descrito en la sección 10.",
+      "### Fase C — Editor V2",
+      "No se inicia B1 mientras la Fase B no esté aceptada, salvo una decisión canónica posterior explícita.",
+      "- fijar la integración canónica exacta de partida;",
+      "- ejecutar pruebas actuales del Bloque 18, Placement, BBSIS, Navigation y Save/Load;",
+      "- crear rama de integración de Editor V2 sin modificar comportamiento.",
+      "**Cierre B0 — 2026-10-05: PASS.** Evidencia: [Editor V2 Baseline 2026-10-05](../40_TESTING/EDITOR_V2_BASELINE_20261005.md). La baseline registra dos incidencias preexistentes de rendimiento que no impiden cerrar la fotografía de partida: Load de 5,676 s frente al presupuesto histórico de 5 s y diagnóstico completo de circulación de ~37 s. Ambas quedan como entradas explícitas de hardening; no son regresiones de Editor V2.",
+      "### B2 — Editor V2 Coordinator",
+      "**Cierre B3 — 2026-10-06: PASS.** Se introduce una selección común observable con identidad, tipo y capacidades, proyectada desde las autoridades existentes de Furniture y Construction/Surfaces. La barra de edición consume el contrato común para las acciones disponibles sin asumir autoridad de dominio. Gate específico 28/28 y regresiones B2 22/22, Core 84/84, Scene 77/77, Lifecycle 20/20 y Queen exit 0. Evidencia: [Editor V2 B3 Selección común](../40_TESTING/EDITOR_V2_B3_COMMON_SELECTION_20261006.md).",
+      "### B4 — Undo/Redo global",
+      "**GATE CRÍTICO:** si Undo/Redo mixto no es determinista, no se continúa.",
+      "Snapping propone. Placement/BBSIS valida.",
+      "- Undo/Redo de una sola acción;",
+      "**Cierre B8 — 2026-10-08: PASS.** Editor V2 incorpora Selection Set determinista con selección primaria, Shift+selección aditiva/toggle, intersección real de capacidades, proyección de la selección explícita sobre Linked Groups y cierre transitivo de relaciones semánticas. Movimiento y rotación conservan geometría relativa sin reparenting; validación, cancelación y commit siguen pasando por Placement/BBSIS. Duplicación y eliminación de conjuntos son transaccionales y publican un único comando compuesto con rollback. Undo/Redo global trata el conjunto como una sola acción y los miembros continúan siendo editables individualmente. Gate B8: 59/59 en tres ejecuciones consecutivas, stress 10.000 poses sin GC tras warmup y regresión B1-B7/Core/Lifecycle/Scene/Queen con exit 0. Evidencia: [Editor V2 B8 Multiselección y grupos](../40_TESTING/EDITOR_V2_B8_MULTI_SELECTION_GROUPS_20261008.md).",
+      "**Cierre B9 — 2026-10-08: PASS técnico.** Índice de 10.000 artículos, filtros, ordenación y búsqueda normalizada; tarjetas virtualizadas con pool limitado al viewport; reciclaje correcto de callbacks y favoritos; miniaturas vinculadas a demanda con caché acotada; integración en los componentes UI existentes sin cambiar el aspecto final no aprobado. Gate: 42/42 en tres ejecuciones, 300 desplazamientos reales de UI / 5.346 rebinds / ~17,9 ms, 10.000 frames sin scroll con 0 bytes asignados tras warmup; B8 regresión 74/74 y 59/59; B1–B7, Core, Lifecycle, Scene Validator y Queen PASS. Build Windows 64 bits PASS y prueba de arranque headless sin excepciones. La carga de texturas **asíncrona desde disco** requiere futuro contrato de miniaturas SAVIC; con las definiciones actuales se retrasa la vinculación Sprite, no su serialización. La medición de FPS con viewport gráfico real permanece pendiente de una prueba jugable y no se confunde con estos benchmarks. Evidencia: [Editor V2 B9 Catálogo escalable](../40_TESTING/EDITOR_V2_B9_SCALABLE_CATALOG_20261008.md).",
+      "**CIERRE DEL NÚCLEO B10 — 08/10/2026: PASS técnico.** Sustitución individual y múltiple, validación canónica, presupuesto económico real, Undo/Redo y rollback: 40/40 PASS. Save/Load **real en Play Mode** PASS (38 artículos, 28 enlaces mesa-silla); regresión B4+B5+B8+B9+B10: **252/252 PASS**; compilación Windows 64 bits: **PASS**. La activación gráfica final del botón de sustituir y el diseño del catálogo se resolverán dentro de `docs/ModoEdicion/EditorV2/UI/EDITOR_V2_UI_DESIGN.md` sin reabrir las autoridades de B10. No merge a maestra mientras la integración visual esté pendiente. Evidencia: `docs/40_TESTING/EDITOR_V2_B10_REPLACEMENT_20261008.md`.",
+      "**Conexión UI B10 — 08/10/2026:** catálogo actual + inspector derecho conectados al contrato B8/B10. Al seleccionar muebles y después otro artículo, se presenta coste neto real y botón «Sustituir selección»; sin ejecución automática, sin creación de ghost y con rechazo explícito de candidatos incompatibles. Prueba real de clic en UI + Save/Load: PASS (`Logs/B10_CatalogWiring_Acceptance.log`). El diseño íntegro de Galería Viva no está materializado aún; el cableado se podrá conservar cuando se incorpore. Véase `docs/40_TESTING/EDITOR_V2_B10_CATALOG_WIRING_20261008.md`.",
+      "- Save/Load mantiene el resultado.",
+      "**OPTIMIZACIÓN NAVIGATION 17 — 09/10/2026:** resuelto el cuello de botella original de búsqueda exhaustiva; **2,70–2,98 s** en tres repeticiones completas sobre las 21 rutas reales frente a **29,2 s** medidos antes. **37/37** equivalencias exactas (tipo, longitud y waypoints) frente al algoritmo anterior, más 267/267 regresiones Editor V2. Ver `docs/40_TESTING/NAVIGATION_17_EXHAUSTIVE_OPT_20261009.md`. El estrés con 50 NPC mantiene una incidencia de convergencia incluso usando el algoritmo anterior: no se declara resuelta.",
+      "- consultar BBSIS/Navigation y demás autoridades;",
+      "- almacenar IDs canónicos y transforms relativos;",
+      "- Undo/Redo repetido;",
+      "- Save/Load;",
+      "- BBSIS;",
+      "- secuencias largas de Undo/Redo;",
+      "- Save/Load repetido;",
+      "- actualizar documentación canónica;",
+      "- Save/Load final PASS;",
+      "## 10. Gate obligatorio Assets4All → SAVIC",
+      "Antes de B1, la conexión inicial Assets4All → SAVIC debe demostrar un contrato estable suficiente para Editor V2.",
+      "**Asset fuente → Assets4All → contrato analítico → SAVIC → contenido canónico BB → Catálogo → Editor V2**",
+      "Editor V2 no analizará geometría para compensar metadatos ausentes.",
+      "El contrato debe poder aportar o permitir que SAVIC resuelva de forma fiable:",
+      "- perfil BBSIS;",
+      "Sabemos exactamente qué funcionaba antes de Editor V2.",
+      "### Gate B — Undo/Redo",
+      "### Gate D — Save/Load",
+      "- No desarrollar Editor V2 directamente sobre la rama maestra.",
+      "- Antes de iniciar un bloque nuevo se sincroniza deliberadamente con la integración canónica vigente y se repiten regresiones relevantes.",
+      "- No mezclar SAVIC completo, UI completa y Editor V2 en una única integración.",
+      "- IDs estables antes y después de Save/Load;",
+      "- ningún Undo/Redo duplica cobros o devoluciones;",
+      "- BBSIS no ejecutará análisis globales por cada frame de arrastre.",
+      "Editor V2 mantiene la dirección visual vigente de Bistro Builder:",
+      "## 16. Fuera de alcance de Editor V2",
+      "- análisis geométrico de assets dentro del runtime del editor como sustituto de SAVIC;",
+      "- reescritura de BBSIS, Navigation, Finance o Save/Load.",
+      "| Gate Assets4All → SAVIC | PASS — cinco familias verificadas por evidencia compuesta; puente versionado en ambos extremos |",
+      "| B2 Editor V2 Coordinator | PASS — 22/22 Coordinator + regresiones Core/Scene/Lifecycle/Queen exit 0 |",
+      "| B4 Undo/Redo global | PASS - 63/63 + regresiones B3 28/28 + B2 22/22 |",
+      "| B10 Sustitución inteligente | PASS técnico 2026-10-08 — 40/40, Save/Load real PASS, conexión catálogo PASS |",
+      "| B12 Plantillas | MOTOR TÉCNICO PASS 2026-10-09: Save/Load real de mesa+4 sillas y vínculos exactos 4/4; 64 mesas válidas con biblioteca/Undo/Redo en 1.160 ms y 774 ms, optimizadas por registro de asientos; rechazo 65, rollback de economía tras 2 cargos, 267/267 regresión anterior. Falta validación gráfica/UX Galería Viva y pruebas visuales responsive; cierre integral pendiente |",
+      "Editor V2 se considerará cerrado únicamente cuando:",
+      "- todos los cambios persistentes sobrevivan Save/Load;",
+      "- BBSIS, Navigation, Finance, Interaction y gameplay sigan reconociendo correctamente el restaurante;",
+      "- el catálogo escale con contenido SAVIC;",
+      "- Undo/Redo mixto sea determinista;",
+      "- no quede una segunda autoridad funcional creada por Editor V2;",
+      "- la documentación canónica y los tests reflejen el estado real.",
+      "Antes de modificar Editor V2, leer como mínimo:",
+      "7. SAVIC cuando el cambio dependa de assets.",
+      "**Editor V2 se construye como una evolución verificable del editor existente, no como una apuesta de todo o nada.**"
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\CONSTRUCTION_AUTHORING.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\CONSTRUCTION_AUTHORING.md",
+    "sha256": "7B65B6D14AD5D0818E290AC32CF27F1390D7F1BD50822DBDEA29971128010A2F",
+    "bytes": 2006,
+    "headings": [
+      "# Bistro Builder — Construction Authoring / hardening de Bloque 18",
+      "## Estado reconciliado",
+      "## Núcleo ya cubierto",
+      "## Problemas reales detectados en playtest",
+      "## Decisiones de hardening",
+      "## Gate player-ready"
+    ],
+    "editorReferences": [
+      "- Undo/Redo y modelo Draft/Baseline;",
+      "- integración con Economía, BBSIS y Navigation.",
+      "- preservar núcleo autoritativo existente; no reconstruir BBACS/BBSIS/Nav/SaveGame desde cero;",
+      "Un usuario debe poder abrir Modo Edición y, sin conocer el código, crear una habitación/pared, añadir una puerta, colocar/mover/eliminar mobiliario, entender validez/coste, confirmar, guardar, cargar y continuar editando con respuesta fluida y feedback inequívoco."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\20_GAME_SYSTEMS\\CLIMATE.md",
+    "relativePath": "docs\\20_GAME_SYSTEMS\\CLIMATE.md",
+    "sha256": "E5DE315D7186BE5FC49F271EBE819543A06DA60C29DE60E715020281EF864597",
+    "bytes": 1658,
+    "headings": [
+      "# BB Climate & Weather System",
+      "## Decisiones vinculantes",
+      "## Arquitectura V1 existente",
+      "## Regla de integración",
+      "## Gate de cierre"
+    ],
+    "editorReferences": []
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\SYSTEM_MAP.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\SYSTEM_MAP.md",
+    "sha256": "FBA590CA789B9706184C6FFCA86DB7CDDCF30E1A3E3B9BF2B2A94CB998A42DE6",
+    "bytes": 2232,
+    "headings": [
+      "# Bistro Builder — mapa canónico de sistemas",
+      "## Principio central",
+      "## Cadena runtime",
+      "## Capas principales",
+      "## Sistemas transversales adicionales",
+      "## Regla de integración",
+      "## Persistencia"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — mapa canónico de sistemas",
+      "`Gameplay/IA → Interaction & Reservation → BBSIS → Navigation → Animation → sistema de dominio`.",
+      "| BBSIS | viabilidad espacial, contratos, claims/leases, puertos, sweeps y gates |",
+      "- **BBPLFS:** generación y distribución procedural de layouts y furnishing; consume contratos canónicos.",
+      "- **Modo Edición/Construcción:** edición estructural del restaurante fuera de servicio.",
+      "Los proveedores de Save/Load deben conservar identidad estable, ser versionados y respetar dependencias de Apply/Finalize. No se permiten serializadores paralelos para el mismo estado canónico."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\PERSISTENCE.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\PERSISTENCE.md",
+    "sha256": "878456EE2E14C9C370384365A68D02374831290298327994DEB6254E04DB6914",
+    "bytes": 1807,
+    "headings": [
+      "# Bistro Builder — persistencia y Save/Load",
+      "## Estado",
+      "## Principios vinculantes",
+      "## Secciones conocidas",
+      "## Regla de integración",
+      "## Gate"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — persistencia y Save/Load",
+      "Todo sistema nuevo o ampliado debe demostrar round-trip, carga cruzada cuando aplique, Save/Load en estados no triviales y ausencia de duplicación o corrupción tras repetición."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\NAVIGATION_CROWD.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\NAVIGATION_CROWD.md",
+    "sha256": "08F65AD549D468BAA2573B5AA64E5D177BAE030B36F0FF254E6ACB7BE0E3B185",
+    "bytes": 1657,
+    "headings": [
+      "# BB Navigation & Crowd Flow System",
+      "## Autoridad",
+      "## Familias contempladas",
+      "## Responsabilidades",
+      "## Fronteras vinculantes",
+      "## Casos espaciales obligatorios",
+      "## Cierre/hardening"
+    ],
+    "editorReferences": [
+      "**Estado canónico:** diseño especializado cerrado en sus fronteras; implementación/hardening transversal activo. El Bloque 17 Navegación V1 figura cerrado, pero Crowd Flow continúa integración y regresiones.",
+      "- BBSIS decide si el espacio/episodio es físicamente válido y sus Claims/Leases.",
+      "Las puertas ocupan espacio durante apertura y las sillas cambian ocupación al sentarse/levantarse. Navigation debe consumir esa realidad espacial sin convertirse en autoridad de bisagras, asientos o contratos BBSIS."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\INTERACTION_RESERVATION.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\INTERACTION_RESERVATION.md",
+    "sha256": "AAC338A2C83BE55F28D04D4A0B14124C5BDF38384C88FCF88A48445034704006",
+    "bytes": 1675,
+    "headings": [
+      "# BB Interaction & Reservation System",
+      "## Autoridad",
+      "## Primitivas públicas V1",
+      "## Reglas vinculantes",
+      "## Auditoría futura"
+    ],
+    "editorReferences": [
+      "**Estado canónico:** V1.0 IMPLEMENTADO, VALIDADO Y CERRADO. Existe una auditoría destructiva futura obligatoria antes de vertical slice/beta.",
+      "Coordina derechos **lógicos**, no espaciales. Gameplay/IA solicita; Interaction concede/revoca; BBSIS conserva toda autoridad espacial.",
+      "- No almacenar posiciones, volúmenes, rutas, Claims ni Spatial Leases de BBSIS.",
+      "- Seating lógico, workstations y recursos compartidos usan grants; su accesibilidad física se valida por BBSIS.",
+      "Antes de vertical slice/beta ejecutar carga prolongada, Save/Load en transferencias, cancelaciones encadenadas, edición con recursos activos, replay determinista, búsqueda de locks legacy y perfil CPU/GC. El objetivo es 0 grants huérfanos y 0 duplicidades exclusivas."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\CHARACTER_ANIMATION.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\CHARACTER_ANIMATION.md",
+    "sha256": "F5A1B38C75A3DE1F7D2AAE4C6F17275A0AB475A62D230DD545499A9DEF9A08E6",
+    "bytes": 1474,
+    "headings": [
+      "# BB Character & Interaction Animation System",
+      "## Arquitectura vinculante",
+      "## Autoridad",
+      "## Modelo de datos",
+      "## Reglas",
+      "## Integraciones"
+    ],
+    "editorReferences": [
+      "**Estado canónico:** V1 INTEGRADO, VALIDADO Y SUBIDO. Cualquier ampliación futura se trata como V2/hardening.",
+      "`Gameplay decide → BBSIS valida → Navigation llega → Animation representa`.",
+      "Navigation proporciona movimiento lógico y llegada; BBSIS anchors/puertos válidos; Interaction puede exponer el derecho lógico; sistemas de objetos exponen su estado. Animation traduce esos hechos a una representación creíble sin apropiarse de ellos."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\BBSIS.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\BBSIS.md",
+    "sha256": "6FBF9AF94BBA53B669C159487933E44DB5B4581E2C29EB0D08F0D7B4E8327F01",
+    "bytes": 1586,
+    "headings": [
+      "# BB Spatial Interaction System (BBSIS)",
+      "## Autoridad",
+      "## Conceptos vinculantes",
+      "## Reglas",
+      "## Evolución"
+    ],
+    "editorReferences": [
+      "# BB Spatial Interaction System (BBSIS)",
+      "**Estado canónico:** V1 COMPLETO, VALIDADO Y CERRADO. No reabrir diseño salvo regresión demostrable.",
+      "BBSIS es la única autoridad de **viabilidad y reserva espacial** para interacciones. No decide intención de gameplay, derechos lógicos, navegación ni animación.",
+      "- Modo Edición y BBPLFS deben validar contra contratos espaciales comunes."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\BBPLFS.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\BBPLFS.md",
+    "sha256": "D6E11C814F87F9F7A5A52BB186F8280303138500F492F667DC1B2BDD1839EAD5",
+    "bytes": 1355,
+    "headings": [
+      "# BB Procedural Layout & Furnishing System (BBPLFS)",
+      "## Objetivo",
+      "## Reglas vinculantes",
+      "## Integraciones",
+      "## Cierre"
+    ],
+    "editorReferences": [
+      "**Estado canónico:** sistema transversal en desarrollo activo, rama `feature/bbplfs-v1`.",
+      "Generar y distribuir layouts/furnishing de restaurante de forma procedural sin convertirse en un editor paralelo ni saltarse las autoridades canónicas del proyecto.",
+      "- BBPLFS propone/genera; la estructura final se valida mediante los mismos contratos de Modo Edición/BBSIS que una edición manual.",
+      "- BBSIS: viabilidad espacial y contratos.",
+      "- Persistence: estructura y furnishing mediante formatos canónicos."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\10_ARCHITECTURE\\AUTHORITY_MATRIX.md",
+    "relativePath": "docs\\10_ARCHITECTURE\\AUTHORITY_MATRIX.md",
+    "sha256": "ECE65169B7530EC2678F39561D44CB7A15A01A7717DA667E9779AF8E76D361FC",
+    "bytes": 1876,
+    "headings": [
+      "# Bistro Builder — matriz de autoridad",
+      "## Reglas de frontera"
+    ],
+    "editorReferences": [
+      "| Intención y prioridad de tarea | Gameplay / IA | Animation, Navigation, BBSIS |",
+      "| Derecho lógico a usar/asignar/poseer | Interaction & Reservation | BBSIS, Navigation, Animation |",
+      "| Viabilidad y reserva espacial | BBSIS | Interaction, Navigation, Animation |",
+      "| Ruta, velocidad, heading y llegada | Navigation & Crowd Flow | BBSIS, Animation |",
+      "| Pose visual, blending, IK, gaze, recovery | Character Animation | Gameplay, BBSIS, Navigation |",
+      "- Claims/Spatial Leases pertenecen solo a BBSIS.",
+      "- UI emite comandos y presenta snapshots; no muta estado canónico directamente."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\00_PRODUCT\\ROADMAP.md",
+    "relativePath": "docs\\00_PRODUCT\\ROADMAP.md",
+    "sha256": "7068BED6EED3DEA4BC3349C3C7EAA76BA43BD85EDBEBCABB118F7599ED8A63BD",
+    "bytes": 6720,
+    "headings": [
+      "# Bistro Builder — roadmap vivo",
+      "## Sistemas transversales",
+      "## Integración actual",
+      "## Actualización 24/09/2026 — Nueva partida",
+      "## Actualización UI — 25/09/2026",
+      "## Revisión visual UI — 26/09/2026",
+      "## Revisión UI — 28/09/2026",
+      "## Revisión UI — 29/09/2026",
+      "## Integración UI autorizada — 29/09/2026",
+      "## Plan Editor V2 — 05/10/2026",
+      "## Editor V2 B3 - 06/10/2026"
+    ],
+    "editorReferences": [
+      "| Área | Estado canónico | Nota |",
+      "| 366/366B Save/Load estructura + `game.general` | CERRADO | PASS |",
+      "| 18 Modo Edición/Construcción | CORE V1 CERRADO; EDITOR V2 B0 PASS; GATE A4A→SAVIC PASS; B1 PASS; B2 PASS; B3 PASS | Selección común validada 28/28 y consumida por la barra de edición; regresiones B2/Core/Scene/Lifecycle/Queen PASS; B4 Undo/Redo global desbloqueado |",
+      "- **BBSIS v1:** COMPLETO, VALIDADO Y CERRADO; hardening solo ante regresión real.",
+      "- **Navigation & Crowd Flow:** contratos de autoridad fijados; implementación/hardening activo sin duplicar BBSIS ni Animation.",
+      "## Plan Editor V2 — 05/10/2026",
+      "Se aprueba el plan maestro de evolución del Modo Edición sin reescritura total. La implementación queda secuenciada por gates: primero B0 (baseline/protección), después cierre de la conexión Assets4All → SAVIC y, una vez superado ese gate, B1–B16 de Editor V2. BBSIS, Navigation, Finance, Save/Load, SAVIC, Placement, Construction Authoring, cámara 369 y Universal Preview conservan sus autoridades; Editor V2 añadirá coordinación común sin duplicarlas. Fuente: [Editor V2 Master Plan](../20_GAME_SYSTEMS/EDITOR_V2_MASTER_PLAN.md).",
+      "## Editor V2 B3 - 06/10/2026",
+      "B3 Selección común queda cerrado en PASS. Furniture, Construction y Surfaces proyectan su selección especializada a un contrato común con identidad, tipo y capacidades; la barra de edición usa ese contrato para habilitar acciones sin duplicar autoridades. Gate B3 28/28; regresiones B2 22/22, Core 84/84, Scene 77/77, Lifecycle 20/20 y Queen exit 0. B4 Undo/Redo global queda desbloqueado. Fuente: [Editor V2 B3 Selección común](../40_TESTING/EDITOR_V2_B3_COMMON_SELECTION_20261006.md)."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\00_PRODUCT\\PRD.md",
+    "relativePath": "docs\\00_PRODUCT\\PRD.md",
+    "sha256": "610932AF98BA25CA098ED1187A31A57A2A47E4D7A20684B9789553F94900D75E",
+    "bytes": 2711,
+    "headings": [
+      "# Bistro Builder — PRD canónico",
+      "## Objetivo",
+      "## Pilares",
+      "## Requisitos de producto vinculantes",
+      "## Requisitos de calidad",
+      "## Fuera de alcance por defecto"
+    ],
+    "editorReferences": [
+      "# Bistro Builder — PRD canónico",
+      "- **Construir y adaptar:** habitaciones, paredes, puertas, mobiliario/equipamiento y decoración mediante Modo Edición profesional.",
+      "- El Modo Edición solo está disponible fuera de servicio; construcción instantánea, sin obreros simulados."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\00_PRODUCT\\BRANCH_AUDIT_20260918.md",
+    "relativePath": "docs\\00_PRODUCT\\BRANCH_AUDIT_20260918.md",
+    "sha256": "97F1308B1F6B306C24CFE9189C9B99ECF526B0535241AA1FDB30ADDD27AEDCA0",
+    "bytes": 9784,
+    "headings": [
+      "# Bistro Builder — Auditoría de ramas e integración",
+      "## Criterios usados",
+      "## Rama maestra",
+      "## Integrado durante esta auditoría",
+      "### Catalog UI V1",
+      "## Ya contenido en producción — no volver a mezclar",
+      "## Sistemas cuyo nombre de rama engaña",
+      "### Clima",
+      "### Animación",
+      "### Interaction & Reservation",
+      "### Navigation & Crowd Flow",
+      "## UI / iconografía",
+      "### UI visual polish",
+      "### 21A UI/UX definitiva",
+      "### 21B Iconography",
+      "## Bloques 12–17 y BBSIS",
+      "## Playtest/all-current y fixes agregados",
+      "## Worktrees con cambios locales sin commit",
+      "### BistroBuilder raíz",
+      "### CatalogUIV1",
+      "### ConstructionAuthoringV1",
+      "### OpeningV2 / UIUXDefinitive",
+      "## Política de integración desde hoy",
+      "## Estado tras la auditoría",
+      "## Cierre de consolidación — 2026-09-19",
+      "### Recuperación de Construcción",
+      "### Recuperación de Navegación",
+      "### Build final de la maestra"
+    ],
+    "editorReferences": [
+      "Se creó `integration/master-current-20260918` desde la producción vigente.",
+      "- Economía V1, horarios/personal, reservas, marketing/reputación/progresión, clientes avanzados y comandas avanzadas: ramas canónicas ya absorbidas.",
+      "## Bloques 12–17 y BBSIS",
+      "- BBSIS: producción contiene rebuild e incremental hardening (`765167dd`, `c9e52556`, `423b3bfc`).",
+      "Contienen UI 21A/21B, scroll, BBSIS y new-game que producción ya posee en implementaciones posteriores.",
+      "No representan una versión canónica superior al contenido integrado.",
+      "- Navigation/BBSIS y bloques canónicos principales confirmados presentes.",
+      "- Save/Load real de Navigation 17: **PASS, exit code 0**.",
+      "La rama `integration/master-current-20260918` queda como base acumulativa canónica para el siguiente trabajo estable."
+    ]
+  },
+  {
+    "path": "C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2\\docs\\00_PRODUCT\\ACTIVE_BRANCHES.md",
+    "relativePath": "docs\\00_PRODUCT\\ACTIVE_BRANCHES.md",
+    "sha256": "E52515977DABCD90A3819670BBD7242B5A0583C7212EBE04BE6B55F9AC63355A",
+    "bytes": 4037,
+    "headings": [
+      "# Bistro Builder — Ramas activas",
+      "## Regla simple",
+      "## Lo único que hay que recordar",
+      "## Worktrees principales",
+      "## Ramas de agentes",
+      "## Assets4All → SAVIC",
+      "## Regla para futuros chats y agentes",
+      "## Builds",
+      "## Estado actual"
+    ],
+    "editorReferences": [
+      "| **EDITOR V2** | `feature/editor-v2` | Desarrollo controlado de Editor V2 | Hilo/agente de Editor V2 |",
+      "| **SAVIC** | `feature/savic-v1` | Desarrollo y hardening de SAVIC | Agente responsable de SAVIC |",
+      "- EDITOR V2:",
+      "  `C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_EditorV2`",
+      "- SAVIC:",
+      "  `C:\\Users\\mruperez\\ProyectoBB\\BistroBuilder_SAVICV1`",
+      "## Assets4All → SAVIC",
+      "La conexión Assets4All → SAVIC ha superado el gate de Editor V2 mediante evidencia compuesta de cinco familias y el puente está versionado de forma aislada en ambos extremos. Esto desbloquea B1, pero no autoriza por sí solo un merge a MASTER.",
+      "A fecha de este documento no se designa una rama puente como nueva autoridad canónica. El resultado deberá integrarse de forma controlada:",
+      "**Assets4All → contrato estable → adaptador SAVIC → SAVIC → Bistro Builder**",
+      "1. estabilizar primero SAVIC;",
+      "2. identificar exactamente qué commits pertenecen al puente Assets4All → SAVIC;",
+      "3. integrar el puente sobre la versión estable de SAVIC;",
+      "- MASTER: estable y limpia al iniciar B0 Editor V2.",
+      "- EDITOR V2: creada desde MASTER + documentación canónica; B0 cerrado sin cambios funcionales.",
+      "- SAVIC: trabajo activo en paralelo; existen cambios locales/agentes y no se deben tocar desde Editor V2.",
+      "Con esta política, el usuario solo necesita decir **MASTER**, **EDITOR V2**, **SAVIC** o **ASSETS4ALL**. Los nombres técnicos secundarios quedan bajo responsabilidad de los agentes."
+    ]
+  }
+]

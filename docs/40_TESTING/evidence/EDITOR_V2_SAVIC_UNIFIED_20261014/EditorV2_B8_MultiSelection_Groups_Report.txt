@@ -1,0 +1,82 @@
+﻿EDITOR V2 - B8 MULTISELECTION / GROUPS SELF TEST
+OK - B8 acepta un Selection Set explícito válido
+OK - B8 deduplica identidades repetidas
+OK - B8 conserva una selección primaria explícita
+OK - B8 calcula capacidades por intersección real del conjunto
+OK - B8 expone orden estable independiente del orden de entrada
+OK - B8 rechaza mezclar autoridades distintas en un mismo set
+OK - B8 Selection Set soporta 1000 miembros sin duplicados
+OK - B8 Selection Set de estrés mantiene determinismo
+METRIC - SELECTION_1000_MS=6,769
+OK - B8 comando compuesto válido exige hijos homogéneos
+OK - B8 Undo compuesto aplica todos los miembros
+OK - B8 Redo compuesto aplica todos los miembros
+OK - B8 libera exactamente una vez los recursos de cada hijo
+OK - B8 fault injection Undo revierte el conjunto completo
+OK - B8 fault injection Redo revierte el conjunto completo
+OK - B8 rechaza comandos compuestos de tipos incompatibles
+OK - B8 cierra relaciones transitivas sin duplicados ni raíz
+OK - B8 grafo semántico es determinista entre ejecuciones
+OK - B8 fuzz/stress 10000 transformaciones no produce NaN/Infinity
+OK - B8 cancelación restaura exactamente raíz y 24 seguidores
+OK - B8 stress 10000 poses queda bajo 3 s
+OK - B8 stress no genera más de 1 MB tras warmup
+METRIC - GROUP_10000_MS=38,129
+METRIC - GROUP_10000_ALLOCATED_BYTES=0
+OK - B8 bootstrap instala todas las autoridades necesarias
+OK - B8 bootstrap es idempotente
+OK - B8 entra en modo edición real
+OK - B8 activa Furniture mediante Editor V2 Coordinator
+METRIC - REAL_MOVABLE_CANDIDATES=38
+OK - B8 encuentra al menos dos colocables reales para integración
+OK - B8 selección programática reproduce clic + Shift+clic
+OK - B8 último Shift+clic se convierte en primario
+OK - B8 Shift+clic sobre miembro seleccionado lo retira y recupera primario
+OK - B8 miembro retirado puede reincorporarse sin duplicarse
+OK - B8 inicia movimiento grupal sobre Placement real
+OK - B8 Linked Groups absorbe todos los miembros explícitos
+OK - B8 aplica transformación rígida matemática al conjunto
+OK - B8 cancelar movimiento grupal restaura snapshot exacto
+OK - B8 encuentra una pose real válida para commit atómico
+OK - B8 movimiento de varios objetos genera un único comando histórico
+OK - B8 Ctrl+Z global restaura el grupo en una sola acción
+OK - B8 Ctrl+Y global rehace el grupo en una sola acción
+OK - B8 segundo Undo devuelve la escena a baseline
+OK - B8 eliminar selección publica un único comando compuesto
+OK - B8 delete desactiva el conjunto completo
+OK - B8 Undo delete restaura exactamente identidades y registros
+OK - B8 Undo delete restaura poses exactas
+OK - B8 elementos restaurados siguen siendo editables individualmente
+OK - B8 Redo delete vuelve a retirar todo el conjunto
+OK - B8 Undo final de delete recupera baseline
+OK - B8 duplicate fallido #1 no deja estado parcial
+OK - B8 duplicate fallido #2 no deja estado parcial
+OK - B8 duplicate fallido #3 no deja estado parcial
+OK - B8 duplicate fallido #4 no deja estado parcial
+OK - B8 duplicate fallido #5 no deja estado parcial
+OK - B8 duplicate fallido #6 no deja estado parcial
+OK - B8 duplicate fallido #7 no deja estado parcial
+OK - B8 duplicate fallido #8 no deja estado parcial
+OK - B8 duplicate fallido #9 no deja estado parcial
+OK - B8 duplicate fallido #10 no deja estado parcial
+OK - B8 duplicate fallido #11 no deja estado parcial
+OK - B8 duplicate fallido #12 no deja estado parcial
+OK - B8 duplicate fallido #13 no deja estado parcial
+OK - B8 duplicate fallido #14 no deja estado parcial
+OK - B8 duplicate fallido #15 no deja estado parcial
+OK - B8 duplicate fallido #16 no deja estado parcial
+OK - B8 duplicate fallido #17 no deja estado parcial
+OK - B8 duplicate fallido #18 no deja estado parcial
+OK - B8 duplicate fallido #19 no deja estado parcial
+OK - B8 duplicate fallido #20 no deja estado parcial
+OK - B8 búsqueda adversarial de pareja duplicable no deja estados parciales
+METRIC - B8_DUPLICATE_PAIRS_EXAMINED=1
+OK - B8 encuentra destino real para duplicar dos artículos
+OK - B8 duplicate de dos miembros crea un único historial
+OK - B8 duplicate asigna IDs nuevos y preserva geometría relativa
+OK - B8 Undo duplicate retira los clones en una sola acción
+OK - B8 Redo duplicate restaura clones e identidades
+OK - B8 Undo final de duplicate recupera baseline activa
+OK - B8 duplicación física determinista en área QA aislada
+OK - B8 sale limpio del modo edición
+Resultado: 75 OK / 0 fallos.

@@ -50,6 +50,19 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
     private int sortMode;
     private bool favoritesOnly;
     private bool recentsOnly;
+
+    public int SelectedGalleryTab => favoritesOnly ? 1 : recentsOnly ? 2 : 0;
+
+    public void SetGalleryTab(int tab)
+    {
+        favoritesOnly = tab == 1;
+        recentsOnly = tab == 2;
+        if (favoritesFilterButton != null)
+            SetChipSelected(favoritesFilterButton, favoritesOnly);
+        if (recentsFilterButton != null)
+            SetChipSelected(recentsFilterButton, recentsOnly);
+        ApplyFiltersAndOrdering();
+    }
     private bool filterOpen;
     private bool collapsed;
     private string activeItemId;
@@ -61,6 +74,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
 
     private void Start()
     {
+        if (GetComponent<BistroBuilderGalleryViva>() != null) return;
         CacheDependencies();
         BuildApprovedChrome();
         ApplyStaticLayout();
@@ -69,6 +83,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (GetComponent<BistroBuilderGalleryViva>() != null) return;
         if (contentRoot == null)
         {
             CacheHierarchy();
@@ -737,6 +752,7 @@ public sealed class RestaurantPlaceableCatalogApprovedSkin : MonoBehaviour
 
     public void OpenSection()
     {
+        if (GetComponent<BistroBuilderGalleryViva>() != null) return;
         collapsed = false; filterOpen = false;
         if (filterPanel != null) filterPanel.SetActive(false);
         NotifyCategoryChanged(true); ApplyCollapsedState();

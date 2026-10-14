@@ -12,13 +12,35 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
     [SerializeField] private CustomerGroup customerGroup;
     [SerializeField] private MeshRenderer groupPlaceholderRenderer;
     [SerializeField, Min(0.15f)] private float memberSpacing = 0.42f;
-    [SerializeField] private Vector3 memberScale = new Vector3(0.32f, 0.55f, 0.32f);
+    [SerializeField] private Vector3 memberScale = new Vector3(0.30f, 0.72f, 0.30f);
+
+    private static readonly int BaseColorPropertyId =
+        Shader.PropertyToID("_BaseColor");
+
+    private static readonly int ColorPropertyId =
+        Shader.PropertyToID("_Color");
+
+    private static readonly Color[] PresentationPalette =
+    {
+        new Color32(111, 128, 92, 255),
+        new Color32(151, 115, 83, 255),
+        new Color32(92, 119, 128, 255),
+        new Color32(136, 106, 122, 255),
+        new Color32(119, 112, 91, 255)
+    };
+    [SerializeField] private BistroBuilderCustomerHumanoidProfile humanoidProfile;
 
     private readonly List<GameObject> visuals = new List<GameObject>(8);
     private int builtForSize;
 
     public int VisualCount => visuals.Count;
     public CustomerGroup CustomerGroup => customerGroup;
+    public BistroBuilderCustomerHumanoidProfile HumanoidProfile => humanoidProfile;
+
+#if UNITY_EDITOR
+    public void ConfigureHumanoidForEditor(BistroBuilderCustomerHumanoidProfile profile)
+    { humanoidProfile = profile; builtForSize = 0; }
+#endif
 
     private void Awake() => CacheReferences();
 
@@ -46,6 +68,7 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
             error = "10G necesita el renderer visual del CustomerGroup.";
             return false;
         }
+        if (humanoidProfile != null && !humanoidProfile.ValidateConfiguration(out error)) return false;
         error = string.Empty;
         return true;
     }
@@ -54,6 +77,7 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
     {
         CacheReferences();
         if (customerGroup == null || customerGroup.GroupSize < 1) return false;
+        if (humanoidProfile != null && !humanoidProfile.ValidateConfiguration(out _)) return false;
         if (builtForSize == customerGroup.GroupSize && visuals.Count == builtForSize)
             return true;
 
@@ -62,6 +86,7 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
             ? groupPlaceholderRenderer.sharedMaterial : null;
         for (int index = 1; index <= customerGroup.GroupSize; index++)
             visuals.Add(CreateMemberVisual(index, customerGroup.GroupSize, sharedMaterial));
+        if (visuals.Exists(visual => visual == null)) { ClearVisuals(); return false; }
         builtForSize = customerGroup.GroupSize;
         if (groupPlaceholderRenderer != null) groupPlaceholderRenderer.enabled = false;
         return visuals.Count == customerGroup.GroupSize;
@@ -79,6 +104,8 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
         int groupSize,
         Material sharedMaterial)
     {
+        if (humanoidProfile != null && humanoidProfile.ValidateConfiguration(out _))
+            return CreateHumanoidMember(memberIndex, groupSize);
         GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         visual.name = VisualPrefix + memberIndex.ToString("D2");
         visual.transform.SetParent(transform, false);
@@ -88,12 +115,57 @@ public sealed class BistroBuilderAdvancedCustomerMemberVisualGroup : MonoBehavio
         visual.layer = gameObject.layer;
 
         MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
-        if (renderer != null && sharedMaterial != null)
-            renderer.sharedMaterial = sharedMaterial;
+        if (renderer != null)
+        {
+            if (sharedMaterial != null)
+                renderer.sharedMaterial = sharedMaterial;
+
+            MaterialPropertyBlock block =
+                new MaterialPropertyBlock();
+
+            Color presentationColor =
+                PresentationPalette[
+                    Mathf.Abs(
+                        memberIndex +
+                        (customerGroup != null
+                            ? customerGroup.GroupId
+                            : 0)) %
+                    PresentationPalette.Length];
+
+            block.SetColor(
+                BaseColorPropertyId,
+                presentationColor);
+
+            block.SetColor(
+                ColorPropertyId,
+                presentationColor);
+
+            renderer.SetPropertyBlock(block);
+        }
         Collider collider = visual.GetComponent<Collider>();
         if (collider != null) collider.isTrigger = true;
         var target = visual.AddComponent<BistroBuilderAdvancedCustomerMemberHitTarget>();
         target.Bind(customerGroup, memberIndex);
+        return visual;
+    }
+
+    private GameObject CreateHumanoidMember(int memberIndex, int groupSize)
+    {
+        GameObject visual = new GameObject(VisualPrefix + memberIndex.ToString("D2"));
+        visual.transform.SetParent(transform, false);
+        visual.transform.localPosition = CalculateLocalPosition(memberIndex, groupSize);
+        visual.layer = gameObject.layer;
+        GameObject model = Instantiate(humanoidProfile.ModelPrefab, visual.transform, false);
+        model.transform.localPosition = Vector3.zero; model.transform.localRotation = Quaternion.identity;
+        model.transform.localScale = Vector3.one * humanoidProfile.ModelScale;
+        foreach (Collider sourceCollider in model.GetComponentsInChildren<Collider>(true)) sourceCollider.enabled = false;
+        var hitCollider = visual.AddComponent<CapsuleCollider>();
+        hitCollider.isTrigger = true; hitCollider.height = 1.8f; hitCollider.radius = 0.25f;
+        hitCollider.center = Vector3.up * 0.9f;
+        var target = visual.AddComponent<BistroBuilderAdvancedCustomerMemberHitTarget>();
+        target.Bind(customerGroup, memberIndex);
+        if (!visual.AddComponent<BistroBuilderCustomerBarSeatPresenter>().ConfigureRuntime(customerGroup, memberIndex, humanoidProfile))
+        { Destroy(visual); return null; }
         return visual;
     }
 

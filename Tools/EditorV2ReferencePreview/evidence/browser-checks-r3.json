@@ -1,0 +1,135 @@
+{
+  "revision": "R3",
+  "utc": "2026-10-11T21:44:48.572Z",
+  "checks": [
+    {
+      "name": "Búsqueda con acento y mayúsculas",
+      "pass": true
+    },
+    {
+      "name": "Ámbito y precio combinados",
+      "pass": true
+    },
+    {
+      "name": "Precio ascendente",
+      "pass": true
+    },
+    {
+      "name": "Intervalo inválido no cambia resultados",
+      "pass": true
+    },
+    {
+      "name": "Favoritos coherente en tarjetas y destacado",
+      "pass": true
+    },
+    {
+      "name": "Recientes conserva el orden de consulta",
+      "pass": true
+    },
+    {
+      "name": "Imagen ampliada real",
+      "pass": true
+    },
+    {
+      "name": "Estado vacío coherente",
+      "pass": true
+    },
+    {
+      "name": "Plegado conserva filtros",
+      "pass": true
+    },
+    {
+      "name": "Categoría Exterior",
+      "pass": true
+    },
+    {
+      "name": "Entrada real a pantalla completa",
+      "pass": true
+    },
+    {
+      "name": "Vuelta a ventana",
+      "pass": true
+    },
+    {
+      "name": "Orden visual y de teclado de variantes; selección de mármol",
+      "pass": true
+    },
+    {
+      "name": "Nombres y precios caben en las ocho tarjetas",
+      "pass": true
+    },
+    {
+      "name": "Los cuatro nombres relacionados caben en una línea",
+      "pass": true
+    },
+    {
+      "name": "Composición completa en viewport 4K",
+      "pass": true
+    }
+  ],
+  "geometry": {
+    "devicePixelRatio": 1.0000000149011612,
+    "height": 2160,
+    "panels": [
+      {
+        "bottom": 188.22530555725095,
+        "fit": true,
+        "height": 169.8618621826172,
+        "id": "topbar",
+        "right": 3820.6088542938232,
+        "width": 3801.23291015625,
+        "x": 19.37594413757324,
+        "y": 18.36344337463379
+      },
+      {
+        "bottom": 1889.1394348144531,
+        "fit": true,
+        "height": 1677.9598388671875,
+        "id": "catalog",
+        "right": 1300.2260627746582,
+        "width": 1278.5546875,
+        "x": 21.671375274658203,
+        "y": 211.1795959472656
+      },
+      {
+        "bottom": 1886.8436584472656,
+        "fit": true,
+        "height": 1675.6640625,
+        "id": "inspector",
+        "right": 3816.0181274414062,
+        "width": 729.9470825195312,
+        "x": 3086.071044921875,
+        "y": 211.1795959472656
+      },
+      {
+        "bottom": 2141.6365814208984,
+        "fit": true,
+        "height": 231.83848571777344,
+        "id": "bottom-bar",
+        "right": 3820.6088542938232,
+        "width": 3801.23291015625,
+        "x": 19.37594413757324,
+        "y": 1909.798095703125
+      }
+    ],
+    "related": [
+      {
+        "fit": true,
+        "text": "Mesa cuadrada"
+      },
+      {
+        "fit": true,
+        "text": "Mesa mármol claro"
+      },
+      {
+        "fit": true,
+        "text": "Mesa pedestal nogal"
+      },
+      {
+        "fit": true,
+        "text": "Mesa extensible"
+      }
+    ],
+    "width": 3840
+  }
+}

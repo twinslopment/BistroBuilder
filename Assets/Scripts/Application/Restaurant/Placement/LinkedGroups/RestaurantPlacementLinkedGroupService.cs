@@ -512,7 +512,8 @@ public sealed class RestaurantPlacementLinkedGroupService :
     /// </summary>
     public void NotifyConfirmedGroupPoseApplied(
         RestaurantAreaMember rootMember,
-        IReadOnlyList<RestaurantAreaMember> linkedMembers
+        IReadOnlyList<RestaurantAreaMember> linkedMembers,
+        bool followerAreasAlreadyValidated = false
     )
     {
         if (rootMember == null)
@@ -539,7 +540,12 @@ public sealed class RestaurantPlacementLinkedGroupService :
             }
         }
 
-        UpdateFollowerAreas(scratchFollowers);
+        // B12 template batches have just validated every member and
+        // assigned its area before committing. Repeating this can perform
+        // dozens of costly full spatial/functional validations.
+        // All other callers retain the original defensive revalidation.
+        if (!followerAreasAlreadyValidated)
+            UpdateFollowerAreas(scratchFollowers);
         NotifyProviders(rootMember, scratchFollowers);
         scratchFollowers.Clear();
     }

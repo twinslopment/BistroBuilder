@@ -136,6 +136,17 @@ public sealed class BistroBuilderEditorV2GalleryDriver : MonoBehaviour
             "Galería Viva sin escaparate duplicado");
         Assert(showcase.IsShowing && showcase.Featured != null,
             "Destacado vinculado a un artículo real");
+        var products = Object.FindFirstObjectByType<RestaurantPlaceableCatalogService>(
+            FindObjectsInactive.Include);
+        if (products != null && products.AvailableItems != null &&
+            products.AvailableItems.Any(item => item != null &&
+                item.HasValidPrefab && item.PurchasePrice > 0 &&
+                item.InspectorPreview != null))
+        {
+            Assert(showcase.Featured.PurchasePrice > 0 &&
+                showcase.Featured.InspectorPreview != null,
+                "Destacado no debe promocionar un cubo gratuito si hay producto autorado");
+        }
         var showcaseRoot = catalog.transform.Find(
             "CatalogContent/BB_EditorV2_GalleryShowcase");
         Assert(showcaseRoot != null && showcaseRoot.gameObject.activeSelf,
@@ -169,10 +180,40 @@ public sealed class BistroBuilderEditorV2GalleryDriver : MonoBehaviour
             "BistroBuilder/UI/Typography/Recoleta-SDF");
         Assert(recoleta != null && title.font == recoleta,
             "Título oficial Recoleta aplicado al catálogo");
+        var premium = catalog.GetComponent<BistroBuilderEditorV2PremiumLayout>();
+        Assert(premium != null && premium.IsReady,
+            "la disposición premium V2 debe construirse realmente");
+        var categoryColumn = content.Find("CategoryBar") as RectTransform;
+        var searchBox = content.Find("ApprovedSearch") as RectTransform;
+        var itemList = content.Find("ItemsScroll") as RectTransform;
+        var newTabs = content.Find("BB_EditorV2_ApprovedTabs") as RectTransform;
+        Assert(categoryColumn != null && searchBox != null &&
+            itemList != null && newTabs != null, "cinco zonas V2 montadas");
+        Assert(categoryColumn.anchorMax.x == 0 &&
+            categoryColumn.anchoredPosition.x < itemList.offsetMin.x &&
+            categoryColumn.rect.height > 250f,
+            "categorías realmente verticales a la izquierda del catálogo");
+        Assert(content.GetComponent<RectTransform>().rect.width >= 580f,
+            "Galería Viva debe ocupar una proporción legible de pantalla");
+        Assert(itemList.offsetMin.x >= 160f &&
+            itemList.offsetMax.y <= -430f &&
+            newTabs.rect.height > 25f,
+            "pestañas, destacado y tarjetas con espacio reservado");
+        var firstCategory = categoryColumn.GetComponentsInChildren<
+            RestaurantPlaceableCatalogCategoryView>(true)
+            .FirstOrDefault(v => v.gameObject.activeSelf);
+        var readableLabel = firstCategory != null ?
+            firstCategory.transform.Find("PreviewLabel")?.GetComponent<TMP_Text>()
+            : null;
+        Assert(readableLabel != null && readableLabel.fontSize >= 15f &&
+            readableLabel.alignment == TextAlignmentOptions.MidlineLeft,
+            "categorías deben tener rótulos legibles en filas horizontales");
         var background = content.GetComponent<Image>();
-        Assert(background != null && background.color.r > background.color.g &&
-            background.color.g > background.color.b,
-            "Crema cálido, sin oliva");
+        Assert(background != null &&
+            background.sprite == BistroBuilderEditorV2BrassArt.Get(
+                BistroBuilderEditorV2BrassArt.Style.Frame) &&
+            background.type == Image.Type.Sliced,
+            "Marco marfil/latón en nueve cortes, sin color oliva plano");
         catalog.SelectSection(RestaurantEditCatalogSection.Surfaces);
         for (int i = 0; i < 3; i++) yield return null;
         Assert(title.text.StartsWith("Taller ·", StringComparison.Ordinal),
@@ -205,11 +246,42 @@ public sealed class BistroBuilderEditorV2GalleryDriver : MonoBehaviour
             .FirstOrDefault(x => x.name == "BB_UIUX_PlaceableInspector");
         Assert(oldInspector != null && oldInspector.gameObject.activeSelf,
             "ficha del catálogo accesible antes de seleccionar mundo");
-        Assert(b8.ReplaceSelectionSet(members, members[0].stableId,
-            out string replaceError), "B8 selection: " + replaceError);
+        // Use the same actual furniture selection authority as player clicks.
+        // Direct B8.ReplaceSelectionSet used to pass a one-frame-only test while
+        // the coordinator cleared the synthetic selection on the next frame.
+        var furnitureController = Object.FindFirstObjectByType<
+            RestaurantEditInteractionController>(FindObjectsInactive.Include);
+        Assert(furnitureController != null, "autoridad real mobiliario");
+        RestaurantPlaceableObject firstObject;
+        RestaurantPlaceableObject secondObject;
+        bool resolvedFirst = registry.TryGetByInstanceId(
+            members[0].stableId, out firstObject);
+        bool resolvedSecond = registry.TryGetByInstanceId(
+            members[1].stableId, out secondObject);
+        Assert(resolvedFirst && resolvedSecond,
+            "instancias reales por identidad");
+        Assert(furnitureController.TrySelectPlaceable(secondObject),
+            "selección física inicial");
+        yield return null;
+        Assert(furnitureController.TrySelectPlaceable(firstObject, true, false),
+            "multiselección física aditiva");
+        for (int stableFrame = 0; stableFrame < 8; stableFrame++) yield return null;
+        Assert(b8.SelectionCount == 2 &&
+               b8.PrimarySelection.stableId == members[0].stableId,
+            "B8 debe conservar dos piezas seleccionadas entre frames"); 
         inspector.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
         Assert(inspector.IsShowing && inspector.VisibleSelectionCount == 2,
             "inspector reconoce conjunto real");
+        var halo = catalog.GetComponent<BistroBuilderEditorV2FootprintHalo>();
+        Assert(halo != null &&
+            catalog.GetComponents<BistroBuilderEditorV2FootprintHalo>().Length == 1,
+            "Halo de Huella V2 es único e idempotente");
+        halo.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
+        Assert(halo.VisibleMemberCount == 2 && halo.HasGroupOutline,
+            "Halo sigue ambas huellas reales y tiene contorno de grupo");
+        var lines = halo.GetComponentsInChildren<LineRenderer>(true);
+        Assert(lines.Length >= 4 && lines.Any(line => line.positionCount >= 5),
+            "Halo representa geometría de footprint, no offsets de pantalla");
         Assert(!oldInspector.gameObject.activeSelf,
             "ficha antigua se oculta al seleccionar muebles del mundo");
         var root = Object.FindObjectsByType<RectTransform>(
@@ -251,10 +323,21 @@ public sealed class BistroBuilderEditorV2GalleryDriver : MonoBehaviour
             "plegado conserva grupo");
 
         // Don't mutate world: only the B8 read model has been exercised.
+        Assert(furnitureController.ClearSelection(),
+            "deselección desde la autoridad real del mobiliario");
         b8.ClearSelectionSet();
         inspector.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
         Assert(!inspector.IsShowing || !inspector.IsExpanded,
             "deselección no deja panel sobre el restaurante");
+        yield return new WaitForSecondsRealtime(.30f);
+        halo.SendMessage("LateUpdate", SendMessageOptions.DontRequireReceiver);
+        Assert(halo.VisibleMemberCount == 0 && !halo.HasGroupOutline,
+            "Halo se retira por completo después de deseleccionar" +
+            " members=" + halo.VisibleMemberCount +
+            " group=" + halo.HasGroupOutline +
+            " opacity=" + halo.Opacity +
+            " b8=" + b8.SelectionCount +
+            " local=" + furnitureController.HasSelection);
 
         finish("Galería Viva y Taller conectados; pieles únicas; marfil/latón; " +
             "2 muebles reales de registry; selección B8, Principal/Conjunto, " +

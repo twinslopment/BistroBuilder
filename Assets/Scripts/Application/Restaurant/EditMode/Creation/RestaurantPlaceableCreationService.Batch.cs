@@ -399,7 +399,8 @@ public sealed partial class RestaurantPlaceableCreationService
     }
 
     private void NotifyBatchRelationshipRebuild(
-        IReadOnlyList<RestaurantPlaceableObject> clones)
+        IReadOnlyList<RestaurantPlaceableObject> clones,
+        bool followerAreasAlreadyValidated = false)
     {
         if (batchLinkedGroupService == null ||
             clones == null ||
@@ -432,7 +433,8 @@ public sealed partial class RestaurantPlaceableCreationService
         {
             batchLinkedGroupService.NotifyConfirmedGroupPoseApplied(
                 root,
-                followers);
+                followers,
+                followerAreasAlreadyValidated);
         }
     }
 

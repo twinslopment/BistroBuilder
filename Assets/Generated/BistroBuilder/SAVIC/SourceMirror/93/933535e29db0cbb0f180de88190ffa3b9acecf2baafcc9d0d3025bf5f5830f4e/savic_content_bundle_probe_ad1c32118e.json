@@ -1,0 +1,123 @@
+{
+    "schemaId": "savic.content-bundle",
+    "schemaVersion": 1,
+    "bundleId": "bundle_savic_probe_ad1c32118e",
+    "ingredients": [
+        {
+            "ingredientId": "ingredient_savic_probe_ad1c32118e",
+            "displayName": "Harina SAVIC Probe",
+            "category": "DryGoods",
+            "storageType": "DryStorage",
+            "baseUnit": "Gram",
+            "referencePackAmount": 1.0,
+            "referencePackUnit": "Kilogram",
+            "referencePackPriceCents": 220,
+            "defaultShelfLifeDays": 365,
+            "perishable": false,
+            "imageContentId": "",
+            "commercialPackages": [
+                {
+                    "packageFormatId": "package_savic_probe_ad1c32118e",
+                    "displayName": "Saco 1 kg",
+                    "packageType": "Saco",
+                    "netQuantityMicrounits": 1000000000,
+                    "logisticSize": "Pequeno",
+                    "imageContentId": "",
+                    "isActive": true
+                }
+            ]
+        }
+    ],
+    "dishes": [
+        {
+            "dishId": "dish_savic_probe_ad1c32118e",
+            "displayName": "Plato SAVIC Probe",
+            "description": "Contenido temporal para validar publicación SAVIC.",
+            "categoryId": "category_main_course",
+            "course": "Main",
+            "defaultAvailability": "Lunch,Dinner",
+            "allowedServiceModes": "TableService",
+            "requiredStation": "HotKitchen",
+            "basePreparationSeconds": 180,
+            "complexity": 2,
+            "recipeId": "recipe_savic_probe_ad1c32118e",
+            "basePriceCents": 1290,
+            "shareable": false,
+            "minimumConsumers": 1,
+            "maximumConsumers": 1,
+            "imageContentId": ""
+        }
+    ],
+    "recipes": [
+        {
+            "recipeId": "recipe_savic_probe_ad1c32118e",
+            "dishId": "dish_savic_probe_ad1c32118e",
+            "yieldPortions": 1,
+            "wasteBasisPoints": 500,
+            "notes": "SAVIC vertical probe.",
+            "ingredients": [
+                {
+                    "ingredientId": "ingredient_savic_probe_ad1c32118e",
+                    "amount": 120.0,
+                    "unit": "Gram"
+                }
+            ]
+        }
+    ],
+    "suppliers": [
+        {
+            "supplierId": "supplier_savic_probe_ad1c32118e",
+            "displayName": "Proveedor SAVIC Probe",
+            "shortName": "SAVIC Probe",
+            "description": "Proveedor temporal para validar el bundle.",
+            "logoContentId": "",
+            "primaryBrandColor": "#335943",
+            "secondaryBrandColor": "#E6D6A3",
+            "textContrastColor": "#FFFFFF",
+            "catalogFlags": "Secos",
+            "commercialModelFlags": "Distribuidor",
+            "scopeFlags": "Regional",
+            "positioningFlags": "Equilibrado",
+            "reliabilityTier": "Alta",
+            "reliabilityValue": 0.9700000286102295,
+            "minimumOrderValueCents": 3000,
+            "shippingCostCents": 500,
+            "freeShippingEnabled": true,
+            "freeShippingThresholdCents": 12000,
+            "defaultLeadTimeGameHours": 24.0,
+            "isActive": true,
+            "customTags": [],
+            "deliveryWindows": [
+                {
+                    "startMinuteOfDay": 480,
+                    "endMinuteOfDay": 720,
+                    "monday": true,
+                    "tuesday": true,
+                    "wednesday": true,
+                    "thursday": true,
+                    "friday": true,
+                    "saturday": false,
+                    "sunday": false
+                }
+            ],
+            "baseOffers": [
+                {
+                    "supplierOfferId": "offer_savic_probe_ad1c32118e",
+                    "ingredientId": "ingredient_savic_probe_ad1c32118e",
+                    "packageFormatId": "package_savic_probe_ad1c32118e",
+                    "basePriceCents": 210,
+                    "minimumPackageCount": 1,
+                    "orderIncrement": 1,
+                    "initialAvailability": "Disponible",
+                    "promotionEligible": true,
+                    "overrideLeadTime": false,
+                    "leadTimeOverrideGameHours": 24.0,
+                    "minimumMarketVariationPercent": -5.0,
+                    "maximumMarketVariationPercent": 10.0,
+                    "sortOrder": 0,
+                    "isActive": true
+                }
+            ]
+        }
+    ]
+}

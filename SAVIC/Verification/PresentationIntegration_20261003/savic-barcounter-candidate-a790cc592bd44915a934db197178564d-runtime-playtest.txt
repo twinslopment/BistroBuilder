@@ -1,0 +1,1 @@
+PASS: SAVIC BARCOUNTER RUNTIME PLAYTEST - PASS: SavicId=a790cc592bd44915a934db197178564d, ItemId=bb_barcounter_a790cc592bd44915a934db197178564d, canonical placement=PASS, SaveGame save/load=PASS, new runtime instance=PASS, native bar binding/identity/route/lease=PASS. Diagnostic slot deleted.

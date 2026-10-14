@@ -1,0 +1,8 @@
+{
+  "reference": "EditorV2_R7_20261013 Windows Player assemblies",
+  "result": "PASS",
+  "nativePlayerValidation": "Pendiente del chat Analiza el Editor V2",
+  "sourceCount": 3,
+  "scope": "Compilación aislada de los tres módulos nuevos, sin iniciar Unity",
+  "compiler": "Roslyn 10.0.301"
+}

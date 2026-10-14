@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// El número de tarjetas instanciadas depende solo del viewport, nunca
 /// del número de artículos. Ni reparenting de assets ni segundo catálogo.
 /// </summary>
-[DisallowMultipleComponent]
+[DisallowMultipleComponent, DefaultExecutionOrder(2600)]
 public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
 {
     private const int OverscanRows = 2;
@@ -43,6 +43,10 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
     private float lastCellWidth = -1f;
     private float lastCellHeight = -1f;
     private float lastScrollY = -1f;
+    private bool approvedRows;
+    private float RowTop(int row) => row * rowStride;
+    private float RowHeight(int row) => lastCellHeight;
+    private int RowAt(float y) => Mathf.FloorToInt(y / rowStride);
     private float rowStride = 257f;
     private float colStride = 190f;
     private int leftPadding;
@@ -131,6 +135,7 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
         container.anchorMax = new Vector2(1f, 1f);
         container.pivot = new Vector2(0.5f, 1f);
         container.anchoredPosition = Vector2.zero;
+        container.sizeDelta = new Vector2(0f, container.sizeDelta.y);
         lastWidth = lastHeight = -1f;
         RefreshWindow(true);
     }
@@ -159,7 +164,7 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
                 for (int i = 0; i < results.Count; i++)
                     if (string.Equals(results[i].ItemId, anchor, StringComparison.Ordinal))
                     {
-                        y = (i / columns) * rowStride;
+                        y = RowTop(i / columns);
                         break;
                     }
             }
@@ -218,14 +223,22 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
         lastHeight = Mathf.Max(1f, viewport.rect.height);
         lastCellWidth = cellWidth;
         lastCellHeight = cellHeight;
+        var viva=GetComponent<BistroBuilderGalleryViva>();
+        approvedRows=viva!=null && viva.OwnsPresentation;
+        if (approvedRows)
+        {
+            cellWidth = (lastWidth - leftPadding - (grid != null ? grid.padding.right : 0) - gapX*3)/4;
+            if (grid != null) grid.cellSize = new Vector2(cellWidth, cellHeight);
+            lastCellWidth = cellWidth;
+        }
         rowStride = Mathf.Max(1f, cellHeight + gapY);
         colStride = Mathf.Max(1f, cellWidth + gapX);
         int rightPadding = grid != null ? grid.padding.right : 0;
         columns = Mathf.Clamp(Mathf.FloorToInt(
-            (lastWidth - leftPadding - rightPadding + gapX) / colStride), 1, 16);
+            (lastWidth - leftPadding - rightPadding + gapX + .001f) / colStride), 1, 16);
         int rows = (results.Count + columns - 1) / columns;
         float height = topPadding + bottomPadding +
-            (rows > 0 ? rows * rowStride - gapY : 0f);
+            (rows > 0 ? RowTop(rows-1)+RowHeight(rows-1) : 0f);
         container.SetSizeWithCurrentAnchors(
             RectTransform.Axis.Vertical, Mathf.Max(height, lastHeight));
         if (container.anchoredPosition.y > Mathf.Max(0f, height - lastHeight))
@@ -245,10 +258,9 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
         if (fitter != null && fitter.enabled) fitter.enabled = false;
 
         float y = Mathf.Max(0f, container.anchoredPosition.y);
-        int startRow = Mathf.Max(0, Mathf.FloorToInt(
-            Mathf.Max(0f, y - topPadding) / rowStride) - OverscanRows);
+        int startRow = Mathf.Max(0, RowAt(Mathf.Max(0f, y - topPadding)) - OverscanRows);
         int rowCount = Mathf.CeilToInt(
-            Mathf.Max(1f, viewport.rect.height) / rowStride) + OverscanRows * 2 + 2;
+            Mathf.Max(1f, viewport.rect.height) / (approvedRows?90:rowStride)) + OverscanRows * 2 + 2;
         int start = startRow * columns;
         int count = Mathf.Min(results.Count - start, rowCount * columns);
         count = Mathf.Clamp(count, 0, MaxVisibleCards);
@@ -271,8 +283,7 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
                 view.Bind(results[dataIndex], onSelected, ResolveThumbnail);
                 view.SetInteractable(cardsInteractable);
                 boundIndices[slot] = dataIndex;
-                approvedSkin?.StyleVirtualCard(view);
-                previewSkin?.StyleVirtualCard(view);
+                StyleCard(view);
                 RebindCount++;
             }
 
@@ -281,12 +292,13 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
             {
                 rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
                 rect.pivot = new Vector2(0f, 1f);
-                rect.sizeDelta = new Vector2(lastCellWidth, lastCellHeight);
                 int row = dataIndex / columns;
+                rect.sizeDelta = new Vector2(lastCellWidth, RowHeight(row));
+                if(approvedRows)view.GetComponent<BistroBuilderGalleryVivaCard>()?.SetCompactGridRow(false);
                 int col = dataIndex % columns;
                 rect.anchoredPosition = new Vector2(
                     leftPadding + col * colStride,
-                    -(topPadding + row * rowStride));
+                    -(topPadding + RowTop(row)));
             }
             if (!view.gameObject.activeSelf)
                 view.gameObject.SetActive(true);
@@ -322,9 +334,15 @@ public sealed class BistroBuilderEditorV2CatalogVirtualizedList : MonoBehaviour
         {
             var view = pool[i];
             if (view == null || view.Definition == null) continue;
-            approvedSkin?.StyleVirtualCard(view);
-            previewSkin?.StyleVirtualCard(view);
+            StyleCard(view);
         }
+    }
+
+    private void StyleCard(RestaurantPlaceableCatalogItemView view)
+    {
+        var viva = GetComponent<BistroBuilderGalleryViva>();
+        if (viva != null && viva.OwnsPresentation) viva.StyleCard(view);
+        else { approvedSkin?.StyleVirtualCard(view); previewSkin?.StyleVirtualCard(view); }
     }
 
     private void ReleasePool()

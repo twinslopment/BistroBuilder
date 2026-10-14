@@ -93,3 +93,10 @@ Una build de una feature se etiqueta como build de prueba de esa feature y nunca
 - Assets4All: trabajo activo en repositorio separado.
 
 Con esta política, el usuario solo necesita decir **MASTER**, **EDITOR V2**, **SAVIC** o **ASSETS4ALL**. Los nombres técnicos secundarios quedan bajo responsabilidad de los agentes.
+
+
+## Proyecto conjunto Editor V2 + SAVIC — 2026-10-14
+
+La ruta de revisión viva es `C:\Users\mruperez\ProyectoBB\BB_EditorV2_SAVIC`, un enlace al worktree `editor-v2-galeria-fiel/BistroBuilder` de `codex/editor-v2-galeria-viva`. Integra R9 y el receptor Assets4All–SAVIC mediante un delta contrastado y respaldado; ambos chats deben continuar sus cambios sobre este mismo worktree. La evidencia R9 independiente se conserva. MASTER continúa siendo `integration/master-current-20260918`.
+
+Instrucciones para el usuario: [Proyecto unificado](../PROYECTO_UNIFICADO_EDITOR_V2_SAVIC.md). Evidencia conjunta: [Validación](../40_TESTING/EDITOR_V2_SAVIC_UNIFIED_20261014.md).
