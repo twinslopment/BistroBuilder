@@ -16,6 +16,7 @@ using UnityEngine.UI;
 public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 {
     public const string RuntimeRevision = "MENU-2.1E-UI";
+    private const string SpecialCategoryId = "__special";
 
     [Header("Dependencias")]
 
@@ -33,6 +34,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
     [SerializeField]
     private BistroBuilderMenuPortfolioRuntimeView portfolioView;
+
+    [SerializeField]
+    private BistroBuilderDishImageCatalog dishImageCatalog;
 
     [Header("Comportamiento")]
 
@@ -81,6 +85,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Text detailTitleText;
     private Text detailSubtitleText;
     private Text descriptionText;
+    private Image detailDishImage;
+    private Text detailCategoryText;
+    private Text detailModeText;
+    private Text detailOrderText;
+    private Text detailCostText;
+    private Text detailMarginText;
+    private Text detailStatusBadgeText;
     private Text economicsText;
     private Text availabilityText;
     private Text recipeText;
@@ -231,9 +242,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
             ScrollRect[] scrollRects = modalRoot.GetComponentsInChildren<ScrollRect>(true);
 
-            if (scrollRects.Length < 3)
+            if (scrollRects.Length < 2)
             {
-                error = "La vista 2.1E no contiene los tres scrolls esperados.";
+                error = "La vista Carta/Platos no contiene los scrolls de categorías y platos esperados.";
                 return false;
             }
 
@@ -424,7 +435,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         BuildHeader(panel);
         BuildTabs(panel);
         BuildBody(panel);
-        BuildFooter(panel);
+        BuildApprovedFooter(panel);
         BuildConfirmation(modalRoot);
         BistroBuilderCartaReferenceV3Style.ApplyEditor(panel);
         BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
@@ -443,8 +454,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(18f, -70f),
-            new Vector2(-18f, -12f)
+            new Vector2(14f, -66f),
+            new Vector2(-14f, -8f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             header,
@@ -454,28 +465,28 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         titleText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Title",
             header,
-            "Carta y platos",
-            24,
+            "CARTA",
+            30,
             TextAnchor.MiddleLeft,
             BistroBuilderMenuEditorUiFactory.TextPrimary,
             FontStyle.Bold
         );
         titleText.rectTransform.anchorMin = new Vector2(0f, 0f);
-        titleText.rectTransform.anchorMax = new Vector2(0.32f, 1f);
-        titleText.rectTransform.offsetMin = new Vector2(54f, 0f);
+        titleText.rectTransform.anchorMax = new Vector2(0.42f, 1f);
+        titleText.rectTransform.offsetMin = new Vector2(58f, 0f);
         titleText.rectTransform.offsetMax = Vector2.zero;
         BistroBuilderMenuEditorUiFactory.AddMenuHeaderIcon(header);
 
         contextText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Context",
             header,
-            string.Empty,
-            13,
-            TextAnchor.MiddleLeft,
+            "Define, organiza y personaliza los platos de tu carta.",
+            12,
+            TextAnchor.MiddleRight,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        contextText.rectTransform.anchorMin = new Vector2(0.32f, 0f);
-        contextText.rectTransform.anchorMax = new Vector2(0.53f, 1f);
+        contextText.rectTransform.anchorMin = new Vector2(0.56f, 0f);
+        contextText.rectTransform.anchorMax = new Vector2(0.91f, 1f);
         contextText.rectTransform.offsetMin = new Vector2(8f, 0f);
         contextText.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
@@ -509,15 +520,26 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         SetAnchoredColumn(newDishButton, 0.80f, 0.89f, 9f);
 
+        // The approved Carta shell keeps service selectors out of this screen.
+        // They remain alive for domain state/refresh, but are not part of the
+        // visual contract shown to the player.
+        mealServiceButton.gameObject.SetActive(false);
+        serviceModeButton.gameObject.SetActive(false);
+        newDishButton.gameObject.SetActive(false);
+
         Button closeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Close",
             header,
-            "Cerrar",
+            "×",
             RequestClose,
-            BistroBuilderMenuEditorUiFactory.Negative,
-            14
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised,
+            22
         );
-        SetAnchoredColumn(closeButton, 0.90f, 0.985f, 7f);
+        RectTransform closeRect = closeButton.GetComponent<RectTransform>();
+        closeRect.anchorMin = new Vector2(1f, 0.5f);
+        closeRect.anchorMax = new Vector2(1f, 0.5f);
+        closeRect.offsetMin = new Vector2(-44f, -18f);
+        closeRect.offsetMax = new Vector2(-8f, 18f);
     }
 
     private void BuildTabs(RectTransform panel)
@@ -565,17 +587,17 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             Vector2.zero,
             Vector2.one,
-            new Vector2(18f, 78f),
-            new Vector2(-18f, -118f)
+            new Vector2(12f, 58f),
+            new Vector2(-12f, -116f)
         );
 
         RectTransform sidebar = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Sidebar",
             body,
             Vector2.zero,
-            new Vector2(0f, 1f),
+            new Vector2(0.16f, 1f),
             Vector2.zero,
-            new Vector2(226f, 0f)
+            new Vector2(-4f, 0f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             sidebar,
@@ -587,9 +609,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         RectTransform detail = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Detail",
             body,
-            new Vector2(1f, 0f),
+            new Vector2(0.72f, 0f),
             Vector2.one,
-            new Vector2(-382f, 0f),
+            new Vector2(4f, 0f),
             Vector2.zero
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
@@ -597,135 +619,122 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
         BistroBuilderMenuEditorUiFactory.StylePlate(detail);
-        BuildDetail(detail);
+        BuildApprovedDetail(detail);
 
         RectTransform list = BistroBuilderMenuEditorUiFactory.CreateRect(
             "List",
             body,
-            Vector2.zero,
-            Vector2.one,
-            new Vector2(238f, 0f),
-            new Vector2(-394f, 0f)
+            new Vector2(0.16f, 0f),
+            new Vector2(0.72f, 1f),
+            new Vector2(4f, 0f),
+            new Vector2(-4f, 0f)
         );
         BuildList(list);
     }
 
     private void BuildSidebar(RectTransform sidebar)
     {
-        searchInput = BistroBuilderMenuEditorUiFactory.CreateInputField(
-            "Search",
-            sidebar,
-            "Buscar plato…",
-            HandleSearchChanged,
-            null
-        );
-        RectTransform searchRect = searchInput.GetComponent<RectTransform>();
-        searchRect.anchorMin = new Vector2(0f, 1f);
-        searchRect.anchorMax = new Vector2(1f, 1f);
-        searchRect.offsetMin = new Vector2(10f, -48f);
-        searchRect.offsetMax = new Vector2(-10f, -10f);
-
-        Text categoryLabel = BistroBuilderMenuEditorUiFactory.CreateText(
-            "CategoryLabel",
-            sidebar,
-            "CATEGORÍAS",
-            12,
-            TextAnchor.MiddleLeft,
-            BistroBuilderMenuEditorUiFactory.TextSecondary,
-            FontStyle.Bold
-        );
-        categoryLabel.rectTransform.anchorMin = new Vector2(0f, 1f);
-        categoryLabel.rectTransform.anchorMax = new Vector2(1f, 1f);
-        categoryLabel.rectTransform.offsetMin = new Vector2(12f, -82f);
-        categoryLabel.rectTransform.offsetMax = new Vector2(-10f, -56f);
-
         ScrollRect categories = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "Categories",
             sidebar,
             out categoryContent
         );
         RectTransform categoriesRect = categories.GetComponent<RectTransform>();
-        categoriesRect.anchorMin = new Vector2(0f, 0.42f);
-        categoriesRect.anchorMax = new Vector2(1f, 1f);
-        categoriesRect.offsetMin = new Vector2(8f, 6f);
-        categoriesRect.offsetMax = new Vector2(-8f, -84f);
-
-        Text filterLabel = BistroBuilderMenuEditorUiFactory.CreateText(
-            "FilterLabel",
-            sidebar,
-            "FILTROS",
-            12,
-            TextAnchor.MiddleLeft,
-            BistroBuilderMenuEditorUiFactory.TextSecondary,
-            FontStyle.Bold
-        );
-        filterLabel.rectTransform.anchorMin = new Vector2(0f, 0.38f);
-        filterLabel.rectTransform.anchorMax = new Vector2(1f, 0.42f);
-        filterLabel.rectTransform.offsetMin = new Vector2(12f, 0f);
-        filterLabel.rectTransform.offsetMax = new Vector2(-10f, 0f);
-
-        RectTransform filterRoot = BistroBuilderMenuEditorUiFactory.CreateRect(
-            "Filters",
-            sidebar,
-            Vector2.zero,
-            new Vector2(1f, 0.38f),
-            new Vector2(8f, 8f),
-            new Vector2(-8f, -4f)
-        );
-        VerticalLayoutGroup layout =
-            filterRoot.gameObject.AddComponent<VerticalLayoutGroup>();
-        layout.spacing = 5f;
-        layout.childControlHeight = true;
-        layout.childControlWidth = true;
-        layout.childForceExpandHeight = true;
-        layout.childForceExpandWidth = true;
-
-        CreateFilterButton(filterRoot, "Todos", BistroBuilderMenuEditorFilter.All);
-        CreateFilterButton(filterRoot, "En carta", BistroBuilderMenuEditorFilter.Included);
-        CreateFilterButton(filterRoot, "Activos", BistroBuilderMenuEditorFilter.Active);
-        CreateFilterButton(filterRoot, "Platos firma", BistroBuilderMenuEditorFilter.Signature);
-        CreateFilterButton(filterRoot, "Requieren atención", BistroBuilderMenuEditorFilter.NeedsAttention);
+        categoriesRect.anchorMin = Vector2.zero;
+        categoriesRect.anchorMax = Vector2.one;
+        categoriesRect.offsetMin = new Vector2(7f, 8f);
+        categoriesRect.offsetMax = new Vector2(-7f, -8f);
     }
 
     private void BuildList(RectTransform list)
     {
+        BistroBuilderMenuEditorUiFactory.AddImage(
+            list,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
+        );
+        BistroBuilderMenuEditorUiFactory.StylePlate(list);
+
         RectTransform listHeader = BistroBuilderMenuEditorUiFactory.CreateRect(
             "ListHeader",
             list,
             new Vector2(0f, 1f),
             Vector2.one,
-            new Vector2(0f, -42f),
-            Vector2.zero
+            new Vector2(8f, -44f),
+            new Vector2(-8f, -6f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             listHeader,
             BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
 
+        searchInput = BistroBuilderMenuEditorUiFactory.CreateInputField(
+            "Search",
+            listHeader,
+            "Buscar plato…",
+            HandleSearchChanged,
+            null
+        );
+        SetRect(searchInput.GetComponent<RectTransform>(),
+            0f, 0.08f, 0.54f, 0.92f, 0f);
+
+        Text orderLabel = BistroBuilderMenuEditorUiFactory.CreateText(
+            "OrderLabel", listHeader, "Ordenar por", 11,
+            TextAnchor.MiddleRight,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(orderLabel.rectTransform, 0.58f, 0f, 0.72f, 1f, 0f);
+
+        Button orderButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "OrderCategory", listHeader, "Categoría", () => { },
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
+        );
+        SetRect(orderButton.GetComponent<RectTransform>(),
+            0.73f, 0.08f, 0.92f, 0.92f, 0f);
+
+        Button orderDirection = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "OrderDirection", listHeader, "↕", () => { },
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 14
+        );
+        SetRect(orderDirection.GetComponent<RectTransform>(),
+            0.93f, 0.08f, 1f, 0.92f, 0f);
+
+        RectTransform columnHeader = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "ColumnHeader",
+            list,
+            new Vector2(0f, 1f),
+            Vector2.one,
+            new Vector2(8f, -73f),
+            new Vector2(-8f, -47f)
+        );
+        BistroBuilderMenuEditorUiFactory.AddImage(
+            columnHeader,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
+        );
+
         Text columns = BistroBuilderMenuEditorUiFactory.CreateText(
             "Columns",
-            listHeader,
-            "PLATO                         CATEGORÍA      PRECIO      MARGEN      SERVICIOS      ESTADO",
-            11,
+            columnHeader,
+            "PLATO                         PRECIO      DISPONIBLE      MODALIDAD       PREP.        MARGEN",
+            10,
             TextAnchor.MiddleLeft,
             BistroBuilderMenuEditorUiFactory.TextSecondary,
             FontStyle.Bold
         );
         columns.rectTransform.offsetMin = new Vector2(10f, 0f);
-        columns.rectTransform.offsetMax = new Vector2(-120f, 0f);
+        columns.rectTransform.offsetMax = new Vector2(-64f, 0f);
 
         listCountText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Count",
-            listHeader,
-            "0 platos",
-            12,
+            columnHeader,
+            string.Empty,
+            10,
             TextAnchor.MiddleRight,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        listCountText.rectTransform.anchorMin = new Vector2(0.78f, 0f);
+        listCountText.rectTransform.anchorMin = new Vector2(0.91f, 0f);
         listCountText.rectTransform.anchorMax = Vector2.one;
         listCountText.rectTransform.offsetMin = Vector2.zero;
-        listCountText.rectTransform.offsetMax = new Vector2(-10f, 0f);
+        listCountText.rectTransform.offsetMax = new Vector2(-8f, 0f);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "DishScroll",
@@ -735,8 +744,232 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         RectTransform scrollRect = scroll.GetComponent<RectTransform>();
         scrollRect.anchorMin = Vector2.zero;
         scrollRect.anchorMax = Vector2.one;
-        scrollRect.offsetMin = Vector2.zero;
-        scrollRect.offsetMax = new Vector2(0f, -48f);
+        scrollRect.offsetMin = new Vector2(8f, 8f);
+        scrollRect.offsetMax = new Vector2(-8f, -76f);
+    }
+
+    private void BuildApprovedDetail(RectTransform detail)
+    {
+        RectTransform content = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "DetailCanvas",
+            detail,
+            Vector2.zero,
+            Vector2.one,
+            new Vector2(9f, 9f),
+            new Vector2(-9f, -9f)
+        );
+        detailContentRoot = content.gameObject;
+
+        Text heading = BistroBuilderMenuEditorUiFactory.CreateText(
+            "DetailHeading", content, "Detalle del plato", 18,
+            TextAnchor.MiddleLeft,
+            BistroBuilderMenuEditorUiFactory.TextPrimary,
+            FontStyle.Bold
+        );
+        SetRect(heading.rectTransform, 0f, 0.915f, 0.70f, 1f, 0f);
+
+        Text editing = BistroBuilderMenuEditorUiFactory.CreateText(
+            "EditingCaption", content, "Editando plato", 10,
+            TextAnchor.MiddleRight,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(editing.rectTransform, 0.70f, 0.915f, 1f, 1f, 0f);
+
+        detailTitleText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "DishTitle", content, "Selecciona un plato", 20,
+            TextAnchor.MiddleLeft,
+            BistroBuilderMenuEditorUiFactory.TextPrimary,
+            FontStyle.Bold
+        );
+        SetRect(detailTitleText.rectTransform, 0f, 0.835f, 0.72f, 0.915f, 0f);
+
+        detailStatusBadgeText = CreateDetailReadOnlyValue(
+            content, "StatusBadge", "En carta",
+            0.76f, 0.852f, 1f, 0.902f, true
+        );
+
+        detailSubtitleText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "DishSubtitle", content, string.Empty, 11,
+            TextAnchor.MiddleLeft,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(detailSubtitleText.rectTransform, 0f, 0.785f, 0.74f, 0.842f, 0f);
+
+        RectTransform photoFrame = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "DishPhotoFrame", content,
+            new Vector2(0f, 0.535f), new Vector2(1f, 0.785f),
+            Vector2.zero, Vector2.zero
+        );
+        BistroBuilderMenuEditorUiFactory.AddImage(
+            photoFrame, new Color32(229, 204, 171, 255)
+        );
+        RectTransform photo = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "DishPhoto", photoFrame, Vector2.zero, Vector2.one,
+            new Vector2(3f, 3f), new Vector2(-3f, -3f)
+        );
+        detailDishImage = BistroBuilderMenuEditorUiFactory.AddImage(
+            photo, new Color32(241, 224, 201, 255)
+        );
+        detailDishImage.preserveAspect = false;
+
+        editDishRecipeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "EditDishPhoto", photoFrame, "✎",
+            OpenSelectedDishAuthoring,
+            new Color32(58, 43, 31, 225), 16
+        );
+        SetRect(editDishRecipeButton.GetComponent<RectTransform>(),
+            0.88f, 0.04f, 0.98f, 0.24f, 0f);
+
+        CreateDetailCaption(content, "PriceCaption", "Precio",
+            0.485f, 0.525f);
+        priceInput = BistroBuilderMenuEditorUiFactory.CreateInputField(
+            "Price", content, "0,00", null, HandlePriceEndEdit
+        );
+        SetRect(priceInput.GetComponent<RectTransform>(),
+            0.36f, 0.475f, 1f, 0.525f, 0f);
+
+        CreateDetailCaption(content, "CategoryCaption", "Categoría",
+            0.425f, 0.465f);
+        detailCategoryText = CreateDetailReadOnlyValue(
+            content, "CategoryValue", "Entrantes",
+            0.36f, 0.415f, 1f, 0.465f, false
+        );
+
+        CreateDetailCaption(content, "AvailableCaption", "Disponible",
+            0.365f, 0.405f);
+        enabledToggle = BistroBuilderMenuEditorUiFactory.CreateToggle(
+            "AvailableToggle", content, "En carta", HandleEnabledChanged
+        );
+        SetRect(enabledToggle.GetComponent<RectTransform>(),
+            0.36f, 0.355f, 1f, 0.405f, 0f);
+
+        CreateDetailCaption(content, "ModeCaption", "Modalidad",
+            0.305f, 0.345f);
+        detailModeText = CreateDetailReadOnlyValue(
+            content, "ModeValue", "Normal",
+            0.36f, 0.295f, 1f, 0.345f, false
+        );
+
+        CreateDetailCaption(content, "PrepCaption", "Tiempo de preparación",
+            0.245f, 0.285f);
+        preparationTimeInput =
+            BistroBuilderMenuEditorUiFactory.CreateInputField(
+                "PreparationTime", content, "minutos o mm:ss",
+                null, HandlePreparationTimeEndEdit
+            );
+        SetRect(preparationTimeInput.GetComponent<RectTransform>(),
+            0.36f, 0.235f, 1f, 0.285f, 0f);
+
+        CreateDetailCaption(content, "OrderCaption", "Posición en la carta",
+            0.185f, 0.225f);
+        detailOrderText = CreateDetailReadOnlyValue(
+            content, "OrderValue", "1",
+            0.36f, 0.175f, 0.76f, 0.225f, false
+        );
+        moveUpButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "MoveUp", content, "↑", () => MoveSelected(-1),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
+        );
+        SetRect(moveUpButton.GetComponent<RectTransform>(),
+            0.78f, 0.175f, 0.88f, 0.225f, 0f);
+        moveDownButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "MoveDown", content, "↓", () => MoveSelected(1),
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
+        );
+        SetRect(moveDownButton.GetComponent<RectTransform>(),
+            0.90f, 0.175f, 1f, 0.225f, 0f);
+
+        CreateDetailCaption(content, "CostCaption", "Coste (por ración)",
+            0.125f, 0.165f);
+        detailCostText = CreateDetailReadOnlyValue(
+            content, "CostValue", "0,00 €",
+            0.36f, 0.115f, 1f, 0.165f, false
+        );
+
+        CreateDetailCaption(content, "MarginCaption", "Margen",
+            0.065f, 0.105f);
+        detailMarginText = CreateDetailReadOnlyValue(
+            content, "MarginValue", "0 %",
+            0.36f, 0.055f, 1f, 0.105f, false
+        );
+
+        // Preserve all existing authoring bindings without exposing the
+        // obsolete editor controls in the approved compact composition.
+        RectTransform hiddenBindings = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "HiddenBindings", content, Vector2.zero, Vector2.zero,
+            Vector2.zero, Vector2.zero
+        );
+        hiddenBindings.gameObject.SetActive(false);
+        descriptionText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+        soldOutToggle = AddDetailToggle(hiddenBindings, "Agotado", HandleSoldOutChanged);
+        signatureToggle = AddDetailToggle(hiddenBindings, "Firma", HandleSignatureChanged);
+        breakfastToggle = AddDetailToggle(hiddenBindings, "Desayuno", HandleBreakfastChanged);
+        lunchToggle = AddDetailToggle(hiddenBindings, "Comida", HandleLunchChanged);
+        dinnerToggle = AddDetailToggle(hiddenBindings, "Cena", HandleDinnerChanged);
+        preparationDifficultyInput =
+            BistroBuilderMenuEditorUiFactory.CreateInputField(
+                "PreparationDifficulty", hiddenBindings, "1-10",
+                null, HandlePreparationDifficultyEndEdit
+            );
+        preparationSummaryText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+        restoreDefaultsButton = AddDetailButton(
+            hiddenBindings, "Restaurar valores predeterminados",
+            RestoreSelectedDefaults, 1f
+        );
+        economicsText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+        availabilityText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+        recipeText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+    }
+
+    private void CreateDetailCaption(
+        Transform parent,
+        string name,
+        string value,
+        float minY,
+        float maxY
+    )
+    {
+        Text label = BistroBuilderMenuEditorUiFactory.CreateText(
+            name, parent, value, 11,
+            TextAnchor.MiddleLeft,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(label.rectTransform, 0f, minY, 0.34f, maxY, 0f);
+    }
+
+    private Text CreateDetailReadOnlyValue(
+        Transform parent,
+        string name,
+        string value,
+        float minX,
+        float minY,
+        float maxX,
+        float maxY,
+        bool badge
+    )
+    {
+        RectTransform plate = BistroBuilderMenuEditorUiFactory.CreateRect(
+            name + "Plate", parent,
+            new Vector2(minX, minY), new Vector2(maxX, maxY),
+            Vector2.zero, Vector2.zero
+        );
+        BistroBuilderMenuEditorUiFactory.AddImage(
+            plate,
+            badge
+                ? new Color32(225, 240, 209, 255)
+                : BistroBuilderMenuEditorUiFactory.SurfaceRaised
+        );
+        Text text = BistroBuilderMenuEditorUiFactory.CreateText(
+            name, plate, value, badge ? 10 : 11,
+            badge ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft,
+            badge
+                ? new Color32(50, 96, 45, 255)
+                : BistroBuilderMenuEditorUiFactory.TextPrimary,
+            badge ? FontStyle.Bold : FontStyle.Normal
+        );
+        text.rectTransform.offsetMin = new Vector2(8f, 0f);
+        text.rectTransform.offsetMax = new Vector2(-8f, 0f);
+        return text;
     }
 
     private void BuildDetail(RectTransform detail)
@@ -887,6 +1120,75 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         economicsText = AddDetailText(content, string.Empty, 14, 82f, false);
         availabilityText = AddDetailText(content, string.Empty, 14, 90f, false);
         recipeText = AddDetailText(content, string.Empty, 13, 170f, false);
+    }
+
+    private void BuildApprovedFooter(RectTransform panel)
+    {
+        RectTransform footer = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "Footer",
+            panel,
+            Vector2.zero,
+            new Vector2(1f, 0f),
+            new Vector2(12f, 8f),
+            new Vector2(-12f, 52f)
+        );
+        BistroBuilderMenuEditorUiFactory.AddImage(
+            footer,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised
+        );
+
+        Button addDish = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "AddDish", footer, "Añadir plato", OpenNewDishAuthoring,
+            BistroBuilderMenuEditorUiFactory.Positive, 13
+        );
+        SetRect(addDish.GetComponent<RectTransform>(),
+            0f, 0.08f, 0.18f, 0.92f, 0f);
+
+        includeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "RemoveDish", footer, "Eliminar", ToggleIncluded,
+            BistroBuilderMenuEditorUiFactory.Negative, 13
+        );
+        SetRect(includeButton.GetComponent<RectTransform>(),
+            0.19f, 0.08f, 0.34f, 0.92f, 0f);
+
+        Button duplicate = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "DuplicateDish", footer, "Duplicar", () => { },
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 13
+        );
+        SetRect(duplicate.GetComponent<RectTransform>(),
+            0.35f, 0.08f, 0.48f, 0.92f, 0f);
+        duplicate.interactable = false;
+
+        reloadButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "Reload", footer, "Recargar", ReloadConflict,
+            BistroBuilderMenuEditorUiFactory.Warning, 12
+        );
+        SetRect(reloadButton.GetComponent<RectTransform>(),
+            0.56f, 0.08f, 0.67f, 0.92f, 0f);
+
+        applyButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "Apply", footer, "Guardar cambios", ApplyChanges,
+            BistroBuilderMenuEditorUiFactory.Positive, 13
+        );
+        SetRect(applyButton.GetComponent<RectTransform>(),
+            0.69f, 0.08f, 0.84f, 0.92f, 0f);
+
+        discardButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "Discard", footer, "Descartar", DiscardChanges,
+            BistroBuilderMenuEditorUiFactory.SurfaceRaised, 13
+        );
+        SetRect(discardButton.GetComponent<RectTransform>(),
+            0.85f, 0.08f, 1f, 0.92f, 0f);
+
+        statusText = BistroBuilderMenuEditorUiFactory.CreateText(
+            "Status",
+            footer,
+            string.Empty,
+            10,
+            TextAnchor.MiddleLeft,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        statusText.gameObject.SetActive(false);
     }
 
     private void BuildFooter(RectTransform panel)
@@ -1476,9 +1778,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     {
         // Keep Recoleta DEMO restricted to clean ASCII. Dynamic counts and
         // Unicode punctuation are presented in the official Inter caption.
-        titleText.text = "CARTA Y PLATOS";
-        contextText.text = "En carta: " + summary.IncludedDishCount + "/" +
-            summary.CatalogDishCount + " · Restaurante: " + summary.RestaurantId;
+        titleText.text = "CARTA";
+        contextText.text = "Define, organiza y personaliza los platos de tu carta.";
         SetButtonLabel(
             mealServiceButton,
             BistroBuilderMenuEditorUtility.GetMealServiceLabel(
@@ -1511,7 +1812,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
 
         bool hierarchyChanged =
-            categoryButtonIds.Count != categoryIdBuffer.Count + 1;
+            categoryButtonIds.Count != categoryIdBuffer.Count + 2;
 
         if (!hierarchyChanged)
         {
@@ -1547,9 +1848,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                     categoryNameBuffer[index]
                 );
             }
+            CreateCategoryButton(SpecialCategoryId, "Especiales");
         }
 
         if (!string.IsNullOrEmpty(selectedCategoryId) &&
+            selectedCategoryId != SpecialCategoryId &&
             !categoryIdSet.Contains(selectedCategoryId))
         {
             selectedCategoryId = string.Empty;
@@ -1569,7 +1872,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             13
         );
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 34f);
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 42f);
         categoryButtons.Add(button);
         categoryButtonIds.Add(categoryId);
     }
@@ -1641,12 +1944,14 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         {
             BistroBuilderMenuEditorDishSnapshot item = snapshots[index];
 
-            if (BistroBuilderMenuEditorUtility.Matches(
-                    item,
-                    selectedCategoryId,
-                    filter,
-                    searchText
-                ))
+            bool matches = selectedCategoryId == SpecialCategoryId
+                ? item.SignatureDish &&
+                  BistroBuilderMenuEditorUtility.Matches(
+                      item, string.Empty, filter, searchText)
+                : BistroBuilderMenuEditorUtility.Matches(
+                      item, selectedCategoryId, filter, searchText);
+
+            if (matches)
             {
                 filtered.Add(item);
             }
@@ -1741,20 +2046,58 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         try
         {
             detailTitleText.text = selectedSnapshot.DisplayName;
-            detailSubtitleText.text =
-                selectedSnapshot.CategoryName + " · " +
-                selectedSnapshot.Course + " · " +
-                selectedSnapshot.RequiredStation;
-            descriptionText.text = string.IsNullOrWhiteSpace(
-                selectedSnapshot.Description
-            )
-                ? "Sin descripción."
-                : selectedSnapshot.Description;
+            detailSubtitleText.text = string.IsNullOrWhiteSpace(
+                selectedSnapshot.Description)
+                ? selectedSnapshot.CategoryName
+                : ShortDetailSubtitle(selectedSnapshot.Description);
+            descriptionText.text = selectedSnapshot.Description ?? string.Empty;
+
+            if (dishImageCatalog == null)
+                dishImageCatalog = BistroBuilderDishImageCatalog.LoadDefault();
+            Sprite dishSprite = dishImageCatalog != null
+                ? dishImageCatalog.GetImageOrNull(selectedSnapshot.DishId)
+                : null;
+            if (detailDishImage != null)
+            {
+                detailDishImage.sprite = dishSprite;
+                detailDishImage.color = dishSprite != null
+                    ? Color.white
+                    : new Color32(241, 224, 201, 255);
+            }
+
+            if (detailStatusBadgeText != null)
+            {
+                detailStatusBadgeText.text = selectedSnapshot.Included
+                    ? "En carta"
+                    : "Fuera";
+                detailStatusBadgeText.color = selectedSnapshot.Included
+                    ? new Color32(50, 96, 45, 255)
+                    : BistroBuilderMenuEditorUiFactory.TextSecondary;
+            }
+            if (detailCategoryText != null)
+                detailCategoryText.text = selectedSnapshot.CategoryName;
+            if (detailModeText != null)
+                detailModeText.text = ResolveApprovedModality(selectedSnapshot);
+            if (detailOrderText != null)
+                detailOrderText.text = (selectedSnapshot.DisplayOrder + 1).ToString();
+            if (detailCostText != null)
+                detailCostText.text = BistroBuilderMenuEditorUtility.FormatMoney(
+                    selectedSnapshot.CostPerPortionCents);
+            if (detailMarginText != null)
+            {
+                detailMarginText.text = selectedSnapshot.HasValidEconomics
+                    ? (selectedSnapshot.GrossMarginBasisPoints / 100f)
+                        .ToString("0") + " %"
+                    : "—";
+                detailMarginText.color = selectedSnapshot.GrossMarginCents < 0
+                    ? BistroBuilderMenuEditorUiFactory.Negative
+                    : new Color32(58, 132, 54, 255);
+            }
             SetButtonLabel(
                 includeButton,
                 selectedSnapshot.Included
-                    ? "Retirar de la carta"
-                    : "Añadir a la carta"
+                    ? "Eliminar"
+                    : "Añadir a carta"
             );
             BistroBuilderCartaReferenceV3Style.StyleEditorInclusionButton(
                 includeButton,
@@ -1867,6 +2210,26 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         {
             suppressCallbacks = false;
         }
+    }
+
+    private static string ShortDetailSubtitle(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+        string trimmed = value.Trim();
+        return trimmed.Length <= 42
+            ? trimmed
+            : trimmed.Substring(0, 39) + "…";
+    }
+
+    private static string ResolveApprovedModality(
+        BistroBuilderMenuEditorDishSnapshot snapshot)
+    {
+        if (snapshot == null) return "Normal";
+        string category = (snapshot.CategoryName ?? string.Empty)
+            .ToLowerInvariant();
+        if (category.Contains("postre")) return "Postre";
+        if (category.Contains("bebida")) return "Bebida";
+        return "Normal";
     }
 
     private void RefreshFooter()
@@ -2046,6 +2409,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         if (portfolioView == null)
         {
             TryGetComponent(out portfolioView);
+        }
+
+        if (dishImageCatalog == null)
+        {
+            dishImageCatalog = BistroBuilderDishImageCatalog.LoadDefault();
         }
     }
 
