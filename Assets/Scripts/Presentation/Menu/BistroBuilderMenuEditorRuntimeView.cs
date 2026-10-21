@@ -1867,7 +1867,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         Button button = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Category_" + (string.IsNullOrEmpty(categoryId) ? "all" : categoryId),
             categoryContent,
-            label,
+            ApprovedCategoryLabel(label),
             () => SelectCategory(capturedId),
             BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             13
@@ -1875,6 +1875,19 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 42f);
         categoryButtons.Add(button);
         categoryButtonIds.Add(categoryId);
+    }
+
+    private static string ApprovedCategoryLabel(string label)
+    {
+        string value = (label ?? string.Empty).Trim();
+        string lower = value.ToLowerInvariant();
+        if (lower.Contains("principal")) return "Principales";
+        if (lower.Contains("entr")) return "Entrantes";
+        if (lower.Contains("postre")) return "Postres";
+        if (lower.Contains("bebida")) return "Bebidas";
+        if (lower.Contains("especial")) return "Especiales";
+        if (lower == "todas" || lower == "todos") return "Todos";
+        return value;
     }
 
     private void SelectCategory(string categoryId)
