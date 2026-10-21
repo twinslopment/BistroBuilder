@@ -14,7 +14,7 @@ internal static class BistroBuilderCartaReferenceV3Style
     private const string RasterRoot = "BistroBuilder/UI/CartaReferenceV3IconsRaster/";
     private static readonly Color32 Ink = new Color32(57, 34, 18, 255);
     private static readonly Color32 Muted = new Color32(103, 76, 51, 255);
-    private static readonly Color32 Brass = new Color32(155, 106, 58, 255);
+    private static readonly Color32 Brass = new Color32(156, 106, 39, 255);
     private static readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
     private static Font recoleta, inter, interBold;
     private static Sprite outer, card, normalButton, selectedRow, plainRow, input, danger, emblem, dotGreen, dotGrey, dotBrass;
@@ -85,22 +85,22 @@ internal static class BistroBuilderCartaReferenceV3Style
     private static void EnsureSurfaces()
     {
         if (outer != null) return;
-        outer = Surface(new Color32(249,235,215,255),new Color32(244,219,190,255),
-            new Color32(119,80,42,255),14,3);
-        card = Surface(new Color32(255,245,230,255),new Color32(245,223,195,255),
-            new Color32(171,123,71,255),11,2);
-        normalButton = Surface(new Color32(249,233,208,255),new Color32(215,173,119,255),
-            new Color32(150,106,62,255),7,2);
-        selectedRow = Surface(new Color32(246,221,185,255),new Color32(237,196,142,255),
-            new Color32(193,139,76,255),8,2);
-        plainRow = Surface(new Color32(250,238,219,255),new Color32(250,238,219,255),
-            new Color32(222,194,163,255),3,1);
-        input = Surface(new Color32(252,241,223,255),new Color32(250,236,216,255),
-            new Color32(196,156,113,255),6,1);
-        danger = Surface(new Color32(189,80,59,255),new Color32(151,39,24,255),
-            new Color32(113,31,19,255),6,2);
-        emblem = Surface(new Color32(241,213,169,255),new Color32(214,169,115,255),
-            new Color32(165,117,72,255),7,1);
+        outer = Surface(new Color32(246,237,224,255),new Color32(238,224,205,255),
+            new Color32(126,83,31,255),14,3);
+        card = Surface(new Color32(246,237,224,255),new Color32(241,229,212,255),
+            new Color32(174,129,79,255),11,2);
+        normalButton = Surface(new Color32(244,231,211,255),new Color32(225,199,162,255),
+            new Color32(146,98,48,255),7,2);
+        selectedRow = Surface(new Color32(248,226,186,255),new Color32(235,192,112,255),
+            new Color32(184,126,55,255),8,2);
+        plainRow = Surface(new Color32(246,236,222,255),new Color32(245,235,220,255),
+            new Color32(214,187,154,255),3,1);
+        input = Surface(new Color32(244,232,215,255),new Color32(236,220,199,255),
+            new Color32(184,143,97,255),6,1);
+        danger = Surface(new Color32(185,61,48,255),new Color32(145,34,25,255),
+            new Color32(106,29,20,255),6,2);
+        emblem = Surface(new Color32(238,210,165,255),new Color32(208,160,100,255),
+            new Color32(155,104,47,255),7,1);
         dotGreen = Dot(new Color32(115,201,66,255),new Color32(57,117,29,255));
         dotGrey = Dot(new Color32(198,199,197,255),new Color32(112,108,103,255));
         dotBrass = Dot(new Color32(255,213,130,255),new Color32(118,72,27,255));
@@ -369,6 +369,33 @@ internal static class BistroBuilderCartaReferenceV3Style
             Image img=BistroBuilderMenuEditorUiFactory.AddImage(r,Color.white);
             img.sprite=dotBrass;img.raycastTarget=false;
         }
+        AddFrameAccents(panel);
+    }
+
+    private static void AddFrameAccents(RectTransform panel)
+    {
+        if (panel == null || panel.Find("ReferenceInnerFrameTop") != null) return;
+        Color32 lineColor = new Color32(170, 118, 54, 190);
+
+        RectTransform top = Rect("ReferenceInnerFrameTop", panel,
+            new Vector2(0,1), new Vector2(1,1),
+            new Vector2(8,-8), new Vector2(-8,-7));
+        BistroBuilderMenuEditorUiFactory.AddImage(top,lineColor).raycastTarget=false;
+
+        RectTransform bottom = Rect("ReferenceInnerFrameBottom", panel,
+            Vector2.zero, new Vector2(1,0),
+            new Vector2(8,7), new Vector2(-8,8));
+        BistroBuilderMenuEditorUiFactory.AddImage(bottom,lineColor).raycastTarget=false;
+
+        RectTransform left = Rect("ReferenceInnerFrameLeft", panel,
+            Vector2.zero, new Vector2(0,1),
+            new Vector2(7,8), new Vector2(8,-8));
+        BistroBuilderMenuEditorUiFactory.AddImage(left,lineColor).raycastTarget=false;
+
+        RectTransform right = Rect("ReferenceInnerFrameRight", panel,
+            new Vector2(1,0), Vector2.one,
+            new Vector2(-8,8), new Vector2(-7,-8));
+        BistroBuilderMenuEditorUiFactory.AddImage(right,lineColor).raycastTarget=false;
     }
 
     private static string ButtonIcon(string name)
