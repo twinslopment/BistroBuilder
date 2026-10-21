@@ -391,6 +391,11 @@ internal static class BistroBuilderCartaReferenceV3Style
             case "+Promo":return null;
             case "Guardarregla":return "save";
             case "Limpiarformulario":return "broom";
+            case "AddDish":return "plus";
+            case "RemoveDish":return "trash";
+            case "DuplicateDish":return "copy";
+            case "Apply":return "save";
+            case "EditDishPhoto":return "edit";
             default:return null;
         }
     }
@@ -398,7 +403,8 @@ internal static class BistroBuilderCartaReferenceV3Style
     private static void SkinButton(Button button)
     {
         bool destructive=button.name=="Eliminar" || button.name=="Eliminarregla" ||
-            button.name=="ConfirmDeletion" || button.name=="DiscardAndClose";
+            button.name=="ConfirmDeletion" || button.name=="DiscardAndClose" ||
+            button.name=="RemoveDish";
         bool flatField=button.name=="Tipo" || button.name=="Cartadestino";
 
         // Carta V3 is authoritative: suppress every legacy/design-system child
@@ -418,6 +424,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         colors.highlightedColor=new Color(1.03f,1.03f,1.03f,1);
         colors.pressedColor=new Color(.91f,.89f,.87f,1);
         colors.selectedColor=Color.white;
+        colors.disabledColor=Color.white;
         button.colors=colors;
         Text label=button.GetComponentInChildren<Text>(true);
         if(label==null)return;
@@ -453,7 +460,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         EnsureSurfaces();
         SkinImage(panel.GetComponent<Image>(), outer);
 
-        foreach (string path in new[] { "Body/Sidebar", "Body/Detail", "Footer" })
+        foreach (string path in new[] { "Body/Sidebar", "Body/List", "Body/Detail", "Footer" })
         {
             Transform node = panel.Find(path);
             if (node != null) SkinImage(node.GetComponent<Image>(), card);
@@ -462,6 +469,9 @@ internal static class BistroBuilderCartaReferenceV3Style
         Transform listHeader = panel.Find("Body/List/ListHeader");
         if (listHeader != null)
             SkinImage(listHeader.GetComponent<Image>(), input);
+        Transform columnHeader = panel.Find("Body/List/ColumnHeader");
+        if (columnHeader != null)
+            SkinImage(columnHeader.GetComponent<Image>(), plainRow);
 
         Transform header = panel.Find("Header");
         if (header != null)
@@ -478,7 +488,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             Text title = header.Find("Title")?.GetComponent<Text>();
             if (title != null)
             {
-                title.text = "CARTA Y PLATOS";
+                title.text = "CARTA";
                 SetTypeface(title, true, 30, true);
                 Anchor(title.rectTransform, .067f, 0, .31f, 1,
                     Vector2.zero, Vector2.zero);
@@ -498,8 +508,30 @@ internal static class BistroBuilderCartaReferenceV3Style
                     new Vector2(14, 13), new Vector2(42, -13));
             }
 
+            Text context = header.Find("Context")?.GetComponent<Text>();
+            if (context != null)
+            {
+                SetTypeface(context, false, 11);
+                context.alignment = TextAnchor.MiddleRight;
+                context.color = Muted;
+            }
+
             Transform close = header.Find("Close");
-            if (close != null) close.gameObject.SetActive(false);
+            if (close != null)
+            {
+                close.gameObject.SetActive(true);
+                Button closeButton = close.GetComponent<Button>();
+                if (closeButton != null)
+                {
+                    SkinImage(closeButton.GetComponent<Image>(), emblem);
+                    Text closeLabel = closeButton.GetComponentInChildren<Text>(true);
+                    if (closeLabel != null)
+                    {
+                        SetTypeface(closeLabel, true, 21, true);
+                        closeLabel.alignment = TextAnchor.MiddleCenter;
+                    }
+                }
+            }
         }
 
         foreach (InputField field in panel.GetComponentsInChildren<InputField>(true))
@@ -513,12 +545,69 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
         }
 
+        foreach (Image image in panel.GetComponentsInChildren<Image>(true))
+        {
+            if (image == null) continue;
+            string n = image.name;
+            if (n == "CategoryValuePlate" || n == "ModeValuePlate" ||
+                n == "OrderValuePlate" || n == "CostValuePlate" ||
+                n == "MarginValuePlate")
+            {
+                SkinImage(image, input);
+            }
+            else if (n == "DishPhotoFrame")
+            {
+                SkinImage(image, card);
+            }
+        }
+
+        foreach (Text text in panel.GetComponentsInChildren<Text>(true))
+        {
+            if (text == null) continue;
+            switch (text.name)
+            {
+                case "DetailHeading":
+                case "DishTitle":
+                    SetTypeface(text, true, text.name == "DishTitle" ? 18 : 17, true);
+                    break;
+                case "DishSubtitle":
+                case "EditingCaption":
+                    SetTypeface(text, false, text.name == "DishSubtitle" ? 10 : 9);
+                    text.color = Muted;
+                    break;
+                case "Columns":
+                    SetTypeface(text, false, 9, true);
+                    text.color = Muted;
+                    break;
+                case "OrderLabel":
+                case "Count":
+                    SetTypeface(text, false, 9);
+                    text.color = Muted;
+                    break;
+                case "CategoryValue":
+                case "ModeValue":
+                case "OrderValue":
+                case "CostValue":
+                case "MarginValue":
+                    SetTypeface(text, false, 10);
+                    break;
+                default:
+                    if (text.name.EndsWith("Caption", StringComparison.Ordinal))
+                    {
+                        SetTypeface(text, false, 10);
+                        text.color = Muted;
+                    }
+                    break;
+            }
+        }
+
         foreach (Button button in panel.GetComponentsInChildren<Button>(true))
         {
             if (button.name.StartsWith("Category_", StringComparison.Ordinal) ||
                 button.name.StartsWith("Filter_", StringComparison.Ordinal) ||
                 button.name.StartsWith("CartaTab", StringComparison.Ordinal) ||
-                button.name == "Close")
+                button.name == "Close" ||
+                button.name == "EditDishPhoto")
                 continue;
             SkinButton(button);
         }
@@ -558,26 +647,77 @@ internal static class BistroBuilderCartaReferenceV3Style
         colors.selectedColor = Color.white;
         button.colors = colors;
 
-        Text label = button.GetComponentInChildren<Text>(true);
+        Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label != null)
         {
-            SetTypeface(label, true, 13, true);
+            SetTypeface(label, true, 12, true);
             label.alignment = TextAnchor.MiddleCenter;
-            label.rectTransform.offsetMin = new Vector2(10f, 2f);
-            label.rectTransform.offsetMax = new Vector2(-10f, -2f);
+            label.rectTransform.offsetMin = new Vector2(26f, 2f);
+            label.rectTransform.offsetMax = new Vector2(-8f, -2f);
             MixedTypefaceRuns(label);
+        }
+
+        Transform existing = button.transform.Find("ReferenceTabIcon");
+        if (existing == null)
+        {
+            if (button.name == "CartaTabManagement")
+            {
+                Image icon = AddReferenceIcon(
+                    "ReferenceTabIcon", button.transform, "book",
+                    0, .5f, 0, .5f,
+                    new Vector2(10, -9), new Vector2(28, 9));
+                if (icon != null) icon.color = Color.white;
+            }
+            else if (button.name == "CartaTabDishes")
+            {
+                Text icon = BistroBuilderMenuEditorUiFactory.CreateText(
+                    "ReferenceTabIcon", button.transform, "⌒", 16,
+                    TextAnchor.MiddleCenter, Brass, FontStyle.Bold);
+                Anchor(icon.rectTransform, 0, 0, 0, 1,
+                    new Vector2(8, 0), new Vector2(30, 0));
+                SetTypeface(icon, false, 16, true);
+                icon.color = Brass;
+            }
         }
     }
 
     public static void StyleSelectorButton(Button button, bool selected)
     {
         StyleNavigationTab(button, selected);
-        Text label = button != null ? button.GetComponentInChildren<Text>(true) : null;
+        Text label = button != null
+            ? button.transform.Find("Label")?.GetComponent<Text>()
+            : null;
         if (label != null)
         {
-            SetTypeface(label, true, 13, selected);
+            SetTypeface(label, true, 12, selected);
             label.alignment = TextAnchor.MiddleLeft;
-            label.rectTransform.offsetMin = new Vector2(12f, 2f);
+            label.rectTransform.offsetMin = new Vector2(34f, 2f);
+            label.rectTransform.offsetMax = new Vector2(-8f, -2f);
+
+            Transform iconNode = button.transform.Find("ReferenceCategoryIcon");
+            Text icon;
+            if (iconNode == null)
+            {
+                icon = BistroBuilderMenuEditorUiFactory.CreateText(
+                    "ReferenceCategoryIcon", button.transform,
+                    CategoryGlyph(label.text), 16,
+                    TextAnchor.MiddleCenter, Brass, FontStyle.Bold
+                );
+                Anchor(icon.rectTransform, 0, 0, 0, 1,
+                    new Vector2(8, 0), new Vector2(30, 0));
+            }
+            else
+            {
+                icon = iconNode.GetComponent<Text>();
+                if (icon != null) icon.text = CategoryGlyph(label.text);
+            }
+
+            if (icon != null)
+            {
+                SetTypeface(icon, false, 16, true);
+                icon.color = Brass;
+                icon.alignment = TextAnchor.MiddleCenter;
+            }
         }
     }
 
@@ -596,6 +736,54 @@ internal static class BistroBuilderCartaReferenceV3Style
             label.alignment = TextAnchor.MiddleCenter;
             label.color = destructive ? Color.white : Ink;
         }
+    }
+
+    public static void StyleDishRow(Button button, bool selected)
+    {
+        if (button == null) return;
+        EnsureSurfaces();
+        SkinImage(button.GetComponent<Image>(), selected ? selectedRow : plainRow);
+        Image background = button.GetComponent<Image>();
+        if (background != null) background.raycastTarget = true;
+
+        foreach (Text text in button.GetComponentsInChildren<Text>(true))
+        {
+            if (text == null) continue;
+            switch (text.name)
+            {
+                case "Name":
+                    SetTypeface(text, true, 11, true);
+                    break;
+                case "Subtitle":
+                    SetTypeface(text, false, 9);
+                    text.color = Muted;
+                    break;
+                case "Price":
+                    SetTypeface(text, false, 10, true);
+                    break;
+                case "Available":
+                    SetTypeface(text, false, 15, true);
+                    break;
+                case "Margin":
+                    SetTypeface(text, false, 10, true);
+                    break;
+                default:
+                    SetTypeface(text, false, 10);
+                    break;
+            }
+        }
+    }
+
+    private static string CategoryGlyph(string label)
+    {
+        string value = (label ?? string.Empty).ToLowerInvariant();
+        if (value.Contains("todo")) return "▦";
+        if (value.Contains("entr")) return "⌁";
+        if (value.Contains("principal")) return "⌒";
+        if (value.Contains("postre")) return "▤";
+        if (value.Contains("bebida")) return "◫";
+        if (value.Contains("especial")) return "★";
+        return "•";
     }
 
     public static void StyleRow(Button button,bool selected,bool rule,bool baseMenu,bool active)
