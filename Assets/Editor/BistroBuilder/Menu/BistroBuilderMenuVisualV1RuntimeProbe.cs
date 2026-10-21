@@ -345,18 +345,20 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "Menu Editor has the ivory/brass outer frame.");
         Text menuTitle = plate?.Find("Header/Title")?.GetComponent<Text>();
         Text menuContext = plate?.Find("Header/Context")?.GetComponent<Text>();
-        Pass(menuTitle != null && menuTitle.text == "CARTA Y PLATOS" &&
+        Pass(menuTitle != null && menuTitle.text == "CARTA" &&
              menuTitle.font != null &&
              menuTitle.font.name.IndexOf("Recoleta",
                  StringComparison.OrdinalIgnoreCase) >= 0 &&
-             menuContext != null && menuContext.text.Contains("En carta:") &&
+             menuContext != null &&
+             menuContext.text.Contains("personaliza los platos") &&
              menuContext.font != null &&
              menuContext.font.name.IndexOf("Inter",
                  StringComparison.OrdinalIgnoreCase) >= 0,
-             "Editor uses clean Recoleta for title; dynamic count and accents use Inter.");
+             "Platos shares the approved CARTA header and Inter helper line.");
         Pass(IsParchment(plate, "Body/Sidebar") &&
+             IsParchment(plate, "Body/List") &&
              IsParchment(plate, "Body/Detail"),
-             "Category filters and selected dish have matching parchment panels.");
+             "Categories, dish table and selected-dish detail use matching parchment cards.");
         Button editorManagementTab =
             plate?.Find("CartaTabs/CartaTabManagement")?.GetComponent<Button>();
         Button editorDishesTab =
@@ -366,13 +368,16 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              editorDishesTab.GetComponent<Image>()?.sprite != null,
             "Platos shares the same Carta tabs and V3 button construction as the hub.");
         Pass(plate?.Find("Body/List/DishScroll/Viewport/Content") != null &&
-             plate?.Find("Header/NewDish") != null &&
+             plate?.Find("Body/List/ListHeader/Search") != null &&
+             plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame/DishPhoto") != null &&
+             plate?.Find("Footer/AddDish") != null &&
+             plate?.Find("Footer/RemoveDish") != null &&
              plate?.Find("Footer/Apply") != null &&
              plate?.Find("Header/CartaHeaderIcon") != null,
-            "Dish list, create action, official icon and apply draft remain available.");
+            "Approved Platos composition exposes search, photos and the exact bottom action bar.");
         Pass(editor.TryValidateVisibleContent(out _),
             "Existing 2.1E runtime scroll and row validation still passes.");
-        Capture("02_Editor_Carta_y_Platos.png");
+        Capture("02_Editor_Carta_Aprobado.png");
         Move(4);
     }
 
