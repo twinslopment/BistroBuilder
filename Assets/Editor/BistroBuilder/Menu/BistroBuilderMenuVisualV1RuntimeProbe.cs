@@ -721,6 +721,26 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              preparationLabel != null &&
              !preparationLabel.text.Contains("◷"),
              "Preparation durations use an authored clock sprite instead of a font symbol.");
+        MethodInfo physicalIconRule =
+            typeof(BistroBuilderCartaReferenceV3Responsive).GetMethod(
+                "IsStablePhysicalIcon",
+                BindingFlags.Static | BindingFlags.NonPublic);
+        bool approvedPictogramsCompensate = physicalIconRule != null;
+        foreach (RectTransform pictogram in new[] {
+            all?.Find("ReferenceCategoryIcon") as RectTransform,
+            plate?.Find("Body/Detail/DetailCanvas/Price/ReferenceFieldIconPlate/ReferenceFieldIcon")
+                as RectTransform,
+            preparationClock?.rectTransform,
+            editorDishesTab?.transform.Find("ReferenceTabIcon") as RectTransform
+        })
+        {
+            approvedPictogramsCompensate &= pictogram != null;
+            if (pictogram != null && physicalIconRule != null)
+                approvedPictogramsCompensate &=
+                    (bool)physicalIconRule.Invoke(null, new object[] { pictogram });
+        }
+        Pass(approvedPictogramsCompensate,
+             "Category, field, preparation and tab pictograms stay physically legible at reduced Canvas scales.");
         Image rowSwitch = firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>();
         Image rowKnob = firstDish?.Find(
             "AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>();
