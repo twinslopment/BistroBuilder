@@ -359,6 +359,20 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              IsParchment(plate, "Body/List") &&
              IsParchment(plate, "Body/Detail"),
              "Categories, dish table and selected-dish detail use matching parchment cards.");
+        bool noHeavyFrames =
+            plate?.GetComponent<Outline>()?.enabled == false &&
+            plate.Find("Body/Sidebar")?.GetComponent<Outline>()?.enabled == false &&
+            plate.Find("Body/List")?.GetComponent<Outline>()?.enabled == false &&
+            plate.Find("Body/Detail")?.GetComponent<Outline>()?.enabled == false;
+        Pass(noHeavyFrames,
+            "Platos alone disables the legacy stacked outlines on the ivory shell and three columns.");
+        Transform categoriesContent =
+            plate?.Find("Body/Sidebar/Categories/Viewport/Content");
+        Transform all = categoriesContent?.Find("Category_all");
+        Pass(all != null &&
+             all.Find("ReferenceCategoryIcon")?.GetComponent<Image>()?.sprite != null &&
+             all.Find("ReferenceCategorySeparator") != null,
+            "Category selector uses a raster-independent image icon and a fine separator, not font glyphs.");
         Button editorManagementTab =
             plate?.Find("CartaTabs/CartaTabManagement")?.GetComponent<Button>();
         Button editorDishesTab =
@@ -375,6 +389,20 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              plate?.Find("Footer/Apply") != null &&
              plate?.Find("Header/CartaHeaderIcon") != null,
             "Approved Platos composition exposes search, photos and the exact bottom action bar.");
+        Transform headingRoot = plate?.Find("Body/List/ColumnHeader");
+        Pass(headingRoot?.Find("PlatoHeading") != null &&
+             headingRoot.Find("PriceHeading") != null &&
+             headingRoot.Find("AvailableHeading") != null &&
+             headingRoot.Find("ModeHeading") != null &&
+             headingRoot.Find("PrepHeading") != null &&
+             headingRoot.Find("MarginHeading") != null,
+             "Responsive dish columns use six independently anchored headings.");
+        Transform dishContent = plate?.Find("Body/List/DishScroll/Viewport/Content");
+        Transform firstDish = dishContent != null && dishContent.childCount > 0
+            ? dishContent.GetChild(0) : null;
+        Pass(firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>()?.sprite != null &&
+             firstDish.Find("AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>()?.sprite != null,
+             "Availability is rendered with a rounded switch, not an ambiguous status bullet.");
         Pass(editor.TryValidateVisibleContent(out _),
             "Existing 2.1E runtime scroll and row validation still passes.");
         Capture("02_Editor_Carta_Aprobado.png");

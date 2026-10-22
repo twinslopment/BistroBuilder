@@ -711,17 +711,20 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.SurfaceRaised
         );
 
-        Text columns = BistroBuilderMenuEditorUiFactory.CreateText(
-            "Columns",
-            columnHeader,
-            "PLATO                         PRECIO      DISPONIBLE      MODALIDAD       PREP.        MARGEN",
-            10,
-            TextAnchor.MiddleLeft,
-            BistroBuilderMenuEditorUiFactory.TextSecondary,
-            FontStyle.Bold
-        );
-        columns.rectTransform.offsetMin = new Vector2(10f, 0f);
-        columns.rectTransform.offsetMax = new Vector2(-64f, 0f);
+        // Individual column anchors mirror the actual dish rows; padding
+        // spaces inside one Text broke alignment at 1280x720.
+        CreateColumnHeading(columnHeader, "PlatoHeading", "PLATO", 0.11f, 0.44f,
+            TextAnchor.MiddleLeft);
+        CreateColumnHeading(columnHeader, "PriceHeading", "PRECIO", 0.44f, 0.54f,
+            TextAnchor.MiddleCenter);
+        CreateColumnHeading(columnHeader, "AvailableHeading", "DISPONIBLE", 0.54f, 0.64f,
+            TextAnchor.MiddleCenter);
+        CreateColumnHeading(columnHeader, "ModeHeading", "MODALIDAD", 0.64f, 0.75f,
+            TextAnchor.MiddleCenter);
+        CreateColumnHeading(columnHeader, "PrepHeading", "PREP.", 0.75f, 0.87f,
+            TextAnchor.MiddleCenter);
+        CreateColumnHeading(columnHeader, "MarginHeading", "MARGEN", 0.87f, 0.95f,
+            TextAnchor.MiddleCenter);
 
         listCountText = BistroBuilderMenuEditorUiFactory.CreateText(
             "Count",
@@ -746,6 +749,26 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         scrollRect.anchorMax = Vector2.one;
         scrollRect.offsetMin = new Vector2(8f, 8f);
         scrollRect.offsetMax = new Vector2(-8f, -76f);
+        VerticalLayoutGroup rowLayout = listContent.GetComponent<VerticalLayoutGroup>();
+        if (rowLayout != null)
+        {
+            rowLayout.spacing = 1f;
+            rowLayout.padding = new RectOffset(2, 2, 2, 2);
+        }
+    }
+
+    private static void CreateColumnHeading(
+        Transform root, string name, string value,
+        float from, float to, TextAnchor alignment)
+    {
+        Text label = BistroBuilderMenuEditorUiFactory.CreateText(
+            name, root, value, 11, alignment,
+            BistroBuilderMenuEditorUiFactory.TextSecondary, FontStyle.Bold);
+        RectTransform rect = label.rectTransform;
+        rect.anchorMin = new Vector2(from, 0f);
+        rect.anchorMax = new Vector2(to, 1f);
+        rect.offsetMin = new Vector2(1f, 0f);
+        rect.offsetMax = new Vector2(-1f, 0f);
     }
 
     private void BuildApprovedDetail(RectTransform detail)

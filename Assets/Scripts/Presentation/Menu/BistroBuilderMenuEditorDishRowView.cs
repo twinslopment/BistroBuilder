@@ -16,6 +16,8 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
     private Text subtitleText;
     private Text priceText;
     private Text availabilityText;
+    private Image availabilityTrack;
+    private Image availabilityKnob;
     private Text modalityText;
     private Text preparationText;
     private Text marginText;
@@ -40,7 +42,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         button.targetGraphic = background;
         button.onClick.AddListener(HandleClicked);
 
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 46f);
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 62f);
 
         RectTransform thumbRect = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Thumbnail", transform,
@@ -54,6 +56,21 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         subtitleText = CreateText("Subtitle", 0.11f, 0.44f, 0.02f, 0.48f, 9, false);
         priceText = CreateText("Price", 0.44f, 0.54f, 0f, 1f, 11, true);
         availabilityText = CreateText("Available", 0.54f, 0.64f, 0f, 1f, 15, true);
+        availabilityText.gameObject.SetActive(false);
+        RectTransform switchRect = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "AvailabilityTrack", transform,
+            new Vector2(.59f, .5f), new Vector2(.59f, .5f),
+            new Vector2(-20f, -10f), new Vector2(20f, 10f));
+        availabilityTrack = BistroBuilderMenuEditorUiFactory.AddImage(
+            switchRect, Color.white);
+        RectTransform knobRect = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "AvailabilityKnob", switchRect,
+            new Vector2(1f, .5f), new Vector2(1f, .5f),
+            new Vector2(-18f, -8f), new Vector2(-2f, 8f));
+        availabilityKnob = BistroBuilderMenuEditorUiFactory.AddImage(
+            knobRect, Color.white);
+        BistroBuilderCartaReferenceV3Style.StyleAvailabilitySwitch(
+            availabilityTrack, availabilityKnob, false);
         modalityText = CreateText("Modality", 0.64f, 0.75f, 0f, 1f, 10, false);
         preparationText = CreateText("Preparation", 0.75f, 0.87f, 0f, 1f, 10, false);
         marginText = CreateText("Margin", 0.87f, 1f, 0f, 1f, 10, true);
@@ -85,11 +102,10 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         subtitleText.text = ShortSubtitle(snapshot);
         priceText.text = BistroBuilderMenuEditorUtility.FormatMoney(
             snapshot.CurrentPriceCents);
-        availabilityText.text = "●";
-        availabilityText.alignment = TextAnchor.MiddleCenter;
-        availabilityText.color = snapshot.Included && snapshot.Enabled
-            ? new Color32(209, 145, 21, 255)
-            : new Color32(190, 184, 174, 255);
+        availabilityText.text = string.Empty;
+        BistroBuilderCartaReferenceV3Style.StyleAvailabilitySwitch(
+            availabilityTrack, availabilityKnob,
+            snapshot.Included && snapshot.Enabled);
         modalityText.text = ResolveModality(snapshot);
         preparationText.text = "◷ " +
             BistroBuilderMenuEditorUtility.FormatPreparationDuration(
