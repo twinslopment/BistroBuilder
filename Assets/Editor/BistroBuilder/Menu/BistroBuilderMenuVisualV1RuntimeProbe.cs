@@ -631,19 +631,24 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "ModeCaption", "PrepCaption", "OrderCaption",
             "CostCaption", "MarginCaption"
         };
-        bool labelsScaleSafely = detailLabels != null;
+        Canvas captionCanvas = detailLabels?.GetComponentInParent<Canvas>();
+        float captionScale = captionCanvas != null
+            ? Mathf.Max(.5f, captionCanvas.scaleFactor) : 1f;
+        int expectedCaptionMax = Mathf.RoundToInt(
+            12f * Mathf.Clamp(1f / captionScale, 1f, 1.55f));
+        bool labelsScaleSafely = detailLabels != null && captionCanvas != null;
         foreach (string caption in responsiveCaptions)
         {
             Text label = detailLabels?.Find(caption)?.GetComponent<Text>();
             labelsScaleSafely &= label != null &&
                 label.resizeTextForBestFit &&
-                label.resizeTextMinSize >= 9 &&
-                label.resizeTextMaxSize <= 12 &&
+                label.resizeTextMinSize == 9 &&
+                label.resizeTextMaxSize == expectedCaptionMax &&
                 label.horizontalOverflow == HorizontalWrapMode.Wrap &&
                 label.verticalOverflow == VerticalWrapMode.Truncate;
         }
         Pass(labelsScaleSafely,
-            "Eight long detail labels use bounded fit and wrapping rather than painting over adjacent fields.");
+            "Eight detail labels adapt their best-fit ceiling to Canvas scale while preserving bounds and wrapping.");
         Transform dishContent = plate?.Find("Body/List/DishScroll/Viewport/Content");
         Transform firstDish = dishContent != null && dishContent.childCount > 0
             ? dishContent.GetChild(0) : null;
