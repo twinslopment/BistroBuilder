@@ -46,6 +46,17 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         {
             Text text = texts[i];
             if (text == null) continue;
+            // Detail captions must remain readable at 1280x720. Their fixed
+            // 12px best-fit ceiling previously cancelled Canvas compensation.
+            // Long captions can still shrink to 9px and wrap inside their
+            // own RectTransform rather than colliding with the input column.
+            if (text.name.EndsWith("Caption", System.StringComparison.Ordinal) &&
+                text.resizeTextForBestFit)
+            {
+                text.resizeTextMinSize = 9;
+                text.resizeTextMaxSize =
+                    Mathf.RoundToInt(12f * compensate);
+            }
             int id = text.GetInstanceID();
             if (!baseFontSizes.TryGetValue(id, out int baseSize))
             {
