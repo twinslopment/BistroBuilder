@@ -649,6 +649,25 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(labelsScaleSafely,
             "Eight detail labels adapt their best-fit ceiling to Canvas scale while preserving bounds and wrapping.");
+        string[] detailValueNames = {
+            "Price", "CategoryValuePlate", "AvailableToggle",
+            "ModeValuePlate", "PreparationTime", "OrderValuePlate",
+            "CostValuePlate", "MarginValuePlate"
+        };
+        bool detailColumnsAligned = detailLabels != null;
+        for (int i = 0; i < responsiveCaptions.Length; i++)
+        {
+            RectTransform captionRect = detailLabels?.Find(responsiveCaptions[i])
+                as RectTransform;
+            RectTransform valueRect = detailLabels?.Find(detailValueNames[i])
+                as RectTransform;
+            detailColumnsAligned &= captionRect != null && valueRect != null &&
+                Mathf.Abs(captionRect.anchorMax.x - .43f) < .0001f &&
+                Mathf.Abs(valueRect.anchorMin.x - .45f) < .0001f &&
+                captionRect.anchorMax.x < valueRect.anchorMin.x;
+        }
+        Pass(detailColumnsAligned,
+            "The eight detail rows keep a 43/55 proportion and a gap between captions and field controls.");
         Transform dishContent = plate?.Find("Body/List/DishScroll/Viewport/Content");
         Transform firstDish = dishContent != null && dishContent.childCount > 0
             ? dishContent.GetChild(0) : null;
