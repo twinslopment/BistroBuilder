@@ -890,13 +890,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             "Price", content, "0,00", null, HandlePriceEndEdit
         );
         SetRect(priceInput.GetComponent<RectTransform>(),
-            0.36f, 0.475f, 1f, 0.525f, 0f);
+            0.45f, 0.475f, 1f, 0.525f, 0f);
 
         CreateDetailCaption(content, "CategoryCaption", "Categoría",
             0.425f, 0.465f);
         detailCategoryText = CreateDetailReadOnlyValue(
             content, "CategoryValue", "Entrantes",
-            0.36f, 0.415f, 1f, 0.465f, false
+            0.45f, 0.415f, 1f, 0.465f, false
         );
 
         CreateDetailCaption(content, "AvailableCaption", "Disponible",
@@ -905,13 +905,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             "AvailableToggle", content, "En carta", HandleEnabledChanged
         );
         SetRect(enabledToggle.GetComponent<RectTransform>(),
-            0.36f, 0.355f, 1f, 0.405f, 0f);
+            0.45f, 0.355f, 1f, 0.405f, 0f);
 
         CreateDetailCaption(content, "ModeCaption", "Modalidad",
             0.305f, 0.345f);
         detailModeText = CreateDetailReadOnlyValue(
             content, "ModeValue", "Normal",
-            0.36f, 0.295f, 1f, 0.345f, false
+            0.45f, 0.295f, 1f, 0.345f, false
         );
 
         CreateDetailCaption(content, "PrepCaption", "Tiempo de preparación",
@@ -922,13 +922,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                 null, HandlePreparationTimeEndEdit
             );
         SetRect(preparationTimeInput.GetComponent<RectTransform>(),
-            0.36f, 0.235f, 1f, 0.285f, 0f);
+            0.45f, 0.235f, 1f, 0.285f, 0f);
 
         CreateDetailCaption(content, "OrderCaption", "Posición en la carta",
             0.185f, 0.225f);
         detailOrderText = CreateDetailReadOnlyValue(
             content, "OrderValue", "1",
-            0.36f, 0.175f, 1f, 0.225f, false
+            0.45f, 0.175f, 1f, 0.225f, false
         );
         moveUpButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "MoveUp", content, "↑", () => MoveSelected(-1),
@@ -947,14 +947,14 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             0.125f, 0.165f);
         detailCostText = CreateDetailReadOnlyValue(
             content, "CostValue", "0,00 €",
-            0.36f, 0.115f, 1f, 0.165f, false
+            0.45f, 0.115f, 1f, 0.165f, false
         );
 
         CreateDetailCaption(content, "MarginCaption", "Margen",
             0.065f, 0.105f);
         detailMarginText = CreateDetailReadOnlyValue(
             content, "MarginValue", "0 %",
-            0.36f, 0.055f, 1f, 0.105f, false
+            0.45f, 0.055f, 1f, 0.105f, false
         );
 
         // Preserve all existing authoring bindings without exposing the
@@ -998,7 +998,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             TextAnchor.MiddleLeft,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        SetRect(label.rectTransform, 0f, minY, 0.34f, maxY, 0f);
+        // Match the approved reference's two-column detail form: readable
+        // field labels occupy 43%, editable values start at 45%.
+        SetRect(label.rectTransform, 0f, minY, 0.43f, maxY, 0f);
         // Long captions must never print over their adjacent input fields
         // when the management Canvas is reduced to 1280x720.
         label.resizeTextForBestFit = true;
