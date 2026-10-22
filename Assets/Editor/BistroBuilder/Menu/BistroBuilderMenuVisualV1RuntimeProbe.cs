@@ -381,6 +381,54 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              editorManagementTab.GetComponent<Image>()?.sprite != null &&
              editorDishesTab.GetComponent<Image>()?.sprite != null,
             "Platos shares the same Carta tabs and V3 button construction as the hub.");
+        Transform photo = plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame");
+        Transform photoImage = photo?.Find("DishPhoto");
+        Pass(photo?.GetComponent<RectMask2D>() != null &&
+             photoImage?.GetComponent<AspectRatioFitter>()?.aspectMode ==
+                 AspectRatioFitter.AspectMode.EnvelopeParent &&
+             plate.Find("Body/Detail/DetailCanvas/ReferenceDetailHeadingIcon") != null &&
+             plate.Find("Body/Detail/DetailCanvas/ReferenceDetailRule") != null,
+             "Dish detail crops photos without stretching and retains its dedicated brass heading.");
+        Transform badge = plate?.Find("Body/Detail/DetailCanvas/StatusBadgePlate");
+        Pass(badge?.Find("StatusDot")?.GetComponent<Image>()?.sprite != null,
+            "The dish-status badge contains a real state dot instead of a flat green text box.");
+
+        string[] decoratedFields = {
+            "Price", "CategoryValuePlate", "ModeValuePlate",
+            "PreparationTime", "OrderValuePlate", "CostValuePlate",
+            "MarginValuePlate"
+        };
+        bool detailIcons = true;
+        for (int i = 0; i < decoratedFields.Length; i++)
+            detailIcons &= plate.Find("Body/Detail/DetailCanvas/" +
+                decoratedFields[i] + "/ReferenceFieldIconPlate") != null;
+        Pass(detailIcons,
+            "All seven dish-detail fields have their own aligned ivory-and-brass icons.");
+
+        Image addDishSkin = plate?.Find("Footer/AddDish")?.GetComponent<Image>();
+        Image applySkin = plate?.Find("Footer/Apply")?.GetComponent<Image>();
+        Image discardSkin = plate?.Find("Footer/Discard")?.GetComponent<Image>();
+        Image removeSkin = plate?.Find("Footer/RemoveDish")?.GetComponent<Image>();
+        Pass(addDishSkin?.sprite != null &&
+             applySkin?.sprite == addDishSkin.sprite &&
+             discardSkin?.sprite != addDishSkin.sprite &&
+             removeSkin?.sprite != addDishSkin.sprite,
+             "Approved bottom bar differentiates gold primary, neutral discard and red remove actions.");
+
+        Transform availability = plate?.Find(
+            "Body/Detail/DetailCanvas/AvailableToggle");
+        Toggle availabilityToggle = availability?.GetComponent<Toggle>();
+        Image availabilityTrack = availability?.Find("ReferenceAvailabilityTrack")
+            ?.GetComponent<Image>();
+        Image availabilityKnob = availability?.Find(
+            "ReferenceAvailabilityTrack/ReferenceAvailabilityKnob")
+            ?.GetComponent<Image>();
+        Pass(availabilityToggle != null &&
+             availabilityTrack?.sprite != null &&
+             availabilityKnob?.sprite != null &&
+             availability.GetComponent<Image>()?.raycastTarget == true &&
+             availabilityToggle.targetGraphic == availability.GetComponent<Image>(),
+            "Dish availability is a raycastable real Toggle with its own amber-switch skin.");
         Pass(plate?.Find("Body/List/DishScroll/Viewport/Content") != null &&
              plate?.Find("Body/List/ListHeader/Search") != null &&
              plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame/DishPhoto") != null &&

@@ -86,6 +86,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Text detailSubtitleText;
     private Text descriptionText;
     private Image detailDishImage;
+    private AspectRatioFitter detailDishAspect;
     private Text detailCategoryText;
     private Text detailModeText;
     private Text detailOrderText;
@@ -833,7 +834,19 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         detailDishImage = BistroBuilderMenuEditorUiFactory.AddImage(
             photo, new Color32(241, 224, 201, 255)
         );
+        // Crop into the photo window instead of distorting dish photographs.
+        // EnvelopeParent keeps each image's real proportions.
+        photo.anchorMin = new Vector2(.5f, .5f);
+        photo.anchorMax = new Vector2(.5f, .5f);
+        photo.pivot = new Vector2(.5f, .5f);
+        photo.anchoredPosition = Vector2.zero;
+        photo.sizeDelta = Vector2.zero;
+        detailDishAspect = photo.gameObject.AddComponent<AspectRatioFitter>();
+        detailDishAspect.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        detailDishAspect.aspectRatio = 1.7f;
         detailDishImage.preserveAspect = false;
+        detailDishImage.raycastTarget = false;
+        photoFrame.gameObject.AddComponent<RectMask2D>();
 
         editDishRecipeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "EditDishPhoto", photoFrame, "✎",
@@ -2099,6 +2112,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                 detailDishImage.color = dishSprite != null
                     ? Color.white
                     : new Color32(241, 224, 201, 255);
+                if (detailDishAspect != null)
+                {
+                    detailDishAspect.aspectRatio = dishSprite != null &&
+                        dishSprite.rect.height > 0f
+                        ? dishSprite.rect.width / dishSprite.rect.height
+                        : 1.7f;
+                }
             }
 
             if (detailStatusBadgeText != null)
@@ -2106,9 +2126,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                 detailStatusBadgeText.text = selectedSnapshot.Included
                     ? "En carta"
                     : "Fuera";
-                detailStatusBadgeText.color = selectedSnapshot.Included
-                    ? new Color32(50, 96, 45, 255)
-                    : BistroBuilderMenuEditorUiFactory.TextSecondary;
+                BistroBuilderCartaReferenceV3Style.StyleDetailStatus(
+                    detailStatusBadgeText, selectedSnapshot.Included);
             }
             if (detailCategoryText != null)
                 detailCategoryText.text = selectedSnapshot.CategoryName;
@@ -2161,6 +2180,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                     BistroBuilderMealServiceAvailability.None);
 
             enabledToggle.SetIsOnWithoutNotify(selectedSnapshot.Enabled);
+            BistroBuilderCartaReferenceV3Style.RefreshEditorAvailability(
+                enabledToggle, selectedSnapshot.Enabled);
             soldOutToggle.SetIsOnWithoutNotify(
                 selectedSnapshot.ManuallySoldOut
             );

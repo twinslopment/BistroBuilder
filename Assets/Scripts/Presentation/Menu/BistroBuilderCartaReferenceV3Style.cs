@@ -24,7 +24,7 @@ internal static class BistroBuilderCartaReferenceV3Style
     // intentionally retains its existing textures and dimensions.
     private static Sprite editorOuter, editorCard, editorButton,
         editorSelected, editorRow, editorField, editorDanger, categoryGrid,
-        editorSwitchOn, editorSwitchOff, editorSwitchKnob;
+        editorSwitchOn, editorSwitchOff, editorSwitchKnob, editorGold;
     private static BBIconCatalog categoryIcons;
 
     private static void EnsureEditorSurfaces()
@@ -52,6 +52,9 @@ internal static class BistroBuilderCartaReferenceV3Style
         editorDanger = Surface(new Color32(197, 73, 55, 255),
             new Color32(150, 38, 28, 255),
             new Color32(116, 36, 26, 255), 8, 1);
+        editorGold = Surface(new Color32(213, 161, 73, 255),
+            new Color32(148, 96, 24, 255),
+            new Color32(116, 72, 24, 255), 8, 1);
         editorSwitchOn = Surface(new Color32(220, 161, 45, 255),
             new Color32(204, 139, 27, 255),
             new Color32(173, 115, 22, 255), 12, 1);
@@ -545,11 +548,116 @@ internal static class BistroBuilderCartaReferenceV3Style
         bool plain = button.name == "OrderCategory" ||
             button.name == "OrderDirection" ||
             button.name == "MoveUp" || button.name == "MoveDown";
+        bool primary = button.name == "AddDish" || button.name == "Apply";
         Image background = button.GetComponent<Image>();
         SkinImage(background, destructive ? editorDanger :
-            plain ? editorField : editorButton);
+            primary ? editorGold : plain ? editorField : editorButton);
         if (background != null) background.raycastTarget = true;
+        Text label = button.transform.Find("Label")?.GetComponent<Text>();
+        if (label != null && primary) label.color = Color.white;
+        Transform mixed = button.transform.Find("ReferenceTypefaceRuns");
+        if (primary && mixed != null)
+        {
+            foreach (Text segment in mixed.GetComponentsInChildren<Text>(true))
+                segment.color = Color.white;
+        }
         RemoveOldBevel(button.transform);
+    }
+
+    private static void DecorateEditorValue(Transform panel, string relativePath,
+        string glyph, string iconId = null)
+    {
+        Transform root = panel.Find(relativePath);
+        if (root == null || root.Find("ReferenceFieldIconPlate") != null) return;
+        RectTransform plate = Rect("ReferenceFieldIconPlate", root,
+            new Vector2(0f, .5f), new Vector2(0f, .5f),
+            new Vector2(2f, -12f), new Vector2(28f, 12f));
+        Image plateImage = BistroBuilderMenuEditorUiFactory.AddImage(plate,
+            new Color32(232, 215, 190, 255));
+        plateImage.raycastTarget = false;
+        if (!string.IsNullOrEmpty(iconId))
+        {
+            Image icon = AddReferenceIcon("ReferenceFieldIcon", plate, iconId,
+                0f, 0f, 1f, 1f,
+                new Vector2(4f, 4f), new Vector2(-4f, -4f));
+            if (icon != null) icon.raycastTarget = false;
+        }
+        else
+        {
+            Text symbol = BistroBuilderMenuEditorUiFactory.CreateText(
+                "ReferenceFieldGlyph", plate, glyph, 15,
+                TextAnchor.MiddleCenter, Brass, FontStyle.Bold);
+            symbol.color = Brass;
+        }
+
+        foreach (Text value in root.GetComponentsInChildren<Text>(true))
+        {
+            if (value.name == "ReferenceFieldGlyph" || value.name == "ReferenceFieldIcon")
+                continue;
+            if (value.name == "Label") continue;
+            value.rectTransform.offsetMin =
+                new Vector2(Mathf.Max(value.rectTransform.offsetMin.x, 34f),
+                    value.rectTransform.offsetMin.y);
+        }
+    }
+
+    public static void DecorateEditorAvailability(Toggle toggle)
+    {
+        if (toggle == null || toggle.transform.Find("ReferenceAvailabilityTrack") != null)
+            return;
+
+        Image background = toggle.gameObject.GetComponent<Image>();
+        if (background == null)
+            background = toggle.gameObject.AddComponent<Image>();
+        background.color = Color.clear;
+        background.raycastTarget = true;
+        toggle.targetGraphic = background;
+        toggle.transition = Selectable.Transition.None;
+
+        Transform legacyBox = toggle.transform.Find("Box");
+        if (legacyBox != null)
+        {
+            Image oldImage = legacyBox.GetComponent<Image>();
+            if (oldImage != null)
+            {
+                oldImage.color = Color.clear;
+                oldImage.raycastTarget = false;
+            }
+            Text check = legacyBox.Find("Check")?.GetComponent<Text>();
+            if (check != null) check.color = Color.clear;
+        }
+
+        RectTransform track = Rect("ReferenceAvailabilityTrack",
+            toggle.transform, new Vector2(0f, .5f), new Vector2(0f, .5f),
+            new Vector2(2f, -10f), new Vector2(42f, 10f));
+        Image trackImage = BistroBuilderMenuEditorUiFactory.AddImage(track, Color.white);
+        trackImage.raycastTarget = false;
+        RectTransform knob = Rect("ReferenceAvailabilityKnob", track,
+            new Vector2(.5f, .5f), new Vector2(.5f, .5f),
+            new Vector2(-8f, -8f), new Vector2(8f, 8f));
+        Image knobImage = BistroBuilderMenuEditorUiFactory.AddImage(knob, Color.white);
+        knobImage.raycastTarget = false;
+
+        Text label = toggle.transform.Find("Label")?.GetComponent<Text>();
+        if (label != null)
+        {
+            SetTypeface(label, false, 12);
+            label.color = Muted;
+            label.rectTransform.offsetMin = new Vector2(52f, 0f);
+        }
+        StyleAvailabilitySwitch(trackImage, knobImage, toggle.isOn);
+        toggle.onValueChanged.AddListener(value =>
+            StyleAvailabilitySwitch(trackImage, knobImage, value));
+    }
+
+    public static void RefreshEditorAvailability(Toggle toggle, bool isOn)
+    {
+        if (toggle == null) return;
+        Image track = toggle.transform.Find("ReferenceAvailabilityTrack")
+            ?.GetComponent<Image>();
+        Image knob = toggle.transform.Find("ReferenceAvailabilityTrack/ReferenceAvailabilityKnob")
+            ?.GetComponent<Image>();
+        StyleAvailabilitySwitch(track, knob, isOn);
     }
 
     public static void ApplyEditor(RectTransform panel)
@@ -663,6 +771,22 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
         }
 
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/Price", "€");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CategoryValuePlate",
+            "", "file");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/ModeValuePlate",
+            "", "book");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/PreparationTime",
+            "", "clock");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/OrderValuePlate",
+            "", "copy");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CostValuePlate",
+            "€");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/MarginValuePlate",
+            "", "star");
+        DecorateEditorAvailability(panel.Find(
+            "Body/Detail/DetailCanvas/AvailableToggle")?.GetComponent<Toggle>());
+
         foreach (Text text in panel.GetComponentsInChildren<Text>(true))
         {
             if (text == null) continue;
@@ -691,15 +815,56 @@ internal static class BistroBuilderCartaReferenceV3Style
                 case "OrderValue":
                 case "CostValue":
                 case "MarginValue":
-                    SetTypeface(text, false, 10);
+                    SetTypeface(text, false, 12);
                     break;
                 default:
                     if (text.name.EndsWith("Caption", StringComparison.Ordinal))
                     {
-                        SetTypeface(text, false, 10);
+                        SetTypeface(text, false, 12);
                         text.color = Muted;
                     }
                     break;
+            }
+        }
+
+        Transform detailCanvas = panel.Find("Body/Detail/DetailCanvas");
+        if (detailCanvas != null)
+        {
+            if (detailCanvas.Find("ReferenceDetailHeadingIcon") == null)
+            {
+                Image headingIcon = AddReferenceIcon(
+                    "ReferenceDetailHeadingIcon", detailCanvas, "file",
+                    0f, .946f, 0f, .946f,
+                    new Vector2(2f, -12f), new Vector2(24f, 12f));
+                if (headingIcon != null) headingIcon.color = Color.white;
+            }
+            Text detailHeading = detailCanvas.Find("DetailHeading")?.GetComponent<Text>();
+            if (detailHeading != null)
+                Anchor(detailHeading.rectTransform, 0f, .915f, .75f, 1f,
+                    new Vector2(30f, 0f), Vector2.zero);
+            if (detailCanvas.Find("ReferenceDetailRule") == null)
+                Line(detailCanvas, "ReferenceDetailRule", 0f, 1f, .91f);
+        }
+        Button photoEdit = panel.Find(
+            "Body/Detail/DetailCanvas/DishPhotoFrame/EditDishPhoto"
+        )?.GetComponent<Button>();
+        if (photoEdit != null)
+        {
+            Image tile = photoEdit.GetComponent<Image>();
+            if (tile != null)
+            {
+                tile.sprite = null;
+                tile.type = Image.Type.Simple;
+                tile.color = new Color32(52, 39, 28, 236);
+                tile.raycastTarget = true;
+            }
+            RemoveOldBevel(photoEdit.transform);
+            Text editLabel = photoEdit.transform.Find("Label")?.GetComponent<Text>();
+            if (editLabel != null)
+            {
+                SetTypeface(editLabel, false, 20, true);
+                editLabel.color = Color.white;
+                editLabel.alignment = TextAnchor.MiddleCenter;
             }
         }
 
@@ -891,7 +1056,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         if (button == null) return;
         EnsureEditorSurfaces();
         SkinImage(button.GetComponent<Image>(),
-            destructive ? editorDanger : editorButton);
+            destructive ? editorDanger : editorGold);
         RemoveOldBevel(button.transform);
         Image background = button.GetComponent<Image>();
         if (background != null) background.raycastTarget = true;
@@ -901,7 +1066,43 @@ internal static class BistroBuilderCartaReferenceV3Style
         {
             SetTypeface(label, true, 12, true);
             label.alignment = TextAnchor.MiddleCenter;
-            label.color = destructive ? Color.white : Ink;
+            label.color = Color.white;
+        }
+    }
+
+    public static void StyleDetailStatus(Text status, bool included)
+    {
+        if (status == null) return;
+        EnsureEditorSurfaces();
+        Image plate = status.transform.parent.GetComponent<Image>();
+        if (plate != null)
+        {
+            plate.sprite = null;
+            plate.type = Image.Type.Simple;
+            plate.color = included
+                ? new Color32(223, 237, 212, 255)
+                : new Color32(234, 225, 211, 255);
+            plate.raycastTarget = false;
+        }
+        status.color = included ? new Color32(45, 103, 40, 255) : Muted;
+        status.alignment = TextAnchor.MiddleCenter;
+        status.rectTransform.offsetMin = new Vector2(18f, 0f);
+        status.rectTransform.offsetMax = new Vector2(-3f, 0f);
+        Transform dot = status.transform.parent.Find("StatusDot");
+        if (dot == null)
+        {
+            RectTransform marker = Rect("StatusDot", status.transform.parent,
+                new Vector2(0f, .5f), new Vector2(0f, .5f),
+                new Vector2(9f, -5f), new Vector2(19f, 5f));
+            Image icon = BistroBuilderMenuEditorUiFactory.AddImage(marker, Color.white);
+            icon.raycastTarget = false;
+            dot = marker;
+        }
+        Image dotImage = dot.GetComponent<Image>();
+        if (dotImage != null)
+        {
+            dotImage.sprite = included ? dotGreen : dotGrey;
+            dotImage.color = Color.white;
         }
     }
 
