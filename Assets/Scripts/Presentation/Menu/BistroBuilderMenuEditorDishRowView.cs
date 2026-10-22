@@ -146,6 +146,16 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
 
         BistroBuilderCartaReferenceV3Style.StyleDishRow(button, selected);
 
+        // Runtime theme refreshes can restore Overflow and an oversized font.
+        // Reapply a single-line-safe fit after each style pass so long dish
+        // names never paint over PRICE at 1280x720 or 1920x1080.
+        ConstrainCellText(nameText, 11, 17);
+        ConstrainCellText(subtitleText, 9, 13);
+        ConstrainCellText(priceText, 10, 14);
+        ConstrainCellText(modalityText, 9, 13);
+        ConstrainCellText(preparationText, 9, 13);
+        ConstrainCellText(marginText, 9, 13);
+
         nameText.text = snapshot.DisplayName;
         subtitleText.text = ShortSubtitle(snapshot);
         priceText.text = BistroBuilderMenuEditorUtility.FormatMoney(
@@ -198,6 +208,19 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         rect.offsetMin = new Vector2(5f, 1f);
         rect.offsetMax = new Vector2(-4f, -1f);
         return text;
+    }
+
+    private static void ConstrainCellText(Text text, int minimum, int maximum)
+    {
+        if (text == null) return;
+        // Keep hierarchy and text content untouched, so updates, sorting,
+        // selection and data bindings keep their existing behavior.
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = minimum;
+        text.resizeTextMaxSize = maximum;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.alignment = TextAnchor.MiddleLeft;
     }
 
     private static string ShortSubtitle(BistroBuilderMenuEditorDishSnapshot snapshot)
