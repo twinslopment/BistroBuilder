@@ -411,6 +411,25 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             plate.Find("Body/Detail")?.GetComponent<Outline>()?.enabled == false;
         Pass(noHeavyFrames,
             "Platos alone disables the legacy stacked outlines on the ivory shell and three columns.");
+        bool allFineFrames = true;
+        foreach (string panelPath in new[] {
+            "Body/Sidebar", "Body/List", "Body/Detail", "Footer"
+        })
+        {
+            Transform frame = plate?.Find(panelPath);
+            foreach (string frameName in new[] {
+                "ReferenceFineRimTop", "ReferenceFineRimBottom",
+                "ReferenceFineRimLeft", "ReferenceFineRimRight",
+                "ReferenceInnerHighlightTop", "ReferenceInnerHighlightLeft"
+            })
+            {
+                Image line = frame?.Find(frameName)?.GetComponent<Image>();
+                allFineFrames &= line != null && line.enabled &&
+                    line.color.a > .1f && !line.raycastTarget;
+            }
+        }
+        Pass(allFineFrames,
+            "Four approved ivory panels have fine double brass/highlight rims that never intercept mouse clicks.");
         Transform categoriesContent =
             plate?.Find("Body/Sidebar/Categories/Viewport/Content");
         all = categoriesContent?.Find("Category_all");
@@ -418,6 +437,37 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              all.Find("ReferenceCategoryIcon")?.GetComponent<Image>()?.sprite != null &&
              all.Find("ReferenceCategorySeparator") != null,
             "Category selector uses a raster-independent image icon and a fine separator, not font glyphs.");
+        string[] approvedIcons = {
+            "category-all", "category-starters", "category-mains",
+            "category-desserts", "category-drinks", "category-specials"
+        };
+        bool allIconAssetsExist = true;
+        for (int i = 0; i < approvedIcons.Length; i++)
+            allIconAssetsExist &=
+                Resources.Load<Texture2D>(
+                    "BistroBuilder/UI/CartaReferenceV3IconsRaster/" +
+                    approvedIcons[i]) != null;
+        Pass(allIconAssetsExist,
+            "All six approved category icons are imported as independent runtime raster assets.");
+        bool iconVisible = categoriesContent != null;
+        int categoriesWithIcons = 0;
+        if (categoriesContent != null)
+        {
+            for (int i = 0; i < categoriesContent.childCount; i++)
+            {
+                Transform category = categoriesContent.GetChild(i);
+                Image icon = category.Find("ReferenceCategoryIcon")?.GetComponent<Image>();
+                if (!category.name.StartsWith("Category_", StringComparison.Ordinal)) continue;
+                categoriesWithIcons++;
+                iconVisible &= icon != null && icon.enabled &&
+                    icon.gameObject.activeInHierarchy &&
+                    icon.sprite != null &&
+                    icon.color.a > .95f && icon.preserveAspect &&
+                    !icon.raycastTarget && icon.rectTransform.rect.width > 12f;
+            }
+        }
+        Pass(iconVisible && categoriesWithIcons >= 6,
+            "All six category rows display active, opaque, correctly sized icons, not disabled or blank sprites.");
         Button editorManagementTab =
             plate?.Find("CartaTabs/CartaTabManagement")?.GetComponent<Button>();
         Button editorDishesTab =
@@ -470,6 +520,27 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                 decoratedFields[i] + "/ReferenceFieldIconPlate") != null;
         Pass(detailIcons,
             "All seven dish-detail fields have their own aligned ivory-and-brass icons.");
+        string[] detailIconNames = {
+            "field-euro", "field-category", "field-cutlery",
+            "field-clock", "field-order", "field-coins", "field-margin"
+        };
+        bool detailDrawn = true;
+        for (int i = 0; i < decoratedFields.Length; i++)
+        {
+            string basePath = "Body/Detail/DetailCanvas/" +
+                decoratedFields[i] + "/ReferenceFieldIconPlate/ReferenceFieldIcon";
+            Image fieldIcon = plate.Find(basePath)?.GetComponent<Image>();
+            detailDrawn &= Resources.Load<Texture2D>(
+                "BistroBuilder/UI/CartaReferenceV3IconsRaster/" +
+                detailIconNames[i]) != null &&
+                fieldIcon != null && fieldIcon.enabled &&
+                fieldIcon.gameObject.activeInHierarchy &&
+                fieldIcon.sprite != null && fieldIcon.color.a > .9f &&
+                fieldIcon.rectTransform.rect.width > 10f &&
+                !fieldIcon.raycastTarget;
+        }
+        Pass(detailDrawn,
+            "Seven original field icons load from Resources and remain visible, tinted brass and non-interactive.");
 
         Transform orderValuePlate = plate?.Find(
             "Body/Detail/DetailCanvas/OrderValuePlate");
@@ -619,14 +690,22 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "ReferencePreparationClock")?.GetComponent<Image>();
         Text preparationLabel = firstDish?.Find("Preparation")?.GetComponent<Text>();
         Pass(preparationClock?.sprite != null &&
-             preparationClock.preserveAspect &&
+             preparationClock.sprite.name == "CartaV3_field-clock" &&
+             preparationClock.enabled && preparationClock.preserveAspect &&
+             preparationClock.rectTransform.rect.width >= 18f &&
              !preparationClock.raycastTarget &&
              preparationLabel != null &&
              !preparationLabel.text.Contains("◷"),
              "Preparation durations use an authored clock sprite instead of a font symbol.");
-        Pass(firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>()?.sprite != null &&
-             firstDish.Find("AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>()?.sprite != null,
-             "Availability is rendered with a rounded switch, not an ambiguous status bullet.");
+        Image rowSwitch = firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>();
+        Image rowKnob = firstDish?.Find(
+            "AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>();
+        Pass(rowSwitch?.sprite != null && rowSwitch.enabled &&
+             rowSwitch.gameObject.activeInHierarchy &&
+             rowSwitch.type == Image.Type.Sliced &&
+             rowKnob?.sprite != null && rowKnob.enabled &&
+             rowKnob.gameObject.activeInHierarchy,
+             "Availability is a visible oval on/off switch with a white knob, not an invisible texture.");
         Pass(editor.TryValidateVisibleContent(out _),
             "Existing 2.1E runtime scroll and row validation still passes.");
 

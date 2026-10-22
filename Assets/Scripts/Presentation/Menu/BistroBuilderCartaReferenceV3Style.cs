@@ -66,6 +66,47 @@ internal static class BistroBuilderCartaReferenceV3Style
             new Color32(245, 239, 231, 255));
     }
 
+    private static void AddEditorFineRim(Transform panel)
+    {
+        if (panel == null || panel.Find("ReferenceFineRimTop") != null) return;
+        // Two restrained inset strokes mimic the approved ivory/brass
+        // raised cabinet frame. Pure decoration: never blocks hit targets.
+        AddEditorFineLine(panel, "ReferenceFineRimTop",
+            new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(5f, -5f), new Vector2(-5f, -4f),
+            new Color32(164, 117, 64, 144));
+        AddEditorFineLine(panel, "ReferenceFineRimBottom",
+            new Vector2(0f, 0f), new Vector2(1f, 0f),
+            new Vector2(5f, 4f), new Vector2(-5f, 5f),
+            new Color32(220, 190, 153, 190));
+        AddEditorFineLine(panel, "ReferenceFineRimLeft",
+            new Vector2(0f, 0f), new Vector2(0f, 1f),
+            new Vector2(4f, 5f), new Vector2(5f, -5f),
+            new Color32(183, 140, 89, 148));
+        AddEditorFineLine(panel, "ReferenceFineRimRight",
+            new Vector2(1f, 0f), new Vector2(1f, 1f),
+            new Vector2(-5f, 5f), new Vector2(-4f, -5f),
+            new Color32(214, 177, 136, 190));
+        AddEditorFineLine(panel, "ReferenceInnerHighlightTop",
+            new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(7f, -7f), new Vector2(-7f, -6f),
+            new Color32(255, 251, 245, 190));
+        AddEditorFineLine(panel, "ReferenceInnerHighlightLeft",
+            new Vector2(0f, 0f), new Vector2(0f, 1f),
+            new Vector2(7f, 7f), new Vector2(8f, -7f),
+            new Color32(255, 249, 236, 157));
+    }
+
+    private static void AddEditorFineLine(Transform parent, string name,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin,
+        Vector2 offsetMax, Color color)
+    {
+        RectTransform r = Rect(name, parent, anchorMin, anchorMax,
+            offsetMin, offsetMax);
+        Image image = BistroBuilderMenuEditorUiFactory.AddImage(r, color);
+        image.raycastTarget = false;
+    }
+
     private static void RemoveOldBevel(Transform node)
     {
         if (node == null) return;
@@ -619,7 +660,14 @@ internal static class BistroBuilderCartaReferenceV3Style
             Image icon = AddReferenceIcon("ReferenceFieldIcon", plate, iconId,
                 0f, 0f, 1f, 1f,
                 new Vector2(4f, 4f), new Vector2(-4f, -4f));
-            if (icon != null) icon.raycastTarget = false;
+            if (icon != null)
+            {
+                icon.enabled = true;
+                icon.color = Brass;
+                icon.type = Image.Type.Simple;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+            }
         }
         else
         {
@@ -772,6 +820,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (node == null) continue;
             SkinImage(node.GetComponent<Image>(), editorCard);
             RemoveOldBevel(node);
+            AddEditorFineRim(node);
         }
 
         Transform listHeader = panel.Find("Body/List/ListHeader");
@@ -871,15 +920,16 @@ internal static class BistroBuilderCartaReferenceV3Style
         }
 
         DecorateSearchField(panel);
-        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/Price", "€");
+        DecorateEditorValue(panel, "Body/Detail/DetailCanvas/Price",
+            "", "field-euro");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CategoryValuePlate",
-            "", "file");
+            "", "field-category");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/ModeValuePlate",
-            "", "book");
+            "", "field-cutlery");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/PreparationTime",
-            "", "clock");
+            "", "field-clock");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/OrderValuePlate",
-            "", "copy");
+            "", "field-order");
         Transform orderPlate = panel.Find(
             "Body/Detail/DetailCanvas/OrderValuePlate");
         if (orderPlate != null && orderPlate.Find("ReferenceOrderStepperDivider") == null)
@@ -892,9 +942,9 @@ internal static class BistroBuilderCartaReferenceV3Style
             line.raycastTarget = false;
         }
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CostValuePlate",
-            "€");
+            "", "field-coins");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/MarginValuePlate",
-            "", "star");
+            "", "field-margin");
         DecorateEditorAvailability(panel.Find(
             "Body/Detail/DetailCanvas/AvailableToggle")?.GetComponent<Toggle>());
 
@@ -1165,17 +1215,26 @@ internal static class BistroBuilderCartaReferenceV3Style
 
     private static Sprite CategorySprite(string label)
     {
+        // The six approved Carta categories use dedicated in-game icons.
+        // Unlike BBIconCatalog SVG imports, these six raster assets are
+        // guaranteed to be visible through the runtime uGUI Image renderer.
         string category = (label ?? string.Empty).ToLowerInvariant();
-        if (category.Contains("todo")) return CategoryGrid();
-        if (category.Contains("especial")) return ReferenceIcon("star");
+        string rasterName = category.Contains("todo") ? "category-all" :
+            category.Contains("entr") ? "category-starters" :
+            category.Contains("principal") ? "category-mains" :
+            category.Contains("postre") ? "category-desserts" :
+            category.Contains("bebida") ? "category-drinks" :
+            category.Contains("especial") ? "category-specials" : null;
+        Sprite authored = rasterName != null ? ReferenceIcon(rasterName) : null;
+        if (authored != null) return authored;
         if (categoryIcons == null) categoryIcons = BBIconCatalog.LoadDefault();
-        if (categoryIcons == null) return null;
+        if (categoryIcons == null) return CategoryGrid();
         BBIconId id = category.Contains("entr") ? BBIconId.FoodStarter :
             category.Contains("principal") ? BBIconId.FoodMain :
             category.Contains("postre") ? BBIconId.FoodDessert :
             category.Contains("bebida") ? BBIconId.FoodDrink :
             BBIconId.ObjectDish;
-        return categoryIcons.GetSprite(id);
+        return categoryIcons.GetSprite(id) ?? CategoryGrid();
     }
 
     public static void StyleSelectorButton(Button button, bool selected)
@@ -1228,6 +1287,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             Image categoryIcon = BistroBuilderMenuEditorUiFactory.AddImage(
                 iconRect, Brass);
             categoryIcon.sprite = sprite;
+            categoryIcon.enabled = true;
+            categoryIcon.color = Brass;
             categoryIcon.type = Image.Type.Simple;
             categoryIcon.preserveAspect = true;
             categoryIcon.raycastTarget = false;
@@ -1235,7 +1296,15 @@ internal static class BistroBuilderCartaReferenceV3Style
         else
         {
             Image categoryIcon = oldIcon.GetComponent<Image>();
-            if (categoryIcon != null) categoryIcon.sprite = sprite;
+            if (categoryIcon != null)
+            {
+                categoryIcon.sprite = sprite;
+                categoryIcon.enabled = true;  // legacy styling may disable child Images
+                categoryIcon.color = Brass;
+                categoryIcon.type = Image.Type.Simple;
+                categoryIcon.preserveAspect = true;
+                categoryIcon.raycastTarget = false;
+            }
         }
     }
 
@@ -1301,11 +1370,14 @@ internal static class BistroBuilderCartaReferenceV3Style
         if (track != null)
         {
             SkinImage(track, available ? editorSwitchOn : editorSwitchOff);
+            track.enabled = true;
+            track.color = Color.white;
             track.raycastTarget = false; // row click still selects its dish
         }
         if (knob != null)
         {
             knob.sprite = editorSwitchKnob;
+            knob.enabled = true;
             knob.type = Image.Type.Simple;
             knob.preserveAspect = true;
             knob.color = Color.white;
@@ -1321,8 +1393,9 @@ internal static class BistroBuilderCartaReferenceV3Style
     public static void StyleDishPreparationClock(Image clock)
     {
         if (clock == null) return;
-        Sprite icon = ReferenceIcon("clock");
+        Sprite icon = ReferenceIcon("field-clock");
         clock.sprite = icon;
+        clock.enabled = true;
         clock.type = Image.Type.Simple;
         clock.preserveAspect = true;
         clock.color = new Color32(143, 103, 57, 255);

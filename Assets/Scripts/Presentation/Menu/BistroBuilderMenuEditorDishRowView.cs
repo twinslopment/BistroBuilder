@@ -90,7 +90,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         RectTransform clockRect = BistroBuilderMenuEditorUiFactory.CreateRect(
             "ReferencePreparationClock", transform,
             new Vector2(.759f, .5f), new Vector2(.759f, .5f),
-            new Vector2(-7f, -7f), new Vector2(7f, 7f));
+            new Vector2(-10f, -10f), new Vector2(10f, 10f));
         Image clockImage = BistroBuilderMenuEditorUiFactory.AddImage(
             clockRect, Color.white);
         BistroBuilderCartaReferenceV3Style.StyleDishPreparationClock(clockImage);
