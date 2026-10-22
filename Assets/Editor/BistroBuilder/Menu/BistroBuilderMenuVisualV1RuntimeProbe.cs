@@ -704,6 +704,22 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(rowTypographySafe,
              "Dish rows bound every text cell to prevent large fonts overflowing into neighboring columns.");
+        // Reproduce the actual bug: changing selection restyles the text
+        // after the first responsive pass, without resizing the window.
+        var responsive = plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
+        Text rowTitle = firstDish?.Find("Name")?.GetComponent<Text>();
+        bool themeRefreshRestoresSize = responsive != null && rowTitle != null;
+        if (themeRefreshRestoresSize)
+        {
+            responsive.ApplyImmediate(true);
+            int correctSize = rowTitle.fontSize;
+            rowTitle.fontSize = 1; // Simulate a late theme/style reset.
+            responsive.ApplyImmediate(false);
+            themeRefreshRestoresSize =
+                correctSize > 1 && rowTitle.fontSize == correctSize;
+        }
+        Pass(themeRefreshRestoresSize,
+            "Responsive sizing recovers after late row restyling without a screen resize.");
         RectTransform marginHeadingRect = headingRoot?.Find("MarginHeading") as RectTransform;
         RectTransform marginCellRect = firstDish?.Find("Margin") as RectTransform;
         Pass(marginHeadingRect != null && marginCellRect != null &&
