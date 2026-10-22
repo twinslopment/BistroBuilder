@@ -33,14 +33,19 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         for (int i = 0; i < rects.Length; i++)
             if (IsStablePhysicalIcon(rects[i])) iconCount++;
 
-        if (!force && Mathf.Abs(scale - lastScale) < 0.001f &&
-            texts.Length == lastTextCount && iconCount == lastIconCount)
-            return;
-
         // 1920x1080 uses scale 1.0. At 1280x720 the global Canvas is about
         // 0.667, so inverse compensation keeps Carta's type at the same
         // physical size as the approved HTML/reference while its panels shrink.
         float compensate = Mathf.Clamp(1f / scale, 1f, 1.55f);
+
+        // Bind()/selection changes reapply the base visual theme after the
+        // first layout pass. Inspect the actual Text.fontSize before taking
+        // the fast path; otherwise those rows silently shrink at 1280x720
+        // until some unrelated resolution or hierarchy change occurs.
+        if (!force && Mathf.Abs(scale - lastScale) < 0.001f &&
+            texts.Length == lastTextCount && iconCount == lastIconCount &&
+            !NeedsTextReapply(texts, compensate))
+            return;
 
         for (int i = 0; i < texts.Length; i++)
         {
@@ -82,6 +87,21 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         lastScale = scale;
         lastTextCount = texts.Length;
         lastIconCount = iconCount;
+    }
+
+    private bool NeedsTextReapply(Text[] texts, float compensate)
+    {
+        for (int i = 0; i < texts.Length; i++)
+        {
+            Text text = texts[i];
+            if (text == null) continue;
+            if (!baseFontSizes.TryGetValue(text.GetInstanceID(), out int baseSize))
+                return true;
+            int expected = Mathf.Max(1, Mathf.RoundToInt(baseSize * compensate));
+            if (text.fontSize != expected)
+                return true;
+        }
+        return false;
     }
 
     private static bool IsStablePhysicalIcon(RectTransform rect)
