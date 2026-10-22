@@ -355,6 +355,22 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              menuContext.font.name.IndexOf("Inter",
                  StringComparison.OrdinalIgnoreCase) >= 0,
              "Platos shares the approved CARTA header and Inter helper line.");
+        Text visibleHeaderTitle = plate?.Find("Header/ReferenceHeaderTitle")
+            ?.GetComponent<Text>();
+        TMPro.TextMeshProUGUI visibleSdfTitle =
+            plate?.Find("Header/ReferenceHeaderTitleTMP")
+                ?.GetComponent<TMPro.TextMeshProUGUI>();
+        Pass(visibleHeaderTitle != null &&
+             !visibleHeaderTitle.enabled &&
+             visibleSdfTitle != null && visibleSdfTitle.enabled &&
+             visibleSdfTitle.gameObject.activeInHierarchy &&
+             visibleSdfTitle.text == "CARTA" &&
+             visibleSdfTitle.font != null &&
+             visibleSdfTitle.color.a >= .95f &&
+             visibleSdfTitle.rectTransform.rect.width > 100f &&
+             visibleSdfTitle.transform.GetSiblingIndex() ==
+                 visibleSdfTitle.transform.parent.childCount - 1,
+             "CARTA uses an opaque topmost Recoleta-SDF renderer; legacy heading cannot hide it.");
         Pass(IsParchment(plate, "Body/Sidebar") &&
              IsParchment(plate, "Body/List") &&
              IsParchment(plate, "Body/Detail"),
@@ -424,6 +440,14 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                  .GetComponent<Text>() == null,
              "Platos tab renders the actual plate/food sprite, not a font placeholder.");
         Transform photo = plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame");
+        Transform missingPhoto = photo?.Find("MissingDishPhotoHint");
+        Text photoHint = missingPhoto?.GetComponent<Text>();
+        Image selectedPhoto = photo?.Find("DishPhoto")?.GetComponent<Image>();
+        Pass(photoHint != null &&
+             photoHint.text == "Imagen no disponible" &&
+             photoHint.raycastTarget == false &&
+             (selectedPhoto?.sprite != null || photoHint.gameObject.activeSelf),
+             "Missing dish imagery has a truthful readable placeholder, with existing photos unchanged.");
         Transform photoImage = photo?.Find("DishPhoto");
         Pass(photo?.GetComponent<RectMask2D>() != null &&
              photoImage?.GetComponent<AspectRatioFitter>()?.aspectMode ==

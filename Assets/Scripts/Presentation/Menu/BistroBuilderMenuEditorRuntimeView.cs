@@ -91,6 +91,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Text detailSubtitleText;
     private Text descriptionText;
     private Image detailDishImage;
+    private Text missingDishPhotoHint;
     private AspectRatioFitter detailDishAspect;
     private Text detailCategoryText;
     private Text detailModeText;
@@ -863,6 +864,17 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         detailDishImage.preserveAspect = false;
         detailDishImage.raycastTarget = false;
         photoFrame.gameObject.AddComponent<RectMask2D>();
+        // The asset catalog legitimately contains dishes without photographs.
+        // Keep their detail legible rather than presenting a blank panel;
+        // never substitute a photograph of another dish.
+        missingDishPhotoHint = BistroBuilderMenuEditorUiFactory.CreateText(
+            "MissingDishPhotoHint", photoFrame, "Imagen no disponible", 13,
+            TextAnchor.MiddleCenter,
+            BistroBuilderMenuEditorUiFactory.TextSecondary
+        );
+        SetRect(missingDishPhotoHint.rectTransform,
+            0.08f, 0.12f, 0.92f, 0.88f, 0f);
+        missingDishPhotoHint.raycastTarget = false;
 
         editDishRecipeButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "EditDishPhoto", photoFrame, "✎",
@@ -2200,6 +2212,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
                 detailDishImage.color = dishSprite != null
                     ? Color.white
                     : new Color32(241, 224, 201, 255);
+                if (missingDishPhotoHint != null)
+                    missingDishPhotoHint.gameObject.SetActive(dishSprite == null);
                 if (detailDishAspect != null)
                 {
                     detailDishAspect.aspectRatio = dishSprite != null &&

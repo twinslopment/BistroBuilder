@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using BistroBuilder.UI.Iconography;
 
 /// <summary>
@@ -1010,6 +1011,59 @@ internal static class BistroBuilderCartaReferenceV3Style
                 background.color = Color.clear;
                 background.raycastTarget = false;
             }
+        }
+
+        // Title is explicitly rendered last within this header, above the
+        // inherited management/header graphics. The earlier Title remains
+        // as semantic/UI-test metadata but is not the visible text renderer.
+        Transform editorHeader = panel.Find("Header");
+        if (editorHeader != null)
+        {
+            Text legacyTitle = editorHeader.Find("Title")?.GetComponent<Text>();
+            if (legacyTitle != null) legacyTitle.enabled = false;
+            Transform overlayNode = editorHeader.Find("ReferenceHeaderTitle");
+            Text overlayTitle = overlayNode != null
+                ? overlayNode.GetComponent<Text>()
+                : BistroBuilderMenuEditorUiFactory.CreateText(
+                    "ReferenceHeaderTitle", editorHeader, "CARTA", 32,
+                    TextAnchor.MiddleLeft, Ink, FontStyle.Bold);
+            if (overlayTitle != null)
+            {
+                overlayTitle.text = "CARTA";
+                SetTypeface(overlayTitle, true, 32, true);
+                overlayTitle.color = Ink;
+                overlayTitle.alignment = TextAnchor.MiddleLeft;
+                overlayTitle.raycastTarget = false;
+                Anchor(overlayTitle.rectTransform, .074f, 0f, .38f, 1f,
+                    Vector2.zero, Vector2.zero);
+                // The legacy uGUI renderer reports healthy metadata yet
+                // draws no uppercase header on the actual Windows build.
+                // Keep it as metadata and render the approved Recoleta SDF
+                // font through TMP for reliable on-screen output.
+                overlayTitle.enabled = false;
+                overlayTitle.gameObject.SetActive(true);
+            }
+            Transform tmpNode = editorHeader.Find("ReferenceHeaderTitleTMP");
+            RectTransform tmpRect = tmpNode as RectTransform;
+            if (tmpRect == null)
+                tmpRect = Rect("ReferenceHeaderTitleTMP", editorHeader,
+                    new Vector2(.074f, 0f), new Vector2(.38f, 1f),
+                    Vector2.zero, Vector2.zero);
+            TextMeshProUGUI visibleTitle = tmpRect.GetComponent<TextMeshProUGUI>();
+            if (visibleTitle == null)
+                visibleTitle = tmpRect.gameObject.AddComponent<TextMeshProUGUI>();
+            TMP_FontAsset approvedFont = Resources.Load<TMP_FontAsset>(
+                "BistroBuilder/UI/Typography/Recoleta-SDF");
+            if (approvedFont != null) visibleTitle.font = approvedFont;
+            visibleTitle.text = "CARTA";
+            visibleTitle.fontSize = 33f;
+            visibleTitle.color = Ink;
+            visibleTitle.alignment = TextAlignmentOptions.MidlineLeft;
+            visibleTitle.enableAutoSizing = false;
+            visibleTitle.enableWordWrapping = false;
+            visibleTitle.overflowMode = TextOverflowModes.Overflow;
+            visibleTitle.raycastTarget = false;
+            tmpRect.SetAsLastSibling();
         }
 
         if (panel.Find("ReferenceBrassRivet") == null)
