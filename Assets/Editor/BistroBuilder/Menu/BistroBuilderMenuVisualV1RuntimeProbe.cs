@@ -381,6 +381,12 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              editorManagementTab.GetComponent<Image>()?.sprite != null &&
              editorDishesTab.GetComponent<Image>()?.sprite != null,
             "Platos shares the same Carta tabs and V3 button construction as the hub.");
+        Image actualPlateIcon = editorDishesTab?.transform
+            .Find("ReferenceTabIcon")?.GetComponent<Image>();
+        Pass(actualPlateIcon?.sprite != null &&
+             editorDishesTab.transform.Find("ReferenceTabIcon")
+                 .GetComponent<Text>() == null,
+             "Platos tab renders the actual plate/food sprite, not a font placeholder.");
         Transform photo = plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame");
         Transform photoImage = photo?.Find("DishPhoto");
         Pass(photo?.GetComponent<RectMask2D>() != null &&
@@ -429,6 +435,17 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              availability.GetComponent<Image>()?.raycastTarget == true &&
              availabilityToggle.targetGraphic == availability.GetComponent<Image>(),
             "Dish availability is a raycastable real Toggle with its own amber-switch skin.");
+        InputField search = plate?.Find("Body/List/ListHeader/Search")
+            ?.GetComponent<InputField>();
+        Image searchIcon = search?.transform.Find("ReferenceSearchIcon")
+            ?.GetComponent<Image>();
+        Text searchHint = search?.placeholder as Text;
+        Pass(searchIcon?.sprite != null &&
+             searchIcon.raycastTarget == false &&
+             searchHint != null &&
+             searchHint.rectTransform.offsetMin.x >= 37f &&
+             search.textComponent.rectTransform.offsetMin.x >= 37f,
+             "Search has a real magnifier image and its typing/placeholder region never overlaps the icon.");
         Pass(plate?.Find("Body/List/DishScroll/Viewport/Content") != null &&
              plate?.Find("Body/List/ListHeader/Search") != null &&
              plate?.Find("Body/Detail/DetailCanvas/DishPhotoFrame/DishPhoto") != null &&
@@ -445,6 +462,31 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              headingRoot.Find("PrepHeading") != null &&
              headingRoot.Find("MarginHeading") != null,
              "Responsive dish columns use six independently anchored headings.");
+        Text hiddenCount = headingRoot?.Find("Count")?.GetComponent<Text>();
+        Transform marginHeader = headingRoot?.Find("MarginHeading");
+        Pass(hiddenCount != null && !hiddenCount.gameObject.activeSelf &&
+             marginHeader != null && marginHeader.gameObject.activeInHierarchy,
+            "Hidden item count no longer overlaps the visible MARGEN column header.");
+
+        Transform detailLabels = plate?.Find("Body/Detail/DetailCanvas");
+        string[] responsiveCaptions = {
+            "PriceCaption", "CategoryCaption", "AvailableCaption",
+            "ModeCaption", "PrepCaption", "OrderCaption",
+            "CostCaption", "MarginCaption"
+        };
+        bool labelsScaleSafely = detailLabels != null;
+        foreach (string caption in responsiveCaptions)
+        {
+            Text label = detailLabels?.Find(caption)?.GetComponent<Text>();
+            labelsScaleSafely &= label != null &&
+                label.resizeTextForBestFit &&
+                label.resizeTextMinSize >= 9 &&
+                label.resizeTextMaxSize <= 12 &&
+                label.horizontalOverflow == HorizontalWrapMode.Wrap &&
+                label.verticalOverflow == VerticalWrapMode.Truncate;
+        }
+        Pass(labelsScaleSafely,
+            "Eight long detail labels use bounded fit and wrapping rather than painting over adjacent fields.");
         Transform dishContent = plate?.Find("Body/List/DishScroll/Viewport/Content");
         Transform firstDish = dishContent != null && dishContent.childCount > 0
             ? dishContent.GetChild(0) : null;

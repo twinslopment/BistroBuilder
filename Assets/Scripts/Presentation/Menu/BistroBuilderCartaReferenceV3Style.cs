@@ -24,7 +24,7 @@ internal static class BistroBuilderCartaReferenceV3Style
     // intentionally retains its existing textures and dimensions.
     private static Sprite editorOuter, editorCard, editorButton,
         editorSelected, editorRow, editorField, editorDanger, categoryGrid,
-        editorSwitchOn, editorSwitchOff, editorSwitchKnob, editorGold;
+        editorSwitchOn, editorSwitchOff, editorSwitchKnob, editorGold, editorSearchIcon;
     private static BBIconCatalog categoryIcons;
 
     private static void EnsureEditorSurfaces()
@@ -660,6 +660,66 @@ internal static class BistroBuilderCartaReferenceV3Style
         StyleAvailabilitySwitch(track, knob, isOn);
     }
 
+    private static Sprite SearchMagnifier()
+    {
+        if (editorSearchIcon != null) return editorSearchIcon;
+        const int size = 32;
+        Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            name = "CartaV3_SearchMagnifier",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        Vector2 start = new Vector2(18f, 12f);
+        Vector2 end = new Vector2(27f, 3f);
+        Vector2 axis = end - start;
+        for (int y = 0; y < size; y++)
+        for (int x = 0; x < size; x++)
+        {
+            Vector2 p = new Vector2(x + .5f, y + .5f);
+            float ring = Mathf.Abs(Vector2.Distance(p, new Vector2(12f, 20f)) - 7f);
+            float t = Mathf.Clamp01(Vector2.Dot(p - start, axis) /
+                axis.sqrMagnitude);
+            float stem = Vector2.Distance(p, start + axis * t);
+            float alpha = Mathf.Max(
+                Mathf.Clamp01(1.65f - ring),
+                Mathf.Clamp01(1.45f - stem));
+            texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+        }
+        texture.Apply(false, true);
+        editorSearchIcon = Sprite.Create(texture, new Rect(0, 0, size, size),
+            new Vector2(.5f, .5f), 100f);
+        return editorSearchIcon;
+    }
+
+    private static void DecorateSearchField(Transform root)
+    {
+        InputField search = root?.Find("Body/List/ListHeader/Search")
+            ?.GetComponent<InputField>();
+        if (search == null || search.transform.Find("ReferenceSearchIcon") != null)
+            return;
+        RectTransform iconRect = Rect("ReferenceSearchIcon",
+            search.transform, new Vector2(0f, .5f), new Vector2(0f, .5f),
+            new Vector2(8f, -11f), new Vector2(30f, 11f));
+        Image icon = BistroBuilderMenuEditorUiFactory.AddImage(iconRect, Brass);
+        icon.sprite = SearchMagnifier();
+        icon.type = Image.Type.Simple;
+        icon.preserveAspect = true;
+        icon.raycastTarget = false;
+
+        if (search.textComponent != null)
+        {
+            RectTransform textRect = search.textComponent.rectTransform;
+            textRect.offsetMin = new Vector2(37f, textRect.offsetMin.y);
+        }
+        if (search.placeholder is Text placeholder)
+        {
+            RectTransform placeholderRect = placeholder.rectTransform;
+            placeholderRect.offsetMin =
+                new Vector2(37f, placeholderRect.offsetMin.y);
+        }
+    }
+
     public static void ApplyEditor(RectTransform panel)
     {
         if (panel == null) return;
@@ -771,6 +831,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
         }
 
+        DecorateSearchField(panel);
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/Price", "€");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CategoryValuePlate",
             "", "file");
@@ -830,6 +891,19 @@ internal static class BistroBuilderCartaReferenceV3Style
         Transform detailCanvas = panel.Find("Body/Detail/DetailCanvas");
         if (detailCanvas != null)
         {
+            // SetTypeface defaults to Overflow; reapply bounded wrapping
+            // AFTER theme styling to avoid the long field captions bleeding
+            // into their editable controls at 1280x720.
+            foreach (Text label in detailCanvas.GetComponentsInChildren<Text>(true))
+            {
+                if (!label.name.EndsWith("Caption", StringComparison.Ordinal))
+                    continue;
+                label.resizeTextForBestFit = true;
+                label.resizeTextMinSize = 9;
+                label.resizeTextMaxSize = 12;
+                label.horizontalOverflow = HorizontalWrapMode.Wrap;
+                label.verticalOverflow = VerticalWrapMode.Truncate;
+            }
             if (detailCanvas.Find("ReferenceDetailHeadingIcon") == null)
             {
                 Image headingIcon = AddReferenceIcon(
@@ -941,13 +1015,19 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
             else if (button.name == "CartaTabDishes")
             {
-                Text icon = BistroBuilderMenuEditorUiFactory.CreateText(
-                    "ReferenceTabIcon", button.transform, "⌒", 16,
-                    TextAnchor.MiddleCenter, Brass, FontStyle.Bold);
-                Anchor(icon.rectTransform, 0, 0, 0, 1,
-                    new Vector2(8, 0), new Vector2(30, 0));
-                SetTypeface(icon, false, 16, true);
-                icon.color = Brass;
+                // Replace the old placeholder arch glyph with the same
+                // authored plate/food icon used by BistroBuilder's category art.
+                Sprite plate = CategorySprite("Principales");
+                RectTransform rect = Rect(
+                    "ReferenceTabIcon", button.transform,
+                    new Vector2(0f, .5f), new Vector2(0f, .5f),
+                    new Vector2(8f, -11f), new Vector2(30f, 11f));
+                Image icon = BistroBuilderMenuEditorUiFactory.AddImage(
+                    rect, Brass);
+                icon.sprite = plate;
+                icon.type = Image.Type.Simple;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
             }
         }
     }

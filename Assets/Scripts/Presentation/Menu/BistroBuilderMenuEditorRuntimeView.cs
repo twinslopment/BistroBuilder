@@ -749,6 +749,10 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         listCountText.rectTransform.anchorMax = Vector2.one;
         listCountText.rectTransform.offsetMin = Vector2.zero;
         listCountText.rectTransform.offsetMax = new Vector2(-8f, 0f);
+        // Count remains available to accessibility/state checks, but the
+        // approved V3 heading devotes the right edge to the margin column.
+        // Showing both made "MARGEN" and "8 de 8" overlap.
+        listCountText.gameObject.SetActive(false);
 
         ScrollRect scroll = BistroBuilderMenuEditorUiFactory.CreateScrollView(
             "DishScroll",
@@ -981,6 +985,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
         SetRect(label.rectTransform, 0f, minY, 0.34f, maxY, 0f);
+        // Long captions must never print over their adjacent input fields
+        // when the management Canvas is reduced to 1280x720.
+        label.resizeTextForBestFit = true;
+        label.resizeTextMinSize = 9;
+        label.resizeTextMaxSize = 12;
+        label.horizontalOverflow = HorizontalWrapMode.Wrap;
+        label.verticalOverflow = VerticalWrapMode.Truncate;
     }
 
     private Text CreateDetailReadOnlyValue(
