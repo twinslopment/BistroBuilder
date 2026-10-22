@@ -561,7 +561,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
             new Vector2(18f, -112f),
-            new Vector2(-18f, -76f)
+            new Vector2(-18f, -70f)
         );
 
         managementTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
@@ -587,7 +587,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         SetRect(
             dishesTabButton.GetComponent<RectTransform>(),
-            0.185f, 0f, 0.31f, 1f, 0f
+            0.185f, 0f, 0.35f, 1f, 0f
         );
     }
 
@@ -598,7 +598,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             Vector2.zero,
             Vector2.one,
-            new Vector2(12f, 58f),
+            new Vector2(12f, 76f),
             new Vector2(-12f, -116f)
         );
 
@@ -685,8 +685,10 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             HandleSearchChanged,
             null
         );
+        // Approved artwork allocates roughly 57% of the toolbar to search;
+        // reserve the rest for the label, sort value and direction.
         SetRect(searchInput.GetComponent<RectTransform>(),
-            0f, 0.08f, 0.54f, 0.92f, 0f);
+            0f, 0.08f, 0.57f, 0.92f, 0f);
 
         Text orderLabel = BistroBuilderMenuEditorUiFactory.CreateText(
             "OrderLabel", listHeader, "Ordenar por", 11,
@@ -1187,7 +1189,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             Vector2.zero,
             new Vector2(1f, 0f),
             new Vector2(12f, 8f),
-            new Vector2(-12f, 52f)
+            new Vector2(-12f, 70f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             footer,
@@ -1941,7 +1943,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.SurfaceRaised,
             13
         );
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 42f);
+        // V3 reference: airy navigation rows with discrete rules, not
+        // compressed legacy 42px tiles.
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 55f);
         categoryButtons.Add(button);
         categoryButtonIds.Add(categoryId);
     }

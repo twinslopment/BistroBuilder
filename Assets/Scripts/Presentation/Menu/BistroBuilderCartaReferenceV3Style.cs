@@ -1109,9 +1109,14 @@ internal static class BistroBuilderCartaReferenceV3Style
 
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label == null) return;
-        SetTypeface(label, true, 14, selected);
+        SetTypeface(label, true, 16, selected);
+        // The shared tab helper emits a static 12px mixed-typeface overlay.
+        // Category rows must instead render their live, correctly sized text.
+        Transform staleRuns = button.transform.Find("ReferenceTypefaceRuns");
+        if (staleRuns != null) staleRuns.gameObject.SetActive(false);
+        label.enabled = true;
         label.alignment = TextAnchor.MiddleLeft;
-        label.rectTransform.offsetMin = new Vector2(43f, 1f);
+        label.rectTransform.offsetMin = new Vector2(46f, 1f);
         label.rectTransform.offsetMax = new Vector2(-7f, -1f);
 
         Transform separator = button.transform.Find("ReferenceCategorySeparator");
@@ -1135,7 +1140,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             RectTransform iconRect = Rect("ReferenceCategoryIcon",
                 button.transform,
                 new Vector2(0, .5f), new Vector2(0, .5f),
-                new Vector2(10f, -12f), new Vector2(35f, 12f));
+                new Vector2(10f, -15f), new Vector2(40f, 15f));
             Image categoryIcon = BistroBuilderMenuEditorUiFactory.AddImage(
                 iconRect, Brass);
             categoryIcon.sprite = sprite;

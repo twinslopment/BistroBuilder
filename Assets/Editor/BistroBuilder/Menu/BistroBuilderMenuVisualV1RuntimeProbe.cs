@@ -368,6 +368,26 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              middlePane.offsetMin.x > leftPane.offsetMax.x &&
              rightPane.offsetMin.x > middlePane.offsetMax.x,
              "Platos keeps three gap-separated columns with contiguous responsive anchors.");
+        Transform all = plate?.Find("Body/Sidebar/Categories/Viewport/Content/Category_all");
+        LayoutElement categoryHeight = all?.GetComponent<LayoutElement>();
+        Text categoryName = all?.Find("Label")?.GetComponent<Text>();
+        Transform categoryOldRuns = all?.Find("ReferenceTypefaceRuns");
+        Pass(categoryHeight != null && categoryHeight.preferredHeight >= 54f &&
+             categoryName != null && categoryName.enabled &&
+             categoryName.fontSize >= 16f &&
+             categoryName.rectTransform.offsetMin.x >= 45f &&
+             (categoryOldRuns == null || !categoryOldRuns.gameObject.activeSelf),
+            "Approved categories render their visible larger text, not the stale 12px tab overlay.");
+        RectTransform editorBody = plate?.Find("Body") as RectTransform;
+        RectTransform editorFooter = plate?.Find("Footer") as RectTransform;
+        RectTransform primaryFooterButton =
+            plate?.Find("Footer/Apply") as RectTransform;
+        Pass(editorBody != null && editorFooter != null &&
+             primaryFooterButton != null &&
+             editorBody.offsetMin.y > editorFooter.offsetMax.y &&
+             editorFooter.offsetMax.y - editorFooter.offsetMin.y >= 60f &&
+             primaryFooterButton.anchorMax.y - primaryFooterButton.anchorMin.y >= .8f,
+            "Approved bottom buttons have a full-size, separated footer rather than the compressed old toolbar.");
         bool noHeavyFrames =
             plate?.GetComponent<Outline>()?.enabled == false &&
             plate.Find("Body/Sidebar")?.GetComponent<Outline>()?.enabled == false &&
@@ -377,7 +397,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "Platos alone disables the legacy stacked outlines on the ivory shell and three columns.");
         Transform categoriesContent =
             plate?.Find("Body/Sidebar/Categories/Viewport/Content");
-        Transform all = categoriesContent?.Find("Category_all");
+        all = categoriesContent?.Find("Category_all");
         Pass(all != null &&
              all.Find("ReferenceCategoryIcon")?.GetComponent<Image>()?.sprite != null &&
              all.Find("ReferenceCategorySeparator") != null,
@@ -390,6 +410,13 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              editorManagementTab.GetComponent<Image>()?.sprite != null &&
              editorDishesTab.GetComponent<Image>()?.sprite != null,
             "Platos shares the same Carta tabs and V3 button construction as the hub.");
+        RectTransform approvedTabs = plate?.Find("CartaTabs") as RectTransform;
+        RectTransform approvedDishesTab =
+            editorDishesTab?.GetComponent<RectTransform>();
+        Pass(approvedTabs != null && approvedDishesTab != null &&
+             approvedTabs.offsetMax.y - approvedTabs.offsetMin.y >= 42f &&
+             approvedDishesTab.anchorMax.x - approvedDishesTab.anchorMin.x >= .16f,
+             "Platos tab has the substantial height and near-equal width of the approved reference.");
         Image actualPlateIcon = editorDishesTab?.transform
             .Find("ReferenceTabIcon")?.GetComponent<Image>();
         Pass(actualPlateIcon?.sprite != null &&
@@ -446,6 +473,13 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "Dish availability is a raycastable real Toggle with its own amber-switch skin.");
         InputField search = plate?.Find("Body/List/ListHeader/Search")
             ?.GetComponent<InputField>();
+        RectTransform searchRect = search?.GetComponent<RectTransform>();
+        RectTransform orderLabelRect = plate?.Find(
+            "Body/List/ListHeader/OrderLabel") as RectTransform;
+        Pass(searchRect != null && orderLabelRect != null &&
+             searchRect.anchorMax.x >= .56f &&
+             searchRect.anchorMax.x < orderLabelRect.anchorMin.x,
+            "Reference search field occupies more of the central toolbar without colliding with sort controls.");
         Image searchIcon = search?.transform.Find("ReferenceSearchIcon")
             ?.GetComponent<Image>();
         Text searchHint = search?.placeholder as Text;
