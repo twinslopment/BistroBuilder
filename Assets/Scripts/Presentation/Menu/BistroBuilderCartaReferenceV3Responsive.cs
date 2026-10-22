@@ -93,6 +93,12 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
                name == "SectionIcon" ||
                name == "EntryIcon" ||
                name == "ReferenceRowChevron" ||
-               name == "ReferenceRowStatus";
+               name == "ReferenceRowStatus" ||
+               // Approved Carta pictograms were missing from the inverse
+               // scale compensation and became too small at 1280x720.
+               name == "ReferenceCategoryIcon" ||
+               name == "ReferenceFieldIcon" ||
+               name == "ReferencePreparationClock" ||
+               name == "ReferenceTabIcon";
     }
 }
