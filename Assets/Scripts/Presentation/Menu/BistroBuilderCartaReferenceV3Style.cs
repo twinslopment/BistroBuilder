@@ -553,7 +553,26 @@ internal static class BistroBuilderCartaReferenceV3Style
         SkinImage(background, destructive ? editorDanger :
             primary ? editorGold : plain ? editorField : editorButton);
         if (background != null) background.raycastTarget = true;
+        bool fieldStepper = button.name == "MoveUp" || button.name == "MoveDown";
+        if (fieldStepper && background != null)
+        {
+            // The position field owns the ivory surface. Keep both arrows
+            // clickable but remove their separate heavy button frames.
+            background.sprite = null;
+            background.type = Image.Type.Simple;
+            background.color = Color.clear;
+        }
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
+        if (fieldStepper && label != null)
+        {
+            if (InterBold != null) label.font = InterBold;
+            label.fontStyle = FontStyle.Bold;
+            label.fontSize = 11;
+            label.alignment = TextAnchor.MiddleCenter;
+            label.color = Brass;
+            label.rectTransform.offsetMin = Vector2.zero;
+            label.rectTransform.offsetMax = Vector2.zero;
+        }
         if (label != null && primary) label.color = Color.white;
         Transform mixed = button.transform.Find("ReferenceTypefaceRuns");
         if (primary && mixed != null)
@@ -860,6 +879,17 @@ internal static class BistroBuilderCartaReferenceV3Style
             "", "clock");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/OrderValuePlate",
             "", "copy");
+        Transform orderPlate = panel.Find(
+            "Body/Detail/DetailCanvas/OrderValuePlate");
+        if (orderPlate != null && orderPlate.Find("ReferenceOrderStepperDivider") == null)
+        {
+            RectTransform divider = Rect("ReferenceOrderStepperDivider",
+                orderPlate, new Vector2(.86f, .10f), new Vector2(.86f, .90f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f));
+            Image line = BistroBuilderMenuEditorUiFactory.AddImage(
+                divider, new Color32(197, 165, 128, 150));
+            line.raycastTarget = false;
+        }
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/CostValuePlate",
             "€");
         DecorateEditorValue(panel, "Body/Detail/DetailCanvas/MarginValuePlate",
@@ -1232,6 +1262,17 @@ internal static class BistroBuilderCartaReferenceV3Style
             rect.sizeDelta = new Vector2(16f, 16f);
             rect.anchoredPosition = new Vector2(available ? -10f : 10f, 0f);
         }
+    }
+
+    public static void StyleDishPreparationClock(Image clock)
+    {
+        if (clock == null) return;
+        Sprite icon = ReferenceIcon("clock");
+        clock.sprite = icon;
+        clock.type = Image.Type.Simple;
+        clock.preserveAspect = true;
+        clock.color = new Color32(143, 103, 57, 255);
+        clock.raycastTarget = false;
     }
 
     public static void StyleDishRow(Button button, bool selected)

@@ -447,6 +447,25 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Pass(detailIcons,
             "All seven dish-detail fields have their own aligned ivory-and-brass icons.");
 
+        Transform orderValuePlate = plate?.Find(
+            "Body/Detail/DetailCanvas/OrderValuePlate");
+        RectTransform stepUp = plate?.Find(
+            "Body/Detail/DetailCanvas/MoveUp") as RectTransform;
+        RectTransform stepDown = plate?.Find(
+            "Body/Detail/DetailCanvas/MoveDown") as RectTransform;
+        Button stepUpButton = stepUp?.GetComponent<Button>();
+        Button stepDownButton = stepDown?.GetComponent<Button>();
+        Pass(orderValuePlate?.Find("ReferenceOrderStepperDivider")?.GetComponent<Image>()
+                 ?.raycastTarget == false &&
+             stepUp != null && stepDown != null &&
+             stepUp.anchorMin.x >= .90f &&
+             Mathf.Abs(stepUp.anchorMin.x - stepDown.anchorMin.x) < .0001f &&
+             Mathf.Abs(stepUp.anchorMin.y - stepDown.anchorMax.y) < .0001f &&
+             stepUpButton?.GetComponent<Image>()?.raycastTarget == true &&
+             stepDownButton?.GetComponent<Image>()?.raycastTarget == true &&
+             stepUpButton.GetComponent<Image>().sprite == null &&
+             stepDownButton.GetComponent<Image>().sprite == null,
+             "Dish order now has a single ivory field with integrated, non-obstructing up/down arrows.");
         Image addDishSkin = plate?.Find("Footer/AddDish")?.GetComponent<Image>();
         Image applySkin = plate?.Find("Footer/Apply")?.GetComponent<Image>();
         Image discardSkin = plate?.Find("Footer/Discard")?.GetComponent<Image>();
@@ -547,12 +566,40 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                  actualThumbnail.sprite.rect.height) < .001f);
         Pass(thumbnailPreservesSource,
             "Dish-table thumbnails crop to their actual photographic aspect ratio without distorting it.");
+        Transform grip = firstDish?.Find("ReferenceRowGrip");
+        RectTransform thumbRect = thumbnail as RectTransform;
+        RectTransform nameRect = firstDish?.Find("Name") as RectTransform;
+        RectTransform dishHeading = headingRoot?.Find("PlatoHeading") as RectTransform;
+        bool gripSafe = grip != null && grip.childCount == 6;
+        if (gripSafe)
+        {
+            for (int i = 0; i < grip.childCount; i++)
+            {
+                Image dot = grip.GetChild(i).GetComponent<Image>();
+                gripSafe &= dot != null && !dot.raycastTarget;
+            }
+        }
+        Pass(gripSafe && thumbRect != null && nameRect != null &&
+             dishHeading != null &&
+             thumbRect.anchorMin.x > .05f &&
+             thumbRect.anchorMax.x < nameRect.anchorMin.x &&
+             Mathf.Abs(nameRect.anchorMin.x - dishHeading.anchorMin.x) < .0001f,
+             "V3 table rows have six non-blocking grip dots, a properly spaced photo and an exactly aligned plate name.");
         RectTransform marginHeadingRect = headingRoot?.Find("MarginHeading") as RectTransform;
         RectTransform marginCellRect = firstDish?.Find("Margin") as RectTransform;
         Pass(marginHeadingRect != null && marginCellRect != null &&
              Mathf.Abs(marginHeadingRect.anchorMin.x - marginCellRect.anchorMin.x) < .0001f &&
              Mathf.Abs(marginHeadingRect.anchorMax.x - marginCellRect.anchorMax.x) < .0001f,
              "MARGEN heading aligns with the actual margin values across responsive widths.");
+        Image preparationClock = firstDish?.Find(
+            "ReferencePreparationClock")?.GetComponent<Image>();
+        Text preparationLabel = firstDish?.Find("Preparation")?.GetComponent<Text>();
+        Pass(preparationClock?.sprite != null &&
+             preparationClock.preserveAspect &&
+             !preparationClock.raycastTarget &&
+             preparationLabel != null &&
+             !preparationLabel.text.Contains("◷"),
+             "Preparation durations use an authored clock sprite instead of a font symbol.");
         Pass(firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>()?.sprite != null &&
              firstDish.Find("AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>()?.sprite != null,
              "Availability is rendered with a rounded switch, not an ambiguous status bullet.");

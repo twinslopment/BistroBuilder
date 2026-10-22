@@ -726,7 +726,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
         // Individual column anchors mirror the actual dish rows; padding
         // spaces inside one Text broke alignment at 1280x720.
-        CreateColumnHeading(columnHeader, "PlatoHeading", "PLATO", 0.11f, 0.44f,
+        CreateColumnHeading(columnHeader, "PlatoHeading", "PLATO", 0.16f, 0.44f,
             TextAnchor.MiddleLeft);
         CreateColumnHeading(columnHeader, "PriceHeading", "PRECIO", 0.44f, 0.54f,
             TextAnchor.MiddleCenter);
@@ -916,20 +916,20 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             0.185f, 0.225f);
         detailOrderText = CreateDetailReadOnlyValue(
             content, "OrderValue", "1",
-            0.36f, 0.175f, 0.76f, 0.225f, false
+            0.36f, 0.175f, 1f, 0.225f, false
         );
         moveUpButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "MoveUp", content, "↑", () => MoveSelected(-1),
             BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
         );
         SetRect(moveUpButton.GetComponent<RectTransform>(),
-            0.78f, 0.175f, 0.88f, 0.225f, 0f);
+            0.91f, 0.200f, 1f, 0.225f, 0f);
         moveDownButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "MoveDown", content, "↓", () => MoveSelected(1),
             BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
         );
         SetRect(moveDownButton.GetComponent<RectTransform>(),
-            0.90f, 0.175f, 1f, 0.225f, 0f);
+            0.91f, 0.175f, 1f, 0.200f, 0f);
 
         CreateDetailCaption(content, "CostCaption", "Coste (por ración)",
             0.125f, 0.165f);

@@ -47,12 +47,13 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
 
         RectTransform thumbFrame = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Thumbnail", transform,
-            new Vector2(0.015f, 0.12f), new Vector2(0.10f, 0.88f),
+            new Vector2(0.058f, 0.12f), new Vector2(0.15f, 0.88f),
             Vector2.zero, Vector2.zero);
         Image thumbBackground = BistroBuilderMenuEditorUiFactory.AddImage(
             thumbFrame, new Color32(234, 215, 190, 255));
         thumbBackground.raycastTarget = false;
         thumbFrame.gameObject.AddComponent<RectMask2D>();
+        BuildReferenceGrip();
 
         RectTransform photo = BistroBuilderMenuEditorUiFactory.CreateRect(
             "ThumbnailPhoto", thumbFrame,
@@ -66,8 +67,8 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         thumbnailAspect.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
         thumbnailAspect.aspectRatio = 1.6f;
 
-        nameText = CreateText("Name", 0.11f, 0.44f, 0.46f, 0.98f, 12, true);
-        subtitleText = CreateText("Subtitle", 0.11f, 0.44f, 0.02f, 0.48f, 9, false);
+        nameText = CreateText("Name", 0.16f, 0.44f, 0.46f, 0.98f, 12, true);
+        subtitleText = CreateText("Subtitle", 0.16f, 0.44f, 0.02f, 0.48f, 9, false);
         priceText = CreateText("Price", 0.44f, 0.54f, 0f, 1f, 11, true);
         availabilityText = CreateText("Available", 0.54f, 0.64f, 0f, 1f, 15, true);
         availabilityText.gameObject.SetActive(false);
@@ -86,8 +87,39 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         BistroBuilderCartaReferenceV3Style.StyleAvailabilitySwitch(
             availabilityTrack, availabilityKnob, false);
         modalityText = CreateText("Modality", 0.64f, 0.75f, 0f, 1f, 10, false);
-        preparationText = CreateText("Preparation", 0.75f, 0.87f, 0f, 1f, 10, false);
+        RectTransform clockRect = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "ReferencePreparationClock", transform,
+            new Vector2(.759f, .5f), new Vector2(.759f, .5f),
+            new Vector2(-7f, -7f), new Vector2(7f, 7f));
+        Image clockImage = BistroBuilderMenuEditorUiFactory.AddImage(
+            clockRect, Color.white);
+        BistroBuilderCartaReferenceV3Style.StyleDishPreparationClock(clockImage);
+        preparationText = CreateText("Preparation", 0.776f, 0.87f, 0f, 1f, 10, false);
         marginText = CreateText("Margin", 0.87f, 1f, 0f, 1f, 10, true);
+    }
+
+    // Six discreet dots from the approved V3 table: a selection/reorder cue
+    // only. The actual position controls remain the arrows in dish detail.
+    private void BuildReferenceGrip()
+    {
+        RectTransform grip = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "ReferenceRowGrip", transform,
+            new Vector2(0.025f, .5f), new Vector2(0.025f, .5f),
+            new Vector2(-4f, -9f), new Vector2(4f, 9f));
+        for (int row = 0; row < 3; row++)
+        {
+            for (int column = 0; column < 2; column++)
+            {
+                RectTransform dot = BistroBuilderMenuEditorUiFactory.CreateRect(
+                    "Dot_" + row + "_" + column, grip,
+                    new Vector2(0f, 0f), new Vector2(0f, 0f),
+                    new Vector2(column * 5f, row * 6f),
+                    new Vector2(column * 5f + 2.5f, row * 6f + 2.5f));
+                Image dotImage = BistroBuilderMenuEditorUiFactory.AddImage(
+                    dot, new Color32(159, 127, 87, 210));
+                dotImage.raycastTarget = false;
+            }
+        }
     }
 
     public void Bind(
@@ -123,7 +155,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
             availabilityTrack, availabilityKnob,
             snapshot.Included && snapshot.Enabled);
         modalityText.text = ResolveModality(snapshot);
-        preparationText.text = "◷ " +
+        preparationText.text =
             BistroBuilderMenuEditorUtility.FormatPreparationDuration(
                 snapshot.PreparationSeconds);
         marginText.text = snapshot.HasValidEconomics
