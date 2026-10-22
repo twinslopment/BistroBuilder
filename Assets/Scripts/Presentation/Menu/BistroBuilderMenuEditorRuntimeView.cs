@@ -734,7 +734,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             TextAnchor.MiddleCenter);
         CreateColumnHeading(columnHeader, "PrepHeading", "PREP.", 0.75f, 0.87f,
             TextAnchor.MiddleCenter);
-        CreateColumnHeading(columnHeader, "MarginHeading", "MARGEN", 0.87f, 0.95f,
+        CreateColumnHeading(columnHeader, "MarginHeading", "MARGEN", 0.87f, 1f,
             TextAnchor.MiddleCenter);
 
         listCountText = BistroBuilderMenuEditorUiFactory.CreateText(

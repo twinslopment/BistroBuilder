@@ -12,6 +12,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
     private Button button;
     private Image background;
     private Image thumbnail;
+    private AspectRatioFitter thumbnailAspect;
     private Text nameText;
     private Text subtitleText;
     private Text priceText;
@@ -44,13 +45,26 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
 
         BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 62f);
 
-        RectTransform thumbRect = BistroBuilderMenuEditorUiFactory.CreateRect(
+        RectTransform thumbFrame = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Thumbnail", transform,
             new Vector2(0.015f, 0.12f), new Vector2(0.10f, 0.88f),
             Vector2.zero, Vector2.zero);
+        Image thumbBackground = BistroBuilderMenuEditorUiFactory.AddImage(
+            thumbFrame, new Color32(234, 215, 190, 255));
+        thumbBackground.raycastTarget = false;
+        thumbFrame.gameObject.AddComponent<RectMask2D>();
+
+        RectTransform photo = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "ThumbnailPhoto", thumbFrame,
+            new Vector2(.5f, .5f), new Vector2(.5f, .5f),
+            Vector2.zero, Vector2.zero);
         thumbnail = BistroBuilderMenuEditorUiFactory.AddImage(
-            thumbRect, new Color32(234, 215, 190, 255));
+            photo, Color.white);
+        thumbnail.raycastTarget = false;
         thumbnail.preserveAspect = false;
+        thumbnailAspect = photo.gameObject.AddComponent<AspectRatioFitter>();
+        thumbnailAspect.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        thumbnailAspect.aspectRatio = 1.6f;
 
         nameText = CreateText("Name", 0.11f, 0.44f, 0.46f, 0.98f, 12, true);
         subtitleText = CreateText("Subtitle", 0.11f, 0.44f, 0.02f, 0.48f, 9, false);
@@ -93,6 +107,8 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
                 availabilityText.text = modalityText.text =
                 preparationText.text = marginText.text = string.Empty;
             thumbnail.sprite = null;
+            thumbnail.color = new Color(1f, 1f, 1f, 0f);
+            if (thumbnailAspect != null) thumbnailAspect.aspectRatio = 1.6f;
             return;
         }
 
@@ -123,7 +139,11 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         thumbnail.sprite = image;
         thumbnail.color = image != null
             ? Color.white
-            : new Color32(234, 215, 190, 255);
+            : new Color(1f, 1f, 1f, 0f);
+        if (thumbnailAspect != null)
+            thumbnailAspect.aspectRatio = image != null && image.rect.height > 0f
+                ? image.rect.width / image.rect.height
+                : 1.6f;
     }
 
     private Text CreateText(

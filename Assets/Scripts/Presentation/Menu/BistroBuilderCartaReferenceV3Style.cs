@@ -561,6 +561,25 @@ internal static class BistroBuilderCartaReferenceV3Style
             foreach (Text segment in mixed.GetComponentsInChildren<Text>(true))
                 segment.color = Color.white;
         }
+        // Sorting changes its label at runtime. A fixed V3 mixed-font overlay
+        // would keep displaying "Categoría" even after sorting by price/name.
+        // This single dynamic control uses Inter, which includes accents.
+        if (button.name == "OrderCategory")
+        {
+            if (mixed != null) mixed.gameObject.SetActive(false);
+            if (label != null)
+            {
+                label.enabled = true;
+                if (InterBold != null) label.font = InterBold;
+                label.fontStyle = FontStyle.Normal;
+                label.alignment = TextAnchor.MiddleCenter;
+                label.resizeTextForBestFit = true;
+                label.resizeTextMinSize = 9;
+                label.resizeTextMaxSize = 12;
+                label.horizontalOverflow = HorizontalWrapMode.Wrap;
+                label.verticalOverflow = VerticalWrapMode.Truncate;
+            }
+        }
         RemoveOldBevel(button.transform);
     }
 

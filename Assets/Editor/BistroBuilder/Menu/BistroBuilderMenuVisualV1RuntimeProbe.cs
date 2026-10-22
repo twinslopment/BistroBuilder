@@ -359,6 +359,15 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              IsParchment(plate, "Body/List") &&
              IsParchment(plate, "Body/Detail"),
              "Categories, dish table and selected-dish detail use matching parchment cards.");
+        RectTransform leftPane = plate?.Find("Body/Sidebar") as RectTransform;
+        RectTransform middlePane = plate?.Find("Body/List") as RectTransform;
+        RectTransform rightPane = plate?.Find("Body/Detail") as RectTransform;
+        Pass(leftPane != null && middlePane != null && rightPane != null &&
+             Mathf.Abs(leftPane.anchorMax.x - middlePane.anchorMin.x) < .0001f &&
+             Mathf.Abs(middlePane.anchorMax.x - rightPane.anchorMin.x) < .0001f &&
+             middlePane.offsetMin.x > leftPane.offsetMax.x &&
+             rightPane.offsetMin.x > middlePane.offsetMax.x,
+             "Platos keeps three gap-separated columns with contiguous responsive anchors.");
         bool noHeavyFrames =
             plate?.GetComponent<Outline>()?.enabled == false &&
             plate.Find("Body/Sidebar")?.GetComponent<Outline>()?.enabled == false &&
@@ -490,6 +499,26 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Transform dishContent = plate?.Find("Body/List/DishScroll/Viewport/Content");
         Transform firstDish = dishContent != null && dishContent.childCount > 0
             ? dishContent.GetChild(0) : null;
+        Transform thumbnail = firstDish?.Find("Thumbnail");
+        Transform thumbnailPhoto = thumbnail?.Find("ThumbnailPhoto");
+        Image actualThumbnail = thumbnailPhoto?.GetComponent<Image>();
+        AspectRatioFitter thumbnailFitter = thumbnailPhoto
+            ?.GetComponent<AspectRatioFitter>();
+        bool thumbnailPreservesSource = thumbnail?.GetComponent<RectMask2D>() != null &&
+            thumbnailFitter?.aspectMode == AspectRatioFitter.AspectMode.EnvelopeParent &&
+            actualThumbnail != null && !actualThumbnail.raycastTarget &&
+            (actualThumbnail.sprite == null ||
+             Mathf.Abs(thumbnailFitter.aspectRatio -
+                 actualThumbnail.sprite.rect.width /
+                 actualThumbnail.sprite.rect.height) < .001f);
+        Pass(thumbnailPreservesSource,
+            "Dish-table thumbnails crop to their actual photographic aspect ratio without distorting it.");
+        RectTransform marginHeadingRect = headingRoot?.Find("MarginHeading") as RectTransform;
+        RectTransform marginCellRect = firstDish?.Find("Margin") as RectTransform;
+        Pass(marginHeadingRect != null && marginCellRect != null &&
+             Mathf.Abs(marginHeadingRect.anchorMin.x - marginCellRect.anchorMin.x) < .0001f &&
+             Mathf.Abs(marginHeadingRect.anchorMax.x - marginCellRect.anchorMax.x) < .0001f,
+             "MARGEN heading aligns with the actual margin values across responsive widths.");
         Pass(firstDish?.Find("AvailabilityTrack")?.GetComponent<Image>()?.sprite != null &&
              firstDish.Find("AvailabilityTrack/AvailabilityKnob")?.GetComponent<Image>()?.sprite != null,
              "Availability is rendered with a rounded switch, not an ambiguous status bullet.");
@@ -525,6 +554,12 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             Pass(ascending && descending && sameSelection &&
                  sortedItems.Count == originalCount,
                  "Sort controls genuinely reorder dish prices in both directions without changing selection or drafts.");
+            Text visibleSort = sort.transform.Find("Label")?.GetComponent<Text>();
+            Transform staleOverlay = sort.transform.Find("ReferenceTypefaceRuns");
+            Pass(visibleSort != null && visibleSort.enabled &&
+                 visibleSort.text == "Precio" &&
+                 (staleOverlay == null || !staleOverlay.gameObject.activeSelf),
+                 "The visible sort label updates to Precio and no stale Categoría overlay remains.");
         }
         else
         {
