@@ -18,6 +18,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     public const string RuntimeRevision = "MENU-2.1E-UI";
     private const string SpecialCategoryId = "__special";
 
+    private enum DishListSort { Category, Name, Price, Margin, Preparation }
+    private static readonly string[] SortLabels = {
+        "Categoría", "Plato", "Precio", "Margen", "Preparación"
+    };
+
     [Header("Dependencias")]
 
     [SerializeField]
@@ -110,6 +115,9 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private Button includeButton;
     private Button moveUpButton;
     private Button moveDownButton;
+    private Button sortButton;
+    private Button sortDirectionButton;
+    private Button duplicateDishButton;
     private Button restoreDefaultsButton;
     private Button mealServiceButton;
     private Button serviceModeButton;
@@ -127,6 +135,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
     private string selectedCategoryId = string.Empty;
     private string selectedDishId = string.Empty;
     private string searchText = string.Empty;
+    private DishListSort dishSort = DishListSort.Category;
+    private bool descendingSort;
     private bool visualTreeBuilt;
     private bool subscribed;
     private bool suppressCallbacks;
@@ -685,18 +695,18 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         SetRect(orderLabel.rectTransform, 0.58f, 0f, 0.72f, 1f, 0f);
 
-        Button orderButton = BistroBuilderMenuEditorUiFactory.CreateButton(
-            "OrderCategory", listHeader, "Categoría", () => { },
+        sortButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "OrderCategory", listHeader, "Categoría", CycleSort,
             BistroBuilderMenuEditorUiFactory.SurfaceRaised, 12
         );
-        SetRect(orderButton.GetComponent<RectTransform>(),
+        SetRect(sortButton.GetComponent<RectTransform>(),
             0.73f, 0.08f, 0.92f, 0.92f, 0f);
 
-        Button orderDirection = BistroBuilderMenuEditorUiFactory.CreateButton(
-            "OrderDirection", listHeader, "↕", () => { },
+        sortDirectionButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "OrderDirection", listHeader, "↑", ToggleSortDirection,
             BistroBuilderMenuEditorUiFactory.SurfaceRaised, 14
         );
-        SetRect(orderDirection.GetComponent<RectTransform>(),
+        SetRect(sortDirectionButton.GetComponent<RectTransform>(),
             0.93f, 0.08f, 1f, 0.92f, 0f);
 
         RectTransform columnHeader = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -1187,13 +1197,13 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         SetRect(includeButton.GetComponent<RectTransform>(),
             0.19f, 0.08f, 0.34f, 0.92f, 0f);
 
-        Button duplicate = BistroBuilderMenuEditorUiFactory.CreateButton(
-            "DuplicateDish", footer, "Duplicar", () => { },
+        duplicateDishButton = BistroBuilderMenuEditorUiFactory.CreateButton(
+            "DuplicateDish", footer, "Duplicar", DuplicateSelectedDish,
             BistroBuilderMenuEditorUiFactory.SurfaceRaised, 13
         );
-        SetRect(duplicate.GetComponent<RectTransform>(),
+        SetRect(duplicateDishButton.GetComponent<RectTransform>(),
             0.35f, 0.08f, 0.48f, 0.92f, 0f);
-        duplicate.interactable = false;
+        duplicateDishButton.interactable = false;
 
         reloadButton = BistroBuilderMenuEditorUiFactory.CreateButton(
             "Reload", footer, "Recargar", ReloadConflict,
@@ -1508,6 +1518,18 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
 
         authoringView.OpenExisting(selectedSnapshot.DishId);
+    }
+
+    private void DuplicateSelectedDish()
+    {
+        if (selectedSnapshot == null || authoringView == null)
+        {
+            ShowStatus("Selecciona un plato para duplicarlo.", true);
+            return;
+        }
+
+        if (!authoringView.OpenDuplicate(selectedSnapshot.DishId))
+            ShowStatus("No se pudo preparar la copia de este plato.", true);
     }
 
     private void HandleAuthoringSaved(string dishId)
@@ -1985,6 +2007,54 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
     }
 
+    private void CycleSort()
+    {
+        dishSort = (DishListSort)(((int)dishSort + 1) % SortLabels.Length);
+        SetButtonLabel(sortButton, SortLabels[(int)dishSort]);
+        RefreshFilteredList();
+    }
+
+    private void ToggleSortDirection()
+    {
+        descendingSort = !descendingSort;
+        SetButtonLabel(sortDirectionButton, descendingSort ? "↓" : "↑");
+        RefreshFilteredList();
+    }
+
+    private int CompareDishesForDisplay(
+        BistroBuilderMenuEditorDishSnapshot a,
+        BistroBuilderMenuEditorDishSnapshot b)
+    {
+        int comparison;
+        switch (dishSort)
+        {
+            case DishListSort.Name:
+                comparison = StringComparer.CurrentCultureIgnoreCase.Compare(
+                    a.DisplayName, b.DisplayName);
+                break;
+            case DishListSort.Price:
+                comparison = a.CurrentPriceCents.CompareTo(b.CurrentPriceCents);
+                break;
+            case DishListSort.Margin:
+                comparison = a.GrossMarginBasisPoints.CompareTo(
+                    b.GrossMarginBasisPoints);
+                break;
+            case DishListSort.Preparation:
+                comparison = a.PreparationSeconds.CompareTo(b.PreparationSeconds);
+                break;
+            default:
+                comparison = StringComparer.CurrentCultureIgnoreCase.Compare(
+                    a.CategoryName, b.CategoryName);
+                if (comparison == 0)
+                    comparison = a.DisplayOrder.CompareTo(b.DisplayOrder);
+                break;
+        }
+
+        if (comparison == 0)
+            comparison = StringComparer.Ordinal.Compare(a.DishId, b.DishId);
+        return descendingSort ? -comparison : comparison;
+    }
+
     private void RefreshFilteredList()
     {
         filtered.Clear();
@@ -2006,6 +2076,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             }
         }
 
+        filtered.Sort(CompareDishesForDisplay);
         EnsureRowPool(filtered.Count);
 
         for (int index = 0; index < rowPool.Count; index++)
@@ -2084,6 +2155,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
 
         bool hasSelection = selectedSnapshot != null;
         detailContentRoot.SetActive(hasSelection);
+        if (duplicateDishButton != null)
+            duplicateDishButton.interactable = hasSelection && authoringView != null;
 
         if (!hasSelection)
         {

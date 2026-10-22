@@ -453,6 +453,72 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              "Availability is rendered with a rounded switch, not an ambiguous status bullet.");
         Pass(editor.TryValidateVisibleContent(out _),
             "Existing 2.1E runtime scroll and row validation still passes.");
+
+        Button sort = plate?.Find("Body/List/ListHeader/OrderCategory")
+            ?.GetComponent<Button>();
+        Button direction = plate?.Find("Body/List/ListHeader/OrderDirection")
+            ?.GetComponent<Button>();
+        FieldInfo filteredField = editor.GetType().GetField(
+            "filtered", BindingFlags.Instance | BindingFlags.NonPublic);
+        FieldInfo selectedField = editor.GetType().GetField(
+            "selectedDishId", BindingFlags.Instance | BindingFlags.NonPublic);
+        string initiallySelected = selectedField?.GetValue(editor) as string;
+        var sortedItems = filteredField?.GetValue(editor) as
+            System.Collections.Generic.List<BistroBuilderMenuEditorDishSnapshot>;
+        int originalCount = sortedItems?.Count ?? -1;
+        if (sort != null && direction != null && sortedItems != null)
+        {
+            sort.onClick.Invoke(); // Plato
+            sort.onClick.Invoke(); // Precio
+            bool ascending = sortedItems.Count > 1 &&
+                sortedItems[0].CurrentPriceCents <=
+                sortedItems[sortedItems.Count - 1].CurrentPriceCents;
+            direction.onClick.Invoke(); // Mayor primero
+            bool descending = sortedItems.Count > 1 &&
+                sortedItems[0].CurrentPriceCents >=
+                sortedItems[sortedItems.Count - 1].CurrentPriceCents;
+            bool sameSelection = string.Equals(
+                initiallySelected, selectedField?.GetValue(editor) as string,
+                StringComparison.Ordinal);
+            Pass(ascending && descending && sameSelection &&
+                 sortedItems.Count == originalCount,
+                 "Sort controls genuinely reorder dish prices in both directions without changing selection or drafts.");
+        }
+        else
+        {
+            Pass(false, "Dish sorting controls and backing list are present.");
+        }
+        Button duplicate = plate?.Find("Footer/DuplicateDish")?.GetComponent<Button>();
+        string sourceId = selectedField?.GetValue(editor) as string;
+        bool gotSource = editor.EditorService.TryGetDishAuthoringRequest(
+            sourceId, out BistroBuilderDishRecipeAuthoringRequest source,
+            out _);
+        int changesBefore = editor.EditorService.AuthoringService.DraftChangeCount;
+        if (duplicate != null && duplicate.interactable && gotSource)
+        {
+            duplicate.onClick.Invoke();
+            FieldInfo workingField = recipe.GetType().GetField(
+                "workingRequest", BindingFlags.Instance | BindingFlags.NonPublic);
+            BistroBuilderDishRecipeAuthoringRequest copy =
+                workingField?.GetValue(recipe) as BistroBuilderDishRecipeAuthoringRequest;
+            bool intact = copy != null && source != null &&
+                recipe.IsOpen && string.IsNullOrEmpty(copy.DishId) &&
+                copy.DisplayName.EndsWith(" (copia)", StringComparison.Ordinal) &&
+                copy.BasePriceCents == source.BasePriceCents &&
+                copy.Ingredients.Count == source.Ingredients.Count &&
+                (copy.Ingredients.Count == 0 ||
+                 !ReferenceEquals(copy.Ingredients[0], source.Ingredients[0])) &&
+                editor.EditorService.AuthoringService.DraftChangeCount ==
+                    changesBefore &&
+                source.DishId == sourceId;
+            Pass(intact,
+                "Duplicate prepares an independent editable dish and deep-copied recipe without modifying the original or the draft.");
+            recipe.Close();
+        }
+        else
+        {
+            Pass(false, "Duplicate is enabled with a selected dish and canonical recipe.");
+        }
         Capture("02_Editor_Carta_Aprobado.png");
         Move(4);
     }

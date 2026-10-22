@@ -184,6 +184,39 @@ public sealed class BistroBuilderDishRecipeAuthoringRuntimeView : MonoBehaviour
         SetVisible(true);
     }
 
+    /// <summary>
+    /// Prepare an independent copy of an existing dish and all its recipe
+    /// ingredients. Nothing is created or changed until the player saves.
+    /// </summary>
+    public bool OpenDuplicate(string dishId)
+    {
+        if (!PrepareOpen(out string error))
+        {
+            ShowStatus(error, true);
+            return false;
+        }
+
+        if (!editorService.TryGetDishAuthoringRequest(
+                dishId, out BistroBuilderDishRecipeAuthoringRequest source,
+                out error) || source == null)
+        {
+            ShowStatus(error, true);
+            return false;
+        }
+
+        workingRequest = source.Clone();
+        workingRequest.DishId = string.Empty;
+        workingRequest.IsPlayerCreated = true;
+        workingRequest.DisplayName = (source.DisplayName ?? string.Empty)
+            .Trim() + " (copia)";
+        PopulateFromRequest(workingRequest);
+        titleText.text = "Duplicar plato y receta";
+        identityText.text =
+            "Se creará un plato independiente con nuevo DishId al guardar.";
+        SetVisible(true);
+        return true;
+    }
+
     public void Close()
     {
         CloseIngredientPicker();
