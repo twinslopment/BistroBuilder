@@ -680,6 +680,25 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              thumbRect.anchorMax.x < nameRect.anchorMin.x &&
              Mathf.Abs(nameRect.anchorMin.x - dishHeading.anchorMin.x) < .0001f,
              "V3 table rows have six non-blocking grip dots, a properly spaced photo and an exactly aligned plate name.");
+        bool rowTypographySafe = firstDish != null;
+        foreach (var spec in new[] {
+            (Name: "Name", Min: 11, Max: 17),
+            (Name: "Subtitle", Min: 9, Max: 13),
+            (Name: "Price", Min: 10, Max: 14),
+            (Name: "Modality", Min: 9, Max: 13),
+            (Name: "Preparation", Min: 9, Max: 13),
+            (Name: "Margin", Min: 9, Max: 13)
+        })
+        {
+            Text cell = firstDish?.Find(spec.Name)?.GetComponent<Text>();
+            rowTypographySafe &= cell != null && cell.resizeTextForBestFit &&
+                cell.resizeTextMinSize == spec.Min &&
+                cell.resizeTextMaxSize == spec.Max &&
+                cell.horizontalOverflow == HorizontalWrapMode.Wrap &&
+                cell.verticalOverflow == VerticalWrapMode.Truncate;
+        }
+        Pass(rowTypographySafe,
+             "Dish rows bound every text cell to prevent large fonts overflowing into neighboring columns.");
         RectTransform marginHeadingRect = headingRoot?.Find("MarginHeading") as RectTransform;
         RectTransform marginCellRect = firstDish?.Find("Margin") as RectTransform;
         Pass(marginHeadingRect != null && marginCellRect != null &&
