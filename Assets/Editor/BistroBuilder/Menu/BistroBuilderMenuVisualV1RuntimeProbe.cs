@@ -723,6 +723,32 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(rowTypographySafe,
              "Dish rows bound every text cell to prevent large fonts overflowing into neighboring columns.");
+        bool numericalColumnsCentered = firstDish != null;
+        foreach (string name in new[] { "Price", "Modality", "Preparation", "Margin" })
+            numericalColumnsCentered &=
+                firstDish?.Find(name)?.GetComponent<Text>()?.alignment ==
+                TextAnchor.MiddleCenter;
+        numericalColumnsCentered &=
+            firstDish?.Find("Name")?.GetComponent<Text>()?.alignment ==
+            TextAnchor.MiddleLeft;
+        Pass(numericalColumnsCentered,
+            "Price, mode, preparation and margin align centrally, while dish names stay left-aligned.");
+
+        // Check the actual row-fit behavior at a simulated 1280x720 Canvas
+        // compensation factor, without changing display resolution or data.
+        MethodInfo applyRowFit = typeof(BistroBuilderCartaReferenceV3Responsive)
+            .GetMethod("ApplyDishRowFitBounds",
+                BindingFlags.NonPublic | BindingFlags.Static);
+        Text previewName = firstDish?.Find("Name")?.GetComponent<Text>();
+        bool simulatedFit = applyRowFit != null && previewName != null;
+        if (simulatedFit)
+        {
+            applyRowFit.Invoke(null, new object[] { previewName, 1.5f });
+            simulatedFit = previewName.resizeTextMinSize == Mathf.RoundToInt(11f * 1.5f) &&
+                previewName.resizeTextMaxSize == Mathf.RoundToInt(17f * 1.5f);
+        }
+        Pass(simulatedFit,
+            "At 1280x720, dish-name best-fit limits grow with the inverse Canvas scale.");
         // Reproduce the actual bug: changing selection restyles the text
         // after the first responsive pass, without resizing the window.
         var responsive = plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
@@ -732,10 +758,16 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         {
             responsive.ApplyImmediate(true);
             int correctSize = rowTitle.fontSize;
+            int correctMin = rowTitle.resizeTextMinSize;
+            int correctMax = rowTitle.resizeTextMaxSize;
             rowTitle.fontSize = 1; // Simulate a late theme/style reset.
+            rowTitle.resizeTextMinSize = 1;
+            rowTitle.resizeTextMaxSize = 1;
             responsive.ApplyImmediate(false);
             themeRefreshRestoresSize =
-                correctSize > 1 && rowTitle.fontSize == correctSize;
+                correctSize > 1 && rowTitle.fontSize == correctSize &&
+                rowTitle.resizeTextMinSize == correctMin &&
+                rowTitle.resizeTextMaxSize == correctMax;
         }
         Pass(themeRefreshRestoresSize,
             "Responsive sizing recovers after late row restyling without a screen resize.");
