@@ -62,6 +62,7 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
                 text.resizeTextMaxSize =
                     Mathf.RoundToInt(12f * compensate);
             }
+            ApplyDishRowFitBounds(text, compensate);
             int id = text.GetInstanceID();
             if (!baseFontSizes.TryGetValue(id, out int baseSize))
             {
@@ -100,8 +101,45 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             int expected = Mathf.Max(1, Mathf.RoundToInt(baseSize * compensate));
             if (text.fontSize != expected)
                 return true;
+            if (TryGetDishRowFitBounds(text, out int min, out int max) &&
+                (text.resizeTextMinSize != Mathf.RoundToInt(min * compensate) ||
+                 text.resizeTextMaxSize != Mathf.RoundToInt(max * compensate)))
+                return true;
         }
         return false;
+    }
+
+    // DishRowView applies canonical best-fit limits on each Bind(). Apply
+    // the same scale factor to those limits as to Text.fontSize. Otherwise
+    // the capped fit renderer silently shrinks the visible text back to its
+    // 1920px size when the global Canvas is scaled down to 1280px.
+    private static void ApplyDishRowFitBounds(Text text, float compensate)
+    {
+        if (!TryGetDishRowFitBounds(text, out int min, out int max))
+            return;
+        text.resizeTextMinSize = Mathf.RoundToInt(min * compensate);
+        text.resizeTextMaxSize = Mathf.RoundToInt(max * compensate);
+    }
+
+    private static bool TryGetDishRowFitBounds(Text text, out int min, out int max)
+    {
+        min = 0;
+        max = 0;
+        if (text == null || !text.resizeTextForBestFit ||
+            text.transform.parent == null ||
+            text.transform.parent.GetComponent<BistroBuilderMenuEditorDishRowView>() == null)
+            return false;
+
+        switch (text.name)
+        {
+            case "Name": min = 11; max = 17; return true;
+            case "Subtitle": min = 9; max = 13; return true;
+            case "Price": min = 10; max = 14; return true;
+            case "Modality":
+            case "Preparation":
+            case "Margin": min = 9; max = 13; return true;
+            default: return false;
+        }
     }
 
     private static bool IsStablePhysicalIcon(RectTransform rect)
