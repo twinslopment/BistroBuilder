@@ -220,7 +220,20 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         text.resizeTextMaxSize = maximum;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Truncate;
-        text.alignment = TextAnchor.MiddleLeft;
+        // Numeric and operational columns are centered in the approved
+        // six-column reference; only names/descriptions are left-aligned.
+        switch (text.name)
+        {
+            case "Price":
+            case "Modality":
+            case "Preparation":
+            case "Margin":
+                text.alignment = TextAnchor.MiddleCenter;
+                break;
+            default:
+                text.alignment = TextAnchor.MiddleLeft;
+                break;
+        }
     }
 
     private static string ShortSubtitle(BistroBuilderMenuEditorDishSnapshot snapshot)
