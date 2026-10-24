@@ -63,6 +63,7 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
                     Mathf.RoundToInt(12f * compensate);
             }
             ApplyDishRowFitBounds(text, compensate);
+            ApplyDishDetailFitBounds(text, compensate);
             int id = text.GetInstanceID();
             if (!baseFontSizes.TryGetValue(id, out int baseSize))
             {
@@ -105,6 +106,10 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
                 (text.resizeTextMinSize != Mathf.RoundToInt(min * compensate) ||
                  text.resizeTextMaxSize != Mathf.RoundToInt(max * compensate)))
                 return true;
+            if (TryGetDishDetailFitBounds(text, out min, out max) &&
+                (text.resizeTextMinSize != Mathf.RoundToInt(min * compensate) ||
+                 text.resizeTextMaxSize != Mathf.RoundToInt(max * compensate)))
+                return true;
         }
         return false;
     }
@@ -140,6 +145,46 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             case "Margin": min = 9; max = 13; return true;
             default: return false;
         }
+    }
+
+    private static void ApplyDishDetailFitBounds(Text text, float compensate)
+    {
+        if (!TryGetDishDetailFitBounds(text, out int min, out int max))
+            return;
+        text.resizeTextMinSize = Mathf.RoundToInt(min * compensate);
+        text.resizeTextMaxSize = Mathf.RoundToInt(max * compensate);
+    }
+
+    private static bool TryGetDishDetailFitBounds(Text text, out int min, out int max)
+    {
+        min = 0;
+        max = 0;
+        if (text == null || !text.resizeTextForBestFit ||
+            text.transform.parent == null)
+            return false;
+        string parentName = text.transform.parent.name;
+        if (parentName == "DetailCanvas")
+        {
+            if (text.name == "DishTitle")
+            {
+                min = 13;
+                max = 22;
+                return true;
+            }
+            if (text.name == "DishSubtitle")
+            {
+                min = 9;
+                max = 13;
+                return true;
+            }
+        }
+        if (parentName == "StatusBadgePlate" && text.name == "StatusBadge")
+        {
+            min = 9;
+            max = 12;
+            return true;
+        }
+        return false;
     }
 
     private static bool IsStablePhysicalIcon(RectTransform rect)
