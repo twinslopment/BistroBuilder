@@ -704,7 +704,16 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              thumbRect.anchorMax.x < nameRect.anchorMin.x &&
              Mathf.Abs(nameRect.anchorMin.x - dishHeading.anchorMin.x) < .0001f,
              "V3 table rows have six non-blocking grip dots, a properly spaced photo and an exactly aligned plate name.");
-        bool rowTypographySafe = firstDish != null;
+        // Run the same layout pass for both target resolutions before
+        // asserting text limits. Canonical 1920 values must be compensated
+        // when this probe is executed at 1280x720.
+        var responsive = plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
+        if (responsive != null) responsive.ApplyImmediate(true);
+        Canvas rowCanvas = plate?.GetComponentInParent<Canvas>();
+        float rowCompensation = rowCanvas != null
+            ? Mathf.Clamp(1f / Mathf.Max(.5f, rowCanvas.scaleFactor), 1f, 1.55f)
+            : 1f;
+        bool rowTypographySafe = firstDish != null && responsive != null;
         foreach (var spec in new[] {
             (Name: "Name", Min: 11, Max: 17),
             (Name: "Subtitle", Min: 9, Max: 13),
@@ -716,8 +725,8 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         {
             Text cell = firstDish?.Find(spec.Name)?.GetComponent<Text>();
             rowTypographySafe &= cell != null && cell.resizeTextForBestFit &&
-                cell.resizeTextMinSize == spec.Min &&
-                cell.resizeTextMaxSize == spec.Max &&
+                cell.resizeTextMinSize == Mathf.RoundToInt(spec.Min * rowCompensation) &&
+                cell.resizeTextMaxSize == Mathf.RoundToInt(spec.Max * rowCompensation) &&
                 cell.horizontalOverflow == HorizontalWrapMode.Wrap &&
                 cell.verticalOverflow == VerticalWrapMode.Truncate;
         }
@@ -751,7 +760,6 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "At 1280x720, dish-name best-fit limits grow with the inverse Canvas scale.");
         // Reproduce the actual bug: changing selection restyles the text
         // after the first responsive pass, without resizing the window.
-        var responsive = plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
         Text rowTitle = firstDish?.Find("Name")?.GetComponent<Text>();
         bool themeRefreshRestoresSize = responsive != null && rowTitle != null;
         if (themeRefreshRestoresSize)
