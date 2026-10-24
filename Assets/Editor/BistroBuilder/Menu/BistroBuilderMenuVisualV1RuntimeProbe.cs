@@ -371,6 +371,17 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              visibleSdfTitle.transform.GetSiblingIndex() ==
                  visibleSdfTitle.transform.parent.childCount - 1,
              "CARTA uses an opaque topmost Recoleta-SDF renderer; legacy heading cannot hide it.");
+        var approvedHeaderResponsive =
+            plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
+        approvedHeaderResponsive?.ApplyImmediate(true);
+        Canvas approvedHeaderCanvas = plate?.GetComponentInParent<Canvas>();
+        float approvedHeaderCompensation = approvedHeaderCanvas == null
+            ? 1f : Mathf.Clamp(
+                1f / Mathf.Max(.5f, approvedHeaderCanvas.scaleFactor), 1f, 1.55f);
+        Pass(visibleSdfTitle != null && approvedHeaderResponsive != null &&
+             Mathf.Abs(visibleSdfTitle.fontSize -
+                 33f * approvedHeaderCompensation) < .2f,
+             "The visible Recoleta CARTA heading retains its intended physical size at both target resolutions.");
         Pass(IsParchment(plate, "Body/Sidebar") &&
              IsParchment(plate, "Body/List") &&
              IsParchment(plate, "Body/Detail"),
