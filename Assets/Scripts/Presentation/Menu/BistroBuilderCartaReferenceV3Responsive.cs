@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Keeps Carta V3 typography and authored glyphs at a stable physical size
@@ -16,6 +17,8 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
     private float lastScale = -1f;
     private int lastTextCount = -1;
     private int lastIconCount = -1;
+    private TextMeshProUGUI approvedHeader;
+    private float approvedHeaderBaseSize = -1f;
 
     private void OnEnable() => ApplyImmediate(true);
     private void LateUpdate() => ApplyImmediate(false);
@@ -25,6 +28,13 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
     {
         if (rootCanvas == null) rootCanvas = GetComponentInParent<Canvas>();
         if (rootCanvas == null) return;
+        if (approvedHeader == null)
+        {
+            Transform headerNode = transform.Find("Header/ReferenceHeaderTitleTMP");
+            approvedHeader = headerNode?.GetComponent<TextMeshProUGUI>();
+            if (approvedHeader != null)
+                approvedHeaderBaseSize = Mathf.Max(1f, approvedHeader.fontSize);
+        }
 
         float scale = Mathf.Max(0.5f, rootCanvas.scaleFactor);
         Text[] texts = GetComponentsInChildren<Text>(true);
@@ -44,7 +54,8 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         // until some unrelated resolution or hierarchy change occurs.
         if (!force && Mathf.Abs(scale - lastScale) < 0.001f &&
             texts.Length == lastTextCount && iconCount == lastIconCount &&
-            !NeedsTextReapply(texts, compensate))
+            !NeedsTextReapply(texts, compensate) &&
+            !NeedsApprovedHeaderReapply(compensate))
             return;
 
         for (int i = 0; i < texts.Length; i++)
@@ -86,9 +97,20 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             rect.localScale = baseScale * compensate;
         }
 
+        if (approvedHeader != null && approvedHeaderBaseSize > 0f)
+            approvedHeader.fontSize = approvedHeaderBaseSize * compensate;
+
         lastScale = scale;
         lastTextCount = texts.Length;
         lastIconCount = iconCount;
+    }
+
+    private bool NeedsApprovedHeaderReapply(float compensate)
+    {
+        if (approvedHeader == null || approvedHeaderBaseSize <= 0f)
+            return false;
+        return Mathf.Abs(approvedHeader.fontSize -
+            approvedHeaderBaseSize * compensate) > .1f;
     }
 
     private bool NeedsTextReapply(Text[] texts, float compensate)
