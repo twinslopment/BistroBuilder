@@ -508,6 +508,49 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Transform badge = plate?.Find("Body/Detail/DetailCanvas/StatusBadgePlate");
         Pass(badge?.Find("StatusDot")?.GetComponent<Image>()?.sprite != null,
             "The dish-status badge contains a real state dot instead of a flat green text box.");
+        Text boundedTitle = plate?.Find("Body/Detail/DetailCanvas/DishTitle")
+            ?.GetComponent<Text>();
+        Text boundedSubtitle = plate?.Find("Body/Detail/DetailCanvas/DishSubtitle")
+            ?.GetComponent<Text>();
+        Text boundedStatus = badge?.Find("StatusBadge")?.GetComponent<Text>();
+        RectTransform titleRect = boundedTitle?.rectTransform;
+        RectTransform statusRect = badge as RectTransform;
+        bool titleDoesNotOverlapBadge = titleRect != null && statusRect != null &&
+            titleRect.anchorMax.x < statusRect.anchorMin.x;
+        bool detailTextConstrained = titleDoesNotOverlapBadge;
+        foreach (var spec in new[] {
+            (Text: boundedTitle, Min: 13, Max: 22),
+            (Text: boundedSubtitle, Min: 9, Max: 13),
+            (Text: boundedStatus, Min: 9, Max: 12)
+        })
+        {
+            Text field = spec.Text;
+            detailTextConstrained &= field != null && field.resizeTextForBestFit &&
+                field.resizeTextMinSize >= spec.Min &&
+                field.resizeTextMaxSize >= spec.Max &&
+                field.horizontalOverflow == HorizontalWrapMode.Wrap &&
+                field.verticalOverflow == VerticalWrapMode.Truncate;
+        }
+        Pass(detailTextConstrained,
+            "Dish title, subtitle and badge fit inside separate non-overlapping columns.");
+        MethodInfo applyDetailFit =
+            typeof(BistroBuilderCartaReferenceV3Responsive).GetMethod(
+                "ApplyDishDetailFitBounds",
+                BindingFlags.NonPublic | BindingFlags.Static);
+        bool detailFitScales = applyDetailFit != null && boundedTitle != null;
+        if (detailFitScales)
+        {
+            int previousMin = boundedTitle.resizeTextMinSize;
+            int previousMax = boundedTitle.resizeTextMaxSize;
+            applyDetailFit.Invoke(null, new object[] { boundedTitle, 1.5f });
+            detailFitScales =
+                boundedTitle.resizeTextMinSize == Mathf.RoundToInt(13f * 1.5f) &&
+                boundedTitle.resizeTextMaxSize == Mathf.RoundToInt(22f * 1.5f);
+            boundedTitle.resizeTextMinSize = previousMin;
+            boundedTitle.resizeTextMaxSize = previousMax;
+        }
+        Pass(detailFitScales,
+            "Dish title best-fit range scales at 1280x720 and can be restored without changing data.");
 
         string[] decoratedFields = {
             "Price", "CategoryValuePlate", "ModeValuePlate",
