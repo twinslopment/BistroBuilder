@@ -1055,11 +1055,35 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
             RemoveOldBevel(photoEdit.transform);
             Text editLabel = photoEdit.transform.Find("Label")?.GetComponent<Text>();
+            // The reference shows a white pencil icon within the dark photo
+            // corner tile. Use the existing raster art instead of the ✎
+            // Unicode glyph, which varies by font and platform.
+            Transform graphic = photoEdit.transform.Find("ReferencePhotoEditIcon");
+            Image photoEditIcon = graphic?.GetComponent<Image>();
+            if (photoEditIcon == null)
+            {
+                photoEditIcon = AddReferenceIcon(
+                    "ReferencePhotoEditIcon", photoEdit.transform, "edit",
+                    .15f, .15f, .85f, .85f, Vector2.zero, Vector2.zero);
+            }
+            if (photoEditIcon != null)
+            {
+                photoEditIcon.enabled = true;
+                photoEditIcon.color = Color.white;
+                photoEditIcon.type = Image.Type.Simple;
+                photoEditIcon.preserveAspect = true;
+                photoEditIcon.raycastTarget = false;
+            }
             if (editLabel != null)
             {
-                SetTypeface(editLabel, false, 20, true);
-                editLabel.color = Color.white;
-                editLabel.alignment = TextAnchor.MiddleCenter;
+                // Only retain the text fallback if the resource cannot load.
+                editLabel.enabled = photoEditIcon == null;
+                if (photoEditIcon == null)
+                {
+                    SetTypeface(editLabel, false, 20, true);
+                    editLabel.color = Color.white;
+                    editLabel.alignment = TextAnchor.MiddleCenter;
+                }
             }
         }
 
