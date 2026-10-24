@@ -498,6 +498,17 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              photoHint.raycastTarget == false &&
              (selectedPhoto?.sprite != null || photoHint.gameObject.activeSelf),
              "Missing dish imagery has a truthful readable placeholder, with existing photos unchanged.");
+        Image photoEditIcon = photo?.Find("EditDishPhoto/ReferencePhotoEditIcon")
+            ?.GetComponent<Image>();
+        Button photoEditButton = photo?.Find("EditDishPhoto")?.GetComponent<Button>();
+        Text legacyPencil = photo?.Find("EditDishPhoto/Label")?.GetComponent<Text>();
+        Pass(photoEditIcon?.sprite != null && photoEditIcon.enabled &&
+             photoEditIcon.color.a > .95f && photoEditIcon.preserveAspect &&
+             !photoEditIcon.raycastTarget && photoEditButton != null &&
+             photoEditButton.interactable &&
+             photoEditButton.GetComponent<Image>()?.raycastTarget == true &&
+             legacyPencil != null && !legacyPencil.enabled,
+            "Photo-edit button displays a real pencil icon while keeping its click target functional.");
         Transform photoImage = photo?.Find("DishPhoto");
         Pass(photo?.GetComponent<RectMask2D>() != null &&
              photoImage?.GetComponent<AspectRatioFitter>()?.aspectMode ==
