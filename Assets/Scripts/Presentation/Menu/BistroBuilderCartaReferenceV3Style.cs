@@ -991,6 +991,27 @@ internal static class BistroBuilderCartaReferenceV3Style
         Transform detailCanvas = panel.Find("Body/Detail/DetailCanvas");
         if (detailCanvas != null)
         {
+            // Prevent long dish titles from painting over the status badge.
+            // The approved reference keeps the title and its badge in separate
+            // anchored columns. Bounds must be restored after SetTypeface().
+            Text dishTitle = detailCanvas.Find("DishTitle")?.GetComponent<Text>();
+            if (dishTitle != null)
+            {
+                dishTitle.resizeTextForBestFit = true;
+                dishTitle.resizeTextMinSize = 13;
+                dishTitle.resizeTextMaxSize = 22;
+                dishTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+                dishTitle.verticalOverflow = VerticalWrapMode.Truncate;
+            }
+            Text dishSubtitle = detailCanvas.Find("DishSubtitle")?.GetComponent<Text>();
+            if (dishSubtitle != null)
+            {
+                dishSubtitle.resizeTextForBestFit = true;
+                dishSubtitle.resizeTextMinSize = 9;
+                dishSubtitle.resizeTextMaxSize = 13;
+                dishSubtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+                dishSubtitle.verticalOverflow = VerticalWrapMode.Truncate;
+            }
             // SetTypeface defaults to Overflow; reapply bounded wrapping
             // AFTER theme styling to avoid the long field captions bleeding
             // into their editable controls at 1280x720.
@@ -1343,6 +1364,11 @@ internal static class BistroBuilderCartaReferenceV3Style
         }
         status.color = included ? new Color32(45, 103, 40, 255) : Muted;
         status.alignment = TextAnchor.MiddleCenter;
+        status.resizeTextForBestFit = true;
+        status.resizeTextMinSize = 9;
+        status.resizeTextMaxSize = 12;
+        status.horizontalOverflow = HorizontalWrapMode.Wrap;
+        status.verticalOverflow = VerticalWrapMode.Truncate;
         status.rectTransform.offsetMin = new Vector2(18f, 0f);
         status.rectTransform.offsetMax = new Vector2(-3f, 0f);
         Transform dot = status.transform.parent.Find("StatusDot");
