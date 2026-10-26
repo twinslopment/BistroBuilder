@@ -1278,6 +1278,9 @@ internal static class BistroBuilderCartaReferenceV3Style
 
         if (panel.Find("ReferenceBrassRivet") == null)
             AddCorners(panel);
+        // Ornamental brass inlay is geometry-driven Unity UI, not a flat
+        // image pasted over the functioning Carta screen.
+        BistroBuilderCartaV3Ornamentation.Decorate(panel);
 
         BistroBuilderCartaReferenceV3Responsive responsive =
             panel.GetComponent<BistroBuilderCartaReferenceV3Responsive>();

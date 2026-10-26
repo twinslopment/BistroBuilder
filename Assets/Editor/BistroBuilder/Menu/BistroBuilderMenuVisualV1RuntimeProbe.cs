@@ -484,6 +484,36 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(allFineFrames,
             "Four approved ivory panels have fine double brass/highlight rims that never intercept mouse clicks.");
+        bool luxuryFrame = true;
+        foreach (string detail in new[] {
+            "V3LuxuryRimTop", "V3LuxuryRimGoldTop",
+            "V3LuxuryRimHighlightTop", "V3LuxuryRimBottom",
+            "V3LuxuryRimGoldBottom", "V3LuxuryRimLeft",
+            "V3LuxuryRimRight", "V3LuxuryCornerTL",
+            "V3LuxuryCornerTR", "V3LuxuryCornerBL", "V3LuxuryCornerBR"
+        })
+        {
+            Image ornamental = plate?.Find(detail)?.GetComponent<Image>();
+            luxuryFrame &= ornamental != null && ornamental.enabled &&
+                !ornamental.raycastTarget;
+        }
+        Pass(luxuryFrame,
+            "Luxury brass/ivory inset and four procedural corner medallions remain visible and click-through.");
+        bool actionAffordances = plate?.Find("Header/Close/V3CloseStrokeA")
+                ?.GetComponent<Image>()?.raycastTarget == false &&
+            plate?.Find("Header/Close/V3CloseStrokeB")
+                ?.GetComponent<Image>()?.raycastTarget == false;
+        foreach (string name in new[] { "CategoryValuePlate", "ModeValuePlate" })
+        {
+            Transform field = plate?.Find("Body/Detail/DetailCanvas/" + name);
+            Image arrow = field?.Find("V3DropdownChevron")?.GetComponent<Image>();
+            Image background = field?.GetComponent<Image>();
+            actionAffordances &= arrow != null && arrow.sprite != null &&
+                !arrow.raycastTarget && field.GetComponent<Button>() != null &&
+                background != null && background.raycastTarget;
+        }
+        Pass(actionAffordances,
+            "Close X and two real clickable detail affordances are visible, not fake decorative controls.");
         Transform categoriesContent =
             plate?.Find("Body/Sidebar/Categories/Viewport/Content");
         all = categoriesContent?.Find("Category_all");

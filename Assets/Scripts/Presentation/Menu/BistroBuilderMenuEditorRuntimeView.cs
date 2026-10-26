@@ -461,6 +461,10 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         BuildApprovedFooter(panel);
         BuildConfirmation(modalRoot);
         BistroBuilderCartaReferenceV3Style.ApplyEditor(panel);
+        // The reference shows category/mode dropdowns. Open the actual
+        // authoring UI on click, rather than offering decorative fake inputs.
+        BindDetailAuthoringControl(panel, "CategoryValuePlate");
+        BindDetailAuthoringControl(panel, "ModeValuePlate");
         BistroBuilderCartaReferenceV3Style.StyleNavigationTab(
             managementTabButton, false
         );
@@ -468,6 +472,21 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             dishesTabButton, true
         );
         visualTreeBuilt = true;
+    }
+
+    private void BindDetailAuthoringControl(RectTransform panel, string plateName)
+    {
+        Transform field = panel.Find("Body/Detail/DetailCanvas/" + plateName);
+        if (field == null) return;
+        Image image = field.GetComponent<Image>();
+        if (image == null) return;
+        Button clickable = field.GetComponent<Button>();
+        if (clickable == null)
+            clickable = field.gameObject.AddComponent<Button>();
+        clickable.transition = Selectable.Transition.ColorTint;
+        clickable.targetGraphic = image;
+        image.raycastTarget = true;
+        clickable.onClick.AddListener(OpenSelectedDishAuthoring);
     }
 
     private void BuildHeader(RectTransform panel)
