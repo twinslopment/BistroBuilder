@@ -43,7 +43,9 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         button.targetGraphic = background;
         button.onClick.AddListener(HandleClicked);
 
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 67f);
+        // Eight dishes should fill the approved visual table rather than
+        // leaving a large unused parchment block at the bottom.
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 80f);
 
         RectTransform thumbFrame = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Thumbnail", transform,

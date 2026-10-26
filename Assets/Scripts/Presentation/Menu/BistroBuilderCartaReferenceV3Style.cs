@@ -32,30 +32,30 @@ internal static class BistroBuilderCartaReferenceV3Style
     {
         EnsureSurfaces();
         if (editorOuter != null) return;
-        editorOuter = Surface(new Color32(248, 239, 225, 255),
-            new Color32(243, 231, 214, 255),
-            new Color32(154, 114, 65, 255), 13, 1);
-        editorCard = Surface(new Color32(249, 242, 232, 255),
-            new Color32(246, 236, 222, 255),
-            new Color32(196, 162, 120, 255), 10, 1);
-        editorButton = Surface(new Color32(249, 236, 212, 255),
-            new Color32(222, 186, 127, 255),
-            new Color32(152, 106, 53, 255), 8, 1);
+        editorOuter = Surface(new Color32(254, 245, 232, 255),
+            new Color32(245, 232, 213, 255),
+            new Color32(133, 80, 28, 255), 13, 4);
+        editorCard = Surface(new Color32(255, 248, 238, 255),
+            new Color32(247, 236, 219, 255),
+            new Color32(193, 155, 106, 255), 10, 2);
+        editorButton = Surface(new Color32(255, 244, 226, 255),
+            new Color32(220, 183, 128, 255),
+            new Color32(144, 89, 33, 255), 8, 3);
         editorSelected = Surface(new Color32(252, 225, 177, 255),
             new Color32(235, 184, 100, 255),
             new Color32(194, 139, 63, 255), 8, 1);
         editorRow = Surface(new Color32(249, 242, 230, 255),
             new Color32(246, 237, 224, 255),
             new Color32(223, 202, 173, 255), 4, 1);
-        editorField = Surface(new Color32(250, 244, 235, 255),
-            new Color32(246, 236, 220, 255),
-            new Color32(207, 179, 144, 255), 6, 1);
-        editorDanger = Surface(new Color32(197, 73, 55, 255),
-            new Color32(150, 38, 28, 255),
-            new Color32(116, 36, 26, 255), 8, 1);
-        editorGold = Surface(new Color32(213, 161, 73, 255),
-            new Color32(148, 96, 24, 255),
-            new Color32(116, 72, 24, 255), 8, 1);
+        editorField = Surface(new Color32(255, 251, 244, 255),
+            new Color32(248, 238, 225, 255),
+            new Color32(195, 160, 117, 255), 6, 2);
+        editorDanger = Surface(new Color32(193, 55, 45, 255),
+            new Color32(132, 24, 21, 255),
+            new Color32(101, 25, 20, 255), 8, 3);
+        editorGold = Surface(new Color32(205, 146, 54, 255),
+            new Color32(133, 77, 17, 255),
+            new Color32(99, 56, 13, 255), 8, 3);
         editorSwitchOn = Surface(new Color32(220, 161, 45, 255),
             new Color32(204, 139, 27, 255),
             new Color32(173, 115, 22, 255), 12, 1);
@@ -660,7 +660,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 label.alignment = TextAnchor.MiddleCenter;
                 label.resizeTextForBestFit = true;
                 label.resizeTextMinSize = 11;
-                label.resizeTextMaxSize = 16;
+                label.resizeTextMaxSize = 19;
                 label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 label.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -672,6 +672,19 @@ internal static class BistroBuilderCartaReferenceV3Style
             button.name == "Apply" || button.name == "Discard";
         if (footerAction)
         {
+            // Inset illumination and lower brass edge, as on the approved
+            // raised ivory/gold cabinet buttons. Both are non-interactive.
+            if (button.transform.Find("ReferenceButtonHighlightTop") == null)
+            {
+                AddEditorFineLine(button.transform, "ReferenceButtonHighlightTop",
+                    new Vector2(0f, 1f), new Vector2(1f, 1f),
+                    new Vector2(6f, -6f), new Vector2(-6f, -5f),
+                    new Color32(255, 249, 235, 215));
+                AddEditorFineLine(button.transform, "ReferenceButtonBrassBottom",
+                    Vector2.zero, new Vector2(1f, 0f),
+                    new Vector2(6f, 5f), new Vector2(-6f, 6f),
+                    new Color32(122, 76, 29, 193));
+            }
             Image pictogram = button.transform.Find("ReferenceActionIcon")
                 ?.GetComponent<Image>();
             if (pictogram != null)
@@ -746,9 +759,13 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (value.name == "ReferenceFieldGlyph" || value.name == "ReferenceFieldIcon")
                 continue;
             if (value.name == "Label") continue;
-            value.rectTransform.offsetMin =
-                new Vector2(Mathf.Max(value.rectTransform.offsetMin.x, 44f),
-                    value.rectTransform.offsetMin.y);
+            bool compactInput = root.GetComponent<InputField>() != null &&
+                (root.name == "Price" || root.name == "PreparationTime");
+            RectTransform r = value.rectTransform;
+            r.offsetMin = new Vector2(Mathf.Max(r.offsetMin.x, 44f),
+                compactInput ? 1f : r.offsetMin.y);
+            if (compactInput)
+                r.offsetMax = new Vector2(r.offsetMax.x, -1f);
         }
     }
 
@@ -877,6 +894,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         EnsureEditorSurfaces();
         SkinImage(panel.GetComponent<Image>(), editorOuter);
         RemoveOldBevel(panel);
+        AddEditorFineRim(panel);
 
         foreach (string path in new[] { "Body/Sidebar", "Body/List", "Body/Detail", "Footer" })
         {
@@ -917,7 +935,7 @@ internal static class BistroBuilderCartaReferenceV3Style
 
             Transform iconNode = header.Find("CartaHeaderIcon");
             Image icon = iconNode?.GetComponent<Image>();
-            Sprite book = ReferenceIcon("book");
+            Sprite book = ReferenceIcon("header-book");
             if (icon != null && book != null)
             {
                 icon.sprite = book;
@@ -926,7 +944,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 Anchor(icon.rectTransform, 0, 0, 0, 1,
-                    new Vector2(13, 6), new Vector2(69, -6));
+                    new Vector2(16, 4), new Vector2(103, -4));
             }
 
             Text context = header.Find("Context")?.GetComponent<Text>();
@@ -965,7 +983,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
             if (field.placeholder is Text hint)
             {
-                SetTypeface(hint, false, 14);
+                SetTypeface(hint, false, 18);
                 hint.color = new Color32(139, 108, 78, 255);
             }
         }
@@ -1022,7 +1040,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             {
                 case "DetailHeading":
                 case "DishTitle":
-                    SetTypeface(text, true, text.name == "DishTitle" ? 27 : 26, true);
+                    SetTypeface(text, true, text.name == "DishTitle" ? 29 : 33, true);
                     break;
                 case "DishSubtitle":
                 case "EditingCaption":
@@ -1097,13 +1115,13 @@ internal static class BistroBuilderCartaReferenceV3Style
                 Image headingIcon = AddReferenceIcon(
                     "ReferenceDetailHeadingIcon", detailCanvas, "file",
                     0f, .946f, 0f, .946f,
-                    new Vector2(2f, -12f), new Vector2(24f, 12f));
+                    new Vector2(2f, -18f), new Vector2(37f, 18f));
                 if (headingIcon != null) headingIcon.color = Color.white;
             }
             Text detailHeading = detailCanvas.Find("DetailHeading")?.GetComponent<Text>();
             if (detailHeading != null)
-                Anchor(detailHeading.rectTransform, 0f, .915f, .80f, 1f,
-                    new Vector2(37f, 0f), Vector2.zero);
+                Anchor(detailHeading.rectTransform, 0f, .915f, .725f, 1f,
+                    new Vector2(47f, 0f), Vector2.zero);
             if (detailCanvas.Find("ReferenceDetailRule") == null)
                 Line(detailCanvas, "ReferenceDetailRule", 0f, 1f, .91f);
         }
@@ -1247,7 +1265,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 "BistroBuilder/UI/Typography/Recoleta-SDF");
             if (approvedFont != null) visibleTitle.font = approvedFont;
             visibleTitle.text = "CARTA";
-            visibleTitle.fontSize = 45f;
+            visibleTitle.fontSize = 53f;
             visibleTitle.fontStyle = FontStyles.Bold;
             visibleTitle.color = Ink;
             visibleTitle.alignment = TextAlignmentOptions.MidlineLeft;
@@ -1290,11 +1308,17 @@ internal static class BistroBuilderCartaReferenceV3Style
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label != null)
         {
-            SetTypeface(label, true, editor ? 18 : 12, true);
+            SetTypeface(label, true, editor ? 24 : 12, true);
             label.alignment = TextAnchor.MiddleCenter;
-            label.rectTransform.offsetMin = new Vector2(editor ? 34f : 26f, 2f);
+            label.rectTransform.offsetMin = new Vector2(editor ? 52f : 26f, 2f);
             label.rectTransform.offsetMax = new Vector2(-8f, -2f);
-            MixedTypefaceRuns(label);
+            if (editor && button.name.StartsWith("CartaTab", StringComparison.Ordinal))
+            {
+                Transform oldRuns = button.transform.Find("ReferenceTypefaceRuns");
+                if (oldRuns != null) oldRuns.gameObject.SetActive(false);
+                BistroBuilderCartaV3SdfMirror.Install(label, false, true);
+            }
+            else MixedTypefaceRuns(label);
         }
 
         Transform existing = button.transform.Find("ReferenceTabIcon");
@@ -1305,7 +1329,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 Image icon = AddReferenceIcon(
                     "ReferenceTabIcon", button.transform, "book",
                     0, .5f, 0, .5f,
-                    new Vector2(9, -13), new Vector2(35, 13));
+                    new Vector2(11, -21), new Vector2(53, 21));
                 if (icon != null) icon.color = Color.white;
             }
             else if (button.name == "CartaTabDishes")
@@ -1316,7 +1340,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 RectTransform rect = Rect(
                     "ReferenceTabIcon", button.transform,
                     new Vector2(0f, .5f), new Vector2(0f, .5f),
-                    new Vector2(8f, -14f), new Vector2(36f, 14f));
+                    new Vector2(11f, -21f), new Vector2(53f, 21f));
                 Image icon = BistroBuilderMenuEditorUiFactory.AddImage(
                     rect, Brass);
                 icon.sprite = plate;
@@ -1394,14 +1418,14 @@ internal static class BistroBuilderCartaReferenceV3Style
 
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label == null) return;
-        SetTypeface(label, true, 20, selected);
+        SetTypeface(label, true, 25, selected);
         // The shared tab helper emits a static 12px mixed-typeface overlay.
         // Category rows must instead render their live, correctly sized text.
         Transform staleRuns = button.transform.Find("ReferenceTypefaceRuns");
         if (staleRuns != null) staleRuns.gameObject.SetActive(false);
         label.enabled = true;
         label.alignment = TextAnchor.MiddleLeft;
-        label.rectTransform.offsetMin = new Vector2(57f, 1f);
+        label.rectTransform.offsetMin = new Vector2(71f, 1f);
         label.rectTransform.offsetMax = new Vector2(-7f, -1f);
 
         Transform separator = button.transform.Find("ReferenceCategorySeparator");
@@ -1425,7 +1449,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             RectTransform iconRect = Rect("ReferenceCategoryIcon",
                 button.transform,
                 new Vector2(0, .5f), new Vector2(0, .5f),
-                new Vector2(10f, -20f), new Vector2(50f, 20f));
+                new Vector2(12f, -24f), new Vector2(60f, 24f));
             Image categoryIcon = BistroBuilderMenuEditorUiFactory.AddImage(
                 iconRect, Brass);
             categoryIcon.sprite = sprite;

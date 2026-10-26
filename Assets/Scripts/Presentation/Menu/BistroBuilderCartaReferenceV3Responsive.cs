@@ -26,7 +26,11 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
 
     public void ApplyImmediate(bool force = true)
     {
-        if (rootCanvas == null) rootCanvas = GetComponentInParent<Canvas>();
+        if (rootCanvas == null)
+        {
+            Canvas nearest = GetComponentInParent<Canvas>();
+            rootCanvas = nearest != null ? nearest.rootCanvas : null;
+        }
         if (rootCanvas == null) return;
         if (approvedHeader == null)
         {
@@ -81,7 +85,11 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
                 baseSize = Mathf.Max(1, text.fontSize);
                 baseFontSizes[id] = baseSize;
             }
-            text.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * compensate));
+            // Compact form values have a 28-unit field and cannot retain
+            // the full inverse Canvas compensation at 1280x720. Otherwise
+            // uGUI Truncate culls the entire line (value bound, no pixels).
+            float textScale = AdaptiveTextScale(text, compensate);
+            text.fontSize = Mathf.Max(1, Mathf.RoundToInt(baseSize * textScale));
         }
 
         for (int i = 0; i < rects.Length; i++)
@@ -98,11 +106,65 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         }
 
         if (approvedHeader != null && approvedHeaderBaseSize > 0f)
-            approvedHeader.fontSize = approvedHeaderBaseSize * compensate;
+            approvedHeader.fontSize = approvedHeaderBaseSize *
+                Mathf.Min(compensate, 1.13f);
+
+        // The Windows player otherwise occasionally paints empty price and
+        // read-only value fields on the first frame at 1280x720, despite
+        // having correct bound strings. Rebuild geometry on scale changes,
+        // never every frame, so the corrective pass does not cost gameplay FPS.
+        if (force || Mathf.Abs(scale - lastScale) > .001f)
+        {
+            foreach (Text source in texts)
+                if (source != null) source.SetAllDirty();
+            foreach (TMP_Text crisp in GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (crisp == null) continue;
+                crisp.SetAllDirty();
+                crisp.ForceMeshUpdate(true, true);
+            }
+        }
 
         lastScale = scale;
         lastTextCount = texts.Length;
         lastIconCount = iconCount;
+    }
+
+    private static float AdaptiveTextScale(Text text, float compensate)
+    {
+        if (IsCompactDetailValue(text)) return Mathf.Min(compensate, 1.10f);
+        if (text == null) return compensate;
+        if (text.name == "DetailHeading")
+            return Mathf.Min(compensate, 1.12f);
+        if (text.name == "Label" && text.transform.parent != null)
+        {
+            string parent = text.transform.parent.name;
+            if (parent.StartsWith("Category_", System.StringComparison.Ordinal))
+                return Mathf.Min(compensate, 1.05f);
+            if (parent.StartsWith("CartaTab", System.StringComparison.Ordinal))
+                return Mathf.Min(compensate, 1.12f);
+        }
+        return compensate;
+    }
+
+    private static bool IsCompactDetailValue(Text text)
+    {
+        if (text == null) return false;
+        switch (text.name)
+        {
+            case "CategoryValue":
+            case "ModeValue":
+            case "OrderValue":
+            case "CostValue":
+            case "MarginValue":
+                return true;
+            case "Text":
+                Transform parent = text.transform.parent;
+                return parent != null && parent.GetComponent<InputField>() != null &&
+                    (parent.name == "Price" || parent.name == "PreparationTime");
+            default:
+                return false;
+        }
     }
 
     private bool NeedsApprovedHeaderReapply(float compensate)
@@ -110,7 +172,7 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         if (approvedHeader == null || approvedHeaderBaseSize <= 0f)
             return false;
         return Mathf.Abs(approvedHeader.fontSize -
-            approvedHeaderBaseSize * compensate) > .1f;
+            approvedHeaderBaseSize * Mathf.Min(compensate, 1.13f)) > .1f;
     }
 
     private bool NeedsTextReapply(Text[] texts, float compensate)
@@ -121,7 +183,8 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             if (text == null) continue;
             if (!baseFontSizes.TryGetValue(text.GetInstanceID(), out int baseSize))
                 return true;
-            int expected = Mathf.Max(1, Mathf.RoundToInt(baseSize * compensate));
+            float textScale = AdaptiveTextScale(text, compensate);
+            int expected = Mathf.Max(1, Mathf.RoundToInt(baseSize * textScale));
             if (text.fontSize != expected)
                 return true;
             if (TryGetDishRowFitBounds(text, out int min, out int max) &&

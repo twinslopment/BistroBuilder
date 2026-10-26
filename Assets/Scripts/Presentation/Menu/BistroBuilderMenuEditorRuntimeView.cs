@@ -422,12 +422,23 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         if (modalRoot.GetComponent<BistroBuilderUiStyleIsolation>() == null)
             modalRoot.gameObject.AddComponent<BistroBuilderUiStyleIsolation>();
+        // The scene HUD uses separate higher-order canvases. Merely removing
+        // the 76px inset left the Carta artwork hidden behind those bars.
+        // A nested overlay canvas makes the approved management window the
+        // topmost interactive layer without disabling or changing HUD objects.
+        Canvas cartaOverlay = modalRoot.gameObject.AddComponent<Canvas>();
+        cartaOverlay.overrideSorting = true;
+        cartaOverlay.sortingOrder = 500;
+        modalRoot.gameObject.AddComponent<GraphicRaycaster>();
         BistroBuilderMenuEditorUiFactory.AddImage(
             modalRoot,
             BistroBuilderMenuEditorUiFactory.Overlay
         );
-        modalRoot.offsetMin = new Vector2(0, 76);
-        modalRoot.offsetMax = new Vector2(0, -76);
+        // Carta V3 is a complete management screen, not a floating tool
+        // sandwiched between the play HUD bars. The approved design occupies
+        // the entire viewport; the opaque modal masks HUD behind it.
+        modalRoot.offsetMin = Vector2.zero;
+        modalRoot.offsetMax = Vector2.zero;
 
         RectTransform panel = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Panel",
@@ -466,7 +477,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(14f, -79f),
+            new Vector2(14f, -99f),
             new Vector2(-14f, -8f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
@@ -561,8 +572,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(18f, -137f),
-            new Vector2(-18f, -82f)
+            new Vector2(18f, -170f),
+            new Vector2(-18f, -102f)
         );
 
         managementTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
@@ -599,8 +610,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             Vector2.zero,
             Vector2.one,
-            new Vector2(12f, 96f),
-            new Vector2(-12f, -141f)
+            new Vector2(12f, 146f),
+            new Vector2(-12f, -174f)
         );
 
         RectTransform sidebar = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -814,7 +825,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             TextAnchor.MiddleRight,
             BistroBuilderMenuEditorUiFactory.TextSecondary
         );
-        SetRect(editing.rectTransform, 0.70f, 0.915f, 1f, 1f, 0f);
+        SetRect(editing.rectTransform, 0.735f, 0.915f, 1f, 1f, 0f);
 
         detailTitleText = BistroBuilderMenuEditorUiFactory.CreateText(
             "DishTitle", content, "Selecciona un plato", 20,
@@ -822,11 +833,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             BistroBuilderMenuEditorUiFactory.TextPrimary,
             FontStyle.Bold
         );
-        SetRect(detailTitleText.rectTransform, 0f, 0.835f, 0.72f, 0.915f, 0f);
+        SetRect(detailTitleText.rectTransform, 0f, 0.835f, 0.665f, 0.915f, 0f);
 
         detailStatusBadgeText = CreateDetailReadOnlyValue(
             content, "StatusBadge", "En carta",
-            0.76f, 0.852f, 1f, 0.902f, true
+            0.68f, 0.852f, 1f, 0.902f, true
         );
 
         detailSubtitleText = BistroBuilderMenuEditorUiFactory.CreateText(
@@ -956,6 +967,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             content, "MarginValue", "0 %",
             0.45f, 0.055f, 1f, 0.105f, false
         );
+        StretchApprovedDetailForm(content);
 
         // Preserve all existing authoring bindings without exposing the
         // obsolete editor controls in the approved compact composition.
@@ -983,6 +995,23 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         economicsText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
         availabilityText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
         recipeText = AddDetailText(hiddenBindings, string.Empty, 10, 1f, false);
+    }
+
+    private static void StretchApprovedDetailForm(RectTransform content)
+    {
+        // The reference distributes its eight fields almost to the bottom
+        // brass rim. Stretch spacing—not font glyphs or input hit targets—
+        // without moving the heading, status badge, or photo.
+        foreach (RectTransform child in content)
+        {
+            float min = child.anchorMin.y;
+            float max = child.anchorMax.y;
+            if (min < .054f || max > .526f) continue;
+            child.anchorMin = new Vector2(
+                child.anchorMin.x, .5f + (min - .5f) * 1.083f);
+            child.anchorMax = new Vector2(
+                child.anchorMax.x, .5f + (max - .5f) * 1.083f);
+        }
     }
 
     private void CreateDetailCaption(
@@ -1203,7 +1232,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             Vector2.zero,
             new Vector2(1f, 0f),
             new Vector2(12f, 8f),
-            new Vector2(-12f, 89f)
+            new Vector2(-12f, 139f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             footer,
@@ -2106,6 +2135,12 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
 
         filtered.Sort(CompareDishesForDisplay);
+
+        // Select before binding rows. The original order highlighted none
+        // on first opening even though the detail displayed the first dish.
+        if (string.IsNullOrEmpty(selectedDishId) && filtered.Count > 0)
+            selectedDishId = filtered[0].DishId;
+
         EnsureRowPool(filtered.Count);
 
         for (int index = 0; index < rowPool.Count; index++)
@@ -2129,11 +2164,6 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         }
 
         listCountText.text = filtered.Count + " de " + snapshots.Count;
-
-        if (string.IsNullOrEmpty(selectedDishId) && filtered.Count > 0)
-        {
-            selectedDishId = filtered[0].DishId;
-        }
 
         RefreshDetail();
         LayoutRebuilder.ForceRebuildLayoutImmediate(listContent);
@@ -2446,7 +2476,11 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         if (modalRoot != null)
         {
             modalRoot.gameObject.SetActive(visible);
-            if (visible) BistroBuilderManagementSafeArea.Install(modalRoot);
+            // Carta V3 intentionally replaces the full HUD, matching the
+            // approved full-screen artwork. Do not install the legacy safe
+            // area here: its LateUpdate reinstates 76/120px insets and hides
+            // the content behind the navigation/bottom chrome. All other
+            // management views retain their existing safe-area behavior.
 
             if (visible)
             {

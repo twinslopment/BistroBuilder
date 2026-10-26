@@ -63,9 +63,10 @@ public sealed class BistroBuilderCartaV3SdfMirror : MonoBehaviour
         if (font != null) display.font = font;
         display.enableWordWrapping = false;
         display.overflowMode = TextOverflowModes.Ellipsis;
+        display.extraPadding = true;
         display.raycastTarget = false;
         display.enableAutoSizing = false;
-        display.fontStyle = FontStyles.Normal;
+        display.fontStyle = useRecoleta ? FontStyles.Bold : FontStyles.Normal;
         display.margin = Vector4.zero;
         source.enabled = false;
     }

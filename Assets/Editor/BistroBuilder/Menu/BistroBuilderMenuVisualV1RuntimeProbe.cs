@@ -343,6 +343,12 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Pass(editor.IsOpen && plate != null &&
             plate.GetComponent<Outline>() != null,
             "Menu Editor has the ivory/brass outer frame.");
+        Canvas cartaCanvas = modal?.GetComponent<Canvas>();
+        Pass(modal != null && cartaCanvas != null &&
+             cartaCanvas.overrideSorting && cartaCanvas.sortingOrder >= 500 &&
+             modal.offsetMin == Vector2.zero && modal.offsetMax == Vector2.zero &&
+             modal.GetComponent<BistroBuilderManagementSafeArea>() == null,
+            "Approved Carta V3 occupies the full screen on its own overlay canvas, without HUD safe-area insets.");
         Text menuTitle = plate?.Find("Header/Title")?.GetComponent<Text>();
         Text menuContext = plate?.Find("Header/Context")?.GetComponent<Text>();
         Pass(menuTitle != null && menuTitle.text == "CARTA" &&
@@ -374,13 +380,13 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         var approvedHeaderResponsive =
             plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
         approvedHeaderResponsive?.ApplyImmediate(true);
-        Canvas approvedHeaderCanvas = plate?.GetComponentInParent<Canvas>();
+        Canvas approvedHeaderCanvas = plate?.GetComponentInParent<Canvas>()?.rootCanvas;
         float approvedHeaderCompensation = approvedHeaderCanvas == null
-            ? 1f : Mathf.Clamp(
-                1f / Mathf.Max(.5f, approvedHeaderCanvas.scaleFactor), 1f, 1.55f);
+            ? 1f : Mathf.Min(1.13f, Mathf.Clamp(
+                1f / Mathf.Max(.5f, approvedHeaderCanvas.scaleFactor), 1f, 1.55f));
         Pass(visibleSdfTitle != null && approvedHeaderResponsive != null &&
              Mathf.Abs(visibleSdfTitle.fontSize -
-                 45f * approvedHeaderCompensation) < .2f,
+                 53f * approvedHeaderCompensation) < .2f,
              "The visible Recoleta CARTA heading retains its intended physical size at both target resolutions.");
         Pass(IsParchment(plate, "Body/Sidebar") &&
              IsParchment(plate, "Body/List") &&
@@ -733,7 +739,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             "ModeCaption", "PrepCaption", "OrderCaption",
             "CostCaption", "MarginCaption"
         };
-        Canvas captionCanvas = detailLabels?.GetComponentInParent<Canvas>();
+        Canvas captionCanvas = detailLabels?.GetComponentInParent<Canvas>()?.rootCanvas;
         float captionScale = captionCanvas != null
             ? Mathf.Max(.5f, captionCanvas.scaleFactor) : 1f;
         int expectedCaptionMax = Mathf.RoundToInt(
@@ -811,7 +817,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         // when this probe is executed at 1280x720.
         var responsive = plate?.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
         if (responsive != null) responsive.ApplyImmediate(true);
-        Canvas rowCanvas = plate?.GetComponentInParent<Canvas>();
+        Canvas rowCanvas = plate?.GetComponentInParent<Canvas>()?.rootCanvas;
         float rowCompensation = rowCanvas != null
             ? Mathf.Clamp(1f / Mathf.Max(.5f, rowCanvas.scaleFactor), 1f, 1.55f)
             : 1f;
