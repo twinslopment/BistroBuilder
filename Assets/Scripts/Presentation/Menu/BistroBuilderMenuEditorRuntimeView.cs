@@ -466,7 +466,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(14f, -66f),
+            new Vector2(14f, -79f),
             new Vector2(-14f, -8f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
@@ -561,8 +561,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             new Vector2(0f, 1f),
             new Vector2(1f, 1f),
-            new Vector2(18f, -112f),
-            new Vector2(-18f, -70f)
+            new Vector2(18f, -137f),
+            new Vector2(-18f, -82f)
         );
 
         managementTabButton = BistroBuilderMenuEditorUiFactory.CreateButton(
@@ -599,8 +599,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             panel,
             Vector2.zero,
             Vector2.one,
-            new Vector2(12f, 76f),
-            new Vector2(-12f, -116f)
+            new Vector2(12f, 96f),
+            new Vector2(-12f, -141f)
         );
 
         RectTransform sidebar = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -770,7 +770,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         VerticalLayoutGroup rowLayout = listContent.GetComponent<VerticalLayoutGroup>();
         if (rowLayout != null)
         {
-            rowLayout.spacing = 1f;
+            rowLayout.spacing = 2f;
             rowLayout.padding = new RectOffset(2, 2, 2, 2);
         }
     }
@@ -780,7 +780,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         float from, float to, TextAnchor alignment)
     {
         Text label = BistroBuilderMenuEditorUiFactory.CreateText(
-            name, root, value, 11, alignment,
+            name, root, value, 13, alignment,
             BistroBuilderMenuEditorUiFactory.TextSecondary, FontStyle.Bold);
         RectTransform rect = label.rectTransform;
         rect.anchorMin = new Vector2(from, 0f);
@@ -1004,8 +1004,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         // Long captions must never print over their adjacent input fields
         // when the management Canvas is reduced to 1280x720.
         label.resizeTextForBestFit = true;
-        label.resizeTextMinSize = 9;
-        label.resizeTextMaxSize = 12;
+        label.resizeTextMinSize = 11;
+        label.resizeTextMaxSize = 16;
         label.horizontalOverflow = HorizontalWrapMode.Wrap;
         label.verticalOverflow = VerticalWrapMode.Truncate;
     }
@@ -1203,7 +1203,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             Vector2.zero,
             new Vector2(1f, 0f),
             new Vector2(12f, 8f),
-            new Vector2(-12f, 70f)
+            new Vector2(-12f, 89f)
         );
         BistroBuilderMenuEditorUiFactory.AddImage(
             footer,
@@ -1959,7 +1959,7 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
         );
         // V3 reference: airy navigation rows with discrete rules, not
         // compressed legacy 42px tiles.
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 55f);
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(button, 66f);
         categoryButtons.Add(button);
         categoryButtonIds.Add(categoryId);
     }

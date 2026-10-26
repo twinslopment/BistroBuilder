@@ -43,7 +43,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         button.targetGraphic = background;
         button.onClick.AddListener(HandleClicked);
 
-        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 62f);
+        BistroBuilderMenuEditorUiFactory.SetLayoutHeight(this, 67f);
 
         RectTransform thumbFrame = BistroBuilderMenuEditorUiFactory.CreateRect(
             "Thumbnail", transform,
@@ -149,12 +149,12 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         // Runtime theme refreshes can restore Overflow and an oversized font.
         // Reapply a single-line-safe fit after each style pass so long dish
         // names never paint over PRICE at 1280x720 or 1920x1080.
-        ConstrainCellText(nameText, 11, 17);
-        ConstrainCellText(subtitleText, 9, 13);
-        ConstrainCellText(priceText, 10, 14);
-        ConstrainCellText(modalityText, 9, 13);
-        ConstrainCellText(preparationText, 9, 13);
-        ConstrainCellText(marginText, 9, 13);
+        ConstrainCellText(nameText, 12, 19);
+        ConstrainCellText(subtitleText, 10, 15);
+        ConstrainCellText(priceText, 11, 17);
+        ConstrainCellText(modalityText, 10, 15);
+        ConstrainCellText(preparationText, 10, 15);
+        ConstrainCellText(marginText, 11, 16);
 
         nameText.text = snapshot.DisplayName;
         subtitleText.text = ShortSubtitle(snapshot);

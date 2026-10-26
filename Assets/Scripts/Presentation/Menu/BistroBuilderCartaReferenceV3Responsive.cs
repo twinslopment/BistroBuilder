@@ -69,9 +69,9 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             if (text.name.EndsWith("Caption", System.StringComparison.Ordinal) &&
                 text.resizeTextForBestFit)
             {
-                text.resizeTextMinSize = 9;
+                text.resizeTextMinSize = 11;
                 text.resizeTextMaxSize =
-                    Mathf.RoundToInt(12f * compensate);
+                    Mathf.RoundToInt(16f * compensate);
             }
             ApplyDishRowFitBounds(text, compensate);
             ApplyDishDetailFitBounds(text, compensate);
@@ -159,12 +159,12 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
 
         switch (text.name)
         {
-            case "Name": min = 11; max = 17; return true;
-            case "Subtitle": min = 9; max = 13; return true;
-            case "Price": min = 10; max = 14; return true;
+            case "Name": min = 12; max = 19; return true;
+            case "Subtitle": min = 10; max = 15; return true;
+            case "Price": min = 11; max = 17; return true;
             case "Modality":
-            case "Preparation":
-            case "Margin": min = 9; max = 13; return true;
+            case "Preparation": min = 10; max = 15; return true;
+            case "Margin": min = 11; max = 16; return true;
             default: return false;
         }
     }
@@ -189,14 +189,14 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         {
             if (text.name == "DishTitle")
             {
-                min = 13;
-                max = 22;
+                min = 15;
+                max = 26;
                 return true;
             }
             if (text.name == "DishSubtitle")
             {
-                min = 9;
-                max = 13;
+                min = 11;
+                max = 16;
                 return true;
             }
         }

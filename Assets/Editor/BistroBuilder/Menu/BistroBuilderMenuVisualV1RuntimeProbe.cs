@@ -380,7 +380,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
                 1f / Mathf.Max(.5f, approvedHeaderCanvas.scaleFactor), 1f, 1.55f);
         Pass(visibleSdfTitle != null && approvedHeaderResponsive != null &&
              Mathf.Abs(visibleSdfTitle.fontSize -
-                 33f * approvedHeaderCompensation) < .2f,
+                 45f * approvedHeaderCompensation) < .2f,
              "The visible Recoleta CARTA heading retains its intended physical size at both target resolutions.");
         Pass(IsParchment(plate, "Body/Sidebar") &&
              IsParchment(plate, "Body/List") &&
@@ -399,10 +399,10 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         LayoutElement categoryHeight = all?.GetComponent<LayoutElement>();
         Text categoryName = all?.Find("Label")?.GetComponent<Text>();
         Transform categoryOldRuns = all?.Find("ReferenceTypefaceRuns");
-        Pass(categoryHeight != null && categoryHeight.preferredHeight >= 54f &&
+        Pass(categoryHeight != null && categoryHeight.preferredHeight >= 65f &&
              categoryName != null && categoryName.enabled &&
-             categoryName.fontSize >= 16f &&
-             categoryName.rectTransform.offsetMin.x >= 45f &&
+             categoryName.fontSize >= 20f &&
+             categoryName.rectTransform.offsetMin.x >= 56f &&
              (categoryOldRuns == null || !categoryOldRuns.gameObject.activeSelf),
             "Approved categories render their visible larger text, not the stale 12px tab overlay.");
         RectTransform editorBody = plate?.Find("Body") as RectTransform;
@@ -412,7 +412,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         Pass(editorBody != null && editorFooter != null &&
              primaryFooterButton != null &&
              editorBody.offsetMin.y > editorFooter.offsetMax.y &&
-             editorFooter.offsetMax.y - editorFooter.offsetMin.y >= 60f &&
+             editorFooter.offsetMax.y - editorFooter.offsetMin.y >= 80f &&
              primaryFooterButton.anchorMax.y - primaryFooterButton.anchorMin.y >= .8f,
             "Approved bottom buttons have a full-size, separated footer rather than the compressed old toolbar.");
         bool noHeavyFrames =
@@ -491,7 +491,7 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         RectTransform approvedDishesTab =
             editorDishesTab?.GetComponent<RectTransform>();
         Pass(approvedTabs != null && approvedDishesTab != null &&
-             approvedTabs.offsetMax.y - approvedTabs.offsetMin.y >= 42f &&
+             approvedTabs.offsetMax.y - approvedTabs.offsetMin.y >= 54f &&
              approvedDishesTab.anchorMax.x - approvedDishesTab.anchorMin.x >= .16f,
              "Platos tab has the substantial height and near-equal width of the approved reference.");
         Image actualPlateIcon = editorDishesTab?.transform
@@ -566,8 +566,8 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             int previousMax = boundedTitle.resizeTextMaxSize;
             applyDetailFit.Invoke(null, new object[] { boundedTitle, 1.5f });
             detailFitScales =
-                boundedTitle.resizeTextMinSize == Mathf.RoundToInt(13f * 1.5f) &&
-                boundedTitle.resizeTextMaxSize == Mathf.RoundToInt(22f * 1.5f);
+                boundedTitle.resizeTextMinSize == Mathf.RoundToInt(15f * 1.5f) &&
+                boundedTitle.resizeTextMaxSize == Mathf.RoundToInt(26f * 1.5f);
             boundedTitle.resizeTextMinSize = previousMin;
             boundedTitle.resizeTextMaxSize = previousMax;
         }
@@ -700,14 +700,14 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         float captionScale = captionCanvas != null
             ? Mathf.Max(.5f, captionCanvas.scaleFactor) : 1f;
         int expectedCaptionMax = Mathf.RoundToInt(
-            12f * Mathf.Clamp(1f / captionScale, 1f, 1.55f));
+            16f * Mathf.Clamp(1f / captionScale, 1f, 1.55f));
         bool labelsScaleSafely = detailLabels != null && captionCanvas != null;
         foreach (string caption in responsiveCaptions)
         {
             Text label = detailLabels?.Find(caption)?.GetComponent<Text>();
             labelsScaleSafely &= label != null &&
                 label.resizeTextForBestFit &&
-                label.resizeTextMinSize == 9 &&
+                label.resizeTextMinSize == 11 &&
                 label.resizeTextMaxSize == expectedCaptionMax &&
                 label.horizontalOverflow == HorizontalWrapMode.Wrap &&
                 label.verticalOverflow == VerticalWrapMode.Truncate;
@@ -780,12 +780,12 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             : 1f;
         bool rowTypographySafe = firstDish != null && responsive != null;
         foreach (var spec in new[] {
-            (Name: "Name", Min: 11, Max: 17),
-            (Name: "Subtitle", Min: 9, Max: 13),
-            (Name: "Price", Min: 10, Max: 14),
-            (Name: "Modality", Min: 9, Max: 13),
-            (Name: "Preparation", Min: 9, Max: 13),
-            (Name: "Margin", Min: 9, Max: 13)
+            (Name: "Name", Min: 12, Max: 19),
+            (Name: "Subtitle", Min: 10, Max: 15),
+            (Name: "Price", Min: 11, Max: 17),
+            (Name: "Modality", Min: 10, Max: 15),
+            (Name: "Preparation", Min: 10, Max: 15),
+            (Name: "Margin", Min: 11, Max: 16)
         })
         {
             Text cell = firstDish?.Find(spec.Name)?.GetComponent<Text>();
@@ -818,8 +818,8 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         if (simulatedFit)
         {
             applyRowFit.Invoke(null, new object[] { previewName, 1.5f });
-            simulatedFit = previewName.resizeTextMinSize == Mathf.RoundToInt(11f * 1.5f) &&
-                previewName.resizeTextMaxSize == Mathf.RoundToInt(17f * 1.5f);
+            simulatedFit = previewName.resizeTextMinSize == Mathf.RoundToInt(12f * 1.5f) &&
+                previewName.resizeTextMaxSize == Mathf.RoundToInt(19f * 1.5f);
         }
         Pass(simulatedFit,
             "At 1280x720, dish-name best-fit limits grow with the inverse Canvas scale.");

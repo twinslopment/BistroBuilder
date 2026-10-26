@@ -615,12 +615,31 @@ internal static class BistroBuilderCartaReferenceV3Style
             label.rectTransform.offsetMin = Vector2.zero;
             label.rectTransform.offsetMax = Vector2.zero;
         }
-        if (label != null && primary) label.color = Color.white;
-        Transform mixed = button.transform.Find("ReferenceTypefaceRuns");
-        if (primary && mixed != null)
+        if (label != null)
         {
+            // Footer buttons are the primary actions in the approved
+            // screenshot; 12px inherited button labels look miniature.
+            if (button.name == "AddDish" || button.name == "RemoveDish" ||
+                button.name == "DuplicateDish" || button.name == "Apply" ||
+                button.name == "Discard")
+            {
+                SetTypeface(label, false, 18, true);
+                label.alignment = TextAnchor.MiddleCenter;
+                label.color = primary || destructive ? Color.white : Ink;
+            }
+            if (primary) label.color = Color.white;
+        }
+        Transform mixed = button.transform.Find("ReferenceTypefaceRuns");
+        if (mixed != null)
+        {
+            bool footerButton = button.name == "AddDish" ||
+                button.name == "RemoveDish" || button.name == "DuplicateDish" ||
+                button.name == "Apply" || button.name == "Discard";
             foreach (Text segment in mixed.GetComponentsInChildren<Text>(true))
-                segment.color = Color.white;
+            {
+                if (footerButton) segment.fontSize = 18;
+                if (primary || destructive) segment.color = Color.white;
+            }
         }
         // Sorting changes its label at runtime. A fixed V3 mixed-font overlay
         // would keep displaying "Categoría" even after sorting by price/name.
@@ -635,8 +654,8 @@ internal static class BistroBuilderCartaReferenceV3Style
                 label.fontStyle = FontStyle.Normal;
                 label.alignment = TextAnchor.MiddleCenter;
                 label.resizeTextForBestFit = true;
-                label.resizeTextMinSize = 9;
-                label.resizeTextMaxSize = 12;
+                label.resizeTextMinSize = 11;
+                label.resizeTextMaxSize = 16;
                 label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 label.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -862,7 +881,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 icon.preserveAspect = true;
                 icon.raycastTarget = false;
                 Anchor(icon.rectTransform, 0, 0, 0, 1,
-                    new Vector2(13, 8), new Vector2(51, -8));
+                    new Vector2(13, 6), new Vector2(69, -6));
             }
 
             Text context = header.Find("Context")?.GetComponent<Text>();
@@ -895,10 +914,10 @@ internal static class BistroBuilderCartaReferenceV3Style
         foreach (InputField field in panel.GetComponentsInChildren<InputField>(true))
         {
             SkinImage(field.GetComponent<Image>(), editorField);
-            if (field.textComponent != null) SetTypeface(field.textComponent, false, 13);
+            if (field.textComponent != null) SetTypeface(field.textComponent, false, 16);
             if (field.placeholder is Text hint)
             {
-                SetTypeface(hint, false, 12);
+                SetTypeface(hint, false, 14);
                 hint.color = new Color32(139, 108, 78, 255);
             }
         }
@@ -955,11 +974,11 @@ internal static class BistroBuilderCartaReferenceV3Style
             {
                 case "DetailHeading":
                 case "DishTitle":
-                    SetTypeface(text, true, text.name == "DishTitle" ? 18 : 17, true);
+                    SetTypeface(text, true, text.name == "DishTitle" ? 24 : 23, true);
                     break;
                 case "DishSubtitle":
                 case "EditingCaption":
-                    SetTypeface(text, false, text.name == "DishSubtitle" ? 10 : 9);
+                    SetTypeface(text, false, text.name == "DishSubtitle" ? 14 : 11);
                     text.color = Muted;
                     break;
                 case "Columns":
@@ -976,12 +995,12 @@ internal static class BistroBuilderCartaReferenceV3Style
                 case "OrderValue":
                 case "CostValue":
                 case "MarginValue":
-                    SetTypeface(text, false, 12);
+                    SetTypeface(text, false, 16);
                     break;
                 default:
                     if (text.name.EndsWith("Caption", StringComparison.Ordinal))
                     {
-                        SetTypeface(text, false, 12);
+                        SetTypeface(text, false, 16);
                         text.color = Muted;
                     }
                     break;
@@ -998,8 +1017,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (dishTitle != null)
             {
                 dishTitle.resizeTextForBestFit = true;
-                dishTitle.resizeTextMinSize = 13;
-                dishTitle.resizeTextMaxSize = 22;
+                dishTitle.resizeTextMinSize = 15;
+                dishTitle.resizeTextMaxSize = 26;
                 dishTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
                 dishTitle.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1007,8 +1026,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (dishSubtitle != null)
             {
                 dishSubtitle.resizeTextForBestFit = true;
-                dishSubtitle.resizeTextMinSize = 9;
-                dishSubtitle.resizeTextMaxSize = 13;
+                dishSubtitle.resizeTextMinSize = 11;
+                dishSubtitle.resizeTextMaxSize = 16;
                 dishSubtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
                 dishSubtitle.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1020,8 +1039,8 @@ internal static class BistroBuilderCartaReferenceV3Style
                 if (!label.name.EndsWith("Caption", StringComparison.Ordinal))
                     continue;
                 label.resizeTextForBestFit = true;
-                label.resizeTextMinSize = 9;
-                label.resizeTextMaxSize = 12;
+                label.resizeTextMinSize = 11;
+                label.resizeTextMaxSize = 16;
                 label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 label.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1151,7 +1170,8 @@ internal static class BistroBuilderCartaReferenceV3Style
                 "BistroBuilder/UI/Typography/Recoleta-SDF");
             if (approvedFont != null) visibleTitle.font = approvedFont;
             visibleTitle.text = "CARTA";
-            visibleTitle.fontSize = 33f;
+            visibleTitle.fontSize = 45f;
+            visibleTitle.fontStyle = FontStyles.Bold;
             visibleTitle.color = Ink;
             visibleTitle.alignment = TextAlignmentOptions.MidlineLeft;
             visibleTitle.enableAutoSizing = false;
@@ -1193,9 +1213,9 @@ internal static class BistroBuilderCartaReferenceV3Style
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label != null)
         {
-            SetTypeface(label, true, 12, true);
+            SetTypeface(label, true, editor ? 18 : 12, true);
             label.alignment = TextAnchor.MiddleCenter;
-            label.rectTransform.offsetMin = new Vector2(26f, 2f);
+            label.rectTransform.offsetMin = new Vector2(editor ? 34f : 26f, 2f);
             label.rectTransform.offsetMax = new Vector2(-8f, -2f);
             MixedTypefaceRuns(label);
         }
@@ -1208,7 +1228,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 Image icon = AddReferenceIcon(
                     "ReferenceTabIcon", button.transform, "book",
                     0, .5f, 0, .5f,
-                    new Vector2(10, -9), new Vector2(28, 9));
+                    new Vector2(9, -13), new Vector2(35, 13));
                 if (icon != null) icon.color = Color.white;
             }
             else if (button.name == "CartaTabDishes")
@@ -1219,7 +1239,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 RectTransform rect = Rect(
                     "ReferenceTabIcon", button.transform,
                     new Vector2(0f, .5f), new Vector2(0f, .5f),
-                    new Vector2(8f, -11f), new Vector2(30f, 11f));
+                    new Vector2(8f, -14f), new Vector2(36f, 14f));
                 Image icon = BistroBuilderMenuEditorUiFactory.AddImage(
                     rect, Brass);
                 icon.sprite = plate;
@@ -1297,14 +1317,14 @@ internal static class BistroBuilderCartaReferenceV3Style
 
         Text label = button.transform.Find("Label")?.GetComponent<Text>();
         if (label == null) return;
-        SetTypeface(label, true, 16, selected);
+        SetTypeface(label, true, 20, selected);
         // The shared tab helper emits a static 12px mixed-typeface overlay.
         // Category rows must instead render their live, correctly sized text.
         Transform staleRuns = button.transform.Find("ReferenceTypefaceRuns");
         if (staleRuns != null) staleRuns.gameObject.SetActive(false);
         label.enabled = true;
         label.alignment = TextAnchor.MiddleLeft;
-        label.rectTransform.offsetMin = new Vector2(46f, 1f);
+        label.rectTransform.offsetMin = new Vector2(57f, 1f);
         label.rectTransform.offsetMax = new Vector2(-7f, -1f);
 
         Transform separator = button.transform.Find("ReferenceCategorySeparator");
@@ -1328,7 +1348,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             RectTransform iconRect = Rect("ReferenceCategoryIcon",
                 button.transform,
                 new Vector2(0, .5f), new Vector2(0, .5f),
-                new Vector2(10f, -15f), new Vector2(40f, 15f));
+                new Vector2(10f, -20f), new Vector2(50f, 20f));
             Image categoryIcon = BistroBuilderMenuEditorUiFactory.AddImage(
                 iconRect, Brass);
             categoryIcon.sprite = sprite;
@@ -1466,20 +1486,20 @@ internal static class BistroBuilderCartaReferenceV3Style
             switch (text.name)
             {
                 case "Name":
-                    SetTypeface(text, true, 15, true);
+                    SetTypeface(text, true, 19, true);
                     break;
                 case "Subtitle":
-                    SetTypeface(text, false, 11);
+                    SetTypeface(text, false, 14);
                     text.color = Muted;
                     break;
                 case "Price":
-                    SetTypeface(text, false, 13, true);
+                    SetTypeface(text, false, 16, true);
                     break;
                 case "Available":
                     SetTypeface(text, false, 15, true);
                     break;
                 case "Margin":
-                    SetTypeface(text, false, 12, true);
+                    SetTypeface(text, false, 16, true);
                     break;
                 default:
                     SetTypeface(text, false, 12);
