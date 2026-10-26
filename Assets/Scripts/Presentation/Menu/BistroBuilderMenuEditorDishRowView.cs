@@ -77,7 +77,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         RectTransform switchRect = BistroBuilderMenuEditorUiFactory.CreateRect(
             "AvailabilityTrack", transform,
             new Vector2(.59f, .5f), new Vector2(.59f, .5f),
-            new Vector2(-20f, -10f), new Vector2(20f, 10f));
+            new Vector2(-26f, -13f), new Vector2(26f, 13f));
         availabilityTrack = BistroBuilderMenuEditorUiFactory.AddImage(
             switchRect, Color.white);
         RectTransform knobRect = BistroBuilderMenuEditorUiFactory.CreateRect(
@@ -92,7 +92,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         RectTransform clockRect = BistroBuilderMenuEditorUiFactory.CreateRect(
             "ReferencePreparationClock", transform,
             new Vector2(.759f, .5f), new Vector2(.759f, .5f),
-            new Vector2(-10f, -10f), new Vector2(10f, 10f));
+            new Vector2(-13f, -13f), new Vector2(13f, 13f));
         Image clockImage = BistroBuilderMenuEditorUiFactory.AddImage(
             clockRect, Color.white);
         BistroBuilderCartaReferenceV3Style.StyleDishPreparationClock(clockImage);

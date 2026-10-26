@@ -9,6 +9,7 @@ using UnityEngine.UI;
 internal static class BistroBuilderCartaV3Ornamentation
 {
     private static Sprite cornerSeal;
+    private static Texture2D headerLace;
     private static readonly Color32 DeepGold = new Color32(114, 68, 25, 255);
     private static readonly Color32 Gold = new Color32(183, 131, 64, 255);
     private static readonly Color32 Bright = new Color32(255, 229, 169, 255);
@@ -16,6 +17,7 @@ internal static class BistroBuilderCartaV3Ornamentation
     public static void Decorate(RectTransform panel)
     {
         if (panel == null || panel.Find("V3LuxuryRimTop") != null) return;
+        DecorateParchmentHeader(panel);
         // Layered edge catches approximate the reference's metal-inlaid ivory
         // surround without stealing real estate from the editing form.
         Stroke(panel, "V3LuxuryRimTop", 0f, 1f, 1f, 1f,
@@ -104,6 +106,58 @@ internal static class BistroBuilderCartaV3Ornamentation
                 action.targetGraphic = basePlate;
             }
         }
+    }
+
+    private static void DecorateParchmentHeader(RectTransform panel)
+    {
+        Transform header = panel.Find("Header");
+        if (header == null || header.Find("V3ParchmentLace") != null) return;
+        RectTransform rect = BistroBuilderMenuEditorUiFactory.CreateRect(
+            "V3ParchmentLace", header, Vector2.zero, Vector2.one,
+            new Vector2(0f, 0f), new Vector2(0f, 0f));
+        RawImage lace = rect.gameObject.AddComponent<RawImage>();
+        lace.texture = GetParchmentLace();
+        lace.color = Color.white;
+        lace.raycastTarget = false;
+        lace.uvRect = new Rect(0f, 0f, 6f, 1f);
+        rect.SetAsFirstSibling(); // Under every live header button and title.
+    }
+
+    private static Texture2D GetParchmentLace()
+    {
+        if (headerLace != null) return headerLace;
+        const int w = 256, h = 128;
+        Texture2D tex = new Texture2D(w, h, TextureFormat.RGBA32, false)
+        {
+            name = "Carta V3 Procedural Parchment Watermark",
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Repeat
+        };
+        for (int y = 0; y < h; ++y)
+        for (int x = 0; x < w; ++x)
+        {
+            Vector2 pixel = new Vector2(x + .5f, y + .5f);
+            float grain = Mathf.PerlinNoise((x + 37f) * .085f,
+                (y + 73f) * .085f) - .42f;
+            float pattern = 0f;
+            for (int motif = 0; motif < 2; ++motif)
+            {
+                Vector2 center = motif == 0
+                    ? new Vector2(52f, 61f) : new Vector2(183f, 81f);
+                float radius = Vector2.Distance(pixel, center);
+                float outer = Mathf.Abs(radius - 43f);
+                float inner = Mathf.Abs(radius - 25f);
+                pattern += .9f * Mathf.Clamp01(1.1f - outer) +
+                    .4f * Mathf.Clamp01(1f - inner);
+            }
+            // Under 7% opacity: a subtle engraved relief, not a UI bitmap.
+            float opacity = Mathf.Clamp01(grain * .085f + pattern * .045f);
+            Color ink = new Color(.68f, .48f, .29f, opacity);
+            tex.SetPixel(x, y, ink);
+        }
+        tex.Apply(false, true);
+        headerLace = tex;
+        return tex;
     }
 
     private static void CrossStroke(Transform parent, string name, float angle)

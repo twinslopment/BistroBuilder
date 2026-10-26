@@ -542,6 +542,11 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(luxuryFrame,
             "Luxury brass/ivory inset and four procedural corner medallions remain visible and click-through.");
+        RawImage parchment = plate?.Find("Header/V3ParchmentLace")
+            ?.GetComponent<RawImage>();
+        Pass(parchment?.texture != null && !parchment.raycastTarget &&
+            parchment.transform.GetSiblingIndex() == 0,
+            "Procedural parchment watermark is beneath the functioning Carta header, never a screenshot overlay.");
         bool actionAffordances = plate?.Find("Header/Close/V3CloseStrokeA")
                 ?.GetComponent<Image>()?.raycastTarget == false &&
             plate?.Find("Header/Close/V3CloseStrokeB")
@@ -925,6 +930,13 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(crispCells,
             "Six bound dish columns render with dynamic SDF glyphs while preserving their real data bindings.");
+        RectTransform actualSwitch = firstDish?.Find("AvailabilityTrack") as RectTransform;
+        Image actualClock = firstDish?.Find("ReferencePreparationClock")
+            ?.GetComponent<Image>();
+        Pass(actualSwitch != null && actualSwitch.rect.width >= 50f &&
+            actualClock?.sprite != null &&
+            actualClock.rectTransform.rect.width >= 25f,
+            "Dish availability and preparation icon sizes are legible at native reference scale.");
         bool numericalColumnsCentered = firstDish != null;
         foreach (string name in new[] { "Price", "Modality", "Preparation", "Margin" })
             numericalColumnsCentered &=
