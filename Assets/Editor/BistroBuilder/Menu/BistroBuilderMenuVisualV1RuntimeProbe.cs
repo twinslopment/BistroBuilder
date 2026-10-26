@@ -458,6 +458,28 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(sharpDetail,
             "Detail heading, dish identity, badge and eight form captions render through official sharp SDF typography.");
+        Transform approvedBadge = plate?.Find(
+            "Body/Detail/DetailCanvas/StatusBadgePlate");
+        var greenPlate = approvedBadge?.GetComponent<Image>();
+        var greenMarker = approvedBadge?.Find("V3GreenStatusDot")?.GetComponent<Image>();
+        var greenArrow = approvedBadge?.Find("V3GreenStatusArrow")?.GetComponent<Image>();
+        var imagePlaceholder = plate?.Find(
+            "Body/Detail/DetailCanvas/DishPhotoFrame/MissingDishPhotoHint/V3PhotoPlaceholderIcon")
+            ?.GetComponent<Image>();
+        Debug.Log("[CARTA QA] Detail premium assets: status=" +
+            (greenPlate != null) + ", statusSprite=" +
+            (greenPlate?.sprite != null) + ", statusType=" +
+            (greenPlate?.type.ToString() ?? "null") + ", marker=" +
+            (greenMarker?.sprite != null) + ", arrow=" +
+            (greenArrow?.sprite != null) + ", placeholder=" +
+            (imagePlaceholder?.sprite != null));
+        Pass(greenPlate?.sprite != null &&
+            greenPlate.type == Image.Type.Sliced &&
+            greenMarker?.sprite != null && greenArrow?.sprite != null &&
+            imagePlaceholder?.sprite != null &&
+            !greenMarker.raycastTarget && !greenArrow.raycastTarget &&
+            !imagePlaceholder.raycastTarget,
+            "Status badge and missing-photo marker use procedural art with no fake image or click interceptions.");
         bool noHeavyFrames =
             plate?.GetComponent<Outline>()?.enabled == false &&
             plate.Find("Body/Sidebar")?.GetComponent<Outline>()?.enabled == false &&

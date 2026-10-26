@@ -32,34 +32,34 @@ internal static class BistroBuilderCartaReferenceV3Style
     {
         EnsureSurfaces();
         if (editorOuter != null) return;
-        editorOuter = Surface(new Color32(254, 245, 232, 255),
+        editorOuter = PremiumSurface(new Color32(254, 245, 232, 255),
             new Color32(245, 232, 213, 255),
             new Color32(133, 80, 28, 255), 13, 4);
-        editorCard = Surface(new Color32(255, 248, 238, 255),
+        editorCard = PremiumSurface(new Color32(255, 248, 238, 255),
             new Color32(247, 236, 219, 255),
             new Color32(193, 155, 106, 255), 10, 2);
-        editorButton = Surface(new Color32(255, 244, 226, 255),
+        editorButton = PremiumSurface(new Color32(255, 244, 226, 255),
             new Color32(220, 183, 128, 255),
             new Color32(144, 89, 33, 255), 8, 3);
-        editorSelected = Surface(new Color32(252, 225, 177, 255),
+        editorSelected = PremiumSurface(new Color32(252, 225, 177, 255),
             new Color32(235, 184, 100, 255),
             new Color32(194, 139, 63, 255), 8, 1);
-        editorRow = Surface(new Color32(249, 242, 230, 255),
+        editorRow = PremiumSurface(new Color32(249, 242, 230, 255),
             new Color32(246, 237, 224, 255),
             new Color32(223, 202, 173, 255), 4, 1);
-        editorField = Surface(new Color32(255, 251, 244, 255),
+        editorField = PremiumSurface(new Color32(255, 251, 244, 255),
             new Color32(248, 238, 225, 255),
             new Color32(195, 160, 117, 255), 6, 2);
-        editorDanger = Surface(new Color32(193, 55, 45, 255),
+        editorDanger = PremiumSurface(new Color32(193, 55, 45, 255),
             new Color32(132, 24, 21, 255),
             new Color32(101, 25, 20, 255), 8, 3);
-        editorGold = Surface(new Color32(205, 146, 54, 255),
+        editorGold = PremiumSurface(new Color32(205, 146, 54, 255),
             new Color32(133, 77, 17, 255),
             new Color32(99, 56, 13, 255), 8, 3);
-        editorSwitchOn = Surface(new Color32(220, 161, 45, 255),
+        editorSwitchOn = PremiumSurface(new Color32(220, 161, 45, 255),
             new Color32(204, 139, 27, 255),
             new Color32(173, 115, 22, 255), 12, 1);
-        editorSwitchOff = Surface(new Color32(222, 211, 195, 255),
+        editorSwitchOff = PremiumSurface(new Color32(222, 211, 195, 255),
             new Color32(219, 207, 190, 255),
             new Color32(199, 181, 159, 255), 12, 1);
         editorSwitchKnob = Dot(new Color32(255, 255, 255, 255),
@@ -179,6 +179,80 @@ internal static class BistroBuilderCartaReferenceV3Style
         tex.Apply(false, true);
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(.5f,.5f),
             100f, 0, SpriteMeshType.FullRect, new Vector4(13,13,13,13));
+    }
+
+    /// <summary>
+    /// 128px high-resolution procedural 9-slice, preserving the approved
+    /// ivory/brass material at both target PC resolutions. Never use a
+    /// screenshot texture for the UI: real Text/Button/InputField remain live.
+    /// </summary>
+    private static Sprite PremiumSurface(Color32 top, Color32 bottom,
+        Color32 stroke, int radius, int rim)
+    {
+        const int size = 128;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+            name = "Carta V3 premium ivory / brass 9-slice"
+        };
+        // A stable noise function prevents visible tiling or frame-to-frame
+        // shimmering; amplitude stays below 2/255 for legible text.
+        float r = Mathf.Clamp(radius + 3f, 5f, 18f);
+        for (int y = 0; y < size; ++y)
+        for (int x = 0; x < size; ++x)
+        {
+            float px = x + .5f, py = y + .5f;
+            float nearestX = Mathf.Clamp(px, r, size - r);
+            float nearestY = Mathf.Clamp(py, r, size - r);
+            float corner = Vector2.Distance(new Vector2(px, py),
+                new Vector2(nearestX, nearestY));
+            float cornerEdge = r - corner;
+            float edge = Mathf.Min(Mathf.Min(px, size - px),
+                Mathf.Min(py, size - py));
+            // Only the corner quadrants use the radial signed distance.
+            float depth = Mathf.Min(edge, cornerEdge);
+            float coverage = Mathf.Clamp01(depth + .5f);
+            if (coverage <= 0f)
+            {
+                tex.SetPixel(x, y, Color.clear);
+                continue;
+            }
+
+            float v = y / (float)(size - 1);
+            Color fill = Lerp(bottom, top, v);
+            float grain = Mathf.Sin((x * 17.13f + y * 53.67f) * .43f) *
+                Mathf.Sin((x * 7.73f - y * 9.19f) * .32f) / 255f;
+            fill.r = Mathf.Clamp01(fill.r + grain);
+            fill.g = Mathf.Clamp01(fill.g + grain * .9f);
+            fill.b = Mathf.Clamp01(fill.b + grain * .75f);
+            // Small list rows and fields use a restrained hairline, not
+            // the heavy brass band reserved for footer buttons and the rim.
+            float ornament = rim >= 3 ? 1f : rim == 2 ? .43f : .16f;
+            if (depth < 1.45f)
+                fill = Color.Lerp(fill, stroke, rim >= 3 ? .87f : .53f);
+            else if (depth < 3.0f)
+                fill = Color.Lerp(fill, stroke, .58f * ornament);
+            else if (depth < 4.6f)
+                fill = Color.Lerp(fill, new Color32(255, 248, 232, 255),
+                    .59f * ornament);
+            else if (depth < 6.3f)
+                fill = Color.Lerp(fill, new Color32(129, 80, 31, 255),
+                    .08f * ornament);
+            else if (depth < 8f)
+                fill = Color.Lerp(fill, new Color32(255, 250, 235, 255),
+                    .19f * ornament);
+            // Broad recessed relief behind the outermost gilded edge.
+            float relief = Mathf.Clamp01((12f - depth) / 12f);
+            if (depth >= 8f)
+                fill = Color.Lerp(fill, stroke, relief * .035f);
+            fill.a = coverage;
+            tex.SetPixel(x, y, fill);
+        }
+        tex.Apply(false, true);
+        return Sprite.Create(tex, new Rect(0, 0, size, size),
+            new Vector2(.5f, .5f), 100f, 0,
+            SpriteMeshType.FullRect, new Vector4(20, 20, 20, 20));
     }
 
     private static void EnsureSurfaces()
@@ -715,7 +789,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 label.rectTransform.offsetMax = new Vector2(-8f, -1f);
                 Transform oldRuns = button.transform.Find("ReferenceTypefaceRuns");
                 if (oldRuns != null) oldRuns.gameObject.SetActive(false);
-                BistroBuilderCartaV3SdfMirror.Install(label, false, true);
+                BistroBuilderCartaV3SdfMirror.Install(label, true);
             }
         }
         RemoveOldBevel(button.transform);
@@ -1281,6 +1355,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         // Ornamental brass inlay is geometry-driven Unity UI, not a flat
         // image pasted over the functioning Carta screen.
         BistroBuilderCartaV3Ornamentation.Decorate(panel);
+        BistroBuilderCartaV3DetailPolish.Apply(panel);
 
         BistroBuilderCartaReferenceV3Responsive responsive =
             panel.GetComponent<BistroBuilderCartaReferenceV3Responsive>();
@@ -1317,9 +1392,11 @@ internal static class BistroBuilderCartaReferenceV3Style
             label.rectTransform.offsetMax = new Vector2(-8f, -2f);
             if (editor && button.name.StartsWith("CartaTab", StringComparison.Ordinal))
             {
+                label.resizeTextForBestFit = false;
+                label.fontSize = 29;
                 Transform oldRuns = button.transform.Find("ReferenceTypefaceRuns");
                 if (oldRuns != null) oldRuns.gameObject.SetActive(false);
-                BistroBuilderCartaV3SdfMirror.Install(label, false, true);
+                BistroBuilderCartaV3SdfMirror.Install(label, true);
             }
             else MixedTypefaceRuns(label);
         }
@@ -1500,14 +1577,24 @@ internal static class BistroBuilderCartaReferenceV3Style
     {
         if (status == null) return;
         EnsureEditorSurfaces();
+        bool decorated = status.transform.parent.Find("V3GreenStatusDot") != null;
         Image plate = status.transform.parent.GetComponent<Image>();
         if (plate != null)
         {
-            plate.sprite = null;
-            plate.type = Image.Type.Simple;
-            plate.color = included
-                ? new Color32(223, 237, 212, 255)
-                : new Color32(234, 225, 211, 255);
+            if (decorated && included)
+            {
+                plate.sprite = BistroBuilderCartaV3DetailPolish.ActiveStatusPill;
+                plate.type = Image.Type.Sliced;
+                plate.color = Color.white;
+            }
+            else
+            {
+                plate.sprite = null;
+                plate.type = Image.Type.Simple;
+                plate.color = included
+                    ? new Color32(223, 237, 212, 255)
+                    : new Color32(234, 225, 211, 255);
+            }
             plate.raycastTarget = false;
         }
         status.color = included ? new Color32(45, 103, 40, 255) : Muted;
@@ -1518,7 +1605,11 @@ internal static class BistroBuilderCartaReferenceV3Style
         status.horizontalOverflow = HorizontalWrapMode.Wrap;
         status.verticalOverflow = VerticalWrapMode.Truncate;
         status.rectTransform.offsetMin = new Vector2(28f, 0f);
-        status.rectTransform.offsetMax = new Vector2(-3f, 0f);
+        status.rectTransform.offsetMax = new Vector2(decorated ? -26f : -3f, 0f);
+        Transform premiumDot = status.transform.parent.Find("V3GreenStatusDot");
+        if (premiumDot != null) premiumDot.gameObject.SetActive(included);
+        Transform premiumArrow = status.transform.parent.Find("V3GreenStatusArrow");
+        if (premiumArrow != null) premiumArrow.gameObject.SetActive(included);
         Transform dot = status.transform.parent.Find("StatusDot");
         if (dot == null)
         {
@@ -1534,6 +1625,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         {
             dotImage.sprite = included ? dotGreen : dotGrey;
             dotImage.color = Color.white;
+            dotImage.enabled = !decorated;
         }
     }
 

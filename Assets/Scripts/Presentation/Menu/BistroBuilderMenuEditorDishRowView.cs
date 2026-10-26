@@ -177,7 +177,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
 
         // Preserve native, bound dish data while rendering each cell through
         // crisp SDF glyphs. This avoids blurring at non-integer Canvas scales.
-        BistroBuilderCartaV3SdfMirror.Install(nameText, false, true);
+        BistroBuilderCartaV3SdfMirror.Install(nameText, true);
         BistroBuilderCartaV3SdfMirror.Install(subtitleText, false);
         BistroBuilderCartaV3SdfMirror.Install(priceText, false, true);
         BistroBuilderCartaV3SdfMirror.Install(modalityText, false);
