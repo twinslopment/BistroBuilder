@@ -69,9 +69,9 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
             if (text.name.EndsWith("Caption", System.StringComparison.Ordinal) &&
                 text.resizeTextForBestFit)
             {
-                text.resizeTextMinSize = 11;
+                text.resizeTextMinSize = 13;
                 text.resizeTextMaxSize =
-                    Mathf.RoundToInt(16f * compensate);
+                    Mathf.RoundToInt(19f * compensate);
             }
             ApplyDishRowFitBounds(text, compensate);
             ApplyDishDetailFitBounds(text, compensate);
@@ -189,21 +189,21 @@ public sealed class BistroBuilderCartaReferenceV3Responsive : MonoBehaviour
         {
             if (text.name == "DishTitle")
             {
-                min = 15;
-                max = 26;
+                min = 17;
+                max = 29;
                 return true;
             }
             if (text.name == "DishSubtitle")
             {
-                min = 11;
-                max = 16;
+                min = 13;
+                max = 19;
                 return true;
             }
         }
         if (parentName == "StatusBadgePlate" && text.name == "StatusBadge")
         {
-            min = 9;
-            max = 12;
+            min = 12;
+            max = 18;
             return true;
         }
         return false;

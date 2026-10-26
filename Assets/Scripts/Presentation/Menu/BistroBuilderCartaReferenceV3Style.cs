@@ -521,6 +521,7 @@ internal static class BistroBuilderCartaReferenceV3Style
             case "RemoveDish":return "trash";
             case "DuplicateDish":return "copy";
             case "Apply":return "save";
+            case "Discard":return "undo";
             case "EditDishPhoto":return "edit";
             default:return null;
         }
@@ -623,7 +624,11 @@ internal static class BistroBuilderCartaReferenceV3Style
                 button.name == "DuplicateDish" || button.name == "Apply" ||
                 button.name == "Discard")
             {
-                SetTypeface(label, false, 18, true);
+                SetTypeface(label, false, 21, true);
+                label.resizeTextForBestFit = true;
+                label.resizeTextMinSize = 14;
+                label.resizeTextMaxSize = 21;
+                label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 label.alignment = TextAnchor.MiddleCenter;
                 label.color = primary || destructive ? Color.white : Ink;
             }
@@ -660,6 +665,46 @@ internal static class BistroBuilderCartaReferenceV3Style
                 label.verticalOverflow = VerticalWrapMode.Truncate;
             }
         }
+        // Full-size, correctly colored pictograms; never rely on an ASCII
+        // fallback masquerading as the icon. Keep the clickable Button intact.
+        bool footerAction = button.name == "AddDish" ||
+            button.name == "RemoveDish" || button.name == "DuplicateDish" ||
+            button.name == "Apply" || button.name == "Discard";
+        if (footerAction)
+        {
+            Image pictogram = button.transform.Find("ReferenceActionIcon")
+                ?.GetComponent<Image>();
+            if (pictogram != null)
+            {
+                string whiteVariant = button.name == "AddDish" ? "plus-white" :
+                    button.name == "RemoveDish" ? "trash-ui-white" :
+                    button.name == "Apply" ? "save-white" : null;
+                if (whiteVariant != null)
+                {
+                    Sprite whiteSprite = ReferenceIcon(whiteVariant);
+                    if (whiteSprite != null) pictogram.sprite = whiteSprite;
+                }
+                pictogram.enabled = true;
+                // Native source PNGs already include brown pigment: tinting
+                // them white would NOT whiten the RGB values. Use truly white
+                // assets for gold/red actions and a brown tint only for undo.
+                pictogram.color = button.name == "Discard" ? Ink : Color.white;
+                pictogram.type = Image.Type.Simple;
+                pictogram.preserveAspect = true;
+                Anchor(pictogram.rectTransform, 0f, .5f, 0f, .5f,
+                    new Vector2(18f, -18f), new Vector2(54f, 18f));
+            }
+            if (label != null)
+            {
+                label.enabled = true;
+                label.alignment = TextAnchor.MiddleCenter;
+                label.rectTransform.offsetMin = new Vector2(58f, 1f);
+                label.rectTransform.offsetMax = new Vector2(-8f, -1f);
+                Transform oldRuns = button.transform.Find("ReferenceTypefaceRuns");
+                if (oldRuns != null) oldRuns.gameObject.SetActive(false);
+                BistroBuilderCartaV3SdfMirror.Install(label, false, true);
+            }
+        }
         RemoveOldBevel(button.transform);
     }
 
@@ -670,7 +715,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         if (root == null || root.Find("ReferenceFieldIconPlate") != null) return;
         RectTransform plate = Rect("ReferenceFieldIconPlate", root,
             new Vector2(0f, .5f), new Vector2(0f, .5f),
-            new Vector2(2f, -12f), new Vector2(28f, 12f));
+            new Vector2(2f, -16f), new Vector2(37f, 16f));
         Image plateImage = BistroBuilderMenuEditorUiFactory.AddImage(plate,
             new Color32(232, 215, 190, 255));
         plateImage.raycastTarget = false;
@@ -678,7 +723,7 @@ internal static class BistroBuilderCartaReferenceV3Style
         {
             Image icon = AddReferenceIcon("ReferenceFieldIcon", plate, iconId,
                 0f, 0f, 1f, 1f,
-                new Vector2(4f, 4f), new Vector2(-4f, -4f));
+                new Vector2(6f, 5f), new Vector2(-6f, -5f));
             if (icon != null)
             {
                 icon.enabled = true;
@@ -702,7 +747,7 @@ internal static class BistroBuilderCartaReferenceV3Style
                 continue;
             if (value.name == "Label") continue;
             value.rectTransform.offsetMin =
-                new Vector2(Mathf.Max(value.rectTransform.offsetMin.x, 34f),
+                new Vector2(Mathf.Max(value.rectTransform.offsetMin.x, 44f),
                     value.rectTransform.offsetMin.y);
         }
     }
@@ -735,21 +780,21 @@ internal static class BistroBuilderCartaReferenceV3Style
 
         RectTransform track = Rect("ReferenceAvailabilityTrack",
             toggle.transform, new Vector2(0f, .5f), new Vector2(0f, .5f),
-            new Vector2(2f, -10f), new Vector2(42f, 10f));
+            new Vector2(2f, -14f), new Vector2(57f, 14f));
         Image trackImage = BistroBuilderMenuEditorUiFactory.AddImage(track, Color.white);
         trackImage.raycastTarget = false;
         RectTransform knob = Rect("ReferenceAvailabilityKnob", track,
             new Vector2(.5f, .5f), new Vector2(.5f, .5f),
-            new Vector2(-8f, -8f), new Vector2(8f, 8f));
+            new Vector2(-11f, -11f), new Vector2(11f, 11f));
         Image knobImage = BistroBuilderMenuEditorUiFactory.AddImage(knob, Color.white);
         knobImage.raycastTarget = false;
 
         Text label = toggle.transform.Find("Label")?.GetComponent<Text>();
         if (label != null)
         {
-            SetTypeface(label, false, 12);
-            label.color = Muted;
-            label.rectTransform.offsetMin = new Vector2(52f, 0f);
+            SetTypeface(label, false, 16);
+            label.color = Ink;
+            label.rectTransform.offsetMin = new Vector2(66f, 0f);
         }
         StyleAvailabilitySwitch(trackImage, knobImage, toggle.isOn);
         toggle.onValueChanged.AddListener(value =>
@@ -887,9 +932,9 @@ internal static class BistroBuilderCartaReferenceV3Style
             Text context = header.Find("Context")?.GetComponent<Text>();
             if (context != null)
             {
-                SetTypeface(context, false, 11);
+                SetTypeface(context, false, 15);
                 context.alignment = TextAnchor.MiddleRight;
-                context.color = Muted;
+                context.color = Ink;
             }
 
             Transform close = header.Find("Close");
@@ -914,7 +959,10 @@ internal static class BistroBuilderCartaReferenceV3Style
         foreach (InputField field in panel.GetComponentsInChildren<InputField>(true))
         {
             SkinImage(field.GetComponent<Image>(), editorField);
-            if (field.textComponent != null) SetTypeface(field.textComponent, false, 16);
+            if (field.textComponent != null) {
+                SetTypeface(field.textComponent, false, 18);
+                field.textComponent.color = Ink;
+            }
             if (field.placeholder is Text hint)
             {
                 SetTypeface(hint, false, 14);
@@ -974,11 +1022,11 @@ internal static class BistroBuilderCartaReferenceV3Style
             {
                 case "DetailHeading":
                 case "DishTitle":
-                    SetTypeface(text, true, text.name == "DishTitle" ? 24 : 23, true);
+                    SetTypeface(text, true, text.name == "DishTitle" ? 27 : 26, true);
                     break;
                 case "DishSubtitle":
                 case "EditingCaption":
-                    SetTypeface(text, false, text.name == "DishSubtitle" ? 14 : 11);
+                    SetTypeface(text, false, text.name == "DishSubtitle" ? 17 : 15);
                     text.color = Muted;
                     break;
                 case "Columns":
@@ -995,13 +1043,13 @@ internal static class BistroBuilderCartaReferenceV3Style
                 case "OrderValue":
                 case "CostValue":
                 case "MarginValue":
-                    SetTypeface(text, false, 16);
+                    SetTypeface(text, false, 18);
                     break;
                 default:
                     if (text.name.EndsWith("Caption", StringComparison.Ordinal))
                     {
-                        SetTypeface(text, false, 16);
-                        text.color = Muted;
+                        SetTypeface(text, false, 18);
+                        text.color = Ink;
                     }
                     break;
             }
@@ -1017,8 +1065,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (dishTitle != null)
             {
                 dishTitle.resizeTextForBestFit = true;
-                dishTitle.resizeTextMinSize = 15;
-                dishTitle.resizeTextMaxSize = 26;
+                dishTitle.resizeTextMinSize = 17;
+                dishTitle.resizeTextMaxSize = 29;
                 dishTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
                 dishTitle.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1026,8 +1074,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             if (dishSubtitle != null)
             {
                 dishSubtitle.resizeTextForBestFit = true;
-                dishSubtitle.resizeTextMinSize = 11;
-                dishSubtitle.resizeTextMaxSize = 16;
+                dishSubtitle.resizeTextMinSize = 13;
+                dishSubtitle.resizeTextMaxSize = 19;
                 dishSubtitle.horizontalOverflow = HorizontalWrapMode.Wrap;
                 dishSubtitle.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1039,8 +1087,8 @@ internal static class BistroBuilderCartaReferenceV3Style
                 if (!label.name.EndsWith("Caption", StringComparison.Ordinal))
                     continue;
                 label.resizeTextForBestFit = true;
-                label.resizeTextMinSize = 11;
-                label.resizeTextMaxSize = 16;
+                label.resizeTextMinSize = 13;
+                label.resizeTextMaxSize = 19;
                 label.horizontalOverflow = HorizontalWrapMode.Wrap;
                 label.verticalOverflow = VerticalWrapMode.Truncate;
             }
@@ -1054,10 +1102,39 @@ internal static class BistroBuilderCartaReferenceV3Style
             }
             Text detailHeading = detailCanvas.Find("DetailHeading")?.GetComponent<Text>();
             if (detailHeading != null)
-                Anchor(detailHeading.rectTransform, 0f, .915f, .75f, 1f,
-                    new Vector2(30f, 0f), Vector2.zero);
+                Anchor(detailHeading.rectTransform, 0f, .915f, .80f, 1f,
+                    new Vector2(37f, 0f), Vector2.zero);
             if (detailCanvas.Find("ReferenceDetailRule") == null)
                 Line(detailCanvas, "ReferenceDetailRule", 0f, 1f, .91f);
+        }
+        // Native Text is retained for functional bindings and probes, while
+        // official SDF glyphs render text at native resolution, not scaled
+        // low-resolution font atlases. No flattened image of the UI is used.
+        if (detailCanvas != null)
+        {
+            foreach (Text t in detailCanvas.GetComponentsInChildren<Text>(true))
+            {
+                bool editableDetail = t.name == "DetailHeading" ||
+                    t.name == "DishTitle" || t.name == "DishSubtitle" ||
+                    t.name == "EditingCaption" ||
+                    t.name == "StatusBadge" ||
+                    t.name == "CategoryValue" || t.name == "ModeValue" ||
+                    t.name == "OrderValue" || t.name == "CostValue" ||
+                    t.name == "MarginValue" ||
+                    t.name.EndsWith("Caption", StringComparison.Ordinal);
+                if (!editableDetail) continue;
+                bool title = t.name == "DetailHeading" || t.name == "DishTitle";
+                BistroBuilderCartaV3SdfMirror.Install(t, title);
+            }
+        }
+        Text missingHint = panel.Find(
+            "Body/Detail/DetailCanvas/DishPhotoFrame/MissingDishPhotoHint")
+            ?.GetComponent<Text>();
+        if (missingHint != null)
+        {
+            missingHint.color = Muted;
+            missingHint.fontSize = 17;
+            BistroBuilderCartaV3SdfMirror.Install(missingHint, false);
         }
         Button photoEdit = panel.Find(
             "Body/Detail/DetailCanvas/DishPhotoFrame/EditDishPhoto"
@@ -1409,18 +1486,18 @@ internal static class BistroBuilderCartaReferenceV3Style
         status.color = included ? new Color32(45, 103, 40, 255) : Muted;
         status.alignment = TextAnchor.MiddleCenter;
         status.resizeTextForBestFit = true;
-        status.resizeTextMinSize = 9;
-        status.resizeTextMaxSize = 12;
+        status.resizeTextMinSize = 12;
+        status.resizeTextMaxSize = 18;
         status.horizontalOverflow = HorizontalWrapMode.Wrap;
         status.verticalOverflow = VerticalWrapMode.Truncate;
-        status.rectTransform.offsetMin = new Vector2(18f, 0f);
+        status.rectTransform.offsetMin = new Vector2(28f, 0f);
         status.rectTransform.offsetMax = new Vector2(-3f, 0f);
         Transform dot = status.transform.parent.Find("StatusDot");
         if (dot == null)
         {
             RectTransform marker = Rect("StatusDot", status.transform.parent,
                 new Vector2(0f, .5f), new Vector2(0f, .5f),
-                new Vector2(9f, -5f), new Vector2(19f, 5f));
+                new Vector2(11f, -7f), new Vector2(25f, 7f));
             Image icon = BistroBuilderMenuEditorUiFactory.AddImage(marker, Color.white);
             icon.raycastTarget = false;
             dot = marker;
@@ -1455,8 +1532,8 @@ internal static class BistroBuilderCartaReferenceV3Style
             RectTransform rect = knob.rectTransform;
             rect.anchorMin = new Vector2(available ? 1f : 0f, .5f);
             rect.anchorMax = rect.anchorMin;
-            rect.sizeDelta = new Vector2(16f, 16f);
-            rect.anchoredPosition = new Vector2(available ? -10f : 10f, 0f);
+            rect.sizeDelta = new Vector2(21f, 21f);
+            rect.anchoredPosition = new Vector2(available ? -14f : 14f, 0f);
         }
     }
 

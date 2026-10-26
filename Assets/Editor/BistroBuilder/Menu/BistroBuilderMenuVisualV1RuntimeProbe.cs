@@ -415,6 +415,43 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
              editorFooter.offsetMax.y - editorFooter.offsetMin.y >= 80f &&
              primaryFooterButton.anchorMax.y - primaryFooterButton.anchorMin.y >= .8f,
             "Approved bottom buttons have a full-size, separated footer rather than the compressed old toolbar.");
+        bool sharpFooter = true;
+        foreach (string action in new[] {
+            "AddDish", "RemoveDish", "DuplicateDish", "Apply", "Discard"
+        })
+        {
+            Transform buttonNode = plate?.Find("Footer/" + action);
+            Image glyph = buttonNode?.Find("ReferenceActionIcon")?.GetComponent<Image>();
+            var readableLabel = buttonNode?.Find("Label/CartaV3SharpText")
+                ?.GetComponent<TMPro.TextMeshProUGUI>();
+            sharpFooter &= buttonNode?.GetComponent<Button>() != null &&
+                glyph?.sprite != null && glyph.enabled &&
+                glyph.preserveAspect && !glyph.raycastTarget &&
+                glyph.rectTransform.rect.width >= 32f &&
+                readableLabel != null && readableLabel.enabled &&
+                readableLabel.font != null && !readableLabel.raycastTarget;
+        }
+        Pass(sharpFooter,
+            "All five primary actions use legible SDF labels and full-size icon sprites, including the undo arrow on Discard.");
+        string[] sharpDetailFields = {
+            "DetailHeading", "DishTitle", "DishSubtitle", "EditingCaption",
+            "PriceCaption", "CategoryCaption", "AvailableCaption",
+            "ModeCaption", "PrepCaption", "OrderCaption", "CostCaption",
+            "MarginCaption", "CategoryValuePlate/CategoryValue",
+            "ModeValuePlate/ModeValue", "OrderValuePlate/OrderValue",
+            "CostValuePlate/CostValue", "MarginValuePlate/MarginValue",
+            "StatusBadgePlate/StatusBadge"
+        };
+        bool sharpDetail = true;
+        foreach (string field in sharpDetailFields)
+        {
+            var sharp = plate?.Find("Body/Detail/DetailCanvas/" + field +
+                "/CartaV3SharpText")?.GetComponent<TMPro.TextMeshProUGUI>();
+            sharpDetail &= sharp != null && sharp.enabled &&
+                sharp.font != null && !sharp.raycastTarget;
+        }
+        Pass(sharpDetail,
+            "Detail heading, dish identity, badge and eight form captions render through official sharp SDF typography.");
         bool noHeavyFrames =
             plate?.GetComponent<Outline>()?.enabled == false &&
             plate.Find("Body/Sidebar")?.GetComponent<Outline>()?.enabled == false &&
@@ -566,8 +603,8 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
             int previousMax = boundedTitle.resizeTextMaxSize;
             applyDetailFit.Invoke(null, new object[] { boundedTitle, 1.5f });
             detailFitScales =
-                boundedTitle.resizeTextMinSize == Mathf.RoundToInt(15f * 1.5f) &&
-                boundedTitle.resizeTextMaxSize == Mathf.RoundToInt(26f * 1.5f);
+                boundedTitle.resizeTextMinSize == Mathf.RoundToInt(17f * 1.5f) &&
+                boundedTitle.resizeTextMaxSize == Mathf.RoundToInt(29f * 1.5f);
             boundedTitle.resizeTextMinSize = previousMin;
             boundedTitle.resizeTextMaxSize = previousMax;
         }
@@ -700,14 +737,14 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         float captionScale = captionCanvas != null
             ? Mathf.Max(.5f, captionCanvas.scaleFactor) : 1f;
         int expectedCaptionMax = Mathf.RoundToInt(
-            16f * Mathf.Clamp(1f / captionScale, 1f, 1.55f));
+            19f * Mathf.Clamp(1f / captionScale, 1f, 1.55f));
         bool labelsScaleSafely = detailLabels != null && captionCanvas != null;
         foreach (string caption in responsiveCaptions)
         {
             Text label = detailLabels?.Find(caption)?.GetComponent<Text>();
             labelsScaleSafely &= label != null &&
                 label.resizeTextForBestFit &&
-                label.resizeTextMinSize == 11 &&
+                label.resizeTextMinSize == 13 &&
                 label.resizeTextMaxSize == expectedCaptionMax &&
                 label.horizontalOverflow == HorizontalWrapMode.Wrap &&
                 label.verticalOverflow == VerticalWrapMode.Truncate;
@@ -797,6 +834,18 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(rowTypographySafe,
              "Dish rows bound every text cell to prevent large fonts overflowing into neighboring columns.");
+        bool crispCells = firstDish != null;
+        foreach (string field in new[] {
+            "Name", "Subtitle", "Price", "Modality", "Preparation", "Margin"
+        })
+        {
+            var sharp = firstDish?.Find(field + "/CartaV3SharpText")
+                ?.GetComponent<TMPro.TextMeshProUGUI>();
+            crispCells &= sharp != null && sharp.enabled &&
+                sharp.font != null && !sharp.raycastTarget;
+        }
+        Pass(crispCells,
+            "Six bound dish columns render with dynamic SDF glyphs while preserving their real data bindings.");
         bool numericalColumnsCentered = firstDish != null;
         foreach (string name in new[] { "Price", "Modality", "Preparation", "Margin" })
             numericalColumnsCentered &=

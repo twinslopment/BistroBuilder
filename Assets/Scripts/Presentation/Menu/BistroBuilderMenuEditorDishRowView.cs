@@ -173,6 +173,15 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
             : "—";
         marginText.color = ResolveMarginColor(snapshot);
 
+        // Preserve native, bound dish data while rendering each cell through
+        // crisp SDF glyphs. This avoids blurring at non-integer Canvas scales.
+        BistroBuilderCartaV3SdfMirror.Install(nameText, false, true);
+        BistroBuilderCartaV3SdfMirror.Install(subtitleText, false);
+        BistroBuilderCartaV3SdfMirror.Install(priceText, false, true);
+        BistroBuilderCartaV3SdfMirror.Install(modalityText, false);
+        BistroBuilderCartaV3SdfMirror.Install(preparationText, false);
+        BistroBuilderCartaV3SdfMirror.Install(marginText, false, true);
+
         if (imageCatalog == null)
             imageCatalog = BistroBuilderDishImageCatalog.LoadDefault();
         Sprite image = imageCatalog != null
