@@ -41,12 +41,12 @@ internal static class BistroBuilderCartaReferenceV3Style
         editorButton = PremiumSurface(new Color32(255, 244, 226, 255),
             new Color32(220, 183, 128, 255),
             new Color32(144, 89, 33, 255), 8, 3);
-        editorSelected = PremiumSurface(new Color32(252, 225, 177, 255),
-            new Color32(235, 184, 100, 255),
-            new Color32(194, 139, 63, 255), 8, 1);
-        editorRow = PremiumSurface(new Color32(249, 242, 230, 255),
-            new Color32(246, 237, 224, 255),
-            new Color32(223, 202, 173, 255), 4, 1);
+        editorSelected = PremiumSurface(new Color32(255, 238, 208, 255),
+            new Color32(244, 209, 156, 255),
+            new Color32(191, 139, 70, 255), 8, 1);
+        editorRow = PremiumSurface(new Color32(255, 251, 245, 255),
+            new Color32(248, 240, 229, 255),
+            new Color32(226, 207, 182, 255), 4, 0);
         editorField = PremiumSurface(new Color32(255, 251, 244, 255),
             new Color32(248, 238, 225, 255),
             new Color32(195, 160, 117, 255), 6, 2);
@@ -1668,11 +1668,34 @@ internal static class BistroBuilderCartaReferenceV3Style
         clock.raycastTarget = false;
     }
 
+    private static void AddDishCellDividers(Transform row)
+    {
+        if (row == null || row.Find("V3DishColumnPrice") != null) return;
+        string[] names = {
+            "V3DishColumnPrice", "V3DishColumnAvailable",
+            "V3DishColumnModality", "V3DishColumnPreparation",
+            "V3DishColumnMargin"
+        };
+        float[] borders = { .44f, .54f, .64f, .75f, .87f };
+        for (int i = 0; i < borders.Length; i++)
+        {
+            float x = borders[i];
+            RectTransform rect = Rect(names[i], row,
+                new Vector2(x, .12f), new Vector2(x, .88f),
+                new Vector2(0f, 0f), new Vector2(1f, 0f));
+            Image line = BistroBuilderMenuEditorUiFactory.AddImage(rect,
+                new Color32(202, 179, 149, 70));
+            line.raycastTarget = false;
+        }
+    }
+
     public static void StyleDishRow(Button button, bool selected)
     {
         if (button == null) return;
         EnsureEditorSurfaces();
         SkinImage(button.GetComponent<Image>(), selected ? editorSelected : editorRow);
+        RemoveOldBevel(button.transform);
+        AddDishCellDividers(button.transform);
         Image background = button.GetComponent<Image>();
         if (background != null) background.raycastTarget = true;
 

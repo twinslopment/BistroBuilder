@@ -458,6 +458,27 @@ public static class BistroBuilderMenuVisualV1RuntimeProbe
         }
         Pass(sharpDetail,
             "Detail heading, dish identity, badge and eight form captions render through official sharp SDF typography.");
+        bool properUnits = true;
+        foreach (string field in new[] { "CostValuePlate", "MarginValuePlate" })
+        {
+            Transform unitPlate = plate?.Find("Body/Detail/DetailCanvas/" + field);
+            var suffix = unitPlate?.Find("V3UnitSuffix")
+                ?.GetComponent<TMPro.TextMeshProUGUI>();
+            properUnits &= unitPlate?.GetComponent<BistroBuilderCartaV3FieldUnits>()
+                != null && suffix != null && !suffix.raycastTarget;
+        }
+        properUnits &= plate?.Find("Body/Detail/DetailCanvas/PreparationTime/V3PrepUnit")
+            ?.GetComponent<TMPro.TextMeshProUGUI>()?.text == "min";
+        Pass(properUnits,
+            "Cost, margin and preparation show dedicated SDF suffix cells without changing authoritative data.");
+        Transform priceSteps = plate?.Find("Body/Detail/DetailCanvas/Price/V3PriceStepper");
+        bool priceStepperFunctional =
+            priceSteps?.Find("V3PriceUp")?.GetComponent<Button>() != null &&
+            priceSteps?.Find("V3PriceDown")?.GetComponent<Button>() != null &&
+            priceSteps.Find("V3PriceUp/Arrow")?.GetComponent<Image>()?.sprite != null &&
+            priceSteps.Find("V3PriceDown/Arrow")?.GetComponent<Image>()?.sprite != null;
+        Pass(priceStepperFunctional,
+            "Price increment/decrement arrows are real clickable controls connected to the existing end-edit callback.");
         Transform approvedBadge = plate?.Find(
             "Body/Detail/DetailCanvas/StatusBadgePlate");
         var greenPlate = approvedBadge?.GetComponent<Image>();

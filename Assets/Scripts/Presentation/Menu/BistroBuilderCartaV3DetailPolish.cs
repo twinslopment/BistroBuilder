@@ -61,6 +61,15 @@ internal static class BistroBuilderCartaV3DetailPolish
             }
         }
 
+        BistroBuilderCartaV3FieldUnits.Install(
+            content.Find("CostValuePlate"), "CostValue", "€");
+        BistroBuilderCartaV3FieldUnits.Install(
+            content.Find("MarginValuePlate"), "MarginValue", "%");
+        BistroBuilderCartaV3FieldUnits.AddPriceStepper(
+            content.Find("Price")?.GetComponent<InputField>());
+        BistroBuilderCartaV3FieldUnits.AddPreparationUnit(
+            content.Find("PreparationTime")?.GetComponent<InputField>());
+
         Transform hint = content.Find("DishPhotoFrame/MissingDishPhotoHint");
         if (hint != null && hint.Find("V3PhotoPlaceholderIcon") == null)
         {
