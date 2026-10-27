@@ -1652,6 +1652,65 @@ No se cambian reglas de negocio, Save/Load, precios persistidos, recetas canóni
 
 ---
 
+## SOURCE: docs/30_UI_UX/CARTA_V3_STEP16_NITIDEZ_DETALLE_ICONOS_20261026.md
+
+Category: CANONICAL
+
+# CARTA V3 - Step16 | Nitidez, detalle del plato e iconografía
+
+**Fecha:** 26/10/2026. **Rama:** `codex/carta-v3-step15-fidelity-20261026`.
+
+## Referencia
+Comparación del usuario (26/10/2026): primera imagen, referencia aprobada con texto nítido y jerarquía visual fuerte; segunda imagen, implementación Unity anterior. Esta entrega es código uGUI/TMP real, sin recrear la pantalla como imagen estática.
+
+## Cambios de implementación
+- Componente `BistroBuilderCartaV3SdfMirror`: representa con atlas SDF oficiales de Recoleta/Inter/Inter SemiBold el texto de detalle, botones inferiores y columnas de platos; conserva Text nativo, enlaces de datos y eventos.
+- Tipografía del detalle: encabezado/título/subtítulo superiores, ocho etiquetas, valores, badge de estado y aviso de fotografía inexistente con mayor jerarquía/contraste.
+- Inputs y fichas: caracteres más legibles, iconos de los campos 35x32, márgenes izquierdos reservados y conmutador Disponible de mayor dimensión.
+- Botonera: pictogramas reales 36x36, iconos blancos dedicados de añadir, eliminar y guardar, duplicación marrón y nueva flecha de deshacer en Descartar. Acciones existentes intactas.
+- Filas: Nombre, subtítulo, precio, modalidad, preparación y margen con SDF, manteniendo selección, ordenación, desplazamiento y datos.
+- Navegación y modelos de negocio sin alterar; los platos sin fotografía muestran un placeholder veraz, sin inventar imágenes.
+
+## Validación
+- `Logs/CartaV3Step16_FinalRegression.log`: **78 PASS / 0 FAIL** en Play Mode; incluye nuevas comprobaciones explícitas de SDF e iconos en uGUI.
+- `Logs/CartaV3Step16_FinalBuild.log`: **BB_PLAYTEST_BUILD_PASS** Windows; incluye cambios de scripts e iconos.
+- Compilación de ensamblados Unity OK. Las 15 advertencias de compilación/build reportadas por Unity no son errores bloqueantes.
+- Ejecutable: `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`.
+
+## Limitación pendiente
+No atribuir paridad visual píxel a píxel a la captura de referencia: la sesión gráfica completa de Platos, con el contenido ilustrativo del usuario, no ha sido capturada después de esta build. Los datos de la demo y los platos reales difieren. Revisar en PC la composición a 1920x1080 y 1280x720 antes de cerrar definitivamente la equivalencia visual.
+
+---
+
+## SOURCE: docs/30_UI_UX/CARTA_V3_STEP19_ORNAMENTACION_20261026.md
+
+Category: CANONICAL
+
+# CARTA V3 — Step19: ornamentación y controles fieles a referencia
+
+**Fecha:** 26/10/2026. **Rama aislada:** `codex/carta-v3-step15-fidelity-20261026`.
+
+## Implementación C# / Unity
+- Nuevo componente estático `BistroBuilderCartaV3Ornamentation`: marco de marfil y latón compuesto por múltiples perfiles finos, reflejos y cuatro medallones decorativos calculados en runtime. No es un screenshot ni sustituye la UI.
+- Bordes iluminados/rebajados en las tres columnas y los cinco botones principales, sin alterar sus eventos.
+- Botón de cerrar con dos trazos geométricos de X; evita un glifo ausente en el runtime Windows.
+- Flechas desplegables de Categoría y Modalidad en el Detalle del plato: vinculadas mediante `Button` al editor real de plato/receta, en lugar de simular cambios sin acción.
+- Todas las piezas añadidas de ornamentación llevan `raycastTarget=false`; únicamente se habilita entrada en los controles operativos.
+- Sin cambios de lógica de negocio, inventario, comidas ni datos de recetas; sin tocar la maestra.
+
+## Pruebas y evidencias
+- `Logs/CartaV3Step19_OrnamentationRegression.log`: **81 PASS / 0 FAIL** en el probe Unity; incluye 2 pruebas nuevas de la ornamentación y click targets.
+- `Logs/CartaV3Step19_FidelityBuild.log`: **Build Finished, Result: Success** y `BB_PLAYTEST_BUILD_PASS` Windows.
+- `Logs/CartaV3Step19_Screens/CartaV3_Unity_1280x720.png` y `CartaV3_Unity_1920x1080.png`: capturas reales del ejecutable, no imágenes diseñadas externamente.
+- Ejecutable disponible: `Builds/Windows/BistroBuilder_Playtest/BistroBuilder.exe`.
+
+## Revisión visual
+Confirma marcos metálicos de borde, esquinas decorativas, pictogramas legibles, X real y dos flechas en el formulario. Mantiene el diseño responsive y la información real de datos.
+
+La equivalencia no es pixel-perfect: el prototipo de referencia muestra ilustraciones y platos de ejemplo que no son necesariamente los que existen en los datos reales. No se han inventado imágenes de platos. El trabajo de microdecoración de cabecera y proporciones exactas sigue abierto a revisión visual.
+
+---
+
 ## SOURCE: docs/30_UI_UX/CONTEXTUAL_ACTION_CATALOG.md
 
 Category: CANONICAL
@@ -4032,87 +4091,6 @@ Ejecutar: `BistroBuilderEditPerformanceProbe.RunBatch` con `-bistroPerfFinal` pa
 
 ---
 
-## SOURCE: docs/SAVIC_REALISTIC_TEST_PACK_V1.md
-
-Category: SUPPORTING
-
-# SAVIC — Realistic Test Pack V1
-
-## Objetivo
-
-Dar a las builds de prueba de Bistro Builder una base visual más creíble usando únicamente contenido ya presente en el proyecto y contratos existentes de SAVIC/Placeable Factory.
-
-El pack no sustituye al contenido definitivo. Es una selección curada para pruebas funcionales y visuales.
-
-## Contenido
-
-### Colocables ya existentes y reutilizados
-
-- `factory_test_plant`
-- `pf_bb_chair_master_001_olive`
-- `pf_bb_chair_master_001_red`
-- `pf_bb_chair_master_001_white`
-- `pf_bb_chair_master_001_yellow`
-- `chair_bistro_01`
-- `bb_chair_master_002`
-- `table_basic`
-- `table_basic_4`
-- `bb_table_b90c47bde3e949918ec76a13dc17c61c`
-
-### Variantes nuevas que instala el pack
-
-- `chair_bistro_01_oak_warm` — Silla bistró, roble cálido
-- `chair_bistro_01_painted_black` — Silla bistró, negro
-- `chair_bistro_01_painted_white` — Silla bistró, blanco
-- `chair_bistro_01_sage_green` — Silla bistró, verde salvia
-- `chair_bistro_01_walnut_dark` — Silla bistró, nogal oscuro
-
-Estas cinco variantes parten de prefabs visuales ya existentes. El instalador las pasa por `BistroBuilderPlaceableFactoryEngine` con preset `Chair`, por lo que obtiene prefab jugable, `RestaurantPlaceableObject`, `EditableObjectDefinition`, capacidades de seating, collider cuando procede, thumbnail y alta de catálogo.
-
-### Construcción incluida en la validación
-
-- `Pared_0.5m.prefab`
-- `Pared_1.0m.prefab`
-- `Pared_2.0m.prefab`
-- `Pared_4.0m.prefab`
-- `Puerta_roble_abierta.prefab`
-- `Ventana_marco_grafito.prefab`
-
-## Resultado esperado
-
-- 15 artículos colocables disponibles en el catálogo.
-- 6 elementos constructivos válidos.
-- 21 piezas curadas utilizables en pruebas.
-- Todos los placeables deben resolver prefab, icono/preview y `EditableObjectDefinition`.
-- La instalación es idempotente: volver a ejecutarla no debe duplicar artículos.
-
-## Uso
-
-Instalar o reparar:
-
-`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Install or Repair`
-
-Validar:
-
-`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Validate`
-
-También dispone de entradas batch:
-
-- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.InstallOrRepairFromCommandLine`
-- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.ValidateFromCommandLine`
-
-Runner de una sola orden:
-
-`Tools/BistroBuilder/RunSavicRealisticTestPackV1.ps1`
-
-El runner instala/repara el pack, ejecuta después la validación y devuelve código de salida distinto de cero si cualquiera de las dos fases falla.
-
-## Alcance
-
-Este V1 usa solo contenido ya almacenado en Bistro Builder. La siguiente expansión deberá centrarse en añadir variedad real de mesas, iluminación, decoración y equipamiento pasivo mediante SAVIC, evitando incorporar assets externos sin licencia/procedencia clara.
-
----
-
 ## SOURCE: docs/SAVIC.md
 
 Category: SUPPORTING
@@ -6297,6 +6275,87 @@ Control Center incorpora **Miniaturas / Lista**, con cuadrícula por defecto, im
 La prueba CLI temporal por loopback permite comprobar por curl el componente UI Toolkit real: **16 solicitudes PASS**, anchos 132/330/460/740 → columnas 1/2/3/5, sin solapes, PNG reales y HTTP 404 para imagen ausente. La ventana SAVIC real pasa selección/ficha, cambio de vista y búsqueda mediante eventos nativos. Regresión **27/27 PASS**, proceso exit 0 y auditoría **05/10/2026 15:47:36 UTC**: 18 publicados / 17 placeables / cero revisiones y fallos; proofs actuales. La galería de seis PNG es un ejemplo independiente, no captura del Editor. [Evidencia y reproducción](40_TESTING/SAVIC_THUMBNAIL_GRID_2026-10-05.md).
 
 Cierre tras integrar la actualización remota de Carta `46666878` mediante `a925ea6c`: `savic-thumbnail-grid-merged-final.log`, **exit 0**, **gate 27/27**, contrato de miniaturas PASS y proofs actuales. Auditoría **05/10/2026 15:58:22 UTC**: **18 publicados,17 placeables,0 revisiones,0 fallidos,0 inbox,0 huérfanos**, cola vacía. La cuadrícula conserva el código probado con curl; los nuevos cambios de Carta se incluyen sin sobrescritura.
+
+---
+
+## SOURCE: docs/SAVIC_REALISTIC_TEST_PACK_V1.md
+
+Category: SUPPORTING
+
+# SAVIC — Realistic Test Pack V1
+
+## Objetivo
+
+Dar a las builds de prueba de Bistro Builder una base visual más creíble usando únicamente contenido ya presente en el proyecto y contratos existentes de SAVIC/Placeable Factory.
+
+El pack no sustituye al contenido definitivo. Es una selección curada para pruebas funcionales y visuales.
+
+## Contenido
+
+### Colocables ya existentes y reutilizados
+
+- `factory_test_plant`
+- `pf_bb_chair_master_001_olive`
+- `pf_bb_chair_master_001_red`
+- `pf_bb_chair_master_001_white`
+- `pf_bb_chair_master_001_yellow`
+- `chair_bistro_01`
+- `bb_chair_master_002`
+- `table_basic`
+- `table_basic_4`
+- `bb_table_b90c47bde3e949918ec76a13dc17c61c`
+
+### Variantes nuevas que instala el pack
+
+- `chair_bistro_01_oak_warm` — Silla bistró, roble cálido
+- `chair_bistro_01_painted_black` — Silla bistró, negro
+- `chair_bistro_01_painted_white` — Silla bistró, blanco
+- `chair_bistro_01_sage_green` — Silla bistró, verde salvia
+- `chair_bistro_01_walnut_dark` — Silla bistró, nogal oscuro
+
+Estas cinco variantes parten de prefabs visuales ya existentes. El instalador las pasa por `BistroBuilderPlaceableFactoryEngine` con preset `Chair`, por lo que obtiene prefab jugable, `RestaurantPlaceableObject`, `EditableObjectDefinition`, capacidades de seating, collider cuando procede, thumbnail y alta de catálogo.
+
+### Construcción incluida en la validación
+
+- `Pared_0.5m.prefab`
+- `Pared_1.0m.prefab`
+- `Pared_2.0m.prefab`
+- `Pared_4.0m.prefab`
+- `Puerta_roble_abierta.prefab`
+- `Ventana_marco_grafito.prefab`
+
+## Resultado esperado
+
+- 15 artículos colocables disponibles en el catálogo.
+- 6 elementos constructivos válidos.
+- 21 piezas curadas utilizables en pruebas.
+- Todos los placeables deben resolver prefab, icono/preview y `EditableObjectDefinition`.
+- La instalación es idempotente: volver a ejecutarla no debe duplicar artículos.
+
+## Uso
+
+Instalar o reparar:
+
+`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Install or Repair`
+
+Validar:
+
+`Tools > Bistro Builder > SAVIC > Packs > Realistic Test Pack V1 > Validate`
+
+También dispone de entradas batch:
+
+- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.InstallOrRepairFromCommandLine`
+- `BistroBuilder.Editor.Savic.SavicRealisticTestPackV1Installer.ValidateFromCommandLine`
+
+Runner de una sola orden:
+
+`Tools/BistroBuilder/RunSavicRealisticTestPackV1.ps1`
+
+El runner instala/repara el pack, ejecuta después la validación y devuelve código de salida distinto de cero si cualquiera de las dos fases falla.
+
+## Alcance
+
+Este V1 usa solo contenido ya almacenado en Bistro Builder. La siguiente expansión deberá centrarse en añadir variedad real de mesas, iluminación, decoración y equipamiento pasivo mediante SAVIC, evitando incorporar assets externos sin licencia/procedencia clara.
 
 ---
 

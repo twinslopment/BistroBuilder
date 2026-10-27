@@ -187,7 +187,7 @@ public sealed class BistroBuilderMenuEditorDishRowView : MonoBehaviour
         if (imageCatalog == null)
             imageCatalog = BistroBuilderDishImageCatalog.LoadDefault();
         Sprite image = imageCatalog != null
-            ? imageCatalog.GetImageOrNull(snapshot.DishId)
+            ? imageCatalog.GetImageOrNull(snapshot.DishId, snapshot.DisplayName)
             : null;
         thumbnail.sprite = image;
         thumbnail.color = image != null

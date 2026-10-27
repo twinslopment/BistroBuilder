@@ -2255,7 +2255,8 @@ public sealed class BistroBuilderMenuEditorRuntimeView : MonoBehaviour
             if (dishImageCatalog == null)
                 dishImageCatalog = BistroBuilderDishImageCatalog.LoadDefault();
             Sprite dishSprite = dishImageCatalog != null
-                ? dishImageCatalog.GetImageOrNull(selectedSnapshot.DishId)
+                ? dishImageCatalog.GetImageOrNull(
+                    selectedSnapshot.DishId, selectedSnapshot.DisplayName)
                 : null;
             if (detailDishImage != null)
             {

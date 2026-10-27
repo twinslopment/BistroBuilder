@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,42 +18,6 @@ public static class BistroBuilderDishImageCatalogImporter
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             ".png", ".jpg", ".jpeg", ".webp"
-        };
-
-    private static readonly Dictionary<string, string> Aliases =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            { "gazpacho", "gazpacho_andaluz" },
-            { "pantumaca", "pan_con_tomate" },
-            { "pan_tumaca", "pan_con_tomate" },
-            { "pancontomate", "pan_con_tomate" },
-            { "tablaembutidos", "tabla_embutidos_ibericos" },
-            { "tabla_embutidos", "tabla_embutidos_ibericos" },
-            { "patatasbravas", "patatas_bravas" },
-            { "pimientospadron", "pimientos_padron" },
-            { "pimientosdepadron", "pimientos_padron" },
-            { "tortillapatatas", "tortilla_patatas" },
-            { "tortilladepatatas", "tortilla_patatas" },
-            { "ensaladillarusa", "ensaladilla_rusa" },
-            { "aceitunasalinadas", "aceitunas_alinadas" },
-            { "arrozconleche", "arroz_con_leche" },
-            { "champinonesajillo", "champinones_al_ajillo" },
-            { "polloajillo", "pollo_al_ajillo" },
-            { "calamaresromana", "calamares_a_la_romana" },
-            { "huevosrotos", "huevos_rotos" },
-            { "pulpogallega", "pulpo_a_la_gallega" },
-            { "quesomanchego", "queso_manchego" },
-            { "atunencebollado", "atun_encebollado" },
-            { "cazonadobo", "cazon_en_adobo" },
-            { "jamoniberico", "jamon_iberico" },
-            { "tartaqueso", "tarta_queso" },
-            { "cocido", "cocido_madrileno" },
-            { "fabada", "fabada_asturiana" },
-            { "lentejas", "lentejas_estofadas" },
-            { "marmitako_stew", "marmitako" },
-            { "pote", "pote_asturiano" },
-            { "croquetasjamoniberico", "croquetas_jamon_iberico" },
-            { "croquetasdejamoniberico", "croquetas_jamon_iberico" }
         };
 
     private sealed class ResolvedImage
@@ -93,7 +56,8 @@ public static class BistroBuilderDishImageCatalogImporter
         {
             string path = imagePaths[i];
             string fileName = Path.GetFileName(path);
-            string dishId = ResolveDishId(Path.GetFileNameWithoutExtension(path));
+            string dishId = BistroBuilderDishImageKeyUtility.ResolveFileStem(
+                Path.GetFileNameWithoutExtension(path));
             if (!dishNames.ContainsKey(dishId))
             {
                 string prefixedDishId = "dish_" + dishId;
@@ -280,53 +244,6 @@ public static class BistroBuilderDishImageCatalogImporter
 
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorUtility.SetDirty(catalog);
-    }
-
-    private static string ResolveDishId(string rawName)
-    {
-        string normalized = NormalizeId(rawName);
-        if (Aliases.TryGetValue(normalized, out string alias))
-        {
-            return alias;
-        }
-
-        string compact = normalized.Replace("_", string.Empty);
-        return Aliases.TryGetValue(compact, out alias) ? alias : normalized;
-    }
-
-    private static string NormalizeId(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        string decomposed = value.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
-        StringBuilder builder = new StringBuilder(decomposed.Length);
-        bool previousUnderscore = false;
-
-        for (int i = 0; i < decomposed.Length; i++)
-        {
-            char c = decomposed[i];
-            UnicodeCategory category = CharUnicodeInfo.GetUnicodeCategory(c);
-            if (category == UnicodeCategory.NonSpacingMark)
-            {
-                continue;
-            }
-
-            if (char.IsLetterOrDigit(c))
-            {
-                builder.Append(c);
-                previousUnderscore = false;
-            }
-            else if (!previousUnderscore && builder.Length > 0)
-            {
-                builder.Append('_');
-                previousUnderscore = true;
-            }
-        }
-
-        return builder.ToString().Trim('_');
     }
 
     private static void WriteManifest(
