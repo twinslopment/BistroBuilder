@@ -22,6 +22,12 @@ MonoBehaviour:
   - dishId: arroz_con_leche
     image: {fileID: 21300000, guid: a7545a50215bf4646bfab2fb55556aa1, type: 3}
     sourceFileName: arroz_con_leche.jpg
+  - dishId: arroz_negro_alioli
+    image: {fileID: 21300000, guid: 8cc6ece7e05b1f14baa460c61a8fd64a, type: 3}
+    sourceFileName: arroz_negro_alioli.jpg
+  - dishId: arroz_senyoret
+    image: {fileID: 21300000, guid: ca9bd1d0de401e841952fcc13577566e, type: 3}
+    sourceFileName: arroz_senyoret.jpg
   - dishId: atun_encebollado
     image: {fileID: 21300000, guid: 1f263b8c05bec354a9db039994383bba, type: 3}
     sourceFileName: atun_encebollado.jpg
@@ -40,12 +46,27 @@ MonoBehaviour:
   - dishId: champinones_al_ajillo
     image: {fileID: 21300000, guid: d50ef3c5fdf9bf547a37406301f52936, type: 3}
     sourceFileName: champinones_al_ajillo.jpg
+  - dishId: chistorra
+    image: {fileID: 21300000, guid: 2bb7dc2cdb6735946947f55933f5da71, type: 3}
+    sourceFileName: chistorra.jpg
   - dishId: cocido_madrileno
     image: {fileID: 21300000, guid: bca3995a797ea0545a23cf7ecc004be5, type: 3}
     sourceFileName: cocido_madrileno.jpg
+  - dishId: croquetas_bacalao
+    image: {fileID: 21300000, guid: d6c19713a0115ac49820d7539fecfa00, type: 3}
+    sourceFileName: croquetas_bacalao.jpg
+  - dishId: croquetas_cocido
+    image: {fileID: 21300000, guid: fc39aa2936ccaf14e93b0b89175248db, type: 3}
+    sourceFileName: croquetas_cocido.jpg
   - dishId: croquetas_de_jamon
     image: {fileID: 21300000, guid: 441310d7e87288d4a94b07d86421e8d6, type: 3}
     sourceFileName: croquetas_de_jamon.jpg
+  - dishId: croquetas_merluza
+    image: {fileID: 21300000, guid: 725e8a6b186683847abae13073c94119, type: 3}
+    sourceFileName: croquetas_merluza.jpg
+  - dishId: croquetas_queso_azul
+    image: {fileID: 21300000, guid: 54f39bc01f296f348aab801d5bdc2f96, type: 3}
+    sourceFileName: croquetas_queso_azul.jpg
   - dishId: dish_aceitunas_alinadas
     image: {fileID: 21300000, guid: c1b7045f995a9bf4d83c46838aac0b22, type: 3}
     sourceFileName: aceitunas_alinadas.jpg
@@ -58,6 +79,9 @@ MonoBehaviour:
   - dishId: ensaladilla_rusa
     image: {fileID: 21300000, guid: f3a47331e5c303740b57d954edbef14d, type: 3}
     sourceFileName: ensaladilla_rusa.jpg
+  - dishId: fideua
+    image: {fileID: 21300000, guid: fb1204a814442b64b8cb1192d7cbfe0b, type: 3}
+    sourceFileName: fideua.jpg
   - dishId: flan
     image: {fileID: 21300000, guid: 6e636560ddddeb04a8641b9526ad499e, type: 3}
     sourceFileName: flan.jpg
@@ -79,9 +103,30 @@ MonoBehaviour:
   - dishId: marmitako
     image: {fileID: 21300000, guid: 8046c0728b94d2649bef623fa9f71cab, type: 3}
     sourceFileName: marmitako.jpg
+  - dishId: mejillones_vapor
+    image: {fileID: 21300000, guid: dd59549f96197fd4f82a9d70684b0f27, type: 3}
+    sourceFileName: mejillones_vapor.jpg
+  - dishId: mejillones_vinagreta
+    image: {fileID: 21300000, guid: 46ed99ed822778d4bbfd20d0136a9ac5, type: 3}
+    sourceFileName: mejillones_vinagreta.jpg
+  - dishId: merluza_horno
+    image: {fileID: 21300000, guid: fdc8ab35d3c58b24184fe61d9b225a8a, type: 3}
+    sourceFileName: merluza_horno.jpg
+  - dishId: merluza_marinera
+    image: {fileID: 21300000, guid: e3d1685d67bed9c4396fbf3a452fdcf0, type: 3}
+    sourceFileName: merluza_marinera.jpg
+  - dishId: merluza_romana
+    image: {fileID: 21300000, guid: 2c6005344b29eeb40b31c479c6edf631, type: 3}
+    sourceFileName: merluza_romana.jpg
+  - dishId: merluza_salsa_verde
+    image: {fileID: 21300000, guid: a71a477dbf3e67e4cbe36cb817f8910b, type: 3}
+    sourceFileName: merluza_salsa_verde.jpg
   - dishId: natillas
     image: {fileID: 21300000, guid: 3ece75d5b2bd5354680e9c5fef0c43f6, type: 3}
     sourceFileName: natillas.jpg
+  - dishId: paella
+    image: {fileID: 21300000, guid: 920318a01344d4c4fbc4c4e0d883fdc5, type: 3}
+    sourceFileName: paella.jpg
   - dishId: paella_valenciana
     image: {fileID: 21300000, guid: cbfe5fd0f8a6b274b86c1fa7cdcd3cf7, type: 3}
     sourceFileName: paella_valenciana.jpg
@@ -109,6 +154,12 @@ MonoBehaviour:
   - dishId: salmorejo_cordobes
     image: {fileID: 21300000, guid: 5bf39e995eaec5b4d951406b5243c10b, type: 3}
     sourceFileName: salmorejo_cordobes.jpg
+  - dishId: secreto_plancha
+    image: {fileID: 21300000, guid: 8c8c7624e8d70354890f94c5cfe4c52f, type: 3}
+    sourceFileName: secreto_plancha.jpg
+  - dishId: sepia_plancha
+    image: {fileID: 21300000, guid: f863c5c59133b4444a2cd58bb01a6fe3, type: 3}
+    sourceFileName: sepia_plancha.jpg
   - dishId: tabla_embutidos_ibericos
     image: {fileID: 21300000, guid: 2233a668b7f6287428cb9f1f741b81aa, type: 3}
     sourceFileName: tabla_embutidos_ibericos.jpg
@@ -118,3 +169,6 @@ MonoBehaviour:
   - dishId: tortilla_patatas
     image: {fileID: 21300000, guid: 72d34134d296de24c8d7009c5b4bb3e9, type: 3}
     sourceFileName: tortilla_patatas.jpg
+  - dishId: zamburinas_plancha
+    image: {fileID: 21300000, guid: 92dd332cde674594dbed7e4ca360acf5, type: 3}
+    sourceFileName: zamburinas_plancha.jpg
