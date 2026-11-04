@@ -36,3 +36,4 @@
 | D-030 | VIGENTE | Acabado Automático solo completa zonas/canales missing o incompletos; nunca sobrescribe trabajo válido salvo orden explícita. |
 | D-031 | VIGENTE | Toda propuesta automática requiere preview y aplicación explícita; reutilizar acabados canónicos tiene prioridad sobre generar nuevos. |
 | D-032 | VIGENTE | Si la semántica de una superficie es incierta, el sistema solicita clasificación y no asigna materiales a ciegas. |
+| D-033 | VIGENTE | V30 rápida (280 ms, 94 % → 103 % → 100 %) es la microinteracción estándar para todos los botones actuales y futuros fuera de Modo Edición; Editor V2 queda pendiente de decisión. Véase `docs/30_UI_UX/BUTTON_MOTION_V21_V30.md`. |
