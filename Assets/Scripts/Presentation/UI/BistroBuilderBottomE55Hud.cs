@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -36,7 +37,8 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
     private BistroBuilderClimateService climate;
     private GameClock clock;
     private RestaurantEditModeService editModeService;
-    private CanvasGroup oldTimeDockGroup;
+    private readonly List<CanvasGroup> hiddenTimeDocks = new List<CanvasGroup>(4);
+    private float nextDockScanAt;
     private RectTransform bottomTransform;
     private Image bottomSurface;
     private float nextDataRefresh;
@@ -50,12 +52,17 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
 
     private void OnDisable()
     {
-        if (oldTimeDockGroup != null)
+        // Restaurar los controles antiguos únicamente al retirar E5.5.
+        for (int i = 0; i < hiddenTimeDocks.Count; i++)
         {
-            oldTimeDockGroup.alpha = 1f;
-            oldTimeDockGroup.interactable = true;
-            oldTimeDockGroup.blocksRaycasts = true;
+            CanvasGroup group = hiddenTimeDocks[i];
+            if (group == null) continue;
+            group.alpha = 1f;
+            group.interactable = true;
+            group.blocksRaycasts = true;
         }
+        hiddenTimeDocks.Clear();
+        nextDockScanAt = 0f;
     }
 
     public bool ValidateConfiguration(out string error)
@@ -119,6 +126,9 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
 
     private void BuildIfNecessary()
     {
+        // Ocultar el antiguo control incluso si el shell se reconcilia antes
+        // del primer LateUpdate o si el HUD se valida estando inactivo.
+        HideOldDock();
         if (root != null) return;
         bottomTransform = transform as RectTransform;
         bottomSurface = GetComponent<Image>();
@@ -131,7 +141,8 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         root.offsetMax = new Vector2(-26f, -3f);
         Panel(root, MakeFrame(), false);
 
-        Shadow shadow = root.GetComponent<Shadow>() ?? root.gameObject.AddComponent<Shadow>();
+        Shadow shadow = root.GetComponent<Shadow>();
+        if (shadow == null) shadow = root.gameObject.AddComponent<Shadow>();
         shadow.effectColor = new Color(0f, 0f, 0f, 0.62f);
         shadow.effectDistance = new Vector2(0f, -3f);
         shadow.useGraphicAlpha = true;
@@ -189,6 +200,8 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         }
         pauseButton.onClick.AddListener(TogglePause);
         root.SetAsLastSibling();
+        HideLegacyChildren();
+        HideOldDock();
         ResolveSources();
         RefreshData();
     }
@@ -208,19 +221,39 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
 
     private void HideOldDock()
     {
-        if (oldTimeDockGroup == null)
+        // Buscar todos los docks: pueden existir varios Canvas o réplicas del HUD
+        // en una escena. No depender del orden de FindFirstObjectByType.
+        if (Application.isPlaying && Time.unscaledTime < nextDockScanAt) return;
+        nextDockScanAt = Time.unscaledTime + 0.35f;
+
+        Canvas[] canvases = FindObjectsByType<Canvas>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < canvases.Length; i++)
         {
-            Canvas canvas = GetComponentInParent<Canvas>();
-            Transform dock = canvas != null ? canvas.transform.Find("BB_368B_TimeControlsDock") : null;
-            if (dock != null)
-                oldTimeDockGroup = dock.GetComponent<CanvasGroup>() ??
-                    dock.gameObject.AddComponent<CanvasGroup>();
+            if (canvases[i] == null) continue;
+            Transform child = canvases[i].transform.Find("BB_368B_TimeControlsDock");
+            if (child != null) SuppressLegacyDock(child);
         }
-        if (oldTimeDockGroup == null) return;
-        // No desactivar el GameObject: los contratos 368B siguen validables.
-        oldTimeDockGroup.alpha = 0f;
-        oldTimeDockGroup.interactable = false;
-        oldTimeDockGroup.blocksRaycasts = false;
+
+        BistroBuilder368BInstalledHudDock[] markers =
+            FindObjectsByType<BistroBuilder368BInstalledHudDock>(
+                FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < markers.Length; i++)
+            if (markers[i] != null) SuppressLegacyDock(markers[i].transform);
+
+        GameObject byName = GameObject.Find("BB_368B_TimeControlsDock");
+        if (byName != null) SuppressLegacyDock(byName.transform);
+    }
+
+    private void SuppressLegacyDock(Transform dock)
+    {
+        CanvasGroup group = dock.GetComponent<CanvasGroup>();
+        if (group == null) group = dock.gameObject.AddComponent<CanvasGroup>();
+        if (!hiddenTimeDocks.Contains(group)) hiddenTimeDocks.Add(group);
+        // El GameObject permanece activo para las validaciones 368B.
+        group.alpha = 0f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
     }
 
     private void ResolveSources()
@@ -357,7 +390,8 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
     }
     private static Image Panel(RectTransform rect, Sprite sprite, bool blocksRaycast)
     {
-        Image image = rect.GetComponent<Image>() ?? rect.gameObject.AddComponent<Image>();
+        Image image = rect.GetComponent<Image>();
+        if (image == null) image = rect.gameObject.AddComponent<Image>();
         image.sprite = sprite;
         image.type = Image.Type.Sliced;
         image.color = Color.white;

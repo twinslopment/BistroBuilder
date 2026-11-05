@@ -24,12 +24,18 @@
 - `Assets/Scripts/Presentation/UI/BistroBuilderBottomE55Hud.cs`
 - `Assets/Scripts/Presentation/UI/BistroBuilderUiShell.cs`: instalación idempotente sobre la barra existente.
 
-## Pruebas pendientes dentro de Unity
+## Validación ejecutada (05/11/2026)
 
-- Compilación de scripts en Unity 6000.3.19f1 y ejecución de Play Mode. Desde el menú del Editor: **Bistro Builder > Pruebas > Validar barra inferior E5.5** para comprobar jerarquía y controles 1×/2×/3×/pausa sin alterar el estado final del reloj.
-- Confirmar ingresos del servicio, satisfacción de visitas activas, clima y cambios reales de velocidad/pausa.
-- Comprobar que no reaparece el dock 368B ni queda ningún elemento de la antigua barra.
-- Validación visual a 1920×1080 y 1280×720, tanto con panel Servicio abierto como con actividad y menú de gestión.
-- Confirmar que el Modo Edición conserva intacta su barra propia.
+- **Compilación Unity 6000.3.19f1: PASS / 0 errores C#.** Se observa `Tundra build success` en `BottomE55_Unity_batch6.log`; permanecen únicamente advertencias ajenas a E5.5.
+- **Play Mode automatizado: PASS** con `BistroBuilderBottomE55BatchPlayTest.RunBatch`. Evidencia: `Logs/BottomE55_PlayMode_Result.txt` con `PASS E55 Play Mode smoke passed`.
+- Comprobados: cuatro módulos y jerarquía, botones 1×/2×/3×, pausa/reanudación real de `GameClock`, restauración de estado tras las pruebas, instalación idempotente, ocultación del HUD inferior antiguo y anulación de interacción del dock 368B.
+- Los errores conocidos de `UnityEditor.Search.SearchDatabase` durante arranque batch se filtran exclusivamente en ese caso de Editor, conforme al patrón de otras pruebas del proyecto. No se enmascaran excepciones de gameplay.
+- Las primeras ejecuciones detectaron un defecto real en la gestión del `CanvasGroup` del dock 368B; corregido con comprobación explícita de componentes Unity y búsqueda de docks en los Canvas activos. El último Play Mode ya termina en PASS.
+- Para volver a comprobarlo: método Editor `BistroBuilderBottomE55BatchPlayTest.RunBatch` en batch o menú **Bistro Builder > Pruebas > Validar barra inferior E5.5** durante Play Mode.
 
-**No afirmar PASS de compilación o captura visual hasta ejecutar estas pruebas en Unity.**
+## Pruebas aún pendientes
+
+- **Verificación visual real** de fidelidad a la imagen E5.5, sin solapamientos a 1920×1080 y 1280×720, incluyendo apertura de menús.
+- **Prueba con datos variables de servicio**: ingresos de caja, satisfacción de visitas activas y cambios meteorológicos; su origen canónico está conectado, pero no hay prueba numérica integrada registrada.
+- **Prueba interactiva del modo edición**: comprobar que su barra independiente permanece intacta.
+- La implementación sigue **provisional** hasta que se validen estos puntos y se apruebe su aspecto final.
