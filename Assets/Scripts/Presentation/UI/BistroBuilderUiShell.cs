@@ -182,6 +182,8 @@ public sealed partial class BistroBuilderUiShell : MonoBehaviour
         EnsureServiceAction();
         EnsureEditModeChrome();
         ReconcileTimeDock();
+        if (bottomOperations.GetComponent<BistroBuilderBottomE55Hud>() == null)
+            bottomOperations.gameObject.AddComponent<BistroBuilderBottomE55Hud>();
         foreach (var panel in new[] { topNavigation, bottomOperations, activityPanel, contextPanel })
         {
             var image = panel.GetComponent<Image>();
