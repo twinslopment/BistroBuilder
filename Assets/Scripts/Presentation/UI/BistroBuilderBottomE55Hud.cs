@@ -116,6 +116,16 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         RefreshData();
     }
 
+    public void EnsureGameDockHeight()
+    {
+        if (bottomTransform == null) bottomTransform = transform as RectTransform;
+        if (bottomTransform == null) return;
+        if (editModeService == null)
+            editModeService = FindFirstObjectByType<RestaurantEditModeService>(FindObjectsInactive.Include);
+        if (editModeService != null && editModeService.IsEditModeActive) return;
+        bottomTransform.sizeDelta = new Vector2(0f, DesiredHeight());
+    }
+
     private float DesiredHeight()
     {
         Canvas canvas = GetComponentInParent<Canvas>();
@@ -133,6 +143,8 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         bottomTransform = transform as RectTransform;
         bottomSurface = GetComponent<Image>();
         if (bottomTransform == null) return;
+        // Evita el primer frame comprimido a 64 unidades antes del LateUpdate.
+        bottomTransform.sizeDelta = new Vector2(0f, DesiredHeight());
         RectTransform existing = transform.Find(VisualRootName) as RectTransform;
         root = existing != null ? existing : Rect(VisualRootName, transform);
         root.anchorMin = Vector2.zero;
@@ -150,7 +162,7 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         RectTransform row = Rect("ContenidoE55", root);
         Stretch(row, 5f, 5f, 5f, 5f);
         HorizontalLayoutGroup layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.spacing = 6f;
+        layout.spacing = 10f;
         layout.padding = new RectOffset(0, 0, 0, 0);
         layout.childAlignment = TextAnchor.MiddleCenter;
         layout.childControlWidth = true;
@@ -160,13 +172,13 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
 
         RectTransform cash = Capsule(row, "CajaE55", Tile(), 160f, 1.02f);
         cashIcon = Icon(cash, "Monedas", 0, 0.035f, 0.13f, 0.22f, 0.90f);
-        Text(cash, "Titulo", "Caja", 13f, Muted, 0.23f, 0.55f, 0.98f, 0.91f, false);
-        cashValue = Text(cash, "Valor", "—", 21f, White, 0.23f, 0.08f, 0.98f, 0.57f, true);
+        Text(cash, "Titulo", "Caja", 17f, Muted, 0.23f, 0.57f, 0.98f, 0.93f, false);
+        cashValue = Text(cash, "Valor", "—", 24f, White, 0.23f, 0.08f, 0.98f, 0.57f, true);
 
         RectTransform satisfaction = Capsule(row, "SatisfaccionE55", GreenTile(), 210f, 1.28f);
         satisfactionIcon = Icon(satisfaction, "Carita", 1, 0.025f, 0.13f, 0.205f, 0.88f);
-        Text(satisfaction, "Titulo", "Satisfacción", 12.5f, White, 0.21f, 0.61f, 0.95f, 0.92f, false);
-        satisfactionValue = Text(satisfaction, "Valor", "—", 19f, White, 0.21f, 0.15f, 0.42f, 0.62f, true);
+        Text(satisfaction, "Titulo", "Satisfacción", 17f, White, 0.21f, 0.61f, 0.95f, 0.94f, false);
+        satisfactionValue = Text(satisfaction, "Valor", "—", 22f, White, 0.21f, 0.15f, 0.42f, 0.62f, true);
         RectTransform track = Rect("BarraBase", satisfaction);
         Place(track, 0.45f, 0.25f, 0.95f, 0.48f);
         satisfactionTrack = Panel(track, Control(), false);
@@ -180,12 +192,14 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
 
         RectTransform weather = Capsule(row, "ClimaE55", Tile(), 165f, 1.03f);
         weatherIcon = Icon(weather, "Tiempo", 2, 0.025f, 0.12f, 0.235f, 0.90f);
-        weatherLabel = Text(weather, "Estado", "Climatología", 14f, White, 0.245f, 0.47f, 0.99f, 0.86f, false);
-        temperatureValue = Text(weather, "Temperatura", "—", 20f, White, 0.245f, 0.10f, 0.99f, 0.54f, true);
+        weatherLabel = Text(weather, "Estado", "Climatología", 17f, White, 0.245f, 0.50f, 0.99f, 0.90f, false);
+        temperatureValue = Text(weather, "Temperatura", "—", 23f, White, 0.245f, 0.10f, 0.99f, 0.56f, true);
 
         RectTransform speed = Capsule(row, "VelocidadE55", Tile(), 242f, 1.14f);
-        Text(speed, "Titulo", "Velocidad", 10f, Muted, 0.04f, 0.79f, 0.95f, 0.98f, false);
-        pauseButton = ControlButton(speed, "Pausa", 0.035f, 0.255f, 0.16f, 0.81f);
+        TMP_Text speedTitle = Text(speed, "Titulo", "Velocidad", 16f, Muted, 0.035f, 0.70f, 0.98f, 0.99f, false);
+        speedTitle.alignment = TextAlignmentOptions.Center;
+        speedTitle.overflowMode = TextOverflowModes.Overflow;
+        pauseButton = ControlButton(speed, "Pausa", 0.035f, 0.255f, 0.12f, 0.73f);
         pauseIcon = Icon(pauseButton.transform, "IconoPausa", 6, 0.19f, 0.19f, 0.81f, 0.81f);
         string[] labels = { "1×", "2×", "3×" };
         for (int i = 0; i < 3; i++)
@@ -193,9 +207,10 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
             int index = i;
             float left = 0.275f + i * 0.238f;
             speedButtons[i] = ControlButton(speed, "Speed" + (i + 1), left,
-                left + 0.215f, 0.16f, 0.81f);
+                left + 0.215f, 0.12f, 0.70f);
             speedLabels[i] = Text(speedButtons[i].transform, "Etiqueta", labels[i],
-                17f, White, 0f, 0f, 1f, 1f, true);
+                21f, White, 0f, 0f, 1f, 1f, true);
+            speedLabels[i].alignment = TextAlignmentOptions.Center;
             speedButtons[i].onClick.AddListener(() => ChangeSpeed(index + 1));
         }
         pauseButton.onClick.AddListener(TogglePause);

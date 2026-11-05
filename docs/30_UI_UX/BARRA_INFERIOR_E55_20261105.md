@@ -33,9 +33,26 @@
 - Las primeras ejecuciones detectaron un defecto real en la gestión del `CanvasGroup` del dock 368B; corregido con comprobación explícita de componentes Unity y búsqueda de docks en los Canvas activos. El último Play Mode ya termina en PASS.
 - Para volver a comprobarlo: método Editor `BistroBuilderBottomE55BatchPlayTest.RunBatch` en batch o menú **Bistro Builder > Pruebas > Validar barra inferior E5.5** durante Play Mode.
 
-## Pruebas aún pendientes
+## QA visual y de datos reales del HUD (05/11/2026)
 
-- **Verificación visual real** de fidelidad a la imagen E5.5, sin solapamientos a 1920×1080 y 1280×720, incluyendo apertura de menús.
-- **Prueba con datos variables de servicio**: ingresos de caja, satisfacción de visitas activas y cambios meteorológicos; su origen canónico está conectado, pero no hay prueba numérica integrada registrada.
-- **Prueba interactiva del modo edición**: comprobar que su barra independiente permanece intacta.
-- La implementación sigue **provisional** hasta que se validen estos puntos y se apruebe su aspecto final.
+- **PASS — Compilación y Play Mode Unity 6000.3.19f1**: ejecución de `BistroBuilderBottomE55VisualAndDataQa.RunBatch`, registrada en `Logs/E55VisualDataQa.txt` y `BottomE55_VisualDataUnity_v5.log`. Ejecutar con `-batchmode` y dispositivo gráfico; **no** usar `-nographics` para las capturas.
+- **PASS — Responsive**: capturas generadas por la cámara y el Canvas reales a 1920×1080 y 1280×720. Altura útil de cada módulo: 72 unidades lógicas, y 4 módulos sin solapamiento geométrico. Reparada la sobrescritura de altura por `EnsureShell()`; ajustados tamaño de texto y alineación de velocidad.
+- **PASS — Datos canónicos**: Caja coincide con `TryGetCurrentServiceResult` (en escena de prueba, 0,00 €). Satisfacción refleja estados *controlados a través del servicio de experiencias*, con 90 % en un escenario favorable y 21 % en otro desfavorable. Clima muestra `Lluvia / 8 °C` y `Nieve / -4 °C` usando `SetDebugOverride`. Los snapshots y overrides se restauran al salir de la prueba. Esto verifica las vinculaciones; no equivale a simular un servicio orgánico completo.
+- **PASS — Modo edición**: al entrar en modo edición, la barra E5.5 se oculta; vuelve a mostrarse al salir. No se alteran las acciones propias de su barra.
+- **PASS — Velocidad y pausa**: sigue vigente `BistroBuilderBottomE55BatchPlayTest`, previamente ejecutada con resultado PASS.
+- **LIMITACIÓN EXTERNA IDENTIFICADA — Personal**: al abrir el menú actual de Personal, su pantalla completa tapa tanto la barra superior como la inferior. E5.5 permanece activa, pero oculta detrás del panel. La corrección requiere redimensionar esa pantalla de gestión y otros menús; **no se ha modificado Personal** en esta rama por tratarse de otra interfaz.
+- **Caveat del Editor**: persiste una excepción de `UnityEditor.Search.SearchDatabase` en arranque batch, ajena al HUD; el comprobador ignora solo ese caso identificado.
+
+### Evidencias gráficas (capturas Unity, no renders conceptuales)
+
+- `docs/Images/UI/BottomE55/E55_Unity_1920x1080_barra.png`
+- `docs/Images/UI/BottomE55/E55_Unity_1280x720_barra.png`
+- `docs/Images/UI/BottomE55/E55_Unity_1920x1080_completo.png`
+
+## Pendiente para aprobación definitiva
+
+- Contrastar las capturas del juego con la referencia artística E5.5 seleccionada, incluyendo los efectos sutiles, en revisión visual del usuario.
+- Adaptar los paneles de gestión a las zonas ocupadas por barra superior e inferior, especialmente Personal y menú Servicio, en su ámbito de implementación.
+- Ensayar un servicio completo generado orgánicamente (ingresos y satisfacción durante pedidos y pagos reales, sin snapshots de prueba).
+
+**Estado:** implementación funcional validada y mejoras visuales comprobadas; diseño E5.5 aún **provisional** hasta aprobación final.
