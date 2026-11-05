@@ -35,6 +35,7 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
     private BistroBuilderGeneralGameStateService gameState;
     private BistroBuilderClimateService climate;
     private GameClock clock;
+    private RestaurantEditModeService editModeService;
     private CanvasGroup oldTimeDockGroup;
     private RectTransform bottomTransform;
     private Image bottomSurface;
@@ -75,8 +76,9 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
     {
         if (!Application.isPlaying) return;
         BuildIfNecessary();
-        bool editing = FindFirstObjectByType<RestaurantEditModeService>(
-            FindObjectsInactive.Include)?.IsEditModeActive == true;
+        if (editModeService == null)
+            editModeService = FindFirstObjectByType<RestaurantEditModeService>(FindObjectsInactive.Include);
+        bool editing = editModeService != null && editModeService.IsEditModeActive;
         if (root != null && root.gameObject.activeSelf == editing)
             root.gameObject.SetActive(!editing);
 
@@ -414,16 +416,16 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         return button;
     }
 
-    private static Sprite MakeFrame() => frameSprite ??= Rounded(
-        new Color32(18, 19, 20, 252), new Color32(181, 130, 65, 255));
-    private static Sprite Tile() => tileSprite ??= Rounded(
-        new Color32(27, 24, 22, 255), new Color32(122, 87, 52, 255));
-    private static Sprite GreenTile() => greenSprite ??= Rounded(
-        new Color32(25, 38, 23, 255), new Color32(148, 114, 60, 255));
-    private static Sprite Control() => controlSprite ??= Rounded(
-        new Color32(26, 23, 21, 255), new Color32(165, 124, 69, 255));
-    private static Sprite Selected() => selectedSprite ??= Rounded(
-        new Color32(245, 202, 128, 255), new Color32(241, 215, 170, 255));
+    private static Sprite MakeFrame() => frameSprite != null ? frameSprite :
+        frameSprite = Rounded(new Color32(18, 19, 20, 252), new Color32(181, 130, 65, 255));
+    private static Sprite Tile() => tileSprite != null ? tileSprite :
+        tileSprite = Rounded(new Color32(27, 24, 22, 255), new Color32(122, 87, 52, 255));
+    private static Sprite GreenTile() => greenSprite != null ? greenSprite :
+        greenSprite = Rounded(new Color32(25, 38, 23, 255), new Color32(148, 114, 60, 255));
+    private static Sprite Control() => controlSprite != null ? controlSprite :
+        controlSprite = Rounded(new Color32(26, 23, 21, 255), new Color32(165, 124, 69, 255));
+    private static Sprite Selected() => selectedSprite != null ? selectedSprite :
+        selectedSprite = Rounded(new Color32(245, 202, 128, 255), new Color32(241, 215, 170, 255));
     private static Sprite ColorFill(Color color) => Rounded(color, color);
 
     private static Sprite Rounded(Color interior, Color stroke)
