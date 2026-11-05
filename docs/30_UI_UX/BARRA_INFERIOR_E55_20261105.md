@@ -26,7 +26,7 @@
 
 ## Pruebas pendientes dentro de Unity
 
-- Compilación de scripts en Unity 6000.3.19f1 y ejecución de Play Mode.
+- Compilación de scripts en Unity 6000.3.19f1 y ejecución de Play Mode. Desde el menú del Editor: **Bistro Builder > Pruebas > Validar barra inferior E5.5** para comprobar jerarquía y controles 1×/2×/3×/pausa sin alterar el estado final del reloj.
 - Confirmar ingresos del servicio, satisfacción de visitas activas, clima y cambios reales de velocidad/pausa.
 - Comprobar que no reaparece el dock 368B ni queda ningún elemento de la antigua barra.
 - Validación visual a 1920×1080 y 1280×720, tanto con panel Servicio abierto como con actividad y menú de gestión.
