@@ -163,7 +163,7 @@ public sealed class BistroBuilderBottomE55Hud : MonoBehaviour
         fill.pivot = new Vector2(0f, 0.5f);
         fill.offsetMin = new Vector2(2f, 2f);
         fill.offsetMax = new Vector2(-2f, -2f);
-        satisfactionFill = Panel(fill, ColorFill(Green), false);
+        satisfactionFill = Panel(fill, ColorFill(Color.white), false);
 
         RectTransform weather = Capsule(row, "ClimaE55", Tile(), 165f, 1.03f);
         weatherIcon = Icon(weather, "Tiempo", 2, 0.025f, 0.12f, 0.235f, 0.90f);
