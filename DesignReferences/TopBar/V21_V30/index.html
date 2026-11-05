@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Bistro Builder — Barra Superior V21 + V30 · Prototipo interactivo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="motion-normal">
+  <header class="preview-head">
+    <div>
+      <div class="kicker">Bistro Builder · V21 aprobada + V30 mejorada</div>
+      <h1>V21 · animación definitiva a prueba</h1>
+      <p>Pulsa cualquier icono, incluso el ya seleccionado. Pruébalo a velocidad normal o a cámara lenta.</p>
+    </div>
+    <div class="preview-settings" aria-label="Configuración del prototipo">
+      <div><div class="segment-label">Anchura de prueba</div><div class="segment" role="group" aria-label="Anchura de prueba">
+        <button type="button" data-size="fluid" aria-pressed="true">Ajustar</button>
+        <button type="button" data-size="1280" aria-pressed="false">1280 px</button>
+        <button type="button" data-size="1920" aria-pressed="false">1920 px</button>
+      </div></div>
+      <div><div class="segment-label">Velocidad de la V30</div><div class="segment" role="group" aria-label="Velocidad de la animación">
+        <button type="button" data-motion="normal" aria-pressed="true">Normal · 280 ms</button>
+        <button type="button" data-motion="slow" aria-pressed="false">Lenta · 840 ms</button>
+        <button type="button" data-motion="off" aria-pressed="false">Sin animación</button>
+      </div></div>
+      <button class="replay-control" type="button" id="replayActive" title="Repetir la animación del botón activo">↻ Repetir</button>
+    </div>
+  </header>
+  <main class="preview-frame">
+  <div class="preview-screen" id="demoScreen">
+    <header class="bistro-topbar" aria-label="Barra superior Bistro Builder V21">
+      <div class="brand-zone" aria-label="Bistro Builder">
+        <img class="brand-logo" src="assets/Logotipo_Bistro_Builder_Original.png" alt="Bistro Builder" draggable="false">
+      </div>
+      <nav class="navigation" aria-label="Navegación principal">
+        <button class="nav-button" type="button" data-section="Actividad" aria-current="page"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M9 43h46M14 39a18 18 0 0 1 36 0M29 20v-4h6v4M11 47h42"/><path d="M26 12c-3-3 3-5 0-8M34 13c-3-3 3-5 0-8M42 12c-3-3 3-5 0-8" stroke-width="1.55"/></svg></span><span class="nav-label">Actividad</span></button>
+        <button class="nav-button" type="button" data-section="Personal"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="19" r="9"/><path d="M15 51V46c0-9 7.4-15 17-15s17 6 17 15v5H15Z"/><circle cx="11" cy="27" r="6"/><path d="M13 38C5 38 3 44 3 51h9M51 51h10c0-7-3-13-11-13"/><circle cx="53" cy="27" r="6"/></svg></span><span class="nav-label">Personal</span></button>
+        <button class="nav-button" type="button" data-section="Carta"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 18C24 13 15 13 7 16v33c9-3 17-2 25 3 8-5 16-6 25-3V16c-8-3-17-3-25 2ZM32 18v34"/><path d="M13 25h12M13 32h12M13 39h9M41 23v17M46 23v17M41 28h5M51 23v17" stroke-width="1.7"/></svg></span><span class="nav-label">Carta</span></button>
+        <button class="nav-button" type="button" data-section="Inventario"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m23 12 9-5 9 5-9 5-9-5Zm0 0v12l9 5 9-5V12M32 17v12M7 35l12-6 12 6-12 6-12-6Zm0 0v14l12 6 12-6V35M19 41v14M33 35l12-6 12 6-12 6-12-6Zm0 0v14l12 6 12-6V35M45 41v14"/></svg></span><span class="nav-label">Inventario</span></button>
+        <button class="nav-button" type="button" data-section="Proveedores"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M6 17h33v28H6V17ZM39 28h10l9 10v7H39M6 45h8M26 45h16M54 45h4"/><circle cx="20" cy="46" r="6"/><circle cx="48" cy="46" r="6"/><path d="M43 32h8l5 6H43V32ZM10 23h21" stroke-width="1.7"/></svg></span><span class="nav-label">Proveedores</span></button>
+        <button class="nav-button" type="button" data-section="Reservas"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="12" width="42" height="42" rx="4"/><path d="M9 23h42M20 7v11M41 7v11M18 31h5M31 31h5M18 40h5"/><circle cx="44" cy="45" r="11" fill="#0b0e11"/><path d="m39 45 4 4 7-8"/></svg></span><span class="nav-label">Reservas</span></button>
+        <button class="nav-button" type="button" data-section="Economía"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M9 53h46M13 49V38h9v11M28 49V29h9v20M43 49V20h9v29M10 26l15-11 10 7 17-15M45 7h7v7"/></svg></span><span class="nav-label">Economía</span></button>
+        <button class="nav-button" type="button" data-section="Marketing"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m11 28 27-12v30L11 35v-7ZM38 16l9-5v40l-9-5M11 28H7c-3 0-4 2-4 4s1 4 4 4h4M17 38l5 15h9l-8-13M53 23l6-6M53 33h8M53 43l6 6"/></svg></span><span class="nav-label">Marketing</span></button>
+        <button class="nav-button" type="button" data-section="Reputación"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="m32 9 5.8 11.8 13.1 1.9-9.4 9.2 2.2 13-11.7-6.2L20.3 45l2.2-13-9.4-9.2 13.1-1.9L32 9Z"/><path d="M13 18C4 28 4 41 17 51M51 18c9 10 9 23-4 33M10 28l-6-2M10 36l-5 1M14 44l-4 5M54 28l6-2M54 36l5 1M50 44l4 5" stroke-width="1.6"/></svg></span><span class="nav-label">Reputación</span></button>
+        <button class="nav-button" type="button" data-section="Opciones"><span class="icon-stage"><svg class="nav-icon" viewBox="0 0 64 64" aria-hidden="true"><path d="M27 7h10l1.5 7 6.1 2.6 6-4 7 7-4 6 2.6 6.1 7 1.5v10l-7 1.5-2.6 6.1 4 6-7 7-6-4-6.1 2.6-1.5 7H27l-1.5-7-6.1-2.6-6 4-7-7 4-6-2.6-6.1-7-1.5v-10l7-1.5 2.6-6.1-4-6 7-7 6 4 6.1-2.6L27 7Z" transform="translate(0 -3) scale(.91) translate(3.2 3.3)"/><circle cx="32" cy="32" r="10"/></svg></span><span class="nav-label">Opciones</span></button>
+      </nav>
+    </header>
+    <div class="preview-content">
+      <div class="room-guide" aria-hidden="true"><div class="floor"></div><p>Restaurante · escenario ilustrativo</p></div>
+      <section class="panel-preview" aria-live="polite">
+        <p class="eyebrow">Bistro Builder · prueba de navegación</p>
+        <h2 id="sectionTitle">Actividad</h2>
+        <p id="sectionDescription">Feed de acontecimientos, alertas y seguimiento de lo que sucede en el restaurante.</p>
+        <div class="status-line"><i></i><span id="sectionStatus">Seleccionado: Actividad</span></div>
+        <div class="animation-spec" aria-live="polite"><strong id="animationState">V30 mejorada</strong><span id="clickCounter">0 clics de prueba</span></div>
+      </section>
+    </div>
+  </div>
+  </main>
+  <footer class="preview-footer"><div><strong>V21 + V30 · HTML/CSS/JS.</strong> La barra y la V30 mejorada son funcionales. Los accesos aún no abren los sistemas de Unity.</div><div>Logo original intacto · 10 accesos · Presión 94 % + recuperación 103 % + destello blanco · Teclado y accesibilidad</div></footer>
+  <script src="app.js"></script>
+</body>
+</html>
