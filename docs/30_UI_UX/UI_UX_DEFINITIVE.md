@@ -1,14 +1,39 @@
 # Bistro Builder — UI/UX definitiva
 
-**Estado:** diseño vinculante; implementación/hardening en `feature/21a-ui-ux-definitive`.
+**Estado:** referencia canónica de diseño. La **barra superior V21 está aprobada** y su implementación definitiva en Unity permanece pendiente de validación; las demás interfaces conservan su propio estado de desarrollo.
 
 ## Composición base
 - Restaurante como protagonista visual; HUD ligero y contextual.
-- Navegación de secciones **horizontal en la parte superior**: Actividad, Economía, Personal y demás secciones globales.
+- Navegación de gestión horizontal superior: **únicamente las diez opciones V21** documentadas en la sección siguiente.
 - `Actividad` funciona como feed compacto a la izquierda.
 - Panel contextual a la derecha, compacto y expandible según selección.
-- Franja operativa inferior para acciones del contexto actual.
-- Velocidad, `Caja` y demás indicadores globales operativos se integran en la zona superior; no crear un menú lateral permanente.
+- Barra inferior **diferenciada del Modo Juego** para los indicadores y controles operativos, incluidos Velocidad, `Caja` y Climatología; su diseño se rige por su propia documentación. No trasladarlos a la barra superior V21.
+- El Modo Edición dispone de controles propios y nunca mostrará la rueda de Servicio del Modo Juego.
+
+## Barra superior obligatoria del Modo Juego (V21)
+
+**Diseño aprobado y vinculante desde el 05/11/2026.** La barra superior es exactamente la definida por el prototipo visual V21, sin reinterpretar sus opciones ni añadir accesos nuevos. De izquierda a derecha:
+
+**Logotipo original de Bistro Builder** (marca, no desplegable operativo) y estos **10 botones**, en este orden:
+
+1. Actividad
+2. Personal
+3. Carta
+4. Inventario
+5. Proveedores
+6. Reservas
+7. Economía
+8. Marketing
+9. Reputación
+10. Opciones
+
+- Mantener la composición, proporciones, iconos SVG blancos, fondo negro satinado, selección y marca dorada del diseño V21 aprobado. La microanimación de los botones será **V30 rápida (280 ms)**.
+- No añadir a esta barra otras entradas como Restaurante, Cocina, Comandas, Camareros, Sala, Progreso, Edición, Cierre del día, Caja, Climatología, fecha, velocidad o controles de simulación. La decisión de dónde ubicar el resto de funciones se gestiona fuera de esta barra.
+- **El logotipo no abre ningún menú**: se utiliza únicamente como identidad de la marca.
+- El Modo Edición tiene sus barras y controles propios. El menú de Servicio, todavía en diseño, **no forma parte de la barra V21 y nunca se muestra en Modo Edición**.
+- Esta decisión establece el **diseño requerido**, no prueba que la barra ya esté integrada en la build de Unity.
+
+**Fuente visual editable única:** [`BARRA_SUPERIOR_V21_V30_APROBADA.md`](BARRA_SUPERIOR_V21_V30_APROBADA.md) y `DesignReferences/TopBar/V21_V30/` (HTML, CSS, JS, logotipo original y capturas). Una referencia antigua incompatible pasa a ser histórica y no prevalece sobre esta decisión.
 
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.

@@ -1,9 +1,17 @@
-# Barra superior del juego
+# Barra superior del juego — decisión vigente V21
 
-La barra usa el catálogo SVG y los efectos de `feature/21b-iconography-system` (`34694c7`). Incluye Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing y Reputación, conectados a sus pantallas existentes. La selección usa dorado, subrayado y fondo; al pasar el ratón los iconos aumentan y se elevan suavemente.
+**Estado: VINCULANTE.** El diseño y las diez opciones aprobadas son los de la barra superior V21 del Modo Juego; no usar como especificación final las barras antiguas.
 
-El nombre del restaurante, el estado del servicio, el calendario y la hora provienen de la partida. El menú de opciones y el desplegable del restaurante permiten entrar en edición, abrir Progreso, Comandas o Cocina, alternar pantalla completa y cerrar paneles. El menú bloquea la interacción con la construcción mientras está abierto.
+**Orden exacto:** logotipo original de Bistro Builder (solo marca) · **Actividad · Personal · Carta · Inventario · Proveedores · Reservas · Economía · Marketing · Reputación · Opciones**.
 
-La prueba `BistroBuilderTopNavigationPlayTest.RunBatch` verifica catálogo, sprites, animación al pasar el ratón, selección, navegación real entre Personal e Inventario, regreso a Actividad, menú de opciones y persistencia de los textos tras reconstruir la barra. Resultado: PASS. Captura de comprobación: `Logs/TopNavigation1920.png`.
+- Fondo negro satinado, iconos blancos de la versión V21, selección iluminada discreta y movimiento **V30 rápida (280 ms)**.
+- No añadir menús de Restaurante o de Operaciones al logotipo. Cocina, Comandas, Sala, etc., se resuelven fuera de estos diez botones.
+- Caja, Velocidad, Climatología, fecha/hora y controles operativos no forman parte de esta barra V21. El HUD inferior del Modo Juego tiene su contrato propio.
+- El Modo Edición no utiliza esta barra como menú de edición: tiene su propia interfaz. La rueda operativa nunca aparece en Modo Edición.
+- La barra V21 está aprobada visualmente, pero su integración completa en Unity/build debe verificarse por separado.
 
-Ejecutable: `Builds/Windows/BistroBuilder_Edicion/BistroBuilder.exe`. El lanzador `Jugar_Pantalla_Completa.cmd` abre la versión de Windows a pantalla completa sin bordes.
+**Referencia canónica:** [Especificación V21 + V30](30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md), [UI/UX general](30_UI_UX/UI_UX_DEFINITIVE.md) y `DesignReferences/TopBar/V21_V30/`.
+
+## Referencia histórica, no vinculante
+
+El diseño anterior `feature/21b-iconography-system` y sus pruebas (`BistroBuilderTopNavigationPlayTest.RunBatch`) describían una barra de otra etapa con opciones y comportamientos distintos. Se conservan como trazabilidad técnica, **pero no sustituyen** a la V21 y no demuestran que la V21 esté implementada en la build.

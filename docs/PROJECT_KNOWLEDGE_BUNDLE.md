@@ -69,7 +69,7 @@ Consolidación iniciada el **12/09/2026** a partir de documentación del reposit
 3. [`10_ARCHITECTURE/SYSTEM_MAP.md`](10_ARCHITECTURE/SYSTEM_MAP.md) — mapa de sistemas.
 4. [`10_ARCHITECTURE/AUTHORITY_MATRIX.md`](10_ARCHITECTURE/AUTHORITY_MATRIX.md) — fronteras de autoridad.
 5. [`90_DECISIONS/DECISION_REGISTER.md`](90_DECISIONS/DECISION_REGISTER.md) — decisiones vinculantes/superadas.
-6. [`30_UI_UX/UI_UX_DEFINITIVE.md`](30_UI_UX/UI_UX_DEFINITIVE.md) y [`30_UI_UX/CAMERA_369.md`](30_UI_UX/CAMERA_369.md).
+6. [`30_UI_UX/UI_UX_DEFINITIVE.md`](30_UI_UX/UI_UX_DEFINITIVE.md), **[barra superior V21 + V30 aprobada](30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md)** y [`30_UI_UX/CAMERA_369.md`](30_UI_UX/CAMERA_369.md).
 7. [`20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md`](20_GAME_SYSTEMS/CONSTRUCTION_AUTHORING.md) para Modo Edición player-ready.
 8. [`40_TESTING/ACCEPTANCE_AND_VALIDATION.md`](40_TESTING/ACCEPTANCE_AND_VALIDATION.md) — definición de PASS.
 
@@ -1084,6 +1084,150 @@ El estado V1 no autoriza a reescribir un bloque desde otro sistema. Correcciones
 
 ---
 
+## SOURCE: docs/30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md
+
+Category: CANONICAL
+
+# Barra superior V21 + V30 rápida — DISEÑO APROBADO
+
+**Estado de diseño: VINCULANTE.** Diseño V21 y movimiento V30 rápido aprobados por el usuario.
+
+**Estado de integración: FUENTE VISUAL/PROTOTIPO, NO INSTALADO EN LA BUILD DEL JUEGO.**
+
+## Fuente única y archivos
+
+El prototipo aprobado, su código editable y la marca original están en:
+
+`DesignReferences/TopBar/V21_V30/`
+
+- `index.html`: estructura real de 10 botones y SVG originales de la versión aceptada.
+- `styles.css`: acabado, tipografía, dimensiones, estados, adaptación y keyframes V30.
+- `app.js`: selección, clics, teclado, repetición y controles de prueba.
+- `assets/Logotipo_Bistro_Builder_Original.png`: logotipo original EXACTO, sin tratamiento ni modificación.
+- `V21_V30_1920_reference.png` / `V21_V30_1280_reference.png`: capturas del prototipo.
+- `ESPECIFICACION_V21_V30.md`: especificación técnica original íntegra.
+- `test_v30.py`: prueba original del prototipo; utiliza rutas temporales de autoría, por lo que se conserva como evidencia, no como runner CI listo para ejecutar.
+
+**No usar otras exploraciones de barra ni imágenes generadas como fuente de verdad.** No reconvertir los iconos a otros dibujos sin aprobación.
+
+## Barra superior, izquierda a derecha
+
+1. Marca Bistro Builder: visual, no lanza menús operativos.
+2. Actividad
+3. Personal
+4. Carta
+5. Inventario
+6. Proveedores
+7. Reservas
+8. Economía
+9. Marketing
+10. Reputación
+11. Opciones
+
+Son **10 botones de navegación**, además del logotipo. La rueda de servicio, en estudio, es independiente y no se incluye aquí.
+
+## Identidad V21
+
+- Negro satinado y fondo discreto.
+- SVG blancos y trazos nítidos; no neón azul, no iconos arcade ni mezcla azul-dorado.
+- Logotipo dorado original intacto.
+- Separadores finos, selección iluminada controlada con línea inferior.
+- Diseñar y verificar al menos a 1920×1080 y 1280×720.
+- No cambiar el orden ni el nombre de los accesos.
+
+## V30 rápida obligatoria
+
+- Duración normal: 280 ms (la cámara lenta 840 ms del prototipo es **solo una herramienta de prueba**).
+- Presión 100 % → 94 %, pequeño rebote al 103 %, vuelta a 100 %.
+- Destello blanco breve, sin colores vivos.
+- Se reinicia en clics consecutivos sobre el mismo botón.
+- Respetar movimiento reducido, teclado y estados interactuable/deshabilitado.
+- Este efecto se aplica a los botones presentes y futuros del juego. **Modo Edición queda excluido hasta decisión posterior.**
+
+## Integración en Unity
+
+La rama que contiene esta documentación **hereda** el trabajo en C# de `feature/ui-v30-global-button-feedback-20261104` (commit `b2fe71f7`):
+
+- `Assets/Scripts/Presentation/UI/BistroBuilderV30ButtonMotion.cs`
+- `Assets/Scripts/Presentation/UI/BistroBuilderV30ButtonInstaller.cs`
+
+Para construir la barra jugable en Unity, utilizar `BistroBuilderUiShell.TopNavigation.cs` y el sistema de navegación existente. Asociar cada opción a su pantalla real. No crear una segunda barra ni rutas de negocio paralelas. El HTML es una referencia editable, no un HUD de Unity instalado.
+
+## Criterios de aceptación de la futura integración
+
+- [ ] Correspondencia visual comprobada con la referencia a 1920×1080 y 1280×720.
+- [ ] Los diez botones abren sus vistas reales, sin acciones de prueba ni navegación ficticia.
+- [ ] Logotipo original sin alteraciones.
+- [ ] Animación V30 rápida en todos, con clic repetido y movimiento reducido.
+- [ ] Ausencia de solapamientos, errores de Unity y regresiones en Carta V3 y demás sistemas.
+- [ ] Modo Edición sin cambios.
+
+## Pruebas ejecutadas al preparar esta referencia
+
+- Verificados los SHA-256 del HTML, CSS, JS, prueba original, especificación original y logotipo: coinciden con el paquete exacto previamente aprobado.
+- Prueba con Chromium/Playwright a 1280×720 y 1920×1080: **PASS** en 10 accesos, animaciones, clics repetidos, teclado, tamaño, logo y ausencia de errores JS.
+- Movimiento reducido: **PASS**.
+- **No** se ha validado la barra V21 dentro de Unity ni en una build jugable.
+
+---
+
+## SOURCE: docs/30_UI_UX/BUTTON_MOTION_V21_V30.md
+
+Category: CANONICAL
+
+# Bistro Builder — Microinteracción global V30 rápida
+
+**Decisión aprobada:** 04/11/2026.
+
+**Referencia visual:** barra superior V21 aprobada.
+
+**Estado técnico:** implementación base en rama aislada; pendiente validación visual en Unity y fusión a la rama integradora.
+
+## Regla vinculante
+
+Todos los botones interactivos actuales y futuros del juego deben utilizar el feedback táctil **V30 rápida**, independientemente de la pantalla en la que se creen. No duplicar animaciones por cada módulo ni inventar variantes para nuevas pantallas.
+
+**Excepción temporal:** el Modo Edición V2 queda fuera de esta adopción hasta una decisión específica. No alterar la animación del editor por efecto de esta decisión.
+
+## V30 rápida: secuencia
+
+Duración total: **280 ms**, no depende del reloj del juego.
+
+1. Compresión 100 % → **94 %** durante los primeros 70 ms.
+2. Retorno elástico hasta **103 %** entre 70 y 162 ms.
+3. Recuperación al **100 %** entre 162 y 280 ms.
+4. Destello blanco breve (intensidad baja) únicamente cuando existe un icono gráfico adecuado.
+5. La selección, foco de teclado, estado hover, disponibilidad y acción del botón no se modifican.
+
+En botones de solo texto aplicar la misma microinteracción táctil sin forzar un brillo que perjudique el contraste. Los iconos con fondo negro conservarán el efecto blanco suave, no azul ni dorado.
+
+## Arquitectura
+
+- `BistroBuilderV30ButtonMotion`: componente de presentación sobre `UnityEngine.UI.Button`, sin lógica de juego ni callbacks propios de gestión.
+- `BistroBuilderV30ButtonInstaller`: instalador global mediante un único barrido periódico (0,6 s) de botones de Canvas; incluye los creados posteriormente.
+- Evitar dos efectos de presión simultáneos: deshabilitar solo el antiguo `BistroBuilderUiSelectableMotion` sobre el mismo botón, sin borrar sus datos.
+- Convivir con `BBIconButton` (estados y hover) animando la raíz del botón, no el RectTransform del icono, que ya gestiona `BBIconButton`.
+- Respetar `BistroBuilderOptionsScreen.ReducedMotion`; cancelar y restaurar al deshabilitar, cambiar a edición o dejar de ser interactuable.
+- No crear una nueva autoridad sobre navegación, menús, selección ni estado de simulación.
+
+## Validación de aceptación
+
+- [ ] Compilación limpia en Unity 6000.3.19f1.
+- [ ] Clic de ratón; clic repetido; mismo botón; distintas secciones.
+- [ ] Activación con teclado; estado seleccionado estable.
+- [ ] Iconos blancos sobre negro y botones claros de pantallas de gestión.
+- [ ] Escalado 1920×1080 / 1280×720 y sin cambios de layout.
+- [ ] Botones añadidos en runtime y ventanas que se crean bajo un Canvas nuevo.
+- [ ] `ReducedMotion`, Time.timeScale=0, botón deshabilitado durante el efecto.
+- [ ] Al entrar en Modo Edición no aplicar V30; al volver al servicio sí.
+- [ ] Confirmar que no se disparan acciones duplicadas.
+
+## Integración
+
+La rama aislada NO cambia prefabs ni escenas ni sobrescribe trabajo paralelo. La adopción final exige fusionarla en la rama integradora y ejecutar regresiones de UI, Carta, Personal y opciones antes de build.
+
+---
+
 ## SOURCE: docs/30_UI_UX/CAMERA_369.md
 
 Category: CANONICAL
@@ -1124,15 +1268,40 @@ Category: CANONICAL
 
 # Bistro Builder — UI/UX definitiva
 
-**Estado:** diseño vinculante; implementación/hardening en `feature/21a-ui-ux-definitive`.
+**Estado:** referencia canónica de diseño. La **barra superior V21 está aprobada** y su implementación definitiva en Unity permanece pendiente de validación; las demás interfaces conservan su propio estado de desarrollo.
 
 ## Composición base
 - Restaurante como protagonista visual; HUD ligero y contextual.
-- Navegación de secciones **horizontal en la parte superior**: Actividad, Economía, Personal y demás secciones globales.
+- Navegación de gestión horizontal superior: **únicamente las diez opciones V21** documentadas en la sección siguiente.
 - `Actividad` funciona como feed compacto a la izquierda.
 - Panel contextual a la derecha, compacto y expandible según selección.
-- Franja operativa inferior para acciones del contexto actual.
-- Velocidad, `Caja` y demás indicadores globales operativos se integran en la zona superior; no crear un menú lateral permanente.
+- Barra inferior **diferenciada del Modo Juego** para los indicadores y controles operativos, incluidos Velocidad, `Caja` y Climatología; su diseño se rige por su propia documentación. No trasladarlos a la barra superior V21.
+- El Modo Edición dispone de controles propios y nunca mostrará la rueda de Servicio del Modo Juego.
+
+## Barra superior obligatoria del Modo Juego (V21)
+
+**Diseño aprobado y vinculante desde el 05/11/2026.** La barra superior es exactamente la definida por el prototipo visual V21, sin reinterpretar sus opciones ni añadir accesos nuevos. De izquierda a derecha:
+
+**Logotipo original de Bistro Builder** (marca, no desplegable operativo) y estos **10 botones**, en este orden:
+
+1. Actividad
+2. Personal
+3. Carta
+4. Inventario
+5. Proveedores
+6. Reservas
+7. Economía
+8. Marketing
+9. Reputación
+10. Opciones
+
+- Mantener la composición, proporciones, iconos SVG blancos, fondo negro satinado, selección y marca dorada del diseño V21 aprobado. La microanimación de los botones será **V30 rápida (280 ms)**.
+- No añadir a esta barra otras entradas como Restaurante, Cocina, Comandas, Camareros, Sala, Progreso, Edición, Cierre del día, Caja, Climatología, fecha, velocidad o controles de simulación. La decisión de dónde ubicar el resto de funciones se gestiona fuera de esta barra.
+- **El logotipo no abre ningún menú**: se utiliza únicamente como identidad de la marca.
+- El Modo Edición tiene sus barras y controles propios. El menú de Servicio, todavía en diseño, **no forma parte de la barra V21 y nunca se muestra en Modo Edición**.
+- Esta decisión establece el **diseño requerido**, no prueba que la barra ya esté integrada en la build de Unity.
+
+**Fuente visual editable única:** [`BARRA_SUPERIOR_V21_V30_APROBADA.md`](BARRA_SUPERIOR_V21_V30_APROBADA.md) y `DesignReferences/TopBar/V21_V30/` (HTML, CSS, JS, logotipo original y capturas). Una referencia antigua incompatible pasa a ser histórica y no prevalece sobre esta decisión.
 
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.
@@ -1282,6 +1451,36 @@ Category: CANONICAL
 | D-030 | VIGENTE | Acabado Automático solo completa zonas/canales missing o incompletos; nunca sobrescribe trabajo válido salvo orden explícita. |
 | D-031 | VIGENTE | Toda propuesta automática requiere preview y aplicación explícita; reutilizar acabados canónicos tiene prioridad sobre generar nuevos. |
 | D-032 | VIGENTE | Si la semántica de una superficie es incierta, el sistema solicita clasificación y no asigna materiales a ciegas. |
+| D-033 | VIGENTE | V30 rápida (280 ms, 94 % → 103 % → 100 %) es la microinteracción estándar para todos los botones actuales y futuros fuera de Modo Edición; Editor V2 queda pendiente de decisión. Véase `docs/30_UI_UX/BUTTON_MOTION_V21_V30.md`. |
+| D-034 | VIGENTE | Barra superior definitiva del **Modo Juego = V21 aprobada**: logotipo original solo como marca y, exactamente en este orden, **Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing, Reputación y Opciones**. No incorporar más botones o controles operativos (Caja, fecha, climatología, velocidad, etc.) en esa barra. Iconos y estética V21, animación V30 rápida. El Modo Edición posee una interfaz propia y la rueda de Servicio es independiente. Referencia: `docs/30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md` y `docs/30_UI_UX/UI_UX_DEFINITIVE.md`. |
+
+---
+
+## SOURCE: docs/90_DECISIONS/NORMA_PUBLICACION_RAMAS_GIT.md
+
+Category: CANONICAL
+
+# Norma de publicación de ramas de Bistro Builder
+
+**Decisión del proyecto:** todas las ramas que se publiquen a partir de ahora deben poder entenderse rápidamente en español.
+
+## Obligatorio al publicar o actualizar una rama
+
+1. Crear o actualizar `docs/RESUMEN_RAMA.md` **dentro de esa misma rama**, con:
+   - **Objetivo:** qué problema resuelve.
+   - **Contenido:** archivos, módulos y funcionalidades añadidos o modificados, expresados de manera comprensible.
+   - **Pruebas realizadas:** resultados comprobados, no supuestos.
+   - **Estado real:** terminado, en desarrollo, pendiente de fusión o integrado en la build.
+   - **Pendientes o limitaciones:** lo que todavía no está hecho o probado.
+   - **Commit principal** y, si existe, enlace a la solicitud de integración (pull request).
+2. Escribir **mensajes de commit en español**, claros y descriptivos. Se admiten identificadores técnicos, rutas y términos habituales como `fix`, `feat`, `UI`, `Unity` o `PR`.
+3. Al abrir una pull request, escribir **título y descripción en español**, con resumen, pruebas y riesgos.
+4. Al informar sobre una rama publicada, incluir siempre **nombre de la rama, resumen en español, estado y enlace**.
+5. Conservar los nombres técnicos de rama sin tildes ni espacios; el texto explicativo debe estar en español.
+
+**Importante:** GitHub no ofrece un campo de descripción general propio para cada rama. El archivo `docs/RESUMEN_RAMA.md`, los commits y la descripción de la pull request son los lugares donde estará disponible esa información.
+
+**No declarar funcionalidades integradas en Unity por el solo hecho de subir el código a GitHub.**
 
 ---
 
@@ -1399,19 +1598,90 @@ Consulta `THIRD_PARTY_NOTICES.md` para atribución y licencia.
 
 ---
 
+## SOURCE: DesignReferences/TopBar/V21_V30/ESPECIFICACION_V21_V30.md
+
+Category: SUPPORTING
+
+# Bistro Builder — V21 + V30 mejorada
+
+**Estado:** prototipo funcional en HTML/CSS/JavaScript. **Unity no se ha modificado.**
+
+## Identidad
+- Barra **V21** aprobada: negro satinado, logotipo dorado 3D original exacto, diez opciones visibles, iconos SVG blancos, separadores y selección luminosa.
+- El archivo `assets/Logotipo_Bistro_Builder_Original.png` es copia binaria del original proporcionado por el usuario; no se transforma ni se recorta.
+
+## Secuencia única de animación al hacer clic
+- Duración normal: **280 ms**.
+- 0 %: tamaño 100 %, brillo habitual.
+- 20 %: compresión al **94 %**, bajada de 1 px.
+- 47 %: recuperación al **103 %**, elevación de 0,65 px.
+- 53 %: destello blanco moderado en el SVG.
+- 72 %: amortiguación al 99,4 %.
+- 100 %: icono al 100 %, sin desplazamiento ni brillo transitorio.
+- Se reproduce con cada clic, incluso clics repetidos y rápidos en la misma opción.
+- `prefers-reduced-motion: reduce` desactiva el movimiento. El demostrador también incorpora una opción manual «Sin animación».
+- Modo «Lenta · 840 ms» disponible para inspeccionar la curva del movimiento; no es el ajuste recomendado del juego.
+
+## Navegación
+Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing, Reputación y Opciones. Sin accesos adicionales ni menús inventados.
+
+## Comprobación
+- Probar 1280×720 y 1920×1080, sin solapamientos de la barra.
+- Verificar que las diez secciones son pulsables, que el clic repetido reinicia la animación, teclado (← → Inicio Fin), ausencia de errores JS y respeto a movimiento reducido.
+- Este prototipo no se conecta aún a Unity. En Unity la interacción deberá vincularse a los launchers reales de `BistroBuilderUiShell`, evitando crear otra navegación paralela.
+
+---
+
+## SOURCE: DesignReferences/TopBar/V21_V30/README.md
+
+Category: SUPPORTING
+
+# Prototipo visual aprobado: Bistro Builder V21 + V30 rápida
+
+Abrir `index.html` con navegador web. Mantener `styles.css`, `app.js` y `assets/` en sus rutas actuales.
+
+Esta carpeta es la **referencia visual vinculante** para la nueva barra superior del juego. No es una escena de Unity ni introduce lógica jugable.
+
+Consulta [el documento de integración](../../../docs/30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md) (enlace relativo desde el repositorio) para criterios, estados y pruebas.
+
+**Identidad:** logo original, fondo negro satinado, 10 iconos SVG blancos, selección luminosa.
+
+**Movimiento elegido:** V30 rápida — 280 ms; el modo «Lenta» es exclusivamente demostrativo.
+
+**Wheel/Servicio:** concepto separado; no se accede desde el logo.
+
+## Comprobación de identidad (SHA-256)
+
+- `index.html`: `E8ACC676E0EDB2789CB54844B324571B461C42A6E6843D7FB9E9D4B6171F2517`
+- `styles.css`: `EBC5401D9225856EA6B5CB8E7A6C711EEC10052A9CDDEC920B4F31A125AFDCAA`
+- `app.js`: `8EE36736957FC2DA4A319ED6DF9392FCA27F0BB8FA28CEC5164256CE27F019CA`
+- `assets/Logotipo_Bistro_Builder_Original.png`: `3FD6C2E45A5E2E3E030F52E45452EAD1029068B2BE02028AA14DD7F89C165D56`
+
+Fuente exacta conservada. El código C# del movimiento V30 se encuentra en `Assets/Scripts/Presentation/UI/` en esta misma rama.
+
+---
+
 ## SOURCE: docs/BarraSuperiorIconos.md
 
 Category: SUPPORTING
 
-# Barra superior del juego
+# Barra superior del juego — decisión vigente V21
 
-La barra usa el catálogo SVG y los efectos de `feature/21b-iconography-system` (`34694c7`). Incluye Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing y Reputación, conectados a sus pantallas existentes. La selección usa dorado, subrayado y fondo; al pasar el ratón los iconos aumentan y se elevan suavemente.
+**Estado: VINCULANTE.** El diseño y las diez opciones aprobadas son los de la barra superior V21 del Modo Juego; no usar como especificación final las barras antiguas.
 
-El nombre del restaurante, el estado del servicio, el calendario y la hora provienen de la partida. El menú de opciones y el desplegable del restaurante permiten entrar en edición, abrir Progreso, Comandas o Cocina, alternar pantalla completa y cerrar paneles. El menú bloquea la interacción con la construcción mientras está abierto.
+**Orden exacto:** logotipo original de Bistro Builder (solo marca) · **Actividad · Personal · Carta · Inventario · Proveedores · Reservas · Economía · Marketing · Reputación · Opciones**.
 
-La prueba `BistroBuilderTopNavigationPlayTest.RunBatch` verifica catálogo, sprites, animación al pasar el ratón, selección, navegación real entre Personal e Inventario, regreso a Actividad, menú de opciones y persistencia de los textos tras reconstruir la barra. Resultado: PASS. Captura de comprobación: `Logs/TopNavigation1920.png`.
+- Fondo negro satinado, iconos blancos de la versión V21, selección iluminada discreta y movimiento **V30 rápida (280 ms)**.
+- No añadir menús de Restaurante o de Operaciones al logotipo. Cocina, Comandas, Sala, etc., se resuelven fuera de estos diez botones.
+- Caja, Velocidad, Climatología, fecha/hora y controles operativos no forman parte de esta barra V21. El HUD inferior del Modo Juego tiene su contrato propio.
+- El Modo Edición no utiliza esta barra como menú de edición: tiene su propia interfaz. La rueda operativa nunca aparece en Modo Edición.
+- La barra V21 está aprobada visualmente, pero su integración completa en Unity/build debe verificarse por separado.
 
-Ejecutable: `Builds/Windows/BistroBuilder_Edicion/BistroBuilder.exe`. El lanzador `Jugar_Pantalla_Completa.cmd` abre la versión de Windows a pantalla completa sin bordes.
+**Referencia canónica:** [Especificación V21 + V30](30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md), [UI/UX general](30_UI_UX/UI_UX_DEFINITIVE.md) y `DesignReferences/TopBar/V21_V30/`.
+
+## Referencia histórica, no vinculante
+
+El diseño anterior `feature/21b-iconography-system` y sus pruebas (`BistroBuilderTopNavigationPlayTest.RunBatch`) describían una barra de otra etapa con opciones y comportamientos distintos. Se conservan como trazabilidad técnica, **pero no sustituyen** a la V21 y no demuestran que la V21 esté implementada en la build.
 
 ---
 
@@ -2174,6 +2444,43 @@ Regresión completa del Bloque 18 repetida con estos cambios: **PASS** (Finance,
 Build Windows: **PASS**, generada el 14/09/2026 a las 06:57:59 UTC; 110.878.409 bytes, cero errores y ocho advertencias preexistentes. Ejecutable actualizado en `Builds/Windows/BistroBuilder_Edicion/BistroBuilder.exe`. Registro: `Logs/EditPerformanceWindowsBuild.log`.
 
 Ejecutar: `BistroBuilderEditPerformanceProbe.RunBatch` con `-bistroPerfFinal` para aplicar los límites de regresión; sin ese argumento realiza la medición inicial del diagnóstico completo.
+
+---
+
+## SOURCE: docs/RESUMEN_RAMA.md
+
+Category: SUPPORTING
+
+# Resumen de esta rama — Barra superior V21 + animación V30
+
+## Objetivo
+Guardar sin modificaciones la **barra superior V21 aprobada** y la **animación V30 rápida** para que Codex pueda implementarlas en Unity sin rediseñar el trabajo aceptado.
+
+## Qué contiene
+- En `DesignReferences/TopBar/V21_V30/`: `index.html`, `styles.css` y `app.js`, que forman el prototipo interactivo editable.
+- Logotipo dorado **original**, conservado sin alteraciones.
+- Diez accesos en este orden: Actividad, Personal, Carta, Inventario, Proveedores, Reservas, Economía, Marketing, Reputación y Opciones.
+- Iconos SVG blancos sobre fondo negro satinado, selección iluminada discretamente.
+- Animación V30 rápida de 280 ms; el modo lento del prototipo es solo para comparar.
+- Capturas de referencia a resoluciones 1280×720 y 1920×1080.
+- Especificación original y documento `docs/30_UI_UX/BARRA_SUPERIOR_V21_V30_APROBADA.md`.
+- Esta rama se creó sobre la rama V30, por lo que **también incluye el código C# de la microanimación global**.
+
+## Actualización de la documentación general (05/11/2026)
+- `docs/30_UI_UX/UI_UX_DEFINITIVE.md`: incorpora **la lista exacta y ordenada de los diez botones V21** y prohíbe añadir elementos adicionales a la barra superior.
+- `docs/90_DECISIONS/DECISION_REGISTER.md`: nueva decisión vinculante **D-034**.
+- `docs/BarraSuperiorIconos.md`: sustituye las descripciones antiguas por la referencia definitiva V21; los diseños anteriores quedan únicamente como historial.
+- `docs/README.md`: enlaza directamente la especificación V21 como documento canónico.
+- `docs/ALL_MARKDOWN_INDEX.md` y `docs/PROJECT_KNOWLEDGE_BUNDLE.md`: índice y contexto regenerados para que otros agentes lean la nueva decisión.
+- **Solo documentación:** no se modifica el código ni la build de Unity; no se pretende haber validado la integración de la barra.
+
+## Pruebas y estado
+- Se verificó que HTML, CSS, JS y logotipo conservan los SHA-256 de los originales.
+- Pruebas del prototipo: diez botones, clic repetido, teclado, movimiento reducido, resolución 1280 y 1920, sin errores de JavaScript.
+- **Pendiente:** implementar la apariencia V21 en la UI de Unity, conectar los botones a pantallas reales y validar la build. No está integrada en la versión jugable.
+
+## Referencia
+Commit del prototipo visual: `092cb7cc`. El logo es únicamente la marca: **no abre un menú operativo**. La rueda de Servicio se desarrolla por separado.
 
 ---
 
