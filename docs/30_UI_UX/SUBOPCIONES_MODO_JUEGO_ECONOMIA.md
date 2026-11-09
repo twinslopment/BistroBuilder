@@ -1,7 +1,7 @@
 # Economía — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Economía → Resumen: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Quedan pendientes de definir **Resultados, Caja, Históricos y Financiación**.
+**Estado:** **Economía → Resumen APROBADA FUNCIONALMENTE (09/11/2026)**. **Economía → Resultados: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Caja, Históricos y Financiación siguen pendientes. La aprobación no supone rediseño ni implementación de mejoras en Unity.
 **Regla de trabajo:** se definen las funciones, no el diseño visual ni la implementación. El aspecto futuro de TODAS las pantallas seguirá `docs/30_UI_UX/SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando las barras V21 y E5.5 aprobadas.
 
 ## Secciones verificadas en el código de Finanzas 3J
@@ -17,7 +17,7 @@
 
 La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestañas y pruebas de 2026. No acredita por sí sola que el nuevo sistema visual V21/E5.5 esté ya integrado ni validado.
 
-## Economía → Resumen — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Economía → Resumen — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** ofrecer una fotografía rápida y fiable de la situación económica del restaurante durante el día de juego, con enlaces a las secciones especializadas.
 
@@ -43,7 +43,7 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - `BistroBuilderFinanceRuntimeView` tiene navegación interna de cinco pestañas. **La navegación profunda desde cada indicador de Resumen, la sincronización visual exacta con la barra inferior E5.5 y el nuevo diseño global son mejoras previstas**, no se han implementado ni probado en este paso.
 - El origen de los importes es financiero y está expresado en céntimos canónicos; **no usar float en cálculos de dinero ni introducir cifras decorativas**.
 
-### Exclusiones y fronteras propuestas
+### Exclusiones y fronteras aprobadas
 
 - No confundir **caja**, **liquidez disponible**, **ventas**, **margen bruto** y **resultado operativo**.
 - No inventar pronósticos de ingresos futuros, rentabilidades garantizadas, comparativas con restaurantes reales ni métricas históricas inexistentes.
@@ -51,6 +51,38 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - No permitir editar importes desde Resumen: el saldo y los resultados los calculan otros sistemas del juego.
 - El rediseño visual debe resultar coherente con el resto del juego y las barras aprobadas, nunca parecer un CRM independiente.
 
+## Economía → Resultados — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** mostrar cómo se construye el resultado económico del restaurante, separando ventas, coste de producto, margen bruto y gastos; distinguir **resultado operativo** de los movimientos de dinero de Caja.
+
+1. **Consultar las ventas cobradas del día de juego**, el número de cuentas pagadas y la parte de ventas que tiene coste de producto reconocido. No equiparar ventas con beneficio ni incluir en ventas la entrada de un préstamo.
+2. **Mostrar el coste de producto vendido (COGS)** real, estimado o mixto que calcula el sistema, acompañado de su **calidad** y del coste teórico de referencia. No sumar el precio de compra de todo el inventario como COGS: la compra es tesorería, y el consumo vendido genera el coste de ventas.
+3. **Calcular y mostrar el margen bruto** en importe y porcentaje a partir de los resultados canónicos. Explicar que mide ventas menos coste de producto, antes de gastos generales.
+4. **Advertir sobre cobertura incompleta de costes:** mostrar si faltan líneas valoradas, la brecha `costCoverageGapCents` y si el coste refleja importes reales, estimados o ambos. No presentar márgenes incompletos como cifras cerradas ni silenciar posibles datos no disponibles de pagos de proveedor.
+5. **Desglosar gastos del día** por categorías realmente registradas: portes de proveedor, gastos operativos recurrentes, nóminas, marketing, baja de activos, pérdidas de inventario por merma/caducidad, intereses financieros y otros gastos reconocidos.
+6. **Mostrar total de gastos operativos y resultado operativo** del día, indicando explícitamente cuándo es pérdida. No mezclar amortización del principal, cobros de préstamos, compra de activos ni cobros por reventa con el beneficio operativo del día.
+7. **Desglosar la contribución por servicio** (desayuno/comida/cena solo cuando existan datos): ventas de mesa y barra, coste de producto, margen bruto, porcentaje de margen y cuentas pagadas. **No repartir artificialmente alquileres, nóminas ni otros gastos generales entre servicios.**
+8. **Identificar qué conceptos explican un mal resultado** mediante sus cifras: ventas bajas, COGS elevado, merma o mayores gastos. Ofrecer lectura comprensible de datos disponibles; no inventar análisis causal avanzado ni recomendaciones no calculadas por los sistemas actuales.
+9. **Actualizar automáticamente al cambiar los resultados** de ventas, consumo, cierre de servicio, pagos y gastos, empleando `BistroBuilderFinancialResultsService` y el dashboard canónico, sin guardar otra cuenta paralela.
+10. **Ir a Caja para movimientos monetarios concretos** y a Históricos para comparar días y periodos. Esta pestaña describe el resultado económico del **día seleccionado/actual**; la selección de días comparables o periodos se resolverá en Históricos, salvo ampliación expresamente aprobada.
+11. **Solo lectura:** el jugador no podrá teclear ingresos, gastos, márgenes o resultados, ni modificar operaciones económicas consolidadas desde esta pantalla. Los cambios reales se originan en los correspondientes sistemas jugables.
+
+### Código y límites verificados
+
+- `BistroBuilderFinanceRuntimeView.BuildResultsSection` ya muestra tres bloques: **Ventas y margen**, **Gastos del día** y **Contribución por servicio**, con cuentas, importes, COGS, margen, cobertura de coste, gastos por concepto y resultado operativo.
+- `BistroBuilderFinancialResultsService.TryGetDayResult` agrega resultados reales y costes mediante las autoridades `BistroBuilderFinanceService` y `BistroBuilderProductCostService`, sin persistir una base de resultados independiente.
+- `BistroBuilderDayFinancialResult` incluye `revenueCents`, `costedSalesCents`, `productCostCents`, `theoreticalProductCostCents`, `grossProfitCents`, `grossMarginBasisPoints`, costes por naturaleza, `totalPeriodExpensesCents`, `operatingResultCents` y `costCoverageGapCents`.
+- `BistroBuilderFinancialResultCostQuality` distingue `None`, `Estimated`, `Mixed` y `Actual`. Las ventas sin coste reconocido y el desglose de pagos de proveedor incompleto se deben tratar con transparencia.
+- `BistroBuilderServiceFinancialResult` distingue ventas de **mesa** y **barra**, cuentas y contribución bruta por comida, cena u otro servicio existente; **no atribuye gastos comunes arbitrariamente**.
+- El código actual **no incorpora** selección de fechas ni comparación histórica dentro de esta pestaña, ni análisis causal automático por motivos de pérdidas: son posibles mejoras de lectura, no capacidades acreditadas. Los históricos están en otra sección.
+
+### Reglas de frontera propuestas
+
+- Mantener separación entre **Resultados** (rentabilidad) y **Caja** (tesorería y movimientos). El coste de mercancía comprada no se registra doblemente como gasto de ventas del día.
+- Evitar cálculos monetarios nuevos con `float`: todos los importes se leen de céntimos canónicos y se presentan formateados.
+- No introducir gráficos históricos redundantes, exportaciones, ajustes contables manuales, impuestos simulados no programados ni nuevas métricas financieras en esta primera fase.
+- Aplicar posteriormente la misma identidad visual premium que a las restantes pantallas, preservando la barra superior V21 y la inferior E5.5.
+
 ## Próximo paso
 
-Solicitar aprobación o ajustes de **Economía → Resumen**. Después seguir por **Economía → Resultados**, **Caja**, **Históricos** y **Financiación**; registrar cada aprobación en el libro general de decisiones.
+Solicitar aprobación de **Economía → Resultados**. Después continuar por **Caja**, **Históricos** y **Financiación**; registrar cada paso y mantener el rediseño visual como trabajo independiente.
