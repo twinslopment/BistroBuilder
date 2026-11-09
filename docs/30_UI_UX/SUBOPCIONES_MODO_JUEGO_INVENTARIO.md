@@ -1,7 +1,7 @@
 # Inventario — definición funcional por secciones (Modo Juego)
 
 **Fecha de inicio:** 09/11/2026.
-**Estado:** **Existencias, Alertas de stock y Movimientos — FUNCIONALIDADES APROBADAS** (09/11/2026); **Recepciones — propuesta funcional pendiente de aprobación**. Son decisiones funcionales; no acreditan implementación ni diseño visual nuevos.
+**Estado:** **INVENTARIO CERRADO FUNCIONALMENTE el 09/11/2026**. Las cuatro secciones — Existencias, Alertas de stock, Movimientos y Recepciones — están APROBADAS. El rediseño visual, integración V21 y las ampliaciones técnicas de UI siguen pendientes; documentación no acredita nuevas pruebas de Unity.
 **Regla de trabajo:** trabajar SOLO funcionalidad por pantalla, documentar aprobaciones antes de avanzar y dejar el rediseño visual global para una fase posterior. Identidad vinculante en `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`.
 
 ## Secciones previstas
@@ -9,7 +9,7 @@
 1. **Existencias** (aprobada funcionalmente).
 2. **Alertas de stock** (aprobada funcionalmente).
 3. **Movimientos** (aprobada funcionalmente).
-4. **Recepciones** (propuesta actual).
+4. **Recepciones** (aprobada funcionalmente).
 
 No introducir múltiples autoridades de inventario ni confundir un movimiento de corrección con una recepción de proveedor.
 
@@ -97,7 +97,7 @@ No crear compras, devoluciones ni pedidos automáticos desde Alertas. No exponer
 - El historial no es un segundo registro de auditoría ni se generan transacciones ficticias; no crear operaciones de compra, devolución o corrección directamente en esta pantalla.
 - **La búsqueda, los filtros específicos, el detalle seleccionado y el enlace a Existencias/Recepciones son funcionalidades propuestas, no verificadas en la UI actual.**
 
-## Recepciones — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Recepciones — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** comprobar **qué compras han llegado efectivamente al restaurante, qué ingredientes se han incorporado al almacén y a qué pedido corresponden**, sin crear un segundo sistema de recepción ni contabilizar dos veces las existencias.
 
@@ -126,4 +126,4 @@ No crear compras, devoluciones ni pedidos automáticos desde Alertas. No exponer
 
 ## Próximo paso
 
-Solicitar aprobación o ajustes sobre **Inventario → Recepciones**. Con esa decisión se podrá cerrar funcionalmente **Inventario**, sin afirmar que el nuevo diseño visual o las adaptaciones técnicas ya están implementados.
+**Inventario queda cerrado funcionalmente.** Continuar la definición funcional de **Proveedores → Proveedores**, sin empezar aún el rediseño visual global ni modificar el runtime Unity.
