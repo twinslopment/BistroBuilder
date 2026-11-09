@@ -1,7 +1,7 @@
 # Marketing — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Marketing → Catálogo de campañas: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. **Marketing → Campañas activas** queda pendiente de definir y aprobar.
+**Estado:** **Marketing → Catálogo de campañas APROBADA FUNCIONALMENTE (09/11/2026)**. **Marketing → Campañas activas: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Sin rediseño ni implementación de mejoras de Unity.
 **Alcance:** definición funcional únicamente. No modificar código Unity ni el diseño en esta fase. La visualización futura debe cumplir `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md` y las barras de Modo Juego V21/E5.5.
 
 ## Estructura real contrastada
@@ -23,7 +23,7 @@ Las siete familias de `BistroBuilderMarketingCampaignType` son:
 
 Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y las campañas contratadas. El gasto se contabiliza exclusivamente por `BistroBuilderDiscretionaryFinanceService`; las variaciones de demanda, reservas, ticket medio, reputación, repetición y presión operativa pertenecen a sus correspondientes sistemas de juego. `BistroBuilderMarketingPlayerFacade` es la fachada de la UI; **no crear otra fuente de datos**.
 
-## Marketing → Catálogo de campañas — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Marketing → Catálogo de campañas — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** permitir al jugador elegir acciones promocionales para captar clientes, aumentar la demanda, fomentar reservas y fidelizar, comprendiendo **coste, duración, público objetivo y efectos/riesgos** antes de pagar.
 
@@ -50,7 +50,7 @@ Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y l
 - `BistroBuilderMarketingModifierKind` define los tipos de efecto; se expresan como puntos básicos o puntos planos de reputación, y pueden estar condicionados por segmento de cliente y franja. **No son una garantía numérica de ventas futuras**.
 - El código semilla prevé **35 campañas (7 × 5)**, pero la UI debe leer exclusivamente el `BistroBuilderMarketingCampaignCatalog` instalado: no codificar «35» como condición ni mostrar campañas ausentes del asset real.
 
-### Límites propuestos
+### Límites aprobados
 
 - No permitir que el jugador cree/edite manualmente campañas, imágenes, anuncios, presupuestos libres o sus multiplicadores. No inventar una plataforma publicitaria externa.
 - No descontar dinero al previsualizar; el cargo ocurre al aceptar e iniciar la campaña.
@@ -59,6 +59,39 @@ Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y l
 - No mezclar Marketing con Reputación: Marketing puede influir en ella mediante efectos; la autoridad de reputación permanece en su propio sistema.
 - Mantener la identidad global premium de Bistro Builder en fase de diseño, sin alterar las barras superiores/inferiores definitivas.
 
+## Marketing → Campañas activas — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** permitir al jugador **supervisar y cancelar las campañas que están vigentes**, con información clara sobre sus compromisos, duración y efectos configurados. Evitar fingir un retorno económico individual o resultados de campaña que el sistema no calcula.
+
+1. **Mostrar las campañas que siguen activas en el día de juego actual**, con un contador total y estado vacío comprensible si no hay ninguna. No confundir campañas disponibles en el catálogo con contrataciones efectivas.
+2. **Ordenar de forma útil:** próximas a terminar primero, como hace el código actual. La UI futura puede incluir filtros por familia y objetivo, y búsqueda por campaña, siempre que se implementen explícitamente; el buscador actual se oculta en esta pestaña.
+3. **Identificar cada campaña** por nombre, familia, objetivo (restaurante general, plato o carta), coste ya pagado, día de inicio, último día activo y días restantes. Calcular las fechas con el calendario de juego: `endDayExclusive` no es un día activo.
+4. **Consultar la ficha de campaña activa** con descripción y modificadores definidos en su catálogo: demanda, reservas, visitas espontáneas, reputación, ticket medio, repetición, promoción de plato/carta y presión operativa, cuando correspondan.
+5. **Explicar efectos favorables y desfavorables** sin presentar los modificadores como ventas garantizadas, clientes captados efectivos ni rentabilidad demostrada. Los efectos reales dependen de la evaluación de sistemas propietarios y del contexto del servicio, segmento o franja.
+6. **Mostrar su coste como pagado**, sin volver a deducir efectivo cada vez que se consulte y sin confundir gasto de Marketing con un coste por día salvo que el motor lo modele así. Enlace a Caja/Resultados cuando una relación trazable esté disponible, sin nuevo ledger.
+7. **Permitir cancelar una campaña todavía activa**, con confirmación de segundo paso que informe claramente de las consecuencias: **se pierden sus efectos futuros, no se reembolsa el coste y no se revierten los efectos ya materializados**. La acción usará exclusivamente `BistroBuilderMarketingService.TryCancelCampaign`.
+8. **No permitir pausa, edición de costes/duración/objetivo ni reanudación del contrato actual.** Si el jugador quiere una nueva campaña, deberá volver al Catálogo y contratar otra campaña válida con un nuevo gasto y comprobaciones.
+9. **Actualizar automáticamente el tiempo restante y el estado** al avanzar el día de juego o variar el sistema canónico. Las campañas vencidas desaparecen de Activas por la depuración del motor; no debe quedar una etiqueta «activa» cuando haya expirado.
+10. **Conservar estado tras guardar y cargar:** reconstruir la interfaz leyendo las campañas runtime de `marketing.state`, sin persistir un segundo registro de UI ni aplicar nuevamente el gasto al cargar.
+11. **Enlace a Catálogo de campañas** para seleccionar otra acción publicitaria. Marketing puede afectar a Reputación, Reservas, Carta y Clientes, pero las pantallas de esos sistemas siguen siendo autoridades separadas.
+
+### Estado comprobado del código y trabajo pendiente
+
+- `BistroBuilderMarketingPlayerScreen.ShowActiveCampaigns` activa `ViewMode.Active` y muestra las campañas del snapshot de la fachada, con panel de detalle, días restantes, objetivo, coste abonado y resumen de efectos.
+- `BistroBuilderMarketingPlayerFacade.BuildActiveRows` lee exclusivamente `CopyActiveCampaigns` para el día actual, resuelve definición y nombre del objetivo, y ordena por **fecha de finalización ascendente**.
+- `BistroBuilderMarketingPlayerScreen.CancelSelectedActive` ya implementa **dos pulsaciones de confirmación**, con aviso de **sin reembolso** y de que los efectos anteriores no se revierten; el servicio vuelve a validar la existencia/actividad.
+- `BistroBuilderMarketingEngine.TryCancelCampaign` elimina el registro de la campaña de `marketing.state`; `TryPruneExpired` también elimina las expiradas. **No hay actualmente un historial permanente de campañas finalizadas/canceladas en Marketing** ni una métrica canónica de ingresos atribuibles a cada campaña. Finanzas sí conserva el cargo real.
+- `BistroBuilderMarketingPlayerScreen.ApplyTabState` oculta buscador y filtros en Activas; cualquier búsqueda/filtros en esta vista será nueva UI pendiente de integración y pruebas.
+- Las referencias de objetivo, las fechas y el coste son datos existentes; **enlaces profundos** a Caja, Reputación o Carta requieren integración futura, nunca una segunda fuente de verdad.
+
+### Límites propuestos
+
+- No inventar ROI por campaña, gráficos de conversiones, clientes atribuidos o una estadística de «campaña más rentable» sin definir primero una métrica real y trazable.
+- No prometer un **historial de campañas** finalizadas o canceladas: el estado actual elimina esos registros. Si se decide añadirlo, requerirá una mejora de dominio/persistencia específica y pruebas, no solo diseño.
+- No permitir edición retroactiva, reintegros, pausas, prórrogas o cambios manuales de multiplicadores sin un mecanismo aprobado.
+- No introducir una tercera pestaña de resultados o un módulo de Reputación dentro de Marketing por defecto.
+- Las decisiones funcionales aprobadas no equivalen a una build Unity integrada con el rediseño premium ni a prueba visual de la navegación V21/E5.5.
+
 ## Próximo paso
 
-Solicitar aprobación de **Marketing → Catálogo de campañas**. Después definir **Marketing → Campañas activas** y valorar solo entonces si se necesita una tercera sección funcional real, sin crearla por costumbre.
+Solicitar aprobación funcional de **Marketing → Campañas activas**. Si se aprueba, cerrar Marketing con dos secciones definitivas: **Catálogo de campañas** y **Campañas activas**, y continuar con **Reputación**.
