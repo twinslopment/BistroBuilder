@@ -3,6 +3,9 @@
 **Estado:** PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN (09/11/2026).
 **Regla:** no convertir esta propuesta en decisión vinculante hasta recibir aprobación explícita del usuario. No modificar código de Unity por una propuesta.
 
+## Requisito visual transversal aprobado (09/11/2026)
+**Reutilizar el sistema de Personal no implica reutilizar su diseño visual.** Las vistas Plantilla, Candidatos y Horarios, sus iconos, botones, filtros, tarjetas, colores y estados deberán ser completamente rediseñados con la identidad gráfica global aprobada de Bistro Builder. No se trata de una excepción de Personal: se aplica a **TODOS LOS PANELES**. Referencia vinculante: [`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`](SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md).
+
 ## Punto de partida verificado en código
 
 - `BistroBuilderStaffPlayerScreen`: pantalla jugable actual de Personal con pestañas `Staff` (Plantilla) y `Candidates` (Candidatos), sin pestaña integrada de Horarios en esta clase.

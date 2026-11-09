@@ -2,6 +2,9 @@
 
 **Estado:** referencia canónica de diseño. La **barra superior V21 está aprobada** y su implementación definitiva en Unity permanece pendiente de validación; las demás interfaces conservan su propio estado de desarrollo.
 
+## Regla transversal de rediseño visual (09/11/2026)
+**Todas las pantallas y paneles de Bistro Builder deberán rediseñarse con el mismo lenguaje visual**, incluidos iconos, colores, tipografías, botones y estados. Reutilizar el código y sistemas jugables preexistentes no obliga a conservar su antigua apariencia. Mantener las decisiones visuales específicas ya aprobadas para la barra superior V21 y la barra inferior del Modo Juego, y los controles propios del Modo Edición. Referencia vinculante: [`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`](SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md).
+
 ## Composición base
 - Restaurante como protagonista visual; HUD ligero y contextual.
 - Navegación de gestión horizontal superior: **únicamente las diez opciones V21** documentadas en la sección siguiente.
