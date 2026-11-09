@@ -1,15 +1,15 @@
 # Inventario — definición funcional por secciones (Modo Juego)
 
 **Fecha de inicio:** 09/11/2026.
-**Estado:** **Existencias y Alertas de stock — FUNCIONALIDADES APROBADAS** (09/11/2026); **Movimientos — propuesta funcional pendiente de aprobación**. Recepciones queda pendiente. Estas decisiones son funcionales y no acreditan implementación ni diseño visual nuevos.
+**Estado:** **Existencias, Alertas de stock y Movimientos — FUNCIONALIDADES APROBADAS** (09/11/2026); **Recepciones — propuesta funcional pendiente de aprobación**. Son decisiones funcionales; no acreditan implementación ni diseño visual nuevos.
 **Regla de trabajo:** trabajar SOLO funcionalidad por pantalla, documentar aprobaciones antes de avanzar y dejar el rediseño visual global para una fase posterior. Identidad vinculante en `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`.
 
 ## Secciones previstas
 
 1. **Existencias** (aprobada funcionalmente).
 2. **Alertas de stock** (aprobada funcionalmente).
-3. **Movimientos** (propuesta actual).
-4. **Recepciones** (después).
+3. **Movimientos** (aprobada funcionalmente).
+4. **Recepciones** (propuesta actual).
 
 No introducir múltiples autoridades de inventario ni confundir un movimiento de corrección con una recepción de proveedor.
 
@@ -40,7 +40,7 @@ No introducir múltiples autoridades de inventario ni confundir un movimiento de
 
 ### Límites funcionales aprobados y advertencias técnicas
 
-- Las **entradas reales de compras** se validan en Recepciones y su servicio correspondiente, no mediante «Aumentar stock» de Existencias.
+- Las **entradas reales de compras** son aceptadas por el servicio canónico de recepción de mercancía desde Proveedores; se **consultan** en la pestaña Recepciones. No se crean mediante «Aumentar stock» de Existencias.
 - Los consumos, reservas y caducidades normales los gestiona el gameplay; el jugador solo corrige discrepancias reales.
 - **Confirmación aprobada:** exigir confirmación para cada corrección manual antes de aplicarla; el código revisado hoy ejecuta el ajuste directamente, por lo que esta decisión requiere adaptar la UI y probarla.
 - No agregar por defecto fichas de proveedor, negociación de compra ni pronósticos inventados a la pantalla de Existencias.
@@ -74,7 +74,7 @@ No introducir múltiples autoridades de inventario ni confundir un movimiento de
 
 No crear compras, devoluciones ni pedidos automáticos desde Alertas. No exponer al jugador operaciones de depuración ni permitir que oculte críticos sin solucionar su causa. No reutilizar esta sección para la auditoría histórica de movimientos o recepciones.
 
-## Movimientos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Movimientos — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** ofrecer al jugador un historial claro y fiable de **por qué han aumentado o disminuido las existencias**, aprovechando directamente el registro de transacciones del inventario canónico (ledger).
 
@@ -97,6 +97,33 @@ No crear compras, devoluciones ni pedidos automáticos desde Alertas. No exponer
 - El historial no es un segundo registro de auditoría ni se generan transacciones ficticias; no crear operaciones de compra, devolución o corrección directamente en esta pantalla.
 - **La búsqueda, los filtros específicos, el detalle seleccionado y el enlace a Existencias/Recepciones son funcionalidades propuestas, no verificadas en la UI actual.**
 
+## Recepciones — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** comprobar **qué compras han llegado efectivamente al restaurante, qué ingredientes se han incorporado al almacén y a qué pedido corresponden**, sin crear un segundo sistema de recepción ni contabilizar dos veces las existencias.
+
+1. **Consultar recepciones confirmadas** de compras, ordenadas de más reciente a más antigua; estado vacío cuando todavía no haya llegado ninguna mercancía.
+2. **Ver resumen por recepción:** referencia del pedido/recepción, origen o proveedor cuando esté disponible, número de ingredientes y cantidades recibidas. No inventar precios, importes o datos de proveedor que no estén en la fuente real.
+3. **Consultar detalle de cada recepción:** lista completa de ingredientes con cantidades y unidades; marca temporal de registro si existe. La fecha UTC del ledger no debe presentarse como día de juego si no está disponible ese dato en la lectura.
+4. **Buscar y filtrar** por ingrediente, origen/proveedor y referencia; permitir seleccionar el registro y consultar su detalle. El código actual no incorpora estos filtros, ni filas de Recepciones seleccionables: son una ampliación funcional.
+5. **Relacionar con Proveedores:** ofrecer «Ver pedido» cuando se pueda resolver el pedido de origen. Los pedidos pendientes o en tránsito se consultan en **Proveedores**, no aparecen falsamente como recibidos.
+6. **Acceder a Existencias:** seleccionar un ingrediente recibido y consultar sus existencias actuales, distinguiéndolas de la cantidad histórica que llegó en aquella recepción.
+7. **Relacionar con Movimientos:** permitir consultar las entradas de inventario asociadas a la recepción utilizando `ReceiptId` / `OperationId`, sin generar registros duplicados.
+8. **Evitar duplicados:** una misma recepción no debe sumar mercancía dos veces, aunque se repita un evento, se vuelva a cargar una partida o se reproduzca la animación del repartidor. Reutilizar la idempotencia canónica por `ReceiptId`.
+9. **No editar recepciones ya confirmadas:** el jugador no puede borrarlas, cambiar sus cantidades ni revertir una compra desde esta pestaña. Las discrepancias físicas posteriores se corrigen desde Existencias, con movimiento nuevo y trazable.
+10. **No introducir confirmación manual de entrega en esta primera fase:** el circuito existente de Proveedores completa la recepción automáticamente cuando se valida su entrega. Recepciones permite **consultar y verificar**, pero no volver a aceptar la mercancía. Una mecánica posterior de entrega parcial/rechazo/incidencia requeriría definir reglas nuevas antes de programarla.
+
+### Código verificado y límites técnicos
+
+- `BistroBuilderSupplierReceivingBridge23L.TryAcceptHandoff` recibe una entrega de un pedido real en estado `InDelivery`, llama a `BistroBuilderGoodsReceivingService.TryReceiveGoods` y marca el pedido como `Delivered` si se completa el flujo.
+- `BistroBuilderGoodsReceivingService.TryReceiveGoods` valida y registra la recepción en inventario de forma atómica usando `ReceiptId` idempotente; si ya se registró, no repite el aumento de existencias. La animación del repartidor se dispara **después** del registro y no es el acto de recepción contable.
+- `BistroBuilderInventoryWarehouseService.CopyReceiptsTo` compone una vista de las operaciones `Purchase` del ledger, agrupadas por `OperationId`/identificador de recepción; devuelve los últimos registros sin una segunda persistencia.
+- `BistroBuilderInventoryWarehouseRuntimeView.RefreshReceipts` presenta filas informativas; no hay aún detalle seleccionable, búsqueda ni enlaces operativos. Las acciones descritas son **propuestas pendientes de implementación**.
+- El snapshot de recepción expone `ReceiptId`, `SourceId`, `TimestampUtcTicks`, `Lines` y secuencias. No garantiza importe, proveedor legible ni fecha en calendario del juego: cruzar datos con Proveedores cuando sea posible y mostrar ausencia de información en otro caso.
+
+### Frontera con Proveedores
+
+**Proveedores** se ocupa de pedidos, estados logísticos y entregas pendientes. **Inventario → Recepciones** consulta únicamente entregas realmente aceptadas en inventario. No agregar aquí un segundo botón de compra ni una confirmación manual que ya contradiga el flujo automatizado.
+
 ## Próximo paso
 
-Solicitar aprobación de **Inventario → Movimientos**. Tras aprobarlo, avanzar a **Inventario → Recepciones** y registrar cada decisión en el libro de decisiones.
+Solicitar aprobación o ajustes sobre **Inventario → Recepciones**. Con esa decisión se podrá cerrar funcionalmente **Inventario**, sin afirmar que el nuevo diseño visual o las adaptaciones técnicas ya están implementados.
