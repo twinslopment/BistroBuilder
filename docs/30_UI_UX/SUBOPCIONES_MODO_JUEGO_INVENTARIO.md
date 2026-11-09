@@ -1,14 +1,14 @@
 # Inventario — definición funcional por secciones (Modo Juego)
 
 **Fecha de inicio:** 09/11/2026.
-**Estado:** **Existencias — funcionalidades aprobadas para avanzar** (09/11/2026, confirmación del usuario de continuar). **Alertas de stock — propuesta pendiente de aprobación.** Movimientos y Recepciones siguen pendientes. Aprobación funcional, no visual ni de implementación Unity.
+**Estado:** **Existencias y Alertas de stock — FUNCIONALIDADES APROBADAS** (09/11/2026); **Movimientos — propuesta funcional pendiente de aprobación**. Recepciones queda pendiente. Estas decisiones son funcionales y no acreditan implementación ni diseño visual nuevos.
 **Regla de trabajo:** trabajar SOLO funcionalidad por pantalla, documentar aprobaciones antes de avanzar y dejar el rediseño visual global para una fase posterior. Identidad vinculante en `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`.
 
 ## Secciones previstas
 
 1. **Existencias** (aprobada funcionalmente).
-2. **Alertas de stock** (propuesta actual).
-3. **Movimientos** (después).
+2. **Alertas de stock** (aprobada funcionalmente).
+3. **Movimientos** (propuesta actual).
 4. **Recepciones** (después).
 
 No introducir múltiples autoridades de inventario ni confundir un movimiento de corrección con una recepción de proveedor.
@@ -47,7 +47,7 @@ No introducir múltiples autoridades de inventario ni confundir un movimiento de
 - El sistema de previsión procede de la planificación existente; aún no se ha inspeccionado de forma integral el comportamiento de proveedores y pedidos.
 - Rediseñar todos los controles con la identidad premium común **después** de aprobar la funcionalidad de las pantallas.
 
-## Alertas de stock — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Alertas de stock — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** mostrar los problemas de inventario que requieren atención, facilitar la causa y conducir a la acción correcta, sin crear una segunda autoridad de alertas.
 
@@ -74,6 +74,29 @@ No introducir múltiples autoridades de inventario ni confundir un movimiento de
 
 No crear compras, devoluciones ni pedidos automáticos desde Alertas. No exponer al jugador operaciones de depuración ni permitir que oculte críticos sin solucionar su causa. No reutilizar esta sección para la auditoría histórica de movimientos o recepciones.
 
+## Movimientos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** ofrecer al jugador un historial claro y fiable de **por qué han aumentado o disminuido las existencias**, aprovechando directamente el registro de transacciones del inventario canónico (ledger).
+
+1. **Consultar los movimientos recientes:** listar entradas y salidas reales ordenadas de más reciente a más antiguo, y permitir revisar el historial conservado sin crear un registro paralelo. Mostrar un estado vacío comprensible cuando no existan movimientos.
+2. **Distinguir los motivos:** stock inicial, recepción de compras, consumo de cocina, mermas, correcciones manuales y caducidad. Reservas/liberaciones internas se omiten en la vista básica para evitar ruido, aunque su efecto sobre disponible/reservado sigue reflejado en Existencias.
+3. **Mostrar los datos esenciales:** ingrediente, tipo de movimiento, cantidad positiva o negativa con unidad adecuada, motivo cuando exista y orden/fecha de registro **solo si el dato está disponible**. Los identificadores técnicos no se presentan como sustitutos de información comprensible.
+4. **Buscar y filtrar por ingrediente y tipo**, distinguir entradas y salidas y ofrecer un filtro por periodo solamente cuando la fuente permita acotarlo de forma verificable. La UI actual no incluye búsqueda ni filtros específicos de movimientos: esto sería ampliación de presentación/consulta.
+5. **Consultar el detalle de un movimiento** para ver tipo, cantidad, ingrediente, motivo/nota original, fuente u operación relacionada y marca temporal si consta. No inventar precios ni atribuir costes económicos donde la transacción no los contiene.
+6. **Ir al ingrediente** en Existencias para consultar la situación actual del stock, sin modificar el movimiento histórico.
+7. **Relacionar con Recepciones** cuando el origen sea una compra, accediendo a la recepción real; no procesar ni duplicar la compra desde Movimientos.
+8. **Historial inalterable desde esta pantalla:** el jugador no puede editar, eliminar ni cancelar transacciones pasadas. Una diferencia de inventario se corrige desde Existencias y crea **un nuevo movimiento trazable**, nunca borrando el anterior.
+9. **Mostrar la información relevante sin sobrecargar:** límite de filas visible, paginación/carga progresiva si fuera necesaria; mostrar claramente el alcance disponible. No prometer historial ilimitado ni exportación de datos sin soporte y decisión adicionales.
+10. **Actualización con el juego:** al recibirse compras, consumirse ingredientes, caducar lotes o registrarse correcciones, el historial reflejará las transacciones persistidas por el sistema canónico, sin inventar entradas para eventos que no hayan ocurrido.
+
+### Verificación de código y límites
+
+- `BistroBuilderInventoryWarehouseService.CopyMovementsTo` devuelve los movimientos recientes del ledger por orden inverso, con máximo entre 1 y 1000 filas (según petición), y permite excluir operaciones internas de reserva. No implementa filtros/búsqueda específicos por tipo/ingrediente ni paginación.
+- `BistroBuilderInventoryWarehouseRuntimeView.RefreshMovements` muestra actualmente hasta 160 filas en formato informativo y oculta las acciones; la selección y el detalle navegable aún requieren adaptación.
+- `BistroBuilderInventoryWarehouseMovementSnapshot` contiene `Sequence`, `TransactionId`, `OperationId`, `IngredientId`, nombre, unidad, tipo, delta físico, delta reservado, fuente, motivo y `TimestampUtcTicks`. Esta marca temporal es de registro UTC; **no equivale necesariamente al día del calendario jugable**. No inventar el día de juego si no consta.
+- El historial no es un segundo registro de auditoría ni se generan transacciones ficticias; no crear operaciones de compra, devolución o corrección directamente en esta pantalla.
+- **La búsqueda, los filtros específicos, el detalle seleccionado y el enlace a Existencias/Recepciones son funcionalidades propuestas, no verificadas en la UI actual.**
+
 ## Próximo paso
 
-Solicitar aprobación o ajustes para **Inventario → Alertas de stock**. Después continuar con **Movimientos**.
+Solicitar aprobación de **Inventario → Movimientos**. Tras aprobarlo, avanzar a **Inventario → Recepciones** y registrar cada decisión en el libro de decisiones.
