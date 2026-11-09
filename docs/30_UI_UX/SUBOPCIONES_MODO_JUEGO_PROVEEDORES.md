@@ -1,7 +1,7 @@
 # Proveedores — definición funcional por pantallas (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Proveedores → Proveedores y Catálogo APROBADAS FUNCIONALMENTE (09/11/2026)**. **Compra inteligente: propuesta funcional pendiente de aprobación**. Pedidos queda pendiente de definir. El rediseño visual y las ampliaciones técnicas continúan pendientes.
+**Estado:** **Proveedores → Proveedores, Catálogo y Compra inteligente APROBADAS FUNCIONALMENTE (09/11/2026)**. **Pedidos: propuesta funcional pendiente de aprobación**. El rediseño visual y las ampliaciones de código/UI continúan pendientes.
 **Criterio global:** aprobar exclusivamente qué hace cada pantalla. No rediseñar ni programar Unity hasta después. Al diseñar TODOS LOS PANELES aplicar la identidad gráfica común obligatoria (`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`) y respetar las barras V21/E5.5 aprobadas.
 
 ## Secciones comprobadas en el código existente
@@ -77,7 +77,7 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - No realizar la confirmación de pago ni dar por recibida la mercancía desde Catálogo. La confirmación pertenece a Pedidos y la entrega/recepción a sus sistemas canónicos.
 - No prometer que una oferta/importe mostrado será el precio final hasta confirmar: las condiciones dinámicas se revalidan al confirmar.
 
-## Proveedores → Compra inteligente — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Proveedores → Compra inteligente — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** ayudar al jugador a planificar la reposición de ingredientes según las necesidades reales y los proveedores disponibles, **sin comprar automáticamente**.
 
@@ -109,6 +109,37 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - No obligar al jugador a aceptar la estrategia sugerida: puede elegir cualquiera de las viables o comprar manualmente en Catálogo.
 - No inventar límites de presupuesto, negociación, reglas de financiación o compra periódica que no hayan sido definidos como mecánica aparte.
 
+## Proveedores → Pedidos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** administrar y seguir **todos los pedidos realizados a proveedores**, desde su preparación hasta la entrega; que el jugador pueda decidir qué compra y conocer claramente el estado sin modificar directamente inventario ni el libro financiero.
+
+1. **Consultar el listado completo de pedidos** asociados a la partida, ordenados por actividad reciente, con referencia reconocible, proveedor, estado e importe cuando corresponda. Mostrar estado vacío útil cuando no exista ninguno.
+2. **Distinguir los estados reales:** **Borrador**, **Confirmado**, **Pendiente de entrega**, **En reparto**, **Entregado** y **Cancelado**, sin inventar estados intermedios y sin tratar un borrador como compra ejecutada.
+3. **Buscar, filtrar y ordenar** por proveedor, estado, referencia y día de creación/confirmación cuando existan datos. Estos filtros no están aún implementados en el listado actual y precisan una ampliación de UI.
+4. **Consultar el detalle del pedido:** líneas de productos, cantidad de paquetes y formatos, proveedor, desglose económico, descuentos/promociones aplicados y fecha de creación/confirmación. **Para pedidos confirmados, precios y condiciones quedan congelados**; los borradores muestran presupuesto dinámico, que puede cambiar.
+5. **Editar borradores:** añadir/cambiar cantidades desde Catálogo y permitir quitar líneas mediante el servicio existente `TryRemoveDraftLine`, con validación de paquetes e incrementos. Ofrecer enlace directo al Catálogo del proveedor de ese borrador. La UI revisada incluye añadir/actualizar desde Catálogo pero no expone todavía una acción clara de quitar líneas dentro de Pedidos.
+6. **Previsualizar antes de confirmar:** líneas, subtotal, portes, total, pedido mínimo, promociones y plazo estimado, identificando impedimentos para confirmar. Las condiciones son del instante de la cotización; revalidarlas inmediatamente antes de confirmar para no utilizar una oferta caducada.
+7. **Confirmar con acción explícita:** solicitar confirmación del jugador con los importes y condiciones finales; comprobar restricciones comerciales y autorización financiera real. No afirmar que el cargo se descuenta en ese mismo instante si el puente financiero lo registra más adelante según el ciclo de envío.
+8. **Consultar seguimiento logístico:** estimación de día/ventana de entrega y cambios de estado, demoras y fiabilidad del proveedor cuando existan, así como progreso de la entrega si ese dato está disponible. No prometer un ETA exacto cuando el sistema solo calcula una previsión.
+9. **Cancelar con restricciones:** permitir cancelar borradores y pedidos Confirmados/Pendientes de entrega **solo cuando las reglas de juego lo autoricen**, mostrando una confirmación previa y cualquier consecuencia económica que realmente establezca la lógica de Finanzas. Prohibido cancelar pedidos **En reparto** o **Entregados**; no fingir devoluciones ni reintegros. La UI existente cancela directamente al pulsar, sin segunda confirmación: incorporar esta protección requiere trabajo adicional.
+10. **Vincular con Recepciones e Inventario:** al quedar Entregado, mostrar el identificador de recepción y permitir consultar qué mercancía entró; la recepción la aplica el flujo canónico de Proveedores y no un botón del historial de pedidos.
+11. **Conservar trazabilidad y persistencia:** guardar/restaurar los estados y las condiciones de cada pedido según el servicio canónico; los pedidos entregados o cancelados siguen visibles históricamente, sin eliminación de las operaciones originales.
+12. **Mantener la separación funcional:** preparación manual en Catálogo, sugerencias en Compra inteligente, ejecución y seguimiento de compra en Pedidos, y comprobación de mercancía registrada en Inventario → Recepciones. No crear otro carrito, motor de pagos ni historial de compras.
+
+### Código revisado y diferencias pendientes de implementación
+
+- `BistroBuilderSupplierPurchaseOrderStatus`: estados `Draft`, `Confirmed`, `PendingDelivery`, `InDelivery`, `Delivered`, `Cancelled`. La pantalla actual representa esos pedidos.
+- `BistroBuilderSupplierPurchaseOrderService` implementa `TryCreateDraft`, `TrySetDraftLine`, `TryRemoveDraftLine`, `TryBuildConfirmationPreview`, `TryConfirmOrder`, `TryCancelOrder`, cambios de estado logístico, lectura y snapshot para persistencia.
+- `BistroBuilderSupplierPlayerRuntimeView.RefreshOrderDetail` diferencia borrador de compra confirmada, calcula previsualización dinámica o muestra importes congelados y seguimiento logístico; la UI actual solo lista hasta siete líneas congeladas en el detalle resumido, por lo que consultar **todas** las líneas exige ampliar la presentación.
+- `OpenOrderConfirmation` muestra una confirmación visual de compra con subtotales/portes/total y plazo estimado; `ConfirmPendingOrder` revalida la cotización justo antes de autorizar la compra.
+- `BistroBuilderSupplierPurchaseFinanceBridge` aplica un control de disponibilidad financiera en la confirmación y un movimiento contable asociado a pedidos `InDelivery`; no asumir cobro al crear un borrador ni prometer débitos o reembolsos ajenos al flujo real.
+- `BistroBuilderSupplierPurchaseOrderEngine.TryCancel` rechaza `InDelivery` y `Delivered`; las cancelaciones de `Confirmed` y `PendingDelivery` dependen de `AllowCancelConfirmed` / `AllowCancelPendingDelivery` en los ajustes. La UI actual muestra Cancelar para esos dos estados incluso si la configuración lo bloquea y la API devuelve error.
+- `BistroBuilderSupplierPlayerRuntimeView.CancelSelectedOrder` cancela **sin cuadro de confirmación**. La confirmación de cancelación, edición/eliminación completa de líneas, búsqueda/filtros, detalle sin truncamiento y enlaces profundos a Recepciones son **requisitos funcionales propuestos**, no entregables ya implementados.
+
+### Límites de alcance
+
+No admitir compras automáticas sin confirmación del jugador, devoluciones o recepciones manuales desde esta pantalla. No desbloquear proveedores ignorando progresión, ni modificar importes de pedidos confirmados, ni alterar saldos del sistema financiero desde la UI. Las reglas definitivas de cancelación y cualquier penalización proceden de los sistemas económicos reales y de su configuración.
+
 ## Próximo paso
 
-Solicitar aprobación o ajustes para **Proveedores → Compra inteligente**. Después continuar con **Proveedores → Pedidos**, y solo tras cerrar las funcionalidades pasar al diseño visual global.
+Solicitar aprobación de **Proveedores → Pedidos**. Con ella, las cuatro secciones del menú Proveedores quedarán cerradas funcionalmente y se podrá continuar con **Reservas**. La implementación y el rediseño visual permanecerán en su fase independiente.
