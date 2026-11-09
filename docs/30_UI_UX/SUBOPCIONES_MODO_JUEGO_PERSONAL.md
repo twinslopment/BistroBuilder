@@ -1,7 +1,7 @@
 # Personal — definición funcional por pantallas (Modo Juego)
 
 **Actualización:** 09/11/2026.
-**Estado:** **Plantilla APROBADA**; **Candidatos y Horarios pendientes de aprobación**. También sigue pendiente la aprobación formal de la organización final de navegación de las tres pestañas.
+**Estado:** **Plantilla y Candidatos APROBADOS funcionalmente**; **Horarios pendiente de aprobación**. La estructura final de navegación de las tres pestañas también permanece pendiente de aprobación explícita.
 **Regla:** documentar lo aprobado sin convertir propuestas no aprobadas en decisiones definitivas.
 
 ## Requisito visual global, ya aprobado
@@ -42,7 +42,7 @@
 
 **Estado técnico:** funcionalidades descritas y aceptadas; no equivale a garantizar su integración visual o pruebas en la build actual.
 
-## Candidatos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Candidatos — FUNCIONALIDADES APROBADAS
 
 **Propósito:** consultar perfiles de aspirantes y contratar personal según las necesidades del restaurante.
 
@@ -55,9 +55,26 @@
 7. No inventar entrevistas, negociación salarial, tasas de contratación ni un mercado de pago sin aprobación funcional específica.
 8. No permitir que la contratación cambie automáticamente un turno ni una asignación del servicio en curso; estas operaciones pertenecen a Horarios y los sistemas de sesión.
 
-## Horarios — PENDIENTE DE DEFINICIÓN FUNCIONAL
+## Horarios — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
 
-Reutilizar la planificación del Bloque 5, sin duplicar empleados o crear otro planificador paralelo. Se definirá después de aprobar Candidatos.
+**Objetivo:** organizar quién trabaja en cada servicio, sin controlar manualmente las tareas de cada empleado.
+
+1. **Planificador de 7 días de juego:** consultar el día actual y los seis días siguientes (horizonte por defecto del Bloque 5; configurable a nivel de perfil).
+2. **Dos servicios diarios:** distinguir los turnos de **comida y cena**.
+3. **Asignación por empleado:** incluir o excluir empleados disponibles para cada día y servicio, diferenciando **camareros y cocineros**. No asignar cocineros a labores de sala.
+4. **Comprobar disponibilidad:** informar claramente de los empleados no disponibles y bloquear la asignación incompatible.
+5. **Cobertura prevista:** comparar cuántos camareros y cocineros están programados con una necesidad mínima recomendada por puesto; advertir cuando falte personal, sin impedir una apertura salvo regla de gameplay aprobada separadamente.
+6. **Coste laboral previsto:** sumar salarios por servicio del personal programado y mostrar el coste del turno; es una previsión, no un cargo en Caja ni una nómina adelantada.
+7. **Rellenar automáticamente:** proponer la distribución mínima elegible para el servicio, permitiendo ajustes manuales. La versión actual solo tiene autocompletado de camareros; el soporte de cocineros y su cobertura requiere ampliación.
+8. **Copiar el turno anterior:** aplicar al servicio seleccionado la planificación equivalente del día previo, respetando disponibilidad y reglas de edición.
+9. **Restricción de edición:** permitir cambios solo con el restaurante cerrado, antes de iniciar el servicio; durante un servicio activo consultar el plan sin reescribir asignaciones de agentes.
+10. **Persistencia:** conservar turnos al guardar/cargar la partida mediante `staff.schedule`, sin crear un registro de empleados ni un guardado paralelo.
+
+**Límites propuestos:** no crear controles de tareas de cocina/sala desde Horarios; no introducir por defecto turnos por horas editables individualmente, descansos, vacaciones, horas extras ni nóminas completas. Si se desea, definirlos expresamente como otra fase.
+
+**Estado comprobado en código:** `BistroBuilderStaffSchedulePlayerScreen` permite pasar de día, elegir comida/cena, marcar empleados, autocompletar camareros, copiar día anterior y consultar coste/cobertura. `BistroBuilderStaffSchedulePlayerFacade` **filtra actualmente solo camareros**, y `BistroBuilderStaffScheduleService.TryBuildCoverage` calcula cobertura y salarios de camareros; por tanto, **la planificación y cobertura de cocineros todavía NO están implementadas en ese flujo**. `BistroBuilderStaffScheduleService` impide editar con el restaurante abierto. La propuesta de cobertura mixta es una **ampliación funcional pendiente de aprobación e implementación**, no una funcionalidad ya probada.
+
+**Pendiente de decidir:** confirmar si se acepta este sistema por día y servicio, incluyendo ambos puestos y asistencia automática.
 
 ## Estructura de navegación — PROPUESTA, TODAVÍA NO APROBADA
 
@@ -65,4 +82,4 @@ Una pantalla de Personal con pestañas Plantilla, Candidatos y Horarios, accedie
 
 ## Próximo paso
 
-Aprobar o ajustar el alcance de **Candidatos**, en especial el comportamiento de **renovar candidatos** y cualquier limitación adicional de contratación.
+Aprobar o ajustar el alcance de **Horarios**, especialmente la planificación conjunta de camareros y cocineros y la edición únicamente con el restaurante cerrado.
