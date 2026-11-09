@@ -1,7 +1,7 @@
 # Marketing — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Marketing → Catálogo de campañas APROBADA FUNCIONALMENTE (09/11/2026)**. **Marketing → Campañas activas: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Sin rediseño ni implementación de mejoras de Unity.
+**Estado:** **MARKETING CERRADO FUNCIONALMENTE el 09/11/2026**. APROBADAS las dos secciones definitivas: **Catálogo de campañas** y **Campañas activas**. Sin rediseño ni implementación de mejoras de Unity.
 **Alcance:** definición funcional únicamente. No modificar código Unity ni el diseño en esta fase. La visualización futura debe cumplir `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md` y las barras de Modo Juego V21/E5.5.
 
 ## Estructura real contrastada
@@ -59,7 +59,7 @@ Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y l
 - No mezclar Marketing con Reputación: Marketing puede influir en ella mediante efectos; la autoridad de reputación permanece en su propio sistema.
 - Mantener la identidad global premium de Bistro Builder en fase de diseño, sin alterar las barras superiores/inferiores definitivas.
 
-## Marketing → Campañas activas — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Marketing → Campañas activas — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** permitir al jugador **supervisar y cancelar las campañas que están vigentes**, con información clara sobre sus compromisos, duración y efectos configurados. Evitar fingir un retorno económico individual o resultados de campaña que el sistema no calcula.
 
@@ -84,7 +84,7 @@ Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y l
 - `BistroBuilderMarketingPlayerScreen.ApplyTabState` oculta buscador y filtros en Activas; cualquier búsqueda/filtros en esta vista será nueva UI pendiente de integración y pruebas.
 - Las referencias de objetivo, las fechas y el coste son datos existentes; **enlaces profundos** a Caja, Reputación o Carta requieren integración futura, nunca una segunda fuente de verdad.
 
-### Límites propuestos
+### Límites aprobados
 
 - No inventar ROI por campaña, gráficos de conversiones, clientes atribuidos o una estadística de «campaña más rentable» sin definir primero una métrica real y trazable.
 - No prometer un **historial de campañas** finalizadas o canceladas: el estado actual elimina esos registros. Si se decide añadirlo, requerirá una mejora de dominio/persistencia específica y pruebas, no solo diseño.
@@ -94,4 +94,4 @@ Autoridad: `BistroBuilderMarketingService` posee el estado `marketing.state` y l
 
 ## Próximo paso
 
-Solicitar aprobación funcional de **Marketing → Campañas activas**. Si se aprueba, cerrar Marketing con dos secciones definitivas: **Catálogo de campañas** y **Campañas activas**, y continuar con **Reputación**.
+**Marketing queda cerrado funcionalmente** con Catálogo de campañas y Campañas activas. Continuar con **Reputación → Valoración y opiniones**, dejando separados el rediseño visual y la programación posterior.
