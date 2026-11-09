@@ -56,3 +56,19 @@ Consultar `docs/30_UI_UX/UI_UX_DEFINITIVE.md` y `docs/30_UI_UX/CONTEXTUAL_ACTION
 La aprobación del layout compacto NO aprueba estos hovers ni medidas. Revisar diseño visual y estados en próximas iteraciones, después implementar componentes compartidos en Unity y validar 1080p/720p, selección, scroll, teclado, reduced motion y accesibilidad. No integrar esta rama antes de aprobación.
 **Discrepancia documental:** en `integration/master-current-20260918`, la clave D-036 de `DECISION_REGISTER.md` corresponde a Agilizar cuenta, no a Actividad; reconciliar la referencia antes de integrar sin sobrescribir decisiones.
 **Gestión documental:** actualizar documentos canónicos y regenerar índice y knowledge bundle conforme a `AGENTS.md` al fusionar.
+
+
+## Aprobación artística posterior — 2026-11-09
+El usuario confirma expresamente que **le encanta** la propuesta de Actividad con panel izquierdo grafito cálido, panel derecho de cabecera grafito e interior marfil y **marco muy fino de luz bronce-dorada** en ambos paneles. Esta elección sustituye como guía cromática a las variantes anteriores y fija la dirección de arte aprobada para los paneles de Modo Juego y, como identidad reutilizable, las futuras interfaces de gestión.
+
+**Características visuales vinculantes de la imagen elegida:**
+- Grafito cálido para el lateral izquierdo, emparentado con barras negras pero no idéntico; reducir dominantes marrones excesivas.
+- Marco luminoso perimetral delgado y contenido, especialmente sutil en esquinas; evitar efecto neón.
+- Cabecera oscura y cuerpo marfil en el contextual; componentes interiores de marfil/crema, relieve suave y jerarquía clara.
+- Bronce cálido de selección y botones principales, verde para estados favorables y rojo para criticidad/destrucción.
+- Mantener anchuras compactas y el restaurante 3D como elemento principal.
+- Imagen adjunta por usuario en conversación: `image(20261109-112159).png`. La imagen sirve como **referencia artística de los paneles**, no como fuente de assets de barras ni prueba de Unity.
+
+**Exclusión imprescindible:** Aunque la imagen conceptual representa otras barras e iconos, la barra superior **V21+V30** y la inferior **E5.5** con sus iconos definitivos siguen siendo vinculantes y no se sustituyen por las reinterpretaciones de la imagen.
+
+**Pendiente de aprobación y ejecución:** hover/pressed/focus y duraciones finas de animación, medidas/tokens definitivos y validaciones 1920×1080 y 1280×720 implementadas. La dirección visual de materiales, colores y marco sí está aprobada. El presente documento aún no habilita cambios runtime ni integración.
