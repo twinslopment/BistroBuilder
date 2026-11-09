@@ -1,7 +1,7 @@
 # Economía — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Economía → Resumen y Resultados APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Caja: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Históricos y Financiación siguen pendientes. Las aprobaciones son funcionales: no suponen rediseño ni implementación de mejoras en Unity.
+**Estado:** **Economía → Resumen, Resultados y Caja APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Históricos: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Financiación sigue pendiente. Las aprobaciones son funcionales; no suponen rediseño ni implementación de mejoras en Unity.
 **Regla de trabajo:** se definen las funciones, no el diseño visual ni la implementación. El aspecto futuro de TODAS las pantallas seguirá `docs/30_UI_UX/SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando las barras V21 y E5.5 aprobadas.
 
 ## Secciones verificadas en el código de Finanzas 3J
@@ -83,7 +83,7 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - No introducir gráficos históricos redundantes, exportaciones, ajustes contables manuales, impuestos simulados no programados ni nuevas métricas financieras en esta primera fase.
 - Aplicar posteriormente la misma identidad visual premium que a las restantes pantallas, preservando la barra superior V21 y la inferior E5.5.
 
-## Economía → Caja — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Economía → Caja — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** consultar la tesorería real del restaurante: **qué dinero hay, cuánto ha entrado o salido y qué compromisos limitan su disponibilidad**, sin mezclar esos movimientos con el resultado económico y sin permitir introducir dinero manualmente.
 
@@ -109,10 +109,41 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - `BistroBuilderDayFinancialResult` distingue movimientos de tesorería de resultado del día; las compras de inventario pueden salir de Caja sin convertirse inmediatamente en COGS de Resultados, y los préstamos recibidos no constituyen beneficio.
 - **Filtros, búsqueda, detalle interactivo, enlaces profundos a Pedidos/Financiación y visualización exacta conjunta con la barra inferior E5.5 requieren UI/integración nueva y pruebas.** Este paso solo propone funcionalidades: no ejecuta la build.
 
-### Exclusiones propuestas
+### Exclusiones aprobadas
 
 No crear arqueo físico, ingreso manual, transferencias bancarias, caja por empleado, impuestos o auditorías administrativas nuevos sin definir previamente su mecánica. No permitir que un botón de Caja altere directamente el ledger. No duplicar la pestaña Históricos en esta pantalla; aquí se consultan movimientos concretos y el estado de tesorería, no análisis gráfico de periodos.
 
+## Economía → Históricos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** ayudar al jugador a comprender **cómo evoluciona su negocio a lo largo del tiempo**, identificar tendencias reales y comparar periodos de juego, sin inventar ingresos ni resultados.
+
+1. **Seleccionar periodos reales:** últimos **7 días**, **30 días**, **90 días** o **todo** el histórico desde el primer día de la partida. El periodo termina en el día actual de juego y se limita a los días que ya existan.
+2. **Consultar un gráfico con tres métricas alternativas:** **Ingresos/ventas**, **Resultado operativo** y **Variación neta de caja**. Mostrar claramente cuál está seleccionada; no representar ingresos como si fueran beneficio.
+3. **Interpretar pérdidas y salidas correctamente:** en el gráfico de resultado y caja los valores negativos deben aparecer por debajo de una referencia cero, sin convertirlos falsamente en cantidades positivas ni omitirlos.
+4. **Mostrar indicadores del periodo**: ventas acumuladas, coste de producto, margen bruto en importe y porcentaje, gastos operativos y resultado operativo/margen operativo; variación neta de caja, ticket medio y cuentas pagadas, cuando los datos existan.
+5. **Resumir el rendimiento por días:** total de días del periodo, días con servicio real, jornadas rentables y jornadas con pérdidas; no computar una jornada sin servicio como restaurante abierto simplemente porque haya un préstamo o compra de mobiliario.
+6. **Identificar puntos destacados:** día con mayores ventas, mejor y peor resultado operativo y servicio de mayor facturación/margen cuando haya actividad suficiente. Mostrar «sin datos» para indicadores que no puedan calcularse de forma significativa.
+7. **Comparar con el periodo anterior de igual duración**, mostrando diferencias en ventas, beneficio bruto, resultado operativo, margen, ticket medio y caja neta, y tendencias cuando el cálculo sea válido. Para **Todo** o cuando falte un periodo anterior comparable, indicar que no hay comparación fiable en lugar de fabricarla.
+8. **Comparar el desempeño por tipo de servicio**, cuando exista: desayunos, comidas y cenas con ingresos, margen bruto, número de cuentas y ticket medio. Esta lectura ampliada ya está en el modelo de históricos, pero **la UI actual solo muestra el servicio líder**, por lo que requiere una nueva presentación.
+9. **Advertir si los costes son incompletos o estimados**, reutilizando los campos canónicos de calidad y cobertura de COGS. Las comparaciones de rentabilidad no deben presentarse como exactas cuando la base contable tenga datos pendientes.
+10. **Consultar la evolución sin sobrecargar el gráfico:** el motor visual actual agrega intervalos largos a **máximo 180 grupos visuales**; cualquier acumulación debe indicar que los valores representan agregados y nunca alterar la fuente financiera.
+11. **Actualización automática a partir del historial canónico**, sin reescribir días antiguos ni guardar otro registro de KPIs. El jugador consulta la evolución, pero no puede editar resultados, borrar jornadas ni corregir el gráfico manualmente.
+12. **Navegación a detalle:** acceder a Resultados para ver conceptos de un día/período y a Caja para las operaciones que explican la variación monetaria, aprovechando las autoridades y pantallas aprobadas. El clic sobre punto de gráfico y drill-down diario son ampliaciones futuras, **no están implementados en la vista 3J actual**.
+
+### Código verificado, límites y mejoras propuestas
+
+- `BistroBuilderFinanceRuntimeView.BuildHistorySection` ya permite elegir **7, 30, 90 días o Todo**, seleccionar los gráficos **Ingresos, Resultado operativo y Caja neta**, ver indicadores agregados y comparación con el periodo anterior.
+- `BistroBuilderFinancialHistoryChartGraphic` dibuja barras uGUI para una métrica seleccionada, contempla valores negativos y consolida historiales largos en un máximo de **180 buckets**. No hay interacción por clic con las barras ni una selección libre de fechas ya programada.
+- `BistroBuilderFinancialHistoryService` genera informes desde `BistroBuilderFinancialResultsService` y las autoridades financieras canónicas; no persiste una segunda base de históricos.
+- `BistroBuilderFinancialPeriodReport` ofrece ventas, coste, gastos, márgenes, resultado operativo, entradas/salidas y caja neta, días activos/rentables/perdedores, ticket medio, mejores/peores días y rendimiento por servicio.
+- `BistroBuilderFinancialPeriodComparison` calcula diferencias y tendencias contra el periodo anterior y publica tasas porcentuales **solo si la base anterior es válida**, evitando divisiones por cero; no garantiza que siempre haya un periodo comparable.
+- El dashboard ya calcula la comparación solamente cuando existe un periodo anterior de igual longitud completo y la ventana elegida no es **Todo**.
+- **Requieren una mejora de presentación posterior** la comparativa detallada por servicio, la explicación visible de intervalos agregados, los avisos de cobertura de costes y enlaces de navegación al detalle diario. Esta aprobación, si se concede, sería funcional, no verificación de Unity ni aprobación del diseño visual.
+
+### Exclusiones y límites propuestos
+
+No prometer predicciones de ingresos futuros, análisis causal artificial, benchmarking con restaurantes ajenos, exportaciones, contabilidad editable ni un editor de gráficos en esta fase. Mantener una sola autoridad de datos financieros, separar resultados de caja y respetar el sistema visual global y las barras V21 y E5.5 ya aprobadas.
+
 ## Próximo paso
 
-Solicitar aprobación o ajustes de **Economía → Caja**. Después continuar por **Históricos** y **Financiación**, manteniendo separadas las decisiones funcionales de la fase posterior de diseño visual y Unity.
+Solicitar aprobación o modificaciones para **Economía → Históricos**. Después definir la última sección **Economía → Financiación** antes de dar el menú por cerrado funcionalmente.
