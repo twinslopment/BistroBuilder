@@ -1,7 +1,7 @@
 # Proveedores — definición funcional por pantallas (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Proveedores → Proveedores APROBADA FUNCIONALMENTE (09/11/2026)**. **Proveedores → Catálogo, propuesta pendiente de aprobación**. Compra inteligente y Pedidos pendientes de definir. El diseño y la implementación de mejoras siguen pendientes.
+**Estado:** **Proveedores → Proveedores y Catálogo APROBADAS FUNCIONALMENTE (09/11/2026)**. **Compra inteligente: propuesta funcional pendiente de aprobación**. Pedidos queda pendiente de definir. El rediseño visual y las ampliaciones técnicas continúan pendientes.
 **Criterio global:** aprobar exclusivamente qué hace cada pantalla. No rediseñar ni programar Unity hasta después. Al diseñar TODOS LOS PANELES aplicar la identidad gráfica común obligatoria (`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`) y respetar las barras V21/E5.5 aprobadas.
 
 ## Secciones comprobadas en el código existente
@@ -47,7 +47,7 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - **No** ocultar proveedores bloqueados: mostrar su existencia y las condiciones de progresión genera objetivos de juego.
 - Reutilizar `SupplierId` y los servicios canónicos; no crear una segunda tabla, fichas permanentes ni snapshots jugables paralelos.
 
-## Proveedores → Catálogo — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Proveedores → Catálogo — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** consultar qué ingredientes y formatos comercializa cada proveedor, comparar las ofertas reales y preparar compras sin confirmar el gasto de inmediato.
 
@@ -70,13 +70,45 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - `ConfirmPendingOrder` se ejecuta en la sección Pedidos y **revalida la cotización** al confirmar para evitar condiciones caducadas.
 - El mercado/autoridad comercial mantiene precios/disponibilidad y promociones; el catálogo del jugador no los modifica. Las funciones de **búsqueda avanzada, filtros y comparación entre proveedores** todavía **no están implementadas en esa pantalla** y requerirán integración y pruebas.
 
-### Exclusiones propuestas
+### Exclusiones aprobadas
 
 - No editar precios, proveedores, formatos de envase, promociones ni ingredientes originales desde la interfaz del jugador.
 - No crear un segundo carrito o catálogo de productos: reutilizar exclusivamente los borradores de `BistroBuilderSupplierPurchaseOrderService` y las ofertas vigentes.
 - No realizar la confirmación de pago ni dar por recibida la mercancía desde Catálogo. La confirmación pertenece a Pedidos y la entrega/recepción a sus sistemas canónicos.
 - No prometer que una oferta/importe mostrado será el precio final hasta confirmar: las condiciones dinámicas se revalidan al confirmar.
 
+## Proveedores → Compra inteligente — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** ayudar al jugador a planificar la reposición de ingredientes según las necesidades reales y los proveedores disponibles, **sin comprar automáticamente**.
+
+1. **Analizar necesidades reales** de ingredientes a partir de stock físico/disponible/reservado, mínimos configurados, consumo previsto cuando haya histórico, próximas caducidades y pedidos ya en camino. No inventar previsiones si faltan datos.
+2. **Detectar riesgo de desabastecimiento** por ingrediente (sin riesgo, bajo, medio, alto, crítico), teniendo en cuenta el stock que quedará cuando llegue un nuevo pedido. El informe y los riesgos se derivan del motor existente.
+3. **Proponer tres estrategias existentes:** **Ahorrar** (menor gasto relativo), **Equilibrado** (coste, plazo, fiabilidad y merma) y **Urgente** (priorizar evitar roturas de stock). Son preferencias de optimización, **no promesas** de coste mínimo global ni entrega garantizada.
+4. **Comparar planes:** total estimado (producto y portes), proveedores utilizados, número de ingredientes recomendados, riesgos altos/críticos y si se cumplen los importes mínimos de compra. Identificar la estrategia recomendada y explicar brevemente el motivo.
+5. **Desglosar cada plan:** ingrediente, proveedor/oferta, cantidad de paquetes, precio estimado, plazo, riesgo y justificación. Permitir consultar alternativas identificadas por el motor cuando existan; la interfaz actual solo presenta un resumen de hasta siete ingredientes y esta consulta completa requerirá adaptación.
+6. **Tener en cuenta restricciones comerciales reales:** proveedores desbloqueados, ofertas disponibles, formatos, cantidad mínima, incrementos, portes y pedido mínimo por proveedor. Marcar como no confirmable cualquier cesta que no supere la validación requerida en lugar de forzar una compra desproporcionada.
+7. **Alertar de sobrecompra y merma** si una oferta/paquete genera exceso previsto o riesgo de caducidad. Las comparaciones se basarán en los datos que realmente calcula el motor.
+8. **Actualizar análisis bajo demanda** para incorporar nuevas existencias, consumos, cambios de oferta, promociones, pedidos en camino y progreso del jugador; señalar fecha/día de cálculo y diagnósticos de datos insuficientes, sin mantener como actual una propuesta obsoleta.
+9. **Crear borradores a partir del plan seleccionado:** generar los borradores agrupados por proveedor mediante los servicios actuales de pedidos, solo cuando el plan sea válido. Es una **propuesta de compra**, no un cargo en Caja ni la recepción de ingredientes.
+10. **Revisar y modificar en Pedidos** las cantidades y líneas propuestas antes de confirmar, revalidando precios, promociones, portes y plazos en la confirmación final. El jugador conserva siempre la decisión de comprar.
+
+### Estado técnico comprobado
+
+- `BistroBuilderSupplierSmartPurchaseService.TryBuildRecommendations` reúne datos del inventario canónico, previsión y política de stock, pedidos pendientes y ofertas comerciales para producir un informe.
+- `BistroBuilderSupplierSmartPurchaseEngine.BuildReport` genera **Ahorrar, Equilibrado y Urgente**, recomienda una estrategia y ofrece alternativas para determinados ingredientes; valora coste, plazo, fiabilidad, desabastecimiento y merma.
+- `BistroBuilderSmartPurchaseReport` diferencia datos resueltos de inventario, previsión y políticas, incluye diagnósticos y registra el día de juego del análisis.
+- `BistroBuilderSupplierPlayerRuntimeView` permite actualizar análisis, seleccionar una estrategia, consultar resumen y crear borradores de ese plan para después revisar en Pedidos.
+- `BistroBuilderSupplierSmartPurchaseService.TryCreateDraftFromPlan` agrupa líneas por proveedor y usa la autoridad de pedidos existente. Comprueba que los proveedores estén desbloqueados, sin saltarse el sistema de progresión.
+- **Aún requieren UI adicional** el detalle íntegro de todos los ingredientes recomendados y alternativas, avisos operativos claros por datos incompletos y navegación granular a la ficha de cada propuesta. No se afirma que estén integrados en la build V21.
+
+### Reglas de alcance
+
+- No activar compras automáticas recurrentes ni aceptar gastos sin confirmación del jugador.
+- No prometer previsiones exactas, disponibilidad futura garantizada o mejor precio absoluto. Mostrar incertidumbre y problemas cuando faltan datos.
+- No crear un motor de compra, cartera, sistema de proveedores o base de stock paralelos.
+- No obligar al jugador a aceptar la estrategia sugerida: puede elegir cualquiera de las viables o comprar manualmente en Catálogo.
+- No inventar límites de presupuesto, negociación, reglas de financiación o compra periódica que no hayan sido definidos como mecánica aparte.
+
 ## Próximo paso
 
-Solicitar aprobación funcional de **Proveedores → Catálogo**. Después definir **Compra inteligente** y **Pedidos**, manteniendo separado el diseño visual global y la integración Unity posteriores.
+Solicitar aprobación o ajustes para **Proveedores → Compra inteligente**. Después continuar con **Proveedores → Pedidos**, y solo tras cerrar las funcionalidades pasar al diseño visual global.
