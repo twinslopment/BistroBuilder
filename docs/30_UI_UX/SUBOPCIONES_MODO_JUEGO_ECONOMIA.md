@@ -1,7 +1,7 @@
 # Economía — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Economía → Resumen APROBADA FUNCIONALMENTE (09/11/2026)**. **Economía → Resultados: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Caja, Históricos y Financiación siguen pendientes. La aprobación no supone rediseño ni implementación de mejoras en Unity.
+**Estado:** **Economía → Resumen y Resultados APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Caja: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Históricos y Financiación siguen pendientes. Las aprobaciones son funcionales: no suponen rediseño ni implementación de mejoras en Unity.
 **Regla de trabajo:** se definen las funciones, no el diseño visual ni la implementación. El aspecto futuro de TODAS las pantallas seguirá `docs/30_UI_UX/SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando las barras V21 y E5.5 aprobadas.
 
 ## Secciones verificadas en el código de Finanzas 3J
@@ -51,7 +51,7 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - No permitir editar importes desde Resumen: el saldo y los resultados los calculan otros sistemas del juego.
 - El rediseño visual debe resultar coherente con el resto del juego y las barras aprobadas, nunca parecer un CRM independiente.
 
-## Economía → Resultados — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Economía → Resultados — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** mostrar cómo se construye el resultado económico del restaurante, separando ventas, coste de producto, margen bruto y gastos; distinguir **resultado operativo** de los movimientos de dinero de Caja.
 
@@ -76,13 +76,43 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 - `BistroBuilderServiceFinancialResult` distingue ventas de **mesa** y **barra**, cuentas y contribución bruta por comida, cena u otro servicio existente; **no atribuye gastos comunes arbitrariamente**.
 - El código actual **no incorpora** selección de fechas ni comparación histórica dentro de esta pestaña, ni análisis causal automático por motivos de pérdidas: son posibles mejoras de lectura, no capacidades acreditadas. Los históricos están en otra sección.
 
-### Reglas de frontera propuestas
+### Reglas de frontera aprobadas
 
 - Mantener separación entre **Resultados** (rentabilidad) y **Caja** (tesorería y movimientos). El coste de mercancía comprada no se registra doblemente como gasto de ventas del día.
 - Evitar cálculos monetarios nuevos con `float`: todos los importes se leen de céntimos canónicos y se presentan formateados.
 - No introducir gráficos históricos redundantes, exportaciones, ajustes contables manuales, impuestos simulados no programados ni nuevas métricas financieras en esta primera fase.
 - Aplicar posteriormente la misma identidad visual premium que a las restantes pantallas, preservando la barra superior V21 y la inferior E5.5.
 
+## Economía → Caja — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** consultar la tesorería real del restaurante: **qué dinero hay, cuánto ha entrado o salido y qué compromisos limitan su disponibilidad**, sin mezclar esos movimientos con el resultado económico y sin permitir introducir dinero manualmente.
+
+1. **Saldo global actual:** mostrar la cantidad de dinero disponible en el libro de caja canónico, diferenciándola claramente de las **ventas** y del **beneficio operativo**.
+2. **Dinero comprometido y disponible:** visualizar el saldo bruto y los compromisos vigentes con proveedores; mostrar el efectivo disponible después de esos compromisos como cifra distinta. Los compromisos aún no debitados no se presentan como pagos ya efectuados.
+3. **Resumen de movimientos del día:** total de entradas, salidas y variación neta de caja, calculados desde las transacciones reconocidas por el sistema financiero.
+4. **Distinguir las operaciones de tesorería** presentes en el código: compras a proveedores, inversiones, devoluciones por reventa de activos, recepción de préstamos y devolución del principal de deuda, además de los cobros y otros pagos reales. **Un préstamo recibido no es un ingreso de explotación**, ni la compra de un activo equivale automáticamente a un gasto del día.
+5. **Movimientos recientes reales**, en orden de más reciente a más antiguo: importe con signo y moneda, concepto comprensible, tipo entrada/salida, categoría, día y hora del juego, y referencia vinculada cuando esté disponible. Mostrar estado vacío cuando todavía no existan transacciones.
+6. **Buscar y filtrar movimientos** por concepto/categoría, sentido (entrada/salida) y día/periodo cuando los datos existentes permitan consultarlo. La vista actual muestra una lista de movimientos recientes, pero **no dispone de buscador ni filtros propios**; son ampliaciones de interfaz/consulta.
+7. **Detalle consultable de un movimiento:** conocer importe exacto, motivo, origen, día de juego y vínculo con el pedido, venta, préstamo o inversión que lo generó si hay una referencia resoluble. No mostrar identificadores técnicos como información principal ni inventar transacciones inexistentes.
+8. **Consultar compromisos y obligaciones próximas:** importe comprometido con proveedores, obligaciones operativas próximas, cuotas de financiación, vencimientos y deudas atrasadas a partir del modelo canónico de liquidez.
+9. **Mostrar proyección de liquidez con transparencia:** indicar horizonte en días de juego y saldo previsto después de obligaciones conocidas; si faltan datos, advertir expresamente que la proyección es **incompleta**, sin etiquetar al restaurante como financieramente sano por defecto.
+10. **Accesos de navegación útiles:** desde Caja ir a Resultados para entender rentabilidad, a Financiación para el origen de cuotas/préstamos, a Pedidos para compromisos y a Históricos para evolución de tesorería. Utilizar las pantallas canónicas existentes, sin crear otra gestión de compras.
+11. **Coherencia con la barra inferior E5.5:** la métrica de **Caja del servicio** de la barra inferior no es necesariamente el saldo global. Debe quedar claro cuándo se habla del servicio actual, del día de juego o de la caja total, sin cambiar el diseño aprobado de esa barra.
+12. **Solo lectura:** no habrá botones para aumentar/reducir efectivo, registrar ingresos o gastos ficticios, eliminar movimientos, editar asientos o pedir créditos desde Caja. El dinero cambia únicamente por acciones reales de otros sistemas del juego.
+
+### Código existente comprobado y ampliaciones pendientes
+
+- `BistroBuilderFinanceRuntimeView.BuildCashSection` ya representa **Caja y obligaciones** y los **movimientos de caja recientes**; enseña saldo, disponible tras compromisos, entradas/salidas/variación diaria, compras, inversiones, devolución de principal, préstamos recibidos, reventa de activos y horizonte de liquidez.
+- `BistroBuilderFinanceDashboardService.CopyRecentMovements` lee el ledger `BistroBuilderFinanceService` en orden inverso y permite pedir hasta **500 filas**; la UI tiene una configuración inicial de **80 movimientos visibles**. Esto **no equivale a un buscador histórico completo** ni a paginación ya implementada.
+- `BistroBuilderFinanceMovementView` contiene secuencia, identificador de operación/origen, categoría y grupo, signo de entrada/salida (`Credit`/`Debit`), importe en céntimos, **día y minuto del juego**, descripción y etiqueta de presentación. No inventar fechas de calendario real para esos índices.
+- `BistroBuilderLiquidityPosition` contiene caja, compromisos con proveedores, disponible tras compromisos, obligaciones próximas, deuda vencida, proyección y `projectionComplete`. Los datos faltantes nunca se sustituyen por estimaciones inventadas en UI.
+- `BistroBuilderDayFinancialResult` distingue movimientos de tesorería de resultado del día; las compras de inventario pueden salir de Caja sin convertirse inmediatamente en COGS de Resultados, y los préstamos recibidos no constituyen beneficio.
+- **Filtros, búsqueda, detalle interactivo, enlaces profundos a Pedidos/Financiación y visualización exacta conjunta con la barra inferior E5.5 requieren UI/integración nueva y pruebas.** Este paso solo propone funcionalidades: no ejecuta la build.
+
+### Exclusiones propuestas
+
+No crear arqueo físico, ingreso manual, transferencias bancarias, caja por empleado, impuestos o auditorías administrativas nuevos sin definir previamente su mecánica. No permitir que un botón de Caja altere directamente el ledger. No duplicar la pestaña Históricos en esta pantalla; aquí se consultan movimientos concretos y el estado de tesorería, no análisis gráfico de periodos.
+
 ## Próximo paso
 
-Solicitar aprobación de **Economía → Resultados**. Después continuar por **Caja**, **Históricos** y **Financiación**; registrar cada paso y mantener el rediseño visual como trabajo independiente.
+Solicitar aprobación o ajustes de **Economía → Caja**. Después continuar por **Históricos** y **Financiación**, manteniendo separadas las decisiones funcionales de la fase posterior de diseño visual y Unity.
