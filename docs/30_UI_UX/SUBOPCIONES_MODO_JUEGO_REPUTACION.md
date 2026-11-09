@@ -1,7 +1,7 @@
 # Reputación — definición funcional (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Reputación → Valoración y opiniones: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. No se han aprobado submenús ni una segunda pantalla de Reputación.
+**Estado:** **REPUTACIÓN CERRADA FUNCIONALMENTE el 09/11/2026** con UNA sola pantalla aprobada: **Valoración y opiniones**. El rediseño, las mejoras de UX y su implementación/verificación en una build Unity siguen pendientes.
 **Alcance:** definición funcional en una sola pantalla. Sin modificar código Unity ni diseño visual en esta fase. El futuro diseño seguirá `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando la barra superior V21 y barra inferior E5.5 de Modo Juego.
 
 ## Arquitectura contrastada
@@ -14,7 +14,7 @@
 - El UI actual muestra **las ocho reseñas más recientes** y el motor conserva hasta **128 reseñas** y **256 experiencias recientes** en su estado acotado. **No afirmar que exista una navegación histórica completa ni un buscador**.
 - La UI histórica no acredita integración visual o build vigente con la barra V21 y E5.5; solo se aprueban funciones hasta nueva orden.
 
-## Reputación → Valoración y opiniones — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Reputación → Valoración y opiniones — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** que el jugador interprete la percepción real de los comensales, sus causas principales y el impacto reputacional en demanda/retorno, **sin poder manipular opiniones ni puntuaciones**.
 
@@ -41,7 +41,7 @@
 - La presentación inicial usa porcentajes incluso sin experiencias; **la distinción «sin datos suficientes» es un requisito funcional nuevo de UX**, y las sugerencias descriptivas basadas en aspectos y cualquier navegación a otros paneles también necesitan adaptación.
 - **No existen reseñas de texto libre escritas por personas reales**: las reseñas visibles son construidas por el sistema a partir de experiencias del juego, con estrellas y una clave corta de resumen.
 
-### Límites propuestos
+### Límites aprobados
 
 - No permitir editar puntuaciones ni crear/borrar reseñas, responder ficticiamente a ellas, pagar para eliminarlas o premiar arbitrariamente satisfacción.
 - No mostrar valoraciones como reseñas verificadas de servicios de internet ni inventar perfiles, nombres, fotos, citas textuales, fechas reales o comparaciones con restaurantes ajenos.
@@ -51,4 +51,4 @@
 
 ## Próximo paso
 
-Solicitar aprobación de la única pantalla **Reputación → Valoración y opiniones**. Si se aprueba, cerrar funcionalmente Reputación con esta pantalla sin inventar submenús, y continuar por **Opciones** de la barra superior.
+**Reputación queda cerrada funcionalmente con una única pantalla.** Continuar por **Opciones → Partida**, primera de las nueve categorías existentes de configuración. Diseño visual e implementación Unity siguen por separado.
