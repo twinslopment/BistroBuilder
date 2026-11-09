@@ -1,7 +1,7 @@
 # Carta — definición funcional por secciones (Modo Juego)
 
 **Fecha de inicio:** 09/11/2026.
-**Estado:** «Cartas y reglas de activación» y «Platos» **APROBADAS FUNCIONALMENTE el 09/11/2026**. La conveniencia de mantener o eliminar como subopción independiente «Edición de cartas, recetas y escandallos» sigue PENDIENTE de aprobación. No confundir aprobación funcional con validación visual ni implementación en Unity.
+**Estado:** **CARTA CERRADA FUNCIONALMENTE el 09/11/2026**. Quedan exactamente dos secciones jugables aprobadas: «Cartas y reglas de activación» y «Platos». No habrá tercera subopción independiente de «Edición de cartas, recetas y escandallos». La consulta de recetas y escandallos pertenece a la ficha de Platos. La definición visual global, la integración en Unity y las pruebas siguen pendientes.
 **Regla de trabajo:** revisar código existente; aprobar funcionalidad sección por sección; **no diseñar, programar ni cambiar el estilo visual hasta cerrar el alcance funcional**. Al diseñar, aplicar a TODOS los paneles el sistema visual global obligatorio descrito en `SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`.
 
 ## Separación entre sistemas
@@ -61,9 +61,9 @@
 
 **Estado comprobado en código y diseño anterior (sin aprobar su aspecto):** el editor de Carta dispone de selección, filtros, añadido/retirada, precio, disponibilidad, agotado manual, plato firma, dificultad/preparación y escandallo/margen calculados. La rama Carta V3 contiene una pantalla «Platos» con estas operaciones y un formulario de recetas, así como pruebas históricas documentadas. **No se ha auditado su integración con V21 actual ni con el rediseño global.**
 
-## Edición de cartas, recetas y escandallos — RECOMENDACIÓN PENDIENTE DE APROBACIÓN
+## Edición de cartas, recetas y escandallos — DECISIÓN APROBADA: SIN TERCERA SUBOPCIÓN
 
-### Recomendación: suprimir la tercera subopción independiente
+### Decisión aprobada: se suprime la tercera subopción independiente
 
 **No crear una pantalla nueva** con estas tres funciones. La gestión ya queda cubierta por:
 
@@ -72,18 +72,18 @@
 - **«Detalle de plato» dentro de Platos:** **consultar sin editar el original** la receta base, ingredientes, cantidades, merma, preparación, coste de elaboración, coste real asociado a suministros cuando exista y margen calculado. Los datos de cálculo proceden de los sistemas canónicos y proveedores/inventario, no de campos ficticios.
 - **«Catálogo Maestro» (herramienta interna Unity, fuera de las pantallas del jugador):** administrar y validar definiciones, fotografías, ingredientes, recetas base, estaciones, tiempos y escandallos de referencia. No exponer herramientas de publicación del administrador al jugador.
 
-### Por qué requiere una decisión explícita
+### Implicaciones técnicas de la decisión aprobada
 
-**El código existente sí soporta creación/edición de platos y recetas en runtime.** `BistroBuilderMenuEditorService.TryCreateOrUpdateDishRecipe` delega en `BistroBuilderDishRecipeAuthoringService.TryCreateOrUpdate`, que puede crear un `DishId` nuevo con `IsPlayerCreated=true`. Además, `TryApplyAndContinue` confirma de forma atómica cambios en carta, platos y recetas. Por tanto, simplificar la interfaz es una **decisión funcional nueva**: no asumir que el código actual ya limita esa capacidad. No eliminar el sistema sin auditoría ni pruebas; para primera versión se recomienda **no exponer esos controles al jugador** si se aprueba el modelo de Catálogo Maestro cerrado.
+**El código existente sí soporta creación/edición de platos y recetas en runtime.** `BistroBuilderMenuEditorService.TryCreateOrUpdateDishRecipe` delega en `BistroBuilderDishRecipeAuthoringService.TryCreateOrUpdate`, que puede crear un `DishId` nuevo con `IsPlayerCreated=true`. Además, `TryApplyAndContinue` confirma de forma atómica cambios en carta, platos y recetas. **Contrato vinculante para esta primera versión:** no exponer al jugador esos controles de autoría de recetas ni permitirles modificar las definiciones canónicas; mantener las funcionalidades comerciales aprobadas. Esta decisión aún requiere implementación, auditoría de dependencias y pruebas de regresión para no romper la edición de Carta V3 ni la autoría interna. No eliminar a ciegas el código existente.
 
-### Alternativa que podría aprobarse más adelante
+### Posible ampliación futura no aprobada
 
 Permitir que el jugador cree **recetas propias de la partida**, separadas por ID y persistencia de las definiciones canónicas, con ingredientes reales, costes y validación; sería una mecánica avanzada de creación de platos y necesitaría un diseño funcional específico. **No queda aprobada** con la aprobación de «Platos».
 
-### Resultado propuesto de la navegación (no aprobado todavía)
+### Resultado definitivo de la navegación (APROBADO)
 
-Bajo la barra superior «Carta», únicamente dos secciones: **1. Cartas y reglas de activación; 2. Platos**. La consulta de receta/escandallo es detalle de «Platos», no una tercera sección. Se evita duplicar acciones entre menús.
+Bajo la barra superior «Carta», únicamente dos secciones: **1. Cartas y reglas de activación; 2. Platos**. La consulta de receta/escandallo será parte de la ficha de «Platos», sin edición de los originales. No existe una tercera pantalla. La aprobación es funcional, no visual ni de una build.
 
 ## Próximo paso
 
-Solicitar aprobación o ajuste sobre **eliminar «Edición de cartas, recetas y escandallos» como subopción independiente**, manteniendo la lectura de receta/escandallo dentro de «Platos» y el Catálogo Maestro como herramienta interna. Aclarar expresamente si se quieren recetas propias creadas por el jugador en fases posteriores.
+Continuar la definición funcional de **Inventario → Existencias**. Mantener el rediseño visual pendiente hasta haber definido las funciones de todas las pantallas.
