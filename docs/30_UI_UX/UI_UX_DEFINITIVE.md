@@ -35,6 +35,12 @@
 
 **Fuente visual editable única:** [`BARRA_SUPERIOR_V21_V30_APROBADA.md`](BARRA_SUPERIOR_V21_V30_APROBADA.md) y `DesignReferences/TopBar/V21_V30/` (HTML, CSS, JS, logotipo original y capturas). Una referencia antigua incompatible pasa a ser histórica y no prevalece sobre esta decisión.
 
+## Subopciones de Actividad (decisión 09/11/2026)
+- **Vista del restaurante:** cierra paneles de gestión y devuelve a la escena 3D sin pantalla adicional.
+- **Actividad reciente:** utiliza el panel izquierdo de Actividad existente.
+- **«Alertas e incidencias» no será una subopción independiente**: su contenido se consulta con el filtro **«Incidencias»** dentro del panel izquierdo. Mantener las notificaciones críticas y su acceso al objetivo/panel contextual derecho; no duplicar sistemas.
+- Detalle y estado de integración: [`SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md`](SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md).
+
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.
 - Doble clic en mesa abre detalle/comanda cuando corresponda.
