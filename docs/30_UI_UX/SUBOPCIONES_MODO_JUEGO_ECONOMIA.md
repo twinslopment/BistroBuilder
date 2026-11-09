@@ -1,7 +1,7 @@
 # Economía — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Economía → Resumen, Resultados, Caja e Históricos APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Financiación: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Las aprobaciones no suponen rediseño ni implementación de mejoras en Unity.
+**Estado:** **ECONOMÍA CERRADA FUNCIONALMENTE el 09/11/2026**. Quedan APROBADAS las cinco secciones: **Resumen, Resultados, Caja, Históricos y Financiación**. El rediseño visual, la integración UI V21/E5.5 y las ampliaciones técnicas pendientes no han sido implementados ni probados en esta fase.
 **Regla de trabajo:** se definen las funciones, no el diseño visual ni la implementación. El aspecto futuro de TODAS las pantallas seguirá `docs/30_UI_UX/SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando las barras V21 y E5.5 aprobadas.
 
 ## Secciones verificadas en el código de Finanzas 3J
@@ -144,7 +144,7 @@ No crear arqueo físico, ingreso manual, transferencias bancarias, caja por empl
 
 No prometer predicciones de ingresos futuros, análisis causal artificial, benchmarking con restaurantes ajenos, exportaciones, contabilidad editable ni un editor de gráficos en esta fase. Mantener una sola autoridad de datos financieros, separar resultados de caja y respetar el sistema visual global y las barras V21 y E5.5 ya aprobadas.
 
-## Economía → Financiación — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Economía → Financiación — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** permitir al jugador consultar préstamos disponibles, entender exactamente sus compromisos y solicitar financiación solo cuando el restaurante cumpla las condiciones económicas reales del juego.
 
@@ -171,7 +171,7 @@ No prometer predicciones de ingresos futuros, análisis causal artificial, bench
 - `BistroBuilderFinanceRuntimeView.BuildDebtText` solo enseña **hasta cuatro préstamos recientes** y la próxima cuota impagada de cada uno. **Para consultar todos los contratos y el calendario completo de cuotas, harán falta mejoras de UI y pruebas**; no afirmar que ya están disponibles.
 - El contrato `BistroBuilderLiquidityPosition` distingue principal, intereses, obligaciones de hoy, cuotas próximas y vencidas; no tratar una proyección incompleta como certeza.
 
-### Límites propuestos
+### Límites aprobados
 
 - **No** permitir préstamos personalizados con importe/plazo inventados, renegociación, amortización anticipada, refinanciación, pago manual, quitas o eliminación de deuda desde esta pantalla sin mecánicas expresamente aprobadas.
 - **No** inventar comisiones, puntuaciones crediticias ni garantías que no estén modeladas por 3I.
@@ -181,4 +181,4 @@ No prometer predicciones de ingresos futuros, análisis causal artificial, bench
 
 ## Próximo paso
 
-Solicitar aprobación de **Economía → Financiación**. Si se aprueba, las cinco secciones (Resumen, Resultados, Caja, Históricos y Financiación) quedarán cerradas funcionalmente y seguiremos con **Marketing**.
+**Economía queda cerrada funcionalmente.** Continuar con **Marketing → Catálogo de campañas** y después con **Campañas activas**, respetando los servicios existentes. La fase de diseño gráfico y programación Unity continúa separada.
