@@ -1,7 +1,7 @@
 # Personal — definición funcional por pantallas (Modo Juego)
 
 **Actualización:** 09/11/2026.
-**Estado:** **Plantilla y Candidatos APROBADOS funcionalmente**; **Horarios pendiente de aprobación**. La estructura final de navegación de las tres pestañas también permanece pendiente de aprobación explícita.
+**Estado:** **Plantilla, Candidatos y Horarios APROBADOS funcionalmente (09/11/2026)**. El rediseño visual e integración del conjunto de pestañas en Unity se realizará después; la aprobación funcional no equivale a una prueba técnica.
 **Regla:** documentar lo aprobado sin convertir propuestas no aprobadas en decisiones definitivas.
 
 ## Requisito visual global, ya aprobado
@@ -55,7 +55,7 @@
 7. No inventar entrevistas, negociación salarial, tasas de contratación ni un mercado de pago sin aprobación funcional específica.
 8. No permitir que la contratación cambie automáticamente un turno ni una asignación del servicio en curso; estas operaciones pertenecen a Horarios y los sistemas de sesión.
 
-## Horarios — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Horarios — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** organizar quién trabaja en cada servicio, sin controlar manualmente las tareas de cada empleado.
 
@@ -70,16 +70,16 @@
 9. **Restricción de edición:** permitir cambios solo con el restaurante cerrado, antes de iniciar el servicio; durante un servicio activo consultar el plan sin reescribir asignaciones de agentes.
 10. **Persistencia:** conservar turnos al guardar/cargar la partida mediante `staff.schedule`, sin crear un registro de empleados ni un guardado paralelo.
 
-**Límites propuestos:** no crear controles de tareas de cocina/sala desde Horarios; no introducir por defecto turnos por horas editables individualmente, descansos, vacaciones, horas extras ni nóminas completas. Si se desea, definirlos expresamente como otra fase.
+**Límites aprobados para esta primera fase:** no crear controles de tareas de cocina/sala desde Horarios; no introducir por defecto turnos por horas editables individualmente, descansos, vacaciones, horas extras ni nóminas completas. Si se desea, definirlos expresamente como otra fase.
 
-**Estado comprobado en código:** `BistroBuilderStaffSchedulePlayerScreen` permite pasar de día, elegir comida/cena, marcar empleados, autocompletar camareros, copiar día anterior y consultar coste/cobertura. `BistroBuilderStaffSchedulePlayerFacade` **filtra actualmente solo camareros**, y `BistroBuilderStaffScheduleService.TryBuildCoverage` calcula cobertura y salarios de camareros; por tanto, **la planificación y cobertura de cocineros todavía NO están implementadas en ese flujo**. `BistroBuilderStaffScheduleService` impide editar con el restaurante abierto. La propuesta de cobertura mixta es una **ampliación funcional pendiente de aprobación e implementación**, no una funcionalidad ya probada.
+**Estado técnico anterior a la implementación de esta decisión (comprobado en código): `BistroBuilderStaffSchedulePlayerScreen` permite pasar de día, elegir comida/cena, marcar empleados, autocompletar camareros, copiar día anterior y consultar coste/cobertura. `BistroBuilderStaffSchedulePlayerFacade` **filtra actualmente solo camareros**, y `BistroBuilderStaffScheduleService.TryBuildCoverage` calcula cobertura y salarios de camareros; por tanto, **la planificación y cobertura de cocineros todavía NO están implementadas en ese flujo**. `BistroBuilderStaffScheduleService` impide editar con el restaurante abierto. La propuesta de cobertura mixta es una **ampliación funcional pendiente de aprobación e implementación**, no una funcionalidad ya probada.
 
-**Pendiente de decidir:** confirmar si se acepta este sistema por día y servicio, incluyendo ambos puestos y asistencia automática.
+**Decisión aprobada:** organizar por día y servicio, incluyendo camareros y cocineros y asistencia automática. La cobertura de cocina exige implementar/ampliar el código existente.
 
-## Estructura de navegación — PROPUESTA, TODAVÍA NO APROBADA
+## Navegación funcional de Personal — DEFINIDA
 
-Una pantalla de Personal con pestañas Plantilla, Candidatos y Horarios, accediendo inicialmente a Plantilla y recuperando la funcionalidad de los sistemas ya implementados. La composición visual y la integración de Horarios se diseñarán después de cerrar la definición funcional.
+Acceso **Personal** con secciones **Plantilla, Candidatos y Horarios**, con Plantilla como entrada inicial; una experiencia de gestión coherente que reutiliza los servicios ya implementados. La estructura precisa y la presentación visual del conjunto serán objeto del posterior diseño global; no deben crearse sistemas de empleados paralelos.
 
 ## Próximo paso
 
-Aprobar o ajustar el alcance de **Horarios**, especialmente la planificación conjunta de camareros y cocineros y la edición únicamente con el restaurante cerrado.
+Continuar con **Carta → Cartas y reglas de activación**. No comenzar aún el diseño visual ni la integración Unity.
