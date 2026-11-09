@@ -24,16 +24,16 @@
 | **Economía** | Resumen · Resultados · Caja · Históricos · Financiación | **5/5 aprobadas** | `SUBOPCIONES_MODO_JUEGO_ECONOMIA.md` |
 | **Marketing** | Catálogo de campañas · Campañas activas | **2/2 aprobadas** | `SUBOPCIONES_MODO_JUEGO_MARKETING.md` |
 | **Reputación** | UNA pantalla Valoración y opiniones | **1/1 aprobada** | `SUBOPCIONES_MODO_JUEGO_REPUTACION.md` |
-| **Opciones** | Partida · Audio · Vídeo · Jugabilidad · Interfaz · Controles · Accesibilidad · Idioma · Créditos/Legal | **2/9 aprobadas, 7/9 propuestas pendientes de aprobación conjunta** | `SUBOPCIONES_MODO_JUEGO_OPCIONES.md` |
+| **Opciones** | Partida · Audio · Vídeo · Jugabilidad · Interfaz · Controles · Accesibilidad · Idioma · Créditos/Legal | **9/9 aprobadas** | `SUBOPCIONES_MODO_JUEGO_OPCIONES.md` |
 
-**Total documental:** **24 de 31 apartados/categorías aprobados**, siete propuestas de Opciones preparadas para una **única validación**, y Actividad aprobada como **acción directa sin submenú**. No inferir que «aprobado» equivale a terminado en el juego.
+**Total documental:** **31 de 31 apartados/categorías aprobados**, con **las 10 entradas de la barra superior definidas funcionalmente**. Actividad funciona como **acción directa sin submenú**. **CERRADO EL DISEÑO FUNCIONAL del menú superior V21**; no confundir aprobación con código implementado, integración visual o build validada.
 
-## Última decisión registrada y aprobaciones pendientes
+## Cierre de decisiones y alcance
 
-- `D-062`: **Opciones → Audio**, aprobada tras `D-061` (Partida).
-- **Pendientes de aprobación** (no registrar como vigentes hasta aceptación del usuario): **Opciones → Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal**.
-- Las siete están descritas en `SUBOPCIONES_MODO_JUEGO_OPCIONES.md`, **cada una con funciones, código verificado, límites y trabajo de integración**.
-- Una vez validadas estas siete, registrar las decisiones correspondientes y cerrar documentalmente Opciones; con ello terminará la **definición funcional** de las diez entradas V21, pero **no el desarrollo de las pantallas**.
+- `D-061` y `D-062`: **Opciones → Partida y Audio**, aprobadas anteriormente.
+- `D-063` a `D-069`: **Opciones → Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal**, aprobadas **en bloque el 09/11/2026**.
+- **No quedan apartados de la barra superior por definir funcionalmente.** Los diez menús y las 31 secciones/categorías documentadas ya están acordados, y Actividad es una acción directa.
+- La única fase cerrada es la **especificación funcional**. Permanecen **pendientes de implementar y probar** los cambios detectados en cada documento, además de la fidelidad visual V21/E5.5.
 
 ## Brechas de implementación a priorizar después de las decisiones
 
@@ -45,6 +45,8 @@
 6. **Publicación y licencias:** comprobar derechos de distribución de los recursos y de `Recoleta Regular DEMO` antes de una build comercial; mantener avisos legales exactos.
 7. **Pruebas posteriores obligatorias, NO realizadas con esta documentación:** compilación y Play Mode, interacción de botones/paneles, guardado/carga, persistencia, idempotencia de operaciones monetarias, navegación teclado/ratón, resolución **1920×1080 y 1280×720**, captura visual de las dos barras y regresión en Modo Edición.
 
-## Siguiente hito
+## Siguiente hito: pasar a integración real
 
-Solicitar **una aprobación en bloque** de las siete propuestas pendientes de Opciones. Tras la validación, cerrar formalmente el alcance funcional del menú V21 y programar por etapas con pruebas de fidelidad visual y funcionalidad real, utilizando estos documentos como contratos de aceptación.
+**No abrir otra ronda de definición de submenús** salvo un cambio solicitado explícitamente. Usar los documentos aprobados como contratos; inspeccionar la rama de integración autorizada, establecer el orden de implementación y desarrollar en pasos aislados, con pruebas técnicas y comparaciones visuales contra el sistema premium aprobado.
+
+Consultar `PLAN_IMPLANTACION_UI_MODO_JUEGO_V21.md` para orden, dependencias, criterios de aceptación y salvaguardas de integración. Ninguna modificación de Unity se ha realizado para registrar este cierre documental.

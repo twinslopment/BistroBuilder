@@ -1,7 +1,7 @@
 # Opciones — definición funcional por categorías (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Opciones → Partida y Audio APROBADAS FUNCIONALMENTE (09/11/2026)**. **Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal: PROPUESTAS FUNCIONALES DOCUMENTADAS EN BLOQUE, PENDIENTES DE APROBACIÓN**. No se ha modificado Unity ni realizado rediseño visual.
+**Estado:** **OPCIONES CERRADA FUNCIONALMENTE el 09/11/2026**. Las nueve categorías están APROBADAS: **Partida, Audio, Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal**. Todas las entradas de la barra superior de Modo Juego quedan definidas funcionalmente. No se ha modificado Unity ni realizado rediseño visual o build en esta fase.
 **Alcance:** aprobación de funciones; no cambiar código de Unity ni rediseño visual en este paso. El diseño definitivo debe conservar la barra superior V21, inferior E5.5 del Modo Juego y el sistema visual global premium.
 
 ## Estructura real comprobada
@@ -78,7 +78,7 @@ No tocar lógica de `BistroBuilderSaveGameService` ni sobrescribir ranura 999 de
 
 No crear controles decorativos que no modifiquen un canal real, ni afirmar que hay banda sonora, sonidos de cocina, voces o volumen ambiental si aún no están integrados. La gestión de dispositivos, mezclas individuales, subtítulos, audio espacial, soporte para varios altavoces o prueba sonora se estudiará cuando existan requisitos y sistema de audio adecuados.
 
-## Opciones → Vídeo — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Vídeo — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** cambiar el modo de visualización y limitar el rendimiento de un juego de PC de forma sencilla, sin ofrecer botones de resolución/calidad que aún no controlan el motor.
 
@@ -98,7 +98,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - `ToggleRow` guarda VSync en `PlayerPrefs`; `ShowPage(2)` y `Awake` aplican el valor. El código muestra un aviso sobre prioridad de VSync respecto al límite FPS.
 - El resaltado permanente del valor elegido, la reconciliación con límites internos y una eventual confirmación/reversión al cambiar resolución requieren trabajo posterior; **no se ha probado la build aquí**.
 
-## Opciones → Jugabilidad — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Jugabilidad — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** ajustar el comportamiento temporal del juego sin provocar pérdida de progreso ni alterar la simulación mediante mecanismos ajenos al reloj canónico.
 
@@ -117,7 +117,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - El selector de velocidad en Opciones actualmente **no refleja claramente la opción seleccionada** como un conjunto exclusivo ni identifica todos los bloqueos activos; sincronizar su presentación con E5.5 requiere integrar los componentes en la nueva UI.
 - `BistroBuilderGeneralGameSaveSectionProvider` guarda/restaura el multiplicador temporal dentro del estado de la partida; no asumir que la preferencia persistente equivale al juego guardado.
 
-## Opciones → Interfaz — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Interfaz — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** controlar aspectos de presentación y animación de la interfaz sin deshacer la identidad artística definitiva de Bistro Builder.
 
@@ -136,7 +136,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - La opción es también visible en **Accesibilidad** con exactamente la misma clave. Cambiar el estado en una pantalla y abrir la otra debe ofrecer lectura fresca de `PlayerPrefs`.
 - Nada en el código revisado ofrece controles de tamaño de tipografía, escala global, color o idioma desde Interfaz.
 
-## Opciones → Controles — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Controles — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** mostrar instrucciones claras de ratón y teclado para las acciones disponibles en cada modo de Bistro Builder, sin prometer un sistema de reasignación de teclas que aún no existe.
 
@@ -155,7 +155,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - `BistroBuilderOptionsScreen.Update` cierra Opciones con Esc cuando está abierto; no extrapolar esta pulsación a un sistema global de pausa o navegación de escenas.
 - No crear ajustes de sensibilidad, inversión de ejes ni controles de gamepad sin propiedades conectadas al motor y pruebas.
 
-## Opciones → Accesibilidad — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Accesibilidad — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** mejorar la comodidad visual y reducir molestias de animación, preservando una interfaz legible, operable con ratón y teclado y de estilo premium.
 
@@ -174,7 +174,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - La documentación existente menciona estados de foco y navegación, pero **no se han verificado sistemáticamente todas las pantallas del juego**. No declarar modos de alto contraste, lector de pantalla o localización de subtítulos ya disponibles.
 - Si un futuro modo de alto contraste modifica la identidad visual aprobada, deberá diseñarse como alternativa accesible específica, no reemplazar el estilo normal.
 
-## Opciones → Idioma — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Idioma — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** informar honestamente del idioma de la versión y preparar un camino de internacionalización sin mostrar un selector que no funciona.
 
@@ -191,7 +191,7 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 - Los textos jugables examinados están codificados directamente en C#; no acreditar un sistema de traducción completo ni configuraciones multilingües que no se hayan auditado.
 - Localización futura será ampliación de producto, no una función implementada por la interfaz actual.
 
-## Opciones → Créditos / Legal — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Créditos / Legal — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** mostrar información fiel de autoría, versión, motor y licencias de terceros sin inventar derechos de distribución ni presentar una demostración como producto definitivo.
 
@@ -211,8 +211,8 @@ No crear controles decorativos que no modifiquen un canal real, ni afirmar que h
 
 ## Estado general y próximo paso
 
-**Aprobado en este ciclo:** Opciones → Audio, junto con Partida aprobada previamente. **Preparadas pero NO aprobadas todavía:** las siete propuestas **Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal**.
+**APROBADAS LAS NUEVE CATEGORÍAS DE OPCIONES:** Partida y Audio (D-061 y D-062) y, por aprobación conjunta del 09/11/2026, Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal (D-063 a D-069). **OPCIONES CERRADA FUNCIONALMENTE.**
 
-Se solicita **una aprobación en bloque** de estas siete propuestas, o los cambios concretos que se quieran introducir. Si se aprueban, se podrán registrar las siete decisiones y **cerrar Opciones y toda la definición funcional del menú superior de Modo Juego**. Las funciones nuevas de UI, rediseño y pruebas Unity seguirán siendo trabajo posterior.
+**CIERRE DEL MENÚ SUPERIOR V21:** las diez entradas están definidas; Actividad es una acción directa y las restantes secciones mantienen la estructura acordada. Las aprobaciones son **contratos de comportamiento**, no evidencia de que todas las funciones estén implementadas o integradas en Unity.
 
-**Nota de precisión:** el siguiente trabajo no debería ser abrir más submenús por costumbre, sino contrastar este inventario aprobado de pantallas con las barras V21/E5.5 y priorizar los huecos de implementación en la rama de integración.
+**Siguiente fase:** auditar brechas UI y seguridad del flujo, priorizar implementación en la rama autorizada, integrar conforme a las barras V21/E5.5 y a la guía visual global, y ejecutar pruebas de compilación, Play Mode, guardado/carga, resolución y fidelidad visual. Véase `INDICE_FUNCIONAL_MENU_SUPERIOR_MODO_JUEGO.md`.
