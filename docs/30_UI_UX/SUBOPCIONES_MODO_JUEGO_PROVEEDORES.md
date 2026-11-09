@@ -1,7 +1,7 @@
 # Proveedores — definición funcional por pantallas (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** propuesta **Proveedores → Proveedores PENDIENTE DE APROBACIÓN**. Catálogo, Compra inteligente y Pedidos pendientes de definir en pasos siguientes.
+**Estado:** **Proveedores → Proveedores APROBADA FUNCIONALMENTE (09/11/2026)**. **Proveedores → Catálogo, propuesta pendiente de aprobación**. Compra inteligente y Pedidos pendientes de definir. El diseño y la implementación de mejoras siguen pendientes.
 **Criterio global:** aprobar exclusivamente qué hace cada pantalla. No rediseñar ni programar Unity hasta después. Al diseñar TODOS LOS PANELES aplicar la identidad gráfica común obligatoria (`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`) y respetar las barras V21/E5.5 aprobadas.
 
 ## Secciones comprobadas en el código existente
@@ -24,7 +24,7 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - `BistroBuilderSupplierPurchaseOrderService`: autoridad de pedidos; la ficha de proveedor no escribe pedidos ni inventario.
 - La integración con la futura interfaz global rediseñada y el estado de las builds V21 requiere validación posterior.
 
-## Propuesta: PROVEEDORES → Proveedores
+## Proveedores → Proveedores — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** elegir de quién abastecerse valorando disponibilidad, especialidad y condiciones comerciales.
 
@@ -39,7 +39,7 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 9. **Acceso a Pedidos**, con posibilidad de consultar los pedidos relacionados con el proveedor elegido si el vínculo puede resolverse, sin generar un nuevo registro de pedidos.
 10. **Actualizar al avanzar la partida:** cambios de progreso, bloqueo, fiabilidad, promociones o condiciones cuando el sistema los modifique se reflejan en la misma ficha y lista canónicas.
 
-### Límites recomendados (pendientes de aprobación)
+### Límites aprobados de la primera fase
 
 - **No** permitir que el jugador cree, edite o borre proveedores comerciales; esos registros pertenecen a herramientas internas de autoría.
 - **No** realizar pedidos desde la ficha de Proveedores: el jugador selecciona ofertas en **Catálogo** o usa **Compra inteligente**, y confirma las compras mediante el sistema **Pedidos**.
@@ -47,6 +47,36 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - **No** ocultar proveedores bloqueados: mostrar su existencia y las condiciones de progresión genera objetivos de juego.
 - Reutilizar `SupplierId` y los servicios canónicos; no crear una segunda tabla, fichas permanentes ni snapshots jugables paralelos.
 
+## Proveedores → Catálogo — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** consultar qué ingredientes y formatos comercializa cada proveedor, comparar las ofertas reales y preparar compras sin confirmar el gasto de inmediato.
+
+1. **Consultar catálogo del proveedor seleccionado** y sus ofertas activas. Los proveedores bloqueados muestran requisitos, pero **no permiten añadir ofertas al pedido**. No presentar registros inactivos de autoría como productos comprables.
+2. **Buscar y filtrar productos** por ingrediente, nombre, categoría/tipo, disponibilidad y promociones; ordenar por precio, precio normalizado y plazo cuando los datos sean comparables. Esta búsqueda/filtros de Catálogo son una **ampliación futura de UI**, no parte verificada de la lista actual.
+3. **Comparar ofertas del mismo ingrediente** entre proveedores disponibles y formatos de venta, especialmente **precio normalizado por unidad** y condiciones comerciales. La UI actual se centra en el catálogo de un proveedor; una comparación transversal requiere mejorar el flujo de consulta, sin crear cotizaciones paralelas.
+4. **Consultar ficha de oferta:** ingrediente, fotografía del ingrediente cuando exista (si no, usar icono/ausencia explícita), proveedor, presentación/paquete, cantidad neta, unidad, precio de mercado, precio efectivo y coste normalizado.
+5. **Ver disponibilidad real y promociones vigentes**, con descuento y fin de campaña cuando se disponga de datos; las ofertas no disponibles no pueden incorporarse a nuevas compras.
+6. **Consultar condiciones:** cantidad mínima de paquetes, incrementos permitidos, plazo estimado de entrega, pedido mínimo monetario, portes y portes gratuitos cuando correspondan al proveedor.
+7. **Seleccionar cantidad de paquetes** cumpliendo mínimo e incrementos; calcular subtotal estimado de la línea. No convertir paquetes en unidades arbitrarias ni ignorar cantidades canónicas del formato.
+8. **Añadir o actualizar producto en el borrador de pedido** del proveedor elegido. Crear el borrador a través del servicio de pedidos cuando no exista. El clic no compra ni recibe existencias de inmediato.
+9. **Revisar y confirmar desde Pedidos:** allí se valida el carrito completo, promociones vigentes, pedido mínimo, portes, total y entrega, con confirmación explícita. Las cotizaciones pueden cambiar antes de confirmar; en ese instante se recalculan y se congelan condiciones de la compra confirmada.
+10. **Navegar entre secciones**: volver a ficha de Proveedores, pasar a Compra inteligente o revisar el pedido/borrador, manteniendo `SupplierId`, `SupplierOfferId` y `PurchaseOrderId` de los sistemas existentes.
+
+### Límites técnicos verificados
+
+- `BistroBuilderSupplierPlayerRuntimeView.BuildCatalogRows` lista ofertas activas de un proveedor desbloqueado, lee cotizaciones efectivas y muestra precio normalizado, paquete, promoción y disponibilidad.
+- `RefreshCatalogDetail` incluye precio de mercado, efectivo, normalizado, descuento, duración, condiciones, plazo, cantidad mínima/incrementos y subtotal de paquetes.
+- `AddSelectedOfferToDraft` comprueba acceso del proveedor, crea el borrador mediante `BistroBuilderSupplierProgressionService.TryCreatePlayerDraft` si hace falta y añade o sustituye línea mediante `BistroBuilderSupplierPurchaseOrderService.TrySetDraftLine`; **no confirma el pedido**.
+- `ConfirmPendingOrder` se ejecuta en la sección Pedidos y **revalida la cotización** al confirmar para evitar condiciones caducadas.
+- El mercado/autoridad comercial mantiene precios/disponibilidad y promociones; el catálogo del jugador no los modifica. Las funciones de **búsqueda avanzada, filtros y comparación entre proveedores** todavía **no están implementadas en esa pantalla** y requerirán integración y pruebas.
+
+### Exclusiones propuestas
+
+- No editar precios, proveedores, formatos de envase, promociones ni ingredientes originales desde la interfaz del jugador.
+- No crear un segundo carrito o catálogo de productos: reutilizar exclusivamente los borradores de `BistroBuilderSupplierPurchaseOrderService` y las ofertas vigentes.
+- No realizar la confirmación de pago ni dar por recibida la mercancía desde Catálogo. La confirmación pertenece a Pedidos y la entrega/recepción a sus sistemas canónicos.
+- No prometer que una oferta/importe mostrado será el precio final hasta confirmar: las condiciones dinámicas se revalidan al confirmar.
+
 ## Próximo paso
 
-Solicitar aprobación funcional de **Proveedores → Proveedores**. Después definir **Proveedores → Catálogo**, continuando con Compra inteligente y Pedidos. No comenzar el diseño visual hasta terminar la definición de qué hace cada pantalla.
+Solicitar aprobación funcional de **Proveedores → Catálogo**. Después definir **Compra inteligente** y **Pedidos**, manteniendo separado el diseño visual global y la integración Unity posteriores.
