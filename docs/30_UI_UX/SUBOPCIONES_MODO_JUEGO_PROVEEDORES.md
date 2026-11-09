@@ -1,7 +1,7 @@
 # Proveedores — definición funcional por pantallas (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Proveedores → Proveedores, Catálogo y Compra inteligente APROBADAS FUNCIONALMENTE (09/11/2026)**. **Pedidos: propuesta funcional pendiente de aprobación**. El rediseño visual y las ampliaciones de código/UI continúan pendientes.
+**Estado:** **PROVEEDORES CERRADO FUNCIONALMENTE el 09/11/2026**. Quedan APROBADAS las cuatro secciones: **Proveedores, Catálogo, Compra inteligente y Pedidos**. El rediseño visual global, integración con las barras definitivas y las ampliaciones de código/UI continúan pendientes.
 **Criterio global:** aprobar exclusivamente qué hace cada pantalla. No rediseñar ni programar Unity hasta después. Al diseñar TODOS LOS PANELES aplicar la identidad gráfica común obligatoria (`SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`) y respetar las barras V21/E5.5 aprobadas.
 
 ## Secciones comprobadas en el código existente
@@ -109,7 +109,7 @@ No crear un segundo gestor de proveedores, ni mezclar compra con la edición de 
 - No obligar al jugador a aceptar la estrategia sugerida: puede elegir cualquiera de las viables o comprar manualmente en Catálogo.
 - No inventar límites de presupuesto, negociación, reglas de financiación o compra periódica que no hayan sido definidos como mecánica aparte.
 
-## Proveedores → Pedidos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Proveedores → Pedidos — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** administrar y seguir **todos los pedidos realizados a proveedores**, desde su preparación hasta la entrega; que el jugador pueda decidir qué compra y conocer claramente el estado sin modificar directamente inventario ni el libro financiero.
 
@@ -142,4 +142,4 @@ No admitir compras automáticas sin confirmación del jugador, devoluciones o re
 
 ## Próximo paso
 
-Solicitar aprobación de **Proveedores → Pedidos**. Con ella, las cuatro secciones del menú Proveedores quedarán cerradas funcionalmente y se podrá continuar con **Reservas**. La implementación y el rediseño visual permanecerán en su fase independiente.
+**Proveedores queda cerrado funcionalmente.** Continuar con **Reservas → Agenda y gestión**, sin programar Unity ni comenzar el rediseño gráfico de los paneles en este chat.
