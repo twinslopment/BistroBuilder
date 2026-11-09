@@ -34,3 +34,11 @@ Prueba visual y de interacciones con Chromium:
 
 ## Cautelas
 La escena de restaurante es una fotografía de referencia estática, no viewport Unity. Los contenidos del feed son datos de ejemplo y las opciones de gameplay deben provenir de las autoridades vigentes de `CONTEXTUAL_ACTION_CATALOG.md`. Recoleta se sustituye por una serif si no está instalada. La aprobación de la dirección artística no aprueba automáticamente todos los estados o duraciones.
+
+## Aprobación de parámetros visuales — 2026-11-09 (V1.2)
+El usuario aprueba la previsualización y selecciona expresamente estos valores predeterminados para Actividad:
+- **Reducir movimiento: ACTIVADO** (equivalente al ajuste de movimiento reducido en el prototipo).
+- **Intensidad del marco luminoso: 50 %**.
+Ambos quedan como configuración artística vigente para la preview V1.2. Se conservan barras superiores/inferiores originales sin rediseño. No se declara todavía implementación en Unity, ni se alteran las animaciones aprobadas propias de V21/V30 o E5.5. El ajuste de movimiento reducido sirve también como criterio accesible para las transiciones de componentes compartidos, respetando las preferencias de movimiento reducido.
+
+Nuevo archivo de previsualización entregado en conversación: `BistroBuilder_Actividad_Preview_V1_2_Aprobada.html` (autónomo), con paquete `BistroBuilder_Actividad_Preview_V1_2_Codigo.zip`. Verificación de navegación de filtros, paneles, imágenes, 1280×720, valores iniciales y errores JS: **PASS / 0 errores**.
