@@ -1,7 +1,7 @@
 # Reservas — definición funcional (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Agenda y gestión — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. No existe aprobación aún de submenús ni de una segunda pantalla de Reservas.
+**Estado:** **RESERVAS CERRADO FUNCIONALMENTE el 09/11/2026** con una única pantalla aprobada: **Agenda y gestión**. Las ampliaciones UI, integración con Actividad/V21, rediseño visual y pruebas actuales de Unity siguen pendientes.
 **Alcance del trabajo actual:** definir qué hace la interfaz jugable a partir de código real. NO modificar Unity ni diseño visual. En una fase posterior aplicar la identidad gráfica global obligatoria a todos los paneles, respetando las barras definitivas de Modo Juego V21 y E5.5; el Modo Edición no comparte esta navegación.
 
 ## Arquitectura comprobada
@@ -16,7 +16,7 @@
 - Los estados canónicos son: `Booked` (reservada), `Due` (en hora), `Arrived`, `Seated`, `Completed`, `Cancelled`, `NoShow`.
 - La integración exacta de esta UI histórica en el nuevo sistema global V21/E5.5 y su funcionamiento en una build actual NO están probados en este paso.
 
-## Propuesta de estructura: UNA pantalla «Reservas → Agenda y gestión»
+## Estructura APROBADA: UNA pantalla «Reservas → Agenda y gestión»
 
 **Objetivo:** que el jugador organice reservas de su restaurante de forma comprensible, compruebe su encaje en las mesas y gestione cambios, sin convertirlo en un sistema aparte de clientes o de distribución manual del salón.
 
@@ -33,7 +33,7 @@
 11. **Persistencia de las reservas y sus mesas lógicas** en `reservations.state` al guardar/cargar, sin guardar objetos visuales ni crear una segunda base de datos.
 12. **Búsqueda y filtros útiles** por nombre, estado y tramo horario, solo como **mejora de presentación futura**; la pantalla actual contiene agenda diaria y selección, pero no filtros/buscador avanzado. Priorizar sencillez y lectura sobre un CRM.
 
-### Reglas y límites recomendados, pendientes de aprobación
+### Reglas y límites APROBADOS
 
 - **No dividir sin motivo** Reservas en «Agenda», «Nueva reserva», «Cancelaciones», etc.: crear/editar/cancelar será parte de una misma pantalla, con formulario contextual.
 - **No editar manualmente mesas individuales por defecto**: el planificador ya asigna una mesa compatible. La eventual selección manual/traslado de mesa se estudiará como mecánica aparte si el jugador la solicita.
@@ -44,4 +44,4 @@
 
 ## Próximo paso
 
-Solicitar aprobación o ajustes sobre **Reservas → Agenda y gestión** y decidir expresamente si el menú tendrá **una única pantalla con agenda y ficha**, como recomienda el código actual. Solo si existen necesidades funcionales no cubiertas se propondrán más secciones.
+**Reservas queda cerrado funcionalmente con una pantalla única**, agenda y formulario contextual. Continuar por **Economía → Resumen**. La aprobación funcional no implica que todas las mejoras ya estén programadas ni que se haya aprobado el diseño visual.
