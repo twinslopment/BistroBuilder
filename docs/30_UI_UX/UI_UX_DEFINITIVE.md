@@ -35,11 +35,14 @@
 
 **Fuente visual editable única:** [`BARRA_SUPERIOR_V21_V30_APROBADA.md`](BARRA_SUPERIOR_V21_V30_APROBADA.md) y `DesignReferences/TopBar/V21_V30/` (HTML, CSS, JS, logotipo original y capturas). Una referencia antigua incompatible pasa a ser histórica y no prevalece sobre esta decisión.
 
-## Subopciones de Actividad (decisión 09/11/2026)
-- **Vista del restaurante:** cierra paneles de gestión y devuelve a la escena 3D sin pantalla adicional.
-- **Actividad reciente:** utiliza el panel izquierdo de Actividad existente.
-- **«Alertas e incidencias» no será una subopción independiente**: su contenido se consulta con el filtro **«Incidencias»** dentro del panel izquierdo. Mantener las notificaciones críticas y su acceso al objetivo/panel contextual derecho; no duplicar sistemas.
-- Detalle y estado de integración: [`SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md`](SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md).
+## Actividad — botón directo sin submenú (decisión definitiva 09/11/2026)
+- Al pulsar **Actividad** desde una pantalla de gestión, se cierran los paneles abiertos, se vuelve al restaurante 3D y se muestra **Actividad** en el lateral izquierdo.
+- Con el panel visible, otro clic en **Actividad** lo oculta; si está oculto, lo vuelve a mostrar. No existe un submenú para Actividad.
+- El panel izquierdo conserva los filtros **Hoy, Incidencias, Oportunidades y Reservas**. **«Alertas e incidencias» no es una subopción independiente.**
+- Con Actividad oculto y una incidencia crítica pendiente, el botón superior debe mantener un **indicador discreto**, sin duplicar avisos ni abrir modales rutinarios.
+- El panel derecho continúa siendo contextual según selección. No modificar el flujo del Modo Edición.
+- La implementación exacta y el aviso de críticos están pendientes de integración y pruebas en Unity.
+- Fuente de verdad: [`SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md`](SUBOPCIONES_MODO_JUEGO_ACTIVIDAD.md).
 
 ## Interacción
 - Seleccionar una mesa recentra suavemente la cámara **sin zoom automático**.
