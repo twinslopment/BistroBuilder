@@ -1,7 +1,7 @@
 # Economía — definición funcional por secciones (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Economía → Resumen, Resultados y Caja APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Históricos: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Financiación sigue pendiente. Las aprobaciones son funcionales; no suponen rediseño ni implementación de mejoras en Unity.
+**Estado:** **Economía → Resumen, Resultados, Caja e Históricos APROBADAS FUNCIONALMENTE (09/11/2026)**. **Economía → Financiación: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Las aprobaciones no suponen rediseño ni implementación de mejoras en Unity.
 **Regla de trabajo:** se definen las funciones, no el diseño visual ni la implementación. El aspecto futuro de TODAS las pantallas seguirá `docs/30_UI_UX/SISTEMA_VISUAL_GLOBAL_OBLIGATORIO.md`, respetando las barras V21 y E5.5 aprobadas.
 
 ## Secciones verificadas en el código de Finanzas 3J
@@ -113,7 +113,7 @@ La documentación histórica `docs/FINANCE_3J_UI.md` describe las cinco pestaña
 
 No crear arqueo físico, ingreso manual, transferencias bancarias, caja por empleado, impuestos o auditorías administrativas nuevos sin definir previamente su mecánica. No permitir que un botón de Caja altere directamente el ledger. No duplicar la pestaña Históricos en esta pantalla; aquí se consultan movimientos concretos y el estado de tesorería, no análisis gráfico de periodos.
 
-## Economía → Históricos — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Economía → Históricos — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** ayudar al jugador a comprender **cómo evoluciona su negocio a lo largo del tiempo**, identificar tendencias reales y comparar periodos de juego, sin inventar ingresos ni resultados.
 
@@ -140,10 +140,45 @@ No crear arqueo físico, ingreso manual, transferencias bancarias, caja por empl
 - El dashboard ya calcula la comparación solamente cuando existe un periodo anterior de igual longitud completo y la ventana elegida no es **Todo**.
 - **Requieren una mejora de presentación posterior** la comparativa detallada por servicio, la explicación visible de intervalos agregados, los avisos de cobertura de costes y enlaces de navegación al detalle diario. Esta aprobación, si se concede, sería funcional, no verificación de Unity ni aprobación del diseño visual.
 
-### Exclusiones y límites propuestos
+### Exclusiones y límites aprobados
 
 No prometer predicciones de ingresos futuros, análisis causal artificial, benchmarking con restaurantes ajenos, exportaciones, contabilidad editable ni un editor de gráficos en esta fase. Mantener una sola autoridad de datos financieros, separar resultados de caja y respetar el sistema visual global y las barras V21 y E5.5 ya aprobadas.
 
+## Economía → Financiación — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** permitir al jugador consultar préstamos disponibles, entender exactamente sus compromisos y solicitar financiación solo cuando el restaurante cumpla las condiciones económicas reales del juego.
+
+1. **Consultar ofertas de financiación activas** publicadas por el sistema canónico, diferenciando **disponibles y bloqueadas**. No inventar entidades bancarias, ofertas, productos o importes que no existan en las definiciones de 3I.
+2. **Comparar condiciones por oferta:** dinero que recibirá el restaurante (principal), plazo en días de juego, interés total en dinero y porcentaje, número de cuotas y **total a devolver**. No confundir importe financiado con beneficio.
+3. **Consultar elegibilidad real antes de solicitar** y explicar por qué una oferta no está disponible: proyección de liquidez incompleta, deudas vencidas o impagadas, pérdidas consecutivas, máximo de préstamos, límite de principal pendiente o financiación insuficiente para resolver un saldo negativo, según reglas actuales.
+4. **Mostrar una previsualización de contratación comprensible**: dinero que entrará en Caja, cuotas, plazo, interés total y obligación total; recordar que los intereses se reconocen como gasto financiero al pagarse, mientras que el principal recibido es tesorería y deuda.
+5. **Solicitar financiación con confirmación explícita**, nunca con un clic accidental. Revalidar la elegibilidad al confirmar; si cambia la situación financiera entre la consulta y la acción, devolver el motivo sin abrir crédito indebidamente.
+6. **Registrar desembolso y préstamo una sola vez** mediante operación idempotente: si hay una doble activación de la misma confirmación no se duplica la entrada de efectivo ni el contrato, y todas las mutaciones pertenecen a `BistroBuilderFinancingService` y `BistroBuilderFinanceService`.
+7. **Consultar préstamos activos y finalizados** con importe, fecha/día de apertura, intereses, total contratado, estado y deuda restante cuando esté calculada. Los estados actuales son **Activo, Con retrasos (moroso), Incumplido y Saldado**; usar etiquetas españolas claras y no ocultar los contratos ya pagados.
+8. **Consultar calendario de cuotas por préstamo**, con número, importe desglosado entre principal e intereses, día de vencimiento y estado **Pendiente, Vencida o Pagada**, más día de pago cuando corresponda. Mostrar el siguiente vencimiento y la deuda vencida.
+9. **Procesar vencimientos mediante la lógica automática del juego:** se intenta pagar la cuota cuando el sistema ejecuta el procesamiento del día y existe efectivo suficiente; si no, queda vencida y puede agravar el estado del préstamo según la tolerancia real. **La UI no publica débitos, ni marca cuotas pagadas manualmente**.
+10. **Mostrar salud financiera y obligaciones relacionadas:** principal/intereses pendientes, cuotas que vencen hoy, vencidas, límite de endeudamiento y liquidez proyectada, con la advertencia de cobertura incompleta cuando corresponda.
+11. **Conectar con Caja y Resumen** para observar el desembolso real y los pagos de principal/intereses, y con Históricos para la evolución de tesorería; sin crear duplicación de transacciones ni alterar el significado del resultado operativo.
+12. **Trazabilidad y persistencia:** mantener los préstamos/estados en `finance.financing.runtime`, los importes realmente abonados en el ledger `finance.runtime` y la misma autoridad de cálculo. No dar por concedidas solicitudes bloqueadas ni mostrar pagos ficticios.
+
+### Verificación técnica y ampliaciones necesarias
+
+- `BistroBuilderFinanceRuntimeView.BuildFinancingSection` ya muestra ofertas, ficha, botón de solicitud bloqueado cuando `eligible == false` y resumen de deuda. `OpenFinancingConfirmation` presenta principal, plazo, cuotas, interés y total, y exige confirmación.
+- `BistroBuilderFinancingService.TryGetOfferViews` evalúa condiciones de concesión: liquidez proyectada completa, inexistencia de deuda vencida/impagada, menos de cinco días consecutivos de pérdidas, máximo de préstamos activos, tope de principal y tratamiento de saldos negativos. La UI expone `ineligibilityReason` cuando se conoce.
+- `BistroBuilderFinancingService.TryAcceptOffer` vuelve a comprobar elegibilidad, crea un `BistroBuilderLoanRecord` y registra el desembolso en Caja por una operación identificada; repetir la **misma** operación es idempotente, pero **no bloquea nuevas solicitudes distintas** que cumplan las reglas.
+- `BistroBuilderFinancingService.TryProcessDuePayments` procesa cuotas vencidas con el dinero disponible, marca atrasos por fondos insuficientes y contabiliza principal e intereses mediante un lote monetario atómico. No implementa un botón de pago manual ni pagos anticipados.
+- `BistroBuilderLoanRecord` conserva cuotas y estado (Active/Delinquent/Defaulted/PaidOff); `BistroBuilderLoanInstallmentRecord` expone cuota, vencimiento, principal, intereses y estado Pending/Overdue/Paid.
+- `BistroBuilderFinanceRuntimeView.BuildDebtText` solo enseña **hasta cuatro préstamos recientes** y la próxima cuota impagada de cada uno. **Para consultar todos los contratos y el calendario completo de cuotas, harán falta mejoras de UI y pruebas**; no afirmar que ya están disponibles.
+- El contrato `BistroBuilderLiquidityPosition` distingue principal, intereses, obligaciones de hoy, cuotas próximas y vencidas; no tratar una proyección incompleta como certeza.
+
+### Límites propuestos
+
+- **No** permitir préstamos personalizados con importe/plazo inventados, renegociación, amortización anticipada, refinanciación, pago manual, quitas o eliminación de deuda desde esta pantalla sin mecánicas expresamente aprobadas.
+- **No** inventar comisiones, puntuaciones crediticias ni garantías que no estén modeladas por 3I.
+- **No** ofrecer financiación automática ni activarla sin aceptación expresa del jugador.
+- **No** mezclar principal recibido y beneficios, ni principal amortizado y gastos operativos; los intereses sí son gasto cuando corresponden.
+- La pantalla conserva la estética global premium de Bistro Builder en la futura fase visual, sin sustituir las barras V21/E5.5 ni duplicar un ledger financiero.
+
 ## Próximo paso
 
-Solicitar aprobación o modificaciones para **Economía → Históricos**. Después definir la última sección **Economía → Financiación** antes de dar el menú por cerrado funcionalmente.
+Solicitar aprobación de **Economía → Financiación**. Si se aprueba, las cinco secciones (Resumen, Resultados, Caja, Históricos y Financiación) quedarán cerradas funcionalmente y seguiremos con **Marketing**.
