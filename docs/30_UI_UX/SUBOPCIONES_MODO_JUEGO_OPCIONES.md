@@ -1,7 +1,7 @@
 # Opciones — definición funcional por categorías (Modo Juego)
 
 **Fecha:** 09/11/2026.
-**Estado:** **Opciones → Partida: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Pendientes de definición/ratificación: **Audio, Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal**.
+**Estado:** **Opciones → Partida APROBADA FUNCIONALMENTE (09/11/2026)**. **Opciones → Audio: PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN**. Vídeo, Jugabilidad, Interfaz, Controles, Accesibilidad, Idioma y Créditos / Legal siguen pendientes. Aprobación funcional, sin cambios de código ni diseño visual.
 **Alcance:** aprobación de funciones; no cambiar código de Unity ni rediseño visual en este paso. El diseño definitivo debe conservar la barra superior V21, inferior E5.5 del Modo Juego y el sistema visual global premium.
 
 ## Estructura real comprobada
@@ -19,7 +19,7 @@ El componente `Assets/Scripts/Presentation/UI/BistroBuilderOptionsScreen.cs` con
 
 La pantalla se abre como overlay propio; al abrir normalmente selecciona **Partida**. `docs/OpcionesYCarta.md` describe también las pruebas históricas `BistroBuilderOptionsPlayTest.RunBatch`, pero no se han ejecutado aquí ni acreditan integración visual definitiva.
 
-## Opciones → Partida — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+## Opciones → Partida — FUNCIONALIDADES APROBADAS
 
 **Objetivo:** permitir al jugador gestionar con claridad su progreso sin perder la partida por una acción accidental.
 
@@ -48,10 +48,36 @@ La pantalla se abre como overlay propio; al abrir normalmente selecciona **Parti
 - **Mejoras que requieren programación/UI:** etiquetado inequívoco de la ranura de autoguardado frente a manual, denominación correcta del menú de pausa frente a escena principal, texto y separación visual de acciones destructivas/seguras, adaptación de la pantalla al sistema visual definitivo y pruebas de guardado/carga de la build actual.
 - **No hay acción real de «Nueva partida» dentro del menú de pausa `ShowPage(-1)`**. No incluirla ni prometer transición a una pantalla principal real sin una decisión/implementación adicional.
 
-### Límites propuestos
+### Límites aprobados
 
 No tocar lógica de `BistroBuilderSaveGameService` ni sobrescribir ranura 999 desde la selección manual. No ofrecer nube, múltiples perfiles de usuario, logros, backups remotos, borrado de partidas, importación/exportación o recuperación garantizada de guardados dañados si no existe soporte comprobado. Todos los cambios que impliquen perder progreso requieren confirmación clara.
 
+## Opciones → Audio — PROPUESTA FUNCIONAL PENDIENTE DE APROBACIÓN
+
+**Objetivo:** dar al jugador control directo y comprensible sobre el sonido general de Bistro Builder en PC, sin fingir canales o contenidos sonoros que todavía no están implementados.
+
+1. **Control de volumen general entre 0 y 100 %**, mediante un deslizador continuo con el porcentaje numérico visible. La escala visual corresponde al rango real `AudioListener.volume = 0..1`.
+2. **Aplicar el cambio inmediatamente** mientras el jugador mueve el deslizador, sin necesitar un botón «Aplicar» ni reiniciar la partida. Esto controla todos los sonidos que pasen por el `AudioListener` de Unity; no inventar mezclas por canal.
+3. **Volumen inicial al 100 %** cuando el usuario no haya modificado la opción previamente. Al volver a entrar, el deslizador debe reflejar la preferencia guardada en lugar de volver a un valor predeterminado.
+4. **Permitir silencio total ajustando el volumen a 0 %** y recuperarlo al mover de nuevo el control. Un botón de silenciar/desilenciar independiente sería una mejora adicional que requeriría comportamiento de restauración y prueba, no imprescindible en esta fase.
+5. **Guardar la preferencia por instalación/equipo** con la clave `BB.Options.Volume` de `PlayerPrefs`, independiente de las partidas guardadas; así cargar otra partida no debería cambiar el volumen elegido en el equipo. Garantizar que se persiste en el cierre normal mediante `PlayerPrefs.Save()` y que se aplica en `Awake`.
+6. **Mostrar claramente que es un volumen maestro**, no una mezcla de música/efectos/ambiente ni ajuste de volumen del sistema operativo. Respetar el volumen y dispositivo elegidos por el usuario en Windows.
+7. **Permitir uso con ratón y teclado** mediante el control de Unity y proporcionar respuesta visual clara de valor actual, foco e interacción. El perfeccionamiento de accesibilidad/estilo corresponde a su sección y al diseño global.
+8. **No prometer escucha de muestra ni reproducción de prueba** si no existe un recurso sonoro instalado y comprobado. Cuando se incorpore audio real, evaluar una muestra reproducible y pruebas auditivas para verificar que el volumen funciona en la build.
+9. **Restablecer al 100 %** puede ofrecerse como acción explícita de comodidad en una futura adaptación de UI, con cambio inmediato y persistido; la pantalla actual **no incorpora ese botón**, por lo que se trata de mejora propuesta, no funcionalidad ya presente.
+
+### Estado técnico verificado
+
+- `BistroBuilderOptionsScreen.ShowPage(1)` construye una página con un solo `SliderRow("Volumen general", ...)`, con rango **0..1** y texto numérico **0..100 %**.
+- Al mover el deslizador llama a `AudioListener.volume = value` y `PlayerPrefs.SetFloat("BB.Options.Volume", value)`. `Awake()` recupera la preferencia mediante `GetFloat(..., 1)`, y `Close()` llama a `PlayerPrefs.Save()`.
+- La búsqueda en scripts versionados no mostró controladores de mezcla por grupos ni referencias a `AudioMixer`; tampoco aparecen recursos `.wav`, `.mp3`, `.ogg` o `.mixer` versionados en la ruta revisada. **La existencia de audio reproducible en una build o assets fuera del repositorio no queda acreditada por esta revisión.**
+- No existe un control específico de **Música, Efectos, Ambiente, Voces** o **Dispositivo de salida** en la página actual. Añadirlos exigiría primero definir/implementar sus canales reales, conectarlos al control de audio y ejecutar pruebas.
+- No se ha ejecutado Unity ni una prueba auditiva en esta fase; la aprobación funcional no valida sonido ni apariencia visual.
+
+### Reglas de alcance propuestas
+
+No crear controles decorativos que no modifiquen un canal real, ni afirmar que hay banda sonora, sonidos de cocina, voces o volumen ambiental si aún no están integrados. La gestión de dispositivos, mezclas individuales, subtítulos, audio espacial, soporte para varios altavoces o prueba sonora se estudiará cuando existan requisitos y sistema de audio adecuados.
+
 ## Próximo paso
 
-Solicitar aprobación de **Opciones → Partida**. Después continuar con **Opciones → Audio**, siguiendo las nueve categorías existentes y registrando cada decisión. El rediseño gráfico se realizará separadamente.
+Solicitar aprobación o ajustes de **Opciones → Audio**. Después continuar con **Opciones → Vídeo**, siguiendo la arquitectura de nueve categorías existente.
