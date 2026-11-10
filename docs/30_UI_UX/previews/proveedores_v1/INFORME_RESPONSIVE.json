@@ -1,0 +1,303 @@
+[
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "231.312px 161.938px 115.656px 101.203px 109.891px 15px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 241,
+        "right": 472.3125
+      },
+      {
+        "left": 477.3125,
+        "right": 639.25
+      },
+      {
+        "left": 644.25,
+        "right": 759.90625
+      },
+      {
+        "left": 764.90625,
+        "right": 866.109375
+      },
+      {
+        "left": 871.109375,
+        "right": 959
+      },
+      {
+        "left": 986,
+        "right": 1001
+      }
+    ],
+    "rowBounds": {
+      "left": 231,
+      "right": 1011
+    },
+    "resolution": "1024x768",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "307.047px 207.719px 137.266px 135.469px 144.5px 22px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 260,
+        "right": 567.046875
+      },
+      {
+        "left": 575.046875,
+        "right": 782.765625
+      },
+      {
+        "left": 790.765625,
+        "right": 928.03125
+      },
+      {
+        "left": 936.03125,
+        "right": 1071.5
+      },
+      {
+        "left": 1079.5,
+        "right": 1167.390625
+      },
+      {
+        "left": 1232,
+        "right": 1254
+      }
+    ],
+    "rowBounds": {
+      "left": 250,
+      "right": 1264
+    },
+    "resolution": "1280x720",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "329.25px 222.734px 147.188px 145.266px 154.953px 22px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 275.609375,
+        "right": 604.859375
+      },
+      {
+        "left": 612.859375,
+        "right": 835.59375
+      },
+      {
+        "left": 843.59375,
+        "right": 990.78125
+      },
+      {
+        "left": 998.78125,
+        "right": 1144.046875
+      },
+      {
+        "left": 1152.046875,
+        "right": 1239.9375
+      },
+      {
+        "left": 1315,
+        "right": 1337
+      }
+    ],
+    "rowBounds": {
+      "left": 265.609375,
+      "right": 1347
+    },
+    "resolution": "1366x768",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "382.625px 258.844px 171.062px 168.797px 180.078px 22px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 317.59375,
+        "right": 700.21875
+      },
+      {
+        "left": 712.21875,
+        "right": 971.0625
+      },
+      {
+        "left": 983.0625,
+        "right": 1154.125
+      },
+      {
+        "left": 1166.125,
+        "right": 1334.921875
+      },
+      {
+        "left": 1346.921875,
+        "right": 1440
+      },
+      {
+        "left": 1539,
+        "right": 1561
+      }
+    ],
+    "rowBounds": {
+      "left": 303.59375,
+      "right": 1575
+    },
+    "resolution": "1600x900",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "496.938px 335.438px 208.719px 181.391px 193.812px 26px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 373.90625,
+        "right": 870.84375
+      },
+      {
+        "left": 882.84375,
+        "right": 1218.28125
+      },
+      {
+        "left": 1230.28125,
+        "right": 1439
+      },
+      {
+        "left": 1451,
+        "right": 1632.390625
+      },
+      {
+        "left": 1644.390625,
+        "right": 1737.46875
+      },
+      {
+        "left": 1850.203125,
+        "right": 1876.203125
+      }
+    ],
+    "rowBounds": {
+      "left": 359.90625,
+      "right": 1890.203125
+    },
+    "resolution": "1920x1080",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "687.016px 463.734px 288.547px 250.766px 267.938px 26px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 451,
+        "right": 1138.015625
+      },
+      {
+        "left": 1153.015625,
+        "right": 1616.75
+      },
+      {
+        "left": 1631.75,
+        "right": 1920.296875
+      },
+      {
+        "left": 1935.296875,
+        "right": 2186.0625
+      },
+      {
+        "left": 2201.0625,
+        "right": 2294.140625
+      },
+      {
+        "left": 2484,
+        "right": 2510
+      }
+    ],
+    "rowBounds": {
+      "left": 437,
+      "right": 2524
+    },
+    "resolution": "2560x1440",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  },
+  {
+    "pageOverflow": false,
+    "topBottomOverlap": false,
+    "titleClipped": false,
+    "drawerInViewport": true,
+    "selectedRowVisible": true,
+    "layoutCols": "995.781px 672.156px 418.234px 363.469px 388.359px 26px",
+    "navRows": 4,
+    "activeTitle": "Catálogo de productos",
+    "actualCells": [
+      {
+        "left": 451,
+        "right": 1446.78125
+      },
+      {
+        "left": 1461.78125,
+        "right": 2133.9375
+      },
+      {
+        "left": 2148.9375,
+        "right": 2567.171875
+      },
+      {
+        "left": 2582.171875,
+        "right": 2945.640625
+      },
+      {
+        "left": 2960.640625,
+        "right": 3053.71875
+      },
+      {
+        "left": 3364,
+        "right": 3390
+      }
+    ],
+    "rowBounds": {
+      "left": 437,
+      "right": 3404
+    },
+    "resolution": "3440x1440",
+    "errors": [],
+    "resizePreservesTabAndSearch": true
+  }
+]
