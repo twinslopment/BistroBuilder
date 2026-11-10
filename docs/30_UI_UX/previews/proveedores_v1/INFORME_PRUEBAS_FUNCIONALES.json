@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "PASS Proveedor / 6 filas",
+    "PASS Filtro bloqueados",
+    "PASS Ficha proveedor bloqueado",
+    "PASS Catálogo 14 ofertas",
+    "PASS Filtro promociones",
+    "PASS Búsqueda por ingrediente",
+    "PASS Detalle catálogo",
+    "PASS Sumar envase",
+    "PASS Crear pedido borrador",
+    "PASS Abre confirmación explícita",
+    "PASS Confirma pedido",
+    "PASS Reset borradores y vuelta inicial",
+    "PASS Ficha comparativa de estrategia",
+    "PASS Plan genera borradores",
+    "PASS Modal cancelación",
+    "PASS Cancelar borrador"
+  ],
+  "errors": []
+}
