@@ -1,0 +1,182 @@
+{
+  "sizes": [
+    {
+      "viewport": "1024x768",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 564,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_1024x768.png"
+      ]
+    },
+    {
+      "viewport": "1280x720",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 514,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_1280x720.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_alerts_1280x720.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_moves_1280x720.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_receipts_1280x720.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_stock_1280x720.png"
+      ]
+    },
+    {
+      "viewport": "1366x768",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 555,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_1366x768.png"
+      ]
+    },
+    {
+      "viewport": "1440x900",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 655,
+      "screenshots": []
+    },
+    {
+      "viewport": "1600x900",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 640,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_1600x900.png"
+      ]
+    },
+    {
+      "viewport": "1904x910",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 620,
+      "screenshots": []
+    },
+    {
+      "viewport": "1920x1080",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 789,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_1920x1080.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_alerts_1920x1080.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_moves_1920x1080.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_receipts_1920x1080.png",
+        "/mnt/data/inventario_responsive_v7/Inventario_stock_1920x1080.png"
+      ]
+    },
+    {
+      "viewport": "2560x1440",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 1056,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_2560x1440.png"
+      ]
+    },
+    {
+      "viewport": "3440x1440",
+      "rows_per_tab": {
+        "alerts": 12,
+        "moves": 9,
+        "receipts": 3,
+        "stock": 17
+      },
+      "horiz_page_overflow": false,
+      "vert_page_overflow": false,
+      "title_clipped": false,
+      "drawer_inside": true,
+      "dialog_inside": true,
+      "table_height": 1034,
+      "screenshots": [
+        "/mnt/data/inventario_responsive_v7/Inventario_Existencias_3440x1440.png"
+      ]
+    }
+  ],
+  "functional": {
+    "search": true,
+    "filters": true,
+    "open_detail": true,
+    "prevent_overdraw": true,
+    "adjust_and_record": true,
+    "receipt_to_moves": true,
+    "reset": true,
+    "reduced_motion": true,
+    "js_errors": []
+  },
+  "js_errors": []
+}
