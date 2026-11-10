@@ -1,0 +1,101 @@
+/* BLOQUE 04 — capa específica sobre el CSS aprobado de Inventario V7.
+   Se conservan proporciones, tipografías, barras, materiales y componentes comunes. */
+:root{--bar-height:var(--top)}
+.bistro-topbar{position:absolute!important;top:0;left:0;right:0;z-index:35;height:var(--top)!important;padding:2px 7px!important}
+.bistro-topbar .brand-zone{width:clamp(172px,15.4vw,290px)}
+.bistro-topbar .brand-logo{max-height:100%}
+.bistro-topbar .navigation{grid-template-columns:repeat(10,minmax(0,1fr))}
+.bistro-topbar .icon-stage{height:36px;width:36px}
+.bistro-topbar .nav-icon{height:32px;width:32px}
+.bistro-topbar .nav-button{gap:4px;padding:3px 2px 4px}
+.bistro-topbar .nav-label{font-size:clamp(10px,.78vw,13px)}
+.bistro-topbar .nav-button::before{pointer-events:none}
+.sidebar-title{padding-left:2px;padding-right:2px}
+/* Controles existentes, misma escala que Personal/Inventario V7 */
+.grid-supplier{grid-template-columns:minmax(230px,2.1fr) minmax(136px,.9fr) minmax(92px,.62fr) minmax(105px,.75fr) minmax(105px,.7fr) minmax(100px,.75fr) 26px}
+.grid-catalog{grid-template-columns:minmax(220px,2fr) minmax(170px,1.35fr) minmax(114px,.84fr) minmax(108px,.73fr) minmax(110px,.78fr) 26px}
+.grid-smart{grid-template-columns:minmax(245px,1.8fr) minmax(135px,.9fr) minmax(139px,.9fr) minmax(133px,.9fr) minmax(118px,.84fr) 26px}
+.grid-orders{grid-template-columns:minmax(190px,1.5fr) minmax(185px,1.5fr) minmax(118px,.8fr) minmax(150px,1.05fr) minmax(125px,.86fr) 26px}
+.cell-numeric{font-weight:750;font-size:14px;white-space:nowrap;color:#3d2d20}
+.cell-muted{font-size:12px;color:#6e5843;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell-quality{display:flex;flex-direction:column;gap:3px;color:#59452f;font-weight:650;font-size:12px}
+.quality-meter{display:block;height:6px;width:96px;max-width:95%;border-radius:3px;border:1px solid #a68d68;background:#f8f0dd;overflow:hidden}
+.quality-meter i{display:block;height:100%;background:linear-gradient(#b6ac7e,#8b8156)}
+.cell-end{font-size:20px;color:#382718}
+.mini-portrait{border-color:#fff8e6}
+.status.locked{background:linear-gradient(#a9a29a,#77716a);border-color:#9e9384}
+.status.locked:before{content:'×'}
+.status.promo{background:linear-gradient(#dcba79,#b3843f);color:#49301d;border-color:#c59b5c}
+.status.promo:before{content:'★'}
+.status.draft{background:linear-gradient(#e7c987,#c59557);color:#50361a;border-color:#c79c5c}
+.status.draft:before{content:'•'}
+.status.confirmed{background:linear-gradient(#7f9d58,#557b3d)}
+.status.confirmed:before{content:'✓'}
+.status.intransit{background:linear-gradient(#8e8e83,#5b645c)}
+.status.intransit:before{content:'↗'}
+.status.delivered{background:linear-gradient(#6d924d,#46712e)}
+.status.delivered:before{content:'✓'}
+.status.cancelled{background:linear-gradient(#ae9d92,#83746b)}
+.status.cancelled:before{content:'×'}
+.table-row:disabled{opacity:.75}
+.drawer-body .compare-box{background:#fff8e9;border:1px solid #d7bd93;border-radius:8px;margin:8px 0 13px;padding:11px}
+.drawer-body .compare-box strong{display:block;font-size:18px;color:#39291c}
+.drawer-body .compare-box small{display:block;color:#846e53;margin-top:5px}
+.drawer-body .plan-note{font-size:12px;line-height:1.45;color:#664f37}
+.drawer-body .qty-control{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;padding:9px;border:1px solid #cfb794;border-radius:8px;background:#fff8ec}
+.qty-control button{width:34px;height:32px;border:1px solid #b48a56;border-radius:6px;background:linear-gradient(#f0d6ac,#d9ac70);color:#402b18;font-size:19px}
+.qty-control input{width:65px;height:31px;text-align:center;background:#fffefa;border:1px solid #b69a72;border-radius:6px;color:#4b301a}
+.drawer-head h2{word-break:break-word}
+.plan-highlight{box-shadow:inset 4px 0 #bd975a}
+.inline-detail{display:flex;align-items:center;gap:7px;color:#694f33;font-size:11px;margin-top:6px}
+.demo-explanation{font-size:12px;color:#8c7151;line-height:1.45;margin-top:12px}
+.main-header .small-label{font:600 10px var(--body);letter-spacing:.05em;color:#ceaa73}
+.dialog-body .review-line{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid #dcc6a8;font-size:13px}
+.dialog-body .review-line strong{text-align:right}
+.dialog-body .small-review{color:#78614b;font-size:12px;line-height:1.5;margin-top:12px}
+.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:10px 0}
+.help-grid span{border:1px solid #d2bb9c;background:#fff7e7;border-radius:6px;padding:10px;font-size:12px;color:#5b4631}
+.help-grid strong{display:block;font-size:17px;color:#30251d;margin-top:4px}
+#orderDialog .dialog-foot{padding-top:6px}
+#orderDialog .dialog-body{max-height:48vh;overflow:auto}
+select option{background:#352c24;color:#fff4e0}
+@media(max-width:1600px){
+ .grid-supplier{grid-template-columns:minmax(180px,1.65fr) minmax(100px,.8fr) minmax(82px,.68fr) minmax(90px,.75fr) minmax(85px,.73fr) minmax(87px,.75fr) 22px}
+ .grid-catalog{grid-template-columns:minmax(165px,1.7fr) minmax(135px,1.15fr) minmax(86px,.76fr) minmax(90px,.75fr) minmax(90px,.8fr) 22px}
+ .grid-smart{grid-template-columns:minmax(170px,1.6fr) minmax(105px,.9fr) minmax(100px,.9fr) minmax(95px,.85fr) minmax(100px,.86fr) 22px}
+ .grid-orders{grid-template-columns:minmax(138px,1.35fr) minmax(122px,1.2fr) minmax(90px,.8fr) minmax(115px,1fr) minmax(107px,.9fr) 22px}
+}
+@media(max-width:1200px){
+ .bistro-topbar .brand-zone{width:172px}
+ .bistro-topbar .icon-stage{height:30px;width:30px}
+ .bistro-topbar .nav-icon{height:27px;width:27px}
+ .bistro-topbar .nav-label{font-size:10px}
+ .cell-quality .quality-meter{width:65px}
+ .table-row{gap:5px!important}.table-head{gap:5px!important}
+ .grid-supplier{grid-template-columns:minmax(145px,1.7fr) minmax(90px,.8fr) minmax(70px,.7fr) minmax(72px,.65fr) minmax(78px,.7fr) minmax(79px,.72fr) 16px}
+ .grid-catalog{grid-template-columns:minmax(160px,1.6fr) minmax(109px,1.12fr) minmax(75px,.8fr) minmax(78px,.7fr) minmax(80px,.76fr) 15px}
+ .grid-smart{grid-template-columns:minmax(151px,1.3fr) minmax(76px,.65fr) minmax(89px,.8fr) minmax(79px,.7fr) minmax(90px,.75fr) 15px}
+ .grid-orders{grid-template-columns:minmax(119px,1.25fr) minmax(105px,1.1fr) minmax(74px,.73fr) minmax(94px,.85fr) minmax(91px,.85fr) 15px}
+ .cell-muted{font-size:10px}.cell-numeric{font-size:11px}.cell-quality{font-size:10px}
+}
+@media(max-width:1010px){
+ .grid-supplier,.grid-catalog,.grid-smart,.grid-orders{grid-template-columns:minmax(143px,2fr) minmax(79px,1fr) minmax(67px,.7fr) minmax(73px,.8fr) 17px}
+ .grid-supplier > :nth-child(4),.grid-catalog > :nth-child(4),.grid-smart > :nth-child(4),.grid-orders > :nth-child(4){display:none}
+ .grid-supplier > :nth-child(7),.grid-catalog > :nth-child(6),.grid-smart > :nth-child(6),.grid-orders > :nth-child(6){display:none}
+ .table-row{min-height:49px}
+}
+@media(max-height:740px){
+ .sidebar-title{min-height:70px!important}
+ .main{padding-top:6px!important;padding-bottom:6px!important}
+ .main-header{min-height:36px}
+ .toolrow{min-height:42px}
+ .table-row{min-height:46px}
+ .drawer{top:70px!important}
+}
+@media(prefers-reduced-motion:reduce){.bistro-topbar *{animation:none!important;transition:none!important}}
+/* El panel cerrado nunca intercepta clics sobre las filas durante la transición. */
+.drawer{pointer-events:none}
+.drawer.open{pointer-events:auto}
+/* Etiquetas de estado compactas como las de Plantilla / Inventario. */
+.grid-supplier>.status,.grid-catalog>.status,.grid-smart>.status,.grid-orders>.status{justify-self:start;align-self:center;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.grid-supplier>.cell-end,.grid-catalog>.cell-end,.grid-smart>.cell-end,.grid-orders>.cell-end{justify-content:center}
